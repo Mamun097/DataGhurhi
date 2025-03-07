@@ -1,0 +1,103 @@
+/* Full Page Layout */
+.register-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #6e8efb, #1e043e);
+    font-family: "Poppins", sans-serif;
+}
+  
+/* Registration Box */
+.register-box {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 40px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+  
+/* Title */
+.register-title {
+    font-size: 24px;
+    color: white;
+    margin-bottom: 20px;
+    font-weight: bold;
+}
+  
+/* Input Fields - Same Width for All */
+input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box; /* Ensures consistent width calculation */
+}
+
+/* Name Fields - Ensure First & Last Name Match Other Inputs */
+.name-fields {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.name-fields input {
+    width: 50%; /* Each field takes half the width inside flexbox */
+    flex: 1; /* Ensures equal distribution */
+}
+
+/* Button */
+.register-button {
+    width: 100%;
+    padding: 12px;
+    background: #ff5733;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+}
+  
+.register-button:hover {
+    background: #ff471a;
+}
+
+/* Login Redirect Link */
+.login-link {
+    margin-top: 15px;
+    font-size: 14px;
+    color: white;
+}
+  
+.login-link a {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+/* Responsive - Stack Fields on Small Screens */
+@media (max-width: 600px) {
+    .name-fields {
+        flex-direction: column;
+    }
+
+    .name-fields input {
+        width: 100%; /* Make full width on smaller screens */
+    }
+}
+/* Error Message */
+.error-message {
+    color: #ff0000;
+    font-size: 20px;
+    margin-top: -8px;
+    margin-bottom: 10px;
+    text-align: left;
+    width: 100%;
+  }
+  

@@ -1,0 +1,98 @@
+/* Navbar Container - Transparent with Shadow */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(234, 230, 230, 0.7); /* Transparent effect */
+    backdrop-filter: blur(10px); /* Frosted glass effect */
+    padding: 10px 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.7); /* Soft shadow */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 1000;
+    transition: background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  
+  /* Logo Section */
+  .logo-container {
+    display: flex;
+    align-items: left;
+    gap: 2rem;
+  }
+  
+  /* Uniform Logo Styling */
+  .logo {
+    width: 6rem;
+    height: 5rem;
+    object-fit: contain;
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  .logo:hover {
+    transform: scale(1.5);
+  }
+  /* Import Google Font */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Raleway:wght@500&display=swap');
+
+  /* Navigation Links */
+ /* Navigation Links - Centered with Icons */
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 3rem;
+    padding: 0;
+    margin-right: 5rem;
+  }
+  
+  .nav-links li {
+    text-align: center;
+  }
+  
+  .nav-links a {
+    text-decoration: none;
+    color: rgb(90, 88, 88);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size:  1rem;
+    font-family: 'Playfair Display', serif; /* Stylish and elegant */
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.3s ease-in-out, transform 0.2s ease-in-out;
+  }
+  /* Icons Styling */
+  .nav-icon {
+    font-size: 3rem;
+    margin-bottom: 0.5 rem;
+    color: rgb(95, 93, 93);
+    transition: transform 0.3s ease-in-out;
+  }
+  
+  /* Hover Effects */
+  .nav-links a:hover {
+    transform: scale(1.2);
+    color: #9e43ff;
+  }
+  
+  .nav-links a:hover .nav-icon {
+    transform: scale(1.2);
+    color: #9a23e9;
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .nav-links {
+      gap: 20px;
+    }
+  
+    .nav-links a {
+      font-size: 12px;
+    }
+  
+    .nav-icon {
+      font-size: 20px;
+    }
+  }
+  

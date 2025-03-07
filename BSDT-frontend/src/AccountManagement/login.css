@@ -1,0 +1,81 @@
+/* Full Page Layout */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #6e8efb, #1e043e);
+    font-family: "Poppins", sans-serif;
+  }
+  
+  /* Login Box */
+  .login-box {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    padding: 40px;
+    width: 400px;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Title */
+  .login-title {
+    font-size: 24px;
+    color: white;
+    margin-bottom: 20px;
+    font-weight: bold;
+  }
+  
+  /* Input Fields */
+  input {
+    width: 100%;
+    padding: 12px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  
+  /* Login Button */
+  .login-button {
+    width: 100%;
+    padding: 12px;
+    background: #ff5733;
+    border: none;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .login-button:hover {
+    background: #ff471a;
+  }
+  
+  /* Error Message */
+  .error-message {
+    color: #ff4444;
+    font-size: 14px;
+    margin-top: -8px;
+    margin-bottom: 10px;
+    text-align: left;
+    width: 100%;
+  }
+  
+  /* Register Redirect Link */
+  .register-link {
+    margin-top: 15px;
+    font-size: 14px;
+    color: white;
+  }
+  
+  .register-link a {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  
