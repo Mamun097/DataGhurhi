@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { motion } from "framer-motion";
 import "./Register.css";
 import Navbarhome from "../Homepage/navbarhome";
@@ -13,6 +14,8 @@ const Register = () => {
   });
 
   const [emailError, setEmailError] = useState("");
+  const [errorMessage, setErrorMessage] = useState(""); // To display backend error messages
+  const [isLoading, setIsLoading] = useState(false); // Correctly defining the loading state
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,13 +34,38 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (emailError) {
       alert("Please enter a valid email before submitting.");
       return;
     }
-    alert(`Registered Successfully: ${formData.firstName} ${formData.lastName}`);
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMessage("Passwords do not match.");
+      return;
+    }
+
+    setIsLoading(true); // Show loading spinner
+
+    try {
+      const response = await axios.post("http://localhost:2000/api/register", {
+        name: formData.firstName +" "+formData.lastName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (response.status === 201) {
+        // Registration success
+        alert(`Registered Successfully: ${formData.firstName} ${formData.lastName}`);
+        window.location.href = "/login"; // Redirect to login page
+      }
+    } catch (error) {
+      setErrorMessage(error.response?.data?.error || "Something went wrong.");
+    } finally {
+      setIsLoading(false); // Hide loading spinner
+    }
+    
   };
 
   return (

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from 'axios';
 import { motion } from "framer-motion";
 import "./Login.css";
 import Navbarhome from "../Homepage/navbarhome";
@@ -27,13 +28,38 @@ const Login = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log(formData.email);
+    console.log(formData.password);
     if (emailError) {
       alert("Please enter a valid email before logging in.");
       return;
     }
-    alert(`Logged in successfully: ${formData.email}`);
+    try {
+      const response = await axios.post('http://localhost:2000/api/login', {
+        email: formData.email,
+        password: formData.password,
+        
+      });
+      console.log(response);
+
+      if (response.status === 200) {
+        console.log(response.data.message);
+        alert(`Logged in successfully: ${formData.email}`);
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('role', "user");
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        window.location.href = '/dashboard';
+
+      } else {
+        setErrorMessage(response.data.error);
+      }
+    } catch (error) {
+       console.log('error');
+      console.error('Error:', error);
+    }
+    
   };
 
   return (
