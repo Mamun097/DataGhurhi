@@ -97,7 +97,7 @@ const Login = () => {
           </button>
         </form>
         <p className="register-link">
-          Don't have an account? <a href="/register">Sign up</a>
+          Don't have an account? <a href="/signup">Sign up</a>
         </p>
       </motion.div>
     </div>
