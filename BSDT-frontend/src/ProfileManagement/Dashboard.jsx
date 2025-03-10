@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { use, useState, useEffect, useCallback } from "react";
+import axios from 'axios';
 import { motion } from "framer-motion";
 import NavbarAccountHolder from "./navbarAccountholder";
 import "./Dashboard.css";
+
 
 const publicProjects = [
   { name: "AI Chatbot", owner: "Alice Smith", description: "An AI-powered chatbot for customer support." },
@@ -10,9 +12,17 @@ const publicProjects = [
 ];
 
 const Dashboard = () => {
+
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (!token) {
+  //     window.location.href = "/login";
+  //   }
+  // }, []);
   const [profilePic, setProfilePic] = useState(null);
   const [coverPic, setCoverPic] = useState(null);
   const [activeTab, setActiveTab] = useState("edit-profile");
+  const [values, setValues] = useState({});
 
   const handleProfilePicChange = (event) => {
     const file = event.target.files[0];
@@ -27,6 +37,46 @@ const Dashboard = () => {
       setCoverPic(URL.createObjectURL(file));
     }
   };
+
+const getProfile = useCallback 
+(async () => {
+  const token = localStorage.getItem("token");
+  console.log(token);
+  try {
+    const requestOptions = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token,
+    },
+  };
+  const response =await axios.get('http://localhost:2000/api/profile', requestOptions);
+
+  if (response.status === 200) {
+    console.log(response.data);
+    setValues(response.data);
+    // console.log(values);
+    
+  } else {
+    console.log(response.data.error);
+  }} 
+  catch (error) {
+  console.error('Error:', error);
+  }
+},
+[]
+);
+
+useEffect(() => {
+  getProfile();
+}, [getProfile]);
+
+useEffect(() => {
+  if (values && Object.keys(values).length > 0) {
+    console.log("Updated values:", values);
+  }
+}, [values]);
+
 
   return (
     <div className="dashboard-container">
@@ -50,9 +100,9 @@ const Dashboard = () => {
             <input type="file" id="profileUpload" accept="image/*" onChange={handleProfilePicChange} style={{ display: "none" }} />
             <label htmlFor="profileUpload" className="edit-profile-btn">📷</label>
           </div>
-          <h2>John Doe</h2>
-          <p>Software Engineer | Tech Enthusiast | Gamer</p>
-          <p>120 Friends</p>
+          <h2>{values && values.user && values.user.name ? values.user.name : "Loading..."}</h2>
+          {/* <p>Software Engineer | Tech Enthusiast | Gamer</p>
+          <p>120 Friends</p> */}
         </div>
 
         {/* Tabs Navigation */}

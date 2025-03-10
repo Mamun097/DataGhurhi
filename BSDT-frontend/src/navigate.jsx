@@ -12,11 +12,11 @@ import Dashboard from "./ProfileManagement/Dashboard";
 const Navigate = () => {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/home" element={<Home />} />
-      <Route path="/signup" element={<Register />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/" exact element={<Home />} />
+      <Route path="/home" exact element={<Home />} />
+      <Route path="/signup" exact element={<Register />} />
+      <Route path="/login"exact element={<Login />} />
+      
 
     </Routes>
   );

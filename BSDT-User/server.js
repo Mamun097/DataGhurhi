@@ -16,6 +16,7 @@ app.use(cors({
 
 const registerRouter = require('./route/register');
 const loginRouter = require('./route/login');
+const profileRouter = require('./route/profile');
 // // const profile = require('./route/profile');
 
 //connect db
@@ -38,6 +39,7 @@ app.use(express.json());
 // Routes
 app.use('/api/register', registerRouter);
 app.use('/api/login', loginRouter);
+app.use('/api/profile', profileRouter);
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
 

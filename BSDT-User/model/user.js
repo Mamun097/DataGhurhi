@@ -33,10 +33,17 @@ createUser({
     }])
     return newUser;
 }
+async function findUserById(id) {
+    const { data, error } = await supabase
+    .from('user')
+    .select('*')
+    .eq('user_id', id)
+ // return data and error togrther
+ return { data, error };
+}
 
 
 
 module.exports = {
     findUserByEmail,
-    createUser
-};
+    createUser, findUserById};

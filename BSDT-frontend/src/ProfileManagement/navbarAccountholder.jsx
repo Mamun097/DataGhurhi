@@ -14,6 +14,13 @@ import {
   FaInfoCircle,
   FaQuestionCircle,
 } from "react-icons/fa";
+const logOut = () => {
+  localStorage.removeItem('token');
+  localStorage.removeItem('userType');
+  localStorage.removeItem('role');
+  localStorage.removeItem('userId');
+  window.location.href = '/';
+};
 
 const NavbarAccountHolder= () => {
   const [scrolled, setScrolled] = useState(false);
@@ -65,7 +72,7 @@ const NavbarAccountHolder= () => {
           </a>
         </li>
         <li>
-          <a href="logout">
+          <a href="#" onClick={logOut}>
             <FaSignOutAlt className="nav-icon" />
             <span>Log Out</span>
           </a>

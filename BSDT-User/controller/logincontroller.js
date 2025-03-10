@@ -34,6 +34,7 @@ exports.login = async (req, res) => {
         return res.status(401).json({ error: 'Incorrect password' });
     }
    let token = jwt.sign({ email: user.email, id: user.user_id }, process.env.JWT_SECRET_USER);
+//    res.setHeader('Authorization', `Bearer ${token}`);
     return res.status(200).json({ message: 'Login successful', token });
 }
     
