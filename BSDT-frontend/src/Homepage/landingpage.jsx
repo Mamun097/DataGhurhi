@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavbarHome from "./navbarhome"; // Import the Navbar component
-import "./LandingPage.css";
+import "./landingpage.css";
 
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState("");

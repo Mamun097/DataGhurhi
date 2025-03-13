@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import "./Register.css";
+import "./register.css";
 import Navbarhome from "../Homepage/navbarhome";
 
 const Register = () => {
