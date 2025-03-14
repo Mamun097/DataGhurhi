@@ -1,4 +1,4 @@
-CREATE TABLE project_versions (
+CREATE TABLE survey_project_versions (
     version_id SERIAL PRIMARY KEY,
     project_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -13,7 +13,7 @@ CREATE TABLE project_versions (
 CREATE OR REPLACE FUNCTION save_project_version() 
 RETURNS TRIGGER AS $$
 BEGIN
-    INSERT INTO project_versions (project_id, user_id, previous_data)
+    INSERT INTO survey_project_versions (project_id, user_id, previous_data)
     VALUES (OLD.project_id, OLD.user_id, row_to_json(OLD));
     RETURN NEW;
 END;
