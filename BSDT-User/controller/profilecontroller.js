@@ -1,6 +1,7 @@
 //controller for user profile page
 const User = require('../model/user');
-const bcrypt = require('bcrypt');
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const supabase = require('../db');
 //get user profile

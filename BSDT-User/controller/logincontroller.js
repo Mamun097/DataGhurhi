@@ -1,6 +1,7 @@
 // controllers/signinController.js
 
-const bcrypt = require('bcrypt');
+// const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const supabase = require('../db');
 const jwt = require('jsonwebtoken');
 const user = require('../model/user');

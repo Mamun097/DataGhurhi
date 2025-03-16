@@ -2,6 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const app = express();
+const swaggerUi = require('swagger-ui-express');
+const yaml = require('yamljs');
+// loading API documentation
+const swaggerDocument = yaml.load('./docs/api-docs.yml');
+// serving Swagger UI
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
 
 const allowedOrigins = ['http://localhost:5173'];
@@ -19,6 +25,7 @@ const loginRouter = require('./route/login');
 const profileRouter = require('./route/profile');
 
 const versionHistoryRouter= require('./route/projectversioning');
+const surveyversionHistoryRouter= require('./route/surveyversioning');
 // // const profile = require('./route/profile');
 
 //connect db
@@ -44,8 +51,7 @@ app.use('/api/login', loginRouter);
 app.use('/api/profile', profileRouter);
 
 app.use('/api', versionHistoryRouter);
+app.use('/api', surveyversionHistoryRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
-
-
