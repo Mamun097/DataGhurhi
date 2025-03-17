@@ -1,0 +1,119 @@
+swagger: "2.0"
+info:
+  description: "API documentation for BSDT"
+  version: "1.0.0"
+  title: "BSDT"
+host: "localhost:2000"
+basePath: "/api"
+
+tags:
+  - name: "register"
+    description: "User Registration"
+  - name: "login"
+    description: "User Login"
+
+schemes:
+  - "http"
+
+paths:
+  /register:
+    post:
+      tags:
+        - "register"
+      summary: "Create a new user"
+      description: "Create a new user record in the BSDT system"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: "User registration details"
+          required: true
+          schema:
+            type: object
+            properties:
+              name:
+                type: string
+                example: "John Doe"
+              email:
+                type: string
+                example: "johndoe@example.com"
+              password:
+                type: string
+                example: "password123"
+      responses:
+        201:
+          description: "User created successfully"
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Registered Successfully"
+        400:
+          description: "User ID already exists"
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "User ID already exists"
+        401:
+          description: "Unauthorized"
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"
+        500:
+          description: "Unsuccessful registration"
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unsuccessful registration"
+  /login:
+    post:
+      tags:
+        - "login"
+      summary: "Login for user"
+      description: "User login details"
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: "User credentials"
+          required: true
+          schema:
+            type: object
+            properties:
+              email:
+                type: string
+                example: "johndoe@example.com"
+              password:
+                type: string
+                example: "password123"
+      responses:
+        201:
+          description: "Login successful"
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+                example: "Ok"
+        401:
+          description: "Unauthorized"
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Unauthorized"

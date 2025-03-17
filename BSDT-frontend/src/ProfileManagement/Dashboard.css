@@ -1,0 +1,310 @@
+/* Ensure Navbar is fixed at the top */
+.navbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background: #ffffff;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Main Container */
+.dashboard-container {
+  display: flex;
+  /* flex-direction: column; */
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background-color: #f8f9fa; /* Light Background */
+  color: #333; /* Darker text for contrast */
+  /* width: 90vw; Full page width */
+  min-height: 80vh; /* Full page height */
+  margin-top: 60px; /* Push down to avoid navbar overlap */
+}
+
+/* Dashboard Layout: 3 Sections */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr; /* Profile | Projects | Trending */
+  gap: 20px;
+  width: 100%;
+  max-width: 1400px; /* More space for larger screens */
+}
+
+/* Profile Section */
+.profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+}
+
+.profile-pic-wrapper {
+  position: relative;
+}
+
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd; /* Light border */
+}
+
+.username {
+  font-size: 14px;
+  color: #555;
+}
+
+/* Edit Profile Button */
+.edit-profile-btn {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: none;
+  background: #007bff; /* Light theme blue */
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.edit-profile-btn:hover {
+  background: #0056b3;
+}
+/* Edit Profile Picture Button */
+.edit-profile-pic-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50%;
+  padding: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease-in-out;
+  opacity: 0;
+}
+/* Show edit icon when hovering over profile picture */
+.profile-pic-wrapper:hover .edit-profile-pic-btn {
+  opacity: 1;
+}
+
+
+/* Projects Section */
+.projects-section {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.project-card {
+  background: #f9f9f9;
+  padding: 10px;
+  border-radius: 8px;
+  width: 200px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.project-card:hover {
+  transform: scale(1.05);
+  background: #e9ecef; /* Light gray hover */
+}
+
+/* Trending Section */
+.trending-section {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.trending-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.trending-list li {
+  background: #f1f1f1;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+.trending-list li:hover {
+  background: #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr; /* Stack sections */
+  }
+
+  .profile-section,
+  .projects-section,
+  .trending-section {
+    width: 100%;
+  }
+}
+/* Profile Picture Styling */
+.profile-pic-wrapper {
+  position: relative;
+}
+
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%; /* Ensures round shape */
+  object-fit: cover;
+  border: 3px solid #ddd; /* Light border */
+}
+/* Profile Picture Styling */
+.profile-pic-wrapper {
+  position: relative;
+}
+
+.profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%; /* Ensures round shape */
+  object-fit: cover;
+  border: 3px solid #ddd; /* Light border */
+}
+
+/* Edit Profile Button */
+.edit-profile-pic-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border-radius: 50%;
+  padding: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease-in-out;
+}
+
+.edit-profile-pic-btn:hover {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+
+/* Profile Tabs */
+.profile-tabs {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+  gap: 10px;
+}
+
+.profile-tabs button {
+  padding: 10px;
+  border: none;
+  background: #e0e0e0;
+  color: black;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out;
+}
+
+.profile-tabs button.active {
+  background: #007bff;
+  color: white;
+}
+
+.profile-tabs button:hover {
+  background: #d0d0d0;
+}
+
+/* Content Sections */
+.edit-profile-content,
+.project-grid,
+.collaborators-section {
+  padding: 20px;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Hide Sections */
+.project-grid, .collaborators-section {
+  display: none;
+}
+
+.projects-section .active {
+  display: block;
+}
+/* Edit Profile Header */
+.edit-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Edit Toggle Button */
+.edit-toggle-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.edit-toggle-btn:hover {
+  background: #0056b3;
+}
+
+/* Profile Fields */
+.profile-fields {
+  margin-top: 10px;
+}
+
+.profile-fields label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+.profile-fields input, .profile-fields textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Save Button */
+.save-btn {
+  background: green;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+.save-btn:hover {
+  background: darkgreen;
+}

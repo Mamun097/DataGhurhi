@@ -1,0 +1,123 @@
+/* Navbar Styling */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #d7d9de, #cfb4ef);
+  color: rgb(1, 1, 1);
+  font-family: "Poppins", sans-serif;
+  position: fixed;
+  width: 100%;
+  height: 60px;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 20px;
+}
+
+/* Logo Container */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  flex-shrink: 0;
+  margin-left: 40px;
+}
+
+/* Logos */
+.logo {
+  height: 60px;  /* Adjust for better scaling */
+  width: auto;
+}
+
+/* Search Box Always Visible */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px 15px;
+  border-radius: 8px;
+  gap: 8px;
+  width: 700px;
+  border: 1px solid rgb(0, 0, 0);
+}
+
+/* Search Input */
+.search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: rgb(0, 0, 0);
+  font-size: 16px;
+  width: 100%;
+}
+
+/* Search Icon */
+.search-icon {
+  color: rgb(0, 0, 0);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Navigation Links */
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 40px;
+  margin-right: 40px;
+}
+
+.nav-links li {
+  display: flex;
+  flex-direction: column; /* Stack items vertically */
+  align-items: center;
+  text-align: center;
+}
+
+/* Icons */
+.nav-icon {
+  font-size: 30px; /* Make icons a bit bigger */
+  margin-bottom: 5px; /* Space between icon and text */
+}
+
+/* Navigation Links Text */
+.nav-links a {
+  text-decoration: none;
+  color: rgb(3, 3, 3);
+  display: flex;
+  flex-direction: column; /* Stack icon and text */
+  align-items: center;
+  font-size: 14px;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #da72bd;
+}
+.nav-links li:hover {
+  color:  #da72bd; /* Change to desired color */
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .navbar {
+    flex-direction: column;
+    height: auto;
+    padding: 15px;
+  }
+
+  .logo-container {
+    flex-wrap: wrap;
+  }
+
+  .search-container {
+    width: 100%;
+    justify-content: center;
+    margin: 10px 0;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+}
