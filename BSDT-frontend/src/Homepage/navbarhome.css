@@ -93,6 +93,9 @@
 .nav-links a:hover {
   color: #da72bd;
 }
+.nav-links li:hover {
+  color:  #da72bd; /* Change to desired color */
+}
 
 /* Responsive Design */
 @media (max-width: 900px) {
@@ -116,4 +119,5 @@
     flex-direction: column;
     gap: 10px;
   }
+  
 }
