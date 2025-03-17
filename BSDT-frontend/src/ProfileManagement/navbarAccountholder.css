@@ -1,98 +1,119 @@
-/* Navbar Container - Transparent with Shadow */
+/* Navbar Styling */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: rgba(234, 230, 230, 0.7); /* Transparent effect */
-    backdrop-filter: blur(10px); /* Frosted glass effect */
-    padding: 10px 15px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.7); /* Soft shadow */
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 1000;
-    transition: background 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-  }
-  
-  /* Logo Section */
-  .logo-container {
-    display: flex;
-    align-items: left;
-    gap: 2rem;
-  }
-  
-  /* Uniform Logo Styling */
-  .logo {
-    width: 6rem;
-    height: 5rem;
-    object-fit: contain;
-    transition: transform 0.3s ease-in-out;
-  }
-  
-  .logo:hover {
-    transform: scale(1.5);
-  }
-  /* Import Google Font */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Raleway:wght@500&display=swap');
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #d7d9de, #cfb4ef);
+  color: rgb(1, 1, 1);
+  font-family: "Poppins", sans-serif;
+  position: fixed;
+  width: 100%;
+  height: 60px;
+  top: 0;
+  z-index: 1000;
+  padding: 10px 20px;
+}
 
-  /* Navigation Links */
- /* Navigation Links - Centered with Icons */
+/* Logo Container */
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Adjusted for better spacing */
+  flex-shrink: 0;
+  margin-left: 40px;
+}
+
+/* Logos */
+.logo {
+  height: 50px; /* Adjusted for better scaling */
+  width: auto;
+}
+
+/* Search Box - Smaller Size & More Spacing */
+.search-container {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 8px;
+  gap: 8px;
+  width: 400px; /* Reduced width */
+  border: 1px solid rgb(0, 0, 0);
+  margin: 0 30px; /* Added margin for spacing */
+}
+
+/* Search Input */
+.search-input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: rgb(0, 0, 0);
+  font-size: 16px;
+  width: 100%;
+}
+
+/* Search Icon */
+.search-icon {
+  color: rgb(0, 0, 0);
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* Navigation Links */
 .nav-links {
-    list-style: none;
-    display: flex;
-    gap: 3rem;
-    padding: 0;
-    margin-right: 5rem;
-  }
-  
-  .nav-links li {
-    text-align: center;
-  }
-  
-  .nav-links a {
-    text-decoration: none;
-    color: rgb(90, 88, 88);
-    display: flex;
+  display: flex;
+  list-style: none;
+  gap: 30px; /* Adjusted for better spacing */
+  margin-right: 40px;
+}
+
+.nav-links li {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  gap: 6px; /* Small gap between icon and text */
+}
+
+/* Icons */
+.nav-icon {
+  font-size: 28px; /* Slightly smaller */
+}
+
+/* Navigation Links Text */
+.nav-links a {
+  text-decoration: none;
+  color: rgb(3, 3, 3);
+  display: flex;
+  align-items: center;
+  font-size: 14px; /* Increased for better visibility */
+  transition: color 0.3s ease;
+  gap: 6px; /* Maintain space between icon and text */
+  white-space: nowrap; /* Prevents text from wrapping */
+}
+
+.nav-links a:hover {
+  color: #da72bd;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .navbar {
     flex-direction: column;
-    align-items: center;
-    font-size:  1rem;
-    font-family: 'Playfair Display', serif; /* Stylish and elegant */
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: color 0.3s ease-in-out, transform 0.2s ease-in-out;
+    height: auto;
+    padding: 15px;
   }
-  /* Icons Styling */
-  .nav-icon {
-    font-size: 3rem;
-    margin-bottom: 0.5 rem;
-    color: rgb(95, 93, 93);
-    transition: transform 0.3s ease-in-out;
+
+  .logo-container {
+    flex-wrap: wrap;
   }
-  
-  /* Hover Effects */
-  .nav-links a:hover {
-    transform: scale(1.2);
-    color: #9e43ff;
+
+  .search-container {
+    width: 80%; /* Adjust width for responsiveness */
+    margin: 10px 0;
   }
-  
-  .nav-links a:hover .nav-icon {
-    transform: scale(1.2);
-    color: #9a23e9;
+
+  .nav-links {
+    flex-direction: column;
+    gap: 20px;
   }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .nav-links {
-      gap: 20px;
-    }
-  
-    .nav-links a {
-      font-size: 12px;
-    }
-  
-    .nav-icon {
-      font-size: 20px;
-    }
-  }
-  
+}

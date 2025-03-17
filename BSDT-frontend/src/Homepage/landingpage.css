@@ -6,7 +6,7 @@
     justify-content: center;
     text-align: center;
     height: 100vh;
-    background: linear-gradient(135deg, #6e8efb, #1e043e);
+    background: linear-gradient(135deg, #6b6f7d, #cdc4d7);
     color: white;
     font-family: 'Poppins', sans-serif;
     padding-top: 80px; /* Prevent overlap with navbar */
@@ -18,7 +18,7 @@
   .title {
     font-size: 4rem;
     font-weight: bold;
-    background: linear-gradient(90deg, #ff9a9e, #fad0c4, #fad0c4);
+    background: linear-gradient(90deg, #024938, #3b0380, #32002b);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 2px;

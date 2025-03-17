@@ -1,42 +1,102 @@
-import React, { use, useState, useEffect, useCallback } from "react";
-import axios from 'axios';
-import { motion } from "framer-motion";
-import NavbarAccountHolder from "./navbarAccountholder";
+import React, { useState } from "react";
+import axios from "axios";
+import { useCallback, useEffect } from "react";
+import { supabase } from '../../db';
+import NavbarAcholder from "./navbarAccountholder"; // Ensure correct import
 import "./Dashboard.css";
 
-
 const publicProjects = [
-  { name: "AI Chatbot", owner: "Alice Smith", description: "An AI-powered chatbot for customer support." },
-  { name: "E-Commerce Platform", owner: "John Doe", description: "A full-stack e-commerce solution with payments." },
-  { name: "Smart Home Automation", owner: "Sarah Johnson", description: "Control your smart home with AI voice commands." },
+  {
+    name: "AI Chatbot",
+    owner: "Alice Smith",
+    description: "An AI-powered chatbot for customer support.",
+  },
+  {
+    name: "E-Commerce Platform",
+    owner: "John Doe",
+    description: "A full-stack e-commerce solution with payments.",
+  },
+  {
+    name: "Smart Home Automation",
+    owner: "Sarah Johnson",
+    description: "Control your smart home with AI voice commands.",
+  },
+];
+
+const trendingTopics = [
+  "AI in Healthcare",
+  "Web3 & Blockchain",
+  "Edge Computing",
+  "Quantum Computing",
+  "Augmented Reality",
 ];
 
 const Dashboard = () => {
+    const [profilePicUrl, setProfilePicUrl] = useState(null);
+    const [values, setValues] = useState({});
 
-  // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     window.location.href = "/login";
+  const handleImageUpload = async (event, type) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    
+    try {
+      const { data, error } = await supabase.storage
+      .from('media')  // Use the correct bucket name: 'media'
+      .upload(`profile_pics/${file.name}`, file, {
+          upsert: true, // Update the file if it already exists
+        }
+      ); 
+
+    if (error) {
+      console.error("Upload failed:", error.message);
+      return;
+    }
+    const urlData =  supabase
+    .storage
+    .from('media')
+    .getPublicUrl(`profile_pics/${file.name}`);
+
+    console.log("publicURL",urlData.data.publicUrl);
+ // Update the profile or cover picture URL in the database
+    await updateImageInDB(type, urlData.data.publicUrl);
+
+       
+    
+    console.log(`${type} picture URL:`, urlData.data.publicUrl);
+  // After updating the profile, fetch the new profile data
+    getProfile();
+     
+    } catch (error) {
+      console.error(`Upload failed for ${type} picture:`, error);
+    }
+  };
+
+
+  const updateImageInDB = async (type, imageUrl) => {
+    console.log("imageUrl",imageUrl);
+    const token = localStorage.getItem("token");
+    
+
+    try {
+      await axios.put(
+        "http://localhost:2000/api/profile/update-profile-image",
+          {imageUrl},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log(`${type} image updated in database.`);
+    } catch (error) {
+      console.error(`Failed to update ${type} image in DB:`, error);
+    }
+  };
+
+  // const handleCoverPicChange = (event) => {
+  //   const file = event.target.files[0];
+  //   if (file) {
+  //     setCoverPic(URL.createObjectURL(file));
   //   }
-  // }, []);
-  const [profilePic, setProfilePic] = useState(null);
-  const [coverPic, setCoverPic] = useState(null);
-  const [activeTab, setActiveTab] = useState("edit-profile");
-  const [values, setValues] = useState({});
-
-  const handleProfilePicChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setProfilePic(URL.createObjectURL(file));
-    }
-  };
-
-  const handleCoverPicChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      setCoverPic(URL.createObjectURL(file));
-    }
-  };
+  // };
 
 const getProfile = useCallback 
 (async () => {
@@ -55,6 +115,7 @@ const getProfile = useCallback
   if (response.status === 200) {
     console.log(response.data);
     setValues(response.data);
+    setProfilePicUrl(response.data.user.image);
     // console.log(values);
     
   } else {
@@ -77,77 +138,70 @@ useEffect(() => {
   }
 }, [values]);
 
-
   return (
-    <div className="dashboard-container">
-      <NavbarAccountHolder />
-      <div className="profile-content">
-        {/* Profile Cover */}
-        <div className="profile-cover">
-          <div className={`default-cover ${coverPic ? "hidden" : ""}`}></div>
-          {coverPic && <img src={coverPic} alt="Cover" />}
-          <label htmlFor="coverUpload" className="edit-cover-btn">
-            Edit Cover Photo
-          </label>
-          <input type="file" id="coverUpload" accept="image/*" onChange={handleCoverPicChange} />
-        </div>
+    <>
+      {/* Navbar is fixed at the top */}
+      <NavbarAcholder />
 
-        {/* Profile Info */}
-        <div className="profile-info">
-          <div className="profile-pic-wrapper">
-            <div className={`default-profile-pic ${profilePic ? "hidden" : ""}`}></div>
-            {profilePic && <img src={profilePic} alt="Profile" className="profile-pic" />}
-            <input type="file" id="profileUpload" accept="image/*" onChange={handleProfilePicChange} style={{ display: "none" }} />
-            <label htmlFor="profileUpload" className="edit-profile-btn">📷</label>
+      {/* Dashboard Layout Below Navbar */}
+      <div className="dashboard-container">
+        <div className="dashboard-layout">
+          {/* Profile Section */}
+          <div className="profile-section">
+            <div className="profile-pic-wrapper">
+              <img
+                src={profilePicUrl || "https://via.placeholder.com/150"}
+                alt="Profile"
+                className="profile-pic"
+              />
+              <input
+                type="file"
+                id="profileUpload"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "profile")}
+                style={{ display: "none" }}
+              />
+               <label htmlFor="profileUpload" className="edit-profile-pic-btn">📷</label>
+            </div>
+            
+            <h2>{values?.user?.name || "Loading..."}</h2>
+            {/* <p className="username">@johndoe</p> */}
+            <p>Software Engineer </p>
+            <button className="edit-profile-btn">Edit Profile</button>
           </div>
-          <h2>{values && values.user && values.user.name ? values.user.name : "Loading..."}</h2>
-          {/* <p>Software Engineer | Tech Enthusiast | Gamer</p>
-          <p>120 Friends</p> */}
-        </div>
+       
+            {/* <button className="edit-profile-btn">Edit Profile</button> */}
+          
+          
 
-        {/* Tabs Navigation */}
-        <div className="profile-tabs">
-          <button className={activeTab === "about" ? "active" : ""} onClick={() => setActiveTab("about")}>
-            About
-          </button>
-          <button className={activeTab === "settings" ? "active" : ""} onClick={() => setActiveTab("settings")}>
-           Settings
-          </button>
-          <button className={activeTab === "projects" ? "active" : ""} onClick={() => setActiveTab("projects")}>
-            Projects
-          </button>
-          <button className={activeTab === "collaborators" ? "active" : ""} onClick={() => setActiveTab("collaborators")}>
-            Collaborators
-          </button>
-
-          <button className={activeTab === "reminders" ? "active" : ""} onClick={() => setActiveTab("reminders")}>
-            Reminders
-          </button>
-        </div>
-
-        {/* Profile Content - Switch between Tabs */}
-        <div className="profile-tab-content">
-          {activeTab === "about" && <p>Edit your personal information, profile details, and preferences here.</p>}
-          {activeTab === "settings" && <p>Manage your password, email settings, and security options.</p>}
-
-          {/* Public Projects moved under "Collaborators" tab */}
-          {activeTab === "projects" && (
-            <motion.div className="projects-container">
-              <h3>Public Projects</h3>
+          {/* Projects Section */}
+          <div className="projects-section">
+            <h3>Pinned Projects</h3>
+            <div className="project-grid">
               {publicProjects.map((project, index) => (
                 <div key={index} className="project-card">
                   <h4>{project.name}</h4>
-                  <p><strong>Owner:</strong> {project.owner}</p>
+                  <p>
+                    <strong>Owner:</strong> {project.owner}
+                  </p>
                   <p className="project-description">{project.description}</p>
                 </div>
               ))}
-            </motion.div>
-          )}
+            </div>
+          </div>
 
-          {activeTab === "reminders" && <p>Set and manage reminders for important tasks and events.</p>}
+          {/* Trending Section */}
+          <div className="trending-section">
+            <h3>Trending Topics</h3>
+            <ul className="trending-list">
+              {trendingTopics.map((topic, index) => (
+                <li key={index}>{topic}</li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

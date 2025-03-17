@@ -20,3 +20,17 @@ exports.profile = async (req, res) => {
     return res.status(200).json({ user });
   
 }
+//update profile image
+exports.updateProfileImage = async (req, res) => {
+   
+    const { imageUrl } = req.body;
+    // console.log('imageUrl',imageUrl);    
+    const { data, error } = await User.updateProfileImage(req.jwt.id, imageUrl);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    return res.status(200).json({ message: 'Profile image updated successfully' });
+}
+

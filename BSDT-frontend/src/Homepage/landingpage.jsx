@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import NavbarHome from "./navbarhome"; // Import the Navbar component
-import "./landingpage.css";
+import "./LandingPage.css";
 
 const LandingPage = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -23,10 +23,10 @@ const LandingPage = () => {
         whileHover={{ scale: 1.05 }}
         transition={{ duration: 1 }}
       >
-        Welcome to BSDT
+        Welcome to Jorip.AI
       </motion.h1>
 
-      {/* Search Bar */}
+      {/* Search Bar
       <motion.div
         className="search-bar"
         initial={{ opacity: 0, scale: 0.8 }}
@@ -47,7 +47,7 @@ const LandingPage = () => {
         >
           🔍
         </motion.button>
-      </motion.div>
+      </motion.div> */}
 
       {/* Background Animation */}
       <motion.div

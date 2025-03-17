@@ -1,90 +1,56 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import "./navbarhome.css";
 import logo_bcc from "../assets/logos/bcc.png";
 import logo_buet from "../assets/logos/buet.png";
-import logo_db from "../assets/logos/db.png";
-import logo_edge from "../assets/logos/edge.png";
 import logo_ict from "../assets/logos/ict.png";
+import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
-import {
-  FaHome,
-  FaUserPlus,
-  FaSignInAlt,
-  FaInfoCircle,
-  FaQuestionCircle,
-} from "react-icons/fa";
+import { FaHome, FaUserPlus, FaSignInAlt, FaInfoCircle, FaQuestionCircle, FaSearch } from "react-icons/fa";
 
-const Navbarhome = () => {
-  const [scrolled, setScrolled] = useState(false);
+const NavbarHome = () => {
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      console.log("Searching for:", searchQuery);
+    }
+  };
 
   return (
-    <motion.nav
-      className={`navbar ${scrolled ? "scrolled" : ""}`}
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 1 }}
-    >
+    <motion.nav className="navbar">
       {/* Logo Section */}
       <div className="logo-container">
         <img src={logo_buet} alt="BUET Logo" className="logo" />
         <img src={logo_ric} alt="RIC Logo" className="logo" />
-        <img src={logo_db} alt="DB Logo" className="logo" />
         <img src={logo_ict} alt="ICT Logo" className="logo" />
         <img src={logo_edge} alt="EDGE Logo" className="logo" />
-        <img src={logo_bcc} alt="BCC Logo" className="logo" />
+      </div>
+
+      {/* Always Visible Search Box */}
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Search for projects, surveys, accounts..."
+          className="search-input"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+        <FaSearch className="search-icon" onClick={handleSearch} />
       </div>
 
       {/* Navigation Links */}
       <ul className="nav-links">
-        <li>
-          <a href="home">
-            <FaHome className="nav-icon" />
-            <span>Home</span>
-          </a>
-        </li>
-        <li>
-          <a href="signup">
-            <FaUserPlus className="nav-icon" />
-            <span>Sign Up</span>
-          </a>
-        </li>
-        <li>
-          <a href="login">
-            <FaSignInAlt className="nav-icon" />
-            <span>Log in</span>
-          </a>
-        </li>
-        <li>
-          <a href="about">
-            <FaInfoCircle className="nav-icon" />
-            <span>About</span>
-          </a>
-        </li>
-        <li>
-          <a href="faq">
-            <FaQuestionCircle className="nav-icon" />
-            <span>FAQ</span>
-          </a>
-        </li>
+        <li><a href="home"><FaHome className="nav-icon" /><span>Home</span></a></li>
+        <li><a href="signup"><FaUserPlus className="nav-icon" /><span>Sign Up</span></a></li>
+        <li><a href="login"><FaSignInAlt className="nav-icon" /><span>Log in</span></a></li>
+        <li><a href="about"><FaInfoCircle className="nav-icon" /><span>About</span></a></li>
+        <li><a href="faq"><FaQuestionCircle className="nav-icon" /><span>FAQ</span></a></li>
       </ul>
+
     </motion.nav>
   );
 };
 
-export default Navbarhome;
+export default NavbarHome;
