@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("editProfile");
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
+  const [projects, setProjects] = useState([]);
 
   // Fetch Profile Data
   const getProfile = useCallback(async () => {
@@ -32,6 +33,7 @@ const Dashboard = () => {
         setValues(response.data.user);
         setProfilePicUrl(response.data.user.image || defaultProfile);
         setEditedValues(response.data.user);
+        setProjects(response.data.user.projects || []);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -57,15 +59,17 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
 
     try {
-      await axios.put(
+      const response = await axios.put(
         "http://localhost:2000/api/profile/update",
         editedValues,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setValues(editedValues);
-      setIsEditing(false);
-      console.log("Profile updated successfully.");
+      if (response.status === 200) {
+        console.log("Profile updated successfully.");
+        setValues(editedValues); // Update UI after successful save
+        setIsEditing(false);
+      }
     } catch (error) {
       console.error("Error updating profile:", error);
     }
@@ -112,62 +116,41 @@ const Dashboard = () => {
                 </div>
 
                 <div className="profile-fields">
-                  <label>Name*:</label>
-                  {isEditing ? (
-                    <input type="text" name="name" value={editedValues.name || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>{values.name}</p>
-                  )}
-
-                  <label>Affiliation*:</label>
-                  {isEditing ? (
-                    <input type="text" name="affiliation" value={editedValues.affiliation || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>{values.affiliation}</p>
-                  )}
-
-                  <label>Research Field*:</label>
-                  {isEditing ? (
-                    <input type="text" name="research_field" value={editedValues.research_field || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>{values.research_field}</p>
-                  )}
-
-                  <label>Profession*:</label>
-                  {isEditing ? (
-                    <input type="text" name="profession" value={editedValues.profession || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>{values.profession}</p>
-                  )}
-
-                  <label>Secret Question*:</label>
-                  {isEditing ? (
-                    <input type="text" name="secret_question" value={editedValues.secret_question || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>{values.secret_question}</p>
-                  )}
-
-                  <label>Email*:</label>
-                  <p>{values.email}</p>
-
-                  <label>Password*:</label>
-                  {isEditing ? (
-                    <input type="password" name="password" value={editedValues.password || ""} onChange={handleInputChange} required />
-                  ) : (
-                    <p>********</p>
-                  )}
-
-                  <label>Education Level:</label>
-                  {isEditing ? (
-                    <select name="education_level" value={editedValues.education_level || ""} onChange={handleInputChange}>
-                      <option value="">Select</option>
-                      <option value="Bachelor">Bachelor</option>
-                      <option value="Master">Master</option>
-                      <option value="PhD">PhD</option>
-                    </select>
-                  ) : (
-                    <p>{values.education_level}</p>
-                  )}
+                  {[
+                    { label: "Name", name: "name", required: true },
+                    { label: "Affiliation", name: "affiliation", required: true },
+                    { label: "Research Field", name: "research_field", required: true },
+                    { label: "Profession", name: "profession", required: true },
+                    { label: "Secret Question", name: "secret_question", required: true },
+                    { label: "Email", name: "email", required: true },
+                    { label: "Password", name: "password", type: "password", required: true },
+                    { label: "Age/DOB", name: "dob", type: "date", required: true },
+                    { label: "Education Level", name: "education_level" },
+                    { label: "Gender", name: "gender" },
+                    { label: "Address", name: "address" },
+                    { label: "Contact No", name: "contact_no" },
+                    { label: "Designation", name: "designation" },
+                    { label: "Secondary Email", name: "secondary_email" },
+                    { label: "Profile Link", name: "profile_link" },
+                    { label: "Religion", name: "religion" },
+                    { label: "Working Place", name: "working_place" },
+                    { label: "Years of Experience", name: "years_of_experience" },
+                  ].map((field, index) => (
+                    <div key={index}>
+                      <label>{field.label}:</label>
+                      {isEditing ? (
+                        <input
+                          type={field.type || "text"}
+                          name={field.name}
+                          value={editedValues[field.name] || ""}
+                          onChange={handleInputChange}
+                          required={field.required}
+                        />
+                      ) : (
+                        <p>{values[field.name]}</p>
+                      )}
+                    </div>
+                  ))}
                 </div>
 
                 {isEditing && (
@@ -180,9 +163,19 @@ const Dashboard = () => {
 
             {activeTab === "projects" && (
               <div>
-                <h3>Pinned Projects</h3>
+                <h3>My Research Projects</h3>
                 <div className="project-grid">
-                  <p>Display user projects here...</p>
+                  {projects.length > 0 ? (
+                    projects.map((project, index) => (
+                      <div key={index} className="project-card">
+                        <h4>{project.name}</h4>
+                        <p><strong>Research Field:</strong> {project.research_field}</p>
+                        <p><strong>Description:</strong> {project.description}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No projects found.</p>
+                  )}
                 </div>
               </div>
             )}
