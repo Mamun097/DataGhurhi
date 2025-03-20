@@ -57,3 +57,21 @@ SET
     scheduled_type = (SELECT previous_data->>'scheduled_type' FROM project_versions WHERE version_id = 5),
     schedule_date = (SELECT previous_data->>'schedule_date' FROM project_versions WHERE version_id = 5)
 WHERE project_id = 1;
+
+
+
+
+
+INSERT INTO survey_project (project_id, user_id, title, field, description, privacy_mode, scheduled_type, schedule_date) 
+VALUES (1, 20, 'Project A', 'Science', 'Initial version', 'Public', 'Manual', '2025-01-01');
+
+
+UPDATE survey_project
+SET 
+    title = 'Updated Project A',
+    field = 'Physics',
+    description = 'New updated description',
+    privacy_mode = 'Private',
+    scheduled_type = 'Auto',
+    schedule_date = '2025-02-01'
+WHERE project_id = 1;

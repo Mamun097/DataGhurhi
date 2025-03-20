@@ -95,7 +95,7 @@ CREATE TABLE "question" (
     qb_id INTEGER,
     text TEXT,
     image TEXT,
-    tag VARCHAR(100),
+    tag JSONB,  --Can store multiple tags for a question as array
     input_type VARCHAR(50),
     privacy VARCHAR(50),
     FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON DELETE CASCADE,
@@ -179,3 +179,35 @@ CREATE TABLE "preprocessed_data" (
     status VARCHAR(50),
     FOREIGN KEY (response_id) REFERENCES "survey_response" (response_id) ON DELETE CASCADE
 );
+
+
+
+-- Question Bank is unnecessary
+ALTER TABLE "question" 
+DROP COLUMN qb_id;
+
+DROP TABLE IF EXISTS "question_bank";
+
+ALTER TABLE "question"
+ALTER COLUMN survey_id DROP NOT NULL;   --Making survey_id not required, it is not mandatory for a
+                                        --question to be from a survey
+
+
+--This table will store unique tags.
+CREATE TABLE tags (
+    tag_id SERIAL PRIMARY KEY,  -- Unique ID for each tag
+    tag_name VARCHAR(100) UNIQUE NOT NULL  -- Tag name must be unique
+);
+
+--This table will establish a many-to-many relationship between question and tags.
+CREATE TABLE question_tag (
+    question_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (question_id, tag_id),  -- Composite primary key to prevent duplicates
+    FOREIGN KEY (question_id) REFERENCES question (question_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags (tag_id) ON DELETE CASCADE
+);
+
+
+--Since tags are now stored separately, remove the tag column from the question table.
+ALTER TABLE question DROP COLUMN tag;
