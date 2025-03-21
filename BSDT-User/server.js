@@ -26,6 +26,8 @@ const profileRouter = require('./route/profile');
 
 const versionHistoryRouter= require('./route/projectversioning');
 const surveyversionHistoryRouter= require('./route/surveyversioning');
+
+const question_import_from_question_bank_Router= require('./route/question_import_from_question_bank')
 // // const profile = require('./route/profile');
 
 //connect db
@@ -52,6 +54,8 @@ app.use('/api/profile', profileRouter);
 
 app.use('/api', versionHistoryRouter);
 app.use('/api', surveyversionHistoryRouter);
+
+app.use('/api', question_import_from_question_bank_Router);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
