@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 import { supabase } from '../../db';
 import NavbarAcholder from "./navbarAccountholder"; 
 import "./Dashboard.css";
-// import defaultprofile from "./default_dp.png";
-// import defaultProfile from "H:\BSDT\backup3\A-Bangla-Based-Tool-For-Quantitative-Data-Analysis\BSDT-frontend\src\ProfileManagement\default_dp.png";
+import defaultprofile from "./default_dp.png";
+import { Navigate, } from "react-router-dom";
+
+
 
 const trendingTopics = [
   "AI in Healthcare",
@@ -76,6 +79,11 @@ const Dashboard = () => {
     }
   };
 
+    const navigate = useNavigate(); // Initialize the navigate function
+  
+    const handleAddProjectClick = () => {
+      navigate('/addproject'); // Use the navigate function to redirect
+    };
   return (
     <>
       <NavbarAcholder />
@@ -162,24 +170,30 @@ const Dashboard = () => {
               </div>
             )}
 
-            {activeTab === "projects" && (
-              <div>
-                <h3>My Research Projects</h3>
-                <div className="project-grid">
-                  {projects.length > 0 ? (
-                    projects.map((project, index) => (
-                      <div key={index} className="project-card">
-                        <h4>{project.name}</h4>
-                        <p><strong>Research Field:</strong> {project.research_field}</p>
-                        <p><strong>Description:</strong> {project.description}</p>
+        {activeTab === "projects" && (
+                      <div>
+                        <h3>My Research Projects</h3>
+                        <div className="project-grid">
+                          {projects.length > 0 ? (
+                            projects.map((project, index) => (
+                              <div key={index} className="project-card">
+                                <h4>{project.name}</h4>
+                                <p><strong>Research Field:</strong> {project.research_field}</p>
+                                <p><strong>Description:</strong> {project.description}</p>
+                              </div>
+                            ))
+                          ) : (
+                            <i>No projects found...</i>
+                            
+                            
+                          )}
+                          </div>
+                             <div className="add-project-card" onClick={() => handleAddProjectClick()}>
+                              <div className="plus-icon">+</div>
+                          </div>
+                       
                       </div>
-                    ))
-                  ) : (
-                    <p>No projects found.</p>
-                  )}
-                </div>
-              </div>
-            )}
+                    )}
 
             {activeTab === "collaborators" && (
               <div>
