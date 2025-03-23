@@ -1,27 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useCallback, useEffect } from "react";
 import { supabase } from '../../db';
-import NavbarAcholder from "./navbarAccountholder"; // Ensure correct import
+import NavbarAcholder from "./navbarAccountholder"; 
 import "./Dashboard.css";
-
-const publicProjects = [
-  {
-    name: "AI Chatbot",
-    owner: "Alice Smith",
-    description: "An AI-powered chatbot for customer support.",
-  },
-  {
-    name: "E-Commerce Platform",
-    owner: "John Doe",
-    description: "A full-stack e-commerce solution with payments.",
-  },
-  {
-    name: "Smart Home Automation",
-    owner: "Sarah Johnson",
-    description: "Control your smart home with AI voice commands.",
-  },
-];
+// import defaultprofile from "./default_dp.png";
+// import defaultProfile from "H:\BSDT\backup3\A-Bangla-Based-Tool-For-Quantitative-Data-Analysis\BSDT-frontend\src\ProfileManagement\default_dp.png";
 
 const trendingTopics = [
   "AI in Healthcare",
@@ -30,167 +13,183 @@ const trendingTopics = [
   "Quantum Computing",
   "Augmented Reality",
 ];
-
+ 
 const Dashboard = () => {
-    const [profilePicUrl, setProfilePicUrl] = useState(null);
-    const [values, setValues] = useState({});
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
+  const [values, setValues] = useState({});
+  const [activeTab, setActiveTab] = useState("editProfile");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedValues, setEditedValues] = useState({});
+  const [projects, setProjects] = useState([]);
 
-  const handleImageUpload = async (event, type) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    
+  // Fetch Profile Data
+  const getProfile = useCallback(async () => {
+    const token = localStorage.getItem("token");
     try {
-      const { data, error } = await supabase.storage
-      .from('media')  // Use the correct bucket name: 'media'
-      .upload(`profile_pics/${file.name}`, file, {
-          upsert: true, // Update the file if it already exists
-        }
-      ); 
+      const response = await axios.get('http://localhost:2000/api/profile', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
 
-    if (error) {
-      console.error("Upload failed:", error.message);
-      return;
-    }
-    const urlData =  supabase
-    .storage
-    .from('media')
-    .getPublicUrl(`profile_pics/${file.name}`);
-
-    console.log("publicURL",urlData.data.publicUrl);
- // Update the profile or cover picture URL in the database
-    await updateImageInDB(type, urlData.data.publicUrl);
-
-       
-    
-    console.log(`${type} picture URL:`, urlData.data.publicUrl);
-  // After updating the profile, fetch the new profile data
-    getProfile();
-     
+      if (response.status === 200) {
+        setValues(response.data.user);
+        setProfilePicUrl(response.data.user.image );
+        setEditedValues(response.data.user);
+        setProjects(response.data.user.projects || []);
+      }
     } catch (error) {
-      console.error(`Upload failed for ${type} picture:`, error);
+      console.error('Error:', error);
     }
+  }, []);
+
+  useEffect(() => {
+    getProfile();
+  }, [getProfile]);
+
+  // Handle Edit Toggle
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
   };
 
+  // Handle Input Change
+  const handleInputChange = (e) => {
+    setEditedValues({ ...editedValues, [e.target.name]: e.target.value });
+  };
 
-  const updateImageInDB = async (type, imageUrl) => {
-    console.log("imageUrl",imageUrl);
+  // Handle Save Changes
+  const handleSaveChanges = async () => {
     const token = localStorage.getItem("token");
-    
 
     try {
-      await axios.put(
-        "http://localhost:2000/api/profile/update-profile-image",
-          {imageUrl},
+      const response = await axios.put(
+        "http://localhost:2000/api/profile/update",
+        editedValues,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log(`${type} image updated in database.`);
+      if (response.status === 200) {
+        console.log("Profile updated successfully.");
+        setValues(editedValues); // Update UI after successful save
+        setIsEditing(false);
+      }
     } catch (error) {
-      console.error(`Failed to update ${type} image in DB:`, error);
+      console.error("Error updating profile:", error);
     }
   };
 
-  // const handleCoverPicChange = (event) => {
-  //   const file = event.target.files[0];
-  //   if (file) {
-  //     setCoverPic(URL.createObjectURL(file));
-  //   }
-  // };
-
-const getProfile = useCallback 
-(async () => {
-  const token = localStorage.getItem("token");
-  console.log(token);
-  try {
-    const requestOptions = {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + token,
-    },
-  };
-  const response =await axios.get('http://localhost:2000/api/profile', requestOptions);
-
-  if (response.status === 200) {
-    console.log(response.data);
-    setValues(response.data);
-    setProfilePicUrl(response.data.user.image);
-    // console.log(values);
-    
-  } else {
-    console.log(response.data.error);
-  }} 
-  catch (error) {
-  console.error('Error:', error);
-  }
-},
-[]
-);
-
-useEffect(() => {
-  getProfile();
-}, [getProfile]);
-
-useEffect(() => {
-  if (values && Object.keys(values).length > 0) {
-    console.log("Updated values:", values);
-  }
-}, [values]);
-
   return (
     <>
-      {/* Navbar is fixed at the top */}
       <NavbarAcholder />
 
-      {/* Dashboard Layout Below Navbar */}
       <div className="dashboard-container">
         <div className="dashboard-layout">
+          
           {/* Profile Section */}
           <div className="profile-section">
             <div className="profile-pic-wrapper">
-              <img
-                src={profilePicUrl || "https://via.placeholder.com/150"}
-                alt="Profile"
-                className="profile-pic"
-              />
-              <input
-                type="file"
-                id="profileUpload"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "profile")}
-                style={{ display: "none" }}
-              />
-               <label htmlFor="profileUpload" className="edit-profile-pic-btn">📷</label>
+              <img src={profilePicUrl } alt="Profile" className="profile-pic" />
             </div>
-            
-            <h2>{values?.user?.name || "Loading..."}</h2>
-            {/* <p className="username">@johndoe</p> */}
-            <p>Software Engineer </p>
-            <button className="edit-profile-btn">Edit Profile</button>
-          </div>
-       
-            {/* <button className="edit-profile-btn">Edit Profile</button> */}
-          
-          
 
-          {/* Projects Section */}
+            <h2>{values?.name || "Loading..."}</h2>
+            <p>Software Engineer</p>
+
+            <div className="profile-tabs">
+              <button className={activeTab === "editProfile" ? "active" : ""} onClick={() => setActiveTab("editProfile")}>
+                Edit Profile
+              </button>
+              <button className={activeTab === "projects" ? "active" : ""} onClick={() => setActiveTab("projects")}>
+                Projects
+              </button>
+              <button className={activeTab === "collaborators" ? "active" : ""} onClick={() => setActiveTab("collaborators")}>
+                Collaborators
+              </button>
+            </div>
+          </div>
+
+          {/* Main Section */}
           <div className="projects-section">
-            <h3>Pinned Projects</h3>
-            <div className="project-grid">
-              {publicProjects.map((project, index) => (
-                <div key={index} className="project-card">
-                  <h4>{project.name}</h4>
-                  <p>
-                    <strong>Owner:</strong> {project.owner}
-                  </p>
-                  <p className="project-description">{project.description}</p>
+            {activeTab === "editProfile" && (
+              <div className="edit-profile-content">
+                <div className="edit-profile-header">
+                  <h3>Profile Details</h3>
+                  <button onClick={toggleEdit} className="edit-toggle-btn">
+                    {isEditing ? "Cancel" : "Edit"}
+                  </button>
                 </div>
-              ))}
-            </div>
+
+                <div className="profile-fields">
+                  {[
+                    { label: "Name", name: "name", required: true },
+                    { label: "Affiliation", name: "affiliation", required: true },
+                    { label: "Research Field", name: "research_field", required: true },
+                    { label: "Profession", name: "profession", required: true },
+                    { label: "Secret Question", name: "secret_question", required: true },
+                    { label: "Email", name: "email", required: true },
+                    { label: "Password", name: "password", type: "password", required: true },
+                    { label: "Age/DOB", name: "dob", type: "date", required: true },
+                    { label: "Education Level", name: "education_level" },
+                    { label: "Gender", name: "gender" },
+                    { label: "Address", name: "address" },
+                    { label: "Contact No", name: "contact_no" },
+                    { label: "Designation", name: "designation" },
+                    { label: "Secondary Email", name: "secondary_email" },
+                    { label: "Profile Link", name: "profile_link" },
+                    { label: "Religion", name: "religion" },
+                    { label: "Working Place", name: "working_place" },
+                    { label: "Years of Experience", name: "years_of_experience" },
+                  ].map((field, index) => (
+                    <div key={index}>
+                      <label>{field.label}:</label>
+                      {isEditing ? (
+                        <input
+                          type={field.type || "text"}
+                          name={field.name}
+                          value={editedValues[field.name] || ""}
+                          onChange={handleInputChange}
+                          required={field.required}
+                        />
+                      ) : (
+                        <p>{values[field.name]}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {isEditing && (
+                  <button className="save-btn" onClick={handleSaveChanges}>
+                    Save Changes
+                  </button>
+                )}
+              </div>
+            )}
+
+            {activeTab === "projects" && (
+              <div>
+                <h3>My Research Projects</h3>
+                <div className="project-grid">
+                  {projects.length > 0 ? (
+                    projects.map((project, index) => (
+                      <div key={index} className="project-card">
+                        <h4>{project.name}</h4>
+                        <p><strong>Research Field:</strong> {project.research_field}</p>
+                        <p><strong>Description:</strong> {project.description}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <p>No projects found.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === "collaborators" && (
+              <div>
+                <h3>Collaborators</h3>
+                <p>Show list of collaborators here...</p>
+              </div>
+            )}
           </div>
 
-          {/* Trending Section */}
+          {/* Trending Topics Section */}
           <div className="trending-section">
             <h3>Trending Topics</h3>
             <ul className="trending-list">
@@ -199,6 +198,7 @@ useEffect(() => {
               ))}
             </ul>
           </div>
+
         </div>
       </div>
     </>
