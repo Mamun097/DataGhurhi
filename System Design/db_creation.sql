@@ -211,3 +211,53 @@ CREATE TABLE question_tag (
 
 --Since tags are now stored separately, remove the tag column from the question table.
 ALTER TABLE question DROP COLUMN tag;
+
+
+
+
+
+--^ CHANGES DONE AT 25/03/2025, TUESDAY ^--
+--^ =================================== ^--
+
+--!Creating the section table
+CREATE TABLE section (
+    section_id SERIAL PRIMARY KEY,   -- Auto-incrementing primary key
+    survey_id INTEGER NOT NULL,      -- Foreign key referencing survey table
+    title VARCHAR(255) NOT NULL,     -- Section title (required)
+    description TEXT,                -- Optional description
+    CONSTRAINT fk_survey FOREIGN KEY (survey_id) 
+        REFERENCES survey(survey_id) ON DELETE CASCADE
+);
+ALTER TABLE section 
+ALTER COLUMN title DROP NOT NULL,  -- Allow NULL values
+ALTER COLUMN title SET DEFAULT 'Section Title',  -- Set default value
+ALTER COLUMN description SET DEFAULT 'Section Description';  -- Set default value
+
+--!Modifying the Question table
+-- 1️⃣ Make `user_id` and `input_type` NOT NULL
+ALTER TABLE question 
+ALTER COLUMN user_id SET NOT NULL,
+ALTER COLUMN input_type SET NOT NULL;
+
+-- 2️⃣ Set default value of `privacy` to 'private'
+ALTER TABLE question 
+ALTER COLUMN privacy SET DEFAULT 'private';
+
+-- 3️⃣ Remove `survey_id` column
+ALTER TABLE question 
+DROP COLUMN survey_id;
+
+-- 4️⃣ Add `section_id` as a foreign key (nullable)
+ALTER TABLE question 
+ADD COLUMN section_id INTEGER,
+ADD CONSTRAINT fk_section FOREIGN KEY (section_id) REFERENCES section(section_id) ON DELETE SET NULL;
+
+-- 5️⃣ Add `options` column as JSONB (nullable)
+ALTER TABLE question 
+ADD COLUMN options JSONB;
+
+
+--!For getting the structure of a table
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'question';
