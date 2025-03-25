@@ -7,21 +7,12 @@ router.get("/own-questions/:userId", questionImportController.getOwnQuestions);
 /*GET /api/own-questions/:userId?tags=math,science&limit=5*/
 
 //!Get all public questions
-router.get("/public-questions/:userId", questionImportController.getPublicQuestions);
+router.get("/public-questions/", questionImportController.getPublicQuestions);
 /*GET /api/public-questions/:userId?tags=math,science&limit=5*/
 
 
-//!Import filtered questions
-router.post("/import-questions", questionImportController.importQuestions);
-/*
-POST /api/import-questions
-Content-Type: application/json
-
-{
-  "userId": 123,
-  "tags": ["math", "science"],
-  "limit": 5
-}
-*/
+//!Import filtered public questions + previous own questions
+router.get("/import-questions/:userId", questionImportController.importQuestions);
+/*GET /api/public-questions/:userId?tags=math,science&limit=5*/
 
 module.exports = router;

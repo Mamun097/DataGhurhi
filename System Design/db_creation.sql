@@ -261,3 +261,9 @@ ADD COLUMN options JSONB;
 SELECT column_name, data_type, is_nullable, column_default
 FROM information_schema.columns
 WHERE table_name = 'question';
+
+
+--!Insert data to Question table
+INSERT INTO question (user_id, text, input_type, privacy, options)  
+VALUES (20, 'At which side does the sun rise?', 'radio', 'private',  
+        '[{"Text": "North"}, {"Text": "South"}, {"Text": "East"}, {"Text": "West"}]'::jsonb);

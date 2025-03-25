@@ -30,7 +30,7 @@ const surveyversionHistoryRouter= require('./route/surveyversioning');
 const question_import_from_question_bank_Router= require('./route/question_import_from_question_bank')
 
 //project
-const UserprojectRouter = require('./route/projectviewUser');
+//const UserprojectRouter = require('./route/projectviewUser');
 
 
 //connect db
@@ -61,7 +61,7 @@ app.use('/api', surveyversionHistoryRouter);
 app.use('/api', question_import_from_question_bank_Router);
 
 //project
-app.use('/api', UserprojectRouter);
+//app.use('/api', UserprojectRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...

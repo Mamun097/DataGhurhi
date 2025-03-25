@@ -1,7 +1,7 @@
 const { text } = require('express');
 const supabase = require('../db');
 const bcrypt = require('bcryptjs');
-const { use } = require('../route/projectviewUser');
+//const { use } = require('../route/projectviewUser');
 
 // create user
 //check if user exists with supabase
