@@ -1,0 +1,113 @@
+.add-project-container {
+    max-width: 800px;
+    margin: 50px auto;
+    margin-top: 90px;
+    padding: 20px;
+    min-height: 80vh; /* Full page height */
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 9px 16px rgba(0, 0, 0, 0.2);
+  }
+  
+  .add-project-container h2 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: left;
+  }
+  
+  .project-form {
+    width: 100%;
+  }
+  
+  .form-group {
+    margin-bottom: 20px;
+  }
+  
+  .form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #666;
+    display: block;
+    margin-bottom: 8px;
+  }
+  
+  .form-group input,
+  .form-group textarea {
+    width: 90%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: #f8f8f8;
+    outline: none;
+  }
+  
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #007bff;
+  }
+  
+  textarea {
+    min-height: 120px;
+  }
+  .visibility-section {
+    margin-top: 30px;
+  }
+  
+  .visibility-options {
+    display: flex;
+    flex-direction: column; /* Stack the options vertically */
+    /* gap: 1px; Add some space between the options */
+    align-items: flex-start; /* Align the items to the start of the container */
+  }
+  
+  .visibility-option {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between radio button, icon, and text */
+  }
+  
+  .visibility-option input {
+    margin-right: 1px; /* Adds space between the radio button and the icon */
+  }
+  
+  .visibility-icon {
+    font-size: 40px; /* Adjust icon size */
+    color: #706c6c; /* Icon color */
+  }
+  
+  .visibility-option label {
+    font-size: 16px; /* Font size for the label */
+    font-weight: bold; /* Bold text for the label */
+    color: #333; /* Label color */
+  }
+  
+  .visibility-description {
+    font-size: 14px; /* Smaller font size for description */
+    color: #666; /* Gray color for description text */
+    margin-top: 5px;
+    margin-bottom: 15px;
+  }
+  
+  
+  
+  .submit-btn {
+    width: 30%;
+    padding: 14px;
+    background-color: #046744;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    align-content: right;
+    display: flex;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .submit-btn:hover {
+    background-color: #085714;
+  }
+  

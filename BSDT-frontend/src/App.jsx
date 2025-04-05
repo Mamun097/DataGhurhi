@@ -4,6 +4,8 @@ import Dashboard from "./ProfileManagement/Dashboard";
 import Home from "./Homepage/landingpage";
 import Register from "./AccountManagement/register";
 import Login from "./AccountManagement/login";
+import AddProject from "./ProjectManagement/createProject";
+import EditProject from "./ProjectManagement/editProject";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -20,16 +22,20 @@ function App() {
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
-        {/* Protected Route: Redirect if not authenticated */}
-        <Route
-          path="/dashboard"
-          element={
-            token && role === "user" ? <Dashboard /> : <Navigate to="/login" replace />
-          }
-        />
+        {/* Protected Routes */}
+        {token && role== "user"? (
+          <>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/addproject" element={<AddProject />} />
+            <Route path="view-project/:projectId" element={<EditProject />} />
+          </>
+        ) : (
+          <Route path="*" element={<Navigate to="/login" />} />
+        )}
 
         {/* Catch-All Route (404 Page) */}
         <Route path="*" element={<h2>404 - Page Not Found</h2>} />
+
       </Routes>
     </Router>
   );

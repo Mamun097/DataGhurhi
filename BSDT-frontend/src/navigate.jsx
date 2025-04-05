@@ -15,9 +15,9 @@ const Navigate = () => {
       <Route path="/" exact element={<Home />} />
       <Route path="/home" exact element={<Home />} />
       <Route path="/signup" exact element={<Register />} />
-      <Route path="/login" exact element={<Login />} />
+      <Route path="/login"exact element={<Login />} />
       <Route path="/dashboard" exact element={<Dashboard />} />
-      <Route path="/profile" exact element={<Dashboard />} />
+
     </Routes>
   );
 };
