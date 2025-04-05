@@ -46,12 +46,41 @@
   position: relative;
 }
 
+/* .profile-pic {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ddd; /* Light border */ 
+/* .default-profile-pic.hidden {
+  display: none;
+} */
+
+/* Uploaded Profile Picture */
 .profile-pic {
   width: 120px;
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid #ddd; /* Light border */
+}
+
+/* Edit Profile Picture Button */
+.edit-profile-pic-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  color: white;
+  border-radius: 50%;
+  padding: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease-in-out;
+  opacity: 0;
 }
 
 .username {
@@ -116,13 +145,35 @@
   padding: 10px;
   border-radius: 8px;
   width: 200px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 5px rgba(22, 21, 21, 0.1);
   transition: transform 0.2s ease-in-out;
 }
 
 .project-card:hover {
   transform: scale(1.05);
   background: #e9ecef; /* Light gray hover */
+}
+.add-project-card {
+  background: #f9f9f9;
+  padding:10px;
+  border-radius: 8px;
+  width: 200px;
+  box-shadow: 0 2px 5px rgba(14, 14, 14, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.add-project-card:hover {
+  transform: scale(1.05);
+  background: #e9ecef; /* Light gray hover */
+}
+.plus-icon {
+  font-size: 120px;
+  font-weight: bold;
+  color: transparent;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  text-shadow: 0 0 0 rgba(188, 160, 194, 0.5); /* Creates a "cut-out" effect */
 }
 
 /* Trending Section */
@@ -174,137 +225,5 @@
   object-fit: cover;
   border: 3px solid #ddd; /* Light border */
 }
-/* Profile Picture Styling */
-.profile-pic-wrapper {
-  position: relative;
-}
-
-.profile-pic {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%; /* Ensures round shape */
-  object-fit: cover;
-  border: 3px solid #ddd; /* Light border */
-}
-
-/* Edit Profile Button */
-.edit-profile-pic-btn {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  border-radius: 50%;
-  padding: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease-in-out;
-}
-
-.edit-profile-pic-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
-}
 
 
-/* Profile Tabs */
-.profile-tabs {
-  display: flex;
-  flex-direction: column;
-  margin-top: 10px;
-  gap: 10px;
-}
-
-.profile-tabs button {
-  padding: 10px;
-  border: none;
-  background: #e0e0e0;
-  color: black;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background 0.3s ease-in-out;
-}
-
-.profile-tabs button.active {
-  background: #007bff;
-  color: white;
-}
-
-.profile-tabs button:hover {
-  background: #d0d0d0;
-}
-
-/* Content Sections */
-.edit-profile-content,
-.project-grid,
-.collaborators-section {
-  padding: 20px;
-  border-radius: 10px;
-  background: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Hide Sections */
-.project-grid, .collaborators-section {
-  display: none;
-}
-
-.projects-section .active {
-  display: block;
-}
-/* Edit Profile Header */
-.edit-profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Edit Toggle Button */
-.edit-toggle-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 15px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.edit-toggle-btn:hover {
-  background: #0056b3;
-}
-
-/* Profile Fields */
-.profile-fields {
-  margin-top: 10px;
-}
-
-.profile-fields label {
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-}
-
-.profile-fields input, .profile-fields textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-/* Save Button */
-.save-btn {
-  background: green;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 15px;
-}
-
-.save-btn:hover {
-  background: darkgreen;
-}

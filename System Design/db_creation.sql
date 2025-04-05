@@ -95,7 +95,7 @@ CREATE TABLE "question" (
     qb_id INTEGER,
     text TEXT,
     image TEXT,
-    tag VARCHAR(100),
+    tag JSONB,  --Can store multiple tags for a question as array
     input_type VARCHAR(50),
     privacy VARCHAR(50),
     FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON DELETE CASCADE,
@@ -179,3 +179,91 @@ CREATE TABLE "preprocessed_data" (
     status VARCHAR(50),
     FOREIGN KEY (response_id) REFERENCES "survey_response" (response_id) ON DELETE CASCADE
 );
+
+
+
+-- Question Bank is unnecessary
+ALTER TABLE "question" 
+DROP COLUMN qb_id;
+
+DROP TABLE IF EXISTS "question_bank";
+
+ALTER TABLE "question"
+ALTER COLUMN survey_id DROP NOT NULL;   --Making survey_id not required, it is not mandatory for a
+                                        --question to be from a survey
+
+
+--This table will store unique tags.
+CREATE TABLE tags (
+    tag_id SERIAL PRIMARY KEY,  -- Unique ID for each tag
+    tag_name VARCHAR(100) UNIQUE NOT NULL  -- Tag name must be unique
+);
+
+--This table will establish a many-to-many relationship between question and tags.
+CREATE TABLE question_tag (
+    question_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY (question_id, tag_id),  -- Composite primary key to prevent duplicates
+    FOREIGN KEY (question_id) REFERENCES question (question_id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags (tag_id) ON DELETE CASCADE
+);
+
+
+--Since tags are now stored separately, remove the tag column from the question table.
+ALTER TABLE question DROP COLUMN tag;
+
+
+
+
+
+--^ CHANGES DONE AT 25/03/2025, TUESDAY ^--
+--^ =================================== ^--
+
+--!Creating the section table
+CREATE TABLE section (
+    section_id SERIAL PRIMARY KEY,   -- Auto-incrementing primary key
+    survey_id INTEGER NOT NULL,      -- Foreign key referencing survey table
+    title VARCHAR(255) NOT NULL,     -- Section title (required)
+    description TEXT,                -- Optional description
+    CONSTRAINT fk_survey FOREIGN KEY (survey_id) 
+        REFERENCES survey(survey_id) ON DELETE CASCADE
+);
+ALTER TABLE section 
+ALTER COLUMN title DROP NOT NULL,  -- Allow NULL values
+ALTER COLUMN title SET DEFAULT 'Section Title',  -- Set default value
+ALTER COLUMN description SET DEFAULT 'Section Description';  -- Set default value
+
+--!Modifying the Question table
+-- 1️⃣ Make `user_id` and `input_type` NOT NULL
+ALTER TABLE question 
+ALTER COLUMN user_id SET NOT NULL,
+ALTER COLUMN input_type SET NOT NULL;
+
+-- 2️⃣ Set default value of `privacy` to 'private'
+ALTER TABLE question 
+ALTER COLUMN privacy SET DEFAULT 'private';
+
+-- 3️⃣ Remove `survey_id` column
+ALTER TABLE question 
+DROP COLUMN survey_id;
+
+-- 4️⃣ Add `section_id` as a foreign key (nullable)
+ALTER TABLE question 
+ADD COLUMN section_id INTEGER,
+ADD CONSTRAINT fk_section FOREIGN KEY (section_id) REFERENCES section(section_id) ON DELETE SET NULL;
+
+-- 5️⃣ Add `options` column as JSONB (nullable)
+ALTER TABLE question 
+ADD COLUMN options JSONB;
+
+
+--!For getting the structure of a table
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_name = 'question';
+
+
+--!Insert data to Question table
+INSERT INTO question (user_id, text, input_type, privacy, options)  
+VALUES (20, 'At which side does the sun rise?', 'radio', 'private',  
+        '[{"Text": "North"}, {"Text": "South"}, {"Text": "East"}, {"Text": "West"}]'::jsonb);
