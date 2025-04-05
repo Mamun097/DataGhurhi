@@ -7,7 +7,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import NavbarAcholder from "./navbarAccountholder";
 
 const EditProject = () => {
-  const { id } = useParams();
+  const { projectId } = useParams();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -23,11 +23,11 @@ const EditProject = () => {
   // Fetch project details
   useEffect(() => {
     const fetchProject = async () => {
+      // console.log("Fetching project with ID:", projectId);
+      const token = localStorage.getItem("token");
       try {
-        const response = await axios.get(`http://localhost:2000/api/project/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+        const response = await axios.get(`http://localhost:2000/api/project/${projectId}`, {
+                      headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.status === 200 && response.data?.project) {
           const { title, field, description, privacy_mode } = response.data.project;
@@ -46,7 +46,7 @@ const EditProject = () => {
     };
 
     fetchProject();
-  }, [id]);
+  }, [projectId]);
 
   // Input handler
   const handleChange = (e) => {
@@ -58,7 +58,7 @@ const EditProject = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:2000/api/project/update/${id}`, formData, {
+      await axios.put(`http://localhost:2000/api/project/${projectId}/update-project`, formData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
