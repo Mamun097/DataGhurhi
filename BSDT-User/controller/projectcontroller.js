@@ -73,3 +73,65 @@ exports.deleteProject = async (req, res) => {
     }
     return res.status(200).json({ message: 'Project deleted successfully' });
 }
+// collaborators
+
+exports.inviteCollaborator = async (req, res) => {
+    const projectId = req.params.projectID;
+    console.log(projectId);
+    console.log(req.body);
+    
+    
+    // check if exists
+    const { data: projectData, error: projectError } = await Project.findProjectById(projectId);
+    if (projectError) {
+        console.error(projectError);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!projectData.length) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+    const { data, error } = await Project.inviteCollaborator(projectId, req.body);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Collaborator invited successfully' });
+}
+exports.getCollaborators = async (req, res) => {
+    const projectId = req.params.projectID;
+    // check if exists
+    const { data: projectData, error: projectError } = await Project.findProjectById(projectId);
+    if (projectError) {
+        console.error(projectError);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!projectData.length) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+    const { data, error } = await Project.getCollaborators(projectId);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    return res.status(200).json({ collaborators: data });
+}
+exports.removeCollaborator = async (req, res) => {
+    const projectId = req.params.projectID;
+    const collaboratorId = req.params.collaboratorId;
+    // check if exists
+    const { data: projectData, error: projectError } = await Project.findProjectById(projectId);
+    if (projectError) {
+        console.error(projectError);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!projectData.length) {
+        return res.status(404).json({ error: 'Project not found' });
+    }
+    const { data, error } = await Project.removeCollaborator(projectId, collaboratorId);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    return res.status(200).json({ message: 'Collaborator removed successfully' });
+}
+

@@ -60,9 +60,53 @@ async function deleteProject(projectId) {
     .eq('project_id', projectId)
     return { error };
 };
+// collaborators
 
+async function inviteCollaborator(projectId, user_data) {
+    const { data, error } = await supabase.rpc('get_survey_designer_by_email', {
+        u_email: user_data.email
+    });
+    if (error) {
+        console.error(error);
+        return { error };
+    }
+    if (data.length === 0) {
+        return { error: 'user does not exist' };
+    }
+   
+    const id = data;
+    console.log(data);
+    
+    const { error: insertError } = await supabase
+        .from('survey_shared_with_collaborators')
+        .insert([{
+            user_id: id,
+            project_id: projectId,            
+            access_role: user_data.access_role,
+            invitation: user_data.invitation
+        }]);
+    return { error: insertError };
+
+}
+async function getCollaborators(projectId) {
+    const { data, error } = await supabase
+        .from('survey_shared_with_collaborators')
+        .select('*')
+        .eq('project_id', projectId);
+    return { data, error };
+}
+
+async function removeCollaborator(projectId, collaboratorId) {
+    const { error } = await supabase
+        .from('survey_shared_with_collaborators')
+        .delete()
+        .eq('project_id', projectId)
+        .eq('user_id', collaboratorId);
+    return { error };
+}
 module.exports = {
     createProject,
     findProjectByUserId, findProjectById,
-    updateProject, deleteProject
+    updateProject, deleteProject, 
+    inviteCollaborator, getCollaborators, removeCollaborator
 }
