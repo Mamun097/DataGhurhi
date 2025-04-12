@@ -1,11 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const profileController = require('../controller/projectcontroller');
+const projectController = require('../controller/projectcontroller');
 const { jwtAuthMiddleware } = require('../auth/authmiddleware');
+// role checking middl
+router.get('/', jwtAuthMiddleware, projectController.allprojectviewUser);
+router.get('/:projectID', jwtAuthMiddleware, projectController.projectData);
+router.put( '/:projectID/update-project', jwtAuthMiddleware, projectController.updateProject);
+router.post('/create-project', jwtAuthMiddleware, projectController.createProject);
+router.delete('/:projectID/delete-project', jwtAuthMiddleware, projectController.deleteProject);
+//collaborator
+router.post('/:projectID/invite-collaborator', jwtAuthMiddleware, projectController.inviteCollaborator);
+router.get('/:projectID/collaborators', jwtAuthMiddleware, projectController.getCollaborators);
+router.delete('/:projectID/collaborators/:collaboratorId', jwtAuthMiddleware, projectController.removeCollaborator);
 
-router.get('/', jwtAuthMiddleware, profileController.allprojectviewUser);
-router.get('/:projectID', jwtAuthMiddleware, profileController.projectData);
-router.put( '/:projectID/update-project', jwtAuthMiddleware, profileController.updateProject);
-router.post('/create-project', jwtAuthMiddleware, profileController.createProject);
-router.delete('/:projectID/delete-project', jwtAuthMiddleware, profileController.deleteProject);
 module.exports = router;

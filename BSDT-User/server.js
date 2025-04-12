@@ -31,6 +31,7 @@ const question_import_from_question_bank_Router= require('./route/question_impor
 
 //project
 const UserprojectRouter = require('./route/projectviewUser');
+const CollaboratorprojectRouter = require('./route/collaboratorView');
 
 
 //connect db
@@ -62,6 +63,7 @@ app.use('/api', question_import_from_question_bank_Router);
 
 //project
 app.use('/api/project', UserprojectRouter);
+app.use('/api/collaborator', CollaboratorprojectRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
