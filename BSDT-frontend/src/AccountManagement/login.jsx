@@ -6,9 +6,15 @@ import Navbarhome from "../Homepage/navbarhome";
 import {ToastContainer, toast } from "react-toastify";
 
 const Login = () => {
-  const [language, setLanguage] = useState("English");
-  const toggleLanguage = () =>
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
+  
+  const toggleLanguage = () => {
     setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+    localStorage.setItem("language", language); // Store the selected language in local storage
+  };
+
 
   const [formData, setFormData] = useState({
     email: "",
@@ -103,7 +109,7 @@ const Login = () => {
         );
 
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("role", "user");
+        localStorage.setItem("role", "user");     
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
         setTimeout(() => {

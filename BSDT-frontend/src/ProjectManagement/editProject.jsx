@@ -4,7 +4,7 @@ import './createProject.css';
 import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
-import NavbarAcholder from "./navbarAccountholder";
+import NavbarAcholder from "./navbarproject";
 
 const EditProject = () => {
   const { projectId } = useParams();

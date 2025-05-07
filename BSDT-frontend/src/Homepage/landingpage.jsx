@@ -77,7 +77,8 @@ const slideContent = {
 };
 
 const LandingPage = () => {
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "English"); // Default to English if not set
+ 
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const slides = slideContent[language];
@@ -87,6 +88,7 @@ const LandingPage = () => {
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+    localStorage.setItem("language", language); // Store the selected language in local storage
   };
   useEffect(() => {
     const interval = setInterval(() => {
