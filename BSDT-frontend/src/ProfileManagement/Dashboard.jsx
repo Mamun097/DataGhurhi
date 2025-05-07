@@ -22,9 +22,10 @@ const Dashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [projects, setProjects] = useState([]);
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+    localStorage.setItem("language", language); // Store the selected language in local storage
   };
 
   const handleImageUpload = async (event, type) => {

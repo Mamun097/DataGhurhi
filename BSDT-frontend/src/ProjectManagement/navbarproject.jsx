@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import "./navbarAccountholder.css";
+import "./navbarproject.css";
 import logo_bcc from "../assets/logos/bcc.png";
 import logo_buet from "../assets/logos/buet.png";
 import logo_ict from "../assets/logos/ict.png";
@@ -51,13 +51,13 @@ const NavbarAcholder = () => {
       {/* Navigation Links */}
       <ul className="nav-links">
         <li>
-          <a href="home">
+          <a href="/" >
             <FaHome className="nav-icon" />
             <span>Home</span>
           </a>
         </li>
         <li>
-          <a href="profile">
+          <a href="/dashboard">
             <FaUser className="nav-icon" />
             <span>Profile</span>
           </a>
@@ -69,13 +69,13 @@ const NavbarAcholder = () => {
           </a>
         </li>
         <li>
-          <a href="about">
+          <a href="/about">
             <FaInfoCircle className="nav-icon" />
             <span>About</span>
           </a>
         </li>
         <li>
-          <a href="faq">
+          <a href="/faq">
             <FaQuestionCircle className="nav-icon" />
             <span>FAQ</span>
           </a>
