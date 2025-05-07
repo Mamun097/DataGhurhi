@@ -1,103 +1,233 @@
-/* Full Page Layout */
 .register-container {
+    background: linear-gradient(to bottom, #c878fe, #e0e7ff);
+    min-height: 90vh;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    height: 100vh;
-    background: linear-gradient(135deg, #6b6f7d, #cdc4d7);
-    font-family: "Poppins", sans-serif;
-}
+    font-family: 'Poppins', sans-serif;
+    padding-top: 80px;
+  }
   
-/* Registration Box */
-.register-box {
-    background: rgba(255, 255, 255, 0.15);
+  .register-wrapper {
+    display: flex;
+    gap: 0px;
+    margin-top: 10px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(10px);
-    border-radius: 10px;
-    padding: 40px;
-    width: 400px;
-    text-align: center;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
-}
-  
-/* Title */
-.register-title {
-    font-size: 24px;
-    color: white;
-    margin-bottom: 20px;
-    font-weight: bold;
-}
-  
-/* Input Fields - Same Width for All */
-input {
+    max-width: 900px;
     width: 100%;
-    padding: 12px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    box-sizing: border-box; /* Ensures consistent width calculation */
-}
+  }
+  
+  /* Left Feature Card */
+  .feature-card {
+    flex: 1;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(157, 30, 186, 0.3));
+    padding: 40px 30px;
+    border-radius: 20px 0 0 20px;
+    color: #2d0037;
+    text-align: left;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 12px 28px rgba(123, 0, 255, 0.12);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 40px rgba(123, 0, 255, 0.2);
+  }
+  
+  .feature-card h3 {
+    font-size: 1.5rem;
 
-/* Name Fields - Ensure First & Last Name Match Other Inputs */
-.name-fields {
+    color: #5a189a;
+
+   
+  }
+  
+  
+  .feature-card ul {
+    list-style-type: disc;
+    padding-left: 20px;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #333;
+  }
+  
+  .feature-card ul li {
+    margin-bottom: 5px;
+  }
+
+  .feature-image {
+    width: 80%;
+    max-width: 400px;
+    height: auto;
+    margin-bottom: 5px;
+    display: block;
+
+  }
+  
+  
+  /* Right Register Box */
+  .register-box {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 40px 30px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+  }
+  
+  .register-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #444;
+  }
+  
+  .name-fields {
     display: flex;
     gap: 10px;
-    width: 100%;
-}
-
-.name-fields input {
-    width: 50%; /* Each field takes half the width inside flexbox */
-    flex: 1; /* Ensures equal distribution */
-}
-
-/* Button */
-.register-button {
-    width: 100%;
-    padding: 12px;
-    background: #ff5733;
-    border: none;
-    color: white;
-    font-size: 18px;
-    font-weight: bold;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s ease-in-out;
-}
-  
-.register-button:hover {
-    background: #ff471a;
-}
-
-/* Login Redirect Link */
-.login-link {
-    margin-top: 15px;
-    font-size: 14px;
-    color: white;
-}
-  
-.login-link a {
-    color: #ffd700;
-    text-decoration: none;
-    font-weight: bold;
-}
-
-/* Responsive - Stack Fields on Small Screens */
-@media (max-width: 600px) {
-    .name-fields {
-        flex-direction: column;
-    }
-
-    .name-fields input {
-        width: 100%; /* Make full width on smaller screens */
-    }
-}
-/* Error Message */
-.error-message {
-    color: #ff0000;
-    font-size: 20px;
-    margin-top: -8px;
     margin-bottom: 10px;
-    text-align: left;
+  }
+  
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
     width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #f0f4ff;
+  }
+  
+  .register-button {
+    margin-top: 15px;
+    background: #76106f;
+    color: white;
+    font-weight: bold;
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  .login-link {
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  
+  .login-link a {
+    color: #f009e4;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  
+  /* Shared Language Toggle */
+  .language-toggle-register {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 5px;
+    margin-bottom: -20px;
+  }
+  
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 26px;
+  }
+  
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #7b2cbf;
+    transition: 0.4s;
+    border-radius: 34px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background-color: #5a189a;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(24px);
+  }
+  
+  .language-labels {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .language-labels span {
+    color: #777;
+  }
+  
+  .language-labels .active {
+    color: #7b2cbf;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .register-wrapper {
+      flex-direction: column;
+      border-radius: 20px;
+    }
+  
+    .name-fields {
+      flex-direction: column;
+    }
+  
+    .feature-card,
+    .register-box {
+      padding: 30px 20px;
+    }
+  }
+  /* Fancy Toast Style */
+  .custom-success-toast {
+  
+    background: linear-gradient(to right, #ffffff, #81c784);
+    color: rgb(0, 0, 0);
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    border-radius: 8px;
+  }
+  
+  .custom-error-toast {
+    background: linear-gradient(to right, #ffffff, #ff0000);
+    color: rgb(0, 0, 0);
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    border-radius: 8px;
   }
   
