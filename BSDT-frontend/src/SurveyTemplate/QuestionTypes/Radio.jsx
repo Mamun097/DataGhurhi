@@ -136,8 +136,8 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question, questions, setQuestions]);
 
   return (
-    <div className="mb-4 p-3 border rounded bg-white dnd-isolate">
-      <label className="ms-2 mb-2 d-block">
+    <div className="mb-3 dnd-isolate">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
         <em><strong>MCQ</strong></em>
       </label>
 
@@ -202,7 +202,7 @@ const Radio = ({ question, questions, setQuestions }) => {
       </DragDropContext>
 
       {/* Add option */}
-      <button className="btn btn-sm btn-secondary mt-2" onClick={addOption}>
+      <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
         ➕ Add Option
       </button>
 

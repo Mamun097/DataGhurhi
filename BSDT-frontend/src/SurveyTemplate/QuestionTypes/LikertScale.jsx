@@ -113,8 +113,8 @@ const LikertScale = ({ question, questions, setQuestions }) => {
   };
 
   return (
-    <div className="p-3 border rounded shadow bg-white mb-3">
-      <label className="ms-2 mb-2">
+    <div className="mb-3">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
         <em>
           <strong>Likert Scale</strong>
         </em>
@@ -143,7 +143,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
 
       {/* Rows */}
       <div className="mb-3">
-        <h6>Rows</h6>
+        <h6><b>Rows</b></h6>
         {rows.map((row, index) => (
           <div key={index} className="d-flex justify-content-between">
             <input
@@ -168,7 +168,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
 
       {/* Columns */}
       <div className="mb-3">
-        <h6>Columns</h6>
+        <h6><b>Columns</b></h6>
         {columns.map((col, index) => (
           <div key={index} className="d-flex justify-content-between">
             <input

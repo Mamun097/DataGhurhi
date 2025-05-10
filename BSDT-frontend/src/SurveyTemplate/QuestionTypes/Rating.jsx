@@ -73,8 +73,8 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
   };
 
   return (
-    <div className="mb-4 p-3 border rounded">
-      <label className="ms-2 mb-2">
+    <div className="mb-3">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2em" }}>
         <em>
           <strong>Rating</strong>
         </em>
@@ -133,14 +133,15 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
           <i className="bi bi-image"></i>
           <input type="file" hidden onChange={handleImageUpload} />
         </label>
-        <button
-          className={`btn btn-outline-secondary me-2 ${
-            question.required ? "btn-danger" : ""
-          }`}
-          onClick={() => handleRequired(question.id)}
-        >
-          Required
-        </button>
+        <div className="form-check form-switch ms-auto">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            checked={question.required}
+            onChange={() => handleRequired(question.id)}
+          />
+          <label className="form-check-label">Required</label>
+        </div>
       </div>
     </div>
   );

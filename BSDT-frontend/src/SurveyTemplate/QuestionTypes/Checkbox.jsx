@@ -132,8 +132,8 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   return (
-    <div className="mb-4 p-3 border rounded bg-white dnd-isolate">
-      <label className="ms-2 mb-2">
+    <div className="mb-3 dnd-isolate">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
         <em><strong>Checkbox</strong></em>
       </label>
 
@@ -175,11 +175,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                       className="d-flex align-items-center mb-2"
                     >
                       <span className="me-2" style={{ fontSize: "1.5rem", cursor: "grab" }}>☰</span>
-                      <input
-                        type="checkbox"
-                        className="form-check-input me-2"
-                        disabled
-                      />
+                      
                       <input
                         type="text"
                         className="form-control me-2"

@@ -34,13 +34,13 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
     setQuestions((prev) => {
       // Remove the question with the current id
       const updatedQuestions = prev.filter((q) => q.id !== question.id);
-  
+
       // Adjust ids of subsequent questions to fill in the gap created by the deletion
       const correctedQuestions = updatedQuestions.map((q, index) => ({
         ...q,
         id: index + 1, // Reassign ids starting from 1
       }));
-  
+
       return correctedQuestions;
     });
   };
@@ -65,7 +65,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
   const handleCopy = () => {
     const index = questions.findIndex((q) => q.id === question.id);
     const newId = question.id + 1;
-  
+
     const copiedQuestion = {
       ...question,
       id: newId,
@@ -73,24 +73,24 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
       meta: { ...question.meta },
       image: question.image,
     };
-  
+
     // Increment IDs of all questions after or equal to newId
     const updatedQuestions = questions.map((q) =>
       q.id >= newId ? { ...q, id: q.id + 1 } : q
     );
-  
+
     // Insert the copied question after the original one
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
-  
+
     // Sort to maintain sequential order
     updatedQuestions.sort((a, b) => a.id - b.id);
-  
+
     setQuestions(updatedQuestions);
   };
 
   return (
-    <div className="mb-4 p-3 border rounded">
-      <label className="ms-2 mb-2">
+    <div className="mb-3">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2em" }}>
         <em>
           <strong>Date/Time</strong>
         </em>
@@ -117,13 +117,13 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
         />
       </div>
       {/* Date/Time Input */}
-      <div className="d-flex align-items-center ms-1 mb-2">
+      <div className="d-flex align-items-center gap-2 ms-1 mb-3">
         <input
           type={question.dateType === "time" ? "time" : "date"}
-          className="form-control-md me-2"
+          className="form-control form-control-sm w-auto"
         />
         <select
-          className="form-select-sm ms-2"
+          className="form-select form-select-sm w-auto"
           onChange={(e) => handleTypeChange(e.target.value)}
           value={question.dateType || "date"}
         >
@@ -131,6 +131,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
           <option value="time">Time</option>
         </select>
       </div>
+
       {/* Action Buttons */}
       <div className="d-flex align-items-center mt-3">
         <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>

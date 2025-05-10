@@ -132,7 +132,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="mt-3"
+            className="mt-2"
           >
             {sectionQuestions.map((question, index) => (
               <Draggable

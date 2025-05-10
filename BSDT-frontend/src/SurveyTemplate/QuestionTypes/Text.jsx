@@ -6,6 +6,7 @@ const Text = ({ question, questions, setQuestions }) => {
   const [validationType, setValidationType] = useState("Number");
   const [condition, setCondition] = useState("Greater Than");
   const [errorText, setErrorText] = useState("");
+  const [validationText, setValidationText] = useState("");
 
   const conditions = {
     Number: [
@@ -32,7 +33,28 @@ const Text = ({ question, questions, setQuestions }) => {
 
   // Validate the input
   const handleSettings = () => {
-    setInputValidation(!inputValidation);
+    if(inputValidation) {
+      setInputValidation(false);
+    }
+    else {
+      setInputValidation(true);
+      setQuestions((prevQuestions) =>
+        prevQuestions.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  validationType: validationType,
+                  condition: condition,
+                  errorText: errorText,
+                  validationText: validationText,
+                },
+              }
+            : q
+        )
+      );
+    }
   };
 
   // Toggle the required status of the question
@@ -101,11 +123,76 @@ const Text = ({ question, questions, setQuestions }) => {
     setQuestions(updatedQuestions);
   };
 
+  // handle updating the validation type
+  const handleValidationTypeChange = (event) => {
+    const selectedType = event.target.value;
+    setValidationType(selectedType);
+    setCondition(conditions[selectedType][0]); // Reset condition to the first one
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id ? { ...q, 
+          meta: {
+            ...q.meta,
+            validationType: selectedType,
+            condition: conditions[selectedType][0],
+          },
+         } : q
+      )
+    );
+  };
+  // handle updating the condition
+  const handleConditionChange = (event) => {
+    const selectedCondition = event.target.value;
+    setCondition(selectedCondition);
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id ? { ...q, 
+          meta: {
+            ...q.meta,
+            condition: selectedCondition,
+          },
+         } : q
+      )
+    );
+  };
+  // handle updating the validation text
+  const handleValidationTextChange = (event) => {
+    const newValidationText = event.target.value;
+    setValidationText(newValidationText);
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id ? { ...q,
+          meta: {
+            ...q.meta,
+            validationText: newValidationText,
+          },
+         } : q
+      )
+    );
+  };  
+
+  // handle updating the error text
+  const handleErrorTextChange = (event) => {
+    const newErrorText = event.target.value;
+    setErrorText(newErrorText);
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id ? { ...q, 
+          meta: {
+            ...q.meta,
+            errorText: newErrorText,
+          },
+         } : q
+      )
+    );
+  };
+
+
   return (
-    <div className="mb-4 p-3 border rounded">
-      <label className="ms-2">
+    <div className="mb-3">
+      <label className="ms-2" style={{ fontSize: "1.2rem" }}>
         <em>
-          <strong>Short Answer</strong>
+          <strong>Text</strong>
         </em>
       </label>
       {/* Question Input */}
@@ -140,8 +227,7 @@ const Text = ({ question, questions, setQuestions }) => {
             <select
               className="form-select me-2"
               onChange={(e) => {
-                setValidationType(e.target.value);
-                setCondition(conditions[e.target.value][0]); // Reset condition
+                handleValidationTypeChange(e);
               }}
               value={validationType}
             >
@@ -153,7 +239,9 @@ const Text = ({ question, questions, setQuestions }) => {
             </select>
             <select
               className="form-select"
-              onChange={(e) => setCondition(e.target.value)}
+              onChange={(e) => {
+                handleConditionChange(e);
+              }}
               value={condition}
             >
               {conditions[validationType].map((condition) => (
@@ -184,6 +272,8 @@ const Text = ({ question, questions, setQuestions }) => {
                 type="text"
                 className="form-control me-2"
                 placeholder="Type here"
+                value={validationText}
+                onChange={(e) => handleValidationTextChange(e)}
               />
             </div>
           )}
@@ -192,7 +282,8 @@ const Text = ({ question, questions, setQuestions }) => {
               type="text"
               className="form-control me-2 mt-2"
               placeholder="Custom Error Message (Optional)"
-              onChange={(e) => setErrorText(e.target.value)}
+              value={errorText}
+              onChange={(e) => handleErrorTextChange(e)}
             />
           </div>
         </div>
