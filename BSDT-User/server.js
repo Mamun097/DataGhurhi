@@ -33,6 +33,9 @@ const question_import_from_question_bank_Router= require('./route/question_impor
 const UserprojectRouter = require('./route/projectviewUser');
 const CollaboratorprojectRouter = require('./route/collaboratorView');
 
+//template
+const surveyTemplateRouter = require('./route/surveytemplate');
+
 
 //connect db
 const supabase = require('./db');
@@ -64,6 +67,9 @@ app.use('/api', question_import_from_question_bank_Router);
 //project
 app.use('/api/project', UserprojectRouter);
 app.use('/api/collaborator', CollaboratorprojectRouter);
+
+//template
+app.use('/api/surveytemplate', surveyTemplateRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
