@@ -13,6 +13,7 @@ const logOut = () => {
   localStorage.removeItem('userType');
   localStorage.removeItem('role');
   localStorage.removeItem('userId');
+  localStorage.setItem('language', 'English');
   window.location.href = '/';
 };
 const NavbarAcholder = () => {

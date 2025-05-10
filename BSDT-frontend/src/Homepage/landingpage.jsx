@@ -77,9 +77,12 @@ const slideContent = {
 };
 
 const LandingPage = () => {
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English"); // Default to English if not set
+  console.log(localStorage.getItem("language"));
+  const [language, setLanguage] = useState( localStorage.getItem("language") 
+|| "English"); // Default to English if not set
  
   const [currentSlide, setCurrentSlide] = useState(0);
+  const token = localStorage.getItem("token"); // Get the token from local storage
 
   const slides = slideContent[language];
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -87,8 +90,9 @@ const LandingPage = () => {
     setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
-    localStorage.setItem("language", language); // Store the selected language in local storage
+    const newLanguage = language === "English" ? "বাংলা" : "English";
+    setLanguage(newLanguage);
+    localStorage.setItem("language", newLanguage); // Store the selected language in local storage
   };
   useEffect(() => {
     const interval = setInterval(() => {
@@ -178,7 +182,9 @@ const LandingPage = () => {
                 </button>
                 <button
                   className="secondary-btn"
-                  onClick={() => (window.location.href = "/login")}
+                  onClick={() => token? (window.location.href = "/dashboard"):
+                    (window.location.href = "/login")
+                  }
                 >
                   {language === "English" ? "Log In" : "লগ ইন"}
                 </button>

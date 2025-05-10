@@ -91,7 +91,13 @@ async function inviteCollaborator(projectId, user_data) {
 async function getCollaborators(projectId) {
     const { data, error } = await supabase
         .from('survey_shared_with_collaborators')
-        .select('*')
+        .select(`
+            *,
+            user (
+              email,
+              name
+            )
+          `)
         .eq('project_id', projectId);
     return { data, error };
 }
