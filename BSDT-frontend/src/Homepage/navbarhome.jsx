@@ -19,7 +19,7 @@ import {
 
 const NavbarHome = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("English");
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
   const navigate = useNavigate();
 
   const toggleLanguage = () => {

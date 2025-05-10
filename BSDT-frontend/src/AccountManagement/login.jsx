@@ -6,13 +6,16 @@ import Navbarhome from "../Homepage/navbarhome";
 import {ToastContainer, toast } from "react-toastify";
 
 const Login = () => {
-  const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "English"
-  );
   
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language"));
+    console.log(language);
+
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
-    localStorage.setItem("language", language); // Store the selected language in local storage
+    const newLanguage = language === "English" ? "বাংলা" : "English";
+    setLanguage(newLanguage);
+    localStorage.setItem("language", newLanguage);
+    
   };
 
 
