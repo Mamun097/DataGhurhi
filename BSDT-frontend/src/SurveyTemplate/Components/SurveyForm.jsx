@@ -24,7 +24,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
   const handleAddSection = () => {
     const newSection = {
       id: sections.length + 1,
-      title: `Section ${sections.length + 1}`,
+      title: "",
     };
     setSections([...sections, newSection]);
   };
@@ -102,12 +102,11 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           />
         ))}
         <button
-          className="btn btn-outline-primary ms-5 mb-3"
+          className="btn btn-outline-primary ms-5 mb-3 mt-2"
           onClick={() => handleAddSection()}
         >
           ➕ Add Section
         </button>
-
       </div>
     </div>
   );

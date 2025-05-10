@@ -2,6 +2,7 @@ import React from "react";
 import { useState } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
+//import {handleDeleteSection} from "./SurveyForm";
 
 const SurveySections = ({
   section,
@@ -20,24 +21,24 @@ const SurveySections = ({
       required: false,
       image: null,
     };
-  
+
     let newQ = {
       ...baseQuestion,
-      meta: {}
+      meta: {},
     };
-  
+
     switch (type) {
       case "radio":
       case "checkbox":
       case "dropdown":
         newQ.meta.options = ["Option 1", "Option 2"];
         break;
-  
+
       case "tickboxGrid":
         newQ.meta.rows = ["Row 1", "Row 2"];
         newQ.meta.columns = ["Column 1", "Column 2"];
         break;
-  
+
       case "linearScale":
         newQ.meta = {
           min: 1,
@@ -46,21 +47,17 @@ const SurveySections = ({
           rightLabel: "Excellent",
         };
         break;
-  
+
       case "rating":
         newQ.meta.scale = 5;
         break;
-  
+
       case "datetime":
         newQ.meta.dateType = "date";
         break;
-  
+
       case "likert":
-        newQ.meta.rows = [
-          "Subtext 1",
-          "Subtext 2",
-          "Subtext 3",
-        ];
+        newQ.meta.rows = ["Subtext 1", "Subtext 2", "Subtext 3"];
         newQ.meta.columns = [
           "Strongly Disagree",
           "Disagree",
@@ -69,38 +66,51 @@ const SurveySections = ({
           "Strongly Agree",
         ];
         break;
-  
+
       case "text":
         newQ.meta.options = [];
         break;
-  
+
       default:
         break;
     }
-  
+
     setQuestions([...questions, newQ]);
     setNewQuestion(false);
   };
-  
+
   // Function to calculate the number of questions present in the current section
   const questionCount = questions.filter(
     (question) => question.section === section.id
   ).length;
 
   // Function to delete a section
-  const handleDeleteSection = () => {
-    const updatedQuestions = questions.filter(
+  const onPressDeleteSection = () => {
+    //console.log("Sections before deletion: ", sections);
+    // Filter out the deleted section
+    const updatedSections = sections.filter((sec) => sec.id !== section.id);
+
+    // Reassign section IDs to maintain sequential order
+    const reindexedSections = updatedSections.map((sec, index) => ({
+      ...sec,
+      id: index + 1,
+    }));
+
+    const filteredQuestions = questions.filter(
       (question) => question.section !== section.id
     );
-    const updatedSections = sections.filter((sec) => sec.id !== section.id);
-    questions.forEach((question) => {
+
+    // Update the questions to match the new section IDs
+    const updatedQuestions = filteredQuestions.map((question) => {
       if (question.section > section.id) {
-        question.section -= questionCount;
+        return { ...question, section: question.section - 1 };
       }
+      return question;
     });
 
+    setSections(reindexedSections);
     setQuestions(updatedQuestions);
-    setSections(updatedSections);
+    //console.log("Sections after deletion: ", reindexedSections);
   };
 
   // Function to update the section title
@@ -134,13 +144,16 @@ const SurveySections = ({
 
     setQuestions(updatedQuestions);
     setSections(updatedSections);
-  }
+  };
 
   return (
     <div className="border p-3">
       {sections.length !== 1 && (
         <div>
-          <h4 className="text-center"><i>Section </i>{section.id}</h4>
+          <h4 className="text-center">
+            <i>Section </i>
+            {section.id}
+          </h4>
           <textarea
             className="form-control mt-2"
             placeholder="Enter Section Title"
@@ -178,7 +191,7 @@ const SurveySections = ({
         <button
           className="btn btn-outline-danger btn-sm mt-2"
           onClick={() => {
-            handleDeleteSection();
+            onPressDeleteSection();
           }}
         >
           Delete Section
