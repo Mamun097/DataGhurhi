@@ -8,19 +8,25 @@ const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
 
   // Toggle required
-  const handleRequired = useCallback((id) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
-    );
-    setRequired((r) => !r);
-  }, [setQuestions]);
+  const handleRequired = useCallback(
+    (id) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
+      );
+      setRequired((r) => !r);
+    },
+    [setQuestions]
+  );
 
   // Update question text
-  const handleQuestionChange = useCallback((newText) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
-    );
-  }, [question.id, setQuestions]);
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Delete question and resequence IDs
   const handleDelete = useCallback(() => {
@@ -31,19 +37,22 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   // Image upload
-  const handleImageUpload = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id ? { ...q, image: reader.result } : q
-        )
-      );
-    };
-    reader.readAsDataURL(file);
-  }, [question.id, setQuestions]);
+  const handleImageUpload = useCallback(
+    (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id ? { ...q, image: reader.result } : q
+          )
+        );
+      };
+      reader.readAsDataURL(file);
+    },
+    [question.id, setQuestions]
+  );
 
   // Add new option
   const addOption = useCallback(() => {
@@ -54,7 +63,10 @@ const Radio = ({ question, questions, setQuestions }) => {
               ...q,
               meta: {
                 ...q.meta,
-                options: [...q.meta.options, `Option ${q.meta.options.length + 1}`],
+                options: [
+                  ...q.meta.options,
+                  `Option ${q.meta.options.length + 1}`,
+                ],
               },
             }
           : q
@@ -63,62 +75,73 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   // Update an option's text
-  const updateOption = useCallback((idx, newText) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: q.meta.options.map((opt, i) => (i === idx ? newText : opt)),
-              },
-            }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateOption = useCallback(
+    (idx, newText) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.map((opt, i) =>
+                    i === idx ? newText : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Remove an option
-  const removeOption = useCallback((idx) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: q.meta.options.filter((_, i) => i !== idx),
-              },
-            }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const removeOption = useCallback(
+    (idx) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.filter((_, i) => i !== idx),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Handle drag end to reorder options
-  const handleDragEnd = useCallback((result) => {
-    if (!result.destination) return;
+  const handleDragEnd = useCallback(
+    (result) => {
+      if (!result.destination) return;
 
-    const src = result.source.index;
-    const dest = result.destination.index;
+      const src = result.source.index;
+      const dest = result.destination.index;
 
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id !== question.id) return q;
-        const opts = Array.from(q.meta.options);
-        const [moved] = opts.splice(src, 1);
-        opts.splice(dest, 0, moved);
-        return {
-          ...q,
-          meta: {
-            ...q.meta,
-            options: opts,
-          },
-        };
-      })
-    );
-  }, [question.id, setQuestions]);
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id !== question.id) return q;
+          const opts = Array.from(q.meta.options);
+          const [moved] = opts.splice(src, 1);
+          opts.splice(dest, 0, moved);
+          return {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: opts,
+            },
+          };
+        })
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Copy question: duplicate with id+1, bump subsequent IDs
   const handleCopy = useCallback(() => {
@@ -135,10 +158,33 @@ const Radio = ({ question, questions, setQuestions }) => {
     setQuestions(bumped);
   }, [question, questions, setQuestions]);
 
+  // handle add tag
+  const handleAddTag = useCallback(() => {
+  const tagsInput = prompt("Enter tags (comma-separated):");
+  if (tagsInput) {
+    const newTags = tagsInput.split(",").map((tag) => tag.trim()); // Split and trim tags
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                tags: [...(q.meta.tags || []), ...newTags], // Add new tags
+              },
+            }
+          : q
+      )
+    );
+  }
+}, [question.id, setQuestions]);
+
   return (
     <div className="mb-3 dnd-isolate">
       <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em><strong>MCQ</strong></em>
+        <em>
+          <strong>MCQ</strong>
+        </em>
       </label>
 
       {/* Question Text */}
@@ -178,7 +224,12 @@ const Radio = ({ question, questions, setQuestions }) => {
                       {...prov.dragHandleProps}
                       className="d-flex align-items-center mb-2"
                     >
-                      <span className="me-2" style={{ fontSize: "1.5rem", cursor: "grab" }}>☰</span>
+                      <span
+                        className="me-2"
+                        style={{ fontSize: "1.5rem", cursor: "grab" }}
+                      >
+                        ☰
+                      </span>
                       <input
                         type="text"
                         className="form-control me-2"
@@ -202,7 +253,10 @@ const Radio = ({ question, questions, setQuestions }) => {
       </DragDropContext>
 
       {/* Add option */}
-      <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
+      <button
+        className="btn btn-sm btn-outline-primary mt-2"
+        onClick={addOption}
+      >
         ➕ Add Option
       </button>
 
@@ -211,13 +265,22 @@ const Radio = ({ question, questions, setQuestions }) => {
         <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handleDelete}
+        >
           <i className="bi bi-trash"></i>
         </button>
         <label className="btn btn-outline-secondary me-2">
           <i className="bi bi-image"></i>
           <input type="file" hidden onChange={handleImageUpload} />
         </label>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handleAddTag}
+        >
+          <i className="bi bi-tags"></i>
+        </button>
         <div className="form-check form-switch ms-auto">
           <input
             className="form-check-input"
