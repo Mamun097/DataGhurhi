@@ -137,12 +137,10 @@ const SurveySections = ({
   }
 
   return (
-    <div className="container mt-2 p-4 border rounded shadow bg-white">
+    <div className="border p-3">
       {sections.length !== 1 && (
         <div>
-          <b>
-            <i>Section {section.id}</i>
-          </b>
+          <h4 className="text-center"><i>Section </i>{section.id}</h4>
           <textarea
             className="form-control mt-2"
             placeholder="Enter Section Title"
@@ -169,7 +167,7 @@ const SurveySections = ({
       <div className="d-flex justify-content-end mt-2">
         {sections.length !== 1 && section.id !== 1 && (
           <button
-            className="btn btn-secondary btn-sm me-2"
+            className="btn btn-outline-primary btn-sm mt-2 me-2"
             onClick={() => {
               handleMergeWithAbove();
             }}
@@ -178,7 +176,7 @@ const SurveySections = ({
           </button>
         )}
         <button
-          className="btn btn-danger btn-sm mt-2"
+          className="btn btn-outline-danger btn-sm mt-2"
           onClick={() => {
             handleDeleteSection();
           }}

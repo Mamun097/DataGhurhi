@@ -108,8 +108,8 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
   };
 
   return (
-    <div className="p-3 border rounded shadow bg-white">
-      <label className="ms-2">
+    <div className="mb-3">
+      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
         <em>
           <strong>Linear Scale</strong>
         </em>

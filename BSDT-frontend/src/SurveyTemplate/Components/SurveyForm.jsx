@@ -32,7 +32,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
   return (
     <div style={{ backgroundColor: themeColor ? themeColor : "white" }}>
       {/* Survey Header */}
-      <div className="container mt-5 p-4 border rounded shadow bg-white text-center">
+      <div>
         <div style={{ position: "relative", width: "100%" }}>
           {/* Full-width Background Image */}
           <img
@@ -43,7 +43,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
               width: "100%",
               height: "400px", // Adjust height as needed
               objectFit: "cover",
-              borderRadius: "10px",
+              //borderRadius: "10px",
             }}
           />
 
@@ -57,8 +57,8 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
               color: "white",
               fontWeight: "bold",
               background: "rgba(0, 0, 0, 0.5)", // Dark overlay for better contrast
-              padding: "10px 20px",
-              borderRadius: "5px",
+              //padding: "10px 20px",
+              //borderRadius: "5px",
             }}
             type="text"
             className="form-control text-center"
@@ -72,7 +72,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           {/* Banner Image Upload Button */}
           <div className="mt-3 text-center">
             <label className="btn btn-outline-secondary">
-              <i className="bi bi-image"></i> Upload Banner Image
+              <i className="bi bi-image"></i> Change Banner Image
               <input
                 type="file"
                 hidden
@@ -102,7 +102,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           />
         ))}
         <button
-          className="btn btn-secondary ms-5 mt-3"
+          className="btn btn-outline-primary ms-5 mb-3"
           onClick={() => handleAddSection()}
         >
           ➕ Add Section

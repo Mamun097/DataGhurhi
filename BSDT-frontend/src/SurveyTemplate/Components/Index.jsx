@@ -14,12 +14,12 @@ const Index = () => {
   return (
     <div className="container-fluid">
       <div className="row">
-        <div className="col-4 me-5">
-          <div className="container mt-5 ms-5 w-75 align-items-center">
+        <div className="col-2 me-5">
+          <div className="container mt-5 align-items-center">
             <h2 className="mb-4">Survey Templates</h2>
             <div className="mt-3 d-flex flex-column align-items-center gap-3">
               {/* Employee Satisfaction Survey Card */}
-              <div className="col-md-6">
+              <div>
                 <div
                   className="card text-center shadow-sm"
                   onClick={() =>
@@ -34,7 +34,7 @@ const Index = () => {
               </div>
 
               {/* Post-Event Feedback Survey Card */}
-              <div className="col-md-6">
+              <div>
                 <div
                   className="card text-center shadow-sm"
                   onClick={() =>
@@ -49,7 +49,7 @@ const Index = () => {
               </div>
 
               {/* Customer Satisfaction Survey Card */}
-              <div className="col-md-6">
+              <div>
                 <div
                   className="card text-center shadow-sm"
                   onClick={() =>
@@ -66,7 +66,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="col-7 mt-5 me-5 align-items-center">
+        <div className="col-9 mt-5 align-items-center">
           {selectedTemplate === "Employee Satisfaction Survey" && (
             <EmployeeSatisfactionSurvey2 />
           )}
