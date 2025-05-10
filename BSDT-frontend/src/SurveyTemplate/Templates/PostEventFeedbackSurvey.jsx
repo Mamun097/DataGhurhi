@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { postEventSatisfactionQuestionData } from "../utils/postEventSatisfactionQuestionData";
 import SurveyForm from "../Components/SurveyForm";
-import saturnJPG from "../../../public/assets/images/saturn.jpg"; // Import the image
+import saturnJPG from "../../assets/images/saturn.jpg";
 
 const PostSatisfactionSurvey = () => {
     const [title, setTitle] = useState("Post Event Satisfaction Survey");

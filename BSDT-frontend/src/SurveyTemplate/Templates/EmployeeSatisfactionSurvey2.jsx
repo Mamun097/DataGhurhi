@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import { savedQuestions } from "../utils/employeeSatisfactionQuestionData";
 import SurveyForm from "../Components/SurveyForm";
 import { useEffect } from "react";
-import seaImage from "../../../public/assets/images/sea.jpg";
+import seaImage from "../../assets/images/sea.jpg"; // Import the image
 
 const EmployeeSatisfactionSurvey2 = () => {
   const [title, setTitle] = useState("Employee Satisfaction Survey");
