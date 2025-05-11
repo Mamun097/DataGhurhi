@@ -6,6 +6,7 @@ import Register from "./AccountManagement/register";
 import Login from "./AccountManagement/login";
 import AddProject from "./ProjectManagement/createProject";
 import EditProject from "./ProjectManagement/editProject";
+import Index from "./SurveyTemplate/Components/Index";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -21,6 +22,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/surveytemplate" element={<Index />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (
