@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import './createProject.css';
-import './editProject.css';
+import "./createProject.css";
+import "./editProject.css";
 import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
@@ -26,34 +26,58 @@ const EditProject = () => {
   const [accessControl, setAccessControl] = useState("view"); // or "edit"
   const [activeTab, setActiveTab] = useState("details");
   const [collaborators, setCollaborators] = useState([]);
-
+  const [surveys, setSurveys] = useState([]);
 
   // Fetch project details
-  useEffect(() => {
-    const fetchProject = async () => {
-      // console.log("Fetching project with ID:", projectId);
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.get(`http://localhost:2000/api/project/${projectId}`, {
-                      headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (response.status === 200 && response.data?.project) {
-          const { title, field, description, privacy_mode } = response.data.project;
-          setFormData({
-            title: title || "",
-            field: field || "",
-            description: description || "",
-            privacy_mode: privacy_mode || "public",
-          });
-          setLoading(false);
+  const fetchProject = async () => {
+    // console.log("Fetching project with ID:", projectId);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:2000/api/project/${projectId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      } catch (error) {
-        console.error("Error fetching project:", error);
+      );
+      if (response.status === 200 && response.data?.project) {
+        const { title, field, description, privacy_mode } =
+          response.data.project;
+        setFormData({
+          title: title || "",
+          field: field || "",
+          description: description || "",
+          privacy_mode: privacy_mode || "public",
+        });
         setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching project:", error);
+      setLoading(false);
+    }
+  };
 
+  // Fetch surveys of the project
+  const fetchSurveys = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get(
+        `http://localhost:2000/api/project/${projectId}/surveys`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        console.log("Surveys:", response.data.surveys);
+        setSurveys(response.data.surveys || []);
+      }
+    } catch (error) {
+      console.error("Error fetching surveys:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchProject();
+    fetchSurveys();
   }, [projectId]);
 
   // Input handler
@@ -66,11 +90,15 @@ const EditProject = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`http://localhost:2000/api/project/${projectId}/update-project`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      await axios.put(
+        `http://localhost:2000/api/project/${projectId}/update-project`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
       alert("Project updated successfully!");
       setIsEditing(false);
     } catch (error) {
@@ -80,56 +108,57 @@ const EditProject = () => {
   };
 
   if (loading) return <p>Loading...</p>;
- 
- //fetch collaborators list
-  const fetchCollaborators =async () => {
+
+  //fetch collaborators list
+  const fetchCollaborators = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(`http://localhost:2000/api/project/${projectId}/collaborators`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        `http://localhost:2000/api/project/${projectId}/collaborators`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setCollaborators(response.data.collaborators || []);
     } catch (error) {
       console.error("Error fetching collaborators:", error);
     }
   };
 
-  
- 
-
-
   return (
     <>
       <NavbarAcholder />
       <div className="add-project-container">
-      <div className="tab-header-container">
-        <div className="tabs">
-          <button
-            className={activeTab === "details" ? "active-tab" : ""}
-            onClick={() => setActiveTab("details")}
-          >
-            Project Details
-          </button>
-          <button
-            className={activeTab === "collaborators" ? "active-tab" : ""}
-            onClick={async () => {
-              setActiveTab("collaborators");
-              await fetchCollaborators();
-            }}
-          >
-            Collaborators
-          </button>
-        </div>
+        <div className="tab-header-container">
+          <div className="tabs">
+            <button
+              className={activeTab === "details" ? "active-tab" : ""}
+              onClick={() => setActiveTab("details")}
+            >
+              Project Details
+            </button>
+            <button
+              className={activeTab === "collaborators" ? "active-tab" : ""}
+              onClick={async () => {
+                setActiveTab("collaborators");
+                await fetchCollaborators();
+              }}
+            >
+              Collaborators
+            </button>
+          </div>
         </div>
         {activeTab === "details" ? (
-         <div className="project-form">
+          <div className="project-form">
             <div className="header-with-button">
               <h2>Project Details</h2>
-              <button className="edit-toggle-btn" onClick={() => setIsEditing(!isEditing)}>
+              <button
+                className="edit-toggle-btn"
+                onClick={() => setIsEditing(!isEditing)}
+              >
                 {isEditing ? "Cancel" : "Edit"}
               </button>
             </div>
-          
 
             <div className="project-form">
               {isEditing ? (
@@ -200,81 +229,89 @@ const EditProject = () => {
                 </form>
               ) : (
                 <div className="view-project">
-                  <p><strong>Project Name:</strong> {formData.title}</p>
-                  <p><strong>Field:</strong> {formData.field}</p>
-                  <p><strong>Description:</strong> {formData.description || <i>(none)</i>}</p>
-                  <p><strong>Privacy:</strong> {formData.privacy_mode}</p>
+                  <p>
+                    <strong>Project Name:</strong> {formData.title}
+                  </p>
+                  <p>
+                    <strong>Field:</strong> {formData.field}
+                  </p>
+                  <p>
+                    <strong>Description:</strong>{" "}
+                    {formData.description || <i>(none)</i>}
+                  </p>
+                  <p>
+                    <strong>Privacy:</strong> {formData.privacy_mode}
+                  </p>
                 </div>
               )}
             </div>
-            <button className="add-collab-btn" onClick={() => setShowModal(true)}>
-                Add Collaborator
-              </button>
+            <button
+              className="add-collab-btn"
+              onClick={() => setShowModal(true)}
+            >
+              Add Collaborator
+            </button>
 
-              {showModal && (
-                  <div className="modal-overlay">
-                    <div className="modal-content">
-                      <h3>Add Collaborator</h3>
+            {showModal && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h3>Add Collaborator</h3>
 
-                      <label>Email</label>
-                      <input
-                        type="email"
-                        value={collabEmail}
-                        onChange={(e) => setCollabEmail(e.target.value)}
-                        required
-                      />
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={collabEmail}
+                    onChange={(e) => setCollabEmail(e.target.value)}
+                    required
+                  />
 
-                      <label>Access Control</label>
-                      <select value={accessControl} onChange={(e) => setAccessControl(e.target.value)}>
-                        <option value="view">View Only</option>
-                        <option value="edit">Can Edit</option>
-                      </select>
+                  <label>Access Control</label>
+                  <select
+                    value={accessControl}
+                    onChange={(e) => setAccessControl(e.target.value)}
+                  >
+                    <option value="view">View Only</option>
+                    <option value="edit">Can Edit</option>
+                  </select>
 
-                      <div className="modal-buttons">
-                        <button
-                          onClick={handleAddCollaborator}
-                        >
-                          Add
-                        </button>
-                        <button onClick={() => setShowModal(false)}>Cancel</button>
-                      </div>
-                    </div>
+                  <div className="modal-buttons">
+                    <button onClick={handleAddCollaborator}>Add</button>
+                    <button onClick={() => setShowModal(false)}>Cancel</button>
                   </div>
-                )}</div>
-              ) : (
-                <div className="collaborator-list">
-
-                
-                   <table className="collab-table">
-                    <thead>
-                      <tr>
-                        <th>Collaborator Name</th>
-                        <th>Email</th>
-                        <th>Access Role</th>
-                        <th>Invitation Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {collaborators.length === 0 ? (
-                        <tr>
-                          <td colSpan="3">No collaborators added yet.</td>
-                        </tr>
-                      ) : (
-                        collaborators.map((collab, index) => (
-                          <tr key={index}>
-                            <td>{collab.user.name }</td>
-                            <td>{collab.user.email}</td>
-                            <td>{collab.access_role}</td>
-                            <td>{collab.invitation }</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-
-                
+                </div>
               </div>
-              )}
+            )}
+          </div>
+        ) : (
+          <div className="collaborator-list">
+            <table className="collab-table">
+              <thead>
+                <tr>
+                  <th>Collaborator Name</th>
+                  <th>Email</th>
+                  <th>Access Role</th>
+                  <th>Invitation Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {collaborators.length === 0 ? (
+                  <tr>
+                    <td colSpan="3">No collaborators added yet.</td>
+                  </tr>
+                ) : (
+                  collaborators.map((collab, index) => (
+                    <tr key={index}>
+                      <td>{collab.user.name}</td>
+                      <td>{collab.user.email}</td>
+                      <td>{collab.access_role}</td>
+                      <td>{collab.invitation}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </>
   );

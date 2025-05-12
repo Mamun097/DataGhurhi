@@ -34,7 +34,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          project_id: 23,
+          project_id: 21,
           survey_template: {
             title: title,
             description: "",

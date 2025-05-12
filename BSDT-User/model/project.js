@@ -31,6 +31,14 @@ async function findProjectById(projectId) {
     .eq('project_id', projectId)
     return { data, error };
 }
+// find survey by project id
+async function findSurveysByProjectId(projectId) {
+    const { data, error } = await supabase
+    .from('survey')
+    .select('*')
+    .eq('project_id', projectId)
+    return { data, error };
+}
 // update project
 async function updateProject(projectId, data) {
     console.log( data);
@@ -112,7 +120,7 @@ async function removeCollaborator(projectId, collaboratorId) {
 }
 module.exports = {
     createProject,
-    findProjectByUserId, findProjectById,
+    findProjectByUserId, findProjectById, findSurveysByProjectId,
     updateProject, deleteProject, 
     inviteCollaborator, getCollaborators, removeCollaborator
 }

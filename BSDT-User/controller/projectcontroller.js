@@ -25,6 +25,23 @@ exports.projectData = async (req, res) => {
     return res.status(200).json({ project: data[0] });
 }
 
+// get all surveys of a project
+exports.getAllSurveys = async (req, res) => {
+    const projectId = req.params.projectID;
+    //console.log("peyegeci", projectId);
+    // It will be called from View-Project page. Project ID will be passed from the URL.
+    const { data, error } = await Project.findSurveysByProjectId(projectId);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    if (!data.length) {
+        return res.status(404).json({ error: 'No surveys found for this project' });
+    }
+    return res.status(200).json({ surveys: data });
+}
+
+
 exports.updateProject = async (req, res) => {
     const projectId = req.params.projectID;
 // check if exists
