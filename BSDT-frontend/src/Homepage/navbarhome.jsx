@@ -1,48 +1,60 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 import "./navbarhome.css";
-import logo_bcc from "../assets/logos/bcc.png";
-import logo_buet from "../assets/logos/buet.png";
+
+import logo_buet from "../assets/logos/cse_buet.png";
+import logo_ric from "../assets/logos/ric.png";
 import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
-import logo_ric from "../assets/logos/ric.png";
-import { FaHome, FaUserPlus, FaSignInAlt, FaInfoCircle, FaQuestionCircle, FaSearch } from "react-icons/fa";
+
+import {
+  FaHome,
+  FaUserPlus,
+  FaSignInAlt,
+  FaInfoCircle,
+  FaQuestionCircle,
+  FaSearch,
+} from "react-icons/fa";
 
 const NavbarHome = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate(); 
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const navigate = useNavigate();
+
+  const toggleLanguage = () => {
+    setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+  };
 
   const handleSearch = () => {
     if (searchQuery.trim()) {
       console.log("Searching for:", searchQuery);
     }
   };
-    // Function to handle login click
-    const handleLoginClick = () => {
-      const token = localStorage.getItem("token"); // Check if token exists
-      if (token) {
-        navigate("/dashboard"); // Redirect to dashboard if logged in
-      } else {
-        navigate("/login"); // Redirect to login page if not logged in
-      }
-    };
+
+  const handleLoginClick = () => {
+    const token = localStorage.getItem("token");
+    navigate(token ? "/dashboard" : "/login");
+  };
 
   return (
     <motion.nav className="navbar">
       {/* Logo Section */}
       <div className="logo-container">
-        <img src={logo_buet} alt="BUET Logo" className="logo" />
-        <img src={logo_ric} alt="RIC Logo" className="logo" />
-        <img src={logo_ict} alt="ICT Logo" className="logo" />
-        <img src={logo_edge} alt="EDGE Logo" className="logo" />
+        <img src={logo_buet} alt="BUET Logo" className="logo1" />
+        <img src={logo_ric} alt="RIC Logo" className="logo2" />
+        <img src={logo_ict} alt="ICT Logo"  className="logo3"/>
+        <img src={logo_edge} alt="EDGE Logo" className="logo4" />
       </div>
 
-      {/* Always Visible Search Box */}
       <div className="search-container">
         <input
           type="text"
-          placeholder="Search for projects, surveys, accounts..."
+          placeholder={
+            language === "English"
+              ? "Search for projects, surveys, accounts..."
+              : "প্রজেক্ট, সার্ভে, অ্যাকাউন্ট অনুসন্ধান করুন..."
+          }
           className="search-input"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -51,18 +63,54 @@ const NavbarHome = () => {
         <FaSearch className="search-icon" onClick={handleSearch} />
       </div>
 
-      {/* Navigation Links */}
       <ul className="nav-links">
-        <li><a href="home"><FaHome className="nav-icon" /><span>Home</span></a></li>
-        <li><a href="signup"><FaUserPlus className="nav-icon" /><span>Sign Up</span></a></li>
-        {/* Use onClick to navigate based on token existence */}
-        <li onClick={handleLoginClick} style={{ cursor: "pointer" }}>
-          <FaSignInAlt className="nav-icon" /><span>Log in</span>
+        <li>
+          <a href="/home">
+            <FaHome className="nav-icon" />
+            {language === "English" ? "Home" : "হোম"}
+          </a>
         </li>
-        <li><a href="about"><FaInfoCircle className="nav-icon" /><span>About</span></a></li>
-        <li><a href="faq"><FaQuestionCircle className="nav-icon" /><span>FAQ</span></a></li>
+        {/* <li>
+          <a href="/signup">
+            <FaUserPlus className="nav-icon" />
+            {language === "English" ? "Sign Up" : "সাইন আপ"}
+          </a>
+        </li> */}
+        <li>
+          <a onClick={handleLoginClick}>
+            <FaSignInAlt className="nav-icon" />
+            {language === "English" ? "Login" : "লগইন"}
+          </a>
+        </li>
+        <li>
+          <a href="/about">
+            <FaInfoCircle className="nav-icon" />
+            {language === "English" ? "About" : "সম্পর্কে"}
+          </a>
+        </li>
+        <li>
+          <a href="/faq">
+            <FaQuestionCircle className="nav-icon" />
+            {language === "English" ? "FAQ" : "প্রশ্নাবলী"}
+          </a>
+        </li>
+        <li className="language-toggle">
+          <label className="switch">
+            <input
+              type="checkbox"
+              onChange={toggleLanguage}
+              checked={language === "বাংলা"}
+            />
+            <span className="slider"></span>
+          </label>
+          <div className="language-labels">
+            <span className={language === "English" ? "active" : ""}>
+              English
+            </span>
+            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
+          </div>
+        </li>
       </ul>
-
     </motion.nav>
   );
 };

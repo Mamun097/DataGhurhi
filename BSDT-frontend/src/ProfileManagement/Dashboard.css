@@ -1,229 +1,342 @@
-/* Ensure Navbar is fixed at the top */
-.navbar {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 1000;
-  background: #ffffff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* Main Container */
+/* General container */
 .dashboard-container {
-  display: flex;
-  /* flex-direction: column; */
-  justify-content: center;
-  align-items: center;
-  padding: 20px;
-  background-color: #f8f9fa; /* Light Background */
-  color: #333; /* Darker text for contrast */
-  /* width: 90vw; Full page width */
-  min-height: 80vh; /* Full page height */
-  margin-top: 60px; /* Push down to avoid navbar overlap */
+  padding: 2rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(135deg, #9776eb 0%, #e7a0f1 100%);
+  min-height: 100vh;
+  margin-top: 3rem;
 }
 
-/* Dashboard Layout: 3 Sections */
+/* Layout */
 .dashboard-layout {
-  display: grid;
-  grid-template-columns: 1fr 2fr 1fr; /* Profile | Projects | Trending */
-  gap: 20px;
-  width: 100%;
-  max-width: 1400px; /* More space for larger screens */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
 }
 
 /* Profile Section */
 .profile-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Light shadow */
+  flex: 1;
+  max-width: 300px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
+  padding: 1.5rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease-in-out;
+}
+
+.profile-section:hover {
+  transform: translateY(-3px);
 }
 
 .profile-pic-wrapper {
   position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 0 auto 1rem auto;
 }
 
-/* .profile-pic {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #ddd; /* Light border */ 
-/* .default-profile-pic.hidden {
-  display: none;
-} */
-
-/* Uploaded Profile Picture */
 .profile-pic {
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #ddd; /* Light border */
+  border: 3px solid #4b6cb7;
+  box-shadow: 0 0 8px rgba(0,0,0,0.1);
 }
 
-/* Edit Profile Picture Button */
 .edit-profile-pic-btn {
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: rgba(0, 0, 0, 0.6);
+  background: #4b6cb7;
   color: white;
+  padding: 6px;
   border-radius: 50%;
-  padding: 8px;
-  font-size: 16px;
+  font-size: 14px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease-in-out;
-  opacity: 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
-.username {
+/* Tabs */
+.profile-tabs ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.profile-tabs li {
+  margin: 0.5rem 0;
+}
+
+.profile-tabs button {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: #dbeafe;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+  color: #1e3a8a;
+}
+
+.profile-tabs button.active,
+.profile-tabs button:hover {
+  background: linear-gradient(135deg, #4b6cb7, #5b21b6);
+  color: white;
+}
+
+/* Language toggle */
+.language-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 1rem;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 30px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #c084fc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 5px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #7c3aed;
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.language-labels span {
   font-size: 14px;
   color: #555;
+  font-weight: 500;
 }
 
-/* Edit Profile Button */
-.edit-profile-btn {
-  margin-top: 10px;
-  padding: 8px 12px;
-  border: none;
-  background: #007bff; /* Light theme blue */
+.language-labels span.active {
+  font-weight: bold;
+  color: #7c3aed;
+}
+
+/* Main Section */
+.projects-section {
+  flex: 2;
+  min-width: 400px;
+  background: #ffffffd6;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.edit-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #ececec;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.edit-profile-header h3 {
+  font-size: 1.6rem;
+  color: #4b0082;
+}
+
+.edit-toggle-btn {
+  background: linear-gradient(to right, #8e2de2, #4a00e0);
   color: white;
-  border-radius: 5px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
   transition: background 0.3s ease;
 }
 
-.edit-profile-btn:hover {
-  background: #0056b3;
+.edit-toggle-btn:hover {
+  background: linear-gradient(to right, #4a00e0, #8e2de2);
 }
-/* Edit Profile Picture Button */
-.edit-profile-pic-btn {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  background: rgba(0, 0, 0, 0.6);
+
+/* Two-column layout */
+.profile-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.profile-fields label {
+  display: block;
+  font-weight: bold;
+  color: #4a00e0;
+  margin-bottom: 0.5rem;
+}
+
+.profile-fields input {
+  width: 100%;
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background: #f3f4f6;
+  transition: all 0.3s ease;
+  font-size: 14px;
+}
+
+.profile-fields input:focus {
+  border-color: #8e2de2;
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(142, 45, 226, 0.2);
+}
+
+.profile-fields i {
+  display: block;
+  padding: 0.6rem;
+  background: #f3f3f3;
+  border-radius: 8px;
+  color: #444;
+  font-style: normal;
+}
+
+.save-btn {
+  margin-top: 2rem;
+  background: #38a169;
   color: white;
-  border-radius: 50%;
-  padding: 8px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.3s ease-in-out;
-  opacity: 0;
-}
-/* Show edit icon when hovering over profile picture */
-.profile-pic-wrapper:hover .edit-profile-pic-btn {
-  opacity: 1;
-}
-
-
-/* Projects Section */
-.projects-section {
-  background: #ffffff;
-  padding: 20px;
+  padding: 0.7rem 1.5rem;
+  border: none;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
+.save-btn:hover {
+  background: #2f855a;
+}
+
+/* Projects Grid */
 .project-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
-.project-card {
-  background: #f9f9f9;
-  padding: 10px;
-  border-radius: 8px;
-  width: 200px;
-  box-shadow: 0 2px 5px rgba(22, 21, 21, 0.1);
-  transition: transform 0.2s ease-in-out;
-}
-
-.project-card:hover {
-  transform: scale(1.05);
-  background: #e9ecef; /* Light gray hover */
-}
+.project-card,
 .add-project-card {
-  background: #f9f9f9;
-  padding:10px;
-  border-radius: 8px;
-  width: 200px;
-  box-shadow: 0 2px 5px rgba(14, 14, 14, 0.1);
-  transition: transform 0.2s ease-in-out;
+  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+  border-radius: 12px;
+  padding: 1.2rem;
+  transition: 0.3s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  border-left: 4px solid #4b6cb7;
+}
+
+.project-card:hover,
+.add-project-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+  background: #e0f2fe;
+}
+
+.project-card h4 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  color: #2d3748;
+}
+
+.add-project-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #f0f9ff;
+  border: 2px dashed #4b6cb7;
+  border-radius: 12px;
+  padding: 1.2rem;
+  transition: 0.3s ease-in-out;
+  min-height: 180px; /* Match project card height */
+  cursor: pointer;
 }
 
 .add-project-card:hover {
-  transform: scale(1.05);
-  background: #e9ecef; /* Light gray hover */
+  background: #e0f2fe;
+  border-color: #3b82f6;
 }
+
 .plus-icon {
-  font-size: 120px;
+  font-size: 2.5rem;
+  color: #4b6cb7;
   font-weight: bold;
-  color: transparent;
-  align-items: center;
-  justify-content: center;
-  display: flex;
-  text-shadow: 0 0 0 rgba(188, 160, 194, 0.5); /* Creates a "cut-out" effect */
 }
 
 /* Trending Section */
 .trending-section {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  flex: 1;
+  min-width: 200px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.08);
+  height: fit-content;
+}
+
+.trending-section h3 {
+  border-bottom: 2px solid #8e2de2;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  color: #4a00e0;
 }
 
 .trending-list {
-  list-style-type: none;
-  padding: 0;
+  list-style: none;
+  padding-left: 1rem;
+  margin-top: 0.5rem;
 }
 
 .trending-list li {
-  background: #f1f1f1;
-  padding: 10px;
-  margin-bottom: 5px;
-  border-radius: 5px;
-  transition: background 0.3s ease;
-}
-
-.trending-list li:hover {
-  background: #e0e0e0;
-}
-
-/* Responsive Design */
-@media (max-width: 900px) {
-  .dashboard-layout {
-    grid-template-columns: 1fr; /* Stack sections */
-  }
-
-  .profile-section,
-  .projects-section,
-  .trending-section {
-    width: 100%;
-  }
-}
-/* Profile Picture Styling */
-.profile-pic-wrapper {
+  margin: 0.5rem 0;
+  padding-left: 1.2rem;
   position: relative;
+  font-weight: 500;
+  color: #444;
 }
 
-.profile-pic {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%; /* Ensures round shape */
-  object-fit: cover;
-  border: 3px solid #ddd; /* Light border */
+.trending-list li::before {
+  content: "🔥";
+  position: absolute;
+  left: 0;
 }
-
-
