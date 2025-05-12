@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import './createProject.css';
+import './editProject.css';
 import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
-import NavbarAcholder from "./navbarAccountholder";
+import NavbarAcholder from "./navbarproject";
+import { useCallback } from "react";
 
 const EditProject = () => {
   const { projectId } = useParams();
@@ -19,6 +21,12 @@ const EditProject = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [collabEmail, setCollabEmail] = useState("");
+  const [accessControl, setAccessControl] = useState("view"); // or "edit"
+  const [activeTab, setActiveTab] = useState("details");
+  const [collaborators, setCollaborators] = useState([]);
+
 
   // Fetch project details
   useEffect(() => {
@@ -72,94 +80,201 @@ const EditProject = () => {
   };
 
   if (loading) return <p>Loading...</p>;
+ 
+ //fetch collaborators list
+  const fetchCollaborators =async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await axios.get(`http://localhost:2000/api/project/${projectId}/collaborators`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setCollaborators(response.data.collaborators || []);
+    } catch (error) {
+      console.error("Error fetching collaborators:", error);
+    }
+  };
+
+  
+ 
+
 
   return (
     <>
       <NavbarAcholder />
       <div className="add-project-container">
-        <div className="header-with-button">
-          <h2>Project Details</h2>
-          <button className="edit-toggle-btn" onClick={() => setIsEditing(!isEditing)}>
-            {isEditing ? "Cancel" : "Edit"}
+      <div className="tab-header-container">
+        <div className="tabs">
+          <button
+            className={activeTab === "details" ? "active-tab" : ""}
+            onClick={() => setActiveTab("details")}
+          >
+            Project Details
+          </button>
+          <button
+            className={activeTab === "collaborators" ? "active-tab" : ""}
+            onClick={async () => {
+              setActiveTab("collaborators");
+              await fetchCollaborators();
+            }}
+          >
+            Collaborators
           </button>
         </div>
-
-        <div className="project-form">
-          {isEditing ? (
-            <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label>Project Name</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Field</label>
-                <input
-                  type="text"
-                  name="field"
-                  value={formData.field}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Description</label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="visibility-section">
-                <label>Visibility</label>
-                <div className="visibility-options">
-                  <label className="visibility-option">
-                    <input
-                      type="radio"
-                      name="privacy_mode"
-                      value="public"
-                      checked={formData.privacy_mode === "public"}
-                      onChange={handleChange}
-                    />
-                    <MdPublic className="visibility-icon" />
-                    Public
-                  </label>
-
-                  <label className="visibility-option">
-                    <input
-                      type="radio"
-                      name="privacy_mode"
-                      value="private"
-                      checked={formData.privacy_mode === "private"}
-                      onChange={handleChange}
-                    />
-                    <FaLock className="visibility-icon" />
-                    Private
-                  </label>
-                </div>
-              </div>
-
-              <button type="submit" className="submit-btn">
-                Save Changes
-              </button>
-            </form>
-          ) : (
-            <div className="view-project">
-              <p><strong>Project Name:</strong> {formData.title}</p>
-              <p><strong>Field:</strong> {formData.field}</p>
-              <p><strong>Description:</strong> {formData.description || <i>(none)</i>}</p>
-              <p><strong>Privacy:</strong> {formData.privacy_mode}</p>
-            </div>
-          )}
         </div>
+        {activeTab === "details" ? (
+         <div className="project-form">
+            <div className="header-with-button">
+              <h2>Project Details</h2>
+              <button className="edit-toggle-btn" onClick={() => setIsEditing(!isEditing)}>
+                {isEditing ? "Cancel" : "Edit"}
+              </button>
+            </div>
+          
+
+            <div className="project-form">
+              {isEditing ? (
+                <form onSubmit={handleSubmit}>
+                  <div className="form-group">
+                    <label>Project Name</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Field</label>
+                    <input
+                      type="text"
+                      name="field"
+                      value={formData.field}
+                      onChange={handleChange}
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label>Description</label>
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="visibility-section">
+                    <label>Visibility</label>
+                    <div className="visibility-options">
+                      <label className="visibility-option">
+                        <input
+                          type="radio"
+                          name="privacy_mode"
+                          value="public"
+                          checked={formData.privacy_mode === "public"}
+                          onChange={handleChange}
+                        />
+                        <MdPublic className="visibility-icon" />
+                        Public
+                      </label>
+
+                      <label className="visibility-option">
+                        <input
+                          type="radio"
+                          name="privacy_mode"
+                          value="private"
+                          checked={formData.privacy_mode === "private"}
+                          onChange={handleChange}
+                        />
+                        <FaLock className="visibility-icon" />
+                        Private
+                      </label>
+                    </div>
+                  </div>
+
+                  <button type="submit" className="submit-btn">
+                    Save Changes
+                  </button>
+                </form>
+              ) : (
+                <div className="view-project">
+                  <p><strong>Project Name:</strong> {formData.title}</p>
+                  <p><strong>Field:</strong> {formData.field}</p>
+                  <p><strong>Description:</strong> {formData.description || <i>(none)</i>}</p>
+                  <p><strong>Privacy:</strong> {formData.privacy_mode}</p>
+                </div>
+              )}
+            </div>
+            <button className="add-collab-btn" onClick={() => setShowModal(true)}>
+                Add Collaborator
+              </button>
+
+              {showModal && (
+                  <div className="modal-overlay">
+                    <div className="modal-content">
+                      <h3>Add Collaborator</h3>
+
+                      <label>Email</label>
+                      <input
+                        type="email"
+                        value={collabEmail}
+                        onChange={(e) => setCollabEmail(e.target.value)}
+                        required
+                      />
+
+                      <label>Access Control</label>
+                      <select value={accessControl} onChange={(e) => setAccessControl(e.target.value)}>
+                        <option value="view">View Only</option>
+                        <option value="edit">Can Edit</option>
+                      </select>
+
+                      <div className="modal-buttons">
+                        <button
+                          onClick={handleAddCollaborator}
+                        >
+                          Add
+                        </button>
+                        <button onClick={() => setShowModal(false)}>Cancel</button>
+                      </div>
+                    </div>
+                  </div>
+                )}</div>
+              ) : (
+                <div className="collaborator-list">
+
+                
+                   <table className="collab-table">
+                    <thead>
+                      <tr>
+                        <th>Collaborator Name</th>
+                        <th>Email</th>
+                        <th>Access Role</th>
+                        <th>Invitation Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {collaborators.length === 0 ? (
+                        <tr>
+                          <td colSpan="3">No collaborators added yet.</td>
+                        </tr>
+                      ) : (
+                        collaborators.map((collab, index) => (
+                          <tr key={index}>
+                            <td>{collab.user.name }</td>
+                            <td>{collab.user.email}</td>
+                            <td>{collab.access_role}</td>
+                            <td>{collab.invitation }</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+
+                
+              </div>
+              )}
       </div>
     </>
   );
