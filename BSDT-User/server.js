@@ -36,6 +36,9 @@ const CollaboratorprojectRouter = require('./route/collaboratorView');
 //template
 const surveyTemplateRouter = require('./route/surveytemplate');
 
+//Automatic Question Tag Generation
+const automatic_question_tag= require('./route/automatic_question_tag');
+
 
 //connect db
 const supabase = require('./db');
@@ -70,6 +73,9 @@ app.use('/api/collaborator', CollaboratorprojectRouter);
 
 //template
 app.use('/api/surveytemplate', surveyTemplateRouter);
+
+//Automatic Question Tag generation
+app.use('/api', automatic_question_tag);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
