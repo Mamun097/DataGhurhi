@@ -38,6 +38,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           survey_template: {
             title: title,
             description: "",
+            sections: sections,
             questions: questions,
           },
         }),
@@ -113,7 +114,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
           <div className="mt-3">
             {/* Banner Image Upload Button */}
             <div className="mt-3 text-center">
-              <label className="btn btn-outline-secondary">
+              <label className="btn btn-outline-secondary bg-white">
                 <i className="bi bi-image"></i> Change Banner Image
                 <input
                   type="file"
@@ -144,7 +145,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
             />
           ))}
           <button
-            className="btn btn-outline-primary ms-5 mb-3 mt-2"
+            className="btn btn-outline-primary ms-5 mb-3 mt-2 bg-white"
             onClick={() => handleAddSection()}
           >
             ➕ Add Section

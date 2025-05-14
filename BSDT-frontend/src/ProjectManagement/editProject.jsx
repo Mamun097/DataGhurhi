@@ -75,6 +75,36 @@ const EditProject = () => {
     }
   };
 
+  const handleAddSurveyClick = async () => {
+    const title = prompt("Enter the survey title:");
+    if (title) {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.post(
+          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          { title },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.status === 201) {
+          alert("Survey created successfully!");
+          fetchSurveys(); // Refresh the surveys list
+        }
+      } catch (error) {
+        console.error("Error creating survey:", error);
+        alert("Failed to create survey. Please try again.");
+      }
+    }
+  };
+
+  const handleSurveyClick = (survey_id) => {
+    navigate(`/view-survey/${survey_id}`); // Redirect to the edit project page with projectId as a URL parameter
+  };
+
   useEffect(() => {
     fetchProject();
     fetchSurveys();
@@ -312,6 +342,29 @@ const EditProject = () => {
             </table>
           </div>
         )}
+        <div className="survey-grid">
+          {surveys.length > 0 ? (
+            surveys.map((survey) => (
+              <div
+                key={survey.survey_id} // survey_id as the key
+                className="survey-card"
+                onClick={() => handleSurveyClick(survey.survey_id)} // Make project card clickable
+                style={{ cursor: "pointer" }}
+              >
+                <h4>{survey.title}</h4>
+              </div>
+            ))
+          ) : (
+            <i>"No projects found. Add new projects to get started..."</i>
+          )}
+
+          <div
+            className="add-survey-card"
+            onClick={() => handleAddSurveyClick()}
+          >
+            <div className="plus-icon">+</div>
+          </div>
+        </div>
       </div>
     </>
   );
