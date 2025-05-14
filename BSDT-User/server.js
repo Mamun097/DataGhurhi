@@ -82,7 +82,7 @@ app.use('/api/surveytemplate', surveyTemplateRouter);
 
 
 // saved templates
-app.use('/api/create-survey', createSurveyRouter);
+app.use('/api/get-saved-survey', createSurveyRouter);
 
 
 // app.use('/api/signin', signinRouter);
