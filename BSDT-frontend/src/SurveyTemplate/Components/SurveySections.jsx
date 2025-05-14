@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
@@ -12,6 +12,10 @@ const SurveySections = ({
   setQuestions,
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
+
+  useEffect(() => {
+    console.table("sections: ", sections); // Logs the array in a structured table format
+  }, [sections]);
   const addNewQuestion = (type) => {
     const baseQuestion = {
       id: questions.length + 1,
@@ -147,15 +151,15 @@ const SurveySections = ({
   };
 
   return (
-    <div className="border p-3">
+    <div className="container-fluid shadow border bg-white rounded p-3 mt-3 mb-3">
       {sections.length !== 1 && (
         <div>
-          <h4 className="text-center">
+          <h4 className="text-left">
             <i>Section </i>
             {section.id}
           </h4>
           <textarea
-            className="form-control mt-2"
+            className="form-control mt-2 mb-4"
             placeholder="Enter Section Title"
             value={section.title}
             onChange={(e) => {

@@ -5,6 +5,7 @@ import EmployeeSatisfactionSurvey from "../Templates/EmployeeSatisfactionSurvey"
 import PostEventFeedbackSurvey from "../Templates/PostEventFeedbackSurvey";
 import CustomerSatisfactionSurvey from "../Templates/CustomerSatisfactionSurvey";
 import EmployeeSatisfactionSurvey2 from "../Templates/EmployeeSatisfactionSurvey2";
+import NavbarSurvey from "./navbarSurvey";
 
 const Index = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(
@@ -12,7 +13,9 @@ const Index = () => {
   );
 
   return (
-    <div className="container-fluid">
+    <div>
+      {/* <NavbarSurvey /> */}
+    <div className="container-fluid mt-5">
       <div className="row">
         <div className="col-2 me-5">
           <div className="container mt-5 align-items-center">
@@ -66,7 +69,7 @@ const Index = () => {
           </div>
         </div>
 
-        <div className="col-9 mt-5 align-items-center">
+        <div className="col-7 mt-5 align-items-center">
           {selectedTemplate === "Employee Satisfaction Survey" && (
             <EmployeeSatisfactionSurvey2 />
           )}
@@ -78,6 +81,7 @@ const Index = () => {
           )}
         </div>
       </div>
+    </div>
     </div>
   );
 };
