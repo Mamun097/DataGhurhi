@@ -3,15 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
-
-import EmployeeSatisfactionSurvey from "../Templates/EmployeeSatisfactionSurvey";
-import PostEventFeedbackSurvey from "../Templates/PostEventFeedbackSurvey";
-import CustomerSatisfactionSurvey from "../Templates/CustomerSatisfactionSurvey";
-import EmployeeSatisfactionSurvey2 from "../Templates/EmployeeSatisfactionSurvey2";
-import NavbarSurvey from "./navbarSurvey";
-
 import SurveyForm from "../Components/SurveyForm";
-
 
 const Index = () => {
   const [templates, setTemplates] = useState([]);
@@ -59,9 +51,7 @@ const Index = () => {
   }
 
   return (
-    <div>
-      {/* <NavbarSurvey /> */}
-    <div className="container-fluid mt-5">
+    <div className="container-fluid">
       <div className="row">
         {/* Sidebar */}
         <div className="col-2 me-5">
@@ -85,16 +75,6 @@ const Index = () => {
             </div>
           </div>
         </div>
-        <div className="col-7 mt-5 align-items-center">
-          {selectedTemplate === "Employee Satisfaction Survey" && (
-            <EmployeeSatisfactionSurvey2 />
-          )}
-          {selectedTemplate === "Post-Event Feedback Survey" && (
-            <PostEventFeedbackSurvey />
-          )}
-          {selectedTemplate === "Customer Satisfaction Survey" && (
-            <CustomerSatisfactionSurvey />
-          )}
 
         {/* Main Content */}
         <div className="col-9 mt-5">
@@ -105,10 +85,8 @@ const Index = () => {
             setQuestions={setQuestions}
             image={backgroundImage}
           />
-
         </div>
       </div>
-    </div>
     </div>
   );
 };

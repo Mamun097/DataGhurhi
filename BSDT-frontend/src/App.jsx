@@ -7,7 +7,7 @@ import Login from "./AccountManagement/login";
 import AddProject from "./ProjectManagement/createProject";
 import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
-import CreateSurvey from "./CreateSurvey/createSurvey";
+// import CreateSurvey from "./CreateSurvey/createSurvey";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -28,7 +28,7 @@ function App() {
         {/* Protected Routes */}
         {token && role== "user"? (
           <>
-            <Route path="/create-survey" element={<CreateSurvey />} />
+            {/* <Route path="/create-survey" element={<CreateSurvey />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
             <Route path="view-project/:projectId" element={<EditProject />} />
