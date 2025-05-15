@@ -2,7 +2,7 @@ const supabase = require('../db');
 
 exports.createSurveyTemplate = async (req, res) => {
   try {
-    const { project_id, survey_template, user_id } = req.body;
+    const { project_id, survey_template, user_id, title } = req.body;
 
     // Validate input
     if (!project_id || !survey_template || !user_id) {
@@ -16,6 +16,7 @@ exports.createSurveyTemplate = async (req, res) => {
         project_id,
         template: survey_template,
         starting_date: new Date(),
+        title: title || 'Untitled Survey',
       })
       .select('survey_id');
 
