@@ -4,15 +4,25 @@ import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
+import { useLocation, useParams } from 'react-router-dom';
 
 const Index = () => {
+  const location = useLocation();
+
   const [templates, setTemplates] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
 
   // These drive SurveyForm props
   const [title, setTitle] = useState("");
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState("");
+
+  const { survey_id } = useParams();
+  const {project_id, survey_details} = location.state || {};
+  console.log("Project ID:", project_id);
+  console.log("Survey ID:", survey_id);
+  console.log("Survey Details:", survey_details);
 
   // 1) Fetch all templates once
   useEffect(() => {

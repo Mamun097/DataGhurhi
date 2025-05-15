@@ -7,7 +7,6 @@ import Login from "./AccountManagement/login";
 import AddProject from "./ProjectManagement/createProject";
 import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
-// import CreateSurvey from "./CreateSurvey/createSurvey";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -23,12 +22,11 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/surveytemplate" element={<Index />} /> 
+        <Route path="/surveytemplate" element={<Index />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (
           <>
-            {/* <Route path="/create-survey" element={<CreateSurvey />} /> */}
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
             <Route path="view-project/:projectId" element={<EditProject />} />
