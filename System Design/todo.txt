@@ -1,0 +1,24 @@
+Question types:
+checkbox (multiple can be choosed)
+Date-time
+dropdown
+multiple choice grid (row-wise and column-wise questions, can choose multiple)
+MCQ
+Likert Scale (must use only one)
+Short Answer
+
+
+
+Question Table Reformation:
+-> Sub-text (lagbe na, in meta data)
+-> Required
+-> meta data
+-> input type->question-type
+Required Field:
+Survey Specific
+
+
+Survey Table:
+Survey form type (3 different options)
+Banner
+
