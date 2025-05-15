@@ -9,11 +9,11 @@ const EmployeeSatisfactionSurvey2 = () => {
   const [title, setTitle] = useState("Employee Satisfaction Survey");
   const [questions, setQuestions] = useState(savedQuestions);
   const backgroundImage = seaImage;
-      // useEffect to log questions whenever it updates
-      useEffect(() => {
-        console.log("Updated Questions:");
-        console.table(questions); // Logs the array in a structured table format
-    }, [questions]);
+  // useEffect to log questions whenever it updates
+  useEffect(() => {
+    console.log("Updated Questions:");
+    console.table(questions); // Logs the array in a structured table format
+  }, [questions]);
 
   return (
     <div>
@@ -26,6 +26,6 @@ const EmployeeSatisfactionSurvey2 = () => {
       />
     </div>
   );
-}
+};
 
 export default EmployeeSatisfactionSurvey2;

@@ -40,6 +40,17 @@ exports.getAllSurveys = async (req, res) => {
     }
     return res.status(200).json({ surveys: data });
 }
+// create survey
+exports.createSurvey = async (req, res) => {
+    const projectId = req.params.projectID;
+    const { title } = req.body;
+    const { data, error } = await Project.createSurvey(projectId, title);
+    if (error) {
+        console.error(error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+    return res.status(201).json({ message: 'Survey created successfully' });
+}
 
 
 exports.updateProject = async (req, res) => {
