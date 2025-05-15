@@ -101,8 +101,13 @@ const EditProject = () => {
     }
   };
 
-  const handleSurveyClick = (survey_id) => {
-    navigate(`/view-survey/${survey_id}`); // Redirect to the edit project page with projectId as a URL parameter
+  const handleSurveyClick = (survey_id, survey) => {
+    navigate(`/view-survey/${survey_id}`, {
+      state: {
+        project_id: projectId,
+        survey_details: survey,
+      }
+    }); // Redirect to the edit project page with projectId as a URL parameter
   };
 
   useEffect(() => {
@@ -348,7 +353,7 @@ const EditProject = () => {
               <div
                 key={survey.survey_id} // survey_id as the key
                 className="survey-card"
-                onClick={() => handleSurveyClick(survey.survey_id)} // Make project card clickable
+                onClick={() => handleSurveyClick(survey.survey_id, survey)} // Make project card clickable
                 style={{ cursor: "pointer" }}
               >
                 <h4>{survey.title}</h4>
