@@ -5,13 +5,10 @@ import { handleImageUpload } from "../utils/handleImageUpload";
 import SurveySections from "./SurveySections";
 
 // SurveyForm Component to manage the survey title, background, sections, and questions.
-const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
+const SurveyForm = ({ title, setTitle,sections, setSections, questions, setQuestions, image }) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
-  const [sections, setSections] = useState([
-    { id: 1, title: "Section Title..." },
-  ]);
 
   // Sync backgroundImage with prop updates
   useEffect(() => {
@@ -34,7 +31,7 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: 21,
-          survey_template: { title, description: "", questions },
+          survey_template: { title, description: null, questions },
         }),
       });
       if (response.ok) {
