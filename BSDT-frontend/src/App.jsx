@@ -23,7 +23,7 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/surveytemplate" element={<Index />} />
+        <Route path="/surveytemplate" element={<Index />} /> 
 
         {/* Protected Routes */}
         {token && role== "user"? (
@@ -32,6 +32,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
             <Route path="view-project/:projectId" element={<EditProject />} />
+            <Route path="view-survey/:surveyId" element={<Index />} />
           </>
         ) : (
           <Route path="*" element={<Navigate to="/login" />} />

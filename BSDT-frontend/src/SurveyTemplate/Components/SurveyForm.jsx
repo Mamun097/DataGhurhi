@@ -34,6 +34,14 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           project_id: 21,
+
+          survey_template: {
+            title: title,
+            description: "",
+            sections: sections,
+            questions: questions,
+          },
+
           survey_template: { title, description: "", questions },
         }),
       });
@@ -101,7 +109,30 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
               hidden
               onChange={(e) => handleImageUpload(e, setBackgroundImage, setThemeColor)}
             />
+
+          </div>
+
+          <div className="mt-3">
+            {/* Banner Image Upload Button */}
+            <div className="mt-3 text-center">
+              <label className="btn btn-outline-secondary bg-white">
+                <i className="bi bi-image"></i> Change Banner Image
+                <input
+                  type="file"
+                  hidden
+                  onChange={(e) =>
+                    handleImageUpload(e, setBackgroundImage, setThemeColor)
+                  }
+                />
+              </label>
+            </div>
+            {/* <div className="btn btn-outline-secondary mt-3">
+            <i className="bi bi-card-text"></i> Add Description
+          </div> */}
+          </div>
+
           </label>
+
         </div>
 
         {/* Survey Sections and Questions */}
@@ -117,6 +148,8 @@ const SurveyForm = ({ title, setTitle, questions, setQuestions, image }) => {
             />
           ))}
           <button
+            className="btn btn-outline-primary ms-5 mb-3 mt-2 bg-white"
+            onClick={() => handleAddSection()}
             className="btn btn-outline-primary mt-3"
             onClick={handleAddSection}
           >
