@@ -1,8 +1,10 @@
 // src/QuestionTypes/Radio.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+// Import the TagManager component
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -60,15 +62,15 @@ const Radio = ({ question, questions, setQuestions }) => {
       prev.map((q) =>
         q.id === question.id
           ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: [
-                  ...q.meta.options,
-                  `Option ${q.meta.options.length + 1}`,
-                ],
-              },
-            }
+            ...q,
+            meta: {
+              ...q.meta,
+              options: [
+                ...q.meta.options,
+                `Option ${q.meta.options.length + 1}`,
+              ],
+            },
+          }
           : q
       )
     );
@@ -81,14 +83,14 @@ const Radio = ({ question, questions, setQuestions }) => {
         prev.map((q) =>
           q.id === question.id
             ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.map((opt, i) =>
-                    i === idx ? newText : opt
-                  ),
-                },
-              }
+              ...q,
+              meta: {
+                ...q.meta,
+                options: q.meta.options.map((opt, i) =>
+                  i === idx ? newText : opt
+                ),
+              },
+            }
             : q
         )
       );
@@ -103,12 +105,12 @@ const Radio = ({ question, questions, setQuestions }) => {
         prev.map((q) =>
           q.id === question.id
             ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.filter((_, i) => i !== idx),
-                },
-              }
+              ...q,
+              meta: {
+                ...q.meta,
+                options: q.meta.options.filter((_, i) => i !== idx),
+              },
+            }
             : q
         )
       );
@@ -158,34 +160,23 @@ const Radio = ({ question, questions, setQuestions }) => {
     setQuestions(bumped);
   }, [question, questions, setQuestions]);
 
-  // handle add tag
-  const handleAddTag = useCallback(() => {
-  const tagsInput = prompt("Enter tags (comma-separated):");
-  if (tagsInput) {
-    const newTags = tagsInput.split(",").map((tag) => tag.trim()); // Split and trim tags
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                tags: [...(q.meta.tags || []), ...newTags], // Add new tags
-              },
-            }
-          : q
-      )
-    );
-  }
-}, [question.id, setQuestions]);
-
   return (
     <div className="mb-3 dnd-isolate">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>MCQ</strong>
-        </em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>MCQ</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager 
+          questionId={question.id} 
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {/* Question Text */}
       <input
@@ -275,12 +266,6 @@ const Radio = ({ question, questions, setQuestions }) => {
           <i className="bi bi-image"></i>
           <input type="file" hidden onChange={handleImageUpload} />
         </label>
-        <button
-          className="btn btn-outline-secondary me-2"
-          onClick={handleAddTag}
-        >
-          <i className="bi bi-tags"></i>
-        </button>
         <div className="form-check form-switch ms-auto">
           <input
             className="form-check-input"

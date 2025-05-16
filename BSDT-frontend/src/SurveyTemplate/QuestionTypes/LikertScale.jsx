@@ -6,6 +6,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { useState } from "react";
 
+import TagManager from "./QuestionSpecificUtils/Tag";
+
 const LikertScale = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
   const [image, setImage] = useState(question.image || null);
@@ -114,11 +116,22 @@ const LikertScale = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>Likert Scale</strong>
-        </em>
-      </label>
+      {/* Modified this part to match the Radio.jsx layout */}
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>Likert Scale</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager 
+          questionId={question.id} 
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {image && (
         <div className="mb-2">
