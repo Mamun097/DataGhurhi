@@ -9,6 +9,7 @@ router.put( '/:projectID/update-project', jwtAuthMiddleware, projectController.u
 router.post('/create-project', jwtAuthMiddleware, projectController.createProject);
 router.delete('/:projectID/delete-project', jwtAuthMiddleware, projectController.deleteProject);
 router.get('/:projectID/surveys', jwtAuthMiddleware, projectController.getAllSurveys);
+router.post('/:projectID/create-survey', jwtAuthMiddleware, projectController.createSurvey);
 //collaborator
 router.post('/:projectID/invite-collaborator', jwtAuthMiddleware, projectController.inviteCollaborator);
 router.get('/:projectID/collaborators', jwtAuthMiddleware, projectController.getCollaborators);
