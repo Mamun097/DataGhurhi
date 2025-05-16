@@ -37,7 +37,7 @@ const CollaboratorprojectRouter = require('./route/collaboratorView');
 const surveyTemplateRouter = require('./route/surveytemplate');
 
 //Automatic Question Tag Generation
-// const automatic_question_tag= require('./route/automatic_question_tag');
+const automatic_question_tag= require('./route/automatic_question_tag');
 
 // saved templates
 const createSurveyRouter = require('./route/createsurvey');
