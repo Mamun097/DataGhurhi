@@ -13,9 +13,9 @@ exports.getOwnQuestions = async (req, res) => {
                 question_id, 
                 text, 
                 image, 
-                input_type, 
+                question_type, 
                 privacy, 
-                options,
+                meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
             `)
             .eq("user_id", userId); // Fetch only the user's own questions
@@ -69,9 +69,9 @@ exports.getPublicQuestions = async (req, res) => {
                 question_id, 
                 text, 
                 image, 
-                input_type, 
+                question_type, 
                 privacy, 
-                options,
+                meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
             `)
             .eq("privacy", "public"); // Only fetch public questions
@@ -123,7 +123,7 @@ exports.importQuestions = async (req, res) => {
         let query = supabase
             .from("question")
             .select(`
-                user_id, question_id, text, image, input_type, privacy, options,
+                user_id, question_id, text, image, question_type, privacy, meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
             `)
             .or(`user_id.eq.${userId},privacy.eq.public`);  // Fetch user's own or public questions
