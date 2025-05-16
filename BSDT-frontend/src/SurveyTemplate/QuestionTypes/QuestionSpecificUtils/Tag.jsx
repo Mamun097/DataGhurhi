@@ -739,14 +739,33 @@ const TagManager = ({ questionId, questionText, questions, setQuestions }) => {
       ) : (
         <button
           className="btn btn-sm btn-outline-secondary"
-          style={{ fontSize: '0.75rem', padding: '2px 8px', height: '28px', boxShadow: 'none' }}
+          style={{ 
+            fontSize: '0.75rem', 
+            padding: '2px 8px', 
+            height: '28px', 
+            boxShadow: 'none',
+            transition: 'background-color 0.2s, border-color 0.2s, color 0.2s'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.backgroundColor = '#007bff';
+            e.currentTarget.style.borderColor = '#007bff';
+            e.currentTarget.style.color = 'white';
+            e.currentTarget.querySelector('i').style.color = '#ffffff'; // Bootstrap green
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.backgroundColor = '';
+            e.currentTarget.style.borderColor = '';
+            e.currentTarget.style.color = '';
+            e.currentTarget.querySelector('i').style.color = '#007bff';
+          }}
           onClick={handleAddTagClick}
         >
           <i className="bi bi-tag-fill" 
              style={{ 
                fontSize: '0.75rem', 
                boxShadow: 'none',
-               color: '#007bff' // Using Bootstrap's blue color to match Auto Generate hover
+               color: '#007bff',
+               transition: 'color 0.2s'
              }}></i> Add Tag
         </button>
       )}

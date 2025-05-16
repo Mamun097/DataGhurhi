@@ -1,4 +1,5 @@
 import { useState } from "react";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Text = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -33,7 +34,7 @@ const Text = ({ question, questions, setQuestions }) => {
 
   // Validate the input
   const handleSettings = () => {
-    if(inputValidation) {
+    if (inputValidation) {
       setInputValidation(false);
     }
     else {
@@ -42,15 +43,15 @@ const Text = ({ question, questions, setQuestions }) => {
         prevQuestions.map((q) =>
           q.id === question.id
             ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  validationType: validationType,
-                  condition: condition,
-                  errorText: errorText,
-                  validationText: validationText,
-                },
-              }
+              ...q,
+              meta: {
+                ...q.meta,
+                validationType: validationType,
+                condition: condition,
+                errorText: errorText,
+                validationText: validationText,
+              },
+            }
             : q
         )
       );
@@ -130,13 +131,14 @@ const Text = ({ question, questions, setQuestions }) => {
     setCondition(conditions[selectedType][0]); // Reset condition to the first one
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, 
+        q.id === question.id ? {
+          ...q,
           meta: {
             ...q.meta,
             validationType: selectedType,
             condition: conditions[selectedType][0],
           },
-         } : q
+        } : q
       )
     );
   };
@@ -146,12 +148,13 @@ const Text = ({ question, questions, setQuestions }) => {
     setCondition(selectedCondition);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, 
+        q.id === question.id ? {
+          ...q,
           meta: {
             ...q.meta,
             condition: selectedCondition,
           },
-         } : q
+        } : q
       )
     );
   };
@@ -161,15 +164,16 @@ const Text = ({ question, questions, setQuestions }) => {
     setValidationText(newValidationText);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? { ...q,
+        q.id === question.id ? {
+          ...q,
           meta: {
             ...q.meta,
             validationText: newValidationText,
           },
-         } : q
+        } : q
       )
     );
-  };  
+  };
 
   // handle updating the error text
   const handleErrorTextChange = (event) => {
@@ -177,12 +181,13 @@ const Text = ({ question, questions, setQuestions }) => {
     setErrorText(newErrorText);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, 
+        q.id === question.id ? {
+          ...q,
           meta: {
             ...q.meta,
             errorText: newErrorText,
           },
-         } : q
+        } : q
       )
     );
   };
@@ -190,11 +195,23 @@ const Text = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3">
-      <label className="ms-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>Text</strong>
-        </em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="ms-2" style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>Text</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
+
+
       {/* Question Input */}
       <div className="d-flex align-items-center mt-2 mb-2">
         <input

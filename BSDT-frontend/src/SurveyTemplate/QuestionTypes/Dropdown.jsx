@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Dropdown = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -64,13 +65,13 @@ const Dropdown = ({ question, questions, setQuestions }) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { 
-              ...q, 
-              meta: { 
-                ...q.meta, 
-                options: [...(q.meta?.options || []), `Option ${q.meta.options.length + 1}`] 
-              } 
+          ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: [...(q.meta?.options || []), `Option ${q.meta.options.length + 1}`]
             }
+          }
           : q
       )
     );
@@ -81,13 +82,13 @@ const Dropdown = ({ question, questions, setQuestions }) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { 
-              ...q, 
-              meta: { 
-                ...q.meta, 
-                options: q.meta.options.map((opt, i) => i === idx ? newText : opt) 
-              } 
+          ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: q.meta.options.map((opt, i) => i === idx ? newText : opt)
             }
+          }
           : q
       )
     );
@@ -98,13 +99,13 @@ const Dropdown = ({ question, questions, setQuestions }) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { 
-              ...q, 
-              meta: { 
-                ...q.meta, 
-                options: q.meta.options.filter((_, i) => i !== idx) 
-              } 
+          ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: q.meta.options.filter((_, i) => i !== idx)
             }
+          }
           : q
       )
     );
@@ -123,9 +124,9 @@ const Dropdown = ({ question, questions, setQuestions }) => {
         const opts = Array.from(q.meta.options);
         const [moved] = opts.splice(src, 1);
         opts.splice(dest, 0, moved);
-        return { 
-          ...q, 
-          meta: { ...q.meta, options: opts } 
+        return {
+          ...q,
+          meta: { ...q.meta, options: opts }
         };
       })
     );
@@ -133,9 +134,19 @@ const Dropdown = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 dnd-isolate">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em><strong>Dropdown</strong></em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+          <em><strong>Dropdown</strong></em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {/* Image Preview */}
       {question.image && (
