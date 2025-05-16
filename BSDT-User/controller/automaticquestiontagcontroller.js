@@ -64,39 +64,3 @@ Existing Tags: [${tagList}]`;
     res.status(500).json({ error: "Server error: " + err.message });
   }
 };
-
-
-exports.getTagsForQuestion = async (req, res) => {
-  const questionId = req.body.questionId;
-
-  try {
-    // Fetch tag IDs associated with the question from the question_tag table
-    const { data: questionTags, error: questionTagsError } = await supabase
-      .from("question_tag")
-      .select("tag_id")
-      .eq("question_id", questionId);
-
-    if (questionTagsError || !questionTags || questionTags.length === 0) {
-      return res.status(200).json({ tags: [] });
-    }
-
-    const tagIds = questionTags.map((qt) => qt.tag_id);
-
-    // Fetch tag names from the tags table using the tag IDs
-    const { data: tags, error: tagsError } = await supabase
-      .from("tags")
-      .select("tag_name")
-      .in("tag_id", tagIds);
-
-    if (tagsError || !tags) {
-      return res.status(500).json({ error: "Failed to fetch tags" });
-    }
-
-    const tagNames = tags.map((t) => t.tag_name);
-
-    res.status(200).json({ tags: tagNames });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error: " + err.message });
-  }
-};

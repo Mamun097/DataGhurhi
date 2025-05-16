@@ -45,7 +45,6 @@ const createSurveyRouter = require('./route/createsurvey');
 
 //connect db
 const supabase = require('./db');
-const { getTagsForQuestion } = require('./controller/automaticquestiontagcontroller');
 require('dotenv').config();
 const port = process.env.PORT || 2000;
 (async () => {
@@ -80,7 +79,6 @@ app.use('/api/surveytemplate', surveyTemplateRouter);
 
 //Automatic Question Tag generation
 app.use('/api', automatic_question_tag);
-app.use('/api', getTagsForQuestion);
 
 // saved templates
 app.use('/api/get-saved-survey', createSurveyRouter);
