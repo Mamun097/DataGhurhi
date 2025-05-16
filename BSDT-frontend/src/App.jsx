@@ -29,7 +29,8 @@ function App() {
           <>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
-            <Route path="view-project/:projectId" element={<EditProject />} />
+            <Route path="/view-project/:projectId" element={<EditProject />} />
+            <Route path="/view-survey/:survey_id" element={<Index />} />
           </>
         ) : (
           <Route path="*" element={<Navigate to="/login" />} />

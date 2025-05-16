@@ -126,6 +126,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
   };
 
   return (
+    <div className="mb-3 ">
     <DragDropContext onDragEnd={handleDragEnd}>
       <Droppable droppableId={`section-${section.id}`}>
         {(provided) => (
@@ -164,6 +165,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
         )}
       </Droppable>
     </DragDropContext>
+    </div>
   );
 };
 

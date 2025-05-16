@@ -37,7 +37,10 @@ const CollaboratorprojectRouter = require('./route/collaboratorView');
 const surveyTemplateRouter = require('./route/surveytemplate');
 
 //Automatic Question Tag Generation
-const automatic_question_tag= require('./route/automatic_question_tag');
+// const automatic_question_tag= require('./route/automatic_question_tag');
+
+// saved templates
+const createSurveyRouter = require('./route/createsurvey');
 
 
 //connect db
@@ -78,6 +81,9 @@ app.use('/api/surveytemplate', surveyTemplateRouter);
 //Automatic Question Tag generation
 app.use('/api', automatic_question_tag);
 app.use('/api', getTagsForQuestion);
+
+// saved templates
+app.use('/api/get-saved-survey', createSurveyRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
