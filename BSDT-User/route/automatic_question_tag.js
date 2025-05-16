@@ -5,7 +5,4 @@ const automaticQuestionTagController = require("../controller/automaticquestiont
 //!Generate question tags with LLM
 router.post("/generate-tags/", automaticQuestionTagController.generateTagsForQuestion);
 
-//!Fetch question tags
-router.post("/fetch-question-tags/", automaticQuestionTagController.getTagsForQuestion);
-
 module.exports = router;
