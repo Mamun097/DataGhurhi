@@ -10,6 +10,7 @@ const SurveySections = ({
   sections,
   questions,
   setQuestions,
+  viewAs,
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
 
@@ -174,33 +175,38 @@ const SurveySections = ({
         section={section}
         questions={questions}
         setQuestions={setQuestions}
+        viewAs={viewAs}
       />
-      {/* Add Question Component */}
-      <AddQuestion
-        newQuestion={newQuestion}
-        setNewQuestion={setNewQuestion}
-        addNewQuestion={addNewQuestion}
-      />
-      <div className="d-flex justify-content-end mt-2">
-        {sections.length !== 1 && section.id !== 1 && (
-          <button
-            className="btn btn-outline-primary btn-sm mt-2 me-2"
-            onClick={() => {
-              handleMergeWithAbove();
-            }}
-          >
-            Merge with above
-          </button>
-        )}
-        <button
-          className="btn btn-outline-danger btn-sm mt-2"
-          onClick={() => {
-            onPressDeleteSection();
-          }}
-        >
-          Delete Section
-        </button>
-      </div>
+      {!viewAs && (
+        <div>
+          {/* Add Question Component */}
+          <AddQuestion
+            newQuestion={newQuestion}
+            setNewQuestion={setNewQuestion}
+            addNewQuestion={addNewQuestion}
+          />
+          <div className="d-flex justify-content-end mt-2">
+            {sections.length !== 1 && section.id !== 1 && (
+              <button
+                className="btn btn-outline-primary btn-sm mt-2 me-2"
+                onClick={() => {
+                  handleMergeWithAbove();
+                }}
+              >
+                Merge with above
+              </button>
+            )}
+            <button
+              className="btn btn-outline-danger btn-sm mt-2"
+              onClick={() => {
+                onPressDeleteSection();
+              }}
+            >
+              Delete Section
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

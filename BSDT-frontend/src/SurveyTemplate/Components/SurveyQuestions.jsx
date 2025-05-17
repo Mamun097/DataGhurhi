@@ -12,7 +12,7 @@ import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
 
-const SurveyQuestions = ({ section, questions, setQuestions }) => {
+const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
   // Filter only the questions for the current section.
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
@@ -54,6 +54,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "text":
@@ -62,6 +63,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "likert":
@@ -70,6 +72,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "rating":
@@ -78,6 +81,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "linearScale":
@@ -86,6 +90,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "datetime":
@@ -94,6 +99,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "dropdown":
@@ -102,6 +108,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "tickboxGrid":
@@ -110,6 +117,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       case "checkbox":
@@ -118,6 +126,7 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            viewAs={viewAs}
           />
         );
       default:
@@ -127,44 +136,44 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 ">
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId={`section-${section.id}`}>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="mt-2"
-          >
-            {sectionQuestions.map((question, index) => (
-              <Draggable
-                key={question.id}
-                draggableId={question.id.toString()}
-                index={index}
-              >
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    style={{
-                      userSelect: "none",
-                      padding: 8,
-                      margin: "0 0 8px 0",
-                      background: snapshot.isDragging ? "#e0e0e0" : "#ffffff",
-                      border: "1px solid #ccc",
-                      ...provided.draggableProps.style,
-                    }}
-                  >
-                    {renderQuestionComponent(question)}
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId={`section-${section.id}`}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="mt-2"
+            >
+              {sectionQuestions.map((question, index) => (
+                <Draggable
+                  key={question.id}
+                  draggableId={question.id.toString()}
+                  index={index}
+                >
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={{
+                        userSelect: "none",
+                        padding: 8,
+                        margin: "0 0 8px 0",
+                        background: snapshot.isDragging ? "#e0e0e0" : "#ffffff",
+                        border: "1px solid #ccc",
+                        ...provided.draggableProps.style,
+                      }}
+                    >
+                      {renderQuestionComponent(question)}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };

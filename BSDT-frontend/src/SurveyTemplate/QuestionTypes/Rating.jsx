@@ -105,7 +105,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
           onChange={(e) => handleScaleChange(Number(e.target.value))}
           value={question.meta?.scale || 5}
         >
-          {[5, 10].map((num) => (
+          {[3, 5, 7, 10].map((num) => (
             <option key={num} value={num}>
               {num}
             </option>
