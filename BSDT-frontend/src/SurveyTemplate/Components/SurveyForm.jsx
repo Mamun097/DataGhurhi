@@ -13,19 +13,22 @@ const SurveyForm = ({
   questions,
   setQuestions,
   image,
+  project_id,
+  survey_id,
+  survey_Status,
 }) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
   const [viewAs, setViewAs] = useState(false);
-
-  // Sync backgroundImage with prop updates
+  
+  // Sync backgroundImage with prop 
   useEffect(() => {
     if (image) {
       setBackgroundImage(image);
     }
   }, [image]);
-
+  console.log(project_id);
   // Function to add a new section
   const handleAddSection = () => {
     const newSection = { id: sections.length + 1, title: "Section Title..." };
@@ -36,16 +39,44 @@ const SurveyForm = ({
   const handlePublish = async () => {
     try {
       const response = await fetch("http://localhost:2000/api/surveytemplate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          project_id: 21,
-          survey_template: { title, description: null, questions },
+        method: "PUT",
+        headers: { "Content-Type": "application/json",
+                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
+          body: JSON.stringify({
+          survey_id: survey_id,
+          project_id:project_id ,
+          survey_template: { sections, title, description: null, questions },
+          title:title,
+          user_id: `${localStorage.getItem('token').id}`,
         }),
       });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Survey published successfully:", data);
+      if (response.status === 201) {
+        // Handle successful response
+        alert("Survey published successfully!");
+      } else {
+        console.error("Error publishing survey:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error publishing survey:", error);
+    }
+  };
+    const handleSave = async () => {
+    try {
+      const response = await fetch("http://localhost:2000/api/surveytemplate/save", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json",
+                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
+          body: JSON.stringify({
+          survey_id: survey_id,
+          project_id:project_id ,
+          survey_template: { sections, title, description: null, questions },
+          title:title,
+          user_id: `${localStorage.getItem('token').id}`,
+        }),
+      });
+      if (response.status === 201) {
+        // Handle successful response
+        alert("Survey published successfully!");
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
@@ -54,9 +85,36 @@ const SurveyForm = ({
     }
   };
 
+    const handleUpdate = async () => {
+    try {
+      const response = await fetch("http://localhost:2000/api/surveytemplate", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json",
+                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
+          body: JSON.stringify({
+          survey_id: survey_id,
+          project_id:project_id ,
+          survey_template: { sections, title, description: null, questions },
+          title:title,
+          user_id: `${localStorage.getItem('token').id}`,
+        }),
+      });
+      if (response.status === 201) {
+        // Handle successful response
+        alert("Survey published successfully!");
+      } else {
+        console.error("Error publishing survey:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error publishing survey:", error);
+    }
+  };
+
+
   // View As
   const handleViewAs = () => {
     setViewAs(!viewAs);
+    console.log(survey_Status);
   };
 
   return (
@@ -66,17 +124,26 @@ const SurveyForm = ({
           className="btn btn-outline-primary me-3"
           onClick={() => handleViewAs()}
         >
-          <i class="bi bi-eye"></i> View As
+          <i className="bi bi-eye"></i> View As
         </button>
-        <button
-          className="btn btn-outline-secondary me-3"
-          onClick={() => console.log("Saved")}
-        >
-          <i className="bi bi-save"></i> Save
-        </button>
-        <button className="btn btn-outline-success" onClick={handlePublish}>
-          <i className="bi bi-check-circle"></i> Publish
-        </button>
+        {survey_Status === "published" ? (
+          <button className="btn btn-outline-primary" onClick={handleUpdate}
+          >
+            <i className="bi bi-pencil"></i> Update
+          </button>
+        ) : (
+          <>
+            <button
+              className="btn btn-outline-secondary me-3"
+              onClick={handleSave}
+            >
+              <i className="bi bi-save"></i> Save
+            </button>
+            <button className="btn btn-outline-success" onClick={handlePublish}>
+              <i className="bi bi-check-circle"></i> Publish
+            </button>
+          </>
+        )}
       </div>
 
       <div style={{ backgroundColor: themeColor || "white" }}>

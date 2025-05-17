@@ -1,23 +1,61 @@
 const supabase = require('../db');
+const { jwtAuthMiddleware } = require('../auth/authmiddleware');
 
-exports.createSurveyTemplate = async (req, res) => {
+
+exports.saveSurveyForm = async (req, res) => {
   try {
-    const { project_id, survey_template, user_id, title } = req.body;
-
+    const { survey_id, project_id, survey_template } = req.body;
     // Validate input
-    if (!project_id || !survey_template || !user_id) {
+    if (!project_id || !survey_template) {
+      return res.status(400).json({ error: 'project_id and survey_template are required' });
+    }
+
+    // Step 1: Insert survey template into survey table
+    const { data: surveyData, error: surveyError } = await supabase
+      .from('survey')
+      .update({
+        project_id: project_id,
+        banner: survey_template.banner || null,
+        template: survey_template,
+        starting_date: new Date(),
+        title: survey_template.title || 'Untitled Survey',
+        survey_status: 'saved'
+      })
+      .eq('survey_id', survey_id)
+      .select('survey_id');
+    if (surveyError) {
+      console.error('Supabase insert error for survey:', surveyError);
+      return res.status(500).json({ error: 'Failed to create survey template' });
+    }
+  }catch (err) {
+    console.error('Error in createSurveyTemplate:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+
+};
+
+exports.createSurveyForm = async (req, res) => {
+  try {
+    const {survey_id, project_id, survey_template, title} = req.body;
+    const user_id = req.jwt.id; 
+    console.log(survey_template.questions);
+    // Validate input
+    if (!project_id || !survey_template) {
       return res.status(400).json({ error: 'project_id, survey_template, and user_id are required' });
     }
 
     // Step 1: Insert survey template into survey table
     const { data: surveyData, error: surveyError } = await supabase
       .from('survey')
-      .insert({
-        project_id,
+      .update({
+        project_id: project_id,
+        banner: survey_template.banner || null,
         template: survey_template,
         starting_date: new Date(),
         title: title || 'Untitled Survey',
+        survey_status: 'published'
       })
+      .eq('survey_id', survey_id)
       .select('survey_id');
 
     if (surveyError) {
@@ -63,10 +101,10 @@ exports.createSurveyTemplate = async (req, res) => {
       const { data: questionData, error: questionError } = await supabase
         .from('question')
         .insert({
-          user_id,
-          text,
-          image,
-          question_type,
+          user_id: user_id,
+          text: question.text,
+          image: question.image || null,
+          type: question.type,
           privacy,
           section_id: sectionId, // Link to the database section_id
           correct_ans: correct_ans || null,
