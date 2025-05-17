@@ -66,7 +66,7 @@ const SurveyForm = ({
           className="btn btn-outline-primary me-3"
           onClick={() => handleViewAs()}
         >
-          <i class="bi bi-eye"></i> View As
+          <i className="bi bi-eye"></i> View As
         </button>
         <button
           className="btn btn-outline-secondary me-3"

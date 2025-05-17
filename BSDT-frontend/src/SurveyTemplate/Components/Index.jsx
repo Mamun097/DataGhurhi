@@ -33,11 +33,12 @@ const Index = () => {
 
   // Has a custom template been passed in?
   const useCustom = survey_details?.template != null;
-  const questionsFromSurveyDetails = survey_details?.template?.questions || [];
-  console.log(
-    "Questions from survey details:",
-    questionsFromSurveyDetails
-  );
+  // const questionsFromSurveyDetails = survey_details?.template?.questions || [];
+  // console.log(
+  //   "Questions from survey details:",
+  //   questionsFromSurveyDetails
+  // );
+  console.log("Questions: ", questions);
   console
   useEffect(() => {
     const load = async () => {

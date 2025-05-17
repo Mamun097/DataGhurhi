@@ -1,8 +1,9 @@
 // src/QuestionTypes/Radio.jsx
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, use } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import Option from "./QuestionSpecificUtils/OptionClass"; 
 
 const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -85,7 +86,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                 meta: {
                   ...q.meta,
                   options: q.meta.options.map((opt, i) =>
-                    i === idx ? newText : opt
+                    i === idx ? { ...opt, text: newText } : opt
                   ),
                 },
               }
@@ -95,6 +96,46 @@ const Radio = ({ question, questions, setQuestions }) => {
     },
     [question.id, setQuestions]
   );
+
+  // const updateOption = useCallback(
+  //   (idx, newText) => {
+  //     setQuestions((prev) =>
+  //       prev.map((q) =>
+  //         q.id === question.id
+  //           ? {
+  //               ...q,
+  //               meta: {
+  //                 ...q.meta,
+  //                 options: q.meta.options.map((opt, i) =>
+  //                   i === idx ? newText : opt
+  //                 ),
+  //               },
+  //             }
+  //           : q
+  //       )
+  //     );
+  //   },
+  //   [question.id, setQuestions]
+  // );
+
+  // Update option's value
+  const updateOptionValue = useCallback((idx, newValue) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+            ...q, 
+            meta: {
+              ...q.meta,
+              options: q.meta.options.map((opt, i) =>
+                i === idx ? { ...opt, value: newValue } : opt
+              ),
+            },
+          }
+          : q
+      )
+    );
+  }, [question.id, setQuestions]);
 
   // Remove an option
   const removeOption = useCallback(
@@ -160,24 +201,24 @@ const Radio = ({ question, questions, setQuestions }) => {
 
   // handle add tag
   const handleAddTag = useCallback(() => {
-  const tagsInput = prompt("Enter tags (comma-separated):");
-  if (tagsInput) {
-    const newTags = tagsInput.split(",").map((tag) => tag.trim()); // Split and trim tags
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                tags: [...(q.meta.tags || []), ...newTags], // Add new tags
-              },
-            }
-          : q
-      )
-    );
-  }
-}, [question.id, setQuestions]);
+    const tagsInput = prompt("Enter tags (comma-separated):");
+    if (tagsInput) {
+      const newTags = tagsInput.split(",").map((tag) => tag.trim()); // Split and trim tags
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  tags: [...(q.meta.tags || []), ...newTags], // Add new tags
+                },
+              }
+            : q
+        )
+      );
+    }
+  }, [question.id, setQuestions]);
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -221,27 +262,42 @@ const Radio = ({ question, questions, setQuestions }) => {
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      {...prov.dragHandleProps}
-                      className="d-flex align-items-center mb-2"
+                      className="row  mb-1"
                     >
-                      <span
-                        className="me-2"
-                        style={{ fontSize: "1.5rem", cursor: "grab" }}
-                      >
-                        ☰
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control me-2"
-                        value={option}
-                        onChange={(e) => updateOption(idx, e.target.value)}
-                      />
-                      <button
-                        className="btn btn-outline-secondary me-2"
-                        onClick={() => removeOption(idx)}
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
+                      <div className="col-auto" {...prov.dragHandleProps}>
+                        <i
+                          className="bi bi-grip-vertical"
+                          style={{ fontSize: "1.5rem", cursor: "grab" }}
+                        ></i>
+                      </div>
+                      <div className="col-8">
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={option.text}
+                          onChange={(e) => updateOption(idx, e.target.value)}
+                        />
+                      </div>
+                      <div className="col-2">
+                        <input
+                          type="number"
+                          className="form-control"
+                          value={option.value ?? 0}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^-?\d*$/.test(val))
+                              updateOptionValue(idx, val);
+                          }}
+                        />
+                      </div>
+                      <div className="col-1">
+                        <button
+                          className="btn btn-outline-danger"
+                          onClick={() => removeOption(idx)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </Draggable>

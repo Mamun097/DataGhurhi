@@ -3,6 +3,7 @@ import { useState } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
 //import {handleDeleteSection} from "./SurveyForm";
+import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 
 const SurveySections = ({
   section,
@@ -34,6 +35,8 @@ const SurveySections = ({
 
     switch (type) {
       case "radio":
+        newQ.meta.options = [ new Option("Option 1", 0), new Option("Option 2", 0)];
+        break;
       case "checkbox":
       case "dropdown":
         newQ.meta.options = ["Option 1", "Option 2"];
