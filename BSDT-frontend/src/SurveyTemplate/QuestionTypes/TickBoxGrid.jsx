@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const TickBoxGrid = ({ question, questions, setQuestions }) => {
+const TickBoxGrid = ({ question, questions, setQuestions, viewAs }) => {
   const [required, setRequired] = useState(question.required || false);
   const [image, setImage] = useState(question.image || null);
 
   const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
-  const columns = question.meta?.columns?.length ? question.meta.columns : ["Column 1"];
+  const columns = question.meta?.columns?.length
+    ? question.meta.columns
+    : ["Column 1"];
 
   const updateMeta = (metaUpdate) => {
     setQuestions((prev) =>
@@ -19,18 +21,14 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
 
   const handleRequired = (id) => {
     setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === id ? { ...q, required: !q.required } : q
-      )
+      prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
     );
     setRequired(!required);
   };
 
   const handleQuestionChange = (newText) => {
     setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, text: newText } : q
-      )
+      prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
     );
   };
 
@@ -137,55 +135,69 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
         />
       </div>
 
-      {/* Rows */}
-      <div className="mb-3">
-        <h6><b>Rows</b></h6>
-        {rows.map((row, index) => (
-          <div key={index} className="d-flex justify-content-between">
-            <input
-              type="text"
-              className="form-control mb-1"
-              value={row}
-              onChange={(e) => handleRowChange(index, e.target.value)}
-              placeholder={`Row ${index + 1}`}
-            />
+      {!viewAs && (
+        <div>
+          {/* Rows */}
+          <div className="mb-3">
+            <h6>
+              <b>Rows</b>
+            </h6>
+            {rows.map((row, index) => (
+              <div key={index} className="d-flex justify-content-between">
+                <input
+                  type="text"
+                  className="form-control mb-1"
+                  value={row}
+                  onChange={(e) => handleRowChange(index, e.target.value)}
+                  placeholder={`Row ${index + 1}`}
+                />
+                <button
+                  className="btn btn-outline-secondary me-2"
+                  onClick={() => handleDeleteRow(index)}
+                >
+                  <i className="bi bi-trash"></i>
+                </button>
+              </div>
+            ))}
             <button
-              className="btn btn-outline-secondary me-2"
-              onClick={() => handleDeleteRow(index)}
+              className="btn btn-sm btn-outline-primary mt-2"
+              onClick={handleAddRow}
             >
-              <i className="bi bi-trash"></i>
+              Add Row
             </button>
           </div>
-        ))}
-        <button className="btn btn-sm btn-outline-primary mt-2" onClick={handleAddRow}>
-          Add Row
-        </button>
-      </div>
 
-      {/* Columns */}
-      <div className="mb-3">
-        <h6><b>Columns</b></h6>
-        {columns.map((col, index) => (
-          <div key={index} className="d-flex justify-content-between">
-            <input
-              type="text"
-              className="form-control mb-1"
-              value={col}
-              onChange={(e) => handleColumnChange(index, e.target.value)}
-              placeholder={`Column ${index + 1}`}
-            />
+          {/* Columns */}
+          <div className="mb-3">
+            <h6>
+              <b>Columns</b>
+            </h6>
+            {columns.map((col, index) => (
+              <div key={index} className="d-flex justify-content-between">
+                <input
+                  type="text"
+                  className="form-control mb-1"
+                  value={col}
+                  onChange={(e) => handleColumnChange(index, e.target.value)}
+                  placeholder={`Column ${index + 1}`}
+                />
+                <button
+                  className="btn btn-outline-secondary me-2"
+                  onClick={() => handleDeleteColumn(index)}
+                >
+                  <i className="bi bi-trash"></i>
+                </button>
+              </div>
+            ))}
             <button
-              className="btn btn-outline-secondary me-2"
-              onClick={() => handleDeleteColumn(index)}
+              className="btn btn-sm btn-outline-primary mt-2"
+              onClick={handleAddColumn}
             >
-              <i className="bi bi-trash"></i>
+              Add Column
             </button>
           </div>
-        ))}
-        <button className="btn btn-sm btn-outline-primary mt-2" onClick={handleAddColumn}>
-          Add Column
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Grid Preview */}
       <div className="mb-3">
@@ -215,28 +227,38 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
         </table>
       </div>
 
-      {/* Action Buttons */}
-      <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
-          <i className="bi bi-clipboard"></i>
-        </button>
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
-          <i className="bi bi-trash"></i>
-        </button>
-        <label className="btn btn-outline-secondary me-2">
-          <i className="bi bi-image"></i>
-          <input type="file" hidden onChange={handleImageUpload} />
-        </label>
-        <div className="form-check form-switch ms-auto">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            onChange={() => handleRequired(question.id)}
-            checked={required}
-          />
-          <label className="form-check-label">Required</label>
+      {!viewAs && (
+        <div>
+          {/* Action Buttons */}
+          <div className="d-flex align-items-center mt-3">
+            <button
+              className="btn btn-outline-secondary me-2"
+              onClick={handleCopy}
+            >
+              <i className="bi bi-clipboard"></i>
+            </button>
+            <button
+              className="btn btn-outline-secondary me-2"
+              onClick={handleDelete}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+            <label className="btn btn-outline-secondary me-2">
+              <i className="bi bi-image"></i>
+              <input type="file" hidden onChange={handleImageUpload} />
+            </label>
+            <div className="form-check form-switch ms-auto">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                onChange={() => handleRequired(question.id)}
+                checked={required}
+              />
+              <label className="form-check-label">Required</label>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

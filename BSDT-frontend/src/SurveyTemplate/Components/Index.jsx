@@ -116,7 +116,7 @@ const Index = () => {
         )}
 
         {/* Main Content */}
-        <div className={`${useCustom ? "col-12" : "col-9"} mt-5`}>
+        <div className={`${useCustom ? "col-12" : "col-7"} mt-5`}>
           <SurveyForm
             title={title}
             setTitle={setTitle}

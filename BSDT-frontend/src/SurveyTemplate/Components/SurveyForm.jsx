@@ -5,10 +5,19 @@ import { handleImageUpload } from "../utils/handleImageUpload";
 import SurveySections from "./SurveySections";
 
 // SurveyForm Component to manage the survey title, background, sections, and questions.
-const SurveyForm = ({ title, setTitle,sections, setSections, questions, setQuestions, image }) => {
+const SurveyForm = ({
+  title,
+  setTitle,
+  sections,
+  setSections,
+  questions,
+  setQuestions,
+  image,
+}) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
+  const [viewAs, setViewAs] = useState(false);
 
   // Sync backgroundImage with prop updates
   useEffect(() => {
@@ -45,9 +54,20 @@ const SurveyForm = ({ title, setTitle,sections, setSections, questions, setQuest
     }
   };
 
+  // View As
+  const handleViewAs = () => {
+    setViewAs(!viewAs);
+  };
+
   return (
     <div>
       <div className="mb-3">
+        <button
+          className="btn btn-outline-primary me-3"
+          onClick={() => handleViewAs()}
+        >
+          <i class="bi bi-eye"></i> View As
+        </button>
         <button
           className="btn btn-outline-secondary me-3"
           onClick={() => console.log("Saved")}
@@ -90,16 +110,20 @@ const SurveyForm = ({ title, setTitle,sections, setSections, questions, setQuest
         </div>
 
         {/* Change Banner Image */}
-        <div className="text-center mt-3">
-          <label className="btn btn-outline-secondary">
-            <i className="bi bi-image"></i> Change Banner Image
-            <input
-              type="file"
-              hidden
-              onChange={(e) => handleImageUpload(e, setBackgroundImage, setThemeColor)}
-            />
-          </label>
-        </div>
+        {!viewAs && (
+          <div className="text-center mt-3">
+            <label className="btn btn-outline-secondary">
+              <i className="bi bi-image"></i> Change Banner Image
+              <input
+                type="file"
+                hidden
+                onChange={(e) =>
+                  handleImageUpload(e, setBackgroundImage, setThemeColor)
+                }
+              />
+            </label>
+          </div>
+        )}
 
         {/* Survey Sections and Questions */}
         <div className="mt-4">
@@ -111,14 +135,17 @@ const SurveyForm = ({ title, setTitle,sections, setSections, questions, setQuest
               setSections={setSections}
               questions={questions}
               setQuestions={setQuestions}
+              viewAs={viewAs}
             />
           ))}
-          <button
-            className="btn btn-outline-primary mt-3"
-            onClick={handleAddSection}
-          >
-            ➕ Add Section
-          </button>
+          {!viewAs && (
+            <button
+              className="btn btn-outline-primary mt-3"
+              onClick={handleAddSection}
+            >
+              ➕ Add Section
+            </button>
+          )}
         </div>
       </div>
     </div>
