@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -109,11 +110,21 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>Linear Scale</strong>
-        </em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>Linear Scale</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {image && (
         <img

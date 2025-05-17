@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const TickBoxGrid = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -110,11 +111,21 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>Tick Box Grid</strong>
-        </em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>Tick Box Grid</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {image && (
         <div className="mb-2">
