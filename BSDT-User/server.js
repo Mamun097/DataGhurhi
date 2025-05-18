@@ -79,6 +79,7 @@ app.use('/api/surveytemplate', surveyTemplateRouter);
 
 //Automatic Question Tag generation
 app.use('/api', automatic_question_tag);
+app.use('/api/all-tags', automatic_question_tag);
 
 // saved templates
 app.use('/api/get-saved-survey', createSurveyRouter);
