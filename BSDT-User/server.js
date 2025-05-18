@@ -38,6 +38,7 @@ const surveyTemplateRouter = require('./route/surveytemplate');
 
 //Automatic Question Tag Generation
 const automatic_question_tag= require('./route/automatic_question_tag');
+const generate_question_with_llm= require('./route/generatequestionwithllm');
 
 // saved templates
 const createSurveyRouter = require('./route/createsurvey');
@@ -80,6 +81,9 @@ app.use('/api/surveytemplate', surveyTemplateRouter);
 //Automatic Question Tag generation
 app.use('/api', automatic_question_tag);
 app.use('/api/all-tags', automatic_question_tag);
+
+//llm question generation
+app.use('/api', generate_question_with_llm);
 
 // saved templates
 app.use('/api/get-saved-survey', createSurveyRouter);
