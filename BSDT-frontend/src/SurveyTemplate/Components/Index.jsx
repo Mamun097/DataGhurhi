@@ -128,7 +128,7 @@ return (
           setImage={setBackgroundImage}
           project_id={project_id}
           survey_id={survey_id}
-          surveyStatus={surveyStatus}
+          survey_Status={surveyStatus}
         />
       </div>
 

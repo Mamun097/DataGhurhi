@@ -1,13 +1,35 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import "./register.css";
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
 
+const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+const API_URL = "https://translation.googleapis.com/language/translate/v2";
+
+const translateText = async (text, targetLanguage) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}?key=${API_KEY}`,
+      {
+        q: text,
+        target: targetLanguage,
+        format: "text",
+      }
+    );
+    return response.data.data.translations[0].translatedText;
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text;
+  }
+};
 
 const Register = () => {
   const [language, setLanguage] = useState("English");
+  const [translations, setTranslations] = useState({});
+  const [loadingTranslations, setLoadingTranslations] = useState(false);
+
   const toggleLanguage = () =>
     setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
 
@@ -23,254 +45,135 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const defaultTexts = {
+    title: "Create an Account",
+    firstName: "First Name",
+    lastName: "Last Name",
+    email: "Email Address",
+    password: "Password",
+    confirmPassword: "Confirm Password",
+    signUp: "Sign Up",
+    alreadyAccount: "Already have an account?",
+    login: "Log in",
+    whyAccount: "Why Create an Account?",
+    benefits: [
+      "Create smart surveys effortlessly and share them easily",
+      "Collaborate with your team in real-time",
+      "Access data analysis and charts",
+      "Save progress, track deadlines and manage responses",
+      "Generate reports in English & Bangla"
+    ],
+    invalidEmail: "Invalid email address",
+    emailRequired: "Please enter a valid email before submitting.",
+    passwordMismatch: "Passwords do not match.",
+    registrationSuccess: "Registered Successfully"
+  };
+
+  useEffect(() => {
+    const fetchTranslations = async () => {
+      if (language === "English") {
+        setTranslations({});
+        return;
+      }
+      setLoadingTranslations(true);
+
+      const translated = {};
+      for (const [key, value] of Object.entries(defaultTexts)) {
+        if (Array.isArray(value)) {
+          const translatedArr = await Promise.all(
+            value.map((v) => translateText(v, "bn"))
+          );
+          translated[key] = translatedArr;
+        } else {
+          translated[key] = await translateText(value, "bn");
+        }
+      }
+
+      setTranslations(translated);
+      setLoadingTranslations(false);
+    };
+
+    fetchTranslations();
+  }, [language]);
+
+  const t = (key) =>
+    language === "English" || loadingTranslations
+      ? defaultTexts[key]
+      : translations[key] || defaultTexts[key];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     setFormData({ ...formData, [name]: value });
 
     if (name === "email") {
-      const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-      if (!emailPattern.test(value)) {
-        setEmailError(
-          language === "English"
-            ? "Invalid email address"
-            : "ইমেইল ঠিকানা সঠিক নয়"
-        );
-      } else {
-        setEmailError("");
-      }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      setEmailError(emailPattern.test(value) ? "" : t("invalidEmail"));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    if (emailError) {
-      toast.error(
-        language === "English"
-          ? "❌ Please enter a valid email before submitting."
-          : "❌ সাবমিট করার আগে একটি বৈধ ইমেইল দিন।",
-        { className: "custom-error-toast" }
-      );
-      return;
-    }
-  
+    if (emailError) return toast.error(`❌ ${t("emailRequired")}`);
     if (formData.password !== formData.confirmPassword) {
-      const msg =
-        language === "English"
-          ? "❌ Passwords do not match."
-          : "❌ পাসওয়ার্ড মিলছে না।";
+      const msg = `❌ ${t("passwordMismatch")}`;
       setErrorMessage(msg);
-      toast.error(msg, { className: "custom-error-toast" });
-      return;
+      return toast.error(msg);
     }
-  
+
     setIsLoading(true);
-  
     try {
       const response = await axios.post("http://localhost:2000/api/register", {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
       });
-  
+
       if (response.status === 201) {
         toast.success(
-          language === "English"
-            ? `🎉 Registered Successfully: Account name: ${formData.firstName} ${formData.lastName}`
-            : `🎉 সফলভাবে রেজিস্ট্রেশন সম্পন্ন হয়েছে: একাউন্টের নাম ${formData.firstName} ${formData.lastName}`,
-          { className: "custom-success-toast" }
+          `🎉 ${t("registrationSuccess")}: ${formData.firstName} ${formData.lastName}`
         );
-  
-        setTimeout(() => {
-          window.location.href = "/login";
-        }, 3000);
+        setTimeout(() => (window.location.href = "/login"), 3000);
       }
-    } catch (error) {
-      const errorMsg =
-        error.response?.data?.error ||
-        (language === "English"
-          ? "❌ Something went wrong."
-          : "❌ কিছু একটা ভুল হয়েছে।");
-  
-      setErrorMessage(errorMsg);
-      toast.error(errorMsg, { className: "custom-error-toast" });
+    } catch (err) {
+      toast.error("❌ Something went wrong.");
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="register-container">
-      <Navbarhome />
+      <Navbarhome language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
-        {/* Left Info Card */}
-        <motion.div
-          className="feature-card"
-          initial={{ opacity: 0, x: -40 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          {/* Inserted Image */}
-          <img
-            src="/assets/images/register.png" // ✅ Replace with your actual image path
-            alt="Account Benefits"
-            className="feature-image"
-          />
-
-          <h3>
-            {language === "English"
-              ? "Why Create an Account?"
-              : "কেন একটি অ্যাকাউন্ট তৈরি করবেন?"}
-          </h3>
-
+        <motion.div className="feature-card" initial={{ x: -40 }} animate={{ x: 0 }} transition={{ duration: 0.8 }}>
+          <img src="/assets/images/register.png" alt="Account Benefits" className="feature-image" />
+          <h3>{t("whyAccount")}</h3>
           <ul>
-            {language === "English" ? (
-              <>
-                <li>Create smart surveys effortlessly and share them easily</li>
-                <li>Collaborate with your team in real-time</li>
-                <li>Access data analysis and charts</li>
-                <li>Save progress, track deadlines and manage responses</li>
-                <li>Generate reports in English & Bangla</li>
-              </>
-            ) : (
-              <>
-                <li>সহজেই স্মার্ট সার্ভে তৈরি করুন এবং সহজেই বিতরণ করুন</li>
-                <li>দলের সাথে রিয়েলটাইমে কাজ করুন </li>
-                <li>তথ্য বিশ্লেষণ ও গ্রাফ দেখুন</li>
-                <li>উত্তর সংরক্ষণ, ব্যবস্থাপনা ও ডেডলাইন ট্র্যাক করুন</li>
-                <li>বাংলা ও ইংরেজিতে রিপোর্ট তৈরি করুন</li>
-              </>
-            )}
+            {t("benefits").map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
           </ul>
-
-          {/* Language Toggle */}
         </motion.div>
 
-        {/* Right Registration Form */}
-        <motion.div
-          className="register-box"
-          initial={{ opacity: 0, y: -50 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-        >
-          <h2 className="register-title">
-            {language === "English"
-              ? "Create an Account"
-              : "একটি অ্যাকাউন্ট তৈরি করুন"}
-          </h2>
+        <motion.div className="register-box" initial={{ y: -50 }} animate={{ y: 0 }} transition={{ duration: 1 }}>
+          <h2 className="register-title">{t("title")}</h2>
           <form onSubmit={handleSubmit}>
             <div className="name-fields">
-              <input
-                type="text"
-                name="firstName"
-                placeholder={
-                  language === "English" ? "First Name" : "নামের প্রথম অংশ"
-                }
-                value={formData.firstName}
-                onChange={handleChange}
-                required
-              />
-              <input
-                type="text"
-                name="lastName"
-                placeholder={
-                  language === "English" ? "Last Name" : "নামের শেষ অংশ"
-                }
-                value={formData.lastName}
-                onChange={handleChange}
-                required
-              />
+              <input type="text" name="firstName" placeholder={t("firstName")} value={formData.firstName} onChange={handleChange} required />
+              <input type="text" name="lastName" placeholder={t("lastName")} value={formData.lastName} onChange={handleChange} required />
             </div>
-
-            <input
-              type="email"
-              name="email"
-              placeholder={
-                language === "English" ? "Email Address" : "ইমেইল ঠিকানা"
-              }
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
+            <input type="email" name="email" placeholder={t("email")} value={formData.email} onChange={handleChange} required />
             {emailError && <p className="error-message">{emailError}</p>}
-
-            <input
-              type="password"
-              name="password"
-              placeholder={language === "English" ? "Password" : "পাসওয়ার্ড"}
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder={
-                language === "English"
-                  ? "Confirm Password"
-                  : "পাসওয়ার্ড নিশ্চিত করুন"
-              }
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-
-            <button type="submit" className="register-button">
-              {language === "English" ? "Sign Up" : "সাইন আপ"}
-            </button>
+            <input type="password" name="password" placeholder={t("password")} value={formData.password} onChange={handleChange} required />
+            <input type="password" name="confirmPassword" placeholder={t("confirmPassword")} value={formData.confirmPassword} onChange={handleChange} required />
+            <button type="submit" className="register-button">{t("signUp")}</button>
           </form>
           <p className="login-link">
-            {language === "English" ? (
-              <>
-                Already have an account? <a href="/login">Log in</a>
-              </>
-            ) : (
-              <>
-                ইতিমধ্যে অ্যাকাউন্ট রয়েছে? <a href="/login">লগ ইন করুন</a>
-              </>
-            )}
+            {t("alreadyAccount")} <a href="/login">{t("login")}</a>
           </p>
-
-          <div className="language-toggle-register">
-            <label className="switch">
-              <input
-                type="checkbox"
-                onChange={toggleLanguage}
-                checked={language === "বাংলা"}
-              />
-              <span className="slider"></span>
-            </label>
-            <div className="language-labels">
-              <span className={language === "English" ? "active" : ""}>
-                English
-              </span>
-              <span className={language === "বাংলা" ? "active" : ""}>
-                বাংলা
-              </span>
-            </div>
-          </div>
         </motion.div>
       </div>
-      <ToastContainer
-        position="top-center"
-        autoClose={4000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        toastClassName="custom-success-toast"
-      />
-      {/* 
-      {errorMessage && (
-        <div className="error-toast">
-          {language === "English" ? errorMessage : "কিছু ভুল হয়েছে।"}
-        </div>
-      )} */}
+      <ToastContainer position="top-center" autoClose={4000} />
     </div>
   );
 };
