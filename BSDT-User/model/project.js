@@ -40,14 +40,46 @@ async function findSurveysByProjectId(projectId) {
   return { data, error };
 }
 // create survey for a project id
+// async function createSurvey(projectId, title) {
+//     // console.log("Create Survey: ",projectId, title);
+//   const { data, error } = await supabase.from("survey").insert([
+//     {
+//       project_id: projectId,
+//       title,
+//     },
+//   ]);
+
+//   return { data, error };
+// }
 async function createSurvey(projectId, title) {
-    console.log("Create Survey: ",projectId, title);
-  const { data, error } = await supabase.from("survey").insert([
-    {
-      project_id: projectId,
-      title,
-    },
-  ]);
+  // Check for duplicates
+  const { data: existing, error: fetchError } = await supabase
+    .from("survey")
+    .select("*")
+    .eq("project_id", projectId)
+    .eq("title", title)
+    .single();
+
+  if (fetchError && fetchError.code !== "PGRST116") {
+    return { data: null, error: fetchError };
+  }
+
+  if (existing) {
+    return {
+      data: null,
+      error: {
+        message: "A survey with this title already exists for the project.",
+      },
+    };
+  }
+
+  // Insert and return the full row
+  const { data, error } = await supabase
+    .from("survey")
+    .insert([{ project_id: projectId, title }])
+    .select()
+    .single(); // ensures only one row is returned
+
   return { data, error };
 }
 

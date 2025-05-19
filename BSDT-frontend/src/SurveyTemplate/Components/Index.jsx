@@ -10,6 +10,7 @@ const Index = () => {
   const location = useLocation();
   const { survey_id } = useParams();
   const { project_id, survey_details } = location.state || {};
+  console.log("Survey details:", survey_details);
   const [surveyStatus, setSurveyStatus] = useState(null);
 
   // Sidebar templates state
@@ -30,11 +31,12 @@ const Index = () => {
     const load = async () => {
       if (useCustom) {
         // ==== 1) Load from survey_details ====
+        console.log("Survey details:", survey_details);
         setTitle(survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
         setQuestions(survey_details.template.questions || []);
         // `banner` field on your object holds the URL
-        setBackgroundImage(survey_details.banner || null);
+        setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
       } else {
         // ==== 2) Otherwise, fetch saved templates ====
@@ -128,7 +130,7 @@ return (
           setImage={setBackgroundImage}
           project_id={project_id}
           survey_id={survey_id}
-          surveyStatus={surveyStatus}
+          survey_Status={surveyStatus}
         />
       </div>
 
