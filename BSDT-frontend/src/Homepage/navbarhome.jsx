@@ -10,20 +10,22 @@ import logo_edge from "../assets/logos/edge.png";
 
 import {
   FaHome,
-  FaUserPlus,
   FaSignInAlt,
   FaInfoCircle,
   FaQuestionCircle,
   FaSearch,
 } from "react-icons/fa";
 
-const NavbarHome = () => {
+const NavbarHome = (props) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const language = props.language || localStorage.getItem("language") ;
+  const setLanguage = props.setLanguage;
   const navigate = useNavigate();
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+    const newLang = language === "English" ? "বাংলা" : "English";
+    setLanguage(newLang);
+    localStorage.setItem("language", newLang);
   };
 
   const handleSearch = () => {
@@ -43,10 +45,11 @@ const NavbarHome = () => {
       <div className="logo-container">
         <img src={logo_buet} alt="BUET Logo" className="logo1" />
         <img src={logo_ric} alt="RIC Logo" className="logo2" />
-        <img src={logo_ict} alt="ICT Logo"  className="logo3"/>
+        <img src={logo_ict} alt="ICT Logo" className="logo3" />
         <img src={logo_edge} alt="EDGE Logo" className="logo4" />
       </div>
 
+      {/* Search Bar */}
       <div className="search-container">
         <input
           type="text"
@@ -63,6 +66,7 @@ const NavbarHome = () => {
         <FaSearch className="search-icon" onClick={handleSearch} />
       </div>
 
+      {/* Navigation Links */}
       <ul className="nav-links">
         <li>
           <a href="/home">
@@ -70,17 +74,11 @@ const NavbarHome = () => {
             {language === "English" ? "Home" : "হোম"}
           </a>
         </li>
-        {/* <li>
-          <a href="/signup">
-            <FaUserPlus className="nav-icon" />
-            {language === "English" ? "Sign Up" : "সাইন আপ"}
-          </a>
-        </li> */}
         <li>
-          <a onClick={handleLoginClick}>
+          <button onClick={handleLoginClick} className="nav-link-button">
             <FaSignInAlt className="nav-icon" />
             {language === "English" ? "Login" : "লগইন"}
-          </a>
+          </button>
         </li>
         <li>
           <a href="/about">
@@ -94,20 +92,24 @@ const NavbarHome = () => {
             {language === "English" ? "FAQ" : "প্রশ্নাবলী"}
           </a>
         </li>
-        <li className="language-toggle">
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="slider"></span>
-          </label>
-          <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
+        <li>
+          <div className="language-toggle">
+            <label className="switch">
+              <input
+                type="checkbox"
+                onChange={toggleLanguage}
+                checked={language === "বাংলা"}
+              />
+              <span className="slider"></span>
+            </label>
+            <div className="language-labels">
+              <span className={language === "English" ? "active" : ""}>
+                English
+              </span>
+              <span className={language === "বাংলা" ? "active" : ""}>
+                বাংলা
+              </span>
+            </div>
           </div>
         </li>
       </ul>
