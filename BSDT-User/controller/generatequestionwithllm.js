@@ -128,7 +128,7 @@ This question must have a total of ${meta.numOptions} options. Kindly generate t
 
         // Add additional context from additionalInfo if available
         if (additionalInfo) {
-            prompt += `\n\nAdditional context: ${additionalInfo}.\n If you feel that the context is insufficient, generate a demo question exactly in the json format I provided.`;
+            prompt += `\n\nAdditional context: ${additionalInfo}. GIVE THE MOST PRIORITY TO ADDITIONAL INFO IF USER PROVIDES. \n If you feel that the context is insufficient, generate a demo question exactly in the json format I provided.`;
         }
 
         // Rest of the code remains the same
@@ -139,7 +139,6 @@ This question must have a total of ${meta.numOptions} options. Kindly generate t
         });
 
         const rawText = await result.response.text();
-        console.log("LLM response:", rawText);
 
         // Remove markdown code block formatting if present
         let cleanedText = rawText;
