@@ -3,10 +3,23 @@ import React, { useState, useCallback, use } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import Option from "./QuestionSpecificUtils/OptionClass"; 
+import Option from "./QuestionSpecificUtils/OptionClass";
+import { handleQuestionImageUpload } from "./QuestionSpecificUtils/handleQuestionImageUpload";
+import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
 const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
+
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const handleQuestionImageUpload = (event, id) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    // setCurrentQuestionId(id);
+    setShowCropper(true);
+  };
 
   // Toggle required
   const handleRequired = useCallback(
@@ -38,22 +51,22 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   // Image upload
-  const handleImageUpload = useCallback(
-    (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        setQuestions((prev) =>
-          prev.map((q) =>
-            q.id === question.id ? { ...q, image: reader.result } : q
-          )
-        );
-      };
-      reader.readAsDataURL(file);
-    },
-    [question.id, setQuestions]
-  );
+  // const handleImageUpload = useCallback(
+  //   (e) => {
+  //     const file = e.target.files[0];
+  //     if (!file) return;
+  //     const reader = new FileReader();
+  //     reader.onload = () => {
+  //       setQuestions((prev) =>
+  //         prev.map((q) =>
+  //           q.id === question.id ? { ...q, image: reader.result } : q
+  //         )
+  //       );
+  //     };
+  //     reader.readAsDataURL(file);
+  //   },
+  //   [question.id, setQuestions]
+  // );
 
   // Add new option
   const addOption = useCallback(() => {
@@ -119,23 +132,26 @@ const Radio = ({ question, questions, setQuestions }) => {
   // );
 
   // Update option's value
-  const updateOptionValue = useCallback((idx, newValue) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-            ...q, 
-            meta: {
-              ...q.meta,
-              options: q.meta.options.map((opt, i) =>
-                i === idx ? { ...opt, value: newValue } : opt
-              ),
-            },
-          }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateOptionValue = useCallback(
+    (idx, newValue) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.map((opt, i) =>
+                    i === idx ? { ...opt, value: newValue } : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Remove an option
   const removeOption = useCallback(
@@ -222,11 +238,32 @@ const Radio = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 dnd-isolate">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>MCQ</strong>
-        </em>
-      </label>
+      <div>
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>MCQ</strong>
+          </em>
+        </label>
+      </div>
+
+      {showCropper && selectedFile && (
+        <ImageCropper
+          file={selectedFile}
+          questionId={question.id}
+          setQuestions={setQuestions}
+          onClose={() => setShowCropper(false)}
+        />
+      )}
+
+      {/* Image Preview */}
+      {question.imageUrl && (
+        <img
+          src={question.imageUrl}
+          alt="Question"
+          className="img-fluid mb-2"
+          style={{ maxHeight: 200 }}
+        />
+      )}
 
       {/* Question Text */}
       <input
@@ -236,16 +273,6 @@ const Radio = ({ question, questions, setQuestions }) => {
         onChange={(e) => handleQuestionChange(e.target.value)}
         placeholder="Enter question..."
       />
-
-      {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Question"
-          className="img-fluid mb-2"
-          style={{ maxHeight: 200 }}
-        />
-      )}
 
       {/* Drag-and-Drop Options */}
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -257,6 +284,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                   key={idx}
                   draggableId={`opt-${question.id}-${idx}`}
                   index={idx}
+                  isDragDisabled={showCropper}
                 >
                   {(prov) => (
                     <div
@@ -329,7 +357,11 @@ const Radio = ({ question, questions, setQuestions }) => {
         </button>
         <label className="btn btn-outline-secondary me-2">
           <i className="bi bi-image"></i>
-          <input type="file" hidden onChange={handleImageUpload} />
+          <input
+            type="file"
+            hidden
+            onChange={(e) => handleQuestionImageUpload(e, question.id)}
+          />
         </label>
         <button
           className="btn btn-outline-secondary me-2"

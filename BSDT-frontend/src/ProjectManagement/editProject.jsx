@@ -92,11 +92,20 @@ const EditProject = () => {
         );
         if (response.status === 201) {
           alert("Survey created successfully!");
-          fetchSurveys(); // Refresh the surveys list
+          console.log("Survey created:", response.data);
+          // fetchSurveys(); // Refresh the surveys list
+          navigate(`/view-survey/${response.data.data.survey_id}`, {
+            state: {
+              project_id: projectId,
+              survey_details: response.data,
+            },
+          });
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-        alert("Failed to create survey. Please try again.");
+        const errorMessage =
+          error.response?.data?.error || "Failed to create survey.";
+        alert(errorMessage);
       }
     }
   };
@@ -106,7 +115,7 @@ const EditProject = () => {
       state: {
         project_id: projectId,
         survey_details: survey,
-      }
+      },
     }); // Redirect to the edit project page with projectId as a URL parameter
   };
 

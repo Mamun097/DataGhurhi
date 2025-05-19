@@ -21,7 +21,8 @@ const SurveyForm = ({
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
   // const [viewAs, setViewAs] = useState(false);
-
+  console.log("SurveyForm Sections:", sections);
+  console.log("SurveyForm Questions:", questions);
   // Sync backgroundImage with prop
   useEffect(() => {
     if (image) {
@@ -47,7 +48,7 @@ const SurveyForm = ({
         body: JSON.stringify({
           survey_id: survey_id,
           project_id: project_id,
-          survey_template: { sections, title, description: null, questions },
+          survey_template: { sections, backgroundImage, title, description: null, questions },
           title: title,
           user_id: `${localStorage.getItem("token").id}`,
         }),
@@ -75,7 +76,7 @@ const SurveyForm = ({
           body: JSON.stringify({
             survey_id: survey_id,
             project_id: project_id,
-            survey_template: { sections, title, description: null, questions },
+            survey_template: { sections, backgroundImage, title, description: null, questions },
             title: title,
             user_id: `${localStorage.getItem("token").id}`,
           }),
@@ -84,6 +85,7 @@ const SurveyForm = ({
       if (response.status === 201) {
         // Handle successful response
         alert("Survey published successfully!");
+        navigat
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
@@ -103,7 +105,7 @@ const SurveyForm = ({
         body: JSON.stringify({
           survey_id: survey_id,
           project_id: project_id,
-          survey_template: { sections, title, description: null, questions },
+          survey_template: { sections, backgroundImage, title, description: null, questions },
           title: title,
           user_id: `${localStorage.getItem("token").id}`,
         }),
@@ -187,7 +189,7 @@ const SurveyForm = ({
 
         <div className="text-center mt-3">
           <label className="btn btn-outline-secondary">
-            <i className="bi bi-image"></i> Change Banner Image
+            <i className="bi bi-image"></i> Upload Banner Image
             <input
               type="file"
               hidden
