@@ -20,9 +20,9 @@ const SurveyForm = ({
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
-  const [viewAs, setViewAs] = useState(false);
-  
-  // Sync backgroundImage with prop 
+  // const [viewAs, setViewAs] = useState(false);
+
+  // Sync backgroundImage with prop
   useEffect(() => {
     if (image) {
       setBackgroundImage(image);
@@ -40,14 +40,16 @@ const SurveyForm = ({
     try {
       const response = await fetch("http://localhost:2000/api/surveytemplate", {
         method: "PUT",
-        headers: { "Content-Type": "application/json",
-                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
-          body: JSON.stringify({
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
           survey_id: survey_id,
-          project_id:project_id ,
+          project_id: project_id,
           survey_template: { sections, title, description: null, questions },
-          title:title,
-          user_id: `${localStorage.getItem('token').id}`,
+          title: title,
+          user_id: `${localStorage.getItem("token").id}`,
         }),
       });
       if (response.status === 201) {
@@ -60,20 +62,25 @@ const SurveyForm = ({
       console.error("Error publishing survey:", error);
     }
   };
-    const handleSave = async () => {
+  const handleSave = async () => {
     try {
-      const response = await fetch("http://localhost:2000/api/surveytemplate/save", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json",
-                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      const response = await fetch(
+        "http://localhost:2000/api/surveytemplate/save",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
           body: JSON.stringify({
-          survey_id: survey_id,
-          project_id:project_id ,
-          survey_template: { sections, title, description: null, questions },
-          title:title,
-          user_id: `${localStorage.getItem('token').id}`,
-        }),
-      });
+            survey_id: survey_id,
+            project_id: project_id,
+            survey_template: { sections, title, description: null, questions },
+            title: title,
+            user_id: `${localStorage.getItem("token").id}`,
+          }),
+        }
+      );
       if (response.status === 201) {
         // Handle successful response
         alert("Survey published successfully!");
@@ -85,18 +92,20 @@ const SurveyForm = ({
     }
   };
 
-    const handleUpdate = async () => {
+  const handleUpdate = async () => {
     try {
       const response = await fetch("http://localhost:2000/api/surveytemplate", {
         method: "PUT",
-        headers: { "Content-Type": "application/json",
-                  'Authorization': `Bearer ${localStorage.getItem('token')}` },
-          body: JSON.stringify({
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
           survey_id: survey_id,
-          project_id:project_id ,
+          project_id: project_id,
           survey_template: { sections, title, description: null, questions },
-          title:title,
-          user_id: `${localStorage.getItem('token').id}`,
+          title: title,
+          user_id: `${localStorage.getItem("token").id}`,
         }),
       });
       if (response.status === 201) {
@@ -110,25 +119,23 @@ const SurveyForm = ({
     }
   };
 
-
   // View As
-  const handleViewAs = () => {
-    setViewAs(!viewAs);
-    console.log(survey_Status);
-  };
+  // const handleViewAs = () => {
+  //   setViewAs(!viewAs);
+  //   console.log(survey_Status);
+  // };
 
   return (
     <div>
       <div className="mb-3">
-        <button
+        {/* <button
           className="btn btn-outline-primary me-3"
           onClick={() => handleViewAs()}
         >
           <i className="bi bi-eye"></i> View As
-        </button>
+        </button> */}
         {survey_Status === "published" ? (
-          <button className="btn btn-outline-primary" onClick={handleUpdate}
-          >
+          <button className="btn btn-outline-primary" onClick={handleUpdate}>
             <i className="bi bi-pencil"></i> Update
           </button>
         ) : (
@@ -177,20 +184,19 @@ const SurveyForm = ({
         </div>
 
         {/* Change Banner Image */}
-        {!viewAs && (
-          <div className="text-center mt-3">
-            <label className="btn btn-outline-secondary">
-              <i className="bi bi-image"></i> Change Banner Image
-              <input
-                type="file"
-                hidden
-                onChange={(e) =>
-                  handleImageUpload(e, setBackgroundImage, setThemeColor)
-                }
-              />
-            </label>
-          </div>
-        )}
+
+        <div className="text-center mt-3">
+          <label className="btn btn-outline-secondary">
+            <i className="bi bi-image"></i> Change Banner Image
+            <input
+              type="file"
+              hidden
+              onChange={(e) =>
+                handleImageUpload(e, setBackgroundImage, setThemeColor)
+              }
+            />
+          </label>
+        </div>
 
         {/* Survey Sections and Questions */}
         <div className="mt-4">
@@ -202,17 +208,15 @@ const SurveyForm = ({
               setSections={setSections}
               questions={questions}
               setQuestions={setQuestions}
-              viewAs={viewAs}
             />
           ))}
-          {!viewAs && (
-            <button
-              className="btn btn-outline-primary mt-3"
-              onClick={handleAddSection}
-            >
-              ➕ Add Section
-            </button>
-          )}
+
+          <button
+            className="btn btn-outline-primary mt-3"
+            onClick={handleAddSection}
+          >
+            ➕ Add Section
+          </button>
         </div>
       </div>
     </div>
