@@ -102,7 +102,7 @@ const AIChatbot = ({ onClose, onGenerate }) => {
       case "text":
       case "datetime":
         // These types don't need additional metadata
-        nextMessage = "Being an LLM model, I can generate your desired question if you provide me the best contexts. Would you like to provide any additional context or specifications for this question? (Optional)";
+        nextMessage = "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)";
         setCurrentStep("additionalInfo");
         break;
     }
@@ -144,7 +144,7 @@ const AIChatbot = ({ onClose, onGenerate }) => {
 
     // Move to additional info step
     setCurrentStep("additionalInfo");
-    addMessage("bot", "Being an LLM model, I can generate your desired question if you provide me the best contexts. Would you like to provide any additional context or specifications for this question? (Optional)");
+    addMessage("bot", "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)");
   };
 
   const handleCustomMetadata = (value) => {
@@ -178,7 +178,7 @@ const AIChatbot = ({ onClose, onGenerate }) => {
 
     setMetadata(updatedMetadata);
     setCurrentStep("additionalInfo");
-    addMessage("bot", "Being an LLM model, I can generate your desired question if you provide me the best contexts. Would you like to provide any additional context or specifications for this question? (Optional)");
+    addMessage("bot", "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)");
   };
 
   const handleAdditionalInfo = (info) => {
