@@ -1,6 +1,7 @@
 import React from "react";
+import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
 
-const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion }) => {
+const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo }) => {
   return (
     <div>
       {newQuestion && (
@@ -67,11 +68,19 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion }) => {
         </div>
       )}
 
-      <button
-        className="btn btn-outline-primary mt-2 ms-4"
-        onClick={() => setNewQuestion(true)}
-      >➕ Add Question
-      </button>
+      <div className="d-flex mt-2 ms-4">
+        <button
+          className="btn btn-outline-primary btn-lg mt-4 ms-4"
+          onClick={() => setNewQuestion(true)}
+        >
+          ➕ Add Question
+        </button>
+
+        <AutoGeneration
+          addGeneratedQuestion={addGeneratedQuestion}
+          questionInfo={questionInfo}
+        />
+      </div>
     </div>
   );
 };
