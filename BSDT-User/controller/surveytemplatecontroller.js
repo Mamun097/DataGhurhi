@@ -14,6 +14,7 @@ exports.createSurveyTemplate = async (req, res) => {
       .from('survey')
       .insert({
         project_id,
+        user_id,
         template: survey_template,
         starting_date: new Date(),
         title: title || 'Untitled Survey',
@@ -130,3 +131,41 @@ exports.createSurveyTemplate = async (req, res) => {
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+exports.deleteSurveyForm = async (req, res) => {
+  try {
+    const { survey_id } = req.params;
+    const  user_id  = req.jwt.id;
+    console.log('Deleting survey with ID:', survey_id);
+    console.log('User ID:', req.jwt.id);
+    // Check if user id and survey id match
+    const { data: surveyData, error: surveyError } = await supabase
+      .from('survey')
+      .select('*')
+      .eq('survey_id', survey_id)
+      .eq('user_id', req.jwt.id)
+      .single();
+    if (surveyError) {
+      console.error('Supabase select error for survey:', surveyError);
+      return res.status(500).json({ error: 'Failed to fetch survey' });
+    }
+    if (!surveyData) {
+      return res.status(404).json({ error: 'Survey not found or user not authorized' });
+    }
+    // Delete the survey
+    const { error: deleteError } = await supabase
+      .from('survey')
+      .delete()
+      .eq('survey_id', survey_id)
+      .eq('user_id', user_id);
+    if (deleteError) {
+      console.error('Supabase delete error for survey:', deleteError);
+      return res.status(500).json({ error: 'Failed to delete survey' });
+    }    
+    //return success response
+    return res.status(200).json({ message: 'Survey deleted successfully' });
+  } catch (err) {
+    console.error('Error in deleteSurveyForm:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}
