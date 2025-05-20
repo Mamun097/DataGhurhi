@@ -16,7 +16,8 @@ const SurveyForm = ({
   image,
   project_id,
   survey_id,
-  survey_Status,
+  surveyStatus,
+  setSurveyStatus,
 }) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
@@ -57,8 +58,14 @@ const SurveyForm = ({
         }),
       });
       if (response.status === 201) {
-        // Handle successful response
-        alert("Survey published successfully!");
+        alert("Survey Saved successfully!");
+        setSurveyStatus("published");
+        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
+          state: {
+            project_id: project_id,
+            survey_details: response.data,
+          },
+        });
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
@@ -143,7 +150,7 @@ const SurveyForm = ({
         >
           <i className="bi bi-eye"></i> View As
         </button> */}
-        {survey_Status === "published" ? (
+        {surveyStatus === "published" ? (
           <button className="btn btn-outline-primary" onClick={handleUpdate}>
             <i className="bi bi-pencil"></i> Update
           </button>

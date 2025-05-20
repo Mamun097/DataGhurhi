@@ -22,15 +22,20 @@ exports.saveSurveyForm = async (req, res) => {
         survey_status: 'saved'
       })
       .eq('survey_id', survey_id)
-      .select('survey_id');
+      .select('*');
     if (surveyError) {
       console.error('Supabase insert error for survey:', surveyError);
       return res.status(500).json({ error: 'Failed to create survey template' });
     }
+    return res.status(201).json({
+      message: 'Survey template created successfully',
+      data: surveyData[0],
+    });
   }catch (err) {
     console.error('Error in createSurveyTemplate:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
+
 
 };
 
@@ -102,6 +107,7 @@ exports.createSurveyForm = async (req, res) => {
         .from('question')
         .insert({
           user_id: user_id,
+          survey_id: surveyId,
           text: question.text,
           image: question.image || null,
           type: question.type,
