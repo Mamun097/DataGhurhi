@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const RatingQuestion = ({ question, questions, setQuestions }) => {
   const [image, setImage] = useState(question.image || null);
@@ -74,11 +75,21 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2em" }}>
-        <em>
-          <strong>Rating</strong>
-        </em>
-      </label>
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2em" }}>
+          <em>
+            <strong>Rating</strong>
+          </em>
+        </label>
+
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
       {question.image && (
         <img

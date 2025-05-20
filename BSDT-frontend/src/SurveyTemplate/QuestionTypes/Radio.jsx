@@ -1,11 +1,14 @@
 // src/QuestionTypes/Radio.jsx
-import React, { useState, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Option from "./QuestionSpecificUtils/OptionClass";
 import { handleQuestionImageUpload } from "./QuestionSpecificUtils/handleQuestionImageUpload";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+
+// Import the TagManager component
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -74,15 +77,15 @@ const Radio = ({ question, questions, setQuestions }) => {
       prev.map((q) =>
         q.id === question.id
           ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: [
-                  ...q.meta.options,
-                  `Option ${q.meta.options.length + 1}`,
-                ],
-              },
-            }
+            ...q,
+            meta: {
+              ...q.meta,
+              options: [
+                ...q.meta.options,
+                `Option ${q.meta.options.length + 1}`,
+              ],
+            },
+          }
           : q
       )
     );
@@ -160,12 +163,12 @@ const Radio = ({ question, questions, setQuestions }) => {
         prev.map((q) =>
           q.id === question.id
             ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.filter((_, i) => i !== idx),
-                },
-              }
+              ...q,
+              meta: {
+                ...q.meta,
+                options: q.meta.options.filter((_, i) => i !== idx),
+              },
+            }
             : q
         )
       );
@@ -214,7 +217,6 @@ const Radio = ({ question, questions, setQuestions }) => {
     bumped.sort((a, b) => a.id - b.id);
     setQuestions(bumped);
   }, [question, questions, setQuestions]);
-
   // handle add tag
   const handleAddTag = useCallback(() => {
     const tagsInput = prompt("Enter tags (comma-separated):");
@@ -244,6 +246,13 @@ const Radio = ({ question, questions, setQuestions }) => {
             <strong>MCQ</strong>
           </em>
         </label>
+        {/* Use the TagManager component */}
+        <TagManager 
+          questionId={question.id} 
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
       </div>
 
       {showCropper && selectedFile && (
@@ -363,12 +372,6 @@ const Radio = ({ question, questions, setQuestions }) => {
             onChange={(e) => handleQuestionImageUpload(e, question.id)}
           />
         </label>
-        <button
-          className="btn btn-outline-secondary me-2"
-          onClick={handleAddTag}
-        >
-          <i className="bi bi-tags"></i>
-        </button>
         <div className="form-check form-switch ms-auto">
           <input
             className="form-check-input"

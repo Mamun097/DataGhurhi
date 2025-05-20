@@ -5,5 +5,6 @@ const { jwtAuthMiddleware } = require('../auth/authmiddleware');
 
 router.put('/', jwtAuthMiddleware, surveyTemplateController.createSurveyForm);
 router.put('/save', jwtAuthMiddleware, surveyTemplateController.saveSurveyForm);
+router.delete('/:survey_id', jwtAuthMiddleware, surveyTemplateController.deleteSurveyForm);
 
 module.exports = router;

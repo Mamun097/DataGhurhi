@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Checkbox = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
@@ -80,53 +81,47 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                   `Option ${q.meta.options.length + 1}`,
                 ],
               },
+
             }
+          }
           : q
       )
     );
   }, [question.id, setQuestions]);
 
   // Update option text
-  const updateOption = useCallback(
-    (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.map((opt, i) =>
-                    i === idx ? newText : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
+  const updateOption = useCallback((idx, newText) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: q.meta.options.map((opt, i) => i === idx ? newText : opt)
+            }
+          }
+          : q
+      )
+    );
+  }, [question.id, setQuestions]);
 
   // Remove option
-  const removeOption = useCallback(
-    (idx) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.filter((_, i) => i !== idx),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
+  const removeOption = useCallback((idx) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: q.meta.options.filter((_, i) => i !== idx)
+            }
+          }
+          : q
+      )
+    );
+  }, [question.id, setQuestions]);
 
   // Handle drag end
   const handleDragEnd = useCallback(
@@ -154,41 +149,60 @@ const Checkbox = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 dnd-isolate">
+      <div className="d-flex justify-content-between align-items-center mb-2">
       <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
         <em>
           <strong>Checkbox</strong>
         </em>
       </label>
 
-      {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Uploaded"
-          className="img-fluid mb-2"
-          style={{ maxHeight: "400px" }}
-        />
-      )}
-
-      {/* Question Text */}
-      <input
-        type="text"
-        className="form-control mb-2"
-        placeholder="Question"
-        value={question.text}
-        onChange={(e) => handleQuestionChange(e.target.value)}
+      {/* Use the TagManager component */}
+      <TagManager
+        questionId={question.id}
+        questionText={question.text}
+        questions={questions}
+        setQuestions={setQuestions}
       />
+    </div>
 
-      {/* Drag & Drop Options */}
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId={`checkbox-options-${question.id}`}>
-          {(provided) => (
-            <div ref={provided.innerRef} {...provided.droppableProps}>
-              {question.meta?.options.map((option, idx) => (
-                <Draggable
-                  key={idx}
-                  draggableId={`checkbox-opt-${question.id}-${idx}`}
-                  index={idx}
+      {/* Image Preview */ }
+  {
+    question.image && (
+      <img
+        src={question.image}
+        alt="Uploaded"
+        className="img-fluid mb-2"
+        style={{ maxHeight: "400px" }}
+      />
+    )
+  }
+
+  {/* Question Text */ }
+  <input
+    type="text"
+    className="form-control mb-2"
+    placeholder="Question"
+    value={question.text}
+    onChange={(e) => handleQuestionChange(e.target.value)}
+  />
+
+  {/* Drag & Drop Options */ }
+  <DragDropContext onDragEnd={handleDragEnd}>
+    <Droppable droppableId={`checkbox-options-${question.id}`}>
+      {(provided) => (
+        <div ref={provided.innerRef} {...provided.droppableProps}>
+          {question.meta?.options.map((option, idx) => (
+            <Draggable
+              key={idx}
+              draggableId={`checkbox-opt-${question.id}-${idx}`}
+              index={idx}
+            >
+              {(prov) => (
+                <div
+                  ref={prov.innerRef}
+                  {...prov.draggableProps}
+                  {...prov.dragHandleProps}
+                  className="d-flex align-items-center mb-2"
                 >
                   {(prov) => (
                     <div
@@ -263,8 +277,38 @@ const Checkbox = ({ question, questions, setQuestions }) => {
             <label className="form-check-label">Required</label>
           </div>
         </div>
-      </div>
+      )}
+    </Droppable>
+  </DragDropContext>
+
+  {/* Add Option */ }
+  <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
+    ➕ Add Option
+  </button>
+
+  {/* Actions */ }
+  <div className="d-flex align-items-center mt-3">
+    <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
+      <i className="bi bi-clipboard"></i>
+    </button>
+    <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
+      <i className="bi bi-trash"></i>
+    </button>
+    <label className="btn btn-outline-secondary me-2">
+      <i className="bi bi-image"></i>
+      <input type="file" hidden onChange={handleImageUpload} />
+    </label>
+    <div className="form-check form-switch ms-auto">
+      <input
+        type="checkbox"
+        className="form-check-input"
+        checked={required}
+        onChange={() => handleRequired(question.id)}
+      />
+      <label className="form-check-label">Required</label>
     </div>
+  </div>
+    </div >
   );
 };
 
