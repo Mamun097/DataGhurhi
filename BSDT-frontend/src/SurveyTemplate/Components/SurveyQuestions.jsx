@@ -127,44 +127,44 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 ">
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId={`section-${section.id}`}>
-        {(provided) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className="mt-2"
-          >
-            {sectionQuestions.map((question, index) => (
-              <Draggable
-                key={question.id}
-                draggableId={question.id.toString()}
-                index={index}
-              >
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    style={{
-                      userSelect: "none",
-                      padding: 8,
-                      margin: "0 0 8px 0",
-                      background: snapshot.isDragging ? "#e0e0e0" : "#ffffff",
-                      border: "1px solid #ccc",
-                      ...provided.draggableProps.style,
-                    }}
-                  >
-                    {renderQuestionComponent(question)}
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId={`section-${section.id}`}>
+          {(provided) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className="mt-2"
+            >
+              {sectionQuestions.map((question, index) => (
+                <Draggable
+                  key={question.id}
+                  draggableId={question.id.toString()}
+                  index={index}
+                >
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      style={{
+                        userSelect: "none",
+                        padding: 8,
+                        margin: "0 0 8px 0",
+                        background: snapshot.isDragging ? "#e0e0e0" : "#ffffff",
+                        border: "1px solid #ccc",
+                        ...provided.draggableProps.style,
+                      }}
+                    >
+                      {renderQuestionComponent(question)}
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
     </div>
   );
 };

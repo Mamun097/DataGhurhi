@@ -4,6 +4,7 @@ import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
 import "./LLL-Generated-Question/ChatbotLoading.css"; // Import the CSS file we created
 //import {handleDeleteSection} from "./SurveyForm";
+import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 
 const SurveySections = ({
   section,
@@ -34,6 +35,11 @@ const SurveySections = ({
 
     switch (type) {
       case "radio":
+        newQ.meta.options = [
+          new Option("Option 1", 0),
+          new Option("Option 2", 0),
+        ];
+        break;
       case "checkbox":
       case "dropdown":
         newQ.meta.options = ["Option 1", "Option 2"];
@@ -185,37 +191,33 @@ const SurveySections = ({
         setQuestions={setQuestions}
       />
 
-      {/* Add Question Component */}
-      <AddQuestion
-        newQuestion={newQuestion}
-        setNewQuestion={setNewQuestion}
-        addNewQuestion={addNewQuestion}
-        addGeneratedQuestion={addGeneratedQuestion}
-        questionInfo={{
-          id: questions.length + 1,
-          questions: questions.map(q => q.text),  // Extract just the question titles
-          section: section.id
-        }}
-      />
-      <div className="d-flex justify-content-end mt-2">
-        {sections.length !== 1 && section.id !== 1 && (
+      <div>
+        {/* Add Question Component */}
+        <AddQuestion
+          newQuestion={newQuestion}
+          setNewQuestion={setNewQuestion}
+          addNewQuestion={addNewQuestion}
+        />
+        <div className="d-flex justify-content-end mt-2">
+          {sections.length !== 1 && section.id !== 1 && (
+            <button
+              className="btn btn-outline-primary btn-sm mt-2 me-2"
+              onClick={() => {
+                handleMergeWithAbove();
+              }}
+            >
+              Merge with above
+            </button>
+          )}
           <button
-            className="btn btn-outline-primary btn-sm mt-2 me-2"
+            className="btn btn-outline-danger btn-sm mt-2"
             onClick={() => {
-              handleMergeWithAbove();
+              onPressDeleteSection();
             }}
           >
-            Merge with above
+            Delete Section
           </button>
-        )}
-        <button
-          className="btn btn-outline-danger btn-sm mt-2"
-          onClick={() => {
-            onPressDeleteSection();
-          }}
-        >
-          Delete Section
-        </button>
+        </div>
       </div>
     </div>
   );
