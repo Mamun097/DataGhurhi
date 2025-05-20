@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
+import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 
 const Index = () => {
   const location = useLocation();
@@ -12,6 +13,9 @@ const Index = () => {
   const { project_id, survey_details } = location.state || {};
   console.log("Survey details:", survey_details);
   const [surveyStatus, setSurveyStatus] = useState(null);
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
 
   // Sidebar templates state
   const [templates, setTemplates] = useState([]);
@@ -19,9 +23,7 @@ const Index = () => {
 
   // Props for SurveyForm
   const [title, setTitle] = useState(null);
-  const [sections, setSections] = useState([
-    { id: 1, title: "Section 1" },
-  ]);
+  const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
 
@@ -76,70 +78,72 @@ const Index = () => {
   if (!useCustom && templates.length === 0) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
-return (
-  <div className="container-fluid">
-    <div className="row">
-
-      {/* Left gutter + sidebar */}
-      <div className="col-2">
-        <div className="mt-5">
-          {/* 1) NOT custom & NOT published → header + cards */}
-          {!useCustom && surveyStatus !== "published" && (
-            <>
-              <h2 className="mb-4">Survey Templates</h2>
-              <div className="d-flex flex-column gap-3"> 
-                {templates.map((tmpl, idx) => (
-                  <div
-                    key={tmpl.id}
-                    className={`card text-center shadow-sm ${
-                      idx === selectedIndex ? "border-primary" : ""
-                    }`}
-                    style={{ cursor: "pointer" }}
-                    onClick={() => handleSelect(idx)}
-                  >
-                    <div className="card-body">
-                      <h5 className="card-title">{tmpl.title}</h5>
-                    </div>
+  return (
+    <>
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
+      <div className="container-fluid">
+        <div className="row">
+          {/* Left gutter + sidebar */}
+          <div className="col-2">
+            <div className="mt-5">
+              {/* 1) NOT custom & NOT published → header + cards */}
+              {!useCustom && surveyStatus !== "published" && (
+                <>
+                  <h2 className="mb-4">Survey Templates</h2>
+                  <div className="d-flex flex-column gap-3">
+                    {templates.map((tmpl, idx) => (
+                      <div
+                        key={tmpl.id}
+                        className={`card text-center shadow-sm ${
+                          idx === selectedIndex ? "border-primary" : ""
+                        }`}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handleSelect(idx)}
+                      >
+                        <div className="card-body">
+                          <h5 className="card-title">{tmpl.title}</h5>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </>
-          )}
+                </>
+              )}
 
-          {/* 2) NOT custom & IS published → warning */}
-          {!useCustom && surveyStatus === "published" && (
-            <div className="alert alert-warning text-center">
-              This survey has already been published.
+              {/* 2) NOT custom & IS published → warning */}
+              {!useCustom && surveyStatus === "published" && (
+                <div className="alert alert-warning text-center">
+                  This survey has already been published.
+                </div>
+              )}
+
+              {/* 3) if useCustom === true → nothing at all */}
             </div>
-          )}
+          </div>
 
-          {/* 3) if useCustom === true → nothing at all */}
+          {/* Center column: always 8 cols */}
+          <div className="col-8 mt-5">
+            <SurveyForm
+              title={title}
+              setTitle={setTitle}
+              sections={sections}
+              setSections={setSections}
+              questions={questions}
+              setQuestions={setQuestions}
+              image={backgroundImage}
+              setImage={setBackgroundImage}
+              project_id={project_id}
+              survey_id={survey_id}
+              surveyStatus={surveyStatus}
+              setSurveyStatus={setSurveyStatus}
+            />
+          </div>
+
+          {/* Right gutter: empty */}
+          <div className="col-2" />
         </div>
       </div>
-
-      {/* Center column: always 8 cols */}
-      <div className="col-8 mt-5">
-        <SurveyForm
-          title={title}
-          setTitle={setTitle}
-          sections={sections}
-          setSections={setSections}
-          questions={questions}
-          setQuestions={setQuestions}
-          image={backgroundImage}
-          setImage={setBackgroundImage}
-          project_id={project_id}
-          survey_id={survey_id}
-          surveyStatus={surveyStatus}
-          setSurveyStatus={setSurveyStatus}
-        />
-      </div>
-
-      {/* Right gutter: empty */}
-      <div className="col-2" />
-    </div>
-  </div>
-);
+    </>
+  );
 };
 
 export default Index;
