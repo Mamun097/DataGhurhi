@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import "./navbarAccountholder.css";
 
-import logo_buet from "../assets/logos/buet.png";
+import logo_buet from "../assets/logos/cse_buet.png";
 import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
@@ -23,9 +23,10 @@ const logOut = () => {
   localStorage.setItem("language", "English");
   window.location.href = "/";
 };
-const NavbarAcholder = () => {
+const NavbarAcholder = (props) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState("English");
+  const language = props.language;
+  const setLanguage = props.setLanguage;
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));

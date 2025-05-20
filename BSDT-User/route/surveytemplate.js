@@ -3,8 +3,8 @@ const router = express.Router();
 const surveyTemplateController = require('../controller/surveytemplatecontroller');
 const { jwtAuthMiddleware } = require('../auth/authmiddleware');
 
-
-// Route to create a survey template
-router.post('/', surveyTemplateController.createSurveyTemplate);
+router.put('/', jwtAuthMiddleware, surveyTemplateController.createSurveyForm);
+router.put('/save', jwtAuthMiddleware, surveyTemplateController.saveSurveyForm);
 router.delete('/:survey_id', jwtAuthMiddleware, surveyTemplateController.deleteSurveyForm);
+
 module.exports = router;

@@ -1,12 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import "./createProject.css";
 import "./editProject.css";
 import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
-import NavbarAcholder from "./navbarproject";
-import { useCallback } from "react";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Swal from "sweetalert2"; // for prompt box
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
 
 const EditProject = () => {
   const { projectId } = useParams();
@@ -18,36 +39,75 @@ const EditProject = () => {
     description: "",
     privacy_mode: "",
   });
-
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [collabEmail, setCollabEmail] = useState("");
-  const [accessControl, setAccessControl] = useState("view"); // or "edit"
+  const [accessControl, setAccessControl] = useState("view");
   const [activeTab, setActiveTab] = useState("details");
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
+  const [translatedLabels, setTranslatedLabels] = useState({});
 
-  // Fetch project details
+  const labelsToTranslate = [
+    "Project Details",
+    "Collaborators",
+    "Cancel",
+    "Edit",
+    "Project Name",
+    "Field",
+    "Description",
+    "Visibility",
+    "Private",
+    "Public",
+    "Save Changes",
+    "Add Collaborator",
+    "Email",
+    "Access Control",
+    "View Only",
+    "Can Edit",
+    "Add",
+    "No collaborators added yet.",
+    "Collaborator Name",
+    "Access Role",
+    "Invitation Status",
+    "No projects found. Click on the plus button to get started...",
+  ];
+
+  const loadTranslations = async () => {
+    if (language === "English") {
+      setTranslatedLabels({});
+      return;
+    }
+    const translations = await translateText(labelsToTranslate, "bn");
+    const translated = {};
+    labelsToTranslate.forEach((key, idx) => {
+      translated[key] = translations[idx];
+    });
+    setTranslatedLabels(translated);
+  };
+
+  useEffect(() => {
+    loadTranslations();
+  }, [language]);
+
+  const getLabel = (text) =>
+    language === "English" ? text : translatedLabels[text] || text;
+
   const fetchProject = async () => {
-    // console.log("Fetching project with ID:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } =
           response.data.project;
-        setFormData({
-          title: title || "",
-          field: field || "",
-          description: description || "",
-          privacy_mode: privacy_mode || "public",
-        });
+        setFormData({ title, field, description, privacy_mode });
         setLoading(false);
       }
     } catch (error) {
@@ -56,58 +116,30 @@ const EditProject = () => {
     }
   };
 
-  // Fetch surveys of the project
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/surveys`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (response.status === 200) {
-        console.log("Surveys:", response.data.surveys);
-        setSurveys(response.data.surveys || []);
-      }
+      if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
       console.error("Error fetching surveys:", error);
     }
   };
 
-  const handleAddSurveyClick = async () => {
-    const title = prompt("Enter the survey title:");
-    if (title) {
+  const fetchCollaborators = async () => {
+    try {
       const token = localStorage.getItem("token");
-      try {
-        const response = await axios.post(
-          `http://localhost:2000/api/project/${projectId}/create-survey`,
-          { title },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.status === 201) {
-          alert("Survey created successfully!");
-          fetchSurveys(); // Refresh the surveys list
-        }
-      } catch (error) {
-        console.error("Error creating survey:", error);
-        alert("Failed to create survey. Please try again.");
-      }
+      const response = await axios.get(
+        `http://localhost:2000/api/project/${projectId}/collaborators`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setCollaborators(response.data.collaborators || []);
+    } catch (error) {
+      console.error("Error fetching collaborators:", error);
     }
-  };
-
-  const handleSurveyClick = (survey_id, survey) => {
-    navigate(`/view-survey/${survey_id}`, {
-      state: {
-        project_id: projectId,
-        survey_details: survey,
-      }
-    }); // Redirect to the edit project page with projectId as a URL parameter
   };
 
   useEffect(() => {
@@ -115,13 +147,87 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-  // Input handler
+  
+const handleAddSurveyClick = async () => {
+  // For translation, fallback to English if not available
+  const t = {
+    title: translatedLabels["Enter Survey Title"] || "Enter Survey Title",
+    placeholder: translatedLabels["Survey Title"] || "Survey Title",
+    confirmText: translatedLabels["Create"] || "Create",
+    cancelText: translatedLabels["Cancel"] || "Cancel",
+    validation: translatedLabels["Title is required!"] || "Title is required!",
+    successMsg: translatedLabels["✅ Survey created successfully!"] || "✅ Survey created successfully!",
+    errorMsg: translatedLabels["❌ Failed to create survey."] || "❌ Failed to create survey.",
+  };
+
+  const result = await Swal.fire({
+    title: language === "English" ? "Enter Survey Title" : t.title,
+    input: "text",
+    inputPlaceholder: language === "English" ? "Survey Title" : t.placeholder,
+    showCancelButton: true,
+    confirmButtonText: language === "English" ? "Create" : t.confirmText,
+    cancelButtonText: language === "English" ? "Cancel" : t.cancelText,
+    inputValidator: (value) => {
+      if (!value) {
+        return language === "English"
+          ? "Title is required!"
+          : t.validation;
+      }
+    },
+  });
+
+  if (result.isConfirmed && result.value) {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/project/${projectId}/create-survey`,
+        { title: result.value },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 201) {
+        // Use alert or toast if available
+        alert(
+          language === "English"
+            ? "✅ Survey created successfully!"
+            : t.successMsg
+        );
+        fetchSurveys();
+        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
+          state: {
+            project_id: projectId,
+            survey_details: response.data,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error creating survey:", error);
+      alert(
+        language === "English"
+          ? "❌ Failed to create survey."
+          : t.errorMsg
+      );
+    }
+  }
+};
+  const handleSurveyClick = (survey_id, survey) => {
+    navigate(`/view-survey/${survey_id}`, {
+      state: {
+        project_id: projectId,
+        survey_details: survey,
+      },
+    });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Submit updated project
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -129,9 +235,7 @@ const EditProject = () => {
         `http://localhost:2000/api/project/${projectId}/update-project`,
         formData,
         {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
       alert("Project updated successfully!");
@@ -144,25 +248,9 @@ const EditProject = () => {
 
   if (loading) return <p>Loading...</p>;
 
-  //fetch collaborators list
-  const fetchCollaborators = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}/collaborators`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setCollaborators(response.data.collaborators || []);
-    } catch (error) {
-      console.error("Error fetching collaborators:", error);
-    }
-  };
-
   return (
     <>
-      <NavbarAcholder />
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="add-project-container">
         <div className="tab-header-container">
           <div className="tabs">
@@ -170,7 +258,7 @@ const EditProject = () => {
               className={activeTab === "details" ? "active-tab" : ""}
               onClick={() => setActiveTab("details")}
             >
-              Project Details
+              {getLabel("Project Details")}
             </button>
             <button
               className={activeTab === "collaborators" ? "active-tab" : ""}
@@ -179,27 +267,27 @@ const EditProject = () => {
                 await fetchCollaborators();
               }}
             >
-              Collaborators
+              {getLabel("Collaborators")}
             </button>
           </div>
         </div>
+
         {activeTab === "details" ? (
           <div className="project-form">
             <div className="header-with-button">
-              <h2>Project Details</h2>
+              <h2>{getLabel("Project Details")}</h2>
               <button
                 className="edit-toggle-btn"
                 onClick={() => setIsEditing(!isEditing)}
               >
-                {isEditing ? "Cancel" : "Edit"}
+                {isEditing ? getLabel("Cancel") : getLabel("Edit")}
               </button>
             </div>
-
             <div className="project-form">
               {isEditing ? (
                 <form onSubmit={handleSubmit}>
                   <div className="form-group">
-                    <label>Project Name</label>
+                    <label>{getLabel("Project Name")}</label>
                     <input
                       type="text"
                       name="title"
@@ -208,9 +296,8 @@ const EditProject = () => {
                       required
                     />
                   </div>
-
                   <div className="form-group">
-                    <label>Field</label>
+                    <label>{getLabel("Field")}</label>
                     <input
                       type="text"
                       name="field"
@@ -219,18 +306,16 @@ const EditProject = () => {
                       required
                     />
                   </div>
-
                   <div className="form-group">
-                    <label>Description</label>
+                    <label>{getLabel("Description")}</label>
                     <textarea
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
                     />
                   </div>
-
                   <div className="visibility-section">
-                    <label>Visibility</label>
+                    <label>{getLabel("Visibility")}</label>
                     <div className="visibility-options">
                       <label className="visibility-option">
                         <input
@@ -240,10 +325,9 @@ const EditProject = () => {
                           checked={formData.privacy_mode === "public"}
                           onChange={handleChange}
                         />
-                        <MdPublic className="visibility-icon" />
-                        Public
+                        <MdPublic className="visibility-icon" />{" "}
+                        {getLabel("Public")}
                       </label>
-
                       <label className="visibility-option">
                         <input
                           type="radio"
@@ -252,30 +336,31 @@ const EditProject = () => {
                           checked={formData.privacy_mode === "private"}
                           onChange={handleChange}
                         />
-                        <FaLock className="visibility-icon" />
-                        Private
+                        <FaLock className="visibility-icon" />{" "}
+                        {getLabel("Private")}
                       </label>
                     </div>
                   </div>
-
                   <button type="submit" className="submit-btn">
-                    Save Changes
+                    {getLabel("Save Changes")}
                   </button>
                 </form>
               ) : (
                 <div className="view-project">
                   <p>
-                    <strong>Project Name:</strong> {formData.title}
+                    <strong>{getLabel("Project Name")}:</strong>{" "}
+                    {formData.title}
                   </p>
                   <p>
-                    <strong>Field:</strong> {formData.field}
+                    <strong>{getLabel("Field")}:</strong> {formData.field}
                   </p>
                   <p>
-                    <strong>Description:</strong>{" "}
+                    <strong>{getLabel("Description")}:</strong>{" "}
                     {formData.description || <i>(none)</i>}
                   </p>
                   <p>
-                    <strong>Privacy:</strong> {formData.privacy_mode}
+                    <strong>{getLabel("Visibility")}:</strong>{" "}
+                    {formData.privacy_mode}
                   </p>
                 </div>
               )}
@@ -284,34 +369,34 @@ const EditProject = () => {
               className="add-collab-btn"
               onClick={() => setShowModal(true)}
             >
-              Add Collaborator
+              {getLabel("Add Collaborator")}
             </button>
-
             {showModal && (
               <div className="modal-overlay">
                 <div className="modal-content">
-                  <h3>Add Collaborator</h3>
-
-                  <label>Email</label>
+                  <h3>{getLabel("Add Collaborator")}</h3>
+                  <label>{getLabel("Email")}</label>
                   <input
                     type="email"
                     value={collabEmail}
                     onChange={(e) => setCollabEmail(e.target.value)}
                     required
                   />
-
-                  <label>Access Control</label>
+                  <label>{getLabel("Access Control")}</label>
                   <select
                     value={accessControl}
                     onChange={(e) => setAccessControl(e.target.value)}
                   >
-                    <option value="view">View Only</option>
-                    <option value="edit">Can Edit</option>
+                    <option value="view">{getLabel("View Only")}</option>
+                    <option value="edit">{getLabel("Can Edit")}</option>
                   </select>
-
                   <div className="modal-buttons">
-                    <button onClick={handleAddCollaborator}>Add</button>
-                    <button onClick={() => setShowModal(false)}>Cancel</button>
+                    <button onClick={handleAddCollaborator}>
+                      {getLabel("Add")}
+                    </button>
+                    <button onClick={() => setShowModal(false)}>
+                      {getLabel("Cancel")}
+                    </button>
                   </div>
                 </div>
               </div>
@@ -322,16 +407,18 @@ const EditProject = () => {
             <table className="collab-table">
               <thead>
                 <tr>
-                  <th>Collaborator Name</th>
-                  <th>Email</th>
-                  <th>Access Role</th>
-                  <th>Invitation Status</th>
+                  <th>{getLabel("Collaborator Name")}</th>
+                  <th>{getLabel("Email")}</th>
+                  <th>{getLabel("Access Role")}</th>
+                  <th>{getLabel("Invitation Status")}</th>
                 </tr>
               </thead>
               <tbody>
                 {collaborators.length === 0 ? (
                   <tr>
-                    <td colSpan="3">No collaborators added yet.</td>
+                    <td colSpan="4">
+                      {getLabel("No collaborators added yet.")}
+                    </td>
                   </tr>
                 ) : (
                   collaborators.map((collab, index) => (
@@ -347,26 +434,27 @@ const EditProject = () => {
             </table>
           </div>
         )}
+
         <div className="survey-grid">
           {surveys.length > 0 ? (
             surveys.map((survey) => (
               <div
-                key={survey.survey_id} // survey_id as the key
+                key={survey.survey_id}
                 className="survey-card"
-                onClick={() => handleSurveyClick(survey.survey_id, survey)} // Make project card clickable
+                onClick={() => handleSurveyClick(survey.survey_id, survey)}
                 style={{ cursor: "pointer" }}
               >
                 <h4>{survey.title}</h4>
               </div>
             ))
           ) : (
-            <i>"No projects found. Add new projects to get started..."</i>
+            <i>
+              {getLabel(
+                "No projects found. Click on the plus button to get started..."
+              )}
+            </i>
           )}
-
-          <div
-            className="add-survey-card"
-            onClick={() => handleAddSurveyClick()}
-          >
+          <div className="add-survey-card" onClick={handleAddSurveyClick}>
             <div className="plus-icon">+</div>
           </div>
         </div>

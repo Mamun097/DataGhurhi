@@ -10,14 +10,8 @@ const Index = () => {
   const location = useLocation();
   const { survey_id } = useParams();
   const { project_id, survey_details } = location.state || {};
-  console.log(
-    "Survey ID:",
-    survey_id,
-    "Project ID:",
-    project_id,
-    "Survey Details:",
-    survey_details
-  );
+  console.log("Survey details:", survey_details);
+  const [surveyStatus, setSurveyStatus] = useState(null);
 
   // Sidebar templates state
   const [templates, setTemplates] = useState([]);
@@ -33,21 +27,17 @@ const Index = () => {
 
   // Has a custom template been passed in?
   const useCustom = survey_details?.template != null;
-  const questionsFromSurveyDetails = survey_details?.template?.questions || [];
-  console.log(
-    "Questions from survey details:",
-    questionsFromSurveyDetails
-  );
-  console
   useEffect(() => {
     const load = async () => {
       if (useCustom) {
         // ==== 1) Load from survey_details ====
+        console.log("Survey details:", survey_details);
         setTitle(survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
         setQuestions(survey_details.template.questions || []);
         // `banner` field on your object holds the URL
-        setBackgroundImage(survey_details.banner || null);
+        setBackgroundImage(survey_details.template.backgroundImage || null);
+        setSurveyStatus(survey_details.survey_status || null);
       } else {
         // ==== 2) Otherwise, fetch saved templates ====
         try {
@@ -86,14 +76,16 @@ const Index = () => {
   if (!useCustom && templates.length === 0) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
+return (
+  <div className="container-fluid">
+    <div className="row">
 
-  return (
-    <div className="container-fluid">
-      <div className="row">
-        {/* Sidebar: only show when using saved templates */}
-        {!useCustom && (
-          <div className="col-2 me-5">
-            <div className="mt-5">
+      {/* Left gutter + sidebar */}
+      <div className="col-2">
+        <div className="mt-5">
+          {/* 1) NOT custom & NOT published → header + cards */}
+          {!useCustom && surveyStatus !== "published" && (
+            <>
               <h2 className="mb-4">Survey Templates</h2>
               <div className="d-flex flex-column gap-3">
                 {templates.map((tmpl, idx) => (
@@ -111,26 +103,43 @@ const Index = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-        )}
+            </>
+          )}
 
-        {/* Main Content */}
-        <div className={`${useCustom ? "col-12" : "col-9"} mt-5`}>
-          <SurveyForm
-            title={title}
-            setTitle={setTitle}
-            sections={sections}
-            setSections={setSections}
-            questions={questions}
-            setQuestions={setQuestions}
-            image={backgroundImage}
-            setImage={setBackgroundImage} // if you've lifted image state up
-          />
+          {/* 2) NOT custom & IS published → warning */}
+          {!useCustom && surveyStatus === "published" && (
+            <div className="alert alert-warning text-center">
+              This survey has already been published.
+            </div>
+          )}
+
+          {/* 3) if useCustom === true → nothing at all */}
         </div>
       </div>
+
+      {/* Center column: always 8 cols */}
+      <div className="col-8 mt-5">
+        <SurveyForm
+          title={title}
+          setTitle={setTitle}
+          sections={sections}
+          setSections={setSections}
+          questions={questions}
+          setQuestions={setQuestions}
+          image={backgroundImage}
+          setImage={setBackgroundImage}
+          project_id={project_id}
+          survey_id={survey_id}
+          surveyStatus={surveyStatus}
+          setSurveyStatus={setSurveyStatus}
+        />
+      </div>
+
+      {/* Right gutter: empty */}
+      <div className="col-2" />
     </div>
-  );
+  </div>
+);
 };
 
 export default Index;
