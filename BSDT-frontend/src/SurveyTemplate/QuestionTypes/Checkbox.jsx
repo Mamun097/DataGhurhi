@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const Checkbox = ({ question, questions, setQuestions, viewAs }) => {
+const Checkbox = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
 
   // Toggle required
@@ -210,14 +210,13 @@ const Checkbox = ({ question, questions, setQuestions, viewAs }) => {
                         value={option}
                         onChange={(e) => updateOption(idx, e.target.value)}
                       />
-                      {!viewAs && (
-                        <button
-                          className="btn btn-outline-secondary"
-                          onClick={() => removeOption(idx)}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      )}
+
+                      <button
+                        className="btn btn-outline-secondary"
+                        onClick={() => removeOption(idx)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
                     </div>
                   )}
                 </Draggable>
@@ -228,45 +227,43 @@ const Checkbox = ({ question, questions, setQuestions, viewAs }) => {
         </Droppable>
       </DragDropContext>
 
-      {!viewAs && (
-        <div>
-          {/* Add Option */}
+      <div>
+        {/* Add Option */}
+        <button
+          className="btn btn-sm btn-outline-primary mt-2"
+          onClick={addOption}
+        >
+          ➕ Add Option
+        </button>
+        {/* Actions */}
+        <div className="d-flex align-items-center mt-3">
           <button
-            className="btn btn-sm btn-outline-primary mt-2"
-            onClick={addOption}
+            className="btn btn-outline-secondary me-2"
+            onClick={handleCopy}
           >
-            ➕ Add Option
+            <i className="bi bi-clipboard"></i>
           </button>
-          {/* Actions */}
-          <div className="d-flex align-items-center mt-3">
-            <button
-              className="btn btn-outline-secondary me-2"
-              onClick={handleCopy}
-            >
-              <i className="bi bi-clipboard"></i>
-            </button>
-            <button
-              className="btn btn-outline-secondary me-2"
-              onClick={handleDelete}
-            >
-              <i className="bi bi-trash"></i>
-            </button>
-            <label className="btn btn-outline-secondary me-2">
-              <i className="bi bi-image"></i>
-              <input type="file" hidden onChange={handleImageUpload} />
-            </label>
-            <div className="form-check form-switch ms-auto">
-              <input
-                type="checkbox"
-                className="form-check-input"
-                checked={required}
-                onChange={() => handleRequired(question.id)}
-              />
-              <label className="form-check-label">Required</label>
-            </div>
+          <button
+            className="btn btn-outline-secondary me-2"
+            onClick={handleDelete}
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+          <label className="btn btn-outline-secondary me-2">
+            <i className="bi bi-image"></i>
+            <input type="file" hidden onChange={handleImageUpload} />
+          </label>
+          <div className="form-check form-switch ms-auto">
+            <input
+              type="checkbox"
+              className="form-check-input"
+              checked={required}
+              onChange={() => handleRequired(question.id)}
+            />
+            <label className="form-check-label">Required</label>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -12,7 +12,7 @@ import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
 
-const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
+const SurveyQuestions = ({ section, questions, setQuestions }) => {
   // Filter only the questions for the current section.
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
@@ -54,7 +54,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "text":
@@ -63,7 +62,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "likert":
@@ -72,7 +70,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "rating":
@@ -81,7 +78,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "linearScale":
@@ -90,7 +86,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "datetime":
@@ -99,7 +94,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "dropdown":
@@ -108,7 +102,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "tickboxGrid":
@@ -117,7 +110,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       case "checkbox":
@@ -126,7 +118,6 @@ const SurveyQuestions = ({ section, questions, setQuestions, viewAs }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
-            viewAs={viewAs}
           />
         );
       default:

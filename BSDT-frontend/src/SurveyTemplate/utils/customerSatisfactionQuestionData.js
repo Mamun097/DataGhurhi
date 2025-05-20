@@ -1,124 +1,190 @@
-export const savedQuestions = [
+[
   {
-    id: 1,
-    section: 1,
-    text: "What is your preferred communication method?",
-    subText: "",
-    type: "radio",
-    meta: {
-      options: ["Email", "Phone", "Text", "Video Call"],
+  "id": 1,
+  "meta": {
+    "tags": ["communication", "preference"],
+    "options": [
+      { "text": "Email", "value": 0 },
+      { "text": "Phone", "value": 0 },
+      { "text": "Text", "value": 0 },
+      { "text": "Video Call", "value": 0 }
+    ]
+  },
+  "text": "What is your preferred communication method?",
+  "type": "radio",
+  "image": null,
+  "section": 1,
+  "subText": "",
+  "required": false,
+  "multipleSelection": false
+},
+  {
+    "id": 2,
+    "meta": {
+      "tags": [
+        "design",
+        "resources",
+        "quality"
+      ],
+      "scale": 5
     },
-    multipleSelection: false,
-    required: false,
-    image: null,
+    "text": "How would you rate the quality of our design resources?",
+    "type": "rating",
+    "section": 1,
+    "required": false,
+    "multipleSelection": false
   },
   {
-    id: 2,
-    section: 1,
-    text: "How would you rate the quality of our design resources?",
-    meta: {
-      scale: 5,
+    "id": 3,
+    "meta": {
+      "tags": [
+        "design",
+        "workshop",
+        "conference",
+        "attendance"
+      ],
+      "dateType": "date"
     },
-    type: "rating",
-    multipleSelection: false,
-    required: false,
+    "text": "When was the last time you attended a design workshop or conference?",
+    "type": "datetime",
+    "section": 1,
+    "required": false,
+    "multipleSelection": false
   },
   {
-    id: 3,
-    section: 1,
-    text: "When was the last time you attended a design workshop or conference?",
-    meta: {
-      dateType: "date",
+    "id": 4,
+    "meta": {
+      "tags": [
+        "design",
+        "conference",
+        "preference"
+      ],
+      "options": [
+        "UI/UX Design",
+        "Graphic Design",
+        "Web Design",
+        "Product Design"
+      ]
     },
-    type: "datetime",
-    multipleSelection: false,
-    required: false,
+    "text": "Which type of design conference would you prefer?",
+    "type": "dropdown",
+    "section": 1,
+    "required": false,
+    "multipleSelection": false
   },
   {
-    id: 4,
-    section: 1,
-    text: "Which type of design conference would you prefer?",
-    meta: {
-      options: ["UI/UX Design", "Graphic Design", "Web Design", "Product Design"],
+    "id": 5,
+    "meta": {
+      "max": 5,
+      "min": 1,
+      "tags": [
+        "workshop",
+        "speaker",
+        "presentation",
+        "skills"
+      ],
+      "leftLabel": "Poor",
+      "rightLabel": "Excellent"
     },
-    type: "dropdown",
-    multipleSelection: false,
-    required: false,
+    "text": "Rate the presentation skills of the last workshop speaker you attended",
+    "type": "linearScale",
+    "section": 1,
+    "required": false,
+    "multipleSelection": false
   },
   {
-    id: 5,
-    section: 1,
-    text: "Rate the presentation skills of the last workshop speaker you attended",
-    meta: {
-      min: 1,
-      max: 5,
-      leftLabel: "Poor",
-      rightLabel: "Excellent",
+    "id": 6,
+    "meta": {
+      "rows": [
+        "Frontend",
+        "Backend",
+        "Database",
+        "Version Control"
+      ],
+      "tags": [
+        "web development",
+        "tools",
+        "categories"
+      ],
+      "columns": [
+        "Tool 1",
+        "Tool 2",
+        "Tool 3"
+      ]
     },
-    type: "linearScale",
-    multipleSelection: false,
-    required: false,
+    "text": "What tools do you use for web development?",
+    "type": "tickboxGrid",
+    "image": null,
+    "section": 1,
+    "subText": "Please select one tool for each category.",
+    "required": false,
+    "multipleSelection": true
   },
   {
-    id: 6,
-    section: 1,
-    text: "What tools do you use for web development?",
-    subText: "Please select one tool for each category.",
-    type: "tickboxGrid",
-    meta: {
-      rows: ["Frontend", "Backend", "Database", "Version Control"],
-      columns: ["Tool 1", "Tool 2", "Tool 3"],
+    "id": 7,
+    "meta": {
+      "tags": [
+        "design",
+        "improvement",
+        "skills"
+      ],
+      "options": []
     },
-    multipleSelection: true,
-    required: false,
-    image: null,
+    "text": "What areas of design do you want to improve in?",
+    "type": "text",
+    "section": 1,
+    "subText": "",
+    "required": false,
+    "multipleSelection": false
   },
   {
-    id: 7,
-    section: 1,
-    text: "What areas of design do you want to improve in?",
-    subText: "",
-    type: "text",
-    meta: {
-      options: [],
+    "id": 8,
+    "meta": {
+      "tags": [
+        "career",
+        "goals",
+        "future"
+      ],
+      "options": []
     },
-    multipleSelection: false,
-    required: false,
+    "text": "What are your future career goals?",
+    "type": "text",
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
   },
   {
-    id: 8,
-    section: 1,
-    text: "What are your future career goals?",
-    subText: "",
-    type: "text",
-    meta: {
-      options: [],
+    "id": 9,
+    "meta": {
+      "tags": [
+        "design",
+        "process",
+        "satisfaction"
+      ],
+      "scale": 10
     },
-    multipleSelection: false,
-    required: true,
+    "text": "How satisfied are you with the current design process at your company?",
+    "type": "rating",
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
   },
-  {
-    id: 9,
-    section: 1,
-    text: "How satisfied are you with the current design process at your company?",
-    subText: "",
-    type: "rating",
-    meta: {
-      scale: 10,
-    },
-    multipleSelection: false,
-    required: true,
+{
+  "id": 10,
+  "meta": {
+    "tags": ["design", "team", "recommendation"],
+    "options": [
+      { "text": "Yes", "value": 0 },
+      { "text": "No", "value": 0 }
+    ]
   },
-  {
-    id: 10,
-    section: 1,
-    text: "Would you recommend working in your design team to others?",
-    subText: "",
-    type: "radio",
-    meta: {
-      options: ["Yes", "No"],
-    },
-    multipleSelection: false,
-    required: true,
-  },
-];
+  "text": "Would you recommend working in your design team to others?",
+  "type": "radio",
+  "section": 1,
+  "subText": "",
+  "required": true,
+  "multipleSelection": false
+}
+]
