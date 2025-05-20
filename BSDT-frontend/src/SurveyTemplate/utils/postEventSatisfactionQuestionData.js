@@ -1,140 +1,248 @@
-export const postEventSatisfactionQuestionData = [
-    {
-      id: 1,
-      section: 1,
-      text: "How would you rate the overall event experience?",
-      subText: "",
-      type: "rating",
-      meta:{
-        scale: 5,
-        min: 1,
-        max: 5,
-        leftLabel: "Very Poor",
-        rightLabel: "Excellent",
-      },
-      multipleSelection: false,
-      required: true,
+[
+  {
+    "id": 1,
+    "meta": {
+      "max": 5,
+      "min": 1,
+      "tags": [
+        "event",
+        "experience",
+        "rating"
+      ],
+      "scale": 5,
+      "leftLabel": "Very Poor",
+      "rightLabel": "Excellent"
     },
-    {
-      id: 2,
-      section: 1,
-      text: "How satisfied were you with the event's organization?",
-      subText: "",
-      type: "rating",
-      meta:{
-        scale: 5,
-        min: 1,
-        max: 5,
-        leftLabel: "Very Disorganized",
-        rightLabel: "Very Organized",
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "How would you rate the overall event experience?",
+    "type": "rating",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 2,
+    "meta": {
+      "max": 5,
+      "min": 1,
+      "tags": [
+        "event",
+        "organization",
+        "satisfaction"
+      ],
+      "scale": 5,
+      "leftLabel": "Very Disorganized",
+      "rightLabel": "Very Organized"
     },
-    {
-      id: 3,
-      section: 1,
-      text: "How relevant was the content of the event to your needs?",
-      subText: "",
-      type: "rating",
-      meta:{
-        scale: 5,
-      min: 1,
-      max: 5,
-      leftLabel: "Not Relevant",
-      rightLabel: "Highly Relevant",
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "How satisfied were you with the event's organization?",
+    "type": "rating",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 3,
+    "meta": {
+      "max": 5,
+      "min": 1,
+      "tags": [
+        "event",
+        "content",
+        "relevance"
+      ],
+      "scale": 5,
+      "leftLabel": "Not Relevant",
+      "rightLabel": "Highly Relevant"
     },
-    {
-      id: 4,
-      section: 1,
-      text: "What did you think about the speakers and their presentations?",
-      subText: "",
-      type: "radio",
-      meta:{
-        options: ["Very Poor", "Poor", "Average", "Good", "Excellent"],
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "How relevant was the content of the event to your needs?",
+    "type": "rating",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 4,
+    "meta": {
+      "tags": [
+        "event",
+        "speakers",
+        "presentations"
+      ],
+      "options": [
+        {
+          "text": "Very Poor",
+          "value": 1
+        },
+        {
+          "text": "Poor",
+          "value": 2
+        },
+        {
+          "text": "Average",
+          "value": 3
+        },
+        {
+          "text": "Good",
+          "value": 4
+        },
+        {
+          "text": "Excellent",
+          "value": 5
+        }
+      ]
     },
-    {
-      id: 5,
-      section: 1,
-      text: "How likely are you to attend a similar event in the future?",
-      subText: "",
-      type: "radio",
-      meta:{
-      options: ["Not Likely", "Somewhat Likely", "Very Likely"],
-
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "What did you think about the speakers and their presentations?",
+    "type": "radio",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 5,
+    "meta": {
+      "tags": [
+        "event",
+        "future attendance",
+        "likelihood"
+      ],
+      "options": [
+        {
+          "text": "Not Likely",
+          "value": 1
+        },
+        {
+          "text": "Somewhat Likely",
+          "value": 2
+        },
+        {
+          "text": "Very Likely",
+          "value": 3
+        }
+      ]
     },
-    {
-      id: 6,
-      section: 1,
-      text: "What aspects of the event would you suggest for improvement?",
-      subText: "",
-      type: "text",
-      meta:{
-        options: [],
-      },
-      multipleSelection: false,
-      required: false,
+    "text": "How likely are you to attend a similar event in the future?",
+    "type": "radio",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 6,
+    "meta": {
+      "tags": [
+        "event",
+        "improvement",
+        "feedback"
+      ],
+      "options": []
     },
-    {
-      id: 7,
-      section: 1,
-      text: "How did you find the networking opportunities during the event?",
-      subText: "",
-      type: "rating",
-      meta:{
-        scale: 5,
-        min: 1,
-        max: 5,
-        leftLabel: "Very Poor",
-        rightLabel: "Excellent",
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "What aspects of the event would you suggest for improvement?",
+    "type": "text",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": false,
+    "multipleSelection": false
+  },
+  {
+    "id": 7,
+    "meta": {
+      "max": 5,
+      "min": 1,
+      "tags": [
+        "event",
+        "networking",
+        "opportunities"
+      ],
+      "scale": 5,
+      "leftLabel": "Very Poor",
+      "rightLabel": "Excellent"
     },
-    {
-      id: 8,
-      section: 1,
-      text: "Did you face any technical issues during the event?",
-      subText: "",
-      type: "radio",
-      meta:{
-        options: ["Yes", "No"],
-      },
-      multipleSelection: false,
-      required: false,
+    "text": "How did you find the networking opportunities during the event?",
+    "type": "rating",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 8,
+    "meta": {
+      "tags": [
+        "event",
+        "technical issues"
+      ],
+      "options": [
+        {
+          "text": "Yes",
+          "value": 1
+        },
+        {
+          "text": "No",
+          "value": 0
+        },
+      ]
     },
-    {
-      id: 9,
-      section: 1,
-      text: "Would you recommend this event to others?",
-      subText: "",
-      type: "radio",
-      meta:{
-        options: ["Yes", "No", "Maybe"],
-      },
-      multipleSelection: false,
-      required: true,
+    "text": "Did you face any technical issues during the event?",
+    "type": "radio",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": false,
+    "multipleSelection": false
+  },
+  {
+    "id": 9,
+    "meta": {
+      "tags": [
+        "event",
+        "recommendation"
+      ],
+      "options": [
+        {
+          "text": "Yes",
+          "value": 1
+        },
+        {
+          "text": "No",
+          "value": 0
+        }
+      ]
     },
-    {
-      id: 10,
-      section: 1,
-      text: "Additional comments or feedback?",
-      subText: "",
-      type: "text",
-      meta:{
-        options: [],
-      },
-      multipleSelection: false,
-      required: false,
+    "text": "Would you recommend this event to others?",
+    "type": "radio",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": true,
+    "multipleSelection": false
+  },
+  {
+    "id": 10,
+    "meta": {
+      "tags": [
+        "event",
+        "feedback",
+        "open-ended"
+      ],
+      "options": []
     },
-  ];
-  
+    "text": "Additional comments or feedback?",
+    "type": "text",
+    "image": null,
+    "section": 1,
+    "subText": "",
+    "required": false,
+    "multipleSelection": false
+  }
+]

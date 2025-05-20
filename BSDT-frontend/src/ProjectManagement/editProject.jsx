@@ -149,30 +149,39 @@ const EditProject = () => {
 
   
 const handleAddSurveyClick = async () => {
-  const language = localStorage.getItem("language") || "English";
-  let t = {};
-
-  if (language === "বাংলা") {
-    const labels = [
-      "Enter Survey Title",
-      "Survey Title",
-      "Create",
-      "Cancel",
-      "Title is required!",
-      "✅ Survey created successfully!",
-      "❌ Failed to create survey.",
-    ];
-    const translated = await translateText(labels, "bn");
-    [
-      t.title,
-      t.placeholder,
-      t.confirmText,
-      t.cancelText,
-      t.validation,
-      t.successMsg,
-      t.errorMsg,
-    ] = translated;
-  }
+    const title = prompt("Enter the survey title:");
+    if (title) {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.post(
+          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          { title },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.status === 201) {
+          alert("Survey created successfully!");
+          console.log("Survey created:", response.data);
+          // fetchSurveys(); // Refresh the surveys list
+          navigate(`/view-survey/${response.data.data.survey_id}`, {
+            state: {
+              project_id: projectId,
+              survey_details: response.data,
+            },
+          });
+        }
+      } catch (error) {
+        console.error("Error creating survey:", error);
+        const errorMessage =
+          error.response?.data?.error || "Failed to create survey.";
+        alert(errorMessage);
+      }
+    }
+  };
 
   const result = await Swal.fire({
     title: language === "English" ? "Enter Survey Title" : t.title,
