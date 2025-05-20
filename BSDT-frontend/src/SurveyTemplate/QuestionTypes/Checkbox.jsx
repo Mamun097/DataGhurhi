@@ -68,26 +68,24 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   );
 
   // Add new option
-  const addOption = useCallback(() => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: [
-                  ...q.meta.options,
-                  `Option ${q.meta.options.length + 1}`,
-                ],
-              },
-
-            }
+const addOption = useCallback(() => {
+  setQuestions((prev) =>
+    prev.map((q) =>
+      q.id === question.id
+        ? {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: [
+                ...q.meta.options,
+                `Option ${q.meta.options.length + 1}`,
+              ],
+            },
           }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+        : q
+    )
+  );
+}, [question.id, setQuestions]);
 
   // Update option text
   const updateOption = useCallback((idx, newText) => {
@@ -99,7 +97,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
             meta: {
               ...q.meta,
               options: q.meta.options.map((opt, i) => i === idx ? newText : opt)
-            }
+            },
           }
           : q
       )
@@ -116,7 +114,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
             meta: {
               ...q.meta,
               options: q.meta.options.filter((_, i) => i !== idx)
-            }
+            },
           }
           : q
       )
@@ -187,100 +185,52 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   />
 
   {/* Drag & Drop Options */ }
-  <DragDropContext onDragEnd={handleDragEnd}>
-    <Droppable droppableId={`checkbox-options-${question.id}`}>
-      {(provided) => (
-        <div ref={provided.innerRef} {...provided.droppableProps}>
-          {question.meta?.options.map((option, idx) => (
-            <Draggable
-              key={idx}
-              draggableId={`checkbox-opt-${question.id}-${idx}`}
-              index={idx}
-            >
-              {(prov) => (
-                <div
-                  ref={prov.innerRef}
-                  {...prov.draggableProps}
-                  {...prov.dragHandleProps}
-                  className="d-flex align-items-center mb-2"
-                >
-                  {(prov) => (
-                    <div
-                      ref={prov.innerRef}
-                      {...prov.draggableProps}
-                      {...prov.dragHandleProps}
-                      className="d-flex align-items-center mb-2"
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <Droppable droppableId={`checkbox-options-${question.id}`}>
+        {(provided) => (
+          <div ref={provided.innerRef} {...provided.droppableProps}>
+            {question.meta?.options.map((option, idx) => (
+              <Draggable
+                key={idx}
+                draggableId={`checkbox-opt-${question.id}-${idx}`}
+                index={idx}
+              >
+                {(prov) => (
+                  <div
+                    ref={prov.innerRef}
+                    {...prov.draggableProps}
+                    {...prov.dragHandleProps}
+                    className="d-flex align-items-center mb-2"
+                  >
+                    <span
+                      className="me-2"
+                      style={{ fontSize: "1.5rem", cursor: "grab" }}
                     >
-                      <span
-                        className="me-2"
-                        style={{ fontSize: "1.5rem", cursor: "grab" }}
-                      >
-                        ☰
-                      </span>
+                      ☰
+                    </span>
 
-                      <input
-                        type="text"
-                        className="form-control me-2"
-                        value={option}
-                        onChange={(e) => updateOption(idx, e.target.value)}
-                      />
+                    <input
+                      type="text"
+                      className="form-control me-2"
+                      value={option}
+                      onChange={(e) => updateOption(idx, e.target.value)}
+                    />
 
-                      <button
-                        className="btn btn-outline-secondary"
-                        onClick={() => removeOption(idx)}
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
-
-      <div>
-        {/* Add Option */}
-        <button
-          className="btn btn-sm btn-outline-primary mt-2"
-          onClick={addOption}
-        >
-          ➕ Add Option
-        </button>
-        {/* Actions */}
-        <div className="d-flex align-items-center mt-3">
-          <button
-            className="btn btn-outline-secondary me-2"
-            onClick={handleCopy}
-          >
-            <i className="bi bi-clipboard"></i>
-          </button>
-          <button
-            className="btn btn-outline-secondary me-2"
-            onClick={handleDelete}
-          >
-            <i className="bi bi-trash"></i>
-          </button>
-          <label className="btn btn-outline-secondary me-2">
-            <i className="bi bi-image"></i>
-            <input type="file" hidden onChange={handleImageUpload} />
-          </label>
-          <div className="form-check form-switch ms-auto">
-            <input
-              type="checkbox"
-              className="form-check-input"
-              checked={required}
-              onChange={() => handleRequired(question.id)}
-            />
-            <label className="form-check-label">Required</label>
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={() => removeOption(idx)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
           </div>
-        </div>
-      )}
-    </Droppable>
-  </DragDropContext>
-
+        )}
+      </Droppable>
+    </DragDropContext>
   {/* Add Option */ }
   <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
     ➕ Add Option

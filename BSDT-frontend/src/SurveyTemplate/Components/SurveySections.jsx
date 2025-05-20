@@ -18,6 +18,11 @@ const SurveySections = ({
   useEffect(() => {
     console.table("sections: ", sections); // Logs the array in a structured table format
   }, [sections]);
+  const questionInfo = {
+    id: questions.length + 1,
+    section: section.id,
+    questions: questions,
+  };
   const addNewQuestion = (type) => {
     const baseQuestion = {
       id: questions.length + 1,
@@ -197,6 +202,8 @@ const SurveySections = ({
           newQuestion={newQuestion}
           setNewQuestion={setNewQuestion}
           addNewQuestion={addNewQuestion}
+          addGeneratedQuestion={addGeneratedQuestion}
+          questionInfo={questionInfo}
         />
         <div className="d-flex justify-content-end mt-2">
           {sections.length !== 1 && section.id !== 1 && (

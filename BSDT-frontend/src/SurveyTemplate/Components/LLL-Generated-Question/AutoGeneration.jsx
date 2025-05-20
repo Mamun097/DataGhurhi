@@ -19,6 +19,8 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo}) => {
       // Use the mock API service instead of making a real API call
     //   const generatedQuestion = await mockQuestionGenerator.generateQuestion(questionData);
     //   console.log(generatedQuestion);
+      console.log("Question Data:", questionData);
+      console.log("Question Info:", questionInfo);
 
       const response = await fetch('http://localhost:2000/api/generate-question-with-llm/', {
         method: 'POST',
@@ -44,6 +46,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo}) => {
       
       // Add the generated question to the survey
       addGeneratedQuestion(generatedQuestion);
+      console.log("Generated question added:", generatedQuestion);
       
     } catch (error) {
       console.error("Error generating question:", error);
