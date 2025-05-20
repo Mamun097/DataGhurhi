@@ -41,10 +41,10 @@ const NavbarAcholder = (props) => {
     <motion.nav className="navbar">
       {/* Logo Section */}
       <div className="logo-container">
-        <img src={logo_buet} alt="BUET Logo" className="logo" />
-        <img src={logo_ric} alt="RIC Logo" className="logo" />
-        <img src={logo_ict} alt="ICT Logo" className="logo" />
-        <img src={logo_edge} alt="EDGE Logo" className="logo" />
+        <img src={logo_buet} alt="BUET Logo" className="logo1" />
+        <img src={logo_ric} alt="RIC Logo" className="logo2" />
+        <img src={logo_ict} alt="ICT Logo" className="logo3" />
+        <img src={logo_edge} alt="EDGE Logo" className="logo4" />
       </div>
 
       {/* Always Visible Search Box */}
