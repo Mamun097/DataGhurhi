@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { handleImageUpload } from "../utils/handleImageUpload";
 import SurveySections from "./SurveySections";
+import { useNavigate } from "react-router-dom";
 
 // SurveyForm Component to manage the survey title, background, sections, and questions.
 const SurveyForm = ({
@@ -29,6 +30,8 @@ const SurveyForm = ({
       setBackgroundImage(image);
     }
   }, [image]);
+  const navigate = useNavigate();
+
   console.log(project_id);
   // Function to add a new section
   const handleAddSection = () => {
@@ -83,9 +86,13 @@ const SurveyForm = ({
         }
       );
       if (response.status === 201) {
-        // Handle successful response
-        alert("Survey published successfully!");
-        navigat
+        alert("Survey Saved successfully!");
+        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
+          state: {
+            project_id: project_id,
+            survey_details: response.data,
+          },
+        });
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
