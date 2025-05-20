@@ -1,5 +1,6 @@
 const supabase = require('../db');
 const { jwtAuthMiddleware } = require('../auth/authmiddleware');
+const crypto = require('crypto');
 
 
 exports.saveSurveyForm = async (req, res) => {
@@ -48,6 +49,8 @@ exports.createSurveyForm = async (req, res) => {
     if (!project_id || !survey_template) {
       return res.status(400).json({ error: 'project_id, survey_template, and user_id are required' });
     }
+    // get slag
+    const slug = generateSlug(title, survey_id, 'published');
 
     // Step 1: Insert survey template into survey table
     const { data: surveyData, error: surveyError } = await supabase
@@ -57,6 +60,7 @@ exports.createSurveyForm = async (req, res) => {
         user_id,
         banner: survey_template.banner || null,
         template: survey_template,
+        survey_link: slug,
         starting_date: new Date(),
         title: title || 'Untitled Survey',
         survey_status: 'published'
@@ -212,4 +216,28 @@ exports.deleteSurveyForm = async (req, res) => {
     console.error('Error in deleteSurveyForm:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
+}
+
+function generateSlug(survey_title, survey_id, survey_status) {
+  const hash = crypto.createHash('sha256');
+  hash.update(`${survey_id}-${survey_status}`);
+  const hashValue = hash.digest('hex');
+
+  const currentTime = Date.now().toString();
+  const randomValue = Math.floor(Math.random() * 1e6).toString();
+
+  // Concatenate all and hash again
+  const finalHash = crypto.createHash('sha256')
+    .update(currentTime + randomValue + hashValue)
+    .digest('hex')
+    .slice(0, 10); // Slug core: 10 chars
+
+  // Format title
+  const safeTitle = survey_title
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-') // remove special chars
+    .replace(/^-+|-+$/g, '');    // remove leading/trailing hyphens
+
+  return `${safeTitle}-${finalHash}`;
 }
