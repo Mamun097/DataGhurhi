@@ -87,7 +87,7 @@ return (
           {!useCustom && surveyStatus !== "published" && (
             <>
               <h2 className="mb-4">Survey Templates</h2>
-              <div className="d-flex flex-column gap-3">
+              <div className="d-flex flex-column gap-3"> 
                 {templates.map((tmpl, idx) => (
                   <div
                     key={tmpl.id}

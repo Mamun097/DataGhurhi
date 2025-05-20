@@ -4,6 +4,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import { handleImageUpload } from "../utils/handleImageUpload";
 import SurveySections from "./SurveySections";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 // SurveyForm Component to manage the survey title, background, sections, and questions.
 const SurveyForm = ({
@@ -22,6 +23,7 @@ const SurveyForm = ({
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
+  const [surveyLink, setSurveyLink] = useState(null);
   // const [viewAs, setViewAs] = useState(false);
   console.log("SurveyForm Sections:", sections);
   console.log("SurveyForm Questions:", questions);
@@ -43,95 +45,150 @@ const SurveyForm = ({
   // Function to handle the publish action
   const handlePublish = async () => {
     try {
-      const response = await fetch("http://localhost:2000/api/surveytemplate", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
+      const response = await axios.put(
+        "http://localhost:2000/api/surveytemplate",
+        {
           survey_id: survey_id,
           project_id: project_id,
-          survey_template: { sections, backgroundImage, title, description: null, questions },
-          title: title,
-          user_id: `${localStorage.getItem("token").id}`,
-        }),
-      });
-      if (response.status === 201) {
-        alert("Survey Saved successfully!");
-        setSurveyStatus("published");
-        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
-          state: {
-            project_id: project_id,
-            survey_details: response.data,
+          survey_template: {
+            sections,
+            backgroundImage,
+            title,
+            description: null,
+            questions,
           },
-        });
-      } else {
-        console.error("Error publishing survey:", response.statusText);
-      }
-    } catch (error) {
-      console.error("Error publishing survey:", error);
-    }
-  };
-  const handleSave = async () => {
-    try {
-      const response = await fetch(
-        "http://localhost:2000/api/surveytemplate/save",
+          title: title,
+          user_id: `${localStorage.getItem("token").id}`, // double-check this line (see note below)
+        },
         {
-          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: JSON.stringify({
-            survey_id: survey_id,
-            project_id: project_id,
-            survey_template: { sections, backgroundImage, title, description: null, questions },
-            title: title,
-            user_id: `${localStorage.getItem("token").id}`,
-          }),
         }
       );
+
       if (response.status === 201) {
         alert("Survey Saved successfully!");
-        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
-          state: {
-            project_id: project_id,
-            survey_details: response.data,
-          },
-        });
+        setSurveyStatus("published");
+        navigate(
+          `/view-survey/${
+            response.data.data?.survey_id || response.data.survey_id
+          }`,
+          {
+            state: {
+              project_id: project_id,
+              survey_details: response.data,
+            },
+          }
+        );
+        setSurveyLink(
+          response.data.data?.survey_link || response.data.survey_link
+        );
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
     } catch (error) {
-      console.error("Error publishing survey:", error);
+      console.error(
+        "Error publishing survey:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await axios.put(
+        "http://localhost:2000/api/surveytemplate/save",
+        {
+          survey_id: survey_id,
+          project_id: project_id,
+          survey_template: {
+            sections,
+            backgroundImage,
+            title,
+            description: null,
+            questions,
+          },
+          title: title,
+          user_id: `${localStorage.getItem("token").id}`, // same note as above
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        alert("Survey Saved successfully!");
+        navigate(
+          `/view-survey/${
+            response.data.data?.survey_id || response.data.survey_id
+          }`,
+          {
+            state: {
+              project_id: project_id,
+              survey_details: response.data,
+            },
+          }
+        );
+      } else {
+        console.error("Error publishing survey:", response.statusText);
+      }
+    } catch (error) {
+      console.error(
+        "Error publishing survey:",
+        error.response?.data || error.message
+      );
     }
   };
 
   const handleUpdate = async () => {
     try {
-      const response = await fetch("http://localhost:2000/api/surveytemplate", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({
+      const token = localStorage.getItem("token");
+
+      const response = await axios.put(
+        "http://localhost:2000/api/surveytemplate",
+        {
           survey_id: survey_id,
           project_id: project_id,
-          survey_template: { sections, backgroundImage, title, description: null, questions },
+          survey_template: {
+            sections,
+            backgroundImage,
+            title,
+            description: null,
+            questions,
+          },
           title: title,
-          user_id: `${localStorage.getItem("token").id}`,
-        }),
-      });
+          user_id: token?.id, // Note: Make sure token is an object if you expect token.id
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       if (response.status === 201) {
-        // Handle successful response
-        alert("Survey published successfully!");
+        alert("Survey updated successfully!");
+        // navigate(`/view-survey/${response.data?.data?.survey_id}`, {
+        //   state: {
+        //     project_id: project_id,
+        //     survey_details: response.data,
+        //   },
+        // });
+        setSurveyLink(response.data?.survey_link);
       } else {
         console.error("Error publishing survey:", response.statusText);
       }
     } catch (error) {
-      console.error("Error publishing survey:", error);
+      console.error(
+        "Error publishing survey:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -166,6 +223,16 @@ const SurveyForm = ({
               <i className="bi bi-check-circle"></i> Publish
             </button>
           </>
+        )}
+        {surveyLink && (
+          <a
+            href={`http://localhost:2000/view/${surveyLink}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-outline-info ms-3"
+          >
+            <i className="bi bi-link-45deg"></i> View Survey Link
+          </a>
         )}
       </div>
 
