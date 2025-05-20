@@ -149,38 +149,15 @@ const EditProject = () => {
 
   
 const handleAddSurveyClick = async () => {
-    const title = prompt("Enter the survey title:");
-    if (title) {
-      const token = localStorage.getItem("token");
-      try {
-        const response = await axios.post(
-          `http://localhost:2000/api/project/${projectId}/create-survey`,
-          { title },
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (response.status === 201) {
-          alert("Survey created successfully!");
-          console.log("Survey created:", response.data);
-          // fetchSurveys(); // Refresh the surveys list
-          navigate(`/view-survey/${response.data.data.survey_id}`, {
-            state: {
-              project_id: projectId,
-              survey_details: response.data,
-            },
-          });
-        }
-      } catch (error) {
-        console.error("Error creating survey:", error);
-        const errorMessage =
-          error.response?.data?.error || "Failed to create survey.";
-        alert(errorMessage);
-      }
-    }
+  // For translation, fallback to English if not available
+  const t = {
+    title: translatedLabels["Enter Survey Title"] || "Enter Survey Title",
+    placeholder: translatedLabels["Survey Title"] || "Survey Title",
+    confirmText: translatedLabels["Create"] || "Create",
+    cancelText: translatedLabels["Cancel"] || "Cancel",
+    validation: translatedLabels["Title is required!"] || "Title is required!",
+    successMsg: translatedLabels["✅ Survey created successfully!"] || "✅ Survey created successfully!",
+    errorMsg: translatedLabels["❌ Failed to create survey."] || "❌ Failed to create survey.",
   };
 
   const result = await Swal.fire({
@@ -213,13 +190,14 @@ const handleAddSurveyClick = async () => {
         }
       );
       if (response.status === 201) {
-        toast.success(
+        // Use alert or toast if available
+        alert(
           language === "English"
             ? "✅ Survey created successfully!"
             : t.successMsg
         );
         fetchSurveys();
-        useNavigate(`/view-survey/${response.data.survey_id}`, {
+        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
           state: {
             project_id: projectId,
             survey_details: response.data,
@@ -228,7 +206,7 @@ const handleAddSurveyClick = async () => {
       }
     } catch (error) {
       console.error("Error creating survey:", error);
-      toast.error(
+      alert(
         language === "English"
           ? "❌ Failed to create survey."
           : t.errorMsg
