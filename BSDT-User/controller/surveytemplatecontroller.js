@@ -256,12 +256,10 @@ function generateSlug(survey_title, survey_id, survey_status) {
 
   const currentTime = Date.now().toString();
   const randomValue = Math.floor(Math.random() * 1e6).toString();
+  const title_hash = crypto.createHash("sha256").update(survey_title).digest("hex").slice(0, 10);
+  const currentTime_hash = crypto.createHash("sha256").update(currentTime).digest("hex").slice(0, 10);
+  const randomValue_hash = crypto.createHash("sha256").update(randomValue).digest("hex").slice(0,10);
+  const final_hash = `${hashValue}-${title_hash}-${currentTime_hash}-${randomValue_hash}`;
 
-  // Concatenate all and hash again
-  const finalHash = crypto
-    .createHash("sha256")
-    .update(currentTime + randomValue + hashValue)
-    .digest("hex");
-
-  return `${finalHash}`;
+  return `${final_hash}`;
 }
