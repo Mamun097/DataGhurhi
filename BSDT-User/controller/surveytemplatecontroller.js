@@ -231,6 +231,24 @@ exports.deleteSurveyForm = async (req, res) => {
         .status(404)
         .json({ error: "Survey not found or user not authorized" });
     }
+    //Delete questions associated with the survey
+    const { error: questionDeleteError } = await supabase
+      .from("question")
+      .delete()
+      .eq("survey_id", survey_id);
+    if (questionDeleteError) {
+      console.error("Supabase delete error for questions:", questionDeleteError);
+      return res.status(500).json({ error: "Failed to delete questions" });
+    }
+    // Delete sections associated with the survey
+    const { error: sectionDeleteError } = await supabase
+      .from("section")
+      .delete()
+      .eq("survey_id", survey_id);
+    if (sectionDeleteError) {
+      console.error("Supabase delete error for sections:", sectionDeleteError);
+      return res.status(500).json({ error: "Failed to delete sections" });
+    }
     // Delete the survey
     const { error: deleteError } = await supabase
       .from("survey")
