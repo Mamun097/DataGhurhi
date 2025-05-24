@@ -6,11 +6,12 @@ import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+import { input } from "framer-motion/client";
 
 const Index = () => {
   const location = useLocation();
   const { survey_id } = useParams();
-  const { project_id, survey_details } = location.state || {};
+  const { project_id, survey_details , input_title} = location.state || {};
   console.log("Survey details:", survey_details);
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [language, setLanguage] = useState(
@@ -22,7 +23,7 @@ const Index = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
-  const [title, setTitle] = useState(null);
+  const [title, setTitle] = useState(input_title || "Untitled Survey");
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
@@ -51,7 +52,7 @@ const Index = () => {
 
           if (data.length > 0) {
             const first = data[0];
-            setTitle(first.title);
+            setTitle(input_title || "Untitled Survey");
             setQuestions(first.template);
             setBackgroundImage(first.image_url);
           }
@@ -69,7 +70,7 @@ const Index = () => {
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
     const tmpl = templates[idx];
-    setTitle(tmpl.title);
+    setTitle(input_title || "Untitled Survey");
     setQuestions(tmpl.template);
     setBackgroundImage(tmpl.image_url);
   };
