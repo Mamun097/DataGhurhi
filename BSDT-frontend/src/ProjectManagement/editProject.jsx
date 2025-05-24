@@ -10,6 +10,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2"; // for prompt box
 import DeleteButton from "../SurveyTemplate/utils/DeleteButton";
+import { title } from "framer-motion/client";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -202,6 +203,7 @@ const handleAddSurveyClick = async () => {
           state: {
             project_id: projectId,
             survey_details: response.data,
+            input_title: result.value,
           },
         });
       }
@@ -226,6 +228,8 @@ const handleAddSurveyClick = async () => {
       if (response.status === 200) {
         alert("Survey deleted successfully!");
         fetchSurveys();
+        // reload
+        window.location.reload();
       } else {
         console.error("Error deleting survey:", response.statusText);
         alert("Failed to delete survey.");
@@ -235,11 +239,12 @@ const handleAddSurveyClick = async () => {
       alert("Failed to delete survey.");
     }
   };
-  const handleSurveyClick = (survey_id, survey) => {
+  const handleSurveyClick = (survey_id, survey, survey_title) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
+        input_title: survey_title || "Untitled Survey",
       },
     });
   };
@@ -464,7 +469,7 @@ const handleAddSurveyClick = async () => {
                 className="survey-card"
                 style={{ cursor: "pointer" }}
               >
-                <h4 className="mx-auto" onClick={() => handleSurveyClick(survey.survey_id, survey)}>{survey.title}</h4>
+                <h4 className="mx-auto" onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title)}>{survey.title}</h4>
                   <DeleteButton onClick={() => handleDeleteSurvey(survey.survey_id)}></DeleteButton>
               </div>
             ))
