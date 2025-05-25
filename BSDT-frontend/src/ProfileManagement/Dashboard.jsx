@@ -3,7 +3,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../db";
 import NavbarAcholder from "./navbarAccountholder";
+import PremiumAdBanner from "./PremiumFeatures/PremiumAdBanner";
+import PremiumPackagesModal from "./PremiumFeatures/PremiumPackagesModal";
+import TokenDisplay from "./PremiumFeatures/TokenDisplay";
 import "./Dashboard.css";
+import "./PremiumFeatures/PremiumAdBanner.css";
+import "./PremiumFeatures/PremiumPackagesModal.css";
+import "./PremiumFeatures/TokenDisplay.css";
 import defaultprofile from "./default_dp.png";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -35,6 +41,12 @@ const Dashboard = () => {
   const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
   const [translatedLabels, setTranslatedLabels] = useState({});
 
+  // Premium feature states
+  const [showAdBanner, setShowAdBanner] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [userType, setUserType] = useState('normal');
+  const [availableTokens, setAvailableTokens] = useState(0);
+
   const loadTranslations = async () => {
     if (language === "English") {
       setTranslatedLabels({});
@@ -42,7 +54,7 @@ const Dashboard = () => {
     }
 
     const labelsToTranslate = [
-      "Edit Profile", "Projects", "Collaborated Projects",
+      "Edit Profile", "Projects", "Collaborated Projects", "Checkout Premium Packages",
       "Profile details", "Cancel", "Edit", "Save Changes",
       "My Research Projects", "Research Field:", "Description:",
       "No projects found. Add new projects to get started...",
@@ -50,7 +62,25 @@ const Dashboard = () => {
       "Trending Topics", "Name", "Email", "Work Affiliation", "Research Field",
       "Profession", "Secret Question", "Secret Answer", "Date of Birth",
       "Highest Education", "Gender", "Home Address", "Contact No", "Profile Link",
-      "Religion", "Working Place", "Years of Experience"
+      "Religion", "Working Place", "Years of Experience",
+      // Premium feature translations
+      "Available Balance", "Unlock Premium Features", "Premium",
+      "Take your surveys to the next level with AI-powered tools",
+      "AI Survey Template Generation", "Smart Question Generation",
+      "Automatic Question Tagging", "Advanced Analytics",
+      "Continue as Free User", "Checkout Premium Packages",
+      "Choose Your Premium Package", "Unlock Powerful AI Features",
+      "AI Survey Generation", "Create professional surveys in seconds with AI assistance",
+      "Smart Question Creation", "Generate relevant questions based on your research goals",
+      "Automatic Tagging", "Organize questions with intelligent tagging system",
+      "Get deeper insights with AI-powered analysis",
+      "Most Popular", "Tokens", "OFF", "Save", "Buy Now",
+      "30-day money-back guarantee", "1,000 AI Tokens", "Basic Survey Templates",
+      "Question Generation", "Email Support", "10,000 AI Tokens",
+      "Advanced Survey Templates", "Priority Support", "Analytics Dashboard",
+      "100,000 AI Tokens", "Unlimited Survey Templates", "Advanced AI Features",
+      "Custom Question Types", "White-label Solutions", "Dedicated Account Manager",
+      "API Access", "Unlimited Advance Survey Templates", "Advaced Smart Question Generation"
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -112,6 +142,15 @@ const Dashboard = () => {
         setValues(response.data);
         setProfilePicUrl(response.data.user.image);
         setEditedValues(response.data.user);
+
+        // Set user type and available tokens
+        setUserType(response.data.user.user_type || 'normal');
+        setAvailableTokens(response.data.user.available_token || 0);
+
+        // Show ad banner for normal users when they visit dashboard
+        if ((response.data.user.user_type || 'normal') === 'normal') {
+          setShowAdBanner(true);
+        }
       }
     } catch (error) {
       console.error("Error:", error);
@@ -164,6 +203,29 @@ const Dashboard = () => {
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId) => navigate(`/view-project/${projectId}`);
 
+  // Premium feature handlers
+  const handleCloseAdBanner = () => {
+    setShowAdBanner(false);
+  };
+
+  const handleCheckoutClick = () => {
+    setShowAdBanner(false);
+    setShowPremiumModal(true);
+  };
+
+  const handleClosePremiumModal = () => {
+    setShowPremiumModal(false);
+  };
+
+  // Handle tab click - open premium modal for checkout premium packages tab
+  const handleTabClick = (tabKey) => {
+    if (tabKey === "checkoutpremiumpackages") {
+      setShowPremiumModal(true);
+    } else {
+      setActiveTab(tabKey);
+    }
+  };
+
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
@@ -176,19 +238,28 @@ const Dashboard = () => {
               <label htmlFor="profileUpload" className="edit-profile-pic-btn">📷</label>
             </div>
             <h2>{values.user?.name || "Loading..."}</h2>
+
+            {/* Token Display */}
+            <TokenDisplay
+              availableTokens={availableTokens}
+              userType={userType}
+              getLabel={getLabel}
+            />
+
             <div className="profile-tabs">
               <ul>
                 {[
-                  "Edit Profile",
-                  "Projects",
-                  "Collaborated Projects"
-                ].map((label, idx) => (
+                  { label: "Edit Profile", key: "editprofile" },
+                  { label: "Projects", key: "projects" },
+                  { label: "Collaborated Projects", key: "collaboratedprojects" },
+                  { label: "Checkout Premium Packages", key: "checkoutpremiumpackages" }
+                ].map((tab, idx) => (
                   <li key={idx}>
                     <button
-                      className={activeTab === label.toLowerCase().replace(/ /g, "") ? "active" : ""}
-                      onClick={() => setActiveTab(label.toLowerCase().replace(/ /g, ""))}
+                      className={activeTab === tab.key ? "active" : ""}
+                      onClick={() => handleTabClick(tab.key)}
                     >
-                      {getLabel(label)}
+                      {getLabel(tab.label)}
                     </button>
                   </li>
                 ))}
@@ -269,6 +340,22 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Premium Ad Banner - Only show for normal users */}
+      {userType === 'normal' && showAdBanner && (
+        <PremiumAdBanner
+          onClose={handleCloseAdBanner}
+          onCheckoutClick={handleCheckoutClick}
+          getLabel={getLabel}
+        />
+      )}
+
+      {/* Premium Packages Modal */}
+      <PremiumPackagesModal
+        isOpen={showPremiumModal}
+        onClose={handleClosePremiumModal}
+        getLabel={getLabel}
+      />
     </>
   );
 };
