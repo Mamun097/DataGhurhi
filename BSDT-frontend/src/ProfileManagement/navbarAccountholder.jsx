@@ -71,13 +71,13 @@ const NavbarAcholder = (props) => {
             <FaHome className="nav-icon" />
             <span> {language === "English" ? "Home" : "হোম"} </span>
           </a>
-        </li> 
+        </li>
         <li>
           <a href="profile">
             <FaUser className="nav-icon" />
             <span>{language === "English" ? "Profile" : "প্রোফাইল"}</span>
           </a>
-        </li> 
+        </li>
         <li>
           <a href="login" onClick={logOut}>
             <FaSignOutAlt className="nav-icon" />
