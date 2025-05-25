@@ -240,7 +240,7 @@ const Radio = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 dnd-isolate">
-      <div>
+      <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
             <strong>MCQ</strong>
