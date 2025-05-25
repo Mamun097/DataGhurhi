@@ -44,7 +44,8 @@ exports.getAllSurveys = async (req, res) => {
 exports.createSurvey = async (req, res) => {
     const projectId = req.params.projectID;
     const { title } = req.body;
-    const { data, error } = await Project.createSurvey(projectId, title);
+    const userId = req.jwt.id;
+    const { data, error } = await Project.createSurvey(projectId, title, userId);
 
     if (error) {
         console.error(error);

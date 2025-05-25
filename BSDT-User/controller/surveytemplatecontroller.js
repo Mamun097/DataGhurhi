@@ -231,6 +231,26 @@ exports.deleteSurveyForm = async (req, res) => {
         .status(404)
         .json({ error: "Survey not found or user not authorized" });
     }
+    // check if survey is published
+    if (surveyData.survey_status != null) {
+          //Delete questions associated with the survey
+    const { error: questionDeleteError } = await supabase
+      .from("question")
+      .delete()
+      .eq("survey_id", survey_id);
+    if (questionDeleteError) {
+      console.error("Supabase delete error for questions:", questionDeleteError);
+      return res.status(500).json({ error: "Failed to delete questions" });
+    }
+    // Delete sections associated with the survey
+    const { error: sectionDeleteError } = await supabase
+      .from("section")
+      .delete()
+      .eq("survey_id", survey_id);
+    if (sectionDeleteError) {
+      console.error("Supabase delete error for sections:", sectionDeleteError);
+      return res.status(500).json({ error: "Failed to delete sections" });
+    }
     // Delete the survey
     const { error: deleteError } = await supabase
       .from("survey")
@@ -243,6 +263,22 @@ exports.deleteSurveyForm = async (req, res) => {
     }
     //return success response
     return res.status(200).json({ message: "Survey deleted successfully" });
+    }else{
+      //just delete the survey
+      console.log("Deleting survey with ID:", survey_id);
+      const { error: deleteError } = await supabase
+        .from("survey")
+        .delete()
+        .eq("survey_id", survey_id)
+        .eq("user_id", user_id);
+      if (deleteError) {
+        console.error("Supabase delete error for survey:", deleteError);
+        return res.status(500).json({ error: "Failed to delete survey" });
+      }
+      //return success response
+      return res.status(200).json({ message: "Survey deleted successfully" });
+    }
+
   } catch (err) {
     console.error("Error in deleteSurveyForm:", err);
     return res.status(500).json({ error: "Internal server error" });

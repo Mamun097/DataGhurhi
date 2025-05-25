@@ -51,7 +51,7 @@ async function findSurveysByProjectId(projectId) {
 
 //   return { data, error };
 // }
-async function createSurvey(projectId, title) {
+async function createSurvey(projectId, title, userId) {
   // Check for duplicates
   const { data: existing, error: fetchError } = await supabase
     .from("survey")
@@ -76,7 +76,7 @@ async function createSurvey(projectId, title) {
   // Insert and return the full row
   const { data, error } = await supabase
     .from("survey")
-    .insert([{ project_id: projectId, title }])
+    .insert([{ project_id: projectId, title, user_id: userId }])
     .select()
     .single(); // ensures only one row is returned
 
