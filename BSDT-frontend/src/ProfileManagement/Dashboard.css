@@ -100,7 +100,7 @@
 }
 
 .edit-profile-header {
-  display: flex;
+ 
   justify-content: space-between;
   align-items: center;
   border-bottom: 2px solid #ececec;
@@ -109,7 +109,7 @@
 }
 
 .edit-profile-header h3 {
-  font-size: 1.6rem;
+  font-size: 2rem;
   color: #035730;
 }
 

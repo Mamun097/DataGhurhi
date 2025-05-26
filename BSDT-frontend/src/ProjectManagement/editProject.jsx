@@ -430,7 +430,7 @@ const EditProject = () => {
           <h3 className="survey-section-heading">
             {getLabel("Create a New Survey")}
           </h3>
-          <div className="survey-grid">
+      <div className="survey-grid-center">
             <div className="add-survey-card" onClick={handleAddSurveyClick}>
               <div className="plus-icon">+</div>
             </div>
