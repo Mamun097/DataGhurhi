@@ -266,4 +266,22 @@ WHERE table_name = 'question';
 --!Insert data to Question table
 INSERT INTO question (user_id, text, input_type, privacy, options)  
 VALUES (20, 'At which side does the sun rise?', 'radio', 'private',  
-        '[{"Text": "North"}, {"Text": "South"}, {"Text": "East"}, {"Text": "West"}]'::jsonb);
+        '[{"Text": "North"}, {"Text": "South"}, {"Text": "East"}, {"Text": "West"}]'::jsonb)
+
+
+--^ CHANGES DONE AT 26/05/2025, Monday ^--
+--^ =================================== ^--
+
+-- Creating the survey_response table
+CREATE TABLE response (
+    response_id SERIAL PRIMARY KEY,  -- Auto-incrementing primary key
+    survey_id INTEGER NOT NULL,      -- Foreign key referencing survey table
+    user_id INTEGER,              -- Foreign key referencing user table
+    submission_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,  -- Time when the response was submitted
+    response_data JSONB,             -- JSONB column to store the response data
+    FOREIGN KEY (survey_id) REFERENCES survey(survey_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES "user" (user_id) ON DELETE SET CASCADE
+);
+
+-- Disable Row Level Security separately
+ALTER TABLE response DISABLE ROW LEVEL SECURITY;
