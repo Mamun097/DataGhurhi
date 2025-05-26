@@ -7,6 +7,7 @@ import Login from "./AccountManagement/login";
 import AddProject from "./ProjectManagement/createProject";
 import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
+import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -31,6 +32,8 @@ function App() {
             <Route path="/addproject" element={<AddProject />} />
             <Route path="/view-project/:projectId" element={<EditProject />} />
             <Route path="/view-survey/:survey_id" element={<Index />} />
+            <Route path="/v/:slug" element={<IndexUser />} />
+
           </>
         ) : (
           <Route path="*" element={<Navigate to="/login" />} />

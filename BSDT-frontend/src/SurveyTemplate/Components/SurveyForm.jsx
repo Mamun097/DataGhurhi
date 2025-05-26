@@ -226,7 +226,7 @@ const SurveyForm = ({
         )}
         {surveyLink && (
           <a
-            href={`http://localhost:2000/view/${surveyLink}`}
+            href={`http://localhost:5173/v/${surveyLink}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-outline-info ms-3"

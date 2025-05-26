@@ -43,6 +43,8 @@ const generate_question_with_llm= require('./route/generatequestionwithllm');
 // saved templates
 const createSurveyRouter = require('./route/createsurvey');
 
+// fetch survey for user end
+const fetchSurveyUserRouter = require('./route/fetchsurveyuser');
 
 //connect db
 const supabase = require('./db');
@@ -87,6 +89,9 @@ app.use('/api', generate_question_with_llm);
 
 // saved templates
 app.use('/api/get-saved-survey', createSurveyRouter);
+
+// fetch survey for user end
+app.use('/api/fetch-survey-user', fetchSurveyUserRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
