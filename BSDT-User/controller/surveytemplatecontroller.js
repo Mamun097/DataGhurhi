@@ -180,6 +180,11 @@ exports.deleteSurveyForm = async (req, res) => {
   try {
     const { survey_id } = req.params;
     const  user_id  = req.jwt.id;
+    
+    if (!survey_id || !user_id) {
+      console.error('Invalid input: survey_id or user_id is missing', { survey_id, user_id });
+      return res.status(400).json({ error: 'survey_id and user_id are required' });
+    }
     console.log('Deleting survey with ID:', survey_id);
     console.log('User ID:', req.jwt.id);
     // Check if user id and survey id match
