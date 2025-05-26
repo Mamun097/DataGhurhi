@@ -48,25 +48,7 @@ const Radio = ({ question, questions, setQuestions }) => {
     });
   }, [question.id, setQuestions]);
 
-  // Add new option
-  // const addOption = useCallback(() => {
-  //   setQuestions((prev) =>
-  //     prev.map((q) =>
-  //       q.id === question.id
-  //         ? {
-  //             ...q,
-  //             meta: {
-  //               ...q.meta,
-  //               options: [
-  //                 ...q.meta.options,
-  //                 `Option ${q.meta.options.length + 1}`,
-  //               ],
-  //             },
-  //           }
-  //         : q
-  //     )
-  //   );
-  // }, [question.id, setQuestions]);
+  // Add a new option
   const addOption = useCallback(() => {
     setQuestions((prev) =>
       prev.map((q) =>
