@@ -95,6 +95,11 @@ const Dashboard = () => {
       "Ascending",
       "Descending",
       "Profile Details",
+      "Privacy Status:",
+      "Created At:",
+      "Created At",
+      "Last Updated:",
+      "Last Updated",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -314,7 +319,9 @@ const Dashboard = () => {
                             onChange={handleInputChange}
                             required
                           >
-                            <option value="">{getLabel("Select Gender")}</option>
+                            <option value="">
+                              {getLabel("Select Gender")}
+                            </option>
                             <option value="Male">{getLabel("Male")}</option>
                             <option value="Female">{getLabel("Female")}</option>
                             <option value="Other">{getLabel("Other")}</option>
@@ -371,7 +378,9 @@ const Dashboard = () => {
                 <h4>{getLabel("Existing Projects")}</h4>
                 <div className="project-filter-bar">
                   {/* Filter by Privacy */}
-                  <label htmlFor="privacyFilter">{getLabel("Filter by: ")}</label>
+                  <label htmlFor="privacyFilter">
+                    {getLabel("Filter by: ")}
+                  </label>
                   <select
                     id="privacyFilter"
                     value={privacyFilter}
@@ -384,7 +393,7 @@ const Dashboard = () => {
                   </select>
 
                   {/* Sort By Field */}
-                  <label htmlFor="sortField">Sort by:</label>
+                  <label htmlFor="sortField">{getLabel("Sort by:")}</label>
                   <select
                     id="sortField"
                     value={sortField}
@@ -393,6 +402,8 @@ const Dashboard = () => {
                   >
                     <option value="title">{getLabel("Title")}</option>
                     <option value="field">{getLabel("Field")}</option>
+                    <option value="created_at">{getLabel("Created At")}</option>
+                    <option value="last_updated">{getLabel("Last Updated")}</option>
                   </select>
 
                   {/* Sort Order */}
@@ -417,11 +428,27 @@ const Dashboard = () => {
                           project.privacy_mode === privacyFilter
                       )
                       .sort((a, b) => {
-                        const aVal = a[sortField]?.toLowerCase() || "";
-                        const bVal = b[sortField]?.toLowerCase() || "";
-                        if (sortOrder === "asc")
-                          return aVal.localeCompare(bVal);
-                        else return bVal.localeCompare(aVal);
+                        const aVal = a[sortField];
+                        const bVal = b[sortField];
+
+                        // Check if field is date-like
+                        const isDateField =
+                          sortField.toLowerCase().includes("created_at") ||
+                          sortField.toLowerCase().includes("last_updated");
+
+                        if (isDateField) {
+                          const aTime = new Date(aVal).getTime();
+                          const bTime = new Date(bVal).getTime();
+                          return sortOrder === "asc"
+                            ? aTime - bTime
+                            : bTime - aTime;
+                        } else {
+                          const aStr = (aVal || "").toString().toLowerCase();
+                          const bStr = (bVal || "").toString().toLowerCase();
+                          return sortOrder === "asc"
+                            ? aStr.localeCompare(bStr)
+                            : bStr.localeCompare(aStr);
+                        }
                       })
                       .map((project) => (
                         <div
@@ -435,9 +462,52 @@ const Dashboard = () => {
                             <strong>{getLabel("Research Field:")}</strong>{" "}
                             {project.field}
                           </p>
+
                           <p>
-                            <strong>{getLabel("Description:")}</strong>{" "}
-                            {project.description}
+                            <strong>{getLabel("Privacy Status:")}</strong>{" "}
+                            {project.privacy_mode}
+                          </p>
+
+                          <p>
+                            <strong>{getLabel("Created At:")}</strong>{" "}
+                            {new Date(project.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            ) +
+                              ", " +
+                              new Date(project.created_at).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )}
+                          </p>
+
+                          <p>
+                            <strong>{getLabel("Last Updated:")}</strong>{" "}
+                            {new Date(project.last_updated).toLocaleDateString(
+                              "en-US",
+                              {
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            ) +
+                              ", " +
+                              new Date(project.last_updated).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )}
                           </p>
                         </div>
                       ))}
