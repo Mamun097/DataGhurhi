@@ -273,8 +273,14 @@ textarea {
   width: 300px;
 }
 
-.survey-card:hover {
+/* .survey-card:hover {
   background-color: #a9f3a2;
+} */
+
+.survey-card p {
+  font-size: 13px;
+  color: #333;
+  margin: 8px 0;
 }
 
 .survey-card img.survey-banner {
@@ -503,3 +509,4 @@ textarea {
 .sort-order-dropdown:hover {
   border-color: #097287;
 }
+

@@ -9,10 +9,10 @@ import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
 import { ToastContainer, toast } from "react-toastify";
-
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
-
+import SendIcon from "@mui/icons-material/Send";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
@@ -51,9 +51,9 @@ const EditProject = () => {
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [sortKey, setSortKey] = useState("title");
-  const [sortOrder, setSortOrder] = useState("asc");
 
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortField, setSortField] = useState("title");
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -103,6 +103,20 @@ const EditProject = () => {
     "Failed to update project.",
     "Project deleted successfully!",
     "Failed to delete project.",
+    "Are you sure?",
+    "This action cannot be undone.",
+    "Yes, delete it!",
+    "No, cancel!",
+    "Survey deleted successfully!",
+    "Failed to delete survey.",
+    "Last Updated:",
+    "Created At:",
+    "Ended At:",
+    "Published At:",
+    "Last Updated",
+    "Created At",
+    "Ended At",
+    "Published At",
   ];
 
   const loadTranslations = async () => {
@@ -156,7 +170,7 @@ const EditProject = () => {
         toast.success(getLabel("Survey deleted successfully!"));
         fetchSurveys();
         // reload
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 2000);
       } else {
         console.error("Error deleting survey:", response.statusText);
         toast.error(getLabel("Failed to delete survey."));
@@ -504,10 +518,18 @@ const EditProject = () => {
               <label htmlFor="sortKey">{getLabel("Sort by:")}</label>
               <select
                 id="sortKey"
-                value={sortKey}
-                onChange={(e) => setSortKey(e.target.value)}
+                value={sortField}
+                onChange={(e) => setSortField(e.target.value)}
               >
                 <option value="title">{getLabel("Title")}</option>
+                <option value="last_updated">{getLabel("Last Updated")}</option>
+                <option value="created_at">{getLabel("Created At")}</option>
+                <option value="ending_date">{getLabel("Ended At")}</option>
+                {filterStatus === "published" && (
+                  <option value="published_date">
+                    {getLabel("Published At")}
+                  </option>
+                )}
               </select>
 
               <select
@@ -528,11 +550,31 @@ const EditProject = () => {
                   : survey.survey_status === filterStatus
               )
               .sort((a, b) => {
-                const aVal = a[sortKey]?.toString().toLowerCase() ?? "";
-                const bVal = b[sortKey]?.toString().toLowerCase() ?? "";
-                return sortOrder === "asc"
-                  ? aVal.localeCompare(bVal)
-                  : bVal.localeCompare(aVal);
+                const aVal = a[sortField];
+                const bVal = b[sortField];
+
+                // Check if field is date-like
+                const isDateField =
+                  sortField.toLowerCase().includes("created_at") ||
+                  sortField
+                    .toLowerCase()
+                    .includes(
+                      "last_updated" ||
+                        sortField.toLowerCase().includes("published_date") ||
+                        sortField.toLowerCase().includes("ending_date")
+                    );
+
+                if (isDateField) {
+                  const aTime = new Date(aVal).getTime();
+                  const bTime = new Date(bVal).getTime();
+                  return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
+                } else {
+                  const aStr = (aVal || "").toString().toLowerCase();
+                  const bStr = (bVal || "").toString().toLowerCase();
+                  return sortOrder === "asc"
+                    ? aStr.localeCompare(bStr)
+                    : bStr.localeCompare(aStr);
+                }
               })
               .map((survey) => (
                 <div
@@ -547,13 +589,142 @@ const EditProject = () => {
                     }
                     className="survey-banner"
                     alt="Survey"
-                    onClick={() => handleSurveyClick(survey.survey_id, survey)}
                   />
                   <h4>{survey.title}</h4>
-                  <IconButton aria-label="delete" size="large">
+                  <p>
+                    <strong>{getLabel("Last Updated:")}</strong>{" "}
+                    {new Date(survey.last_updated).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }) +
+                      ", " +
+                      new Date(survey.last_updated).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        }
+                      )}
+                  </p>
+
+                  <p>
+                    <strong>{getLabel("Created At:")}</strong>{" "}
+                    {new Date(survey.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }) +
+                      ", " +
+                      new Date(survey.created_at).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                  </p>
+                  {survey.ending_date && (
+                    <p>
+                      <strong>{getLabel("Ended At:")}</strong>{" "}
+                      {new Date(survey.ending_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      ) +
+                        ", " +
+                        new Date(survey.ending_date).toLocaleTimeString(
+                          "en-US",
+                          {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          }
+                        )}
+                    </p>
+                  )}
+
+                  {survey.survey_status === "published" && (
+                    <p>
+                      <strong>{getLabel("Published At:")}</strong>{" "}
+                      {new Date(survey.published_date).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                        }
+                      ) +
+                        ", " +
+                        new Date(survey.published_date).toLocaleTimeString(
+                          "en-US",
+                          {
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          }
+                        )}
+                    </p>
+                  )}
+
+                  <IconButton
+                    aria-label="edit"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "blue",
+                        backgroundColor: "#e6f0ff",
+                      },
+                    }}
+                  >
+                    <SendIcon fontSize="inherit" />
+                  </IconButton>
+
+                  <IconButton
+                    aria-label="edit"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "blue",
+                        backgroundColor: "#e6f0ff",
+                      },
+                    }}
+                  >
+                    <EditIcon
+                      fontSize="inherit"
+                      onClick={() =>
+                        handleSurveyClick(survey.survey_id, survey)
+                      }
+                    />
+                  </IconButton>
+                  <IconButton
+                    aria-label="delete"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "red",
+                        backgroundColor: "#ffe6e6",
+                      },
+                    }}
+                  >
                     <DeleteIcon
                       fontSize="inherit"
-                      onClick={() => handleDeleteSurvey(survey.survey_id)}
+                      onClick={() => {
+                        Swal.fire({
+                          title: getLabel("Are you sure?"),
+                          text: getLabel("This action cannot be undone."),
+                          icon: "warning",
+                          showCancelButton: true,
+                          confirmButtonText: getLabel("Yes, delete it!"),
+                          cancelButtonText: getLabel("No, cancel!"),
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleDeleteSurvey(survey.survey_id);
+                          }
+                        });
+                      }}
                     />
                   </IconButton>
                 </div>
