@@ -3,7 +3,7 @@
   max-width: 800px;
   margin: 80px auto;
   padding: 30px;
-  background-color: #e0b1e7;
+  background-color: #cbf0d5;
   border-radius: 12px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
   font-family: 'Poppins', sans-serif;
@@ -15,7 +15,7 @@
   text-align: center;
   margin-bottom: 25px;
   font-size: 35px;
-  color: #330654;
+  color: #000000;
 }
 
 /* Form Layout */
@@ -48,7 +48,7 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #7700cc;
+  border-color: #037a1d;
   box-shadow: 0 0 5px rgba(119, 0, 204, 0.2);
 }
 
@@ -77,12 +77,12 @@
 }
 
 .visibility-option input {
-  accent-color: #7700cc;
+  accent-color: #0b5b06;
 }
 
 .visibility-icon {
   font-size: 20px;
-  color: #4a007e;
+  color: #007e2e;
 }
 
 .visibility-description {
@@ -95,7 +95,7 @@
 .submit-btn {
   padding: 12px 20px;
   font-size: 16px;
-  background-color: #4a007e;
+  background-color: #35a840;
   color: white;
   border: none;
   border-radius: 8px;
@@ -105,7 +105,7 @@
 }
 
 .submit-btn:hover {
-  background-color: #37005f;
+  background-color: #20c06d;
 }
 
 /* Responsive */

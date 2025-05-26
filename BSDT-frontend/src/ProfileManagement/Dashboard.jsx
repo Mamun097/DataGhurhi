@@ -28,11 +28,19 @@ const translateText = async (textArray, targetLang) => {
 const Dashboard = () => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [values, setValues] = useState({});
-  const [activeTab, setActiveTab] = useState("editprofile");
+  const getTabFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "editprofile";
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromURL());
+
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [projects, setProjects] = useState([]);
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const loadTranslations = async () => {
@@ -42,15 +50,38 @@ const Dashboard = () => {
     }
 
     const labelsToTranslate = [
-      "Edit Profile", "Projects", "Collaborated Projects",
-      "Profile details", "Cancel", "Edit", "Save Changes",
-      "My Research Projects", "Research Field:", "Description:",
+      "Edit Profile",
+      "Projects",
+      "Collaborated Projects",
+      "Profile details",
+      "Cancel",
+      "Edit",
+      "Save Changes",
+      "My Research Projects",
+      "Research Field:",
+      "Description:",
       "No projects found. Add new projects to get started...",
-      "Collaborators", "Show list of collaboratored projects here..",
-      "Trending Topics", "Name", "Email", "Work Affiliation", "Research Field",
-      "Profession", "Secret Question", "Secret Answer", "Date of Birth",
-      "Highest Education", "Gender", "Home Address", "Contact No", "Profile Link",
-      "Religion", "Working Place", "Years of Experience"
+      "Collaborators",
+      "Show list of collaboratored projects here..",
+      "Trending Topics",
+      "Name",
+      "Email",
+      "Work Affiliation",
+      "Research Field",
+      "Profession",
+      "Secret Question",
+      "Secret Answer",
+      "Date of Birth",
+      "Highest Education",
+      "Gender",
+      "Home Address",
+      "Contact No",
+      "Profile Link",
+      "Religion",
+      "Working Place",
+      "Years of Experience",
+      "Create a New Project",
+      "Existing Projects",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -67,7 +98,8 @@ const Dashboard = () => {
     loadTranslations();
   }, [language]);
 
-  const getLabel = (text) => language === "English" ? text : translatedLabels[text] || text;
+  const getLabel = (text) =>
+    language === "English" ? text : translatedLabels[text] || text;
 
   const handleImageUpload = async (event, type) => {
     const file = event.target.files[0];
@@ -83,7 +115,9 @@ const Dashboard = () => {
         return;
       }
 
-      const urlData = supabase.storage.from("media").getPublicUrl(`profile_pics/${file.name}`);
+      const urlData = supabase.storage
+        .from("media")
+        .getPublicUrl(`profile_pics/${file.name}`);
       await updateImageInDB(type, urlData.data.publicUrl);
       getProfile();
     } catch (error) {
@@ -94,9 +128,13 @@ const Dashboard = () => {
   const updateImageInDB = async (type, imageUrl) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put("http://localhost:2000/api/profile/update-profile-image", { imageUrl }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        "http://localhost:2000/api/profile/update-profile-image",
+        { imageUrl },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
     } catch (error) {
       console.error("Failed to update ${type} image in DB:", error);
     }
@@ -131,9 +169,13 @@ const Dashboard = () => {
   const handleSaveChanges = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.put("http://localhost:2000/api/profile/update-profile", editedValues, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.put(
+        "http://localhost:2000/api/profile/update-profile",
+        editedValues,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setIsEditing(false);
         getProfile();
@@ -162,7 +204,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const handleAddProjectClick = () => navigate("/addproject");
-  const handleProjectClick = (projectId) => navigate(`/view-project/${projectId}`);
+  const handleProjectClick = (projectId) =>
+    navigate(`/view-project/${projectId}`);
 
   return (
     <>
@@ -171,27 +214,47 @@ const Dashboard = () => {
         <div className="dashboard-layout">
           <div className="profile-section">
             <div className="profile-pic-wrapper">
-              <img src={profilePicUrl || defaultprofile} alt="Profile" className="profile-pic" />
-              <input type="file" id="profileUpload" accept="image/*" onChange={(e) => handleImageUpload(e, "profile")} style={{ display: "none" }} />
-              <label htmlFor="profileUpload" className="edit-profile-pic-btn">📷</label>
+              <img
+                src={profilePicUrl || defaultprofile}
+                alt="Profile"
+                className="profile-pic"
+              />
+              <input
+                type="file"
+                id="profileUpload"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "profile")}
+                style={{ display: "none" }}
+              />
+              <label htmlFor="profileUpload" className="edit-profile-pic-btn">
+                📷
+              </label>
             </div>
             <h2>{values.user?.name || "Loading..."}</h2>
             <div className="profile-tabs">
               <ul>
-                {[
-                  "Edit Profile",
-                  "Projects",
-                  "Collaborated Projects"
-                ].map((label, idx) => (
-                  <li key={idx}>
-                    <button
-                      className={activeTab === label.toLowerCase().replace(/ /g, "") ? "active" : ""}
-                      onClick={() => setActiveTab(label.toLowerCase().replace(/ /g, ""))}
-                    >
-                      {getLabel(label)}
-                    </button>
-                  </li>
-                ))}
+                {["Edit Profile", "Projects", "Collaborated Projects"].map(
+                  (label, idx) => (
+                    <li key={idx}>
+                      <button
+                        className={
+                          activeTab === label.toLowerCase().replace(/ /g, "")
+                            ? "active"
+                            : ""
+                        }
+                        onClick={() => {
+                          const tabKey = label.toLowerCase().replace(/ /g, "");
+                          setActiveTab(tabKey);
+                          const url = new URL(window.location);
+                          url.searchParams.set("tab", tabKey);
+                          window.history.replaceState({}, "", url);
+                        }}
+                      >
+                        {getLabel(label)}
+                      </button>
+                    </li>
+                  )
+                )}
               </ul>
             </div>
           </div>
@@ -206,25 +269,54 @@ const Dashboard = () => {
                   </button>
                 </div>
                 <div className="profile-fields">
-                  {["Name", "Email", "Work Affiliation", "Research Field", "Profession", "Secret Question", "Secret Answer", "Date of Birth", "Highest Education", "Gender", "Home Address", "Contact No", "Profile Link", "Religion", "Working Place", "Years of Experience"].map((field, index) => (
+                  {[
+                    "Name",
+                    "Email",
+                    "Work Affiliation",
+                    "Research Field",
+                    "Profession",
+                    "Secret Question",
+                    "Secret Answer",
+                    "Date of Birth",
+                    "Highest Education",
+                    "Gender",
+                    "Home Address",
+                    "Contact No",
+                    "Profile Link",
+                    "Religion",
+                    "Working Place",
+                    "Years of Experience",
+                  ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
                       {isEditing ? (
                         <input
                           type={field === "Date of Birth" ? "date" : "text"}
                           name={field.toLowerCase().replace(/ /g, "_")}
-                          value={editedValues[field.toLowerCase().replace(/ /g, "_")] || ""}
+                          value={
+                            editedValues[
+                              field.toLowerCase().replace(/ /g, "_")
+                            ] || ""
+                          }
                           onChange={handleInputChange}
                           required={true}
                         />
                       ) : (
-                        <i>{values.user?.[field.toLowerCase().replace(/ /g, "_")]}</i>
+                        <i>
+                          {
+                            values.user?.[
+                              field.toLowerCase().replace(/ /g, "_")
+                            ]
+                          }
+                        </i>
                       )}
                     </div>
                   ))}
                 </div>
                 {isEditing && (
-                  <button className="save-btn" onClick={handleSaveChanges}>{getLabel("Save Changes")}</button>
+                  <button className="save-btn" onClick={handleSaveChanges}>
+                    {getLabel("Save Changes")}
+                  </button>
                 )}
               </div>
             )}
@@ -232,22 +324,46 @@ const Dashboard = () => {
             {activeTab === "projects" && (
               <div>
                 <h3>{getLabel("My Research Projects")}</h3>
-                <div className="project-grid">
-                  {projects.length > 0 ? (
-                    projects.map((project) => (
-                      <div key={project.project_id} className="project-card" onClick={() => handleProjectClick(project.project_id)} style={{ cursor: "pointer" }}>
-                        <h4>{project.title}</h4>
-                        <p><strong>{getLabel("Research Field:")}</strong> {project.field}</p>
-                        <p><strong>{getLabel("Description:")}</strong> {project.description}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <i>{getLabel("No projects found. Add new projects to get started...")}</i>
-                  )}
-                  <div className="add-project-card" onClick={handleAddProjectClick}>
+                {/* New Project Section */}
+                <div className="new-project-section">
+                  <h4>{getLabel("Create a New Project")}</h4>
+                  <div
+                    className="add-project-card"
+                    onClick={handleAddProjectClick}
+                  >
                     <div className="plus-icon">+</div>
                   </div>
                 </div>
+                {/* Existing Projects */}
+                <h4>{getLabel("Existing Projects")}</h4>
+                {projects.length > 0 ? (
+                  <div className="project-grid">
+                    {projects.map((project) => (
+                      <div
+                        key={project.project_id}
+                        className="project-card"
+                        onClick={() => handleProjectClick(project.project_id)}
+                        style={{ cursor: "pointer" }}
+                      >
+                        <h4>{project.title}</h4>
+                        <p>
+                          <strong>{getLabel("Research Field:")}</strong>{" "}
+                          {project.field}
+                        </p>
+                        <p>
+                          <strong>{getLabel("Description:")}</strong>{" "}
+                          {project.description}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <i>
+                    {getLabel(
+                      "No projects found. Add new projects to get started..."
+                    )}
+                  </i>
+                )}
               </div>
             )}
 
@@ -262,7 +378,13 @@ const Dashboard = () => {
           <div className="trending-section">
             <h3>{getLabel("Trending Topics")}</h3>
             <ul className="trending-list">
-              {["AI in Healthcare", "Web3 & Blockchain", "Edge Computing", "Quantum Computing", "Augmented Reality"].map((topic, index) => (
+              {[
+                "AI in Healthcare",
+                "Web3 & Blockchain",
+                "Edge Computing",
+                "Quantum Computing",
+                "Augmented Reality",
+              ].map((topic, index) => (
                 <li key={index}>{topic}</li>
               ))}
             </ul>

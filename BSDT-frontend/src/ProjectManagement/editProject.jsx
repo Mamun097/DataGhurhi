@@ -75,6 +75,10 @@ const EditProject = () => {
     "Access Role",
     "Invitation Status",
     "No projects found. Click on the plus button to get started...",
+    "Create a New Survey",
+    "Existing Surveys",
+    "Enter Survey Title",
+    "Create"
   ];
 
   const loadTranslations = async () => {
@@ -102,7 +106,9 @@ const EditProject = () => {
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } =
@@ -121,7 +127,9 @@ const EditProject = () => {
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/surveys`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
@@ -130,11 +138,13 @@ const EditProject = () => {
   };
 
   const fetchCollaborators = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/collaborators`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setCollaborators(response.data.collaborators || []);
     } catch (error) {
@@ -147,79 +157,53 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-  
-const handleAddSurveyClick = async () => {
-  // For translation, fallback to English if not available
-  const t = {
-    title: translatedLabels["Enter Survey Title"] || "Enter Survey Title",
-    placeholder: translatedLabels["Survey Title"] || "Survey Title",
-    confirmText: translatedLabels["Create"] || "Create",
-    cancelText: translatedLabels["Cancel"] || "Cancel",
-    validation: translatedLabels["Title is required!"] || "Title is required!",
-    successMsg: translatedLabels["✅ Survey created successfully!"] || "✅ Survey created successfully!",
-    errorMsg: translatedLabels["❌ Failed to create survey."] || "❌ Failed to create survey.",
+  const handleAddSurveyClick = async () => {
+    const result = await Swal.fire({
+      title: getLabel("Enter Survey Title"),
+      input: "text",
+      inputPlaceholder: getLabel("Survey Title"),
+      showCancelButton: true,
+      confirmButtonText: getLabel("Create"),
+      cancelButtonText: getLabel("Cancel"),
+      inputValidator: (value) =>
+        !value ? getLabel("Title is required!") : undefined,
+    });
+
+    if (result.isConfirmed && result.value) {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.post(
+          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          { title: result.value },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (response.status === 201) {
+          alert(getLabel("✅ Survey created successfully!"));
+          fetchSurveys();
+          navigate(
+            `/view-survey/${
+              response.data.data?.survey_id || response.data.survey_id
+            }`,
+            {
+              state: { project_id: projectId, survey_details: response.data },
+            }
+          );
+        }
+      } catch (error) {
+        console.error("Error creating survey:", error);
+        alert(getLabel("❌ Failed to create survey."));
+      }
+    }
   };
 
-  const result = await Swal.fire({
-    title: language === "English" ? "Enter Survey Title" : t.title,
-    input: "text",
-    inputPlaceholder: language === "English" ? "Survey Title" : t.placeholder,
-    showCancelButton: true,
-    confirmButtonText: language === "English" ? "Create" : t.confirmText,
-    cancelButtonText: language === "English" ? "Cancel" : t.cancelText,
-    inputValidator: (value) => {
-      if (!value) {
-        return language === "English"
-          ? "Title is required!"
-          : t.validation;
-      }
-    },
-  });
-
-  if (result.isConfirmed && result.value) {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.post(
-        `http://localhost:2000/api/project/${projectId}/create-survey`,
-        { title: result.value },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.status === 201) {
-        // Use alert or toast if available
-        alert(
-          language === "English"
-            ? "✅ Survey created successfully!"
-            : t.successMsg
-        );
-        fetchSurveys();
-        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
-          state: {
-            project_id: projectId,
-            survey_details: response.data,
-          },
-        });
-      }
-    } catch (error) {
-      console.error("Error creating survey:", error);
-      alert(
-        language === "English"
-          ? "❌ Failed to create survey."
-          : t.errorMsg
-      );
-    }
-  }
-};
   const handleSurveyClick = (survey_id, survey) => {
     navigate(`/view-survey/${survey_id}`, {
-      state: {
-        project_id: projectId,
-        survey_details: survey,
-      },
+      state: { project_id: projectId, survey_details: survey },
     });
   };
 
@@ -251,211 +235,225 @@ const handleAddSurveyClick = async () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="add-project-container">
-        <div className="tab-header-container">
-          <div className="tabs">
-            <button
-              className={activeTab === "details" ? "active-tab" : ""}
-              onClick={() => setActiveTab("details")}
-            >
-              {getLabel("Project Details")}
-            </button>
-            <button
-              className={activeTab === "collaborators" ? "active-tab" : ""}
-              onClick={async () => {
-                setActiveTab("collaborators");
-                await fetchCollaborators();
-              }}
-            >
-              {getLabel("Collaborators")}
-            </button>
-          </div>
-        </div>
+      <div className="edit-project-grid">
+        <div className="edit-left">
+          {/* Project Details / Collaborator Tabs and Forms */}
 
-        {activeTab === "details" ? (
-          <div className="project-form">
-            <div className="header-with-button">
-              <h2>{getLabel("Project Details")}</h2>
+          <div className="tab-header-container">
+            <h2>{formData.title}</h2>
+            <div className="tabs">
               <button
-                className="edit-toggle-btn"
-                onClick={() => setIsEditing(!isEditing)}
+                className={activeTab === "details" ? "active-tab" : ""}
+                onClick={() => setActiveTab("details")}
               >
-                {isEditing ? getLabel("Cancel") : getLabel("Edit")}
+                {getLabel("Project Details")}
+              </button>
+              <button
+                className={activeTab === "collaborators" ? "active-tab" : ""}
+                onClick={async () => {
+                  setActiveTab("collaborators");
+                  await fetchCollaborators();
+                }}
+              >
+                {getLabel("Collaborators")}
               </button>
             </div>
+          </div>
+
+          {activeTab === "details" ? (
             <div className="project-form">
-              {isEditing ? (
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label>{getLabel("Project Name")}</label>
+              <div className="header-with-button">
+                {/* <h2>{getLabel("Project Details")}</h2> */}
+                <button
+                  className="edit-toggle-btn"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? getLabel("Cancel") : getLabel("Edit")}
+                </button>
+              </div>
+              <div className="project-form-2">
+                {isEditing ? (
+                  <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                      <label>{getLabel("Project Name")}</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{getLabel("Field")}</label>
+                      <input
+                        type="text"
+                        name="field"
+                        value={formData.field}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{getLabel("Description")}</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="visibility-section">
+                      <label>{getLabel("Visibility")}</label>
+                      <div className="visibility-options">
+                        <label className="visibility-option">
+                          <input
+                            type="radio"
+                            name="privacy_mode"
+                            value="public"
+                            checked={formData.privacy_mode === "public"}
+                            onChange={handleChange}
+                          />
+                          <MdPublic className="visibility-icon" />{" "}
+                          {getLabel("Public")}
+                        </label>
+                        <label className="visibility-option">
+                          <input
+                            type="radio"
+                            name="privacy_mode"
+                            value="private"
+                            checked={formData.privacy_mode === "private"}
+                            onChange={handleChange}
+                          />
+                          <FaLock className="visibility-icon" />{" "}
+                          {getLabel("Private")}
+                        </label>
+                      </div>
+                    </div>
+                    <button type="submit" className="submit-btn">
+                      {getLabel("Save Changes")}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="view-project">
+                    <p>
+                      <strong>{getLabel("Project Name")}:</strong>{" "}
+                      {formData.title}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Field")}:</strong> {formData.field}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Description")}:</strong>{" "}
+                      {formData.description || <i>(none)</i>}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Visibility")}:</strong>{" "}
+                      {formData.privacy_mode}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {showModal && (
+                <div className="modal-overlay">
+                  <div className="modal-content">
+                    <h3>{getLabel("Add Collaborator")}</h3>
+                    <label>{getLabel("Email")}</label>
                     <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
+                      type="email"
+                      value={collabEmail}
+                      onChange={(e) => setCollabEmail(e.target.value)}
                       required
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>{getLabel("Field")}</label>
-                    <input
-                      type="text"
-                      name="field"
-                      value={formData.field}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{getLabel("Description")}</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="visibility-section">
-                    <label>{getLabel("Visibility")}</label>
-                    <div className="visibility-options">
-                      <label className="visibility-option">
-                        <input
-                          type="radio"
-                          name="privacy_mode"
-                          value="public"
-                          checked={formData.privacy_mode === "public"}
-                          onChange={handleChange}
-                        />
-                        <MdPublic className="visibility-icon" />{" "}
-                        {getLabel("Public")}
-                      </label>
-                      <label className="visibility-option">
-                        <input
-                          type="radio"
-                          name="privacy_mode"
-                          value="private"
-                          checked={formData.privacy_mode === "private"}
-                          onChange={handleChange}
-                        />
-                        <FaLock className="visibility-icon" />{" "}
-                        {getLabel("Private")}
-                      </label>
+                    <label>{getLabel("Access Control")}</label>
+                    <select
+                      value={accessControl}
+                      onChange={(e) => setAccessControl(e.target.value)}
+                    >
+                      <option value="view">{getLabel("View Only")}</option>
+                      <option value="edit">{getLabel("Can Edit")}</option>
+                    </select>
+                    <div className="modal-buttons">
+                      <button onClick={handleAddCollaborator}>
+                        {getLabel("Add")}
+                      </button>
+                      <button onClick={() => setShowModal(false)}>
+                        {getLabel("Cancel")}
+                      </button>
                     </div>
                   </div>
-                  <button type="submit" className="submit-btn">
-                    {getLabel("Save Changes")}
-                  </button>
-                </form>
-              ) : (
-                <div className="view-project">
-                  <p>
-                    <strong>{getLabel("Project Name")}:</strong>{" "}
-                    {formData.title}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Field")}:</strong> {formData.field}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Description")}:</strong>{" "}
-                    {formData.description || <i>(none)</i>}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Visibility")}:</strong>{" "}
-                    {formData.privacy_mode}
-                  </p>
                 </div>
               )}
             </div>
-            <button
-              className="add-collab-btn"
-              onClick={() => setShowModal(true)}
-            >
-              {getLabel("Add Collaborator")}
-            </button>
-            {showModal && (
-              <div className="modal-overlay">
-                <div className="modal-content">
-                  <h3>{getLabel("Add Collaborator")}</h3>
-                  <label>{getLabel("Email")}</label>
-                  <input
-                    type="email"
-                    value={collabEmail}
-                    onChange={(e) => setCollabEmail(e.target.value)}
-                    required
-                  />
-                  <label>{getLabel("Access Control")}</label>
-                  <select
-                    value={accessControl}
-                    onChange={(e) => setAccessControl(e.target.value)}
-                  >
-                    <option value="view">{getLabel("View Only")}</option>
-                    <option value="edit">{getLabel("Can Edit")}</option>
-                  </select>
-                  <div className="modal-buttons">
-                    <button onClick={handleAddCollaborator}>
-                      {getLabel("Add")}
-                    </button>
-                    <button onClick={() => setShowModal(false)}>
-                      {getLabel("Cancel")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="collaborator-list">
-            <table className="collab-table">
-              <thead>
-                <tr>
-                  <th>{getLabel("Collaborator Name")}</th>
-                  <th>{getLabel("Email")}</th>
-                  <th>{getLabel("Access Role")}</th>
-                  <th>{getLabel("Invitation Status")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {collaborators.length === 0 ? (
+          ) : (
+            <div className="collaborator-list">
+              <button
+                className="add-collab-btn"
+                onClick={() => setShowModal(true)}
+              >
+                {getLabel("Add Collaborator")}
+              </button>
+              <table className="collab-table">
+                <thead>
                   <tr>
-                    <td colSpan="4">
-                      {getLabel("No collaborators added yet.")}
-                    </td>
+                    <th>{getLabel("Collaborator Name")}</th>
+                    <th>{getLabel("Email")}</th>
+                    <th>{getLabel("Access Role")}</th>
+                    <th>{getLabel("Invitation Status")}</th>
                   </tr>
-                ) : (
-                  collaborators.map((collab, index) => (
-                    <tr key={index}>
-                      <td>{collab.user.name}</td>
-                      <td>{collab.user.email}</td>
-                      <td>{collab.access_role}</td>
-                      <td>{collab.invitation}</td>
+                </thead>
+                <tbody>
+                  {collaborators.length === 0 ? (
+                    <tr>
+                      <td colSpan="4">
+                        {getLabel("No collaborators added yet.")}
+                      </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  ) : (
+                    collaborators.map((collab, index) => (
+                      <tr key={index}>
+                        <td>{collab.user.name}</td>
+                        <td>{collab.user.email}</td>
+                        <td>{collab.access_role}</td>
+                        <td>{collab.invitation}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        <div className="survey-grid">
-          {surveys.length > 0 ? (
-            surveys.map((survey) => (
+          {/* Reuse form / details section */}
+        </div>
+        <div className="edit-right">
+          <h3 className="survey-section-heading">
+            {getLabel("Create a New Survey")}
+          </h3>
+          <div className="survey-grid">
+            <div className="add-survey-card" onClick={handleAddSurveyClick}>
+              <div className="plus-icon">+</div>
+            </div>
+          </div>
+          <h3 className="survey-section-heading">
+            {getLabel("Existing Surveys")}
+          </h3>
+          <div className="survey-grid">
+            {surveys.map((survey) => (
               <div
                 key={survey.survey_id}
                 className="survey-card"
                 onClick={() => handleSurveyClick(survey.survey_id, survey)}
-                style={{ cursor: "pointer" }}
               >
+                <img
+                  src={survey.template?.backgroundImage || "default-banner.jpg"}
+                  className="survey-banner"
+                  alt="Survey"
+                />
                 <h4>{survey.title}</h4>
+                {console.log(survey)}
               </div>
-            ))
-          ) : (
-            <i>
-              {getLabel(
-                "No projects found. Click on the plus button to get started..."
-              )}
-            </i>
-          )}
-          <div className="add-survey-card" onClick={handleAddSurveyClick}>
-            <div className="plus-icon">+</div>
+            ))}
           </div>
         </div>
       </div>
