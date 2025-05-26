@@ -49,6 +49,24 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   // Add new option
+  // const addOption = useCallback(() => {
+  //   setQuestions((prev) =>
+  //     prev.map((q) =>
+  //       q.id === question.id
+  //         ? {
+  //             ...q,
+  //             meta: {
+  //               ...q.meta,
+  //               options: [
+  //                 ...q.meta.options,
+  //                 `Option ${q.meta.options.length + 1}`,
+  //               ],
+  //             },
+  //           }
+  //         : q
+  //     )
+  //   );
+  // }, [question.id, setQuestions]);
   const addOption = useCallback(() => {
     setQuestions((prev) =>
       prev.map((q) =>
@@ -59,14 +77,14 @@ const Radio = ({ question, questions, setQuestions }) => {
                 ...q.meta,
                 options: [
                   ...q.meta.options,
-                  `Option ${q.meta.options.length + 1}`,
+                  new Option(`Option ${q.meta.options.length + 1}`, 0),
                 ],
               },
             }
           : q
       )
     );
-  }, [question.id, setQuestions]);
+  });
 
   // Update an option's text
   const updateOption = useCallback(
@@ -254,7 +272,9 @@ const Radio = ({ question, questions, setQuestions }) => {
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || 'start'}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
@@ -276,7 +296,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
                   onClick={() => removeImage(idx)}
                 >
-                  <i className="bi bi-trash"></i> 
+                  <i className="bi bi-trash"></i>
                 </button>
               </div>
             </div>
@@ -365,7 +385,10 @@ const Radio = ({ question, questions, setQuestions }) => {
 
       {/* Actions */}
       <div className="d-flex align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary hover:bg-gray-100 transition-colors" onClick={handleCopy}>
+        <button
+          className="btn btn-outline-secondary hover:bg-gray-100 transition-colors"
+          onClick={handleCopy}
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
