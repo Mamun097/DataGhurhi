@@ -9,7 +9,13 @@ import LinearScaleQuestion from "../QuestionTypes/LinearScaleUser";
 import Checkbox from "../QuestionTypes/CheckboxUser";
 import TickBoxGrid from "../QuestionTypes/TickBoxGridUser";
 
-const SurveyQuestions = ({ section, questions, setQuestions }) => {
+const SurveyQuestions = ({
+  section,
+  questions,
+  setQuestions,
+  userResponse,
+  setUserResponse,
+}) => {
   // Filter questions for the current section
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
@@ -19,16 +25,16 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
         return (
           <Radio
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "text":
         return (
           <Text
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "likert":
@@ -37,38 +43,40 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "rating":
         return (
           <RatingQuestion
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "linearScale":
         return (
           <LinearScaleQuestion
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "datetime":
         return (
           <DateTimeQuestion
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "dropdown":
         return (
           <DropdownQuestion
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "tickboxGrid":
@@ -77,14 +85,16 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       case "checkbox":
         return (
           <Checkbox
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
           />
         );
       default:
@@ -94,21 +104,20 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
   };
 
   return (
-    <div className="mb-3">
-      <div className="mt-2">
-        {sectionQuestions.map((question) => (
-          <div
-            key={question.id}
-            style={{
-              padding: 8,
-              margin: "0 0 8px 0",
-              border: "1px solid #ccc",
-            }}
-          >
-            {renderQuestionComponent(question)}
-          </div>
-        ))}
-      </div>
+    <div className="mt-3 mb-3 bg-white">
+      {sectionQuestions.map((question) => (
+        <div
+          className="mt-4 mb-4 bg-light"
+          key={question.id}
+          style={{
+            padding: 8,
+            margin: "0 0 8px 0",
+            border: "1px solid #ccc",
+          }}
+        >
+          {renderQuestionComponent(question)}
+        </div>
+      ))}
     </div>
   );
 };
