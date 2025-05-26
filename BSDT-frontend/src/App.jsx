@@ -23,7 +23,8 @@ function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/surveytemplate" element={<Index />} />
+        {/* <Route path="/surveytemplate" element={<Index />} /> */}
+        {/* <Route path="/v/:slug" element={<IndexUser />} /> */}
 
         {/* Protected Routes */}
         {token && role== "user"? (

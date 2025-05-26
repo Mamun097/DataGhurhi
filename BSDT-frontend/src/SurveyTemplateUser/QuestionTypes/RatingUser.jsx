@@ -2,21 +2,37 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const RatingQuestion = ({ question, questions, setQuestions }) => {
+const RatingQuestion = ({ question, userResponse, setUserResponse }) => {
   // Default scale
   const scale = question.meta?.scale || 5;
+  // Find the user's answer if it exists
+  const userAnswer = userResponse.find(
+    (response) => response.questionText === question.text
+  )?.userResponse;
 
-  // Handle rating selection
-  const handleAnswerChange = (value) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, answer: value } : q
-      )
+  // Function to handle when a user selects a rating
+  // It updates the userResponse state with the selected rating for this question
+  const handleAnswerChange = (selectedRating) => {
+    const existingResponseIndex = userResponse.findIndex(
+      (response) => response.questionText === question.text
     );
+    if (existingResponseIndex !== -1) {
+      // If a response already exists, update it with the new rating
+      const updatedResponse = [...userResponse];
+      updatedResponse[existingResponseIndex].userResponse = selectedRating;
+      setUserResponse(updatedResponse);
+    } else {
+      // If no response exists, add a new response with the selected rating
+      const newResponse = {
+        questionText: question.text,
+        userResponse: selectedRating,
+      };
+      setUserResponse([...userResponse, newResponse]);
+    }
   };
 
   return (
-    <div className="mb-3">
+    <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
         {question.text || "Untitled Question"}
@@ -24,48 +40,52 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
       </h5>
 
       {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Question Image"
-          className="img-fluid mb-2"
-          style={{ maxHeight: "400px" }}
-        />
+      {/* Image Preview */}
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mt-4 mb-4">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Rating Stars */}
-      <div className="d-flex justify-content-center mb-3">
-        {[...Array(scale)].map((_, i) => {
-          const value = i + 1;
-          return (
-            <div key={i} className="text-center mx-2">
-              <button
-                type="button"
-                className="btn p-0"
-                onClick={() => handleAnswerChange(value)}
-                aria-label={`Rate ${value} out of ${scale}`}
-                disabled={question.disabled} // Optional: if you want to disable interaction
-              >
-                <i
-                  className={
-                    question.answer >= value ? "bi bi-star-fill" : "bi bi-star"
-                  }
-                  style={{
-                    fontSize: "24px",
-                    color: question.answer >= value ? "#ffc107" : "#6c757d",
-                  }}
-                ></i>
-              </button>
-              <div>{value}</div>
+      <div className="d-flex justify-content-start mt-3 mb-3 gap-3">
+        {[...Array(scale)].map((_, idx) => (
+          <div key={idx} className="text-center">
+            <button
+              type="button"
+              className="btn btn-link p-0 border-0"
+              onClick={() => handleAnswerChange(idx + 1)}
+              style={{
+                color: idx + 1 <= userAnswer ? "#ffc107" : "#6c757d",
+                fontSize: "24px",
+                cursor: "pointer",
+              }}
+            >
+              {idx + 1 <= userAnswer ? (
+                <i className="bi bi-star-fill"></i>
+              ) : (
+                <i className="bi bi-star"></i>
+              )}
+            </button>
+            <div className="text-muted" style={{ fontSize: "14px" }}>
+              {idx + 1}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </div>
-
-      {/* Required Question Indicator */}
-      {question.required && question.answer === undefined && (
-        <small className="text-danger">This question is required.</small>
-      )}
     </div>
   );
 };

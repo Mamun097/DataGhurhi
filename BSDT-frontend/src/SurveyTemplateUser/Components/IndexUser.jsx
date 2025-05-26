@@ -22,6 +22,9 @@ const Index = () => {
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
 
+  // User Response state
+  const [userResponse, setUserResponse] = useState([]);
+  console.log("User Response:", userResponse);
 
   useEffect(() => {
     const load = async () => {
@@ -74,6 +77,8 @@ const Index = () => {
               questions={questions}
               setQuestions={setQuestions}
               image={backgroundImage}
+              userResponse={userResponse} 
+              setUserResponse={setUserResponse}
             />
           </div>
 
