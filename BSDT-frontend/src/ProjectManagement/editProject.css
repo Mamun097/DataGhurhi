@@ -5,8 +5,6 @@
   padding: 20px;
 }
 
-
-
 /* Grid container */
 .edit-project-grid {
   display: flex;
@@ -26,7 +24,7 @@
 .edit-right {
   flex: 0 0 70%;
   background-color: #ffffff;
-  
+
   border-radius: 10px;
   border: 1px solid #ddd;
 
@@ -35,7 +33,6 @@
   align-items: center; /* Center all child content */
   text-align: center;
 }
-
 
 /* Tab header styling */
 .tab-header-container {
@@ -255,21 +252,19 @@ textarea {
 }
 
 .survey-grid {
-
   display: grid;
   grid-template-rows: auto; /* Auto height for rows */
   grid-auto-flow: row; /* Flow items in rows */
   grid-template-columns: repeat(3, 300px); /* Fixed-size columns */
   gap: 20px;
   justify-content: center; /* Center the grid itself */
-  
 }
 
 .survey-card {
   background-color: #f1f5f9;
   padding: 12px;
   margin-top: 2rem;
- 
+
   border-radius: 10px;
   text-align: center;
   cursor: pointer;
@@ -312,8 +307,6 @@ textarea {
   color: #00796b;
   width: 100%;
 }
-
-
 
 /* Add Collaborator Button */
 .add-collab-btn {
@@ -456,8 +449,6 @@ textarea {
   padding: 20px;
 }
 
-
-
 .survey-banner {
   width: 100%;
   height: 150px; /* or any fixed height you prefer */
@@ -469,4 +460,46 @@ textarea {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+.survey-controls {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.survey-filter,
+.survey-sort {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.survey-filter label,
+.survey-sort label {
+  font-weight: 500;
+}
+
+.survey-filter select,
+.survey-sort select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+
+.sort-order-dropdown {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  background-color: #fff;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.sort-order-dropdown:hover {
+  border-color: #097287;
 }

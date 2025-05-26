@@ -34,6 +34,9 @@ const Dashboard = () => {
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromURL());
+  const [privacyFilter, setPrivacyFilter] = useState("all");
+  const [sortField, setSortField] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
 
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
@@ -82,6 +85,16 @@ const Dashboard = () => {
       "Years of Experience",
       "Create a New Project",
       "Existing Projects",
+      "Filter by: ",
+      "All",
+      "Public",
+      "Private",
+      "Sort by:",
+      "Title",
+      "Field",
+      "Ascending",
+      "Descending",
+      "Profile Details",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -290,25 +303,44 @@ const Dashboard = () => {
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
                       {isEditing ? (
-                        <input
-                          type={field === "Date of Birth" ? "date" : "text"}
-                          name={field.toLowerCase().replace(/ /g, "_")}
-                          value={
-                            editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
-                            ] || ""
-                          }
-                          onChange={handleInputChange}
-                          required={true}
-                        />
+                        field === "Gender" ? (
+                          <select
+                            name={field.toLowerCase().replace(/ /g, "_")}
+                            value={
+                              editedValues[
+                                field.toLowerCase().replace(/ /g, "_")
+                              ] || ""
+                            }
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="">{getLabel("Select Gender")}</option>
+                            <option value="Male">{getLabel("Male")}</option>
+                            <option value="Female">{getLabel("Female")}</option>
+                            <option value="Other">{getLabel("Other")}</option>
+                            <option value="Prefer not to say">
+                              {getLabel("Prefer not to say")}
+                            </option>
+                          </select>
+                        ) : (
+                          <input
+                            type={field === "Date of Birth" ? "date" : "text"}
+                            name={field.toLowerCase().replace(/ /g, "_")}
+                            value={
+                              editedValues[
+                                field.toLowerCase().replace(/ /g, "_")
+                              ] || ""
+                            }
+                            onChange={handleInputChange}
+                            required
+                          />
+                        )
                       ) : (
-                        <i>
-                          {
-                            values.user?.[
-                              field.toLowerCase().replace(/ /g, "_")
-                            ]
-                          }
-                        </i>
+                        <span>
+                          {editedValues[
+                            field.toLowerCase().replace(/ /g, "_")
+                          ] || "-"}
+                        </span>
                       )}
                     </div>
                   ))}
@@ -334,28 +366,81 @@ const Dashboard = () => {
                     <div className="plus-icon">+</div>
                   </div>
                 </div>
+                <hr className="section-divider" />
                 {/* Existing Projects */}
                 <h4>{getLabel("Existing Projects")}</h4>
+                <div className="project-filter-bar">
+                  {/* Filter by Privacy */}
+                  <label htmlFor="privacyFilter">{getLabel("Filter by: ")}</label>
+                  <select
+                    id="privacyFilter"
+                    value={privacyFilter}
+                    onChange={(e) => setPrivacyFilter(e.target.value)}
+                    className="privacy-filter-dropdown"
+                  >
+                    <option value="all">{getLabel("All")}</option>
+                    <option value="public">{getLabel("Public")}</option>
+                    <option value="private">{getLabel("Private")}</option>
+                  </select>
+
+                  {/* Sort By Field */}
+                  <label htmlFor="sortField">Sort by:</label>
+                  <select
+                    id="sortField"
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="sort-dropdown"
+                  >
+                    <option value="title">{getLabel("Title")}</option>
+                    <option value="field">{getLabel("Field")}</option>
+                  </select>
+
+                  {/* Sort Order */}
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="sort-dropdown"
+                  >
+                    <option value="asc">{getLabel("Ascending")}</option>
+                    <option value="desc">{getLabel("Descending")}</option>
+                  </select>
+                </div>
+
+                {console.log("Projects:", projects)}
                 {projects.length > 0 ? (
                   <div className="project-grid">
-                    {projects.map((project) => (
-                      <div
-                        key={project.project_id}
-                        className="project-card"
-                        onClick={() => handleProjectClick(project.project_id)}
-                        style={{ cursor: "pointer" }}
-                      >
-                        <h4>{project.title}</h4>
-                        <p>
-                          <strong>{getLabel("Research Field:")}</strong>{" "}
-                          {project.field}
-                        </p>
-                        <p>
-                          <strong>{getLabel("Description:")}</strong>{" "}
-                          {project.description}
-                        </p>
-                      </div>
-                    ))}
+                    {projects
+                      .filter(
+                        (project) =>
+                          privacyFilter === "all" ||
+                          project.privacy_mode === privacyFilter
+                      )
+                      .sort((a, b) => {
+                        const aVal = a[sortField]?.toLowerCase() || "";
+                        const bVal = b[sortField]?.toLowerCase() || "";
+                        if (sortOrder === "asc")
+                          return aVal.localeCompare(bVal);
+                        else return bVal.localeCompare(aVal);
+                      })
+                      .map((project) => (
+                        <div
+                          key={project.project_id}
+                          className="project-card"
+                          onClick={() => handleProjectClick(project.project_id)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <h4>{project.title}</h4>
+                          <p>
+                            <strong>{getLabel("Research Field:")}</strong>{" "}
+                            {project.field}
+                          </p>
+                          <p>
+                            <strong>{getLabel("Description:")}</strong>{" "}
+                            {project.description}
+                          </p>
+                        </div>
+                      ))}
                   </div>
                 ) : (
                   <i>

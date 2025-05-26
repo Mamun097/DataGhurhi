@@ -126,6 +126,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
+  margin-top: 1rem;
 }
 
 .language-labels {
