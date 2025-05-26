@@ -61,7 +61,7 @@ const Dashboard = () => {
       "Research Field:",
       "Description:",
       "No projects found. Add new projects to get started...",
-      "Collaborators",
+      "Collaborated Projects",
       "Show list of collaboratored projects here..",
       "Trending Topics",
       "Name",
@@ -263,7 +263,7 @@ const Dashboard = () => {
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
-                  <h3>{getLabel("Profile details")}</h3>
+                  <h3>{getLabel("Profile Details")}</h3>
                   <button onClick={toggleEdit} className="edit-toggle-btn">
                     {isEditing ? getLabel("Cancel") : getLabel("Edit")}
                   </button>
@@ -369,7 +369,7 @@ const Dashboard = () => {
 
             {activeTab === "collaboratedprojects" && (
               <div>
-                <h3>{getLabel("Collaborators")}</h3>
+                <h3>{getLabel("Collaborated Projects")}</h3>
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
               </div>
             )}
