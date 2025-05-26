@@ -31,6 +31,7 @@ exports.saveSurveyForm = async (req, res) => {
         .status(500)
         .json({ error: "Failed to create survey template" });
     }
+    console.log("Survey template:", surveyData[0]);
     return res.status(201).json({
       message: "Survey template created successfully",
       data: surveyData[0],
@@ -77,7 +78,7 @@ exports.createSurveyForm = async (req, res) => {
         survey_status: "published",
       })
       .eq("survey_id", survey_id)
-      .select("survey_id");
+      .select("*");
 
     if (surveyError) {
       console.error("Supabase insert error for survey:", surveyError);
@@ -197,6 +198,7 @@ exports.createSurveyForm = async (req, res) => {
         }
       }
     }
+    console.log("Survey template creation/updation:", surveyData[0]);
     
     return res.status(201).json({
       survey_link: slug,
