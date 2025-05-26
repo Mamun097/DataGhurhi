@@ -2,9 +2,9 @@
 .dashboard-container {
   padding: 2rem;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #9776eb 0%, #e7a0f1 100%);
+  background: linear-gradient(135deg, #c8efdc 30%, #d8ebe7 30%);
   min-height: 100vh;
-  margin-top: 3rem;
+
 }
 
 /* Layout */
@@ -43,7 +43,7 @@
   height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #4b6cb7;
+  border: 3px solid #05d37e;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -51,7 +51,7 @@
   position: absolute;
   bottom: 5px;
   right: 5px;
-  background: #4b6cb7;
+  background:  #05d37e;
   color: white;
   padding: 6px;
   border-radius: 50%;
@@ -80,12 +80,12 @@
   cursor: pointer;
   font-weight: 600;
   transition: 0.3s;
-  color: #1e3a8a;
+  color: #1e838a;
 }
 
 .profile-tabs button.active,
 .profile-tabs button:hover {
-  background: linear-gradient(135deg, #4b6cb7, #5b21b6);
+  background: linear-gradient(135deg, #4bb77d, #046060);
   color: white;
 }
 /* Main Section */
@@ -110,11 +110,11 @@
 
 .edit-profile-header h3 {
   font-size: 1.6rem;
-  color: #4b0082;
+  color: #035730;
 }
 
 .edit-toggle-btn {
-  background: linear-gradient(to right, #8e2de2, #4a00e0);
+  background: linear-gradient(to right, #116d56, #115f64);
   color: white;
   padding: 0.5rem 1rem;
   font-weight: 600;
@@ -125,7 +125,7 @@
 }
 
 .edit-toggle-btn:hover {
-  background: linear-gradient(to right, #4a00e0, #8e2de2);
+  background: linear-gradient(to right, #0cb574, #079346);
 }
 
 /* Two-column layout */
@@ -138,7 +138,7 @@
 .profile-fields label {
   display: block;
   font-weight: bold;
-  color: #4a00e0;
+  color: #125752;
   margin-bottom: 0.5rem;
 }
 
@@ -153,7 +153,7 @@
 }
 
 .profile-fields input:focus {
-  border-color: #8e2de2;
+  border-color: #03663075;
   background: white;
   outline: none;
   box-shadow: 0 0 0 3px rgba(142, 45, 226, 0.2);
@@ -186,60 +186,99 @@
 }
 
 /* Projects Grid */
-.project-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+/* Section Titles */
+.projects-section h3 {
+  text-align: center;
+  font-size: 2.5 rem;
+  margin-bottom: 1rem;
+  color: #054f13;
+  font-weight: 800;
+}
+.projects-section h4 {
+  text-align: center;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #000000;
+  font-weight: 500;
 }
 
-.project-card,
-.add-project-card {
-  background: linear-gradient(145deg, #ffffff, #f0f0f0);
+/* Grid container for projects */
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+/* Individual project card styling */
+.project-card {
+  width: 280px;
+  background-color: #ffffff;
   border-radius: 12px;
   padding: 1.2rem;
-  transition: 0.3s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
-  border-left: 4px solid #4b6cb7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease-in-out;
+  text-align: center;
 }
 
-.project-card:hover,
-.add-project-card:hover {
-  transform: scale(1.02);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
-  background: #e0f2fe;
+.project-card:hover {
+  transform: translateY(-4px);
 }
 
+/* Project title inside card */
 .project-card h4 {
-  margin-top: 0;
-  font-size: 1.2rem;
-  color: #2d3748;
+  font-size: 1.15rem;
+  margin-bottom: 0.5rem;
+  color: #068d7b;
+  font-weight: 700;
 }
 
+/* Project field and description */
+.project-card p {
+  font-size: 0.95rem;
+  color: #444;
+  margin: 0.3rem 0;
+  line-height: 1.4;
+}
+
+/* Add project card */
 .add-project-card {
+  width: 280px;
+  height: 150px;
+  background-color: #f8f8f8;
+  border: 2px dashed #ccc;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #777;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+
+.add-project-card:hover {
+  background-color: #f0f0f0;
+}
+
+/* New project header and card container */
+.new-project-section {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
-  background: #f0f9ff;
-  border: 2px dashed #4b6cb7;
-  border-radius: 12px;
-  padding: 1.2rem;
-  transition: 0.3s ease-in-out;
-  min-height: 180px; /* Match project card height */
-  cursor: pointer;
+  margin-bottom: 2rem;
 }
 
-.add-project-card:hover {
-  background: #e0f2fe;
-  border-color: #3b82f6;
+.new-project-section h4 {
+  margin-bottom: 1rem;
+  font-size: 1.2rem;
+  color: #333;
+  margin-bottom: 2rem;
 }
 
-.plus-icon {
-  font-size: 2.5rem;
-  color: #4b6cb7;
-  font-weight: bold;
-}
+
 
 /* Trending Section */
 .trending-section {
@@ -253,10 +292,10 @@
 }
 
 .trending-section h3 {
-  border-bottom: 2px solid #8e2de2;
+  border-bottom: 2px solid #067639;
   padding-bottom: 0.5rem;
   margin-bottom: 1rem;
-  color: #4a00e0;
+  color: #0e7f4a;
 }
 
 .trending-list {
@@ -278,3 +317,4 @@
   position: absolute;
   left: 0;
 }
+
