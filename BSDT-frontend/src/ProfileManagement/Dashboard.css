@@ -325,25 +325,19 @@
   background-color: #021813;
   width: 100%;
 }
-.project-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
 
 
 .project-filter-bar {
   display: flex;
   justify-content: center;         /* Center horizontally */
   align-items: center;             /* Align items vertically */
-  gap: 16px;                       /* Space between dropdowns */
+  gap: 5px;                       /* Space between dropdowns */
   margin: 24px auto;               /* Top/bottom spacing, center */
   flex-wrap: wrap;                 /* Responsive wrapping */
 }
 .privacy-filter-dropdown,
 .sort-dropdown {
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 14px;
