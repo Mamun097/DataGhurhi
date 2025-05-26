@@ -6,9 +6,12 @@ import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Swal from "sweetalert2"; // for prompt box
+import Swal from "sweetalert2";
+import { ToastContainer, toast } from "react-toastify";
+
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -47,6 +50,10 @@ const EditProject = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortKey, setSortKey] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
+
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -78,7 +85,24 @@ const EditProject = () => {
     "Create a New Survey",
     "Existing Surveys",
     "Enter Survey Title",
-    "Create"
+    "Create",
+    "Survey Title",
+    "Title is required!",
+    "Survey created successfully!",
+    "Failed to create survey.",
+    "Add Survey",
+    "All",
+    "Published",
+    "Unpublished",
+    "Filter by: ",
+    "Sort by:",
+    "Ascending",
+    "Descending",
+    "Title",
+    "Project updated successfully!",
+    "Failed to update project.",
+    "Project deleted successfully!",
+    "Failed to delete project.",
   ];
 
   const loadTranslations = async () => {
@@ -121,7 +145,27 @@ const EditProject = () => {
       setLoading(false);
     }
   };
-
+  const handleDeleteSurvey = async (surveyId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.delete(
+        `http://localhost:2000/api/surveytemplate/${surveyId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 200) {
+        toast.success(getLabel("Survey deleted successfully!"));
+        fetchSurveys();
+        // reload
+        window.location.reload();
+      } else {
+        console.error("Error deleting survey:", response.statusText);
+        toast.error(getLabel("Failed to delete survey."));
+      }
+    } catch (error) {
+      console.error("Error deleting survey:", error);
+      toast.error(getLabel("Failed to delete survey."));
+    }
+  };
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -183,20 +227,23 @@ const EditProject = () => {
           }
         );
         if (response.status === 201) {
-          alert(getLabel("✅ Survey created successfully!"));
+          toast.success(getLabel("Survey created successfully!"));
           fetchSurveys();
-          navigate(
-            `/view-survey/${
-              response.data.data?.survey_id || response.data.survey_id
-            }`,
-            {
-              state: { project_id: projectId, survey_details: response.data },
-            }
-          );
+
+          setTimeout(() => {
+            navigate(
+              `/view-survey/${
+                response.data.data?.survey_id || response.data.survey_id
+              }`,
+              {
+                state: { project_id: projectId, survey_details: response.data },
+              }
+            );
+          }, 3000); // 3 seconds delay
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-        alert(getLabel("❌ Failed to create survey."));
+        toast.error(getLabel("❌ Failed to create survey."));
       }
     }
   };
@@ -222,11 +269,12 @@ const EditProject = () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      alert("Project updated successfully!");
+
+      toast.success(getLabel("✅ Project updated successfully!"));
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating project:", error);
-      alert("Failed to update project.");
+      toast.error(getLabel("❌ Failed to update project."));
     }
   };
 
@@ -430,32 +478,89 @@ const EditProject = () => {
           <h3 className="survey-section-heading">
             {getLabel("Create a New Survey")}
           </h3>
-      <div className="survey-grid-center">
+          <div className="survey-grid-center">
             <div className="add-survey-card" onClick={handleAddSurveyClick}>
               <div className="plus-icon">+</div>
             </div>
           </div>
+          <hr className="section-divider" />
           <h3 className="survey-section-heading">
             {getLabel("Existing Surveys")}
           </h3>
-          <div className="survey-grid">
-            {surveys.map((survey) => (
-              <div
-                key={survey.survey_id}
-                className="survey-card"
-                onClick={() => handleSurveyClick(survey.survey_id, survey)}
+          <div className="survey-controls">
+            <div className="survey-filter">
+              <label htmlFor="statusFilter">{getLabel("Filter by: ")}</label>
+              <select
+                id="statusFilter"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
               >
-                <img
-                  src={survey.template?.backgroundImage || "default-banner.jpg"}
-                  className="survey-banner"
-                  alt="Survey"
-                />
-                <h4>{survey.title}</h4>
-                {console.log(survey)}
-              </div>
-            ))}
+                <option value="all">{getLabel("All")}</option>
+                <option value="published">{getLabel("Published")}</option>
+                <option value="saved">{getLabel("Unpublished")}</option>
+              </select>
+            </div>
+            <div className="survey-sort">
+              <label htmlFor="sortKey">{getLabel("Sort by:")}</label>
+              <select
+                id="sortKey"
+                value={sortKey}
+                onChange={(e) => setSortKey(e.target.value)}
+              >
+                <option value="title">{getLabel("Title")}</option>
+              </select>
+
+              <select
+                className="sort-order-dropdown"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">{getLabel("Ascending")}</option>
+                <option value="desc">{getLabel("Descending")}</option>
+              </select>
+            </div>
+          </div>
+          <div className="survey-grid">
+            {surveys
+              .filter((survey) =>
+                filterStatus === "all"
+                  ? true
+                  : survey.survey_status === filterStatus
+              )
+              .sort((a, b) => {
+                const aVal = a[sortKey]?.toString().toLowerCase() ?? "";
+                const bVal = b[sortKey]?.toString().toLowerCase() ?? "";
+                return sortOrder === "asc"
+                  ? aVal.localeCompare(bVal)
+                  : bVal.localeCompare(aVal);
+              })
+              .map((survey) => (
+                <div
+                  key={survey.survey_id}
+                  className="survey-card"
+                  style={{ cursor: "pointer" }}
+                >
+                  <img
+                    src={
+                      survey.template?.backgroundImage ||
+                      "/assets/images/banner.jpg"
+                    }
+                    className="survey-banner"
+                    alt="Survey"
+                    onClick={() => handleSurveyClick(survey.survey_id, survey)}
+                  />
+                  <h4>{survey.title}</h4>
+                  <IconButton aria-label="delete" size="large">
+                    <DeleteIcon
+                      fontSize="inherit"
+                      onClick={() => handleDeleteSurvey(survey.survey_id)}
+                    />
+                  </IconButton>
+                </div>
+              ))}
           </div>
         </div>
+        <ToastContainer position="top-center" autoClose={3000} />
       </div>
     </>
   );
