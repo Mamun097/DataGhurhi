@@ -593,79 +593,64 @@ const EditProject = () => {
                   <h4>{survey.title}</h4>
                   <p>
                     <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(survey.last_updated).toLocaleDateString("en-US", {
+                    {new Date(survey.last_updated + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
                       year: "numeric",
                       month: "long",
                       day: "numeric",
-                    }) +
-                      ", " +
-                      new Date(survey.last_updated).toLocaleTimeString(
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
+
+                  <p>
+                    <strong>{getLabel("Created At:")}</strong>{" "}
+                    {new Date(survey.created_at + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
+
+                  {survey.ending_date && (
+                    <p>
+                      <strong>{getLabel("Ended At:")}</strong>{" "}
+                      {new Date(survey.ending_date + "Z").toLocaleString(
                         "en-US",
                         {
+                          timeZone: "Asia/Dhaka",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
                           hour: "numeric",
                           minute: "2-digit",
                           hour12: true,
                         }
                       )}
-                  </p>
-
-                  <p>
-                    <strong>{getLabel("Created At:")}</strong>{" "}
-                    {new Date(survey.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    }) +
-                      ", " +
-                      new Date(survey.created_at).toLocaleTimeString("en-US", {
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                  </p>
-                  {survey.ending_date && (
-                    <p>
-                      <strong>{getLabel("Ended At:")}</strong>{" "}
-                      {new Date(survey.ending_date).toLocaleDateString(
-                        "en-US",
-                        {
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                        }
-                      ) +
-                        ", " +
-                        new Date(survey.ending_date).toLocaleTimeString(
-                          "en-US",
-                          {
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true,
-                          }
-                        )}
                     </p>
                   )}
 
                   {survey.survey_status === "published" && (
                     <p>
                       <strong>{getLabel("Published At:")}</strong>{" "}
-                      {new Date(survey.published_date).toLocaleDateString(
+                      {new Date(survey.published_date + "Z").toLocaleString(
                         "en-US",
                         {
+                          timeZone: "Asia/Dhaka",
                           year: "numeric",
                           month: "long",
                           day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
                         }
-                      ) +
-                        ", " +
-                        new Date(survey.published_date).toLocaleTimeString(
-                          "en-US",
-                          {
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true,
-                          }
-                        )}
+                      )}{" "}
+                  
                     </p>
                   )}
 

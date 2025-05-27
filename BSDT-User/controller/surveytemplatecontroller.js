@@ -19,7 +19,8 @@ exports.saveSurveyForm = async (req, res) => {
         template: survey_template,
         starting_date: new Date(),
         title: survey_template.title || 'Untitled Survey',
-        survey_status: 'saved'
+        survey_status: 'saved',
+        last_updated: new Date().toISOString(),
       })
       .eq('survey_id', survey_id)
       .select('*');
@@ -59,7 +60,8 @@ exports.createSurveyForm = async (req, res) => {
         template: survey_template,
         starting_date: new Date(),
         title: title || 'Untitled Survey',
-        survey_status: 'published'
+        survey_status: 'published',
+        last_updated: new Date().toISOString(),
       })
       .eq('survey_id', survey_id)
       .select('survey_id');

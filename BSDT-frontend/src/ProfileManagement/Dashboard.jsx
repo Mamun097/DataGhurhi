@@ -403,7 +403,9 @@ const Dashboard = () => {
                     <option value="title">{getLabel("Title")}</option>
                     <option value="field">{getLabel("Field")}</option>
                     <option value="created_at">{getLabel("Created At")}</option>
-                    <option value="last_updated">{getLabel("Last Updated")}</option>
+                    <option value="last_updated">
+                      {getLabel("Last Updated")}
+                    </option>
                   </select>
 
                   {/* Sort Order */}
@@ -470,44 +472,34 @@ const Dashboard = () => {
 
                           <p>
                             <strong>{getLabel("Created At:")}</strong>{" "}
-                            {new Date(project.created_at).toLocaleDateString(
+                            {new Date(project.created_at+ "Z").toLocaleString(
                               "en-US",
                               {
+                                timeZone: "Asia/Dhaka",
                                 year: "numeric",
                                 month: "long",
                                 day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
                               }
-                            ) +
-                              ", " +
-                              new Date(project.created_at).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )}
+                            )}
                           </p>
 
                           <p>
                             <strong>{getLabel("Last Updated:")}</strong>{" "}
-                            {new Date(project.last_updated).toLocaleDateString(
+                            {new Date(project.last_updated + "Z").toLocaleString(
                               "en-US",
                               {
+                                timeZone: "Asia/Dhaka",
                                 year: "numeric",
                                 month: "long",
                                 day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
                               }
-                            ) +
-                              ", " +
-                              new Date(project.last_updated).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "numeric",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )}
+                            )}
                           </p>
                         </div>
                       ))}
