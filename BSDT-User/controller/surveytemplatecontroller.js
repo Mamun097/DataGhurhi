@@ -197,16 +197,17 @@ exports.createSurveyForm = async (req, res) => {
         }
       }
     }
-    // add updated time to project table
-    const { error: projectError } = await supabase
+    //add last updated time to project table
+    const { error: projectUpdateError } = await supabase
       .from("survey_project")
       .update({ last_updated: new Date() })
       .eq("project_id", project_id);
-    if (projectError) {
-      console.error("Supabase update error for project:", projectError);
-      return res.status(500).json({ error: "Failed to update project" });
+    if (projectUpdateError) {
+      console.error("Supabase update error for project:", projectUpdateError);
+      return res
+        .status(500)
+        .json({ error: "Failed to update project last updated time" });
     }
-
     return res.status(201).json({
       message: "Survey template created successfully",
       data: surveyData[0],
