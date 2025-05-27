@@ -95,6 +95,7 @@ async function updateProject(projectId, data) {
       privacy_mode: data.privacy_mode,
       scheduled_type: data.scheduled_type,
       schedule_date: data.scheduled_date,
+      last_updated: new Date().toISOString(),
     })
     .eq("project_id", projectId);
 
