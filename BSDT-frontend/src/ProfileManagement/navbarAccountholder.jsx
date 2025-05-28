@@ -6,6 +6,7 @@ import logo_buet from "../assets/logos/cse_buet.png";
 import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
+import { FaChartBar } from "react-icons/fa";
 import {
   FaHome,
   FaUser,
@@ -94,6 +95,14 @@ const NavbarAcholder = (props) => {
           <a href="faq">
             <FaQuestionCircle className="nav-icon" />
             <span>{language === "English" ? "FAQ" : "প্রশ্নাবলী"}</span>
+          </a>
+        </li>
+        <li>
+          <a href="/analysis">
+            <FaChartBar className="nav-icon" />
+            <span>
+              {language === "English" ? "Analysis" : "পরিসংখ্যান বিশ্লেষণ"}
+            </span>
           </a>
         </li>
         <li className="language-toggle">

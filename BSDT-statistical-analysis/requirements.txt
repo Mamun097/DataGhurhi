@@ -1,0 +1,17 @@
+django 
+pandas 
+scikit-learn 
+scipy 
+seaborn 
+matplotlib 
+openpyxl
+statsmodels
+gunicorn
+whitenoise
+networkx
+googletrans
+Pillow
+numpy
+cairocffi
+pangocairocffi
+googletrans==4.0.0-rc1

@@ -1,9 +1,14 @@
-import React from "react";
+import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
+import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+
+
 
 const DateTimeQuestion = ({ question, questions, setQuestions }) => {
+  const [showCropper, setShowCropper] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = React.useState(false);
 
   // Function to toggle the required status of a question
@@ -46,20 +51,39 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
     });
   };
 
-  // Function to upload an image for the question
-  const handleImageUpload = (event) => {
+  // Handle image upload trigger
+  const handleQuestionImageUpload = (event, id) => {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setQuestions((prevQuestions) =>
-          prevQuestions.map((q) =>
-            q.id === question.id ? { ...q, image: e.target.result } : q
-          )
-        );
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    setSelectedFile(file);
+    setShowCropper(true);
+  };
+
+  // Remove image
+  const removeImage = (index) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
+          : q
+      )
+    );
+  };
+
+  // Update image alignment
+  const updateAlignment = (index, alignment) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              imageUrls: q.imageUrls.map((img, i) =>
+                i === index ? { ...img, alignment } : img
+              ),
+            }
+          : q
+      )
+    );
   };
 
   // Updated copy functionality: Insert copied question right below the original
@@ -107,15 +131,55 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
         />
       </div>
       <div className="mb-2">
-        {/* Image Preview */}
-        {question.image && (
-          <img
-            src={question.image}
-            alt="Uploaded"
-            className="img-fluid mb-2"
-            style={{ maxHeight: "400px" }}
+    {/* Image Preview */}
+    {showCropper && selectedFile && (
+          <ImageCropper
+            file={selectedFile}
+            questionId={question.id}
+            setQuestions={setQuestions}
+            onClose={() => {
+              setShowCropper(false);
+              setSelectedFile(null);
+            }}
           />
         )}
+  
+      {/* Image Previews with Remove and Alignment Options */}
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mb-2">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+              <div className="d-flex justify-content-between mt-2 gap-2">
+                <select
+                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={img.alignment || "start"}
+                  onChange={(e) => updateAlignment(idx, e.target.value)}
+                >
+                  <option value="start">Left</option>
+                  <option value="center">Center</option>
+                  <option value="end">Right</option>
+                </select>
+                <button
+                  className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
+                  onClick={() => removeImage(idx)}
+                >
+                  <i className="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       </div>
       {/* Question Text & Type Selector */}
       <div className="d-flex align-items-center mb-2">
@@ -154,9 +218,13 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary me-2">
+        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
           <i className="bi bi-image"></i>
-          <input type="file" hidden onChange={handleImageUpload} />
+          <input
+            type="file"
+            hidden
+            onChange={(e) => handleQuestionImageUpload(e, question.id)}
+          />
         </label>
 
         <div className="form-check form-switch ms-auto">

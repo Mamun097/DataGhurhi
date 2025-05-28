@@ -151,6 +151,7 @@ const Dashboard = () => {
         if ((response.data.user.user_type || 'normal') === 'normal') {
           setShowAdBanner(true);
         }
+        localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
       console.error("Error:", error);
