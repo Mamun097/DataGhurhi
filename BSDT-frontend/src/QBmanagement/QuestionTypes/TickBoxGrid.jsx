@@ -143,7 +143,8 @@ const updateMeta = (newMeta) => {
            Authorization: `Bearer ${token}`,
          },
        });
-       setUpdatedQuestion(null); // Optionally clear the question from state
+       window.location.reload();
+        console.log("Question deleted successfully");
        
      }
      catch (error) {
@@ -205,6 +206,7 @@ const updateMeta = (newMeta) => {
            }
            }
             setIsEditing(false);
+            setUpdatedQuestion((prev) => ({ ...prev, new: false }));
          }, [updatedQuestion, setIsEditing, newQuestion, setNewQuestion]);
 
 
