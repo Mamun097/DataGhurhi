@@ -49,6 +49,9 @@ const fetchSurveyUserRouter = require('./route/fetchsurveyuser');
 // get csv
 const csvgenerationRouter = require('./route/csvgeneration');
 
+// question bank
+const questionBankRouter = require('./route/questionBankView');
+
 //connect db
 const supabase = require('./db');
 require('dotenv').config();
@@ -98,6 +101,10 @@ app.use('/api/fetch-survey-user', fetchSurveyUserRouter);
 
 //csv generation
 app.use('/api/generatecsv', csvgenerationRouter);
+
+
+// question bank
+app.use('/api/question-bank', questionBankRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
