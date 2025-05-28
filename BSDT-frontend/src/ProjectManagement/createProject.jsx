@@ -1,10 +1,13 @@
 //write code
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import './createProject.css';
+import "./createProject.css";
 import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -27,13 +30,16 @@ const translateText = async (textArray, targetLang) => {
 
 const AddProject = () => {
   const [formData, setFormData] = useState({
-    title: '',
-    field: '',
-    description: '',
-    privacy_mode: 'public'
+    title: "",
+    field: "",
+    description: "",
+    privacy_mode: "public",
   });
+const navigate = useNavigate();
 
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const loadTranslations = async () => {
@@ -43,19 +49,38 @@ const AddProject = () => {
     }
 
     const labels = [
-      "Create a New Project", "Project Name", "Enter project name",
-      "Field", "Enter field of project", "Description (Optional)",
-      "Describe your project", "Visibility", "Private", "Public",
+      "Create a New Project",
+      "Project Name",
+      "Enter project name",
+      "Field",
+      "Enter field of project",
+      "Description (Optional)",
+      "Describe your project",
+      "Visibility",
+      "Private",
+      "Public",
       "Choose whether you want the project to be public or private.",
-      "Create Project"
+      "Create Project",
+      "Project created successfully",
+      "An error occurred while creating the project",
     ];
 
     const translated = await translateText(labels, "bn");
     const keys = [
-      "heading", "projectName", "projectPlaceholder",
-      "field", "fieldPlaceholder", "description",
-      "descriptionPlaceholder", "visibility", "private", "public",
-      "visibilityDesc", "submit"
+      "heading",
+      "projectName",
+      "projectPlaceholder",
+      "field",
+      "fieldPlaceholder",
+      "description",
+      "descriptionPlaceholder",
+      "visibility",
+      "private",
+      "public",
+      "visibilityDesc",
+      "submit",
+      "successToast",
+      "errorToast",
     ];
 
     const translations = {};
@@ -70,29 +95,44 @@ const AddProject = () => {
     loadTranslations();
   }, [language]);
 
-  const getLabel = (eng, key) => language === "English" ? eng : translatedLabels[key] || eng;
+  const getLabel = (eng, key) =>
+    language === "English" ? eng : translatedLabels[key] || eng;
 
   const handleChange = (e) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:2000/api/project/create-project', formData, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+      const response = await axios.post(
+        "http://localhost:2000/api/project/create-project",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
-      alert('Project created successfully');
-      window.location.href = '/dashboard';
+      );
+
+      if (response.status === 201) {
+        toast.success(
+          `✅ ${getLabel("Project created successfully", "successToast")}`
+        );
+        setTimeout(() => (navigate("/dashboard?tab=projects")), 3000);
+      }
     } catch (error) {
       console.error(error);
-      alert('An error occurred while creating the project');
+      toast.error(
+        `❌ ${getLabel(
+          "An error occurred while creating the project",
+          "errorToast"
+        )}`
+      );
     }
   };
 
@@ -104,14 +144,19 @@ const AddProject = () => {
         <div className="project-form">
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label htmlFor="title">{getLabel("Project Name", "projectName")}</label>
+              <label htmlFor="title">
+                {getLabel("Project Name", "projectName")}
+              </label>
               <input
                 type="text"
                 id="title"
                 name="title"
                 value={formData.title}
                 onChange={handleChange}
-                placeholder={getLabel("Enter project name", "projectPlaceholder")}
+                placeholder={getLabel(
+                  "Enter project name",
+                  "projectPlaceholder"
+                )}
                 required
               />
             </div>
@@ -124,19 +169,27 @@ const AddProject = () => {
                 name="field"
                 value={formData.field}
                 onChange={handleChange}
-                placeholder={getLabel("Enter field of project", "fieldPlaceholder")}
+                placeholder={getLabel(
+                  "Enter field of project",
+                  "fieldPlaceholder"
+                )}
                 required
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="description">{getLabel("Description (Optional)", "description")}</label>
+              <label htmlFor="description">
+                {getLabel("Description (Optional)", "description")}
+              </label>
               <textarea
                 id="description"
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                placeholder={getLabel("Describe your project", "descriptionPlaceholder")}
+                placeholder={getLabel(
+                  "Describe your project",
+                  "descriptionPlaceholder"
+                )}
               ></textarea>
             </div>
 
@@ -149,11 +202,13 @@ const AddProject = () => {
                     id="private"
                     name="privacy_mode"
                     value="private"
-                    checked={formData.privacy_mode === 'private'}
+                    checked={formData.privacy_mode === "private"}
                     onChange={handleChange}
                   />
                   <FaLock className="visibility-icon" />
-                  <label htmlFor="private">{getLabel("Private", "private")}</label>
+                  <label htmlFor="private">
+                    {getLabel("Private", "private")}
+                  </label>
                 </div>
 
                 <div className="visibility-option">
@@ -162,7 +217,7 @@ const AddProject = () => {
                     id="public"
                     name="privacy_mode"
                     value="public"
-                    checked={formData.privacy_mode === 'public'}
+                    checked={formData.privacy_mode === "public"}
                     onChange={handleChange}
                   />
                   <MdPublic className="visibility-icon" />
@@ -170,7 +225,10 @@ const AddProject = () => {
                 </div>
               </div>
               <div className="visibility-description">
-                {getLabel("Choose whether you want the project to be public or private.", "visibilityDesc")}
+                {getLabel(
+                  "Choose whether you want the project to be public or private.",
+                  "visibilityDesc"
+                )}
               </div>
             </div>
 
@@ -179,6 +237,7 @@ const AddProject = () => {
             </button>
           </form>
         </div>
+        <ToastContainer position="top-center" autoClose={4000} />
       </div>
     </>
   );

@@ -6,12 +6,13 @@ import { MdPublic } from "react-icons/md";
 import { FaLock } from "react-icons/fa";
 import { useParams, useNavigate } from "react-router-dom";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import Swal from "sweetalert2"; // for prompt box
-import DeleteButton from "../SurveyTemplate/utils/DeleteButton";
-import { title } from "framer-motion/client";
-
+import Swal from "sweetalert2";
+import { ToastContainer, toast } from "react-toastify";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+import SendIcon from "@mui/icons-material/Send";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
@@ -49,6 +50,10 @@ const EditProject = () => {
   const [activeTab, setActiveTab] = useState("details");
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortField, setSortField] = useState("title");
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -77,6 +82,41 @@ const EditProject = () => {
     "Access Role",
     "Invitation Status",
     "No projects found. Click on the plus button to get started...",
+    "Create a New Survey",
+    "Existing Surveys",
+    "Enter Survey Title",
+    "Create",
+    "Survey Title",
+    "Title is required!",
+    "Survey created successfully!",
+    "Failed to create survey.",
+    "Add Survey",
+    "All",
+    "Published",
+    "Unpublished",
+    "Filter by: ",
+    "Sort by:",
+    "Ascending",
+    "Descending",
+    "Title",
+    "Project updated successfully!",
+    "Failed to update project.",
+    "Project deleted successfully!",
+    "Failed to delete project.",
+    "Are you sure?",
+    "This action cannot be undone.",
+    "Yes, delete it!",
+    "No, cancel!",
+    "Survey deleted successfully!",
+    "Failed to delete survey.",
+    "Last Updated:",
+    "Created At:",
+    "Ended At:",
+    "Published At:",
+    "Last Updated",
+    "Created At",
+    "Ended At",
+    "Published At",
   ];
 
   const loadTranslations = async () => {
@@ -104,7 +144,9 @@ const EditProject = () => {
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } =
@@ -117,13 +159,35 @@ const EditProject = () => {
       setLoading(false);
     }
   };
-
+  const handleDeleteSurvey = async (surveyId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.delete(
+        `http://localhost:2000/api/surveytemplate/${surveyId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 200) {
+        toast.success(getLabel("Survey deleted successfully!"));
+        fetchSurveys();
+        // reload
+        setTimeout(() => window.location.reload(), 2000);
+      } else {
+        console.error("Error deleting survey:", response.statusText);
+        toast.error(getLabel("Failed to delete survey."));
+      }
+    } catch (error) {
+      console.error("Error deleting survey:", error);
+      toast.error(getLabel("Failed to delete survey."));
+    }
+  };
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/surveys`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
@@ -132,11 +196,13 @@ const EditProject = () => {
   };
 
   const fetchCollaborators = async () => {
+    const token = localStorage.getItem("token");
     try {
-      const token = localStorage.getItem("token");
       const response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/collaborators`,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
       setCollaborators(response.data.collaborators || []);
     } catch (error) {
@@ -149,71 +215,51 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-  
-const handleAddSurveyClick = async () => {
-  // For translation, fallback to English if not available
-  const t = {
-    title: translatedLabels["Enter Survey Title"] || "Enter Survey Title",
-    placeholder: translatedLabels["Survey Title"] || "Survey Title",
-    confirmText: translatedLabels["Create"] || "Create",
-    cancelText: translatedLabels["Cancel"] || "Cancel",
-    validation: translatedLabels["Title is required!"] || "Title is required!",
-    successMsg: translatedLabels["✅ Survey created successfully!"] || "✅ Survey created successfully!",
-    errorMsg: translatedLabels["❌ Failed to create survey."] || "❌ Failed to create survey.",
-  };
+  const handleAddSurveyClick = async () => {
+    const result = await Swal.fire({
+      title: getLabel("Enter Survey Title"),
+      input: "text",
+      inputPlaceholder: getLabel("Survey Title"),
+      showCancelButton: true,
+      confirmButtonText: getLabel("Create"),
+      cancelButtonText: getLabel("Cancel"),
+      inputValidator: (value) =>
+        !value ? getLabel("Title is required!") : undefined,
+    });
 
-  const result = await Swal.fire({
-    title: language === "English" ? "Enter Survey Title" : t.title,
-    input: "text",
-    inputPlaceholder: language === "English" ? "Survey Title" : t.placeholder,
-    showCancelButton: true,
-    confirmButtonText: language === "English" ? "Create" : t.confirmText,
-    cancelButtonText: language === "English" ? "Cancel" : t.cancelText,
-    inputValidator: (value) => {
-      if (!value) {
-        return language === "English"
-          ? "Title is required!"
-          : t.validation;
-      }
-    },
-  });
-
-  if (result.isConfirmed && result.value) {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.post(
-        `http://localhost:2000/api/project/${projectId}/create-survey`,
-        { title: result.value },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      if (response.status === 201) {
-        // Use alert or toast if available
-        alert(
-          language === "English"
-            ? "✅ Survey created successfully!"
-            : t.successMsg
+    if (result.isConfirmed && result.value) {
+      const token = localStorage.getItem("token");
+      try {
+        const response = await axios.post(
+          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          { title: result.value },
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
         );
-        fetchSurveys();
-        navigate(`/view-survey/${response.data.data?.survey_id || response.data.survey_id}`, {
-          state: {
-            project_id: projectId,
-            survey_details: response.data,
-            input_title: result.value,
-          },
-        });
+        if (response.status === 201) {
+          toast.success(getLabel("Survey created successfully!"));
+          fetchSurveys();
+
+          setTimeout(() => {
+            navigate(
+              `/view-survey/${
+                response.data.data?.survey_id || response.data.survey_id
+              }`,
+              {
+                state: { project_id: projectId, survey_details: response.data, input_title: result.value},
+                
+          }
+            );
+          }, 3000); // 3 seconds delay
+        }
+      } catch (error) {
+        console.error("Error creating survey:", error);
+        toast.error(getLabel("❌ Failed to create survey."));
       }
-    } catch (error) {
-      console.error("Error creating survey:", error);
-      alert(
-        language === "English"
-          ? "❌ Failed to create survey."
-          : t.errorMsg
-      );
     }
   }
 };
@@ -264,11 +310,12 @@ const handleAddSurveyClick = async () => {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
-      alert("Project updated successfully!");
+
+      toast.success(getLabel("✅ Project updated successfully!"));
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating project:", error);
-      alert("Failed to update project.");
+      toast.error(getLabel("❌ Failed to update project."));
     }
   };
 
@@ -277,213 +324,426 @@ const handleAddSurveyClick = async () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="add-project-container">
-        <div className="tab-header-container">
-          <div className="tabs">
-            <button
-              className={activeTab === "details" ? "active-tab" : ""}
-              onClick={() => setActiveTab("details")}
-            >
-              {getLabel("Project Details")}
-            </button>
-            <button
-              className={activeTab === "collaborators" ? "active-tab" : ""}
-              onClick={async () => {
-                setActiveTab("collaborators");
-                await fetchCollaborators();
-              }}
-            >
-              {getLabel("Collaborators")}
-            </button>
-          </div>
-        </div>
+      <div className="edit-project-grid">
+        <div className="edit-left">
+          {/* Project Details / Collaborator Tabs and Forms */}
 
-        {activeTab === "details" ? (
-          <div className="project-form">
-            <div className="header-with-button">
-              <h2>{getLabel("Project Details")}</h2>
+          <div className="tab-header-container">
+            <h2>{formData.title}</h2>
+            <div className="tabs">
               <button
-                className="edit-toggle-btn"
-                onClick={() => setIsEditing(!isEditing)}
+                className={activeTab === "details" ? "active-tab" : ""}
+                onClick={() => setActiveTab("details")}
               >
-                {isEditing ? getLabel("Cancel") : getLabel("Edit")}
+                {getLabel("Project Details")}
+              </button>
+              <button
+                className={activeTab === "collaborators" ? "active-tab" : ""}
+                onClick={async () => {
+                  setActiveTab("collaborators");
+                  await fetchCollaborators();
+                }}
+              >
+                {getLabel("Collaborators")}
               </button>
             </div>
+          </div>
+
+          {activeTab === "details" ? (
             <div className="project-form">
-              {isEditing ? (
-                <form onSubmit={handleSubmit}>
-                  <div className="form-group">
-                    <label>{getLabel("Project Name")}</label>
+              <div className="header-with-button">
+                {/* <h2>{getLabel("Project Details")}</h2> */}
+                <button
+                  className="edit-toggle-btn"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  {isEditing ? getLabel("Cancel") : getLabel("Edit")}
+                </button>
+              </div>
+              <div className="project-form-2">
+                {isEditing ? (
+                  <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                      <label>{getLabel("Project Name")}</label>
+                      <input
+                        type="text"
+                        name="title"
+                        value={formData.title}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{getLabel("Field")}</label>
+                      <input
+                        type="text"
+                        name="field"
+                        value={formData.field}
+                        onChange={handleChange}
+                        required
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label>{getLabel("Description")}</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div className="visibility-section">
+                      <label>{getLabel("Visibility")}</label>
+                      <div className="visibility-options">
+                        <label className="visibility-option">
+                          <input
+                            type="radio"
+                            name="privacy_mode"
+                            value="public"
+                            checked={formData.privacy_mode === "public"}
+                            onChange={handleChange}
+                          />
+                          <MdPublic className="visibility-icon" />{" "}
+                          {getLabel("Public")}
+                        </label>
+                        <label className="visibility-option">
+                          <input
+                            type="radio"
+                            name="privacy_mode"
+                            value="private"
+                            checked={formData.privacy_mode === "private"}
+                            onChange={handleChange}
+                          />
+                          <FaLock className="visibility-icon" />{" "}
+                          {getLabel("Private")}
+                        </label>
+                      </div>
+                    </div>
+                    <button type="submit" className="submit-btn">
+                      {getLabel("Save Changes")}
+                    </button>
+                  </form>
+                ) : (
+                  <div className="view-project">
+                    <p>
+                      <strong>{getLabel("Project Name")}:</strong>{" "}
+                      {formData.title}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Field")}:</strong> {formData.field}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Description")}:</strong>{" "}
+                      {formData.description || <i>(none)</i>}
+                    </p>
+                    <p>
+                      <strong>{getLabel("Visibility")}:</strong>{" "}
+                      {formData.privacy_mode}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {showModal && (
+                <div className="modal-overlay">
+                  <div className="modal-content">
+                    <h3>{getLabel("Add Collaborator")}</h3>
+                    <label>{getLabel("Email")}</label>
                     <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
+                      type="email"
+                      value={collabEmail}
+                      onChange={(e) => setCollabEmail(e.target.value)}
                       required
                     />
-                  </div>
-                  <div className="form-group">
-                    <label>{getLabel("Field")}</label>
-                    <input
-                      type="text"
-                      name="field"
-                      value={formData.field}
-                      onChange={handleChange}
-                      required
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>{getLabel("Description")}</label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="visibility-section">
-                    <label>{getLabel("Visibility")}</label>
-                    <div className="visibility-options">
-                      <label className="visibility-option">
-                        <input
-                          type="radio"
-                          name="privacy_mode"
-                          value="public"
-                          checked={formData.privacy_mode === "public"}
-                          onChange={handleChange}
-                        />
-                        <MdPublic className="visibility-icon" />{" "}
-                        {getLabel("Public")}
-                      </label>
-                      <label className="visibility-option">
-                        <input
-                          type="radio"
-                          name="privacy_mode"
-                          value="private"
-                          checked={formData.privacy_mode === "private"}
-                          onChange={handleChange}
-                        />
-                        <FaLock className="visibility-icon" />{" "}
-                        {getLabel("Private")}
-                      </label>
+                    <label>{getLabel("Access Control")}</label>
+                    <select
+                      value={accessControl}
+                      onChange={(e) => setAccessControl(e.target.value)}
+                    >
+                      <option value="view">{getLabel("View Only")}</option>
+                      <option value="edit">{getLabel("Can Edit")}</option>
+                    </select>
+                    <div className="modal-buttons">
+                      <button onClick={handleAddCollaborator}>
+                        {getLabel("Add")}
+                      </button>
+                      <button onClick={() => setShowModal(false)}>
+                        {getLabel("Cancel")}
+                      </button>
                     </div>
                   </div>
-                  <button type="submit" className="submit-btn">
-                    {getLabel("Save Changes")}
-                  </button>
-                </form>
-              ) : (
-                <div className="view-project">
-                  <p>
-                    <strong>{getLabel("Project Name")}:</strong>{" "}
-                    {formData.title}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Field")}:</strong> {formData.field}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Description")}:</strong>{" "}
-                    {formData.description || <i>(none)</i>}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Visibility")}:</strong>{" "}
-                    {formData.privacy_mode}
-                  </p>
                 </div>
               )}
             </div>
-            <button
-              className="add-collab-btn"
-              onClick={() => setShowModal(true)}
-            >
-              {getLabel("Add Collaborator")}
-            </button>
-            {showModal && (
-              <div className="modal-overlay">
-                <div className="modal-content">
-                  <h3>{getLabel("Add Collaborator")}</h3>
-                  <label>{getLabel("Email")}</label>
-                  <input
-                    type="email"
-                    value={collabEmail}
-                    onChange={(e) => setCollabEmail(e.target.value)}
-                    required
-                  />
-                  <label>{getLabel("Access Control")}</label>
-                  <select
-                    value={accessControl}
-                    onChange={(e) => setAccessControl(e.target.value)}
-                  >
-                    <option value="view">{getLabel("View Only")}</option>
-                    <option value="edit">{getLabel("Can Edit")}</option>
-                  </select>
-                  <div className="modal-buttons">
-                    <button onClick={handleAddCollaborator}>
-                      {getLabel("Add")}
-                    </button>
-                    <button onClick={() => setShowModal(false)}>
-                      {getLabel("Cancel")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="collaborator-list">
-            <table className="collab-table">
-              <thead>
-                <tr>
-                  <th>{getLabel("Collaborator Name")}</th>
-                  <th>{getLabel("Email")}</th>
-                  <th>{getLabel("Access Role")}</th>
-                  <th>{getLabel("Invitation Status")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {collaborators.length === 0 ? (
-                  <tr>
-                    <td colSpan="4">
-                      {getLabel("No collaborators added yet.")}
-                    </td>
-                  </tr>
-                ) : (
-                  collaborators.map((collab, index) => (
-                    <tr key={index}>
-                      <td>{collab.user.name}</td>
-                      <td>{collab.user.email}</td>
-                      <td>{collab.access_role}</td>
-                      <td>{collab.invitation}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        <div className="survey-grid">
-          {surveys.length > 0 ? (
-            surveys.map((survey) => (
-              <div
-                key={survey.survey_id}
-                className="survey-card"
-                style={{ cursor: "pointer" }}
-              >
-                <h4 className="mx-auto" onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title)}>{survey.title}</h4>
-                  <DeleteButton onClick={() => handleDeleteSurvey(survey.survey_id)}></DeleteButton>
-              </div>
-            ))
           ) : (
-            <i>
-              {getLabel(
-                "No projects found. Click on the plus button to get started..."
-              )}
-            </i>
+            <div className="collaborator-list">
+              <button
+                className="add-collab-btn"
+                onClick={() => setShowModal(true)}
+              >
+                {getLabel("Add Collaborator")}
+              </button>
+              <table className="collab-table">
+                <thead>
+                  <tr>
+                    <th>{getLabel("Collaborator Name")}</th>
+                    <th>{getLabel("Email")}</th>
+                    <th>{getLabel("Access Role")}</th>
+                    <th>{getLabel("Invitation Status")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {collaborators.length === 0 ? (
+                    <tr>
+                      <td colSpan="4">
+                        {getLabel("No collaborators added yet.")}
+                      </td>
+                    </tr>
+                  ) : (
+                    collaborators.map((collab, index) => (
+                      <tr key={index}>
+                        <td>{collab.user.name}</td>
+                        <td>{collab.user.email}</td>
+                        <td>{collab.access_role}</td>
+                        <td>{collab.invitation}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
-          <div className="add-survey-card" onClick={handleAddSurveyClick}>
-            <div className="plus-icon">+</div>
+
+          {/* Reuse form / details section */}
+        </div>
+        <div className="edit-right">
+          <h3 className="survey-section-heading">
+            {getLabel("Create a New Survey")}
+          </h3>
+          <div className="survey-grid-center">
+            <div className="add-survey-card" onClick={handleAddSurveyClick}>
+              <div className="plus-icon">+</div>
+            </div>
+          </div>
+          <hr className="section-divider" />
+          <h3 className="survey-section-heading">
+            {getLabel("Existing Surveys")}
+          </h3>
+          <div className="survey-controls">
+            <div className="survey-filter">
+              <label htmlFor="statusFilter">{getLabel("Filter by: ")}</label>
+              <select
+                id="statusFilter"
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="all">{getLabel("All")}</option>
+                <option value="published">{getLabel("Published")}</option>
+                <option value="saved">{getLabel("Unpublished")}</option>
+              </select>
+            </div>
+            <div className="survey-sort">
+              <label htmlFor="sortKey">{getLabel("Sort by:")}</label>
+              <select
+                id="sortKey"
+                value={sortField}
+                onChange={(e) => setSortField(e.target.value)}
+              >
+                <option value="title">{getLabel("Title")}</option>
+                <option value="last_updated">{getLabel("Last Updated")}</option>
+                <option value="created_at">{getLabel("Created At")}</option>
+                <option value="ending_date">{getLabel("Ended At")}</option>
+                {filterStatus === "published" && (
+                  <option value="published_date">
+                    {getLabel("Published At")}
+                  </option>
+                )}
+              </select>
+
+              <select
+                className="sort-order-dropdown"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+              >
+                <option value="asc">{getLabel("Ascending")}</option>
+                <option value="desc">{getLabel("Descending")}</option>
+              </select>
+            </div>
+          </div>
+          <div className="survey-grid">
+            {surveys
+              .filter((survey) =>
+                filterStatus === "all"
+                  ? true
+                  : survey.survey_status === filterStatus
+              )
+              .sort((a, b) => {
+                const aVal = a[sortField];
+                const bVal = b[sortField];
+
+                // Check if field is date-like
+                const isDateField =
+                  sortField.toLowerCase().includes("created_at") ||
+                  sortField
+                    .toLowerCase()
+                    .includes(
+                      "last_updated" ||
+                        sortField.toLowerCase().includes("published_date") ||
+                        sortField.toLowerCase().includes("ending_date")
+                    );
+
+                if (isDateField) {
+                  const aTime = new Date(aVal).getTime();
+                  const bTime = new Date(bVal).getTime();
+                  return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
+                } else {
+                  const aStr = (aVal || "").toString().toLowerCase();
+                  const bStr = (bVal || "").toString().toLowerCase();
+                  return sortOrder === "asc"
+                    ? aStr.localeCompare(bStr)
+                    : bStr.localeCompare(aStr);
+                }
+              })
+              .map((survey) => (
+                <div
+                  key={survey.survey_id}
+                  className="survey-card"
+                  style={{ cursor: "pointer" }}
+                >
+                  <img
+                    src={
+                      survey.template?.backgroundImage ||
+                      "/assets/images/banner.jpg"
+                    }
+                    className="survey-banner"
+                    alt="Survey"
+                  />
+                  <h4>{survey.title}</h4>
+                  <p>
+                    <strong>{getLabel("Last Updated:")}</strong>{" "}
+                    {new Date(survey.last_updated + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
+
+                  <p>
+                    <strong>{getLabel("Created At:")}</strong>{" "}
+                    {new Date(survey.created_at + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
+
+                  {survey.ending_date && (
+                    <p>
+                      <strong>{getLabel("Ended At:")}</strong>{" "}
+                      {new Date(survey.ending_date + "Z").toLocaleString(
+                        "en-US",
+                        {
+                          timeZone: "Asia/Dhaka",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        }
+                      )}
+                    </p>
+                  )}
+
+                  {survey.survey_status === "published" && (
+                    <p>
+                      <strong>{getLabel("Published At:")}</strong>{" "}
+                      {new Date(survey.published_date + "Z").toLocaleString(
+                        "en-US",
+                        {
+                          timeZone: "Asia/Dhaka",
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        }
+                      )}{" "}
+                  
+                    </p>
+                  )}
+
+                  <IconButton
+                    aria-label="edit"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "blue",
+                        backgroundColor: "#e6f0ff",
+                      },
+                    }}
+                  >
+                    <SendIcon fontSize="inherit" />
+                  </IconButton>
+
+                  <IconButton
+                    aria-label="edit"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "blue",
+                        backgroundColor: "#e6f0ff",
+                      },
+                    }}
+                  >
+                    <EditIcon
+                      fontSize="inherit"
+                      onClick={() =>
+                        handleSurveyClick(survey.survey_id, survey)
+                      }
+                    />
+                  </IconButton>
+                  <IconButton
+                    aria-label="delete"
+                    size="large"
+                    sx={{
+                      "&:hover": {
+                        color: "red",
+                        backgroundColor: "#ffe6e6",
+                      },
+                    }}
+                  >
+                    <DeleteIcon
+                      fontSize="inherit"
+                      onClick={() => {
+                        Swal.fire({
+                          title: getLabel("Are you sure?"),
+                          text: getLabel("This action cannot be undone."),
+                          icon: "warning",
+                          showCancelButton: true,
+                          confirmButtonText: getLabel("Yes, delete it!"),
+                          cancelButtonText: getLabel("No, cancel!"),
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleDeleteSurvey(survey.survey_id);
+                          }
+                        });
+                      }}
+                    />
+                  </IconButton>
+                </div>
+              ))}
           </div>
         </div>
+        <ToastContainer position="top-center" autoClose={3000} />
       </div>
     </>
   );
