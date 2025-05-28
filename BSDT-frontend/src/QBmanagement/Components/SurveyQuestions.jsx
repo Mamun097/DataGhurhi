@@ -2,14 +2,13 @@ import React from "react";
 
 // Import your question type components:
 import RadioQuestionView from "../viewOnlyQtypes/Radio";
-import Radio from "../QuestionTypes/Radio";
 import TextView from "../viewOnlyQtypes/Text";
 import LikertScaleView from "../viewOnlyQtypes/LikertScale";
 import RatingQuestionView from "../viewOnlyQtypes/Rating";
 import DateTimeViewOnly from "../viewOnlyQtypes/DateTime";
 import DropdownViewOnly from "../viewOnlyQtypes/Dropdown";
 import CheckboxViewOnly from "../viewOnlyQtypes/Checkbox";
-import TickBoxGridView from "../viewOnlyQtypes/TickBoxGrid";
+import TickBoxGridView from "../viewOnlyQtypes/TickboxGrid";
 import LinearScaleQuestionView from "../viewOnlyQtypes/LinearScale";
 
 const SurveyQuestions = ({ questions, setQuestions,newQuestion, setNewQuestion }) => {
