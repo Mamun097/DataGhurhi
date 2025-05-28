@@ -1,26 +1,21 @@
-// src/QuestionTypes/Radio.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Option from "./QuestionSpecificUtils/OptionClass";
-import { handleQuestionImageUpload } from "./QuestionSpecificUtils/handleQuestionImageUpload";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
-
-// Import the TagManager component
 import TagManager from "./QuestionSpecificUtils/Tag";
 
 const Radio = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
-
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
+  // Handle image upload trigger
   const handleQuestionImageUpload = (event, id) => {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
-    // setCurrentQuestionId(id);
     setShowCropper(true);
   };
 
@@ -53,43 +48,25 @@ const Radio = ({ question, questions, setQuestions }) => {
     });
   }, [question.id, setQuestions]);
 
-  // Image upload
-  // const handleImageUpload = useCallback(
-  //   (e) => {
-  //     const file = e.target.files[0];
-  //     if (!file) return;
-  //     const reader = new FileReader();
-  //     reader.onload = () => {
-  //       setQuestions((prev) =>
-  //         prev.map((q) =>
-  //           q.id === question.id ? { ...q, image: reader.result } : q
-  //         )
-  //       );
-  //     };
-  //     reader.readAsDataURL(file);
-  //   },
-  //   [question.id, setQuestions]
-  // );
-
-  // Add new option
+  // Add a new option
   const addOption = useCallback(() => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
           ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: [
-                ...q.meta.options,
-                `Option ${q.meta.options.length + 1}`,
-              ],
-            },
-          }
+              ...q,
+              meta: {
+                ...q.meta,
+                options: [
+                  ...q.meta.options,
+                  new Option(`Option ${q.meta.options.length + 1}`, 0),
+                ],
+              },
+            }
           : q
       )
     );
-  }, [question.id, setQuestions]);
+  });
 
   // Update an option's text
   const updateOption = useCallback(
@@ -112,27 +89,6 @@ const Radio = ({ question, questions, setQuestions }) => {
     },
     [question.id, setQuestions]
   );
-
-  // const updateOption = useCallback(
-  //   (idx, newText) => {
-  //     setQuestions((prev) =>
-  //       prev.map((q) =>
-  //         q.id === question.id
-  //           ? {
-  //               ...q,
-  //               meta: {
-  //                 ...q.meta,
-  //                 options: q.meta.options.map((opt, i) =>
-  //                   i === idx ? newText : opt
-  //                 ),
-  //               },
-  //             }
-  //           : q
-  //       )
-  //     );
-  //   },
-  //   [question.id, setQuestions]
-  // );
 
   // Update option's value
   const updateOptionValue = useCallback(
@@ -163,12 +119,12 @@ const Radio = ({ question, questions, setQuestions }) => {
         prev.map((q) =>
           q.id === question.id
             ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: q.meta.options.filter((_, i) => i !== idx),
-              },
-            }
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.filter((_, i) => i !== idx),
+                },
+              }
             : q
         )
       );
@@ -203,13 +159,12 @@ const Radio = ({ question, questions, setQuestions }) => {
     [question.id, setQuestions]
   );
 
-  // Copy question: duplicate with id+1, bump subsequent IDs
+  // Copy question
   const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
     const newId = question.id + 1;
     const copied = { ...question, id: newId };
 
-    // bump IDs
     const bumped = questions.map((q) =>
       q.id > question.id ? { ...q, id: q.id + 1 } : q
     );
@@ -217,11 +172,12 @@ const Radio = ({ question, questions, setQuestions }) => {
     bumped.sort((a, b) => a.id - b.id);
     setQuestions(bumped);
   }, [question, questions, setQuestions]);
-  // handle add tag
+
+  // Handle add tag
   const handleAddTag = useCallback(() => {
     const tagsInput = prompt("Enter tags (comma-separated):");
     if (tagsInput) {
-      const newTags = tagsInput.split(",").map((tag) => tag.trim()); // Split and trim tags
+      const newTags = tagsInput.split(",").map((tag) => tag.trim());
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
@@ -229,7 +185,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                 ...q,
                 meta: {
                   ...q.meta,
-                  tags: [...(q.meta.tags || []), ...newTags], // Add new tags
+                  tags: [...(q.meta.tags || []), ...newTags],
                 },
               }
             : q
@@ -237,6 +193,33 @@ const Radio = ({ question, questions, setQuestions }) => {
       );
     }
   }, [question.id, setQuestions]);
+
+  // Remove image
+  const removeImage = (index) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
+          : q
+      )
+    );
+  };
+
+  // Update image alignment
+  const updateAlignment = (index, alignment) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              imageUrls: q.imageUrls.map((img, i) =>
+                i === index ? { ...img, alignment } : img
+              ),
+            }
+          : q
+      )
+    );
+  };
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -246,9 +229,8 @@ const Radio = ({ question, questions, setQuestions }) => {
             <strong>MCQ</strong>
           </em>
         </label>
-        {/* Use the TagManager component */}
-        <TagManager 
-          questionId={question.id} 
+        <TagManager
+          questionId={question.id}
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
@@ -260,24 +242,54 @@ const Radio = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
-          onClose={() => setShowCropper(false)}
+          onClose={() => {
+            setShowCropper(false);
+            setSelectedFile(null);
+          }}
         />
       )}
 
-      {/* Image Preview */}
-      {question.imageUrl && (
-        <img
-          src={question.imageUrl}
-          alt="Question"
-          className="img-fluid mb-2"
-          style={{ maxHeight: 200 }}
-        />
+      {/* Image Previews with Remove and Alignment Options */}
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mb-2">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+              <div className="d-flex justify-content-between mt-2 gap-2">
+                <select
+                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={img.alignment || "start"}
+                  onChange={(e) => updateAlignment(idx, e.target.value)}
+                >
+                  <option value="start">Left</option>
+                  <option value="center">Center</option>
+                  <option value="end">Right</option>
+                </select>
+                <button
+                  className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
+                  onClick={() => removeImage(idx)}
+                >
+                  <i className="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Question Text */}
       <input
         type="text"
-        className="form-control mb-2"
+        className="form-control mb-2 mt-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
         value={question.text}
         onChange={(e) => handleQuestionChange(e.target.value)}
         placeholder="Enter question..."
@@ -299,7 +311,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      className="row  mb-1"
+                      className="row mb-1"
                     >
                       <div className="col-auto" {...prov.dragHandleProps}>
                         <i
@@ -310,7 +322,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                       <div className="col-8">
                         <input
                           type="text"
-                          className="form-control"
+                          className="form-control border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                           value={option.text}
                           onChange={(e) => updateOption(idx, e.target.value)}
                         />
@@ -318,7 +330,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                       <div className="col-2">
                         <input
                           type="number"
-                          className="form-control"
+                          className="form-control border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                           value={option.value ?? 0}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -329,7 +341,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                       </div>
                       <div className="col-1">
                         <button
-                          className="btn btn-outline-danger"
+                          className="btn btn-outline-danger hover:bg-red-100 transition-colors"
                           onClick={() => removeOption(idx)}
                         >
                           <i className="bi bi-trash"></i>
@@ -347,24 +359,27 @@ const Radio = ({ question, questions, setQuestions }) => {
 
       {/* Add option */}
       <button
-        className="btn btn-sm btn-outline-primary mt-2"
+        className="btn btn-sm btn-outline-primary mt-2 hover:bg-blue-100 transition-colors"
         onClick={addOption}
       >
         ➕ Add Option
       </button>
 
       {/* Actions */}
-      <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
+      <div className="d-flex align-items-center mt-3 gap-2">
+        <button
+          className="btn btn-outline-secondary hover:bg-gray-100 transition-colors"
+          onClick={handleCopy}
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
-          className="btn btn-outline-secondary me-2"
+          className="btn btn-outline-secondary hover:bg-gray-100 transition-colors"
           onClick={handleDelete}
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary me-2">
+        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
           <i className="bi bi-image"></i>
           <input
             type="file"

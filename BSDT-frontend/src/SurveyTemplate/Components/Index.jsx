@@ -13,7 +13,6 @@ const Index = () => {
   const { survey_id } = useParams();
   const { project_id, survey_details , input_title} = location.state || {};
   console.log("Survey details:", survey_details);
-  const [surveyStatus, setSurveyStatus] = useState(null);
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -27,6 +26,10 @@ const Index = () => {
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
+  const [surveyStatus, setSurveyStatus] = useState(null);
+  const [surveyLink, setSurveyLink] = useState(null);
+
+  console.log("Questions:", questions);
 
   // Has a custom template been passed in?
   const useCustom = survey_details?.template != null;
@@ -41,6 +44,7 @@ const Index = () => {
         // `banner` field on your object holds the URL
         setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
+        setSurveyLink(survey_details.survey_link || null);
       } else {
         // ==== 2) Otherwise, fetch saved templates ====
         try {
@@ -135,7 +139,7 @@ const Index = () => {
               project_id={project_id}
               survey_id={survey_id}
               surveyStatus={surveyStatus}
-              setSurveyStatus={setSurveyStatus}
+              surveyLink={surveyLink}
             />
           </div>
 
