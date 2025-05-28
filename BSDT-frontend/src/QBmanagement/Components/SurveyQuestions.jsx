@@ -13,7 +13,7 @@ import DropdownViewOnly from "../viewOnlyQtypes/Dropdown";
 // import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import CheckboxViewOnly from "../viewOnlyQtypes/Checkbox";
 // import Checkbox from "../QuestionTypes/Checkbox";
-import TickBoxGridView from "../viewOnlyQtypes/TickBoxGrid";
+// import TickBoxGridView from "../viewOnlyQtypes/TickBoxGrid";
 import LinearScaleQuestionView from "../viewOnlyQtypes/LinearScale";
 
 const SurveyQuestions = ({ questions, setQuestions,newQuestion, setNewQuestion }) => {
