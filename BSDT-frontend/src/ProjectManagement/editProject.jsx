@@ -159,27 +159,27 @@ const EditProject = () => {
       setLoading(false);
     }
   };
-  const handleDeleteSurvey = async (surveyId) => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.delete(
-        `http://localhost:2000/api/surveytemplate/${surveyId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.status === 200) {
-        toast.success(getLabel("Survey deleted successfully!"));
-        fetchSurveys();
-        // reload
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        console.error("Error deleting survey:", response.statusText);
-        toast.error(getLabel("Failed to delete survey."));
-      }
-    } catch (error) {
-      console.error("Error deleting survey:", error);
-      toast.error(getLabel("Failed to delete survey."));
-    }
-  };
+  // const handleDeleteSurvey = async (surveyId) => {
+  //   const token = localStorage.getItem("token");
+  //   try {
+  //     const response = await axios.delete(
+  //       `http://localhost:2000/api/surveytemplate/${surveyId}`,
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     if (response.status === 200) {
+  //       toast.success(getLabel("Survey deleted successfully!"));
+  //       fetchSurveys();
+  //       // reload
+  //       setTimeout(() => window.location.reload(), 2000);
+  //     } else {
+  //       console.error("Error deleting survey:", response.statusText);
+  //       toast.error(getLabel("Failed to delete survey."));
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting survey:", error);
+  //     toast.error(getLabel("Failed to delete survey."));
+  //   }
+  // };
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -258,33 +258,32 @@ const EditProject = () => {
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-        toast.error(getLabel("❌ Failed to create survey."));
-      }
+      toast.error(getLabel("❌ Failed to create survey."));
     }
   }
 };
-  
-  const handleDeleteSurvey = async (surveyId) => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await axios.delete(
-        `http://localhost:2000/api/surveytemplate/${surveyId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (response.status === 200) {
-        alert("Survey deleted successfully!");
-        fetchSurveys();
-        // reload
-        window.location.reload();
-      } else {
-        console.error("Error deleting survey:", response.statusText);
-        alert("Failed to delete survey.");
-      }
-    } catch (error) {
-      console.error("Error deleting survey:", error);
+
+const handleDeleteSurvey = async (surveyId) => {
+  const token = localStorage.getItem("token");
+  try {
+    const response = await axios.delete(
+      `http://localhost:2000/api/surveytemplate/${surveyId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (response.status === 200) {
+      alert("Survey deleted successfully!");
+      fetchSurveys();
+      // reload
+      window.location.reload();
+    } else {
+      console.error("Error deleting survey:", response.statusText);
       alert("Failed to delete survey.");
     }
-  };
+  } catch (error) {
+    console.error("Error deleting survey:", error);
+    alert("Failed to delete survey.");
+  }
+};
   const handleSurveyClick = (survey_id, survey, survey_title) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
@@ -319,7 +318,7 @@ const EditProject = () => {
     }
   };
 
-  if (loading) return <p>Loading...</p>;
+  // if (loading) return <p>Loading...</p>;
 
   return (
     <>
