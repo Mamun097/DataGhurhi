@@ -30,13 +30,7 @@ exports.saveSurveyForm = async (req, res) => {
       })
       .eq("survey_id", survey_id)
       .select("*");
-      .eq("survey_id", survey_id)
-      .select("*");
     if (surveyError) {
-      console.error("Supabase insert error for survey:", surveyError);
-      return res
-        .status(500)
-        .json({ error: "Failed to create survey template" });
       console.error("Supabase insert error for survey:", surveyError);
       return res
         .status(500)
@@ -60,9 +54,6 @@ exports.saveSurveyForm = async (req, res) => {
   } catch (err) {
     console.error("Error in createSurveyTemplate:", err);
     return res.status(500).json({ error: "Internal server error" });
-  } catch (err) {
-    console.error("Error in createSurveyTemplate:", err);
-    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -70,14 +61,9 @@ exports.createSurveyForm = async (req, res) => {
   try {
     const { survey_id, project_id, survey_template, title } = req.body;
     const user_id = req.jwt.id;
-    const { survey_id, project_id, survey_template, title } = req.body;
-    const user_id = req.jwt.id;
     console.log(survey_template.questions);
     // Validate input
     if (!project_id || !survey_template) {
-      return res.status(400).json({
-        error: "project_id, survey_template, and user_id are required",
-      });
       return res.status(400).json({
         error: "project_id, survey_template, and user_id are required",
       });
@@ -116,10 +102,6 @@ exports.createSurveyForm = async (req, res) => {
       return res
         .status(500)
         .json({ error: "Failed to create survey template" });
-      console.error("Supabase insert error for survey:", surveyError);
-      return res
-        .status(500)
-        .json({ error: "Failed to create survey template" });
     }
 
     const surveyId = surveyData[0].survey_id; // Fixed to use survey_id
@@ -138,11 +120,8 @@ exports.createSurveyForm = async (req, res) => {
           local_section_id: section_id, // Local identifier from request
         })
         .select("section_id");
-        .select("section_id");
 
       if (sectionError) {
-        console.error("Supabase insert error for section:", sectionError);
-        return res.status(500).json({ error: "Failed to insert section" });
         console.error("Supabase insert error for section:", sectionError);
         return res.status(500).json({ error: "Failed to insert section" });
       }
@@ -162,22 +141,10 @@ exports.createSurveyForm = async (req, res) => {
         correct_ans,
         meta,
       } = question;
-      const {
-        text,
-        image,
-        section_id,
-        question_type,
-        privacy,
-        correct_ans,
-        meta,
-      } = question;
 
       // Get the section_id using the local_section_id
       const sectionId = sectionMapping[section_id];
       if (!sectionId) {
-        return res
-          .status(400)
-          .json({ error: `Invalid local_section_id: ${section_id}` });
         return res
           .status(400)
           .json({ error: `Invalid local_section_id: ${section_id}` });
@@ -198,11 +165,8 @@ exports.createSurveyForm = async (req, res) => {
           meta_data: meta,
         })
         .select("*");
-        .select("*");
 
       if (questionError) {
-        console.error("Supabase insert error for question:", questionError);
-        return res.status(500).json({ error: "Failed to insert question" });
         console.error("Supabase insert error for question:", questionError);
         return res.status(500).json({ error: "Failed to insert question" });
       }
@@ -234,8 +198,6 @@ exports.createSurveyForm = async (req, res) => {
           if (newTagError) {
             console.error("Supabase insert error for tag:", newTagError);
             return res.status(500).json({ error: "Failed to insert tag" });
-            console.error("Supabase insert error for tag:", newTagError);
-            return res.status(500).json({ error: "Failed to insert tag" });
           }
           tagId = newTag.tag_id;
         } else {
@@ -258,13 +220,6 @@ exports.createSurveyForm = async (req, res) => {
           return res
             .status(500)
             .json({ error: "Failed to insert question_tag" });
-          console.error(
-            "Supabase insert error for question_tag:",
-            questionTagError
-          );
-          return res
-            .status(500)
-            .json({ error: "Failed to insert question_tag" });
         }
       }
     }
@@ -275,8 +230,6 @@ exports.createSurveyForm = async (req, res) => {
       data: surveyData[0],
     });
   } catch (err) {
-    console.error("Error in createSurveyTemplate:", err);
-    return res.status(500).json({ error: "Internal server error" });
     console.error("Error in createSurveyTemplate:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
@@ -312,8 +265,6 @@ exports.deleteSurveyForm = async (req, res) => {
     if (surveyError) {
       console.error("Supabase select error for survey:", surveyError);
       return res.status(500).json({ error: "Failed to fetch survey" });
-      console.error("Supabase select error for survey:", surveyError);
-      return res.status(500).json({ error: "Failed to fetch survey" });
     }
     if (!surveyData) {
       return res
@@ -347,17 +298,12 @@ exports.deleteSurveyForm = async (req, res) => {
       .delete()
       .eq("survey_id", survey_id)
       .eq("user_id", user_id);
-      .eq("survey_id", survey_id)
-      .eq("user_id", user_id);
     if (deleteError) {
       console.error("Supabase delete error for survey:", deleteError);
       return res.status(500).json({ error: "Failed to delete survey" });
     }
       console.error("Supabase delete error for survey:", deleteError);
       return res.status(500).json({ error: "Failed to delete survey" });
-    }
-    //return success response
-    return res.status(200).json({ message: "Survey deleted successfully" });
     }else{
       //just delete the survey
       console.log("Deleting survey with ID:", survey_id);
@@ -375,8 +321,6 @@ exports.deleteSurveyForm = async (req, res) => {
     }
 
   } catch (err) {
-    console.error("Error in deleteSurveyForm:", err);
-    return res.status(500).json({ error: "Internal server error" });
     console.error("Error in deleteSurveyForm:", err);
     return res.status(500).json({ error: "Internal server error" });
   }
