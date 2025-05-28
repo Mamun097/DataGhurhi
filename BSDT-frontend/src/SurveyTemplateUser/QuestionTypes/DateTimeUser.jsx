@@ -2,19 +2,34 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const DateTimeQuestion = ({ question, questions, setQuestions }) => {
-  // Handle date/time input change
+const DateTimeQuestion = ({ question, userResponse, setUserResponse }) => {
+  const userAnswer = userResponse.find(
+    (response) => response.questionText === question.text
+  )?.userResponse;
+
+  // Modified handleAnswerChange to update existing response or add new one
   const handleAnswerChange = (e) => {
-    const newAnswer = e.target.value;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, answer: newAnswer } : q
-      )
+    const selectedValue = e.target.value;
+    const existingResponseIndex = userResponse.findIndex(
+      (response) => response.questionText === question.text
     );
+    if (existingResponseIndex !== -1) {
+      // Update existing response
+      const updatedResponse = [...userResponse];
+      updatedResponse[existingResponseIndex].userResponse = selectedValue;
+      setUserResponse(updatedResponse);
+    } else {
+      // Add new response
+      const newResponse = {
+        questionText: question.text,
+        userResponse: selectedValue,
+      };
+      setUserResponse([...userResponse, newResponse]);
+    }
   };
 
   return (
-    <div className="mb-3">
+    <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
         {question.text || "Untitled Question"}
@@ -22,31 +37,36 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
       </h5>
 
       {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Question Image"
-          className="img-fluid mb-2"
-          style={{ maxHeight: "400px" }}
-        />
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mt-4 mb-4">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Date/Time Input */}
-      <div className="mb-3">
+      <div className="mt-3 mb-3">
         <input
           type={question.dateType === "time" ? "time" : "date"}
-          className="form-control form-control-sm w-auto"
-          value={question.answer || ""}
+          className="form-control form-control w-auto"
+          value={userAnswer || ""}
           onChange={handleAnswerChange}
           required={question.required}
-          disabled={question.disabled} // Optional: if you want to disable interaction
+          disabled={question.disabled}
         />
       </div>
-
-      {/* Required Question Indicator */}
-      {question.required && !question.answer && (
-        <small className="text-danger">This question is required.</small>
-      )}
     </div>
   );
 };

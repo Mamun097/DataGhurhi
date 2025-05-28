@@ -7,11 +7,13 @@ const SurveySections = ({
     sections,
     questions,
     setQuestions,
+    userResponse,
+    setUserResponse,
   }) => {
 
   
   return (
-    <div className="container-fluid shadow border bg-white rounded p-3 mt-3 mb-3">
+    <div className="container-fluid shadow border rounded p-3 mt-5 mb-5">
       {sections.length !== 1 && (
         <div>
           <h4 className="text-left">
@@ -26,6 +28,8 @@ const SurveySections = ({
         section={section}
         questions={questions}
         setQuestions={setQuestions}
+        userResponse={userResponse}
+        setUserResponse={setUserResponse}
       />        
       </div>
   );

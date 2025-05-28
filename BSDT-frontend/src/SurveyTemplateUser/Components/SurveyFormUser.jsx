@@ -10,6 +10,8 @@ const SurveyForm = ({
   questions,
   setQuestions,
   image,
+  userResponse,
+  setUserResponse,
 }) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
@@ -61,7 +63,7 @@ const SurveyForm = ({
         <div className="text-center mt-3"></div>
 
         {/* Survey Sections and Questions */}
-        <div className="mt-4">
+        <div className="mt-5">
           {sections.map((section) => (
             <SurveySections
               key={section.id}
@@ -69,6 +71,8 @@ const SurveyForm = ({
               sections={sections}
               questions={questions}
               setQuestions={setQuestions}
+              userResponse={userResponse}
+              setUserResponse={setUserResponse}
             />
           ))}
         </div>
