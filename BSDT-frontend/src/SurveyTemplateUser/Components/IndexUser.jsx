@@ -22,6 +22,9 @@ const Index = () => {
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
 
+  // User Response state
+  const [userResponse, setUserResponse] = useState([]);
+  console.log("User Response:", userResponse);
 
   useEffect(() => {
     const load = async () => {
@@ -52,6 +55,30 @@ const Index = () => {
     load();
   }, [slug]);
 
+  //handle submission
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/submit-survey/${slug}`,
+        {
+          userResponse: userResponse,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      console.log("Submission response:", response.data);
+      // Handle success (e.g., show a success message, redirect, etc.)
+    } catch (error) {
+      console.error("Error submitting survey:", error);
+      // Handle error (e.g., show an error message)
+    }
+  }
+
   // Show a loading placeholder until templates arrive (if needed)
   if ( templates.length === 0) {
     return <p className="text-center mt-5">Loading templates…</p>;
@@ -74,10 +101,28 @@ const Index = () => {
               questions={questions}
               setQuestions={setQuestions}
               image={backgroundImage}
+              userResponse={userResponse} 
+              setUserResponse={setUserResponse}
             />
+            <div style={{ minHeight: "100vh" }}>
+              <button
+                className="btn btn-outline-success"
+                style={{
+                  bottom: "20px",
+                  right: "20px",
+                  alignContent: "center",
+                  elvation: "5",
+                  position: "right",
+                }}
+                onClick={() => handleSubmit(event)}
+              >
+                Submit
+              </button>
+            </div>
           </div>
 
           {/* Right gutter: empty */}
+            
           <div className="col-2" />
         </div>
       </div>
