@@ -1,14 +1,15 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import Dashboard from "./ProfileManagement/Dashboard";
-import Home from "./Homepage/landingpage";
-import Register from "./AccountManagement/register";
+import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Login from "./AccountManagement/login";
+import Register from "./AccountManagement/register";
+import Home from "./Homepage/landingpage";
+import Dashboard from "./ProfileManagement/Dashboard";
 import AddProject from "./ProjectManagement/createProject";
 import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
 import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
+import QB from "./QBmanagement/QuestionBankUser";
 
+import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -34,6 +35,7 @@ function App() {
             <Route path="/view-project/:projectId" element={<EditProject />} />
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
+            <Route path="/question-bank" element={<QB />} />
 
           </>
         ) : (
@@ -43,6 +45,7 @@ function App() {
         {/* Catch-All Route (404 Page) */}
         <Route path="*" element={<h2>404 - Page Not Found</h2>} />
 
+        <Route path="/analysis" element={<StatisticalAnalysisTool />} />
       </Routes>
     </Router>
   );

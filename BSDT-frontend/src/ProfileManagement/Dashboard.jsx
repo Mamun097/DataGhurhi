@@ -112,6 +112,7 @@ const Dashboard = () => {
         setValues(response.data);
         setProfilePicUrl(response.data.user.image);
         setEditedValues(response.data.user);
+        localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
       console.error("Error:", error);
