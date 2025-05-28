@@ -79,6 +79,17 @@ async function createSurvey(projectId, title, userId) {
     .insert([{ project_id: projectId, title, user_id: userId }])
     .select()
     .single(); // ensures only one row is returned
+  //add last updated time to project table
+  const { error: projectUpdateError } = await supabase
+    .from("survey_project")
+    .update({ last_updated: new Date() })
+    .eq("project_id", projectId,);
+  if (projectUpdateError) {
+    console.error("Supabase update error for project:", projectUpdateError);
+    return res
+      .status(500)
+      .json({ error: "Failed to update project last updated time" });
+  }
 
   return { data, error };
 }
@@ -95,6 +106,7 @@ async function updateProject(projectId, data) {
       privacy_mode: data.privacy_mode,
       scheduled_type: data.scheduled_type,
       schedule_date: data.scheduled_date,
+      last_updated: new Date().toISOString(),
     })
     .eq("project_id", projectId);
 
