@@ -19,7 +19,7 @@ findUserByEmail(email) {
         return null
     }
     
-  return data;
+  return {data};
 }
 async function
 createUser({
