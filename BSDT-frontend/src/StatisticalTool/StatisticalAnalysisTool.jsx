@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
+import WilcoxonOptions from './WilcoxonOptions';
 import './StatisticalAnalysisTool.css';
 
 const translations = {
@@ -284,7 +285,7 @@ const StatisticalAnalysisTool = () => {
         formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
 
         // Call the API for analysis
-        if (testType === 'kruskal') {
+        if (['kruskal', 'wilcoxon'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -565,6 +566,34 @@ const StatisticalAnalysisTool = () => {
                                                     />
                                                 )}
 
+                                                {testType === 'wilcoxon' && (
+                                                    <WilcoxonOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
                                                 {requiredFields.col3 && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
@@ -712,6 +741,8 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
     const renderResults = () => {
         if (testType === 'kruskal') {
             return renderKruskalResults();
+        } else if (testType === 'wilcoxon') {
+        return renderWilcoxonResults();
         }
 
         switch (testType) {
@@ -845,6 +876,69 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderWilcoxonResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {t.tests.wilcoxon || 'Wilcoxon Signed Rank Test'}
+                </h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                    </p>
+                )}
+
+                {results.interpretation && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
+                        {results.interpretation}
+                    </p>
+                )}
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'p-মান:' : 'p-value:'}</strong>{' '}
+                    {mapDigitIfBengali(results.p_value?.toFixed(4))}
+                </p>
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
+                    {mapDigitIfBengali(results.statistic?.toFixed(4))}
+                </p>
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                            <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                <img
+                                    src={`http://127.0.0.1:8000${path}`}
+                                    alt={`Wilcoxon visualization ${index + 1}`}
+                                    className="w-full h-auto object-contain"
+                                />
+                            </div>
+                            ))}
                         </div>
                     </div>
                 )}
