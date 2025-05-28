@@ -82,13 +82,9 @@ const handleShareWithEmail = async () => {
     const file = event.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setQuestions((prevQuestions) =>
-          prevQuestions.map((q) =>
-            q.id === question.id ? { ...q, image: e.target.result } : q
-          )
-        );
-        setImage(e.target.result);
+      reader.onloadend = () => {
+        setImage(reader.result);
+        setUpdatedQuestion((prev) => ({ ...prev, image: reader.result }));
       };
       reader.readAsDataURL(file);
     }
@@ -106,7 +102,8 @@ const handleShareWithEmail = async () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUpdatedQuestion(null); // Optionally clear the question from state
+      window.location.reload();
+      console.log("Question deleted successfully");
       
     }
     catch (error) {
@@ -168,6 +165,7 @@ const handleShareWithEmail = async () => {
           }
           }
            setIsEditing(false);
+           window.location.reload();
         }, [updatedQuestion, setIsEditing, newQuestion, setNewQuestion]);
       
   

@@ -92,7 +92,7 @@ const handleShareWithEmail = async () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUpdatedQuestion(null); // Optionally clear the question from state
+       window.location.reload();
       
     }
     catch (error) {
@@ -199,6 +199,7 @@ const handleShareWithEmail = async () => {
         }
         }
          setIsEditing(false);
+          window.location.reload();
       }, [updatedQuestion, setIsEditing, newQuestion, setNewQuestion]);
     
 

@@ -1,19 +1,54 @@
 import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useState } from "react";
+import LikertScale from "../QuestionTypes/LikertScale"; // Assuming this is the editable version
 
-const LikertScaleView = ({ question, surveyTitle, projectTitle }) => {
+const LikertScaleView = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const {
     text,
     image,
-    meta = {},
     owner_name,
     required,
     meta_data = {},
   } = question;
 
-  const rows = meta.rows?.length ? meta.rows : ["Row 1"];
-  const columns = meta.columns?.length ? meta.columns : ["Column 1"];
+  const rows = meta_data.rows?.length ? meta_data.rows : ["Row 1"];
+  const columns = meta_data.columns?.length ? meta_data.columns : ["Column 1"];
   const tags = meta_data.tag || [];
+
+  const userId = parseInt(localStorage.getItem("userId"), 10);
+  console.log("User ID from localStorage:", userId);
+  console.log("Question ID:", question.user_id);
+  const isOwner = question.user_id === userId;
+  console.log("Is Owner:", isOwner);
+
+    if (isEditing && isOwner ) {
+    // Optionally render the editable version directly (careful with infinite loop)
+    return (
+      <>
+      <LikertScale
+        question={question}
+        setIsEditing={setIsEditing}
+        setNewQuestion={setNewQuestion}
+        newQuestion={newQuestion}
+        
+        
+      />
+      {/* Edit Button (only for owner) */}
+            {isOwner && (
+              <div className="text-end mb-2">
+                <button
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => setIsEditing(!isEditing)}
+                >
+                  <i className="bi bi-pencil"></i> {isEditing ? "Cancel" : "Edit"}
+                </button>
+              </div>
+            )}
+      </> 
+    );
+  }
 
   return (
     <div className="p-3 mb-4 border rounded shadow-sm bg-light">
@@ -86,6 +121,18 @@ const LikertScaleView = ({ question, surveyTitle, projectTitle }) => {
           </tbody>
         </table>
       </div>
+
+       {/* Edit Button (only for owner) */}
+          {isOwner && (
+            <div className="text-end mb-2">
+              <button
+                className="btn btn-sm btn-outline-primary"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                <i className="bi bi-pencil"></i> {isEditing ? "Cancel" : "Edit"}
+              </button>
+            </div>
+          )}
     </div>
   );
 };
