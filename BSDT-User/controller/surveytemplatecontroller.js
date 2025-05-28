@@ -32,6 +32,17 @@ exports.saveSurveyForm = async (req, res) => {
         .json({ error: "Failed to create survey template" });
     }
     console.log("Survey template:", surveyData[0]);
+    //update last_updated time in project table
+    const { error: projectUpdateError } = await supabase
+      .from("survey_project")
+      .update({ last_updated: new Date() })
+      .eq("project_id", project_id);
+    if (projectUpdateError) {
+      console.error("Supabase update error for project:", projectUpdateError);
+      return res
+        .status(500)
+        .json({ error: "Failed to update project last updated time" });
+    }
     return res.status(201).json({
       message: "Survey template created successfully",
       data: surveyData[0],
@@ -59,20 +70,15 @@ exports.createSurveyForm = async (req, res) => {
       .select("survey_link")
       .eq("survey_id", survey_id);
 
-    //check if published or not. based on the existence of survey_link
-    if (survey_link_error) {
-      console.error("Supabase select error for survey link:", survey_link_error);
-      return res.status(500).json({ error: "Failed to fetch survey link" });
-    }
+    //check if the survey_link exists
     const isPublished = survey_link.length > 0 && survey_link[0].survey_link;
     // get slag
     const slug = survey_link[0].survey_link
       ? survey_link[0].survey_link
       : generateSlug(title, survey_id, "published");
 
-    // Step 1.1: if survey is not published, update the survey table
-    if(!isPublished) {
-      const { data: surveyData, error: surveyError } = await supabase
+    // Step 1: Insert survey template into survey table
+    const { data: surveyData, error: surveyError } = await supabase
       .from("survey")
       .update({
         project_id: project_id,
@@ -80,29 +86,36 @@ exports.createSurveyForm = async (req, res) => {
         banner: survey_template.banner || null,
         template: survey_template,
         survey_link: slug,
+        starting_date: new Date(),
         title: title || "Untitled Survey",
         survey_status: "published",
-        published_date: new Date(),
       })
       .eq("survey_id", survey_id)
       .select("*");
+    //update published date or update date
+    if (!isPublished){
+      const { error: updateError } = await supabase
+        .from("survey")
+        .update({ published_date: new Date() })
+        .eq("survey_id", survey_id);
+      if (updateError) {
+        console.error("Supabase update error for survey:", updateError);
+        return res
+          .status(500)
+          .json({ error: "Failed to update survey published date" });
+      }
     }else{
-      const { data: surveyData, error: surveyError } = await supabase
-      .from("survey")
-      .update({
-        project_id: project_id,
-        user_id,
-        banner: survey_template.banner || null,
-        template: survey_template,
-        survey_link: slug,
-        title: title || "Untitled Survey",
-        survey_status: "published",
-        last_updated: new Date(),
-      })
-      .eq("survey_id", survey_id)
-      .select("*");
+      const { error: updateError } = await supabase
+        .from("survey")
+        .update({ last_updated: new Date() })
+        .eq("survey_id", survey_id);
+      if (updateError) {
+        console.error("Supabase update error for survey:", updateError);
+        return res
+          .status(500)
+          .json({ error: "Failed to update survey last updated time" });
+      }
     }
-
     if (surveyError) {
       console.error("Supabase insert error for survey:", surveyError);
       return res
@@ -141,7 +154,7 @@ exports.createSurveyForm = async (req, res) => {
         text,
         image,
         section_id,
-        question_type,
+        type,
         privacy,
         correct_ans,
         meta,
@@ -160,9 +173,9 @@ exports.createSurveyForm = async (req, res) => {
         .insert({
           user_id: user_id,
           survey_id: surveyId,
-          text: question.text,
-          image: question.image || null,
-          type: question.type,
+          text: text,
+          image: image || null,
+          type: type,
           privacy,
           section_id: sectionId, // Link to the database section_id
           correct_ans: correct_ans || null,
@@ -178,8 +191,9 @@ exports.createSurveyForm = async (req, res) => {
       const questionId = questionData[0].question_id;
 
       // Handle tags from the meta field
-      const tags = meta?.tag || [];
+      const tags = meta?.tags || [];
       for (const tagName of tags) {
+        console.log("Processing tag:", tagName);
         const { data: existingTag, error: tagCheckError } = await supabase
           .from("tags")
           .select("tag_id")
@@ -222,7 +236,18 @@ exports.createSurveyForm = async (req, res) => {
       }
     }
     console.log("Survey template creation/updation:", surveyData[0]);
-    
+    //update last_updated time in project table
+    const { error: projectUpdateError } = await supabase
+      .from("survey_project")
+      .update({ last_updated: new Date() })
+      .eq("project_id", project_id);
+    if (projectUpdateError) {
+      console.error("Supabase update error for project:", projectUpdateError);
+      return res
+        .status(500)
+        .json({ error: "Failed to update project last updated time" });
+    }
+
     return res.status(201).json({
       survey_link: slug,
       message: "Survey template created successfully",
@@ -300,6 +325,18 @@ exports.deleteSurveyForm = async (req, res) => {
         console.error("Supabase delete error for survey:", deleteError);
         return res.status(500).json({ error: "Failed to delete survey" });
       }
+      //update last_updated time in project table
+      const { error: projectUpdateError } = await supabase
+        .from("survey_project")
+        .update({ last_updated: new Date() })
+        .eq("project_id", surveyData.project_id);
+      if (projectUpdateError) {
+        console.error("Supabase update error for project:", projectUpdateError);
+        return res
+          .status(500)
+          .json({ error: "Failed to update project last updated time" });
+      }
+
       //return success response
       return res.status(200).json({ message: "Survey deleted successfully" });
     }

@@ -72,23 +72,38 @@ async function createSurvey(projectId, title, userId) {
       },
     };
   }
-
+  const date = new Date();
   // Insert and return the full row
   const { data, error } = await supabase
     .from("survey")
-    .insert([{ project_id: projectId, title, user_id: userId }])
+    .insert([{ project_id: projectId, title, user_id: userId , created_at: date, last_updated: date}])
     .select()
     .single(); // ensures only one row is returned
   //add last updated time to project table
   const { error: projectUpdateError } = await supabase
     .from("survey_project")
-    .update({ last_updated: new Date() })
+    .update({ last_updated: date})
     .eq("project_id", projectId,);
   if (projectUpdateError) {
     console.error("Supabase update error for project:", projectUpdateError);
     return res
       .status(500)
       .json({ error: "Failed to update project last updated time" });
+  }
+  //update the last_updated field in the project table
+  const { data: projectData, error: projectError } = await supabase
+    .from("survey_project")
+    .update({
+      last_updated: date,
+    })
+    .eq("project_id", projectId);
+  if (projectError) {
+    console.error("Error updating project last updated time:", projectError);
+    return { data: null, error: projectError };
+  }
+  if (error) {
+    console.error("Error creating survey:", error);
+    return { data: null, error };
   }
 
   return { data, error };
