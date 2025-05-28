@@ -5,7 +5,7 @@ import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
 
-const SurveyForm = ({ questions, setQuestions }) => {
+const SurveyForm = ({ questions, setQuestions, activeTab }) => {
   const [newQuestion, setNewQuestion] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all"); // "all" | "mine" | "public"
@@ -220,12 +220,15 @@ const groupedQuestions = groupByProject
           )}
         </div>
 
-
-      <AddQuestion 
+      {activeTab === "mine" && (
+        <AddQuestion 
         newQuestion={newQuestion}
         setNewQuestion={setNewQuestion}
         addNewQuestion={addNewQuestion}
-      />
+      />   
+        )
+      }
+
 
 
       {groupByProject ? (
