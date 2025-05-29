@@ -101,6 +101,9 @@
   align-items: center;
   font-size: 18px;
 }
+.nav-icon {
+   font-size: 55px;
+}
 
 .nav-links a,
 .nav-link-button {
@@ -116,9 +119,8 @@
   cursor: pointer;
 }
 
-.nav-icon {
-   font-size: 40px;
-}
+
+
 
 .language-toggle {
   display: flex;
