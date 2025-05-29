@@ -5,6 +5,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./CSS/SurveyForm.css";
 import SurveyForm from "./Components/SurveyForm";
 import { useLocation } from "react-router-dom";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 
 const QB = () => {
   const location = useLocation();
@@ -69,29 +70,31 @@ const QB = () => {
   }
 
   return (
-      <div className="container-fluid mt-5 px-5">
+      <>
+      <NavbarAcholder />
+      
         <div className="bg-white rounded shadow p-4 mb-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
-            <h2 className="text-primary mb-0">
+            <h1 className="text-success mb-0 text-center w-100">
               <i className="bi bi-journal-text me-2"></i> Question Bank
-            </h2>
-
-            <div className="d-flex gap-2 ms-auto">
-                <button
-                  className={`btn btn-sm ${activeTab === "mine" ? "btn-primary" : "btn-outline-primary"}`}
-                  onClick={() => setActiveTab("mine")}
-                >
-                  <i className="bi bi-person me-1"></i> My Questions
-                </button>
-
-                <button
-                  className={`btn btn-sm ${activeTab === "shared" ? "btn-warning" : "btn-outline-warning"}`}
-                  onClick={() => setActiveTab("shared")}
-                >
-                  <i className="bi bi-people me-1"></i> Shared with Me
-                </button>
-              </div>
+            </h1>
           </div>
+          <div className="d-flex justify-content-end gap-2 mb-3">
+            <button
+              className={`btn btn-sm ${activeTab === "mine" ? "btn-success" : "btn-outline-success"}`}
+              onClick={() => setActiveTab("mine")}
+            >
+              <i className="bi bi-person me-1"></i> My Questions
+            </button>
+
+            <button
+              className={`btn btn-sm ${activeTab === "shared" ? "btn-success" : "btn-outline-success"}`}
+              onClick={() => setActiveTab("shared")}
+            >
+              <i className="bi bi-people me-1"></i> Shared with Me
+            </button>
+          </div>
+
 
           {activeTab === "mine" && (
             <SurveyForm
@@ -108,7 +111,8 @@ const QB = () => {
               />
             )}
         </div>
-      </div>
+     
+      </>
   );
 };
 

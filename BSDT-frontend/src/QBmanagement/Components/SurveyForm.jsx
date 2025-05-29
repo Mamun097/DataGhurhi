@@ -11,6 +11,16 @@ const SurveyForm = ({ questions, setQuestions, activeTab }) => {
   const [filter, setFilter] = useState("all"); // "all" | "mine" | "public"
   const [groupByProject, setGroupByProject] = useState(false); // toggle grouping
   const [showFilters, setShowFilters] = useState(false);
+  const [searchFields, setSearchFields] = useState({
+  keyword: true,
+  project: false,
+  tag: false,
+  type: false,
+  survey: false,
+  owner: false,
+});
+const [showSearchFilters, setShowSearchFilters] = useState(false);
+
 
 
 
@@ -103,122 +113,200 @@ const SurveyForm = ({ questions, setQuestions, activeTab }) => {
 
 const filteredQuestions = questions
   .filter((q) => {
-    if (filter === "mine") return q.user_id === userId;
-    if (filter === "public") return q.privacy === "public" && q.user_id !== userId;
+    const search = searchTerm.toLowerCase().trim();
+    if (!search) return true;
 
-    return true;
+    const typeAliasText = typeAlias[q.type] || q.type;
+
+    const matches = [];
+
+    if (searchFields.keyword) {
+      const combined = [
+        q.text,
+        q.type,
+        typeAliasText,
+        q.privacy,
+        JSON.stringify(q.meta_data),
+      ]
+        .join(" ")
+        .toLowerCase();
+      matches.push(combined.includes(search));
+    }
+
+    if (searchFields.project) {
+      matches.push((q.project_name || "").toLowerCase().includes(search));
+    }
+
+    if (searchFields.type) {
+      matches.push(typeAliasText.toLowerCase().includes(search));
+    }
+
+    if (searchFields.tag) {
+      matches.push((q.tags || []).join(" ").toLowerCase().includes(search));
+    }
+
+    if (searchFields.survey) {
+      matches.push((q.survey_name || "").toLowerCase().includes(search));
+    }
+
+    if (searchFields.owner) {
+      matches.push((q.owner_name || "").toLowerCase().includes(search));
+    }
+
+    // If no checkbox is selected, default to match all fields
+    const hasAnyFieldSelected = Object.values(searchFields).some(Boolean);
+
+    if (!hasAnyFieldSelected) {
+      const fallbackCombined = [
+        q.text,
+        q.type,
+        typeAliasText,
+        q.privacy,
+        q.project_name,
+        q.survey_name,
+        q.owner_name,
+        (q.tags || []).join(" "),
+        JSON.stringify(q.meta_data),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return fallbackCombined.includes(search);
+    }
+
+    return matches.some(Boolean);
   })
   .filter((q) => {
-    const search = searchTerm.toLowerCase();
-    const friendlyType = typeAlias[q.type] || q.type;
-
-    const combined = [
-      q.text,
-      q.type,
-      friendlyType,
-      q.privacy,
-      q.project_name || "",
-      q.survey_name || "",
-      q.owner_name || "",
-      JSON.stringify(q.meta_data),
-    ].join(" ").toLowerCase();
-
-    return combined.includes(search);
+    if (filter === "mine") return q.user_id === userId;
+    if (filter === "public") return q.privacy === "public" && q.user_id !== userId;
+    return true;
   });
-  // Group by project name
 
-  // Group by project name
-const groupedByProject = filteredQuestions.reduce((acc, q) => {
-  const group = q.project_name || "No Project";
-  if (!acc[group]) acc[group] = [];
-  acc[group].push(q);
-  return acc;
-}, {});
 
-const groupedQuestions = groupByProject
-  ? filteredQuestions.reduce((acc, q) => {
-      const key = q.project_name || "No Project";
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(q);
-      return acc;
-    }, {})
-  : null;
-
+ 
+  
 
 
   return (
     <div>
-        <input
-          type="text"
-          placeholder="Search anything (e.g., mcq, poor, radio)"
-          className="form-control mb-3"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <div className="position-relative mb-3">
+        <div className="d-flex align-items-start mb-3 gap-2">
+          <input
+            type="text"
+            placeholder="Search anything (e.g., keyword, project name)"
+            className="form-control"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <div className="position-relative">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={() => setShowSearchFilters((prev) => !prev)}
+            >
+              <i className="bi bi-search"></i> Search Filter
+            </button>
+
+            {showSearchFilters && (
+              <div
+                className="card p-3 position-absolute"
+                style={{
+                  zIndex: 1000,
+                  top: "110%",
+                  right: 0,
+                  minWidth: "240px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                }}
+              >
+                <label className="fw-bold small mb-2">Search In:</label>
+                <div className="d-flex flex-column gap-2">
+                  {[
+                    { label: "Keyword", key: "keyword" },
+                    { label: "Project Name", key: "project" },
+                    { label: "Type", key: "type" },
+                    { label: "Tag", key: "tag" },
+                    { label: "Survey Name", key: "survey" },
+                    { label: "Owner Name", key: "owner" },
+                  ].map(({ label, key }) => (
+                    <div className="form-check form-check-sm m-0 p-0" key={key}>
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id={`search-${key}`}
+                        style={{ transform: "scale(0.85)" }}
+                        checked={searchFields[key]}
+                        onChange={() =>
+                          setSearchFields((prev) => ({
+                            ...prev,
+                            [key]: !prev[key],
+                          }))
+                        }
+                      />
+                      <label className="form-check-label small ms-1" htmlFor={`search-${key}`}>
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+        </div>
+
+        <div className="position-relative">
+    <button
+      className="btn btn-outline-secondary"
+      onClick={() => setShowFilters(!showFilters)}
+    >
+      <i className="bi bi-funnel me-2"></i> Filters
+    </button>
+
+    {showFilters && (
+      <div
+        className="card p-3 position-absolute"
+        style={{
+          zIndex: 1000,
+          top: "110%",
+          left: 0,
+          minWidth: "220px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
+      >
+        <div className="btn-group d-flex flex-column mb-2">
           <button
-            className="btn btn-outline-secondary btn-sm"
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => {
+              setFilter("all");
+              setShowFilters(false);
+            }}
+            className={`btn btn-sm mb-1 ${filter === "all" ? "btn-primary text-white" : "btn-light"}`}
           >
-            <i className="bi bi-funnel me-2"></i> Filters
+            All
           </button>
 
-          {showFilters && (
-            <div
-              className="card p-3 position-absolute"
-              style={{
-                zIndex: 1000,
-                top: "110%",
-                left: 0,
-                minWidth: "220px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-              }}
-            >
-              <div className="btn-group d-flex flex-column mb-2">
-                <button
-                  onClick={() => {
-                    setFilter("all");
-                    setShowFilters(false);
-                  }}
-                  className={`btn btn-sm mb-1 ${filter === "all" ? "btn-primary" : "btn-outline-primary"}`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => {
-                    setFilter("mine");
-                    setShowFilters(false);
-                  }}
-                  className={`btn btn-sm mb-1 ${filter === "mine" ? "btn-success" : "btn-outline-success"}`}
-                >
-                  My Questions
-                </button>
-                <button
-                  onClick={() => {
-                    setFilter("public");
-                    setShowFilters(false);
-                  }}
-                  className={`btn btn-sm ${filter === "public" ? "btn-warning" : "btn-outline-warning"}`}
-                >
-                  Public
-                </button>
-              </div>
+          <button
+            onClick={() => {
+              setFilter("mine");
+              setShowFilters(false);
+            }}
+            className={`btn btn-sm mb-1 ${filter === "mine" ? "btn-success text-white" : "btn-light"}`}
+          >
+            My Questions
+          </button>
 
-              <div className="form-check form-switch">
-                <input
-                  className="form-check-input"
-                  type="checkbox"
-                  checked={groupByProject}
-                  onChange={() => setGroupByProject(!groupByProject)}
-                  id="groupToggle"
-                />
-                <label className="form-check-label" htmlFor="groupToggle">
-                  Group by Project
-                </label>
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => {
+              setFilter("public");
+              setShowFilters(false);
+            }}
+            className={`btn btn-sm mb-1 ${filter === "public" ? "btn-warning text-white" : "btn-light"}`}
+          >
+            Public
+          </button>
         </div>
+      </div>
+
+    )}
+  </div>
+
+    </div>
 
       {activeTab === "mine" && (
         <AddQuestion 
