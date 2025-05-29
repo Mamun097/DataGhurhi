@@ -3,7 +3,7 @@ import React, { useEffect, useRef } from "react";
 const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion }) => {
 
   return (
-    <div>
+    <div className= "add-question-container">
       {newQuestion && (
         <div className="mt-3">
           <p className="text-center" style={{ fontSize: '20px' }}>

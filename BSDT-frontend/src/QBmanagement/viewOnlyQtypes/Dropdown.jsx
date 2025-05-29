@@ -2,7 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useState } from "react";
 import Dropdown from "../QuestionTypes/Dropdown";
-
+import "../CSS/SurveyForm.css";
 const DropdownViewOnly = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);
   const {
