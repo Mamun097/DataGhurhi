@@ -5,6 +5,8 @@ import { supabase } from "../../db";
 import NavbarAcholder from "./navbarAccountholder";
 import "./Dashboard.css";
 import defaultprofile from "./default_dp.png";
+import QB from "../QBmanagement/QuestionBankUser";
+
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -100,6 +102,7 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
+      "Question Bank",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -252,7 +255,7 @@ const Dashboard = () => {
             <h2>{values.user?.name || "Loading..."}</h2>
             <div className="profile-tabs">
               <ul>
-                {["Edit Profile", "Projects", "Collaborated Projects"].map(
+                {["Edit Profile", "Projects", "Collaborated Projects", "Question Bank"].map(
                   (label, idx) => (
                     <li key={idx}>
                       <button
@@ -274,11 +277,15 @@ const Dashboard = () => {
                     </li>
                   )
                 )}
-                <button>
-                  <label htmlFor="QB" className="upload-btn" onClick={() => navigate("/question-bank")}>
+                {/* <button>
+                  <label
+                    htmlFor="QB"
+                    className="upload-btn"
+                    onClick={() => navigate("/question-bank")}
+                  >
                     Question Bank
                   </label>
-                </button>
+                </button> */}
               </ul>
             </div>
           </div>
@@ -478,7 +485,7 @@ const Dashboard = () => {
 
                           <p>
                             <strong>{getLabel("Created At:")}</strong>{" "}
-                            {new Date(project.created_at+ "Z").toLocaleString(
+                            {new Date(project.created_at + "Z").toLocaleString(
                               "en-US",
                               {
                                 timeZone: "Asia/Dhaka",
@@ -494,18 +501,17 @@ const Dashboard = () => {
 
                           <p>
                             <strong>{getLabel("Last Updated:")}</strong>{" "}
-                            {new Date(project.last_updated + "Z").toLocaleString(
-                              "en-US",
-                              {
-                                timeZone: "Asia/Dhaka",
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                                hour: "numeric",
-                                minute: "2-digit",
-                                hour12: true,
-                              }
-                            )}
+                            {new Date(
+                              project.last_updated + "Z"
+                            ).toLocaleString("en-US", {
+                              timeZone: "Asia/Dhaka",
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            })}
                           </p>
                         </div>
                       ))}
@@ -526,9 +532,24 @@ const Dashboard = () => {
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
               </div>
             )}
+          
+
+
+          {activeTab === "questionbank" && (
+            <div className="question-bank-section">
+              {/* <h3>{getLabel("Question Bank")}</h3> */}
+              <p>
+               
+                <QB />  
+              </p>
+              {/* Future implementation for question bank */}
+            </div>
+          )}
           </div>
 
-          <div className="trending-section">
+          {/* Uncomment this section if you want to add trending topics in the future */}
+
+          {/* <div className="trending-section">
             <h3>{getLabel("Trending Topics")}</h3>
             <ul className="trending-list">
               {[
@@ -541,7 +562,7 @@ const Dashboard = () => {
                 <li key={index}>{topic}</li>
               ))}
             </ul>
-          </div>
+          </div> */}
         </div>
       </div>
     </>
