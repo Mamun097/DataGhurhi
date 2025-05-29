@@ -2,24 +2,46 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const Checkbox = ({ question, questions, setQuestions }) => {
-  // Handle checkbox selection
-  const handleCheckboxChange = (option) => {
-    const updatedQuestions = questions.map((q) => {
-      if (q.id === question.id) {
-        const currentAnswers = Array.isArray(q.answer) ? q.answer : [];
-        const newAnswers = currentAnswers.includes(option)
-          ? currentAnswers.filter((ans) => ans !== option) // Uncheck
-          : [...currentAnswers, option]; // Check
-        return { ...q, answer: newAnswers };
+const Checkbox = ({ question, userResponse, setUserResponse }) => {
+  const userAnswer = userResponse.find(
+    (response) => response.questionText === question.text
+  )?.userResponse;
+
+  // Modified handleAnswerChange to update existing response or add new one
+  const handleAnswerChange = (e) => {
+    const selectedValue = e.target.value;
+    const existingResponseIndex = userResponse.findIndex(
+      (response) => response.questionText === question.text
+    );
+
+    if (existingResponseIndex !== -1) {
+      // Update existing response
+      const updatedResponse = [...userResponse];
+      // if the value is already in the response, remove it; otherwise, add it
+      if (
+        updatedResponse[existingResponseIndex].userResponse.includes(
+          selectedValue
+        )
+      ) {
+        updatedResponse[existingResponseIndex].userResponse = updatedResponse[
+          existingResponseIndex
+        ].userResponse.filter((value) => value !== selectedValue);
+      } else {
+        updatedResponse[existingResponseIndex].userResponse.push(selectedValue);
       }
-      return q;
-    });
-    setQuestions(updatedQuestions);
+      setUserResponse(updatedResponse);
+    } else {
+      // Add new response
+      const newResponse = {
+        questionText: question.text,
+        userResponse: [selectedValue],
+      };
+      setUserResponse([...userResponse, newResponse]);
+    }
   };
 
   return (
-    <div className="mb-3">
+    <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
         {question.text || "Untitled Question"}
@@ -27,41 +49,56 @@ const Checkbox = ({ question, questions, setQuestions }) => {
       </h5>
 
       {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Question Image"
-          className="img-fluid mb-2"
-          style={{ maxHeight: "400px" }}
-        />
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mt-4 mb-4">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* Checkbox Options */}
-      <div>
+      <div className="mt-2 ms-2">
         {question.meta?.options?.map((option, idx) => (
-          <div key={idx} className="form-check mb-2">
+          <div
+            key={idx}
+            className="form-check d-flex align-items-center gap-2 p-2 mb-2 ms-2"
+          >
             <input
               type="checkbox"
               className="form-check-input"
               id={`checkbox-opt-${question.id}-${idx}`}
-              checked={Array.isArray(question.answer) && question.answer.includes(option)}
-              onChange={() => handleCheckboxChange(option)}
-              disabled={question.disabled} // Optional: if you want to disable interaction
+              value={option}
+              checked={userAnswer ? userAnswer.includes(option) : false}
+              onChange={handleAnswerChange}
+              required={question.required}
+              disabled={question.disabled}
+              style={{ cursor: question.disabled ? "not-allowed" : "pointer" }}
             />
             <label
-              className="form-check-label"
+              className="form-check-label mb-0"
               htmlFor={`checkbox-opt-${question.id}-${idx}`}
+              style={{
+                fontSize: "1rem",
+                cursor: question.disabled ? "not-allowed" : "pointer",
+              }}
             >
               {option || `Option ${idx + 1}`}
             </label>
           </div>
         ))}
       </div>
-
-      {/* Required Question Indicator */}
-      {question.required && !Array.isArray(question.answer) && (
-        <small className="text-danger">This question is required.</small>
-      )}
     </div>
   );
 };

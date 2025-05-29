@@ -139,7 +139,8 @@ const handleDelete = useCallback(() => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUpdatedQuestion(null); // Optionally clear the question from state
+      window.location.reload(); // Reload the page to reflect changes
+      console.log("Question deleted successfully");
       
     }
     catch (error) {
@@ -214,6 +215,8 @@ const handleDelete = useCallback(() => {
          }
          }
           setIsEditing(false);
+          window.location.reload();
+          
        }, [updatedQuestion, setIsEditing, newQuestion, setNewQuestion]);
      
 

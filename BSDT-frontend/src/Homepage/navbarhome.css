@@ -5,11 +5,11 @@
   align-items: center;
   background: linear-gradient(
     135deg,
-    rgba(53, 9, 61, 0.5),
-    rgba(157, 38, 216, 0.35)
+    rgba(229, 240, 235, 0.25),
+    rgba(58, 147, 116, 0.5)
   );
-  border-bottom: 1px solid rgba(222, 172, 255, 0.2);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(43, 171, 156, 0.5);
+  box-shadow: 0 4px 20px rgba(4, 141, 18, 0.05);
   position: fixed;
   width: 100%;
   min-height: 120px; /* or just use height: auto */
@@ -56,7 +56,7 @@
   display: flex;
   align-items: center;
   height: 50px;
-  background: rgba(255, 225, 0, 0.15);
+  background: rgba(119, 189, 152, 0.5);
   backdrop-filter: blur(10px);
   border-radius: 25px;
   border: 2px solid rgba(2, 0, 3, 0.3);
@@ -92,6 +92,7 @@
   margin: 0;
   padding: 0;
   flex-shrink: 0;
+  margin-right: 3rem;
 }
 
 .nav-links li {
@@ -116,7 +117,7 @@
 }
 
 .nav-icon {
-  font-size: 18px;
+   font-size: 40px;
 }
 
 .language-toggle {
@@ -125,7 +126,7 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-   margin-top: -3rem;
+  margin-top: 1rem;
 }
 
 .language-labels {
@@ -135,7 +136,6 @@
   font-size: 16px;
   font-weight: 600;
   justify-content: center;
- 
 }
 
 .language-labels span {
@@ -148,8 +148,7 @@
 }
 
 .language-labels .active {
-  color: #ff00ff;
-
+  color: #389b1a;
 }
 
 .switch {
@@ -171,7 +170,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #772079;
+  background-color: #0f5c38;
   transition: 0.4s;
   border-radius: 34px;
 }
@@ -183,15 +182,52 @@
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: rgb(164, 85, 214);
+  background-color: rgb(117, 248, 191);
   border-radius: 50%;
   transition: 0.4s;
 }
 
 input:checked + .slider:before {
   transform: translateX(22px);
-  background-color: #6d666d;
+  background-color: #8fffc7;
 }
+
+.navbar-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+ 
+}
+
+.navbar-profile-pic,
+.navbar-initials-circle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #ddd;
+  background-color: #555;
+  color: white;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+}
+
+.navbar-profile-name {
+ font-size: 25px;
+  margin-top: 4px;
+  color: #333;
+  font-weight: 500;
+  text-align: center;
+  white-space: nowrap;
+}
+
+
+
+
 
 /* Responsive Fixes */
 @media (max-width: 1024px) {
