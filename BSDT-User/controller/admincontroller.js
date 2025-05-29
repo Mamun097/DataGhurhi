@@ -91,10 +91,21 @@ exports.deletePackage = async (req, res) => {
             return res.status(400).json({ error: "Package ID is required" });
         }
 
+        // First check if package exists
+        const { data: existingPackage, error: fetchError } = await supabase
+            .from("package")
+            .select("package_id")
+            .eq("package_id", id)
+            .single();
+
+        if (fetchError || !existingPackage) {
+            return res.status(404).json({ error: "Package not found" });
+        }
+
         const { error } = await supabase
             .from("package")
             .delete()
-            .eq("id", id);
+            .eq("package_id", id);
 
         if (error) {
             console.error("Error deleting package:", error);
@@ -119,15 +130,37 @@ exports.updatePackage = async (req, res) => {
             return res.status(400).json({ error: "Package ID is required" });
         }
 
+        // Validate required fields based on frontend data structure
+        if (!packageData.title || !packageData.original_price || !packageData.discount_price) {
+            return res.status(400).json({ 
+                error: "Package title, original_price, and discount_price are required" 
+            });
+        }
+
+        // First check if package exists
+        const { data: existingPackage, error: fetchError } = await supabase
+            .from("package")
+            .select("package_id")
+            .eq("package_id", id)
+            .single();
+
+        if (fetchError || !existingPackage) {
+            return res.status(404).json({ error: "Package not found" });
+        }
+
         const { data, error } = await supabase
             .from("package")
             .update(packageData)
-            .eq("id", id)
+            .eq("package_id", id)
             .select();
 
         if (error) {
             console.error("Error updating package:", error);
             return res.status(500).json({ error: "Error updating package: " + error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: "Package not found or not updated" });
         }
 
         res.status(200).json({ 
@@ -141,14 +174,23 @@ exports.updatePackage = async (req, res) => {
     }
 };
 
-
 // ✅ Create a new package
 exports.createPackage = async (req, res) => {
     try {
         const packageData = req.body;
 
-        if (!packageData.name || !packageData.price) {
-            return res.status(400).json({ error: "Package name and price are required" });
+        // Validate required fields based on frontend data structure
+        if (!packageData.title || !packageData.original_price || !packageData.discount_price) {
+            return res.status(400).json({ 
+                error: "Package title, original_price, and discount_price are required" 
+            });
+        }
+
+        // Additional validation
+        if (!packageData.tag || !packageData.question || !packageData.survey || !packageData.validity) {
+            return res.status(400).json({ 
+                error: "All package fields (tag, question, survey, validity) are required" 
+            });
         }
 
         const { data, error } = await supabase
@@ -159,6 +201,10 @@ exports.createPackage = async (req, res) => {
         if (error) {
             console.error("Error creating package:", error);
             return res.status(500).json({ error: "Error creating package: " + error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(500).json({ error: "Package creation failed - no data returned" });
         }
 
         res.status(201).json({ 

@@ -745,7 +745,7 @@
 
 /* Header Section */
 .admin-package-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4bb77d, #046060);
     border-radius: 16px;
     padding: 32px;
     margin-bottom: 24px;
@@ -842,7 +842,7 @@
 
 .stat-icon {
     font-size: 28px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4bb77d, #046060);
     padding: 12px;
     border-radius: 12px;
     color: white;
@@ -891,8 +891,8 @@
 
 /* Package Card Header */
 .package-card-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #4bb77d, #046060);
+    color: white !important;
     padding: 24px;
     display: flex;
     justify-content: space-between;
@@ -905,7 +905,7 @@
 
 .package-title {
     font-size: 22px;
-    color: white;
+    color: white !important;
     font-weight: 700;
     margin: 0 0 12px 0;
 }
@@ -917,11 +917,12 @@
 }
 
 .validity-badge {
-    background: rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.3);
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
+    /* color: #374151; */
     backdrop-filter: blur(10px);
 }
 
@@ -939,7 +940,7 @@
     cursor: pointer;
     transition: all 0.3s ease;
     font-size: 14px;
-    width: 36px;
+    width: 52px;
     height: 36px;
     display: flex;
     align-items: center;
@@ -948,12 +949,12 @@
 
 .package-action-btn:hover {
     background: rgba(255,255,255,0.3);
-    transform: scale(1.1);
+    transform: scale(1.03);
 }
 
-.delete-btn:hover {
+/* .delete-btn:hover {
     background: rgba(239, 68, 68, 0.3);
-}
+} */
 
 /* Package Features */
 .package-features {
@@ -1075,7 +1076,7 @@
 }
 
 .admin-modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4bb77d, #046060);
     color: white;
     padding: 24px;
     display: flex;
@@ -1107,7 +1108,7 @@
 
 .modal-close-btn:hover {
     background: rgba(255,255,255,0.3);
-    transform: rotate(90deg);
+    /* transform: rotate(90deg); */
 }
 
 .admin-modal-body {

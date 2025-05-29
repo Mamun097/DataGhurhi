@@ -120,6 +120,9 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
+
+      // Admin Dashboard Labels
+
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
