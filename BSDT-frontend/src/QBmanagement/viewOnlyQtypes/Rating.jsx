@@ -1,9 +1,9 @@
 import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import RatingQuestion from "../QuestionTypes/Rating"; // Assuming this is the editable version
 import { useState } from "react";
-
+import "../CSS/SurveyForm.css";
 const RatingQuestionView = ({ question, surveyTitle, projectTitle, setNewQuestion, newQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);
   const scale = question.meta_data?.scale || 5;
@@ -98,7 +98,7 @@ const RatingQuestionView = ({ question, surveyTitle, projectTitle, setNewQuestio
             {isOwner && (
               <div className="text-end mb-2">
                 <button
-                  className="btn btn-sm btn-outline-primary"
+                  className="btn btn-sm btn-outline-success"
                   onClick={() => setIsEditing(!isEditing)}
                 >
                   <i className="bi bi-pencil"></i> {isEditing ? "Cancel" : "Edit"}

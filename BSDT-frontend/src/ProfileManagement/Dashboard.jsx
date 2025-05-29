@@ -97,7 +97,7 @@ const Dashboard = () => {
       "Ascending",
       "Descending",
       "Profile Details",
-      "Privacy Status:",
+      "Visibility Setting:",
       "Created At:",
       "Created At",
       "Last Updated:",
@@ -479,7 +479,7 @@ const Dashboard = () => {
                           </p>
 
                           <p>
-                            <strong>{getLabel("Privacy Status:")}</strong>{" "}
+                            <strong>{getLabel("Visibility Setting:")}</strong>{" "}
                             {project.privacy_mode}
                           </p>
 
