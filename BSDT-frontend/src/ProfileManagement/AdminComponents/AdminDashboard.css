@@ -980,11 +980,11 @@
     gap: 8px;
     color: #475569;
     font-weight: 500;
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .feature-icon {
-    font-size: 18px;
+    font-size: 14px;
 }
 
 .feature-value {
@@ -1166,8 +1166,8 @@
 .discount-preview {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     color: white;
-    padding: 16px;
-    border-radius: 12px;
+    padding: 2px;
+    border-radius: 2px;
     margin-top: 16px;
 }
 

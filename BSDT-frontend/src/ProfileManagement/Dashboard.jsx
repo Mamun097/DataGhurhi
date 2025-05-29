@@ -16,7 +16,6 @@ import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
 
-
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
@@ -65,7 +64,6 @@ const Dashboard = () => {
     totalResponses: 0,
     premiumUsers: 0,
     recentActivities: []
-      
   });
 
   const loadTranslations = async () => {
@@ -75,9 +73,13 @@ const Dashboard = () => {
     }
 
     const labelsToTranslate = [
+      "Dashboard",
       "Edit Profile",
       "Projects",
-      "Collaborated Projects", "Checkout Premium Packages",
+      "Collaborated Projects", 
+      "Checkout Premium Packages",
+      "Customize Packages",
+      "Question Bank",
       "Profile details",
       "Cancel",
       "Edit",
@@ -122,7 +124,6 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
-      "Question Bank",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -327,15 +328,15 @@ const Dashboard = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard" },
-        //{ label: "Edit Profile", key: "editprofile" },
-        { label: "Customize Packages", key: "customizepackages" }
+        { label: "Customize Packages", key: "customizepackages" },
+        { label: "Edit Profile", key: "editprofile" }
       ];
     } else {
       return [
         { label: "Edit Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
-        { label: "Checkout Premium Packages", key: "checkoutpremiumpackages" }
+        { label: "Question Bank", key: "questionbank" }
       ];
     }
   };
@@ -383,37 +384,25 @@ const Dashboard = () => {
 
             <div className="profile-tabs">
               <ul>
-                {["Edit Profile", "Projects", "Collaborated Projects", "Question Bank"].map(
-                  (label, idx) => (
-                    <li key={idx}>
-                      <button
-                        className={
-                          activeTab === label.toLowerCase().replace(/ /g, "")
-                            ? "active"
-                            : ""
-                        }
-                        onClick={() => {
-                          const tabKey = label.toLowerCase().replace(/ /g, "");
-                          setActiveTab(tabKey);
+                {getTabs().map((tab) => (
+                  <li key={tab.key}>
+                    <button
+                      className={activeTab === tab.key ? "active" : ""}
+                      onClick={() => {
+                        if (tab.key === "checkoutpremiumpackages") {
+                          setShowPremiumModal(true);
+                        } else {
+                          setActiveTab(tab.key);
                           const url = new URL(window.location);
-                          url.searchParams.set("tab", tabKey);
+                          url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
-                        }}
-                      >
-                        {getLabel(label)}
-                      </button>
-                    </li>
-                  )
-                )}
-                {/* <button>
-                  <label
-                    htmlFor="QB"
-                    className="upload-btn"
-                    onClick={() => navigate("/question-bank")}
-                  >
-                    Question Bank
-                  </label>
-                </button> */}
+                        }
+                      }}
+                    >
+                      {getLabel(tab.label)}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
@@ -677,37 +666,14 @@ const Dashboard = () => {
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
               </div>
             )}
-          
 
-
-          {activeTab === "questionbank" && (
-            <div className="question-bank-section">
-              {/* <h3>{getLabel("Question Bank")}</h3> */}
-              <p>
+            {!isAdmin && activeTab === "questionbank" && (
+              <div className="question-bank-section">
+                <h3>{getLabel("Question Bank")}</h3>
                 <QB language={language} setLanguage={setLanguage}/>
-
-              </p>
-              {/* Future implementation for question bank */}
-            </div>
-          )}
+              </div>
+            )}
           </div>
-
-          {/* Uncomment this section if you want to add trending topics in the future */}
-
-          {/* <div className="trending-section">
-            <h3>{getLabel("Trending Topics")}</h3>
-            <ul className="trending-list">
-              {[
-                "AI in Healthcare",
-                "Web3 & Blockchain",
-                "Edge Computing",
-                "Quantum Computing",
-                "Augmented Reality",
-              ].map((topic, index) => (
-                <li key={index}>{topic}</li>
-              ))}
-            </ul>
-          </div> */}
         </div>
       </div>
 
