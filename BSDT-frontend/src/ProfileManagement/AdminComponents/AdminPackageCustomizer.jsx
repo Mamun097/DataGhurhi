@@ -8,6 +8,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false); // Add loading state for operations
     const [formData, setFormData] = useState({
         title: '',
         tag: '',
@@ -28,7 +29,14 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         try {
             setLoading(true);
             const response = await fetch('http://localhost:2000/api/admin/get-all-packages');
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
+            //sorting packages by price in ascending order
+            data.packages.sort((a, b) => a.original_price - b.original_price);
             setPackages(data.packages || []);
         } catch (error) {
             console.error('Error fetching packages:', error);
@@ -92,7 +100,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         if (!formData.original_price || formData.original_price < 0) newErrors.original_price = getLabel('Valid original price is required');
         if (!formData.discount_price || formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
         if (!formData.validity || formData.validity < 1) newErrors.validity = getLabel('Valid validity days is required');
-        
+
         if (parseFloat(formData.discount_price) > parseFloat(formData.original_price)) {
             newErrors.discount_price = getLabel('Discount price cannot be higher than original price');
         }
@@ -126,17 +134,37 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     };
 
     const confirmDelete = async () => {
+        if (!selectedPackage) return;
+
         try {
-            // API call to delete package
-            await fetch(`http://localhost:2000/api/admin/delete-package/${selectedPackage.id}`, {
-                method: 'DELETE'
+            setIsSubmitting(true);
+
+            const response = await fetch(`http://localhost:2000/api/admin/delete-package/${selectedPackage.package_id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
-            
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Delete success:', data.message);
+
+            // Only update state if API call was successful
             setPackages(packages.filter(pkg => pkg.id !== selectedPackage.id));
             setShowDeleteModal(false);
             setSelectedPackage(null);
+            fetchPackages();
+
         } catch (error) {
             console.error('Error deleting package:', error);
+            alert(`Failed to delete package: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -144,6 +172,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         if (!validateForm()) return;
 
         try {
+            setIsSubmitting(true);
+
             const packageData = {
                 ...formData,
                 tag: parseInt(formData.tag),
@@ -154,40 +184,70 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                 validity: parseInt(formData.validity)
             };
 
+            let response;
+            let updatedPackages;
+
             if (showEditModal) {
                 // API call to update package
-                await fetch(`http://localhost:2000/api/admin/update-package/${selectedPackage.id}`, {
+                response = await fetch(`http://localhost:2000/api/admin/update-package/${selectedPackage.package_id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)
                 });
 
-                setPackages(packages.map(pkg => 
-                    pkg.id === selectedPackage.id 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Update success:', data.message);
+
+                // Update local state with the returned package data
+                updatedPackages = packages.map(pkg =>
+                    pkg.id === selectedPackage.id
                         ? { ...pkg, ...packageData }
                         : pkg
-                ));
+                );
+                setPackages(updatedPackages);
+                fetchPackages();
                 setShowEditModal(false);
+
             } else {
                 // API call to create package
-                const response = await fetch('http://localhost:2000/api/admin/create-package', {
+                response = await fetch('http://localhost:2000/api/admin/create-package', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)
                 });
 
-                const newPackage = {
-                    id: Date.now(),
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Create success:', data.message);
+
+                // Use the returned package data instead of creating a new object
+                const newPackage = data.package || {
+                    id: Date.now(), // Fallback ID
                     ...packageData
                 };
+
                 setPackages([...packages, newPackage]);
+                fetchPackages();
                 setShowAddModal(false);
             }
 
             resetForm();
             setSelectedPackage(null);
+
         } catch (error) {
             console.error('Error saving package:', error);
+            alert(`Failed to save package: ${error.message}`);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -215,7 +275,6 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                 <div className="admin-package-header-content">
                     <div className="admin-package-header-info">
                         <h2 className="admin-package-title">
-                            <span className="admin-package-icon">📦</span>
                             {getLabel("Package Management")}
                         </h2>
                         <p className="admin-package-subtitle">
@@ -225,6 +284,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     <button
                         onClick={handleAddPackage}
                         className="admin-add-package-btn"
+                        disabled={isSubmitting}
                     >
                         <span className="btn-icon">➕</span>
                         {getLabel("Add Package")}
@@ -251,7 +311,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                 <div className="package-stat-card">
                     <div className="stat-icon">⭐</div>
                     <div className="stat-info">
-                        <h3>{packages.filter(pkg => pkg.title.toLowerCase().includes('premium') || pkg.title.toLowerCase().includes('recommended')).length}</h3>
+                        <h3>{packages.filter(pkg => pkg.discount_price > 0).length}</h3>
                         <p>{getLabel("Premium")}</p>
                     </div>
                 </div>
@@ -276,15 +336,17 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     onClick={() => handleEditPackage(pkg)}
                                     className="package-action-btn edit-btn"
                                     title={getLabel("Edit Package")}
+                                    disabled={isSubmitting}
                                 >
-                                    ✏️
+                                    Edit
                                 </button>
                                 <button
                                     onClick={() => handleDeletePackage(pkg)}
                                     className="package-action-btn delete-btn"
                                     title={getLabel("Delete Package")}
+                                    disabled={isSubmitting}
                                 >
-                                    🗑️
+                                    Delete
                                 </button>
                             </div>
                         </div>
@@ -325,10 +387,6 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 </div>
                                 <span className="original-price">{formatPrice(pkg.original_price)}</span>
                             </div>
-                            {/* <div className="pricing-duration">
-                                <span className="duration-icon">📅</span>
-                                <span className="duration-text">{pkg.validity}{getLabel("d")}</span>
-                            </div> */}
                         </div>
                     </div>
                 ))}
@@ -350,6 +408,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 }}
                                 className="modal-close-btn"
                                 title={getLabel("Close")}
+                                disabled={isSubmitting}
                             >
                                 ✕
                             </button>
@@ -361,9 +420,10 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 <input
                                     type="text"
                                     value={formData.title}
-                                    onChange={(e) => setFormData({...formData, title: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                                     className={`form-input ${errors.title ? 'error' : ''}`}
                                     placeholder={getLabel("e.g., Starter, Premium, Enterprise")}
+                                    disabled={isSubmitting}
                                 />
                                 {errors.title && <p className="error-message">{errors.title}</p>}
                             </div>
@@ -374,9 +434,10 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     <input
                                         type="number"
                                         value={formData.tag}
-                                        onChange={(e) => setFormData({...formData, tag: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
                                         className={`form-input ${errors.tag ? 'error' : ''}`}
                                         min="1"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.tag && <p className="error-message">{errors.tag}</p>}
                                 </div>
@@ -385,9 +446,10 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     <input
                                         type="number"
                                         value={formData.question}
-                                        onChange={(e) => setFormData({...formData, question: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, question: e.target.value })}
                                         className={`form-input ${errors.question ? 'error' : ''}`}
                                         min="1"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.question && <p className="error-message">{errors.question}</p>}
                                 </div>
@@ -396,9 +458,10 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     <input
                                         type="number"
                                         value={formData.survey}
-                                        onChange={(e) => setFormData({...formData, survey: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, survey: e.target.value })}
                                         className={`form-input ${errors.survey ? 'error' : ''}`}
                                         min="1"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.survey && <p className="error-message">{errors.survey}</p>}
                                 </div>
@@ -410,10 +473,11 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     <input
                                         type="number"
                                         value={formData.original_price}
-                                        onChange={(e) => setFormData({...formData, original_price: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, original_price: e.target.value })}
                                         className={`form-input ${errors.original_price ? 'error' : ''}`}
                                         min="0"
                                         step="0.01"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.original_price && <p className="error-message">{errors.original_price}</p>}
                                 </div>
@@ -422,10 +486,11 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     <input
                                         type="number"
                                         value={formData.discount_price}
-                                        onChange={(e) => setFormData({...formData, discount_price: e.target.value})}
+                                        onChange={(e) => setFormData({ ...formData, discount_price: e.target.value })}
                                         className={`form-input ${errors.discount_price ? 'error' : ''}`}
                                         min="0"
                                         step="0.01"
+                                        disabled={isSubmitting}
                                     />
                                     {errors.discount_price && <p className="error-message">{errors.discount_price}</p>}
                                 </div>
@@ -436,9 +501,10 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 <input
                                     type="number"
                                     value={formData.validity}
-                                    onChange={(e) => setFormData({...formData, validity: e.target.value})}
+                                    onChange={(e) => setFormData({ ...formData, validity: e.target.value })}
                                     className={`form-input ${errors.validity ? 'error' : ''}`}
                                     min="1"
+                                    disabled={isSubmitting}
                                 />
                                 {errors.validity && <p className="error-message">{errors.validity}</p>}
                             </div>
@@ -460,15 +526,20 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     resetForm();
                                 }}
                                 className="modal-btn cancel-btn"
+                                disabled={isSubmitting}
                             >
                                 {getLabel("Cancel")}
                             </button>
                             <button
                                 onClick={handleSavePackage}
                                 className="modal-btn save-btn"
+                                disabled={isSubmitting}
                             >
                                 <span className="btn-icon">💾</span>
-                                {showEditModal ? getLabel('Update') : getLabel('Create')}
+                                {isSubmitting
+                                    ? getLabel("Saving...")
+                                    : (showEditModal ? getLabel('Update') : getLabel('Create'))
+                                }
                             </button>
                         </div>
                     </div>
@@ -492,14 +563,16 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         setSelectedPackage(null);
                                     }}
                                     className="modal-btn cancel-btn"
+                                    disabled={isSubmitting}
                                 >
                                     {getLabel("Cancel")}
                                 </button>
                                 <button
                                     onClick={confirmDelete}
                                     className="modal-btn delete-btn"
+                                    disabled={isSubmitting}
                                 >
-                                    {getLabel("Delete")}
+                                    {isSubmitting ? getLabel("Deleting...") : getLabel("Delete")}
                                 </button>
                             </div>
                         </div>
