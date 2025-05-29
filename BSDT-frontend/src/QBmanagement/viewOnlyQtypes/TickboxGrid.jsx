@@ -1,8 +1,8 @@
 import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid"; // Assuming this is the editable version
 import { useState, useCallback } from "react";
-
+import "../CSS/SurveyForm.css";
 
 const TickBoxGridView = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);

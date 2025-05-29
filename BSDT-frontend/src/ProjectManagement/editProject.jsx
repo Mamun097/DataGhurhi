@@ -66,6 +66,7 @@ const EditProject = () => {
     "Edit",
     "Project Name",
     "Field",
+    "Research Field",
     "Description",
     "Visibility",
     "Private",
@@ -428,7 +429,7 @@ const handleDeleteSurvey = async (surveyId) => {
                       {formData.title}
                     </p>
                     <p>
-                      <strong>{getLabel("Field")}:</strong> {formData.field}
+                      <strong>{getLabel("Research Field")}:</strong> {formData.field}
                     </p>
                     <p>
                       <strong>{getLabel("Description")}:</strong>{" "}

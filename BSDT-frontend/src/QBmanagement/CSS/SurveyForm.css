@@ -177,8 +177,8 @@ body {
 }
 
 .position-relative .btn-outline-secondary:hover {
-  background-color: #2cf72c;
-  border-color: #2cf72c;
+  background-color: #038103;
+  border-color: #077907;
   color: white;
 }
 
@@ -190,15 +190,15 @@ body {
 }
 
 .btn-success .text-white:hover {
-  background-color: #2cf72c;
-  border-color: #2cf72c;
+  background-color: #056d05;
+  border-color: #057905;
   color: white;
 }
 
 /* Filter Button Hover */
 .btn-group .btn-light:hover, .btn-group .btn-warning:hover {
-  background-color: #2cf72c; /* Lighter green on hover */
-  border-color: #2cf72c;
+  background-color: #0d8f0d; /* Lighter green on hover */
+  border-color: #067806;
 }
 
 /* For "All", "My Questions", "Public" buttons */
@@ -209,6 +209,34 @@ body {
 }
 
 .btn-group .btn-primary:hover, .btn-group .btn-light:hover, .btn-group .btn-warning:hover {
-  background-color: #2cf72c; /* Lighter green on hover */
+  background-color: #066c06; /* Lighter green on hover */
   border-color: #2cf72c;
+}
+
+/* Button Styling for Green Theme */
+.text-end .mb-2 .btn-outline-success {
+  background-color: #28a745;
+  border: 2px solid #28a745;  /* Green border */
+  color: #ffffff;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Hover effect for outline green button */
+.btn-outline-success:hover {
+  background-color: #2cf72c;  /* Lighter green when hovered */
+  border-color: #2cf72c;
+  color: white;
+}
+
+/* For a solid green button (optional) */
+.btn-success {
+  background-color: #28a745;
+  border: none;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+/* Hover effect for solid green button */
+.btn-success:hover {
+  background-color: #2cf72c;
 }
