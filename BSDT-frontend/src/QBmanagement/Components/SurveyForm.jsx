@@ -207,7 +207,7 @@ const filteredQuestions = questions
 
             {showSearchFilters && (
               <div
-                className="card p-3 position-absolute"
+                className="card p-4 position-absolute"
                 style={{
                   zIndex: 1000,
                   top: "110%",
