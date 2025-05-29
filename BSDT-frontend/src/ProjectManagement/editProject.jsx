@@ -271,17 +271,17 @@ const handleDeleteSurvey = async (surveyId) => {
       { headers: { Authorization: `Bearer ${token}` } }
     );
     if (response.status === 200) {
-      alert("Survey deleted successfully!");
+      toast.success(getLabel("Survey deleted successfully!"));
       fetchSurveys();
       // reload
-      window.location.reload();
+      // setTimeout(() => window.location.reload(), 4000);
     } else {
       console.error("Error deleting survey:", response.statusText);
-      alert("Failed to delete survey.");
+      toast.error(getLabel("Failed to delete survey."));
     }
   } catch (error) {
     console.error("Error deleting survey:", error);
-    alert("Failed to delete survey.");
+    toast.error(getLabel("Failed to delete survey."));
   }
 };
   const handleSurveyClick = (survey_id, survey, survey_title) => {
