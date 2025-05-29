@@ -326,7 +326,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                             <div className="package-header-row">
                                 <h3 className="package-title">{pkg.title}</h3>
                                 <div className="package-actions">
-                                <button
+                                    <button
                                         onClick={() => handleDeletePackage(pkg)}
                                         className="package-action-btn delete-btn"
                                         title={getLabel("Delete Package")}
@@ -342,7 +342,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     >
                                         Edit
                                     </button>
-                                    
+
                                 </div>
                             </div>
                             <div className="package-validity-row">
@@ -520,7 +520,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         </div>
 
                         <div className="admin-modal-footer">
-                            <button
+                            {/* <button
                                 onClick={() => {
                                     setShowAddModal(false);
                                     setShowEditModal(false);
@@ -530,13 +530,13 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 disabled={isSubmitting}
                             >
                                 {getLabel("Cancel")}
-                            </button>
+                            </button> */}
                             <button
                                 onClick={handleSavePackage}
                                 className="modal-btn save-btn"
                                 disabled={isSubmitting}
                             >
-                                <span className="btn-icon">💾</span>
+                                {/* <span className="btn-icon">💾</span> */}
                                 {isSubmitting
                                     ? getLabel("Saving...")
                                     : (showEditModal ? getLabel('Update') : getLabel('Create'))
