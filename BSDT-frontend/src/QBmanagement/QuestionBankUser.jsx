@@ -71,7 +71,7 @@ const QB = () => {
 
   return (
       <>
-      <NavbarAcholder />
+    
       
         <div className="bg-white rounded shadow p-4 mb-4">
           <div className="d-flex justify-content-between align-items-center mb-4">
