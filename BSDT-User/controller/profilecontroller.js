@@ -6,7 +6,7 @@ const supabase = require('../db');
 //get user profile
 
 exports.profile = async (req, res) => {
-    console.log('req',req.jwt.id);
+    //console.log('req',req.jwt.id);
     const { data, error } = await User.findDesignerByid(req.jwt.id);
     if (error) {
         console.error(error);

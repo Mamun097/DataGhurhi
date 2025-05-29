@@ -285,3 +285,28 @@ CREATE TABLE response (
 
 -- Disable Row Level Security separately
 ALTER TABLE response DISABLE ROW LEVEL SECURITY;
+
+
+-- Create package table
+CREATE TABLE package (
+    package_id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    tag INTEGER,
+    question INTEGER,
+    survey INTEGER,
+    original_price DOUBLE PRECISION,
+    discount_price DOUBLE PRECISION
+);
+
+-- Create subscription table
+CREATE TABLE subscription (
+    subscription_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    tag INTEGER,
+    question INTEGER,
+    survey INTEGER,
+    start_date DATE,
+    end_date DATE,
+    cost DOUBLE PRECISION,
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
+);

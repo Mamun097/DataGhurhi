@@ -52,6 +52,9 @@ const csvgenerationRouter = require('./route/csvgeneration');
 // question bank
 const questionBankRouter = require('./route/questionBankView');
 
+//admin routes
+const adminRouter = require('./route/adminroute');
+
 //connect db
 const supabase = require('./db');
 require('dotenv').config();
@@ -105,6 +108,9 @@ app.use('/api/generatecsv', csvgenerationRouter);
 
 // question bank
 app.use('/api/question-bank', questionBankRouter);
+
+//admin routes
+app.use('/api', adminRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
