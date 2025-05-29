@@ -323,31 +323,32 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     <div key={pkg.id} className="admin-package-card">
                         {/* Package Header */}
                         <div className="package-card-header">
-                            <div className="package-header-info">
+                            <div className="package-header-row">
                                 <h3 className="package-title">{pkg.title}</h3>
-                                <div className="package-validity">
-                                    <span className="validity-badge">
-                                        {pkg.validity} {getLabel("days")}
-                                    </span>
+                                <div className="package-actions">
+                                <button
+                                        onClick={() => handleDeletePackage(pkg)}
+                                        className="package-action-btn delete-btn"
+                                        title={getLabel("Delete Package")}
+                                        disabled={isSubmitting}
+                                    >
+                                        Delete
+                                    </button>
+                                    <button
+                                        onClick={() => handleEditPackage(pkg)}
+                                        className="package-action-btn edit-btn"
+                                        title={getLabel("Edit Package")}
+                                        disabled={isSubmitting}
+                                    >
+                                        Edit
+                                    </button>
+                                    
                                 </div>
                             </div>
-                            <div className="package-actions">
-                                <button
-                                    onClick={() => handleEditPackage(pkg)}
-                                    className="package-action-btn edit-btn"
-                                    title={getLabel("Edit Package")}
-                                    disabled={isSubmitting}
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDeletePackage(pkg)}
-                                    className="package-action-btn delete-btn"
-                                    title={getLabel("Delete Package")}
-                                    disabled={isSubmitting}
-                                >
-                                    Delete
-                                </button>
+                            <div className="package-validity-row">
+                                <span className="validity-badge">
+                                    {pkg.validity} {getLabel("days")}
+                                </span>
                             </div>
                         </div>
 
