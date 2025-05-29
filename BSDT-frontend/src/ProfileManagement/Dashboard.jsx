@@ -539,8 +539,8 @@ const Dashboard = () => {
             <div className="question-bank-section">
               {/* <h3>{getLabel("Question Bank")}</h3> */}
               <p>
-               
-                <QB />  
+                <QB language={language} setLanguage={setLanguage}/>
+
               </p>
               {/* Future implementation for question bank */}
             </div>
