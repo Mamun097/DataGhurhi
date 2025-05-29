@@ -3,7 +3,7 @@ import SurveyQuestions from "./SurveyQuestions";
 import AddQuestion from "./AddNewQuestion";
 import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 import 'bootstrap-icons/font/bootstrap-icons.css';
-
+import "../CSS/SurveyForm.css"; // Assuming you have a CSS file for styling
 
 const SurveyForm = ({ questions, setQuestions, activeTab }) => {
   const [newQuestion, setNewQuestion] = useState(false);
@@ -251,7 +251,7 @@ const filteredQuestions = questions
 
         </div>
 
-        <div className="position-relative">
+    <div className="position-relative">
     <button
       className="btn btn-outline-secondary"
       onClick={() => setShowFilters(!showFilters)}
