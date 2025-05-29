@@ -274,6 +274,11 @@ const Dashboard = () => {
                     </li>
                   )
                 )}
+                <button>
+                  <label htmlFor="QB" className="upload-btn" onClick={() => navigate("/question-bank")}>
+                    Question Bank
+                  </label>
+                </button>
               </ul>
             </div>
           </div>
