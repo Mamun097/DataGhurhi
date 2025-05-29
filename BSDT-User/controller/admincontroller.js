@@ -72,6 +72,9 @@ exports.getAllPackages = async (req, res) => {
             return res.status(500).json({ error: "Error fetching packages: " + error.message });
         }
 
+        //sort packages by discount_price in ascending order
+        packages.sort((a, b) => a.discount_price - b.discount_price);
+
         res.status(200).json({
             packages: packages || [],
             count: packages?.length || 0
@@ -215,5 +218,34 @@ exports.createPackage = async (req, res) => {
     } catch (error) {
         console.error("Server error:", error);
         res.status(500).json({ error: "Server error: " + error.message });
+    }
+};
+
+// ✅ Alternative version - returns only the package ID (lighter response)
+exports.getMostPopularPackageId = async (req, res) => {
+    try {
+        // Call database function using Supabase RPC
+        const { data: popularPackageId, error } = await supabase
+            .rpc('get_most_popular_package_id');
+
+        if (error) {
+            console.error("Error calling popular_package_id function:", error);
+            return res.status(500).json({ 
+                error: "Error retrieving popular package: " + error.message
+            });
+        }
+
+        // If no popular package found, assign 0
+        const packageId = popularPackageId || 0;
+
+        res.status(200).json({
+            popularPackageId: packageId
+        });
+
+    } catch (error) {
+        console.error("Server error in getMostPopularPackageId:", error);
+        res.status(500).json({ 
+            error: "Server error: " + error.message
+        });
     }
 };
