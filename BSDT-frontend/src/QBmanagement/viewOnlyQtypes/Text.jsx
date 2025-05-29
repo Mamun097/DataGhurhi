@@ -2,7 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useState } from "react";
 import Text from "../QuestionTypes/Text";
-
+import "../CSS/SurveyForm.css";
 const TextView = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);
   const tags = question.meta_data?.tag || [];
