@@ -38,10 +38,15 @@ const Dashboard = () => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [values, setValues] = useState({});
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [privacyFilter, setPrivacyFilter] = useState("all");
+  const [sortField, setSortField] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [projects, setProjects] = useState([]);
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   // Premium feature states
@@ -68,41 +73,53 @@ const Dashboard = () => {
     }
 
     const labelsToTranslate = [
-      "Edit Profile", "Projects", "Collaborated Projects", "Checkout Premium Packages",
-      "Profile details", "Cancel", "Edit", "Save Changes",
-      "My Research Projects", "Research Field:", "Description:",
+      "Edit Profile",
+      "Projects",
+      "Collaborated Projects", "Checkout Premium Packages",
+      "Profile details",
+      "Cancel",
+      "Edit",
+      "Save Changes",
+      "My Research Projects",
+      "Research Field:",
+      "Description:",
       "No projects found. Add new projects to get started...",
-      "Collaborators", "Show list of collaboratored projects here..",
-      "Trending Topics", "Name", "Email", "Work Affiliation", "Research Field",
-      "Profession", "Secret Question", "Secret Answer", "Date of Birth",
-      "Highest Education", "Gender", "Home Address", "Contact No", "Profile Link",
-      "Religion", "Working Place", "Years of Experience",
-      // Premium feature translations
-      "Available Balance", "Unlock Premium Features", "Premium",
-      "Take your surveys to the next level with AI-powered tools",
-      "AI Survey Template Generation", "Smart Question Generation",
-      "Automatic Question Tagging", "Advanced Analytics",
-      "Continue as Free User", "Checkout Premium Packages",
-      "Choose Your Premium Package", "Unlock Powerful AI Features",
-      "AI Survey Generation", "Create professional surveys in seconds with AI assistance",
-      "Smart Question Creation", "Generate relevant questions based on your research goals",
-      "Automatic Tagging", "Organize questions with intelligent tagging system",
-      "Get deeper insights with AI-powered analysis",
-      "Most Popular", "Tokens", "OFF", "Save", "Buy Now",
-      "30-day money-back guarantee", "1,000 AI Tokens", "Basic Survey Templates",
-      "Question Generation", "Email Support", "10,000 AI Tokens",
-      "Advanced Survey Templates", "Priority Support", "Analytics Dashboard",
-      "100,000 AI Tokens", "Unlimited Survey Templates", "Advanced AI Features",
-      "Custom Question Types", "White-label Solutions", "Dedicated Account Manager",
-      "API Access", "Unlimited Advance Survey Templates", "Advaced Smart Question Generation",
-      // Admin translations
-      "Dashboard", "System Overview", "Customize Packages", "Total Users", "Active Surveys",
-      "Total Responses", "Premium Users", "Recent Activities", "System Statistics",
-      "User Management", "Survey Analytics", "Revenue Overview", "Platform Health",
-      "User Growth", "Survey Creation Rate", "Response Collection Rate", "System Performance",
-      "Database Status", "Server Status", "API Status", "Active Sessions",
-      "Package customization feature will be implemented here", "Coming Soon",
-      "This section will allow you to customize premium packages for users"
+      "Collaborated Projects",
+      "Show list of collaboratored projects here..",
+      "Trending Topics",
+      "Name",
+      "Email",
+      "Work Affiliation",
+      "Research Field",
+      "Profession",
+      "Secret Question",
+      "Secret Answer",
+      "Date of Birth",
+      "Highest Education",
+      "Gender",
+      "Home Address",
+      "Contact No",
+      "Profile Link",
+      "Religion",
+      "Working Place",
+      "Years of Experience",
+      "Create a New Project",
+      "Existing Projects",
+      "Filter by: ",
+      "All",
+      "Public",
+      "Private",
+      "Sort by:",
+      "Title",
+      "Field",
+      "Ascending",
+      "Descending",
+      "Profile Details",
+      "Privacy Status:",
+      "Created At:",
+      "Created At",
+      "Last Updated:",
+      "Last Updated",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -119,7 +136,8 @@ const Dashboard = () => {
     loadTranslations();
   }, [language]);
 
-  const getLabel = (text) => language === "English" ? text : translatedLabels[text] || text;
+  const getLabel = (text) =>
+    language === "English" ? text : translatedLabels[text] || text;
 
   const handleImageUpload = async (event, type) => {
     const file = event.target.files[0];
@@ -135,7 +153,9 @@ const Dashboard = () => {
         return;
       }
 
-      const urlData = supabase.storage.from("media").getPublicUrl(`profile_pics/${file.name}`);
+      const urlData = supabase.storage
+        .from("media")
+        .getPublicUrl(`profile_pics/${file.name}`);
       await updateImageInDB(type, urlData.data.publicUrl);
       getProfile();
     } catch (error) {
@@ -146,9 +166,13 @@ const Dashboard = () => {
   const updateImageInDB = async (type, imageUrl) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put("http://localhost:2000/api/profile/update-profile-image", { imageUrl }, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.put(
+        "http://localhost:2000/api/profile/update-profile-image",
+        { imageUrl },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
     } catch (error) {
       console.error("Failed to update ${type} image in DB:", error);
     }
@@ -232,9 +256,13 @@ const Dashboard = () => {
   const handleSaveChanges = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.put("http://localhost:2000/api/profile/update-profile", editedValues, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.put(
+        "http://localhost:2000/api/profile/update-profile",
+        editedValues,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setIsEditing(false);
         getProfile();
@@ -265,7 +293,8 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   const handleAddProjectClick = () => navigate("/addproject");
-  const handleProjectClick = (projectId) => navigate(`/view-project/${projectId}`);
+  const handleProjectClick = (projectId) =>
+    navigate(`/view-project/${projectId}`);
 
   // Premium feature handlers
   const handleCloseAdBanner = () => {
@@ -315,9 +344,21 @@ const Dashboard = () => {
         <div className="dashboard-layout">
           <div className="profile-section">
             <div className="profile-pic-wrapper">
-              <img src={profilePicUrl || defaultprofile} alt="Profile" className="profile-pic" />
-              <input type="file" id="profileUpload" accept="image/*" onChange={(e) => handleImageUpload(e, "profile")} style={{ display: "none" }} />
-              <label htmlFor="profileUpload" className="edit-profile-pic-btn">📷</label>
+              <img
+                src={profilePicUrl || defaultprofile}
+                alt="Profile"
+                className="profile-pic"
+              />
+              <input
+                type="file"
+                id="profileUpload"
+                accept="image/*"
+                onChange={(e) => handleImageUpload(e, "profile")}
+                style={{ display: "none" }}
+              />
+              <label htmlFor="profileUpload" className="edit-profile-pic-btn">
+                📷
+              </label>
             </div>
             <h2>{values.user?.name || "Loading..."}</h2>
 
@@ -373,31 +414,81 @@ const Dashboard = () => {
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
-                  <h3>{getLabel("Profile details")}</h3>
+                  <h3>{getLabel("Profile Details")}</h3>
                   <button onClick={toggleEdit} className="edit-toggle-btn">
                     {isEditing ? getLabel("Cancel") : getLabel("Edit")}
                   </button>
                 </div>
                 <div className="profile-fields">
-                  {["Name", "Email", "Work Affiliation", "Research Field", "Profession", "Secret Question", "Secret Answer", "Date of Birth", "Highest Education", "Gender", "Home Address", "Contact No", "Profile Link", "Religion", "Working Place", "Years of Experience"].map((field, index) => (
+                  {[
+                    "Name",
+                    "Email",
+                    "Work Affiliation",
+                    "Research Field",
+                    "Profession",
+                    "Secret Question",
+                    "Secret Answer",
+                    "Date of Birth",
+                    "Highest Education",
+                    "Gender",
+                    "Home Address",
+                    "Contact No",
+                    "Profile Link",
+                    "Religion",
+                    "Working Place",
+                    "Years of Experience",
+                  ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
                       {isEditing ? (
-                        <input
-                          type={field === "Date of Birth" ? "date" : "text"}
-                          name={field.toLowerCase().replace(/ /g, "_")}
-                          value={editedValues[field.toLowerCase().replace(/ /g, "_")] || ""}
-                          onChange={handleInputChange}
-                          required={true}
-                        />
+                        field === "Gender" ? (
+                          <select
+                            name={field.toLowerCase().replace(/ /g, "_")}
+                            value={
+                              editedValues[
+                                field.toLowerCase().replace(/ /g, "_")
+                              ] || ""
+                            }
+                            onChange={handleInputChange}
+                            required
+                          >
+                            <option value="">
+                              {getLabel("Select Gender")}
+                            </option>
+                            <option value="Male">{getLabel("Male")}</option>
+                            <option value="Female">{getLabel("Female")}</option>
+                            <option value="Other">{getLabel("Other")}</option>
+                            <option value="Prefer not to say">
+                              {getLabel("Prefer not to say")}
+                            </option>
+                          </select>
+                        ) : (
+                          <input
+                            type={field === "Date of Birth" ? "date" : "text"}
+                            name={field.toLowerCase().replace(/ /g, "_")}
+                            value={
+                              editedValues[
+                                field.toLowerCase().replace(/ /g, "_")
+                              ] || ""
+                            }
+                            onChange={handleInputChange}
+                            required
+                          />
+                        )
                       ) : (
-                        <i>{values.user?.[field.toLowerCase().replace(/ /g, "_")]}</i>
+                        <span>
+                          {editedValues[
+                            field.toLowerCase().replace(/ /g, "_")
+                          ] || "-"}
+                        </span>
                       )}
                     </div>
                   ))}
                 </div>
                 {isEditing && (
-                  <button className="save-btn" onClick={handleSaveChanges}>{getLabel("Save Changes")}</button>
+                  <button className="save-btn" onClick={handleSaveChanges}>
+                    {getLabel("Save Changes")}
+                  </button>
                 )}
               </div>
             )}
@@ -406,28 +497,160 @@ const Dashboard = () => {
             {!isAdmin && activeTab === "projects" && (
               <div>
                 <h3>{getLabel("My Research Projects")}</h3>
-                <div className="project-grid">
-                  {projects.length > 0 ? (
-                    projects.map((project) => (
-                      <div key={project.project_id} className="project-card" onClick={() => handleProjectClick(project.project_id)} style={{ cursor: "pointer" }}>
-                        <h4>{project.title}</h4>
-                        <p><strong>{getLabel("Research Field:")}</strong> {project.field}</p>
-                        <p><strong>{getLabel("Description:")}</strong> {project.description}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <i>{getLabel("No projects found. Add new projects to get started...")}</i>
-                  )}
-                  <div className="add-project-card" onClick={handleAddProjectClick}>
+                {/* New Project Section */}
+                <div className="new-project-section">
+                  <h4>{getLabel("Create a New Project")}</h4>
+                  <div
+                    className="add-project-card"
+                    onClick={handleAddProjectClick}
+                  >
                     <div className="plus-icon">+</div>
                   </div>
                 </div>
+                <hr className="section-divider" />
+                {/* Existing Projects */}
+                <h4>{getLabel("Existing Projects")}</h4>
+                <div className="project-filter-bar">
+                  {/* Filter by Privacy */}
+                  <label htmlFor="privacyFilter">
+                    {getLabel("Filter by: ")}
+                  </label>
+                  <select
+                    id="privacyFilter"
+                    value={privacyFilter}
+                    onChange={(e) => setPrivacyFilter(e.target.value)}
+                    className="privacy-filter-dropdown"
+                  >
+                    <option value="all">{getLabel("All")}</option>
+                    <option value="public">{getLabel("Public")}</option>
+                    <option value="private">{getLabel("Private")}</option>
+                  </select>
+
+                  {/* Sort By Field */}
+                  <label htmlFor="sortField">{getLabel("Sort by:")}</label>
+                  <select
+                    id="sortField"
+                    value={sortField}
+                    onChange={(e) => setSortField(e.target.value)}
+                    className="sort-dropdown"
+                  >
+                    <option value="title">{getLabel("Title")}</option>
+                    <option value="field">{getLabel("Field")}</option>
+                    <option value="created_at">{getLabel("Created At")}</option>
+                    <option value="last_updated">
+                      {getLabel("Last Updated")}
+                    </option>
+                  </select>
+
+                  {/* Sort Order */}
+                  <select
+                    id="sortOrder"
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                    className="sort-dropdown"
+                  >
+                    <option value="asc">{getLabel("Ascending")}</option>
+                    <option value="desc">{getLabel("Descending")}</option>
+                  </select>
+                </div>
+
+                {console.log("Projects:", projects)}
+                {projects.length > 0 ? (
+                  <div className="project-grid">
+                    {projects
+                      .filter(
+                        (project) =>
+                          privacyFilter === "all" ||
+                          project.privacy_mode === privacyFilter
+                      )
+                      .sort((a, b) => {
+                        const aVal = a[sortField];
+                        const bVal = b[sortField];
+
+                        // Check if field is date-like
+                        const isDateField =
+                          sortField.toLowerCase().includes("created_at") ||
+                          sortField.toLowerCase().includes("last_updated");
+
+                        if (isDateField) {
+                          const aTime = new Date(aVal).getTime();
+                          const bTime = new Date(bVal).getTime();
+                          return sortOrder === "asc"
+                            ? aTime - bTime
+                            : bTime - aTime;
+                        } else {
+                          const aStr = (aVal || "").toString().toLowerCase();
+                          const bStr = (bVal || "").toString().toLowerCase();
+                          return sortOrder === "asc"
+                            ? aStr.localeCompare(bStr)
+                            : bStr.localeCompare(aStr);
+                        }
+                      })
+                      .map((project) => (
+                        <div
+                          key={project.project_id}
+                          className="project-card"
+                          onClick={() => handleProjectClick(project.project_id)}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <h4>{project.title}</h4>
+                          <p>
+                            <strong>{getLabel("Research Field:")}</strong>{" "}
+                            {project.field}
+                          </p>
+
+                          <p>
+                            <strong>{getLabel("Privacy Status:")}</strong>{" "}
+                            {project.privacy_mode}
+                          </p>
+
+                          <p>
+                            <strong>{getLabel("Created At:")}</strong>{" "}
+                            {new Date(project.created_at+ "Z").toLocaleString(
+                              "en-US",
+                              {
+                                timeZone: "Asia/Dhaka",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )}
+                          </p>
+
+                          <p>
+                            <strong>{getLabel("Last Updated:")}</strong>{" "}
+                            {new Date(project.last_updated + "Z").toLocaleString(
+                              "en-US",
+                              {
+                                timeZone: "Asia/Dhaka",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <i>
+                    {getLabel(
+                      "No projects found. Add new projects to get started..."
+                    )}
+                  </i>
+                )}
               </div>
             )}
 
             {!isAdmin && activeTab === "collaboratedprojects" && (
               <div>
-                <h3>{getLabel("Collaborators")}</h3>
+                <h3>{getLabel("Collaborated Projects")}</h3>
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
               </div>
             )}
@@ -438,7 +661,13 @@ const Dashboard = () => {
             <div className="trending-section">
               <h3>{getLabel("Trending Topics")}</h3>
               <ul className="trending-list">
-                {["AI in Healthcare", "Web3 & Blockchain", "Edge Computing", "Quantum Computing", "Augmented Reality"].map((topic, index) => (
+                {[
+                "AI in Healthcare",
+                "Web3 & Blockchain",
+                "Edge Computing",
+                "Quantum Computing",
+                "Augmented Reality",
+              ].map((topic, index) => (
                   <li key={index}>{topic}</li>
                 ))}
               </ul>

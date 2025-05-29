@@ -2,15 +2,11 @@ import React from "react";
 
 // Import your question type components:
 import RadioQuestionView from "../viewOnlyQtypes/Radio";
-import Radio from "../QuestionTypes/Radio";
 import TextView from "../viewOnlyQtypes/Text";
 import LikertScaleView from "../viewOnlyQtypes/LikertScale";
 import RatingQuestionView from "../viewOnlyQtypes/Rating";
 import DateTimeViewOnly from "../viewOnlyQtypes/DateTime";
-// import DateTimeQuestion from "../QuestionTypes/DateTime";
 import DropdownViewOnly from "../viewOnlyQtypes/Dropdown";
-// import DropdownQuestion from "../QuestionTypes/Dropdown";
-// import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import CheckboxViewOnly from "../viewOnlyQtypes/Checkbox";
 // import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGridView from "../viewOnlyQtypes/TickboxGrid";
@@ -53,7 +49,10 @@ const SurveyQuestions = ({ questions, setQuestions,newQuestion, setNewQuestion }
           <LikertScaleView
             question={question}
             surveyTitle={question.survey_name}
-            projectTitle={question.project_name}
+            projectTitle={question.project_name}  
+            newQuestion={newQuestion}
+            setNewQuestion={setNewQuestion}
+
           />
         );
       case "rating":

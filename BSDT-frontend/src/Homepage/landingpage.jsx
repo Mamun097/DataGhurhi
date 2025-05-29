@@ -111,7 +111,7 @@ const LandingPage = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slidesToUse.length);
-    }, 5000);
+    }, 10000);
     return () => clearInterval(interval);
   }, [slidesToUse]);
 

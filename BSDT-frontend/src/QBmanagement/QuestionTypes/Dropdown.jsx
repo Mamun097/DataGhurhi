@@ -78,7 +78,7 @@ const handleShareWithEmail = async () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      setUpdatedQuestion(null); // Optionally clear the question from state
+       window.location.reload();
       
     }
     catch (error) {
@@ -215,6 +215,7 @@ const handleShareWithEmail = async () => {
               }
               }
                setIsEditing(false);
+               window.location.reload();
             }, [updatedQuestion, setIsEditing, newQuestion, setNewQuestion]);
           
   return (
@@ -298,17 +299,81 @@ const handleShareWithEmail = async () => {
         ➕ Add Option
       </button>
 
-      {/* Actions */}
-      <div className="d-flex align-items-center mt-3">
+       <div className="d-flex justify-content-between align-items-center mt-3">
+          {/* Left-aligned buttons */}
+          <div className="d-flex gap-2">
+            <button
+              className="btn btn-outline-secondary"
+              onClick={handleDelete}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+
+            <label className="btn btn-outline-secondary">
+              <i className="bi bi-image"></i>
+              <input type="file" hidden onChange={handleImageUpload} />
+            </label>
+
+        <div className="dropdown me-2">
+          <button className="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            Share
+          </button>
+          <ul className="dropdown-menu">
+            <li><button className="dropdown-item" onClick={() => handlePrivacyChange("public")}>Anyone</button></li>
+            <li><button className="dropdown-item" onClick={() => handlePrivacyChange("private")}>Only Me</button></li>
+            <li><button className="dropdown-item" onClick={() => handlePrivacyChange("email")}>Specific Email</button></li>
+          </ul>
+        </div>
+        {/* Email Share Modal */}
+          {showEmailModal && (
+            <div className="modal d-block" tabIndex="-1" role="dialog">
+              <div className="modal-dialog" role="document">
+                <div className="modal-content">
+                  <div className="modal-header">
+                    <h5 className="modal-title">Share Question by Email</h5>
+                    <button type="button" className="close btn" onClick={() => setShowEmailModal(false)}>
+                      <span>&times;</span>
+                    </button>
+                  </div>
+                  <div className="modal-body">
+                    <input
+                      type="email"
+                      className="form-control"
+                      placeholder="Enter email to share with"
+                      value={emailToShare}
+                      onChange={(e) => setEmailToShare(e.target.value)}
+                    />
+                  </div>
+                  <div className="modal-footer">
+                    <button className="btn btn-primary" onClick={handleShareWithEmail}>Share</button>
+                    <button className="btn btn-secondary" onClick={() => setShowEmailModal(false)}>Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+      </div>
+
         
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
-          <i className="bi bi-trash"></i>
+        
+        {/*save updated question*/}
+      {newQuestion && updatedQuestion.new===true ? (
+        <button
+          className="btn btn-success"
+          onClick={handlesave}
+        >
+          <i className="bi bi-plus-circle"></i> Add Question
         </button>
-        <label className="btn btn-outline-secondary me-2">
-          <i className="bi bi-image"></i>
-          <input type="file" hidden onChange={handleImageUpload} />
-        </label>
-       
+      ) : (
+        <button
+          className="btn btn-success"
+          onClick={handlesave}
+        >
+          <i className="bi bi-save"></i> Save Changes
+        </button>
+      )}
+    
       </div>
     </div>
   );
