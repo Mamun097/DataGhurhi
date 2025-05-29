@@ -6,10 +6,13 @@ import NavbarAcholder from "./navbarAccountholder";
 import PremiumAdBanner from "./PremiumFeatures/PremiumAdBanner";
 import PremiumPackagesModal from "./PremiumFeatures/PremiumPackagesModal";
 import TokenDisplay from "./PremiumFeatures/TokenDisplay";
+import AdminDashboardOverview from "./AdminComponents/AdminDashboardOverview";
+import AdminPackageCustomizer from "./AdminComponents/AdminPackageCustomizer";
 import "./Dashboard.css";
 import "./PremiumFeatures/PremiumAdBanner.css";
 import "./PremiumFeatures/PremiumPackagesModal.css";
 import "./PremiumFeatures/TokenDisplay.css";
+import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -34,7 +37,7 @@ const translateText = async (textArray, targetLang) => {
 const Dashboard = () => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [values, setValues] = useState({});
-  const [activeTab, setActiveTab] = useState("editprofile");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [projects, setProjects] = useState([]);
@@ -46,6 +49,17 @@ const Dashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState('normal');
   const [availableTokens, setAvailableTokens] = useState(0);
+
+  // Admin states
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    activeSurveys: 0,
+    totalResponses: 0,
+    premiumUsers: 0,
+    recentActivities: []
+      
+  });
 
   const loadTranslations = async () => {
     if (language === "English") {
@@ -80,7 +94,15 @@ const Dashboard = () => {
       "Advanced Survey Templates", "Priority Support", "Analytics Dashboard",
       "100,000 AI Tokens", "Unlimited Survey Templates", "Advanced AI Features",
       "Custom Question Types", "White-label Solutions", "Dedicated Account Manager",
-      "API Access", "Unlimited Advance Survey Templates", "Advaced Smart Question Generation"
+      "API Access", "Unlimited Advance Survey Templates", "Advaced Smart Question Generation",
+      // Admin translations
+      "Dashboard", "System Overview", "Customize Packages", "Total Users", "Active Surveys",
+      "Total Responses", "Premium Users", "Recent Activities", "System Statistics",
+      "User Management", "Survey Analytics", "Revenue Overview", "Platform Health",
+      "User Growth", "Survey Creation Rate", "Response Collection Rate", "System Performance",
+      "Database Status", "Server Status", "API Status", "Active Sessions",
+      "Package customization feature will be implemented here", "Coming Soon",
+      "This section will allow you to customize premium packages for users"
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -132,31 +154,70 @@ const Dashboard = () => {
     }
   };
 
+  const fetchAdminStats = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get("http://localhost:2000/api/admin/stats");
+
+      if (response.status === 200) {
+        setAdminStats(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin stats:", error);
+      // Set mock data for demonstration
+      setAdminStats({
+        totalUsers: 1250,
+        activeSurveys: 89,
+        totalResponses: 15420,
+        premiumUsers: 78,
+        recentActivities: [
+          { id: 1, activity: "New user registration", time: "2 minutes ago" },
+          { id: 2, activity: "Survey created", time: "5 minutes ago" },
+          { id: 3, activity: "Premium subscription", time: "15 minutes ago" },
+          { id: 4, activity: "Survey response submitted", time: "20 minutes ago" },
+          { id: 5, activity: "User profile updated", time: "25 minutes ago" }
+        ]
+      });
+    }
+  }, []);
+
   const getProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get("http://localhost:2000/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
+      console.log("Profile response:", response.data);
       if (response.status === 200) {
         setValues(response.data);
         setProfilePicUrl(response.data.user.image);
         setEditedValues(response.data.user);
 
         // Set user type and available tokens
-        setUserType(response.data.user.user_type || 'normal');
+        const currentUserType = response.data.user.user_type;
+        setUserType(currentUserType);
         setAvailableTokens(response.data.user.available_token || 0);
 
-        // Show ad banner for normal users when they visit dashboard
-        if ((response.data.user.user_type || 'normal') === 'normal') {
-          setShowAdBanner(true);
+        // Check if user is admin
+        if (currentUserType === 'admin') {
+          setIsAdmin(true);
+          setActiveTab("dashboard"); // Set default tab for admin
+          fetchAdminStats(); // Fetch admin statistics
+        } else {
+          setIsAdmin(false);
+          setActiveTab("editprofile"); // Set default tab for normal user
+          // Show ad banner for normal users when they visit dashboard
+          if (currentUserType === 'normal') {
+            setShowAdBanner(true);
+          }
         }
+
         localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
       console.error("Error:", error);
     }
-  }, []);
+  }, [fetchAdminStats]);
 
   useEffect(() => {
     getProfile();
@@ -196,8 +257,10 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (!isAdmin) {
+      fetchProjects();
+    }
+  }, [isAdmin, fetchProjects]);
 
   const navigate = useNavigate();
 
@@ -218,19 +281,37 @@ const Dashboard = () => {
     setShowPremiumModal(false);
   };
 
-  // Handle tab click - open premium modal for checkout premium packages tab
+  // Handle tab click
   const handleTabClick = (tabKey) => {
-    if (tabKey === "checkoutpremiumpackages") {
+    if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
       setShowPremiumModal(true);
     } else {
       setActiveTab(tabKey);
     }
   };
 
+  // Get tabs based on user type
+  const getTabs = () => {
+    if (isAdmin) {
+      return [
+        { label: "Dashboard", key: "dashboard" },
+        //{ label: "Edit Profile", key: "editprofile" },
+        { label: "Customize Packages", key: "customizepackages" }
+      ];
+    } else {
+      return [
+        { label: "Edit Profile", key: "editprofile" },
+        { label: "Projects", key: "projects" },
+        { label: "Collaborated Projects", key: "collaboratedprojects" },
+        { label: "Checkout Premium Packages", key: "checkoutpremiumpackages" }
+      ];
+    }
+  };
+
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="dashboard-container">
+      <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
         <div className="dashboard-layout">
           <div className="profile-section">
             <div className="profile-pic-wrapper">
@@ -240,21 +321,25 @@ const Dashboard = () => {
             </div>
             <h2>{values.user?.name || "Loading..."}</h2>
 
-            {/* Token Display */}
-            <TokenDisplay
-              availableTokens={availableTokens}
-              userType={userType}
-              getLabel={getLabel}
-            />
+            {/* Admin badge */}
+            {isAdmin && (
+              <div className="admin-badge">
+                <span>👑 Administrator</span>
+              </div>
+            )}
+
+            {/* Token Display - Only for non-admin users */}
+            {!isAdmin && (
+              <TokenDisplay
+                availableTokens={availableTokens}
+                userType={userType}
+                getLabel={getLabel}
+              />
+            )}
 
             <div className="profile-tabs">
               <ul>
-                {[
-                  { label: "Edit Profile", key: "editprofile" },
-                  { label: "Projects", key: "projects" },
-                  { label: "Collaborated Projects", key: "collaboratedprojects" },
-                  { label: "Checkout Premium Packages", key: "checkoutpremiumpackages" }
-                ].map((tab, idx) => (
+                {getTabs().map((tab, idx) => (
                   <li key={idx}>
                     <button
                       className={activeTab === tab.key ? "active" : ""}
@@ -269,6 +354,22 @@ const Dashboard = () => {
           </div>
 
           <div className="projects-section">
+            {/* Admin Dashboard Overview */}
+            {isAdmin && activeTab === "dashboard" && (
+              <AdminDashboardOverview
+                adminStats={adminStats}
+                getLabel={getLabel}
+              />
+            )}
+
+            {/* Admin Package Customizer */}
+            {isAdmin && activeTab === "customizepackages" && (
+              <AdminPackageCustomizer
+                getLabel={getLabel}
+              />
+            )}
+
+            {/* Edit Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
@@ -301,7 +402,8 @@ const Dashboard = () => {
               </div>
             )}
 
-            {activeTab === "projects" && (
+            {/* Normal User Tabs */}
+            {!isAdmin && activeTab === "projects" && (
               <div>
                 <h3>{getLabel("My Research Projects")}</h3>
                 <div className="project-grid">
@@ -323,7 +425,7 @@ const Dashboard = () => {
               </div>
             )}
 
-            {activeTab === "collaboratedprojects" && (
+            {!isAdmin && activeTab === "collaboratedprojects" && (
               <div>
                 <h3>{getLabel("Collaborators")}</h3>
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
@@ -331,19 +433,22 @@ const Dashboard = () => {
             )}
           </div>
 
-          <div className="trending-section">
-            <h3>{getLabel("Trending Topics")}</h3>
-            <ul className="trending-list">
-              {["AI in Healthcare", "Web3 & Blockchain", "Edge Computing", "Quantum Computing", "Augmented Reality"].map((topic, index) => (
-                <li key={index}>{topic}</li>
-              ))}
-            </ul>
-          </div>
+          {/* Trending Section - Only for normal users */}
+          {!isAdmin && (
+            <div className="trending-section">
+              <h3>{getLabel("Trending Topics")}</h3>
+              <ul className="trending-list">
+                {["AI in Healthcare", "Web3 & Blockchain", "Edge Computing", "Quantum Computing", "Augmented Reality"].map((topic, index) => (
+                  <li key={index}>{topic}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {userType === 'normal' && showAdBanner && (
+      {!isAdmin && userType === 'normal' && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}
@@ -351,12 +456,14 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Premium Packages Modal */}
-      <PremiumPackagesModal
-        isOpen={showPremiumModal}
-        onClose={handleClosePremiumModal}
-        getLabel={getLabel}
-      />
+      {/* Premium Packages Modal - Only for normal users */}
+      {!isAdmin && (
+        <PremiumPackagesModal
+          isOpen={showPremiumModal}
+          onClose={handleClosePremiumModal}
+          getLabel={getLabel}
+        />
+      )}
     </>
   );
 };

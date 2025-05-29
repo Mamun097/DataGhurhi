@@ -1,6 +1,6 @@
 .modal-overlay {
     position: fixed;
-    top: 0;
+    top: 0; /* Adjust this value based on your navbar height */
     left: 0;
     right: 0;
     bottom: 0;
@@ -11,6 +11,7 @@
     justify-content: center;
     z-index: 2000;
     animation: fadeIn 0.3s ease-out;
+    padding: 185px 60px 20px 20px; /* Add padding from all sides */
 }
 
 @keyframes fadeIn {
