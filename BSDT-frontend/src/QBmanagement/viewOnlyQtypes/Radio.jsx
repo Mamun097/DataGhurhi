@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Radio from "../QuestionTypes/Radio"; // Assuming this is the editable version
-
+import "../CSS/SurveyForm.css";
 const RadioQuestionView = ({question, surveyTitle, projectTitle,newQuestion, setNewQuestion}) => {
   const [isEditing, setIsEditing] = useState(false);
   const options = question.meta_data?.options || [];

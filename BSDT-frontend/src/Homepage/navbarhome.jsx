@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./navbarhome.css";
 
 import logo_buet from "../assets/logos/cse_buet.png";
@@ -16,24 +17,89 @@ import {
   FaSearch,
 } from "react-icons/fa";
 
+// Your Google Translate API key (from your Google Cloud Console)
+const GOOGLE_API_KEY =  import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
 const NavbarHome = (props) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const language = props.language || localStorage.getItem("language") ;
-  const setLanguage = props.setLanguage;
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "English"); // Use localStorage if available
+  const [translations, setTranslations] = useState({});
   const navigate = useNavigate();
+  const labelsToTranslate = [
+    "Go to Profile",
+    "Logout",
+    "Home",
+    "About",
+    "FAQ",
+    "Search for projects, surveys, accounts...",
+  ];
 
-  const toggleLanguage = () => {
-    const newLang = language === "English" ? "বাংলা" : "English";
-    setLanguage(newLang);
-    localStorage.setItem("language", newLang);
+  // Function to fetch translations from Google Translate API
+  const translateText = async (textArray, targetLang) => {
+    try {
+      const response = await axios.post(
+        `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+        {
+          q: textArray,
+          target: targetLang,
+          format: "text",
+        }
+      );
+      return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+      console.error("Translation error:", error);
+      return textArray; // If there's an error, fallback to original text
+    }
   };
 
+  // Toggle language between English and Bengali
+  const toggleLanguage = () => {
+    const newLang = language === "English" ? "bn" : "en"; // 'bn' for Bengali, 'en' for English
+    setLanguage(newLang === "bn" ? "বাংলা" : "English");
+    localStorage.setItem("language", newLang === "bn" ? "বাংলা" : "English");
+  };
+
+  // Fetch translations when language changes
+  useEffect(() => {
+    const loadTranslations = async () => {
+      const labels = [
+        "Home",
+        "Login",
+        "About",
+        "FAQ",
+        "Search for projects, surveys, accounts...",
+      ];
+
+      // If language is English, don't translate
+      if (language === "English") {
+        setTranslations({});
+        return;
+      }
+
+      const translated = await translateText(labels, language === "বাংলা" ? "bn" : "en");
+
+      const translatedMap = {};
+      labels.forEach((label, idx) => {
+        translatedMap[label] = translated[idx];
+      });
+
+      setTranslations(translatedMap);
+    };
+
+    loadTranslations();
+  }, [language]);
+
+  // Function to get the translated text based on selected language
+  const getLabel = (text) => translations[text] || text;
+
+  // Handle the search query
   const handleSearch = () => {
     if (searchQuery.trim()) {
       console.log("Searching for:", searchQuery);
     }
   };
 
+  // Handle the login action
   const handleLoginClick = () => {
     const token = localStorage.getItem("token");
     navigate(token ? "/dashboard" : "/login");
@@ -53,11 +119,7 @@ const NavbarHome = (props) => {
       <div className="search-container">
         <input
           type="text"
-          placeholder={
-            language === "English"
-              ? "Search for projects, surveys, accounts..."
-              : "প্রজেক্ট, সার্ভে, অ্যাকাউন্ট অনুসন্ধান করুন..."
-          }
+          placeholder={getLabel("Search for projects, surveys, accounts...")}
           className="search-input"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -71,27 +133,29 @@ const NavbarHome = (props) => {
         <li>
           <a href="/home">
             <FaHome className="nav-icon" />
-            {language === "English" ? "Home" : "হোম"}
+            <span>{getLabel("Home")}</span>
           </a>
         </li>
         <li>
           <button onClick={handleLoginClick} className="nav-link-button">
             <FaSignInAlt className="nav-icon" />
-            {language === "English" ? "Login" : "লগইন"}
+            <span>{getLabel("Login")}</span>
           </button>
         </li>
         <li>
           <a href="/about">
             <FaInfoCircle className="nav-icon" />
-            {language === "English" ? "About" : "সম্পর্কে"}
+            <span>{getLabel("About")}</span>
           </a>
         </li>
         <li>
           <a href="/faq">
             <FaQuestionCircle className="nav-icon" />
-            {language === "English" ? "FAQ" : "প্রশ্নাবলী"}
+            <span>{getLabel("FAQ")}</span>
           </a>
         </li>
+
+        {/* Language Toggle */}
         <li>
           <div className="language-toggle">
             <label className="switch">
