@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react"; // Added useMemo
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -10,16 +10,56 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // Toggle required
-  const handleRequired = useCallback(
-    (id) => {
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
-      );
-      setRequired((r) => !r);
-    },
-    [setQuestions]
+  // New states for additional toggles
+  const [enableOptionShuffle, setEnableOptionShuffle] = useState(
+    question.meta?.enableOptionShuffle || false
   );
+  const [requireAtLeastOneSelection, setRequireAtLeastOneSelection] = useState(
+    question.meta?.requireAtLeastOneSelection || false
+  );
+
+  const options = useMemo( // Memoizing options array
+    () => question.meta?.options || [],
+    [question.meta?.options]
+  );
+
+  // Toggle required
+  const handleRequired = useCallback(() => {
+    // Standardized: Uses question.id from closure
+    const newRequiredState = !required;
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id ? { ...q, required: newRequiredState } : q
+      )
+    );
+    setRequired(newRequiredState);
+  }, [question.id, setQuestions, required]);
+
+  // Toggle Shuffle Option Order
+  const handleEnableOptionShuffleToggle = useCallback(() => {
+    const newValue = !enableOptionShuffle;
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? { ...q, meta: { ...q.meta, enableOptionShuffle: newValue } }
+          : q
+      )
+    );
+    setEnableOptionShuffle(newValue);
+  }, [enableOptionShuffle, question.id, setQuestions]);
+
+  // Toggle Require At Least One Selection
+  const handleRequireAtLeastOneSelectionToggle = useCallback(() => {
+    const newValue = !requireAtLeastOneSelection;
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? { ...q, meta: { ...q.meta, requireAtLeastOneSelection: newValue } }
+          : q
+      )
+    );
+    setRequireAtLeastOneSelection(newValue);
+  }, [requireAtLeastOneSelection, question.id, setQuestions]);
 
   // Update question text
   const handleQuestionChange = useCallback(
@@ -42,41 +82,60 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   // Copy question
   const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
-    const copied = { ...question, id: question.id + 1 };
+    // Standardized ID generation and re-sequencing
+    const copiedQuestion = {
+      ...question,
+      id: questions.length + 1, // Temporary ID, will be re-sequenced
+      meta: {
+        ...question.meta,
+        options: [...(question.meta?.options || [])],
+        enableOptionShuffle: enableOptionShuffle, // Copy shuffle state
+        requireAtLeastOneSelection: requireAtLeastOneSelection, // Copy validation state
+      },
+    };
 
-    const bumped = questions.map((q) =>
-      q.id > question.id ? { ...q, id: q.id + 1 } : q
-    );
-    bumped.splice(index + 1, 0, copied);
-    bumped.sort((a, b) => a.id - b.id);
-    setQuestions(bumped);
-  }, [question, questions, setQuestions]);
+    let updatedQuestions = [...questions];
+    updatedQuestions.splice(index + 1, 0, copiedQuestion);
+    updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
+
+    setQuestions(updatedQuestions);
+  }, [
+    question,
+    questions,
+    setQuestions,
+    enableOptionShuffle,
+    requireAtLeastOneSelection,
+  ]);
 
   // Handle image upload trigger
-  const handleQuestionImageUpload = (event, id) => {
+  const handleQuestionImageUpload = useCallback((event) => {
+
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-  };
+    event.target.value = null;
+  }, []); // Dependencies: setSelectedFile, setShowCropper
 
   // Add new option
   const addOption = useCallback(() => {
     setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: [
-                  ...q.meta.options,
-                  `Option ${q.meta.options.length + 1}`,
-                ],
-              },
-            }
-          : q
-      )
+      prev.map((q) => {
+        if (q.id === question.id) {
+          const currentOptions = q.meta?.options || [];
+          return {
+            ...q,
+            meta: {
+              ...q.meta,
+              options: [
+                ...currentOptions,
+                `Option ${currentOptions.length + 1}`,
+              ],
+            },
+          };
+        }
+        return q;
+      })
     );
   }, [question.id, setQuestions]);
 
@@ -90,7 +149,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                 ...q,
                 meta: {
                   ...q.meta,
-                  options: q.meta.options.map((opt, i) =>
+                  options: (q.meta?.options || []).map((opt, i) =>
                     i === idx ? newText : opt
                   ),
                 },
@@ -106,17 +165,20 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   const removeOption = useCallback(
     (idx) => {
       setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: q.meta.options.filter((_, i) => i !== idx),
-                },
-              }
-            : q
-        )
+        prev.map((q) => {
+          if (q.id === question.id) {
+            const currentOptions = q.meta?.options || [];
+            const updatedOptions = currentOptions.filter((_, i) => i !== idx);
+            return {
+              ...q,
+              meta: {
+                ...q.meta,
+                options: updatedOptions,
+              },
+            };
+          }
+          return q;
+        })
       );
     },
     [question.id, setQuestions]
@@ -126,14 +188,13 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   const handleDragEnd = useCallback(
     (result) => {
       if (!result.destination) return;
-
       const src = result.source.index;
       const dest = result.destination.index;
 
       setQuestions((prev) =>
         prev.map((q) => {
           if (q.id !== question.id) return q;
-          const opts = Array.from(q.meta.options);
+          const opts = Array.from(q.meta?.options || []);
           const [moved] = opts.splice(src, 1);
           opts.splice(dest, 0, moved);
           return {
@@ -147,31 +208,32 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   );
 
   // Remove image
-  const removeImage = (index) => {
+  const removeImageCb = useCallback((index) => { // Wrapped in useCallback
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
+          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
           : q
       )
     );
-  };
+  }, [question.id, setQuestions]);
 
   // Update image alignment
-  const updateAlignment = (index, alignment) => {
+  const updateAlignmentCb = useCallback((index, alignment) => { 
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
           ? {
               ...q,
-              imageUrls: q.imageUrls.map((img, i) =>
+              imageUrls: (q.imageUrls || []).map((img, i) =>
                 i === index ? { ...img, alignment } : img
               ),
             }
           : q
       )
     );
-  };
+  }, [question.id, setQuestions]);
+
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -181,8 +243,6 @@ const Checkbox = ({ question, questions, setQuestions }) => {
             <strong>Checkbox</strong>
           </em>
         </label>
-
-        {/* Use the TagManager component */}
         <TagManager
           questionId={question.id}
           questionText={question.text}
@@ -203,7 +263,6 @@ const Checkbox = ({ question, questions, setQuestions }) => {
         />
       )}
 
-      {/* Image Previews with Remove and Alignment Options */}
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
@@ -222,7 +281,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                 <select
                   className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                   value={img.alignment || "start"}
-                  onChange={(e) => updateAlignment(idx, e.target.value)}
+                  onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
                   <option value="start">Left</option>
                   <option value="center">Center</option>
@@ -230,7 +289,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
-                  onClick={() => removeImage(idx)}
+                  onClick={() => removeImageCb(idx)}
                 >
                   <i className="bi bi-trash"></i>
                 </button>
@@ -240,7 +299,6 @@ const Checkbox = ({ question, questions, setQuestions }) => {
         </div>
       )}
 
-      {/* Question Text */}
       <input
         type="text"
         className="form-control mb-2"
@@ -249,14 +307,13 @@ const Checkbox = ({ question, questions, setQuestions }) => {
         onChange={(e) => handleQuestionChange(e.target.value)}
       />
 
-      {/* Drag & Drop Options */}
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId={`checkbox-options-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {question.meta?.options.map((option, idx) => (
+              {(question.meta?.options || []).map((option, idx) => (
                 <Draggable
-                  key={idx}
+                  key={`opt-checkbox-${question.id}-${idx}`} 
                   draggableId={`checkbox-opt-${question.id}-${idx}`}
                   index={idx}
                 >
@@ -268,20 +325,21 @@ const Checkbox = ({ question, questions, setQuestions }) => {
                       className="d-flex align-items-center mb-2"
                     >
                       <i
-                        className="bi bi-grip-vertical"
+                        className="bi bi-grip-vertical me-2" 
                         style={{ fontSize: "1.5rem", cursor: "grab" }}
                       ></i>
-
                       <input
                         type="text"
                         className="form-control me-2"
                         value={option}
                         onChange={(e) => updateOption(idx, e.target.value)}
+                        placeholder={`Option ${idx + 1}`}
                       />
-
                       <button
                         className="btn btn-outline-secondary"
                         onClick={() => removeOption(idx)}
+                        disabled={(question.meta?.options || []).length <= 1 && (question.meta?.options || [])[0] !== "Other"}
+
                       >
                         <i className="bi bi-trash"></i>
                       </button>
@@ -294,7 +352,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
           )}
         </Droppable>
       </DragDropContext>
-      {/* Add Option */}
+
       <button
         className="btn btn-sm btn-outline-primary mt-2"
         onClick={addOption}
@@ -313,22 +371,54 @@ const Checkbox = ({ question, questions, setQuestions }) => {
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
+        <label className="btn btn-outline-secondary me-2 hover:bg-gray-100 transition-colors">
           <i className="bi bi-image"></i>
           <input
             type="file"
+            accept="image/*" 
             hidden
-            onChange={(e) => handleQuestionImageUpload(e, question.id)}
+            onChange={handleQuestionImageUpload} 
           />
         </label>
-        <div className="form-check form-switch ms-auto">
+      </div>
+
+      {/* Additional Toggles Separated for Clarity */}
+      <div className="mt-3 border-top pt-3">
+        <div className="form-check form-switch mb-2">
           <input
-            type="checkbox"
             className="form-check-input"
-            checked={required}
-            onChange={() => handleRequired(question.id)}
+            type="checkbox"
+            id={`enableOptionShuffleCheckbox${question.id}`}
+            onChange={handleEnableOptionShuffleToggle}
+            checked={enableOptionShuffle}
           />
-          <label className="form-check-label">Required</label>
+          <label className="form-check-label" htmlFor={`enableOptionShuffleCheckbox${question.id}`}>
+            Shuffle option order
+          </label>
+        </div>
+        <div className="form-check form-switch mb-2">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requireAtLeastOneSelectionCheckbox${question.id}`}
+            onChange={handleRequireAtLeastOneSelectionToggle}
+            checked={requireAtLeastOneSelection}
+          />
+          <label className="form-check-label" htmlFor={`requireAtLeastOneSelectionCheckbox${question.id}`}>
+            Require at least one selection
+          </label>
+        </div>
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitchCheckbox${question.id}`}
+            checked={required}
+            onChange={handleRequired} // Standardized call
+          />
+          <label className="form-check-label" htmlFor={`requiredSwitchCheckbox${question.id}`}>
+            Required
+          </label>
         </div>
       </div>
     </div>
