@@ -108,7 +108,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         <div className="admin-dashboard-overview">
             <div className="admin-header">
                 <h2>{getLabel("System Overview")}</h2>
-                <p>Welcome to the administrative dashboard. Monitor your platform's performance and manage system settings.</p>
+                <p>{getLabel("Welcome to the administrative dashboard. Monitor your platform's performance and manage system settings.")}</p>
             </div>
 
             {/* Statistics Cards */}
@@ -217,11 +217,11 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                     <div className="revenue-summary">
                         <div className="revenue-item">
                             <span className="revenue-amount">৳ 0.0</span>
-                            <span className="revenue-label">This Month</span>
+                            <span className="revenue-label">{getLabel("This Month")}</span>
                         </div>
                         <div className="revenue-item">
                             <span className="revenue-amount">৳ 0.0</span>
-                            <span className="revenue-label">Last Month</span>
+                            <span className="revenue-label">{getLabel("Last Month")}</span>
                         </div>
                         <div className="revenue-trend">
                             <span className="trend-positive">0% growth</span>

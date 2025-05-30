@@ -124,6 +124,35 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
+
+      // Admin Dashboard Labels
+      "System Overview","Welcome to the administrative dashboard. Monitor your platform\'s performance and manage system settings.",
+      "Total Users",
+      "Active Surveys",
+      "Total Responses",
+      "Premium Users",
+      "User Analytics",
+      "Survey Analytics",
+      "Revenue Overview",
+      "New User at Current Month",
+      "Survey Created at Current Month",
+      "New User at Previous Month",
+      "Survey Created at Previous Month",
+      "User Growth Rate",
+      "Survey Creation Growth Rate",
+      "This Month",
+      "Last Month",
+
+      // Admin Package Customizer Labels
+      "Package Management",
+      "Add Package",
+      "Manage and customize premium packages for your users",
+      "Total Packages",
+      "Discounted",
+      "Premium",
+      "Tags",
+      "Questions",
+      "Surveys",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
