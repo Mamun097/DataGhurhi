@@ -5,8 +5,27 @@ import { handleImageUpload } from "../utils/handleImageUpload";
 import SurveySections from "./SurveySections";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
-// SurveyForm Component to manage the survey title, background, sections, and questions.
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
 const SurveyForm = ({
   title,
   setTitle,
@@ -19,21 +38,76 @@ const SurveyForm = ({
   survey_id,
   surveyStatus,
   surveyLink,
+  language,
+  setLanguage,
 }) => {
-  // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [themeColor, setThemeColor] = useState(null);
-
-  // Sync backgroundImage with prop
-  useEffect(() => {
-    if (image) {
-      setBackgroundImage(image);
-    }
-  }, [image]);
+  const [translatedLabels, setTranslatedLabels] = useState({});
   const navigate = useNavigate();
 
-  console.log(project_id);
-  // Function to add a new section
+  const labelsToTranslate = [
+    "Save",
+    "Publish",
+    "Update",
+    "View Survey Link",
+    "Upload Banner Image",
+    "Enter Survey Title",
+    "Add Section",
+    "Survey updated successfully!",
+    "Survey Saved successfully!",
+    "Section", "Enter Section Title", "Delete Section", "Merge with above",
+    "Select the type of question you want to add",
+    "Multiple Choice Question",
+    "Text",
+    "Rating",
+    "Linear Scale",
+    "Checkbox",
+    "Dropdown",
+    "Date/Time",
+    "Likert Scale",
+    "Multiple Choice Grid",
+    "Survey Templates",
+    "This survey has already been published.",
+    "Loading templates…",
+    "Untitled Survey",
+    "Survey Template",
+    "Add Question",
+    "Generate Question using LLM",
+    "Error saving survey!",
+    "Survey Published successfully!",
+    "Error publishing survey!",
+    "Error updating survey!",
+  ];
+
+  const getLabel = (text) => translatedLabels[text] || text;
+
+  useEffect(() => {
+    if (image) setBackgroundImage(image);
+  }, [image]);
+
+useEffect(() => {
+  const loadTranslations = async () => {
+    const langCode = language === "বাংলা" || language === "bn" ? "bn" : "en";
+
+    if (langCode === "en") {
+      const englishMap = {};
+      labelsToTranslate.forEach((label) => (englishMap[label] = label));
+      setTranslatedLabels(englishMap);
+    } else {
+      const translated = await translateText(labelsToTranslate, langCode);
+      const translatedMap = {};
+      labelsToTranslate.forEach((label, idx) => {
+        translatedMap[label] = translated[idx];
+      });
+      setTranslatedLabels(translatedMap);
+    }
+  };
+
+  loadTranslations();
+}, [language]);
+
+
   const handleAddSection = () => {
     const newSection = { id: sections.length + 1, title: "Section Title..." };
     setSections([...sections, newSection]);
@@ -44,8 +118,8 @@ const SurveyForm = ({
       const response = await axios.put(
         "http://localhost:2000/api/surveytemplate/save",
         {
-          survey_id: survey_id,
-          project_id: project_id,
+          survey_id,
+          project_id,
           survey_template: {
             sections,
             backgroundImage,
@@ -53,8 +127,8 @@ const SurveyForm = ({
             description: null,
             questions,
           },
-          title: title,
-          user_id: `${localStorage.getItem("token").id}`, // same note as above
+          title,
+          user_id: `${localStorage.getItem("token").id}`,
         },
         {
           headers: {
@@ -65,39 +139,31 @@ const SurveyForm = ({
       );
 
       if (response.status === 201) {
-        alert("Survey Saved successfully!");
-        console.log("Survey saved successfully:", response);
+        toast.success(getLabel("Survey Saved successfully!"))
         navigate(
-          `/view-survey/${
-            response.data.data?.survey_id || response.data.survey_id
-          }`,
+          `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
           {
             state: {
-              project_id: project_id,
+              project_id,
               survey_details: response.data.data,
               input_title: title,
             },
           }
         );
-      } else {
-        console.error("Error publishing survey:", response.statusText);
       }
     } catch (error) {
-      console.error(
-        "Error publishing survey:",
-        error.response?.data || error.message
-      );
+      toast.error(getLabel("Error saving survey!"))
+      console.error("Error saving survey:", error);
     }
   };
 
-  // Function to handle the publish action
   const handlePublish = async () => {
     try {
       const response = await axios.put(
         "http://localhost:2000/api/surveytemplate",
         {
-          survey_id: survey_id,
-          project_id: project_id,
+          survey_id,
+          project_id,
           survey_template: {
             sections,
             backgroundImage,
@@ -105,8 +171,8 @@ const SurveyForm = ({
             description: null,
             questions,
           },
-          title: title,
-          user_id: `${localStorage.getItem("token").id}`, // double-check this line (see note below)
+          title,
+          user_id: `${localStorage.getItem("token").id}`,
         },
         {
           headers: {
@@ -117,41 +183,32 @@ const SurveyForm = ({
       );
 
       if (response.status === 201) {
-        alert("Survey Saved successfully!");
-        console.log("Survey published successfully:", response);
-        // setSurveyStatus("published");
+        toast.success(getLabel("Survey Published successfully!"))
         navigate(
-          `/view-survey/${
-            response.data.data?.survey_id || response.data.survey_id
-          }`,
+          `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
           {
             state: {
-              project_id: project_id,
+              project_id,
               survey_details: response.data.data,
               input_title: title,
             },
           }
         );
-      } else {
-        console.error("Error publishing survey:", response.statusText);
       }
     } catch (error) {
-      console.error(
-        "Error publishing survey:",
-        error.response?.data || error.message
-      );
+      toast.error(getLabel("Error publishing survey!"))
+      console.error("Error publishing survey:", error);
     }
   };
 
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem("token");
-
       const response = await axios.put(
         "http://localhost:2000/api/surveytemplate",
         {
-          survey_id: survey_id,
-          project_id: project_id,
+          survey_id,
+          project_id,
           survey_template: {
             sections,
             backgroundImage,
@@ -159,8 +216,8 @@ const SurveyForm = ({
             description: null,
             questions,
           },
-          title: title,
-          user_id: token?.id, // Note: Make sure token is an object if you expect token.id
+          title,
+          user_id: token?.id,
         },
         {
           headers: {
@@ -171,60 +228,39 @@ const SurveyForm = ({
       );
 
       if (response.status === 201) {
-        console.log("Survey updated successfully:", response);
-        alert("Survey updated successfully!");
+        toast.success(getLabel("Survey updated successfully!"))
         navigate(
-          `/view-survey/${
-            response.data.data?.survey_id || response.data.survey_id
-          }`,
+          `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
           {
             state: {
-              project_id: project_id,
+              project_id,
               survey_details: response.data.data,
               input_title: title,
             },
           }
         );
-      } else {
-        console.error("Error publishing survey:", response.statusText);
       }
     } catch (error) {
-      console.error(
-        "Error publishing survey:",
-        error.response?.data || error.message
-      );
+      toast.error(getLabel("Error updating survey!"))
+      console.error("Error updating survey:", error);
     }
   };
 
-  // View As
-  // const handleViewAs = () => {
-  //   setViewAs(!viewAs);
-  //   console.log(survey_Status);
-  // };
-
   return (
     <div>
+    <ToastContainer position="top-center" autoClose={4000} />
       <div className="mb-3">
-        {/* <button
-          className="btn btn-outline-primary me-3"
-          onClick={() => handleViewAs()}
-        >
-          <i className="bi bi-eye"></i> View As
-        </button> */}
         {surveyStatus === "published" ? (
           <button className="btn btn-outline-primary" onClick={handleUpdate}>
-            <i className="bi bi-pencil"></i> Update
+            <i className="bi bi-pencil"></i> {getLabel("Update")}
           </button>
         ) : (
           <>
-            <button
-              className="btn btn-outline-secondary me-3"
-              onClick={handleSave}
-            >
-              <i className="bi bi-save"></i> Save
+            <button className="btn btn-outline-secondary me-3" onClick={handleSave}>
+              <i className="bi bi-save"></i> {getLabel("Save")}
             </button>
             <button className="btn btn-outline-success" onClick={handlePublish}>
-              <i className="bi bi-check-circle"></i> Publish
+              <i className="bi bi-check-circle"></i> {getLabel("Publish")}
             </button>
           </>
         )}
@@ -235,27 +271,23 @@ const SurveyForm = ({
             rel="noopener noreferrer"
             className="btn btn-outline-info ms-3"
           >
-            <i className="bi bi-link-45deg"></i> View Survey Link
+            <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
           </a>
         )}
       </div>
 
       <div style={{ backgroundColor: themeColor || "white" }}>
-        {/* Survey Header */}
         <div style={{ position: "relative", width: "100%" }}>
-          {/* Full-width Background Image */}
           <img
             src={backgroundImage}
             alt="Survey Banner"
             className="img-fluid"
             style={{ width: "100%", height: "400px", objectFit: "cover" }}
           />
-
-          {/* Survey Title Input over the Banner */}
           <input
             type="text"
             className="form-control text-center"
-            placeholder="Enter Survey Title"
+            placeholder={getLabel("Enter Survey Title")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{
@@ -270,22 +302,17 @@ const SurveyForm = ({
           />
         </div>
 
-        {/* Change Banner Image */}
-
         <div className="text-center mt-3">
           <label className="btn btn-outline-secondary">
-            <i className="bi bi-image"></i> Upload Banner Image
+            <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
             <input
               type="file"
               hidden
-              onChange={(e) =>
-                handleImageUpload(e, setBackgroundImage, setThemeColor)
-              }
+              onChange={(e) => handleImageUpload(e, setBackgroundImage, setThemeColor)}
             />
           </label>
         </div>
 
-        {/* Survey Sections and Questions */}
         <div className="mt-4">
           {sections.map((section) => (
             <SurveySections
@@ -295,17 +322,17 @@ const SurveyForm = ({
               setSections={setSections}
               questions={questions}
               setQuestions={setQuestions}
+              language={language}
+              setLanguage={setLanguage}
+              getLabel={getLabel}
             />
           ))}
-
-          <button
-            className="btn btn-outline-primary mt-3"
-            onClick={handleAddSection}
-          >
-            ➕ Add Section
+          <button className="btn btn-outline-primary mt-3" onClick={handleAddSection}>
+            ➕ {getLabel("Add Section")}
           </button>
         </div>
       </div>
+      
     </div>
   );
 };
