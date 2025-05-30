@@ -6,6 +6,7 @@ import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -40,13 +41,16 @@ const Index = () => {
 
   const [templates, setTemplates] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [title, setTitle] = useState(input_title || "Untitled Survey");
+
+  // Props for SurveyForm
+  const [title, setTitle] = useState(input_title );
+
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [surveyLink, setSurveyLink] = useState(null);
-
+  const [description, setDescription] = useState(null);
   const useCustom = survey_details?.template != null;
 
   const labelsToTranslate = [
@@ -97,12 +101,14 @@ const Index = () => {
   useEffect(() => {
     const load = async () => {
       if (useCustom) {
-        setTitle(survey_details.title || "Untitled Survey");
+        // ==== 1) Load from survey_details ====
+        setTitle(input_title || survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
         setQuestions(survey_details.template.questions || []);
         setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
         setSurveyLink(survey_details.survey_link || null);
+        setDescription(survey_details.description || null);
       } else {
         try {
           const resp = await axios.get(
@@ -113,7 +119,7 @@ const Index = () => {
 
           if (data.length > 0) {
             const first = data[0];
-            setTitle(input_title || "Untitled Survey");
+            setTitle(input_title || survey_details.title || first.title || "Untitled Survey");
             setQuestions(first.template);
             setBackgroundImage(first.image_url);
           }
@@ -124,12 +130,13 @@ const Index = () => {
     };
 
     load();
-  }, [useCustom, survey_details]);
+  }, [useCustom, survey_details, input_title]);
+
 
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
     const tmpl = templates[idx];
-    setTitle(input_title || "Untitled Survey");
+    setTitle(input_title || tmpl.title || "Untitled Survey");
     setQuestions(tmpl.template);
     setBackgroundImage(tmpl.image_url);
   };
@@ -185,14 +192,16 @@ const Index = () => {
               questions={questions}
               setQuestions={setQuestions}
               image={backgroundImage}
-              setImage={setBackgroundImage}
               project_id={project_id}
               survey_id={survey_id}
               surveyStatus={surveyStatus}
               surveyLink={surveyLink}
+              description={description} 
+              setDescription={setDescription} 
               language={language}
               setLanguage={setLanguage}
          
+
             />
           </div>
 

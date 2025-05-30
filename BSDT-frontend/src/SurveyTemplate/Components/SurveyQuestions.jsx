@@ -19,23 +19,19 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
   const handleDragEnd = (result) => {
     if (!result.destination) return;
 
-    // Create a copy of the section's questions and reorder them.
     const reordered = Array.from(sectionQuestions);
     const [removed] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, removed);
 
-    // Update each question's id based solely on the new index (starting at 1).
     const updatedSectionQuestions = reordered.map((q, idx) => ({
       ...q,
       id: idx + 1,
     }));
 
-    // Merge the updated questions back with those from other sections.
     const newQuestions = questions
       .filter((q) => q.section !== section.id)
       .concat(updatedSectionQuestions);
 
-    // Optionally sort newQuestions by section and then by id.
     newQuestions.sort((a, b) => {
       if (a.section === b.section) {
         return a.id - b.id;
@@ -141,21 +137,49 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
                   draggableId={question.id.toString()}
                   index={index}
                 >
-                  {(provided, snapshot) => (
+                  {(providedDraggable, snapshot) => (
                     <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                      {...provided.dragHandleProps}
+                      ref={providedDraggable.innerRef}
+                      {...providedDraggable.draggableProps}
                       style={{
-                        userSelect: "none",
-                        padding: 8,
+                        ...providedDraggable.draggableProps.style,
                         margin: "0 0 8px 0",
-                        background: snapshot.isDragging ? "#e0e0e0" : "#ffffff",
-                        border: "1px solid #ccc",
-                        ...provided.draggableProps.style,
                       }}
                     >
-                      {renderQuestionComponent(question)}
+                      <div
+                        style={{
+                          userSelect: "none",
+                          padding: 8,
+                          background: snapshot.isDragging
+                            ? "#e0e0e0"
+                            : "#ffffff",
+                          border: "1px solid #ccc",
+                          display: "flex",
+                          alignItems: "center",
+                        }}
+                      >
+                        <div
+                          {...providedDraggable.dragHandleProps}
+                          style={{
+                            cursor: "grab",
+                            marginRight: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                          aria-label="Drag question"
+                        >
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem", cursor: "grab" }}
+                          ></i>
+                        </div>
+                        <div style={{ flexGrow: 1 }}>
+                          {" "}
+                          {/* Ensures question content takes remaining space */}
+                          {renderQuestionComponent(question)}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </Draggable>
