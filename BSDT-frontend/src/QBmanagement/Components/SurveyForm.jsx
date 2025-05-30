@@ -33,6 +33,10 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
   const [filter, setFilter] = useState("all"); // "all" | "mine" | "public"
   const [groupByProject, setGroupByProject] = useState(false); // toggle grouping
   const [showFilters, setShowFilters] = useState(false);
+  const [searchLogic, setSearchLogic] = useState("intersection"); // or "union"
+  const [languageFilter, setLanguageFilter] = useState("all");
+
+
   const [searchFields, setSearchFields] = useState({
     keyword: true,
     project: false,
@@ -126,76 +130,90 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
     tickboxGrid: "grid",
   };
 
-  const filteredQuestions = questions
-    .filter((q) => {
-      const search = searchTerm.toLowerCase().trim();
-      if (!search) return true;
+  const detectLanguage = (text) => {
+  const banglaRegex = /[\u0980-\u09FF]/;
+  return banglaRegex.test(text) ? "bn" : "en";
+};
 
-      const typeAliasText = typeAlias[q.type] || q.type;
 
-      const matches = [];
 
-      if (searchFields.keyword) {
-        const combined = [
-          q.text,
-          q.type,
-          typeAliasText,
-          q.privacy,
-          JSON.stringify(q.meta_data),
-        ]
-          .join(" ")
-          .toLowerCase();
-        matches.push(combined.includes(search));
-      }
 
-      if (searchFields.project) {
-        matches.push((q.project_name || "").toLowerCase().includes(search));
-      }
+const filteredQuestions = questions
+  .filter((q) => {
+    const search = searchTerm.toLowerCase().trim();
+    if (!search) return true;
 
-      if (searchFields.type) {
-        matches.push(typeAliasText.toLowerCase().includes(search));
-      }
+    const typeAliasText = typeAlias[q.type] || q.type;
+    const matches = [];
 
-      if (searchFields.tag) {
-        matches.push((q.tags || []).join(" ").toLowerCase().includes(search));
-      }
+    if (searchFields.keyword) {
+      const combined = [
+        q.text,
+        q.type,
+        typeAliasText,
+        q.privacy,
+        JSON.stringify(q.meta_data),
+      ]
+        .join(" ")
+        .toLowerCase();
+      matches.push(combined.includes(search));
+    }
 
-      if (searchFields.survey) {
-        matches.push((q.survey_name || "").toLowerCase().includes(search));
-      }
+    if (searchFields.project) {
+      matches.push((q.project_name || "").toLowerCase().includes(search));
+    }
 
-      if (searchFields.owner) {
-        matches.push((q.owner_name || "").toLowerCase().includes(search));
-      }
+    if (searchFields.type) {
+      matches.push(typeAliasText.toLowerCase().includes(search));
+    }
 
-      // If no checkbox is selected, default to match all fields
-      const hasAnyFieldSelected = Object.values(searchFields).some(Boolean);
+    if (searchFields.tag) {
+      matches.push((q.tags || []).join(" ").toLowerCase().includes(search));
+    }
 
-      if (!hasAnyFieldSelected) {
-        const fallbackCombined = [
-          q.text,
-          q.type,
-          typeAliasText,
-          q.privacy,
-          q.project_name,
-          q.survey_name,
-          q.owner_name,
-          (q.tags || []).join(" "),
-          JSON.stringify(q.meta_data),
-        ]
-          .join(" ")
-          .toLowerCase();
-        return fallbackCombined.includes(search);
-      }
+    if (searchFields.survey) {
+      matches.push((q.survey_name || "").toLowerCase().includes(search));
+    }
 
-      return matches.some(Boolean);
-    })
-    .filter((q) => {
-      if (filter === "mine") return q.user_id === userId;
-      if (filter === "public")
-        return q.privacy === "public" && q.user_id !== userId;
-      return true;
-    });
+    if (searchFields.owner) {
+      matches.push((q.owner_name || "").toLowerCase().includes(search));
+    }
+
+    const hasAnyFieldSelected = Object.values(searchFields).some(Boolean);
+    if (!hasAnyFieldSelected) {
+      const fallbackCombined = [
+        q.text,
+        q.type,
+        typeAliasText,
+        q.privacy,
+        q.project_name,
+        q.survey_name,
+        q.owner_name,
+        (q.tags || []).join(" "),
+        JSON.stringify(q.meta_data),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return fallbackCombined.includes(search);
+    }
+
+    return searchLogic === "intersection"
+      ? matches.every(Boolean)
+      : matches.some(Boolean);
+  })
+  .filter((q) => {
+    if (filter === "mine") return q.user_id === userId;
+    if (filter === "public")
+      return q.privacy === "public" && q.user_id !== userId;
+    return true;
+  })
+  .filter((q) => {
+    if (languageFilter === "all") return true;
+    return detectLanguage(q.text) === languageFilter;
+  });
+
+
+
 
   // Fetch translations when language changes
   useEffect(() => {
@@ -227,6 +245,13 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
         "Add Column",
         "Delete",
         "Save Question",
+        "Result Option:",
+        "Both keyword",
+        "Any selected keyword",
+         "Language",
+        "All Languages",
+        "English",
+        "Bangla",
 
       ];
 
@@ -294,7 +319,7 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
                 {[
                   { label: getLabel("Keyword"), key: "keyword" },
                   { label: getLabel("Project Name"), key: "project" },
-                  { label: getLabel("Type"), key: "type" },
+                  { label: getLabel("Question Type"), key: "type" },
                   { label: getLabel("Tag"), key: "tag" },
                   { label: getLabel("Survey Name"), key: "survey" },
                   { label: getLabel("Owner Name"), key: "owner" },
@@ -321,12 +346,55 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
                       {/* Corrected htmlFor here */}
                       {label}
                     </label>
+
+                    
                   </div>
                 ))}
+                <hr />
+                <div className="form-check form-check-sm m-0 p-0">
+                  {/* dropdown for result logic */}
+                  <label className="form-check-label small mb-2">
+                    {getLabel("Result Option:")}
+                  </label>
+                  <div className="d-flex align-items-center">
+
+                    <select
+                      className="form-select form-select-sm me-2"
+                      value={searchLogic}
+                      onChange={(e) => setSearchLogic(e.target.value)}
+                    >
+                      <option value="intersection">
+                        {getLabel("Both keyword")}
+                      </option>
+                      <option value="union">
+                        {getLabel("Any selected keyword")}
+                      </option>
+                    </select>
+                    </div>
+                    </div>
+
               </div>
             </div>
           )}
         </div>
+
+          <div className="position-relative">        
+            <div className="btn-btn-outline-secondary d-flex align-items-center gap-2">
+            <select
+              className="form-select form-select-sm"
+              style={{ width: "140px" }}
+              value={languageFilter}
+              onChange={(e) => setLanguageFilter(e.target.value)}
+            >
+              <option value="all">{getLabel("All Languages")}</option>
+              <option value="en">{getLabel("English")}</option>
+              <option value="bn">{getLabel("Bangla")}</option>
+            </select>
+            </div>
+          </div>
+
+
+
 
         <div className="position-relative">
           <button

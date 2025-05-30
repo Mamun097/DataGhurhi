@@ -176,6 +176,15 @@ const NavbarAcholder = (props) => {
         </li>
 
         <li>
+          <a href="/analysis">
+            <FaChartBar className="nav-icon" />
+            <span>
+              {language === "English" ? "Analysis" : "পরিসংখ্যান বিশ্লেষণ"}
+            </span>
+          </a>
+        </li>
+
+        <li>
           <div className="navbar-profile">
             <div className="avatar-container">
               <IconButton
