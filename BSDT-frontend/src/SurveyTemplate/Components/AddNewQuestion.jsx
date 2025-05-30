@@ -2,6 +2,8 @@ import React from "react";
 import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+// import ImportFromQb from "./importFromQB/importFromQb";
+
 const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel }) => {
   return (
     <div>
@@ -82,6 +84,10 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
           questionInfo={questionInfo}
           getLabel={getLabel}
         />
+        {/* <ImportFromQb
+          addImportedQuestion={addImportedQuestion}
+          questionInfo={questionInfo}
+        /> */}
       </div>
     </div>
   );
