@@ -7,6 +7,13 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         previous_month_users: 0,
         growth_rate: 0
     });
+
+    const [surveyGrowthStats, setSurveyGrowthStats] = useState({
+        current_month_surveys: 0,
+        previous_month_surveys: 0,
+        survey_growth_rate: 0
+    });
+
     const [loading, setLoading] = useState(true);
 
     // Fetch user growth statistics
@@ -32,6 +39,31 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         };
 
         fetchUserGrowthStats();
+    }, []);
+
+    // Fetch user growth statistics
+    useEffect(() => {
+        const fetchSurveyGrowthStats = async () => {
+            try {
+                const response = await fetch('http://localhost:2000/api/admin/survey-growth-stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    setSurveyGrowthStats({
+                        current_month_surveys: data.surveyGrowthStats.current_month_surveys || 0,
+                        previous_month_surveys: data.surveyGrowthStats.previous_month_surveys || 0,
+                        survey_growth_rate: data.surveyGrowthStats.growth_rate || 0
+                    });
+                } else {
+                    console.error('Failed to fetch user growth stats');
+                }
+            } catch (error) {
+                console.error('Error fetching user growth stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchSurveyGrowthStats();
     }, []);
 
     const statCards = [
@@ -125,7 +157,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
 
                 {/* Quick Analytics */}
                 <div className="admin-card">
-                    <h3>{getLabel("Survey Analytics")}</h3>
+                    <h3>{getLabel("User Analytics")}</h3>
                     <div className="analytics-summary">
                         <div className="analytics-item">
                             <span className="analytics-label">{getLabel("New User at Current Month")}</span>
@@ -146,9 +178,35 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                                 {loading ? "Loading..." : `${userGrowthStats.growth_rate >= 0 ? '+' : ''}${userGrowthStats.growth_rate.toFixed(2)} per Day`}
                             </span>
                         </div>
-                        <div className="analytics-item">
+                        {/* <div className="analytics-item">
                             <span className="analytics-label">{getLabel("System Performance")}</span>
                             <span className="analytics-value">Excellent</span>
+                        </div> */}
+                    </div>
+                </div>
+
+                {/* Quick Analytics */}
+                <div className="admin-card">
+                    <h3>{getLabel("Survey Analytics")}</h3>
+                    <div className="analytics-summary">
+                        <div className="analytics-item">
+                            <span className="analytics-label">{getLabel("Survey Created at Current Month")}</span>
+                            <span className="analytics-value">
+                                {loading ? "Loading..." : surveyGrowthStats.current_month_surveys.toLocaleString()}
+                            </span>
+                        </div>
+                        <div className="analytics-item">
+                            <span className="analytics-label">{getLabel("Survey Created at Previous Month")}</span>
+                            <span className="analytics-value">
+                                {loading ? "Loading..." : surveyGrowthStats.previous_month_surveys.toLocaleString()}
+                            </span>
+                        </div>
+
+                        <div className="analytics-item">
+                            <span className="analytics-label">{getLabel("Survey Creation Growth Rate")}</span>
+                            <span className="analytics-value">
+                                {loading ? "Loading..." : `${surveyGrowthStats.survey_growth_rate >= 0 ? '+' : ''}${surveyGrowthStats.survey_growth_rate.toFixed(2)} per Day`}
+                            </span>
                         </div>
                     </div>
                 </div>
