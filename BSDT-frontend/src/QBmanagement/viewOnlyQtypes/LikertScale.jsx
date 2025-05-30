@@ -2,7 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useState } from "react";
 import LikertScale from "../QuestionTypes/LikertScale"; // Assuming this is the editable version
-
+import "../CSS/SurveyForm.css";
 const LikertScaleView = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);
   const {

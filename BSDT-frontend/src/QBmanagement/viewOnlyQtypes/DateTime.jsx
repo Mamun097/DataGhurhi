@@ -1,8 +1,8 @@
 import React from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
+// import "bootstrap/dist/css/bootstrap.min.css";
 import DateTimeQuestion from "../QuestionTypes/DateTime"; // Assuming this is the editable version
 import { useState } from "react";
-
+import "../CSS/SurveyForm.css";
 const DateTimeViewOnly = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
   const [isEditing, setIsEditing] = useState(false);
   const {
