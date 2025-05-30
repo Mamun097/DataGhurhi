@@ -77,34 +77,7 @@ def analyze_data_api(request):
                 return process_kruskal_test(request, df, col1, col2)
             
             elif test_type == 'mannwhitney':
-                stat, p_value = stats.mannwhitneyu(df[col1], df[col2], alternative='two-sided', nan_policy='omit')
-                results = {
-                    'test': 'Mann-Whitney U test',
-                    'statistic': stat,
-                    'p_value': p_value
-                }
-
-                plot_paths = []
-
-                # Boxplot
-                plt.figure(figsize=(8, 6))
-                sns.boxplot(x=col1, y=col2, data=df)
-                plt.title(f'{col2} by {col1} - Boxplot')
-                plt.xlabel(f'{col1} (categorical)')
-                plt.ylabel(f'{col2} (numeric)')
-                box_path = save_plot(plt, 'mannwhitney_boxplot.png')
-                plot_paths.append(box_path)
-
-                # Violin plot
-                plt.figure(figsize=(8, 6))
-                sns.violinplot(x=col1, y=col2, data=df)
-                plt.title(f'{col2} by {col1} - Violin Plot')
-                plt.xlabel(f'{col1} (categorical)')
-                plt.ylabel(f'{col2} (numeric)')
-                violin_path = save_plot(plt, 'mannwhitney_violinplot.png')
-                plot_paths.append(violin_path)
-
-                results['plot_paths'] = plot_paths
+                return process_mannwhitney_test(request, df, col1, col2)
 
             
             elif test_type == 'spearman':
@@ -1183,6 +1156,145 @@ def process_wilcoxon_test(request, df, col1, col2):
         return JsonResponse({'success': False, 'error': str(e)})
     
 
+def process_mannwhitney_test(request, df, col1, col2):
+    
+    
+    from scipy.stats import mannwhitneyu, rankdata
+    
+    try:
+        # --- 1. Setup ---
+        lang = request.POST.get('language', 'en')
+        img_format = request.POST.get('format', 'png')
+        use_def = request.POST.get('use_default', 'true') == 'true'
+        pil_fmt = {'png': 'PNG', 'jpg': 'JPEG', 'jpeg': 'JPEG', 'pdf': 'PDF', 'tiff': 'TIFF'}[img_format]
+
+        translator = Translator()
+        def translate(text): return translator.translate(text, dest='bn').text if lang == 'bn' else text
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def map_digits(s): return s.translate(digit_map_bn) if lang == 'bn' else s
+
+        if use_def:
+            label_font_size, tick_font_size, img_quality = 36, 16, 90
+            fig_width, fig_height = 8, 6
+            palette = 'deep'
+            box_width = violin_width = rank_bar_width = 0.8
+        else:
+            label_font_size = int(request.POST.get('label_font_size', 36))
+            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            img_quality = int(request.POST.get('image_quality', 90))
+            size_str = request.POST.get('image_size', '8x6')
+            fig_width, fig_height = map(float, size_str.split('x'))
+            palette = request.POST.get('palette', 'deep')
+            box_width = float(request.POST.get('box_width', 0.8))
+            violin_width = float(request.POST.get('violin_width', 0.8))
+            rank_bar_width = float(request.POST.get('rank_bar_width', 0.8))
+
+        # --- 2. Font setup ---
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        fm.fontManager.addfont(font_path)
+        bengali_font_name = fm.FontProperties(fname=font_path).get_name()
+        plt.rcParams['font.family'] = bengali_font_name
+        tick_bn = fm.FontProperties(fname=font_path, size=tick_font_size)
+        tick_en = fm.FontProperties(size=tick_font_size)
+        label_font = ImageFont.truetype(font_path, label_font_size)
+
+        # --- 3. Create image output folder ---
+        media_root = settings.MEDIA_ROOT
+        media_url = settings.MEDIA_URL
+        plots_dir = os.path.join(media_root, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+
+        # --- 4. Mann–Whitney U test ---
+        u_stat, p_value = mannwhitneyu(df[col1], df[col2], alternative='two-sided')
+        result = {
+            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
+            'statistic': float(u_stat),
+            'p_value': float(p_value),
+            'conclusion': translate('Significant difference' if p_value < 0.05 else 'No significant difference'),
+            'success': True,
+        }
+
+        # --- 5. PIL Bengali label drawing ---
+        def create_labeled_plot(fig, ax, title, xlabel, ylabel, tmp, out):
+            ax.set_title('')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            fig.savefig(tmp, dpi=300, format='PNG')
+            plt.close(fig)
+
+            T = map_digits(translate(title))
+            X = map_digits(translate(xlabel))
+            Y = map_digits(translate(ylabel))
+            tx0, ty0, tx1, ty1 = label_font.getbbox(T); th = ty1 - ty0
+            xx0, xy0, xx1, xy1 = label_font.getbbox(X); xh = xy1 - xy0
+            yx0, yy0, yx1, yy1 = label_font.getbbox(Y); yw, yh = yx1 - yx0, yy1 - yy0
+            pad = label_font_size // 2
+            lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
+
+            bg = Image.open(tmp).convert('RGB'); bw, bh = bg.size
+            W, H = bw + lm + rm, bh + tm + bm
+            canvas = Image.new('RGB', (W, H), 'white'); canvas.paste(bg, (lm, tm))
+            draw = ImageDraw.Draw(canvas)
+            def ch(txt, fnt, w): return (w - int(draw.textlength(txt, font=fnt))) // 2
+
+            draw.text((ch(T, label_font, W), (tm - th) // 2), T, font=label_font, fill='black')
+            draw.text((ch(X, label_font, W), tm + bh + (bm - xh) // 2), X, font=label_font, fill='black')
+
+            Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0))
+            d2 = ImageDraw.Draw(Yimg)
+            d2.text((0, 0), Y, font=label_font, fill='black')
+            Yrot = Yimg.rotate(90, expand=True)
+            canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
+
+            canvas.save(out, format=pil_fmt, quality=img_quality)
+
+        # --- 6. Category labels ---
+        cats = sorted(df[col1].unique())
+        cat_labels = [map_digits(translate(str(c))) for c in cats] if lang == 'bn' else [str(c) for c in cats]
+
+        image_paths = []
+
+        # --- 7a. Boxplot ---
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        sns.boxplot(x=col1, y=col2, data=df, palette=palette, width=box_width, ax=ax)
+        ax.set_xticks(cats)
+        ax.set_xticklabels(cat_labels, fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        ax.set_yticklabels([map_digits(f"{v:.2f}") for v in ax.get_yticks()], fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        tmp = os.path.join(plots_dir, 'mann_box_tmp.png')
+        out = os.path.join(plots_dir, f'mannwhitney_boxplot.{img_format}')
+        create_labeled_plot(fig, ax, f"Boxplot of {col2} by {col1}", col1, col2, tmp, out)
+        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_boxplot.{img_format}'))
+
+        # --- 7b. Violinplot ---
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        sns.violinplot(x=col1, y=col2, data=df, palette=palette, width=violin_width, ax=ax)
+        ax.set_xticks(cats)
+        ax.set_xticklabels(cat_labels, fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        ax.set_yticklabels([map_digits(f"{v:.2f}") for v in ax.get_yticks()], fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        tmp = os.path.join(plots_dir, 'mann_violin_tmp.png')
+        out = os.path.join(plots_dir, f'mannwhitney_violinplot.{img_format}')
+        create_labeled_plot(fig, ax, f"Violin plot of {col2} by {col1}", col1, col2, tmp, out)
+        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_violinplot.{img_format}'))
+
+        # --- 7c. Rank plot ---
+        ranks = rankdata(df[col2].values)
+        rdf = df.copy(); rdf['__rank'] = ranks
+        avg = rdf.groupby(col1)['__rank'].mean().reset_index()
+        fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+        sns.barplot(x=col1, y='__rank', data=avg, palette=palette, width=rank_bar_width, ax=ax)
+        ax.set_xticks(cats)
+        ax.set_xticklabels(cat_labels, fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        ax.set_yticklabels([map_digits(f"{v:.2f}") for v in ax.get_yticks()], fontproperties=(tick_bn if lang == 'bn' else tick_en))
+        tmp = os.path.join(plots_dir, 'mann_rank_tmp.png')
+        out = os.path.join(plots_dir, f'mannwhitney_rankplot.{img_format}')
+        create_labeled_plot(fig, ax, f"Average rank of {col2} by {col1}", col1, translate("Average Rank"), tmp, out)
+        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_rankplot.{img_format}'))
+
+        result['image_paths'] = image_paths
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 def save_plot(plt, filename):
