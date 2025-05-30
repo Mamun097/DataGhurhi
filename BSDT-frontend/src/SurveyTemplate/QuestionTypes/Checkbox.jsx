@@ -5,7 +5,6 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-
 const Checkbox = ({ question, questions, setQuestions }) => {
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
@@ -61,8 +60,7 @@ const Checkbox = ({ question, questions, setQuestions }) => {
     setShowCropper(true);
   };
 
-
-    // Add new option
+  // Add new option
   const addOption = useCallback(() => {
     setQuestions((prev) =>
       prev.map((q) =>
@@ -83,38 +81,46 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   // Update option text
-  const updateOption = useCallback((idx, newText) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: q.meta.options.map((opt, i) => i === idx ? newText : opt)
-            },
-          }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateOption = useCallback(
+    (idx, newText) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.map((opt, i) =>
+                    i === idx ? newText : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Remove option
-  const removeOption = useCallback((idx) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: q.meta.options.filter((_, i) => i !== idx)
-            },
-          }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const removeOption = useCallback(
+    (idx) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.filter((_, i) => i !== idx),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Handle drag end
   const handleDragEnd = useCallback(
@@ -170,22 +176,22 @@ const Checkbox = ({ question, questions, setQuestions }) => {
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex justify-content-between align-items-center mb-2">
-      <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-        <em>
-          <strong>Checkbox</strong>
-        </em>
-      </label>
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+          <em>
+            <strong>Checkbox</strong>
+          </em>
+        </label>
 
-      {/* Use the TagManager component */}
-      <TagManager
-        questionId={question.id}
-        questionText={question.text}
-        questions={questions}
-        setQuestions={setQuestions}
-      />
-    </div>
+        {/* Use the TagManager component */}
+        <TagManager
+          questionId={question.id}
+          questionText={question.text}
+          questions={questions}
+          setQuestions={setQuestions}
+        />
+      </div>
 
-    {showCropper && selectedFile && (
+      {showCropper && selectedFile && (
         <ImageCropper
           file={selectedFile}
           questionId={question.id}
@@ -197,131 +203,135 @@ const Checkbox = ({ question, questions, setQuestions }) => {
         />
       )}
 
-    {/* Image Previews with Remove and Alignment Options */}
-    {question.imageUrls && question.imageUrls.length > 0 && (
-      <div className="mb-2">
-        {question.imageUrls.map((img, idx) => (
-          <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-            <div
-              className={`d-flex justify-content-${img.alignment || "start"}`}
-            >
-              <img
-                src={img.url}
-                alt={`Question ${idx}`}
-                className="img-fluid rounded"
-                style={{ maxHeight: 400 }}
-              />
-            </div>
-            <div className="d-flex justify-content-between mt-2 gap-2">
-              <select
-                className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                value={img.alignment || "start"}
-                onChange={(e) => updateAlignment(idx, e.target.value)}
+      {/* Image Previews with Remove and Alignment Options */}
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mb-2">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
               >
-                <option value="start">Left</option>
-                <option value="center">Center</option>
-                <option value="end">Right</option>
-              </select>
-              <button
-                className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
-                onClick={() => removeImage(idx)}
-              >
-                <i className="bi bi-trash"></i>
-              </button>
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+              <div className="d-flex justify-content-between mt-2 gap-2">
+                <select
+                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  value={img.alignment || "start"}
+                  onChange={(e) => updateAlignment(idx, e.target.value)}
+                >
+                  <option value="start">Left</option>
+                  <option value="center">Center</option>
+                  <option value="end">Right</option>
+                </select>
+                <button
+                  className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
+                  onClick={() => removeImage(idx)}
+                >
+                  <i className="bi bi-trash"></i>
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
+      )}
+
+      {/* Question Text */}
+      <input
+        type="text"
+        className="form-control mb-2"
+        placeholder="Enter your question here"
+        value={question.text}
+        onChange={(e) => handleQuestionChange(e.target.value)}
+      />
+
+      {/* Drag & Drop Options */}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <Droppable droppableId={`checkbox-options-${question.id}`}>
+          {(provided) => (
+            <div ref={provided.innerRef} {...provided.droppableProps}>
+              {question.meta?.options.map((option, idx) => (
+                <Draggable
+                  key={idx}
+                  draggableId={`checkbox-opt-${question.id}-${idx}`}
+                  index={idx}
+                >
+                  {(prov) => (
+                    <div
+                      ref={prov.innerRef}
+                      {...prov.draggableProps}
+                      {...prov.dragHandleProps}
+                      className="d-flex align-items-center mb-2"
+                    >
+                      <i
+                        className="bi bi-grip-vertical"
+                        style={{ fontSize: "1.5rem", cursor: "grab" }}
+                      ></i>
+
+                      <input
+                        type="text"
+                        className="form-control me-2"
+                        value={option}
+                        onChange={(e) => updateOption(idx, e.target.value)}
+                      />
+
+                      <button
+                        className="btn btn-outline-secondary"
+                        onClick={() => removeOption(idx)}
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
+      {/* Add Option */}
+      <button
+        className="btn btn-sm btn-outline-primary mt-2"
+        onClick={addOption}
+      >
+        ➕ Add Option
+      </button>
+
+      {/* Actions */}
+      <div className="d-flex align-items-center mt-3">
+        <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
+          <i className="bi bi-clipboard"></i>
+        </button>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handleDelete}
+        >
+          <i className="bi bi-trash"></i>
+        </button>
+        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
+          <i className="bi bi-image"></i>
+          <input
+            type="file"
+            hidden
+            onChange={(e) => handleQuestionImageUpload(e, question.id)}
+          />
+        </label>
+        <div className="form-check form-switch ms-auto">
+          <input
+            type="checkbox"
+            className="form-check-input"
+            checked={required}
+            onChange={() => handleRequired(question.id)}
+          />
+          <label className="form-check-label">Required</label>
+        </div>
       </div>
-    )}
-
-  {/* Question Text */ }
-  <input
-    type="text"
-    className="form-control mb-2"
-    placeholder="Question"
-    value={question.text}
-    onChange={(e) => handleQuestionChange(e.target.value)}
-  />
-
-  {/* Drag & Drop Options */ }
-    <DragDropContext onDragEnd={handleDragEnd}>
-      <Droppable droppableId={`checkbox-options-${question.id}`}>
-        {(provided) => (
-          <div ref={provided.innerRef} {...provided.droppableProps}>
-            {question.meta?.options.map((option, idx) => (
-              <Draggable
-                key={idx}
-                draggableId={`checkbox-opt-${question.id}-${idx}`}
-                index={idx}
-              >
-                {(prov) => (
-                  <div
-                    ref={prov.innerRef}
-                    {...prov.draggableProps}
-                    {...prov.dragHandleProps}
-                    className="d-flex align-items-center mb-2"
-                  >
-                    <span
-                      className="me-2"
-                      style={{ fontSize: "1.5rem", cursor: "grab" }}
-                    >
-                      ☰
-                    </span>
-
-                    <input
-                      type="text"
-                      className="form-control me-2"
-                      value={option}
-                      onChange={(e) => updateOption(idx, e.target.value)}
-                    />
-
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={() => removeOption(idx)}
-                    >
-                      <i className="bi bi-trash"></i>
-                    </button>
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-    </DragDropContext>
-  {/* Add Option */ }
-  <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
-    ➕ Add Option
-  </button>
-
-  {/* Actions */ }
-  <div className="d-flex align-items-center mt-3">
-    <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
-      <i className="bi bi-clipboard"></i>
-    </button>
-    <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
-      <i className="bi bi-trash"></i>
-    </button>
-    <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
-      <i className="bi bi-image"></i>
-      <input
-        type="file"
-        hidden
-        onChange={(e) => handleQuestionImageUpload(e, question.id)}
-      />
-    </label>
-    <div className="form-check form-switch ms-auto">
-      <input
-        type="checkbox"
-        className="form-check-input"
-        checked={required}
-        onChange={() => handleRequired(question.id)}
-      />
-      <label className="form-check-label">Required</label>
     </div>
-  </div>
-    </div >
   );
 };
 

@@ -167,7 +167,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control"
-          placeholder="Question"
+          placeholder="Enter your question here"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
