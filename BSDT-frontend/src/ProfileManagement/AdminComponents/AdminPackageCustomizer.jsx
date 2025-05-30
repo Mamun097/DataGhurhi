@@ -328,7 +328,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                 <div className="package-actions">
                                     <button
                                         onClick={() => handleDeletePackage(pkg)}
-                                        className="package-action-btn delete-btn"
+                                        className="package-action-btn dtl-btn"
                                         title={getLabel("Delete Package")}
                                         disabled={isSubmitting}
                                     >

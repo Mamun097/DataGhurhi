@@ -1,7 +1,7 @@
 /* Admin Dashboard Styles */
 
 .dashboard-container.admin-dashboard {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #c8efdc 30%, #d8ebe7 30%);
     min-height: 100vh;
 }
 
@@ -952,9 +952,9 @@
     transform: scale(1.03);
 }
 
-/* .delete-btn:hover {
+.package-action-btn.dlt-btn:hover {
     background: rgba(239, 68, 68, 0.3);
-} */
+}
 
 /* Package Features */
 .package-features {
