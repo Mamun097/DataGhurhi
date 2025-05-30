@@ -1405,7 +1405,8 @@ def process_spearman_test(request, df, selected_columns):
             cbar.set_label('')
 
             base_path = os.path.join(plots_dir, base_name + '.png')
-            fig.savefig(base_path, dpi=300, format='PNG')
+            # fig.savefig(base_path, dpi=300, format='PNG')
+            fig.savefig(base_path, dpi=fig.dpi, format='PNG')
             plt.close(fig)
 
             img = Image.open(base_path).convert('RGB')
@@ -1459,7 +1460,8 @@ def process_spearman_test(request, df, selected_columns):
             Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
             ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
             Crot = Cimg.rotate(90, expand=True)
-            x_cb = lm + bw + pad // 4
+            # x_cb = lm + bw + pad // 4
+            x_cb = lm + bw - tick_font_size // 2
             y_cb = tm + (bh - Crot.height) / 2
             canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
 
@@ -1583,7 +1585,8 @@ def process_pearson_test(request, df, selected_columns):
             cbar.set_label('')
 
             base_path = os.path.join(plots_dir, base_name + '.png')
-            fig.savefig(base_path, dpi=300, format='PNG')
+            # fig.savefig(base_path, dpi=300, format='PNG')
+            fig.savefig(base_path, dpi=fig.dpi, format='PNG')
             plt.close(fig)
 
             img = Image.open(base_path).convert('RGB')
@@ -1639,7 +1642,9 @@ def process_pearson_test(request, df, selected_columns):
             Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
             ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
             Crot = Cimg.rotate(90, expand=True)
-            x_cb = lm + bw + pad // 4
+            # x_cb = lm + bw + pad // 4
+            x_cb = lm + bw - tick_font_size // 4 
+
             y_cb = tm + (bh - Crot.height) / 2
             canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
 
