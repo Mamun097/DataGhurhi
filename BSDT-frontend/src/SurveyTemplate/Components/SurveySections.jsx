@@ -5,13 +5,15 @@ import AddQuestion from "../Components/AddNewQuestion";
 import "./LLL-Generated-Question/ChatbotLoading.css"; // Import the CSS file we created
 //import {handleDeleteSection} from "./SurveyForm";
 import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 const SurveySections = ({
   section,
   setSections,
   sections,
   questions,
   setQuestions,
+  getLabel,
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
 
@@ -204,6 +206,7 @@ const SurveySections = ({
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
           questionInfo={questionInfo}
+          getLabel={getLabel}
         />
         <div className="d-flex justify-content-end mt-2">
           {sections.length !== 1 && section.id !== 1 && (
@@ -213,7 +216,7 @@ const SurveySections = ({
                 handleMergeWithAbove();
               }}
             >
-              Merge with above
+              {getLabel("Merge with above")}
             </button>
           )}
           <button
@@ -222,10 +225,11 @@ const SurveySections = ({
               onPressDeleteSection();
             }}
           >
-            Delete Section
+            {getLabel("Delete Section")}
           </button>
         </div>
       </div>
+      
     </div>
   );
 };
