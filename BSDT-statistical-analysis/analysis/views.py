@@ -81,85 +81,25 @@ def analyze_data_api(request):
 
             
             elif test_type == 'spearman':
-                heatmap_size = request.POST.get('heatmap_size', '2x2')
-    
+                heatmap_size = request.POST.get('heatmapSize', '2x2')
                 if heatmap_size == '4x4':
-                    # Get 4 columns
-                    col3 = form.cleaned_data.get('column4')  # 3rd input for Spearman 4x4
-                    col4 = form.cleaned_data.get('column5')  # 4th input
-                    selected_cols = [col for col in [col1, col2, col3, col4] if col]
-
-                    if len(selected_cols) != 4:
-                        raise ValueError("Please select four columns for a 4x4 heatmap.")
-
-                    corr_matrix, _ = stats.spearmanr(df[selected_cols])
-                    corr_df = pd.DataFrame(corr_matrix, columns=selected_cols, index=selected_cols)
-
-                    plt.figure(figsize=(9, 7))
-                    sns.heatmap(corr_df, annot=True, cmap='coolwarm', vmin=-1, vmax=1, fmt='.2f', cbar=True)
-                    plt.title('Spearman Rank Correlation Heatmap (4x4)')
-                    plt.xticks(rotation=45, ha='right')
-                    plt.yticks(rotation=45)
-                    plot_path = save_plot(plt, 'spearman_4x4_heatmap.png')
-
-                    results = {
-                        'test': 'Spearman Rank Correlation (4x4)',
-                        'plot_paths': [plot_path]
-                    }
-
+                    col3 = request.POST.get('column3')
+                    col4 = request.POST.get('column4')
+                    selected_columns = [col1, col2, col3, col4]
                 else:
-                    # 2x2 logic (your existing block)
-                    corr, p_value = stats.spearmanr(df[col1], df[col2], nan_policy='omit')
-                    results = {
-                        'test': 'Spearman Rank Correlation',
-                        'statistic': corr,
-                        'p_value': p_value
-                    }
-
-                    plt.figure(figsize=(12, 10))
-                    sns.heatmap(
-                        pd.DataFrame([[1, corr], [corr, 1]],
-                            index=[col1, col2],
-                            columns=[col1, col2]),
-                        annot=True, cmap='coolwarm', vmin=-1, vmax=1, fmt='.2f'
-                    )
-                    plt.title('Spearman Rank Correlation Heatmap (2x2)')
-                    plot_path = save_plot(plt, 'spearman_2x2_heatmap.png')
-                    results['plot_paths'] = [plot_path]
+                    selected_columns = [col1, col2]
+                return process_spearman_test(request, df, selected_columns)
             
 
             elif test_type == 'pearson':
-                column_pairs = list(combinations(df.columns, 2))
-                pearson_results = []
-                significant_pairs = []
-                
-                for c1, c2 in column_pairs:
-                    r, p = stats.pearsonr(df[c1], df[c2])
-                    
-                    if p < 0.01:
-                        interpretation = "Very significant (p < 0.01)"
-                    elif p < 0.05:
-                        interpretation = "Significant (p < 0.05)"
-                    else:
-                        interpretation = "Not significant (p ≥ 0.05)"
-                    
-                    result = {
-                        'Variable_1': c1,
-                        'Variable_2': c2,
-                        'Correlation': round(r, 3),
-                        'p_value': round(p, 4),
-                        'Interpretation': interpretation,
-                        'Significant': p < 0.05
-                    }
-                    pearson_results.append(result)
-                    if p < 0.05:
-                        significant_pairs.append(result)
-                
-                results = {
-                    'test': 'Pearson Correlation Analysis',
-                    'results': pearson_results,
-                    'significant': significant_pairs
-                }
+                heatmap_size = request.POST.get('heatmapSize', '2x2')
+                if heatmap_size == '4x4':
+                    col3 = request.POST.get('column3')
+                    col4 = request.POST.get('column4')
+                    selected_columns = [col1, col2, col3, col4]
+                else:
+                    selected_columns = [col1, col2]
+                return process_pearson_test(request, df, selected_columns)
             
             elif test_type == 'wilcoxon':
                 return process_wilcoxon_test(request, df, col1, col2)
@@ -1377,6 +1317,348 @@ def process_shapiro_test(request, df, col1):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+    
+
+
+def process_spearman_test(request, df, selected_columns):
+    import os
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from scipy.stats import spearmanr
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from django.conf import settings
+    from django.http import JsonResponse
+    from itertools import combinations
+
+    try:
+        language = request.POST.get('language', 'en')
+        img_format = request.POST.get('format', 'png')
+        use_default = request.POST.get('use_default', 'true') == 'true'
+
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text): return translator.translate(text, dest='bn').text if language == 'bn' else text
+        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
+
+        if use_default:
+            label_font_size = 36
+            tick_font_size = 16
+            img_quality = 90
+            width, height = 800, 600
+            plot_color = 'coolwarm'
+            bar_width = 0.8
+        else:
+            label_font_size = int(request.POST.get('label_font_size', 36))
+            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            img_quality = int(request.POST.get('image_quality', 90))
+            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
+            plot_color = request.POST.get('palette', 'coolwarm')
+            bar_width = float(request.POST.get('bar_width', 0.8))
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+        tick_font = ImageFont.truetype(font_path, size=tick_font_size)
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+
+        for col in selected_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        corr_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
+        pval_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
+        for c in selected_columns:
+            corr_mat.loc[c, c] = 1.0
+            pval_mat.loc[c, c] = 0.0
+        for c1, c2 in combinations(selected_columns, 2):
+            rho, p = spearmanr(df[c1].dropna(), df[c2].dropna())
+            corr_mat.loc[c1, c2] = corr_mat.loc[c2, c1] = rho
+            pval_mat.loc[c1, c2] = pval_mat.loc[c2, c1] = p
+
+        corr_str = corr_mat.round(4).astype(str).applymap(map_digits)
+
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.heatmap(
+            corr_mat.astype(float), annot=corr_str.values, fmt='', cmap=plot_color,
+            vmin=-1, vmax=1, square=True, linewidths=bar_width, linecolor='white',
+            cbar_kws={'shrink': 0.7},
+            annot_kws={'fontproperties': fm.FontProperties(fname=font_path, size=tick_font_size),
+                       'fontsize': tick_font_size}, ax=ax
+        )
+
+        def create_labeled_plot(fig, ax, title, base_name):
+            ax.set_title('')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            fig.tight_layout(pad=0)
+
+            cbar = ax.collections[0].colorbar
+            cbar.set_ticklabels([map_digits(f"{t:.2f}") for t in cbar.get_ticks()])
+            cbar.set_label('')
+
+            base_path = os.path.join(plots_dir, base_name + '.png')
+            fig.savefig(base_path, dpi=300, format='PNG')
+            plt.close(fig)
+
+            img = Image.open(base_path).convert('RGB')
+            bw, bh = img.size
+
+            tx = map_digits(translate(title))
+            tx_w, tx_h = label_font.getbbox(tx)[2:]
+            ticks = [map_digits(translate(c)) for c in selected_columns]
+            wrapped, widths, heights = [], [], []
+            for t in ticks:
+                lines = [' '.join(t.split()[i:i+3]) for i in range(0, len(t.split()), 3)]
+                txt = '\n'.join(lines)
+                wrapped.append(txt)
+                widths.append(max(tick_font.getbbox(l)[2] for l in lines))
+                heights.append(len(lines) * tick_font.getbbox(lines[0])[3])
+            max_tick_w, max_tick_h = max(widths), max(heights)
+
+            pad = label_font_size // 2
+            lm = max_tick_w + pad
+            rm = pad
+            tm = tx_h + pad
+            bm = max_tick_h + pad
+            W, H = bw + lm + rm, bh + tm + bm
+
+            canvas = Image.new('RGB', (W, H), 'white')
+            canvas.paste(img, (lm, tm))
+            draw = ImageDraw.Draw(canvas)
+            draw.text(((W - tx_w) / 2, (tm - tx_h) / 2), tx, font=label_font, fill='black')
+
+            heat_pos = ax.get_position()
+            fig_w_px = fig.get_size_inches()[0] * fig.dpi
+            hm_x0 = heat_pos.x0 * fig_w_px + lm
+            hm_w = heat_pos.width * fig_w_px
+            n = len(wrapped)
+            for i, txt in enumerate(wrapped):
+                block_w = widths[i]
+                x_center = hm_x0 + (hm_w / n) * (i + 0.5)
+                x0 = x_center - block_w / 2
+                y0 = tm + bh + pad
+                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
+
+            ch = bh / n
+            for i, txt in enumerate(wrapped):
+                block_h = heights[i]
+                x0 = lm - max_tick_w - pad
+                y0 = tm + ch * (i + 0.5) - block_h / 2
+                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
+
+            cb_label = map_digits(translate('Spearman Coefficient'))
+            cb_w, cb_h = tick_font.getbbox(cb_label)[2:]
+            Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
+            ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
+            Crot = Cimg.rotate(90, expand=True)
+            x_cb = lm + bw + pad // 4
+            y_cb = tm + (bh - Crot.height) / 2
+            canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
+
+            final_path = os.path.join(plots_dir, base_name + '.' + img_format)
+            canvas.save(final_path, format=img_format.upper(), quality=img_quality)
+            return os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+
+        image_url = create_labeled_plot(fig, ax, translate("Spearman Rank Correlation Heatmap"), "spearman_heatmap")
+
+        return JsonResponse({
+            'success': True,
+            'image_paths': [image_url],
+            'columns': selected_columns,
+            'message': translate("Spearman correlation matrix completed.")
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+
+def process_pearson_test(request, df, selected_columns):
+    import os
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from scipy.stats import pearsonr
+    from itertools import combinations
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en')
+        img_format = request.POST.get('format', 'png')
+        use_default = request.POST.get('use_default', 'true') == 'true'
+
+        # Translate & digit helper
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        # Settings
+        if use_default:
+            label_font_size = 36
+            tick_font_size = 16
+            img_quality = 90
+            width, height = 800, 600
+            plot_color = 'coolwarm'
+            bar_width = 0.8
+        else:
+            label_font_size = int(request.POST.get('label_font_size', 36))
+            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            img_quality = int(request.POST.get('image_quality', 90))
+            size_input = request.POST.get('image_size', '800x600')
+            width, height = map(int, size_input.split('x'))
+            plot_color = request.POST.get('palette', 'coolwarm')
+            bar_width = float(request.POST.get('bar_width', 0.8))
+
+        # Font
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+        tick_font = ImageFont.truetype(font_path, size=tick_font_size)
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+
+        # Ensure numeric
+        for col in selected_columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # Compute correlation and p-value matrices
+        corr_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
+        pval_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
+
+        for c in selected_columns:
+            corr_mat.loc[c, c] = 1.0
+            pval_mat.loc[c, c] = 0.0
+
+        for c1, c2 in combinations(selected_columns, 2):
+            r, p = pearsonr(df[c1].dropna(), df[c2].dropna())
+            corr_mat.loc[c1, c2] = corr_mat.loc[c2, c1] = r
+            pval_mat.loc[c1, c2] = pval_mat.loc[c2, c1] = p
+
+        corr_str = corr_mat.round(4).astype(str).applymap(map_digits)
+        pval_str = pval_mat.round(4).astype(str).applymap(map_digits)
+
+        # Plot heatmap
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.heatmap(
+            corr_mat.astype(float), annot=corr_str.values, fmt='', cmap=plot_color,
+            vmin=-1, vmax=1, square=True, linewidths=bar_width, linecolor='white',
+            cbar_kws={'shrink': 0.7},
+            annot_kws={'fontproperties': fm.FontProperties(fname=font_path, size=tick_font_size),
+                       'fontsize': tick_font_size}, ax=ax
+        )
+
+
+
+        # Helper to render labels and ticks with PIL
+        def create_labeled_plot(fig, ax, title, base_name):
+            ax.set_title('')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            fig.tight_layout(pad=0)
+
+            cbar = ax.collections[0].colorbar
+            cbar.set_ticklabels([map_digits(f"{t:.2f}") for t in cbar.get_ticks()])
+            cbar.set_label('')
+
+            base_path = os.path.join(plots_dir, base_name + '.png')
+            fig.savefig(base_path, dpi=300, format='PNG')
+            plt.close(fig)
+
+            img = Image.open(base_path).convert('RGB')
+            bw, bh = img.size
+
+            tx = map_digits(translate(title))
+            tx_w, tx_h = label_font.getbbox(tx)[2:]
+
+            ticks = [map_digits(translate(c)) for c in selected_columns]
+            wrapped, widths, heights = [], [], []
+            for t in ticks:
+                lines = [' '.join(t.split()[i:i+3]) for i in range(0, len(t.split()), 3)]
+                txt = '\n'.join(lines)
+                wrapped.append(txt)
+                widths.append(max(tick_font.getbbox(l)[2] for l in lines))
+                heights.append(len(lines) * tick_font.getbbox(lines[0])[3])
+            max_tick_w, max_tick_h = max(widths), max(heights)
+
+            pad = label_font_size // 2
+            lm = max_tick_w + pad
+            rm = pad
+            tm = tx_h + pad
+            bm = max_tick_h + pad
+            W, H = bw + lm + rm, bh + tm + bm
+
+            canvas = Image.new('RGB', (W, H), 'white')
+            canvas.paste(img, (lm, tm))
+            draw = ImageDraw.Draw(canvas)
+
+            draw.text(((W - tx_w) / 2, (tm - tx_h) / 2), tx, font=label_font, fill='black')
+
+            heat_pos = ax.get_position()
+            fig_w_px = fig.get_size_inches()[0] * fig.dpi
+            hm_x0 = heat_pos.x0 * fig_w_px + lm
+            hm_w = heat_pos.width * fig_w_px
+            n = len(wrapped)
+            for i, txt in enumerate(wrapped):
+                block_w = widths[i]
+                x_center = hm_x0 + (hm_w / n) * (i + 0.5)
+                x0 = x_center - block_w / 2
+                y0 = tm + bh + pad
+                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
+
+            ch = bh / n
+            for i, txt in enumerate(wrapped):
+                block_h = heights[i]
+                x0 = lm - max_tick_w - pad
+                y0 = tm + ch * (i + 0.5) - block_h / 2
+                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
+
+            cb_label = map_digits(translate('Correlation Coefficient'))
+            cb_w, cb_h = tick_font.getbbox(cb_label)[2:]
+            Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
+            ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
+            Crot = Cimg.rotate(90, expand=True)
+            x_cb = lm + bw + pad // 4
+            y_cb = tm + (bh - Crot.height) / 2
+            canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
+
+            final_path = os.path.join(plots_dir, base_name + '.' + img_format)
+            canvas.save(final_path, format=img_format.upper(), quality=img_quality)
+            return os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+
+        img_url = create_labeled_plot(fig, ax, title=translate("Pearson Correlation Heatmap"), base_name="pearson_heatmap")
+
+        return JsonResponse({
+            'success': True,
+            'image_paths': [img_url],
+            'columns': selected_columns,
+            'message': translate("Pearson correlation matrix completed.")
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
 
 def save_plot(plt, filename):
     import os

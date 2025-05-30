@@ -4,6 +4,8 @@ import KruskalOptions from './KruskalOptions';
 import WilcoxonOptions from './WilcoxonOptions';
 import MannWhitneyOptions from './MannWhitneyOptions';
 import ShapiroWilkOptions from './ShapiroWilkOptions';
+import SpearmanOptions from './SpearmanOptions';
+import PearsonOptions from './PearsonOptions';
 import './StatisticalAnalysisTool.css';
 
 const translations = {
@@ -282,12 +284,16 @@ const StatisticalAnalysisTool = () => {
         formData.append('test_type', testType);
         formData.append('column1', column1);
         formData.append('column2', column2);
-        formData.append('column3', column3);
+        if ((testType === 'pearson' || testType === 'spearman') && heatmapSize === '4x4') {
+            formData.append('column3', column3);
+            formData.append('column4', column4);
+        }
+        formData.append('heatmapSize', heatmapSize);
         // Convert language format for API (English -> en, বাংলা -> bn)
         formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
 
         // Call the API for analysis
-        if (['kruskal', 'wilcoxon', 'mannwhitney', 'shapiro'].includes(testType)) {
+        if (['kruskal', 'wilcoxon', 'mannwhitney', 'shapiro', 'spearman', 'pearson'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -310,6 +316,14 @@ const StatisticalAnalysisTool = () => {
                     formData.append('line_color', lineColor);           // Optional: normal curve color
                     formData.append('line_style', lineStyle);           // Optional: solid/dashed/dotted
                 }
+            }
+
+            if (testType === 'pearson' || testType === 'spearman') {
+                if (heatmapSize === '4x4') {
+                    formData.append('column3', column3);
+                    formData.append('column4', column4);
+                }
+                formData.append('heatmapSize', heatmapSize);
             }
         }
 
@@ -358,7 +372,14 @@ const StatisticalAnalysisTool = () => {
                     col2: true,
                     col3: heatmapSize === '4x4',
                     col4: heatmapSize === '4x4',
-                    col5: heatmapSize === '4x4',
+                    refValue: false,
+                    heatmapSize: true
+                };
+            case 'pearson':
+                return {
+                    col2: true,
+                    col3: heatmapSize === '4x4',
+                    col4: heatmapSize === '4x4',
                     refValue: false,
                     heatmapSize: true
                 };
@@ -407,8 +428,9 @@ const StatisticalAnalysisTool = () => {
                                         <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
-                                        {t.formTitle}
+                                        <span className="text-black">{t.formTitle}</span>
                                     </div>
+
                                     <div className="p-6">
                                         <form onSubmit={handleSubmit}>
                                             <div className="mb-6">
@@ -466,6 +488,7 @@ const StatisticalAnalysisTool = () => {
                                                         value={testType}
                                                         onChange={(e) => setTestType(e.target.value)}
                                                     >
+                                                        <option value="" disabled>{t.selectPrompt}</option>
                                                         <optgroup label={t.testGroups.correlation}>
                                                             <option value="pearson">{t.tests.pearson}</option>
                                                             <option value="spearman">{t.tests.spearman}</option>
@@ -663,6 +686,54 @@ const StatisticalAnalysisTool = () => {
                                                     />
                                                 )}
 
+                                                {testType === 'spearman' && (
+                                                    <SpearmanOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'pearson' && (
+                                                    <PearsonOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
                                                 {requiredFields.col3 && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
@@ -816,6 +887,10 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
         return renderMannWhitneyResults();
         }  else if (testType === 'shapiro') {
         return renderShapiroResults();
+        }  else if (testType === 'spearman') {
+        return renderSpearmanResults();
+        }  else if (testType === 'pearson') {
+        return renderPearsonResults();
         }
 
         switch (testType) {
@@ -1004,13 +1079,52 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => (
-                            <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                <img
-                                    src={`http://127.0.0.1:8000${path}`}
-                                    alt={`Wilcoxon visualization ${index + 1}`}
-                                    className="w-full h-auto object-contain"
-                                />
-                            </div>
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <div className="relative">
+                                        <img
+                                            src={`http://127.0.0.1:8000${path}`}
+                                            alt={`Wilcoxon visualization ${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                                    const blob = await response.blob();
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const link = document.createElement('a');
+                                                    const filename = path.split('/').pop() || `wilcoxon_visual_${index + 1}.png`;
+                                                    link.href = url;
+                                                    link.download = filename;
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    document.body.removeChild(link);
+                                                    window.URL.revokeObjectURL(url);
+                                                } catch (error) {
+                                                    console.error('Download failed:', error);
+                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                }
+                                            }}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                        >
+                                            <svg
+                                                className="w-4 h-4 mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -1018,6 +1132,7 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
             </>
         );
     };
+
 
 
     const renderMannWhitneyResults = () => {
@@ -1114,7 +1229,7 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                                         d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                                     />
                                                 </svg>
-                                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                                {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
                                             </button>
                                         </div>
                                     </div>
@@ -1225,10 +1340,175 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                             d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                         />
                                     </svg>
-                                    {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                    {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
                                 </button>
                             </div>
 
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderSpearmanResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">{t.tests.spearman || 'Spearman Correlation'}</h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <div className="relative">
+                                        <img
+                                            src={`http://127.0.0.1:8000${path}`}
+                                            alt={`Spearman visualization ${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                                    const blob = await response.blob();
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const link = document.createElement('a');
+                                                    const filename = path.split('/').pop() || `spearman_visual_${index + 1}.png`;
+                                                    link.href = url;
+                                                    link.download = filename;
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    document.body.removeChild(link);
+                                                    window.URL.revokeObjectURL(url);
+                                                } catch (error) {
+                                                    console.error('Download failed:', error);
+                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                }
+                                            }}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                        >
+                                            <svg
+                                                className="w-4 h-4 mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderPearsonResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+         return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">{t.tests.pearson || 'Pearson Correlation'}</h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <div className="relative">
+                                        <img
+                                            src={`http://127.0.0.1:8000${path}`}
+                                            alt={`Pearson visualization ${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                                    const blob = await response.blob();
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const link = document.createElement('a');
+                                                    const filename = path.split('/').pop() || `pearson_visual_${index + 1}.png`;
+                                                    link.href = url;
+                                                    link.download = filename;
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    document.body.removeChild(link);
+                                                    window.URL.revokeObjectURL(url);
+                                                } catch (error) {
+                                                    console.error('Download failed:', error);
+                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                }
+                                            }}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                        >
+                                            <svg
+                                                className="w-4 h-4 mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
