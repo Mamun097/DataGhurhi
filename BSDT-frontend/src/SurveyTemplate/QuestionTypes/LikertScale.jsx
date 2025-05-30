@@ -207,7 +207,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control"
-          placeholder="Question"
+          placeholder="Enter your question here"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
@@ -220,13 +220,13 @@ const LikertScale = ({ question, questions, setQuestions }) => {
           <div key={index} className="d-flex justify-content-between">
             <input
               type="text"
-              className="form-control mb-1"
+              className="form-control mb-2"
               value={row}
               onChange={(e) => handleRowChange(index, e.target.value)}
               placeholder={`Row ${index + 1}`}
             />
             <button
-              className="btn btn-outline-secondary me-2"
+              className="btn btn-outline-secondary ms-2 me-2 mb-2"
               onClick={() => handleDeleteRow(index)}
             >
               <i className="bi bi-trash"></i>
@@ -245,13 +245,13 @@ const LikertScale = ({ question, questions, setQuestions }) => {
           <div key={index} className="d-flex justify-content-between">
             <input
               type="text"
-              className="form-control mb-1"
+              className="form-control mb-2"
               value={col}
               onChange={(e) => handleColumnChange(index, e.target.value)}
               placeholder={`Column ${index + 1}`}
             />
             <button
-              className="btn btn-outline-secondary me-2"
+              className="btn btn-outline-secondary ms-2 me-2 mb-2"
               onClick={() => handleDeleteColumn(index)}
             >
               <i className="bi bi-trash"></i>

@@ -203,11 +203,11 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
         </div>
       )}
 
-      <div className="d-flex align-items-center mb-2">
+      <div className="d-flex align-items-center mb-4">
         <input
           type="text"
           className="form-control me-2"
-          placeholder="Question"
+          placeholder="Enter your question here"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
@@ -217,7 +217,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
         <div className="d-flex ms-2 mb-2">
           <div className="d-flex align-items-center">
             <label className="me-2">
-              <i>Min Value</i>
+              <i>Min</i>
             </label>
             <input
               type="number"
@@ -229,7 +229,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
           </div>
           <div className="d-flex align-items-center">
             <label className="me-2">
-              <i>Max Value</i>
+              <i>Max</i>
             </label>
             <input
               type="number"
@@ -241,7 +241,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
           </div>
         </div>
 
-        <div className="form-check form-switch ms-2 mb-2">
+        <div className="form-check form-switch mt-4 mb-4 ms-2 mb-2">
           <input
             className="form-check-input"
             type="checkbox"
@@ -264,7 +264,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
                 onChange={handleLeftLabelChange}
               />
             </div>
-            <div className="d-flex align-items-center">
+            <div className="d-flex align-items-center ms-3">
               <label className="me-2">
                 <i>Right Label</i>
               </label>

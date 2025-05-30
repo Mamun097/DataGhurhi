@@ -223,7 +223,7 @@ const Radio = ({ question, questions, setQuestions }) => {
 
   return (
     <div className="mb-3 dnd-isolate">
-      <div>
+      <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
             <strong>MCQ</strong>
@@ -292,7 +292,7 @@ const Radio = ({ question, questions, setQuestions }) => {
         className="form-control mb-2 mt-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
         value={question.text}
         onChange={(e) => handleQuestionChange(e.target.value)}
-        placeholder="Enter question..."
+        placeholder="Enter your question here"
       />
 
       {/* Drag-and-Drop Options */}

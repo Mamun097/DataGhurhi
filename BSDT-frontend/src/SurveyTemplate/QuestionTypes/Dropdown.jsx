@@ -5,30 +5,32 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-
 const Dropdown = ({ question, questions, setQuestions }) => {
-
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [required, setRequired] = useState(question.required || false);
 
   // Toggle required
-  const handleRequired = useCallback((id) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
-    );
-    setRequired((r) => !r);
-  }, [setQuestions]);
+  const handleRequired = useCallback(
+    (id) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === id ? { ...q, required: !q.required } : q))
+      );
+      setRequired((r) => !r);
+    },
+    [setQuestions]
+  );
 
   // Update question text
-  const handleQuestionChange = useCallback((newText) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, text: newText } : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Delete question and resequence IDs
   const handleDelete = useCallback(() => {
@@ -65,73 +67,87 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       prev.map((q) =>
         q.id === question.id
           ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: [...(q.meta?.options || []), `Option ${q.meta.options.length + 1}`]
+              ...q,
+              meta: {
+                ...q.meta,
+                options: [
+                  ...(q.meta?.options || []),
+                  `Option ${q.meta.options.length + 1}`,
+                ],
+              },
             }
-          }
           : q
       )
     );
   }, [question.id, setQuestions]);
 
   // Update option text
-  const updateOption = useCallback((idx, newText) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: q.meta.options.map((opt, i) => i === idx ? newText : opt)
-            }
-          }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateOption = useCallback(
+    (idx, newText) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.map((opt, i) =>
+                    i === idx ? newText : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Remove option
-  const removeOption = useCallback((idx) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: q.meta.options.filter((_, i) => i !== idx)
-            }
-          }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const removeOption = useCallback(
+    (idx) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: q.meta.options.filter((_, i) => i !== idx),
+                },
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   // Handle drag end
-  const handleDragEnd = useCallback((result) => {
-    if (!result.destination) return;
+  const handleDragEnd = useCallback(
+    (result) => {
+      if (!result.destination) return;
 
-    const src = result.source.index;
-    const dest = result.destination.index;
+      const src = result.source.index;
+      const dest = result.destination.index;
 
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id !== question.id) return q;
-        const opts = Array.from(q.meta.options);
-        const [moved] = opts.splice(src, 1);
-        opts.splice(dest, 0, moved);
-        return {
-          ...q,
-          meta: { ...q.meta, options: opts }
-        };
-      })
-    );
-  }, [question.id, setQuestions]);
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id !== question.id) return q;
+          const opts = Array.from(q.meta.options);
+          const [moved] = opts.splice(src, 1);
+          opts.splice(dest, 0, moved);
+          return {
+            ...q,
+            meta: { ...q.meta, options: opts },
+          };
+        })
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-    // Remove image
+  // Remove image
   const removeImage = (index) => {
     setQuestions((prev) =>
       prev.map((q) =>
@@ -162,7 +178,9 @@ const Dropdown = ({ question, questions, setQuestions }) => {
     <div className="mb-3 dnd-isolate">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
-          <em><strong>Dropdown</strong></em>
+          <em>
+            <strong>Dropdown</strong>
+          </em>
         </label>
 
         {/* Use the TagManager component */}
@@ -175,17 +193,17 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       </div>
 
       {showCropper && selectedFile && (
-              <ImageCropper
-                file={selectedFile}
-                questionId={question.id}
-                setQuestions={setQuestions}
-                onClose={() => {
-                  setShowCropper(false);
-                  setSelectedFile(null);
-                }}
-              />
-            )}
-      
+        <ImageCropper
+          file={selectedFile}
+          questionId={question.id}
+          setQuestions={setQuestions}
+          onClose={() => {
+            setShowCropper(false);
+            setSelectedFile(null);
+          }}
+        />
+      )}
+
       {/* Image Previews with Remove and Alignment Options */}
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
@@ -227,7 +245,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       <input
         type="text"
         className="form-control mb-2"
-        placeholder="Question"
+        placeholder="Enter your question here"
         value={question.text}
         onChange={(e) => handleQuestionChange(e.target.value)}
       />
@@ -250,7 +268,10 @@ const Dropdown = ({ question, questions, setQuestions }) => {
                       {...prov.dragHandleProps}
                       className="d-flex align-items-center mb-2"
                     >
-                      <span className="me-2" style={{ fontSize: "1.5rem", cursor: "grab" }}>☰</span>
+                      <i
+                        className="bi bi-grip-vertical"
+                        style={{ fontSize: "1.5rem", cursor: "grab" }}
+                      ></i>
                       <input
                         type="text"
                         className="form-control me-2"
@@ -274,7 +295,10 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       </DragDropContext>
 
       {/* Add Option */}
-      <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
+      <button
+        className="btn btn-sm btn-outline-primary mt-2"
+        onClick={addOption}
+      >
         ➕ Add Option
       </button>
 
@@ -283,7 +307,10 @@ const Dropdown = ({ question, questions, setQuestions }) => {
         <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handleDelete}
+        >
           <i className="bi bi-trash"></i>
         </button>
         <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">

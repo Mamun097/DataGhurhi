@@ -288,6 +288,7 @@ const Text = ({ question, questions, setQuestions }) => {
           className="form-control"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
+          placeholder="Enter your question here"
         />
       </div>
       <div className="mb-2">
@@ -432,7 +433,7 @@ const Text = ({ question, questions, setQuestions }) => {
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
+        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors me-2">
           <i className="bi bi-image"></i>
           <input
             type="file"

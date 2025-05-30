@@ -186,7 +186,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control me-2"
-          placeholder="Question"
+          placeholder="Enter your question here"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />

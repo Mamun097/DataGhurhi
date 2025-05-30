@@ -35,7 +35,7 @@ const SurveyForm = ({
   console.log(project_id);
   // Function to add a new section
   const handleAddSection = () => {
-    const newSection = { id: sections.length + 1, title: "Section Title..." };
+    const newSection = { id: sections.length + 1, title: "" };
     setSections([...sections, newSection]);
   };
 
@@ -240,7 +240,7 @@ const SurveyForm = ({
         )}
       </div>
 
-      <div style={{ backgroundColor: themeColor || "white" }}>
+      <div >
         {/* Survey Header */}
         <div style={{ position: "relative", width: "100%" }}>
           {/* Full-width Background Image */}
@@ -284,7 +284,8 @@ const SurveyForm = ({
             />
           </label>
         </div>
-
+      </div>
+      <div >
         {/* Survey Sections and Questions */}
         <div className="mt-4">
           {sections.map((section) => (
