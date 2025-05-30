@@ -102,6 +102,12 @@ const SurveySections = ({
 
     console.log(questions);
   };
+  // // function to add imported question
+  // const addImportedQuestion = (importedQuestion) => {
+  //   // Add the imported question to the questions array
+  //   setQuestions([...questions, importedQuestion]);
+  //   console.log(questions);
+  // };
 
   // Function to calculate the number of questions present in the current section
   const questionCount = questions.filter(
@@ -204,6 +210,7 @@ const SurveySections = ({
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
           questionInfo={questionInfo}
+          // addImportedQuestion={addImportedQuestion}
         />
         <div className="d-flex justify-content-end mt-2">
           {sections.length !== 1 && section.id !== 1 && (

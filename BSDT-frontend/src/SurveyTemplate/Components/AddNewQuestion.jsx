@@ -1,5 +1,6 @@
 import React from "react";
 import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
+import ImportFromQb from "./importFromQB/importFromQb";
 
 const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo }) => {
   return (
@@ -80,6 +81,10 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
           addGeneratedQuestion={addGeneratedQuestion}
           questionInfo={questionInfo}
         />
+        {/* <ImportFromQb
+          addImportedQuestion={addImportedQuestion}
+          questionInfo={questionInfo}
+        /> */}
       </div>
     </div>
   );
