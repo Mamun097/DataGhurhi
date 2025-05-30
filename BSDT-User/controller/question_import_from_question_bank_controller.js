@@ -13,7 +13,7 @@ exports.getOwnQuestions = async (req, res) => {
                 question_id, 
                 text, 
                 image, 
-                question_type, 
+                type, 
                 privacy, 
                 meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
@@ -69,7 +69,7 @@ exports.getPublicQuestions = async (req, res) => {
                 question_id, 
                 text, 
                 image, 
-                question_type, 
+                type, 
                 privacy, 
                 meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
@@ -105,6 +105,7 @@ exports.getPublicQuestions = async (req, res) => {
         if (limit) {
             data = data.slice(0, parseInt(limit));
         }
+        console.log("Public Questions:", data);
 
         res.status(200).json(data);
     } catch (error) {
@@ -123,7 +124,7 @@ exports.importQuestions = async (req, res) => {
         let query = supabase
             .from("question")
             .select(`
-                user_id, question_id, text, image, question_type, privacy, meta_data,
+                user_id, question_id, text, image, type, privacy, meta_data,
                 question_tag!inner(tag_id, tags!inner(tag_name))
             `)
             .or(`user_id.eq.${userId},privacy.eq.public`);  // Fetch user's own or public questions
@@ -146,6 +147,7 @@ exports.importQuestions = async (req, res) => {
         if (limit) {
             data = shuffleArray(data).slice(0, parseInt(limit));
         }
+        console.log("Imported Questions:", data);
 
         res.status(200).json(data);
     } catch (error) {

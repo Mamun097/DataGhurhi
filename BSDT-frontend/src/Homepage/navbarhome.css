@@ -51,7 +51,7 @@
 /* Search Bar */
 .search-container {
   flex-grow: 1;
-  max-width: 900px;
+  max-width: 200px;
   min-width: 200px;
   display: flex;
   align-items: center;
@@ -60,7 +60,7 @@
   backdrop-filter: blur(10px);
   border-radius: 25px;
   border: 2px solid rgba(2, 0, 3, 0.3);
-  padding: 0 20px;
+  padding: 0 10px;
 }
 
 .search-input {
@@ -101,6 +101,9 @@
   align-items: center;
   font-size: 18px;
 }
+.nav-icon {
+   font-size: 55px;
+}
 
 .nav-links a,
 .nav-link-button {
@@ -116,9 +119,8 @@
   cursor: pointer;
 }
 
-.nav-icon {
-  font-size: 40px;
-}
+
+
 
 .language-toggle {
   display: flex;

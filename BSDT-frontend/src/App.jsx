@@ -35,7 +35,8 @@ function App() {
             <Route path="/view-project/:projectId" element={<EditProject />} />
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
-            <Route path="/question-bank" element={<QB />} />
+            {/* <Route path="/question-bank" element={<QB />} /> */}
+            <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
 
           </>
         ) : (
@@ -45,7 +46,7 @@ function App() {
         {/* Catch-All Route (404 Page) */}
         <Route path="*" element={<h2>404 - Page Not Found</h2>} />
 
-        <Route path="/analysis" element={<StatisticalAnalysisTool />} />
+       
       </Routes>
     </Router>
   );

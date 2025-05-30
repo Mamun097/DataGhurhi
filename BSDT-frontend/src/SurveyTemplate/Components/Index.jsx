@@ -6,50 +6,110 @@ import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
-// import { input } from "framer-motion/client";
+
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+// Translation helper function
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray; // Fallback to original
+  }
+};
 
 const Index = () => {
   const location = useLocation();
   const { survey_id } = useParams();
-  const { project_id, survey_details , input_title} = location.state || {};
-  console.log("Survey details:", survey_details);
-  const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "English"
-  );
+  const { project_id, survey_details, input_title } = location.state || {};
 
-  // Sidebar templates state
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en"
+  );
+  const [translatedLabels, setTranslatedLabels] = useState({});
+
   const [templates, setTemplates] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
   const [title, setTitle] = useState(input_title );
+
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [surveyLink, setSurveyLink] = useState(null);
   const [description, setDescription] = useState(null);
-
-  console.log("Questions:", questions);
-  console.log(input_title);
-
-  // Has a custom template been passed in?
   const useCustom = survey_details?.template != null;
+
+  const labelsToTranslate = [
+    "Survey Templates",
+    "This survey has already been published.",
+    "Loading templates…",
+    "Untitled Survey",
+    "Save",
+    "Publish",
+    "Update",
+    "View Survey Link",
+    "Upload Banner Image",
+    "Enter Survey Title",
+    "Add Section",
+    "Survey updated successfully!",
+    "Survey Saved successfully!",
+    "Section",
+    "Enter Section Title",
+    "Delete Section",
+    "Merge with above",
+  ];
+
+  // Translate UI labels based on language
+  useEffect(() => {
+    const loadTranslations = async () => {
+      if (language === "en") {
+        const englishMap = {};
+        labelsToTranslate.forEach((label) => (englishMap[label] = label));
+        setTranslatedLabels(englishMap);
+        return;
+      }
+
+      const translated = await translateText(labelsToTranslate, language);
+      const translatedMap = {};
+      labelsToTranslate.forEach((label, idx) => {
+        translatedMap[label] = translated[idx];
+      });
+
+      setTranslatedLabels(translatedMap);
+    };
+
+    loadTranslations();
+  }, [language]);
+
+  const getLabel = (text) => translatedLabels[text] || text;
+
+  // Load survey details or templates
   useEffect(() => {
     const load = async () => {
       if (useCustom) {
         // ==== 1) Load from survey_details ====
-        console.log("Survey details:", survey_details);
         setTitle(input_title || survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
         setQuestions(survey_details.template.questions || []);
-        // `banner` field on your object holds the URL
         setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
         setSurveyLink(survey_details.survey_link || null);
         setDescription(survey_details.description || null);
       } else {
-        // ==== 2) Otherwise, fetch saved templates ====
         try {
           const resp = await axios.get(
             "http://localhost:2000/api/get-saved-survey"
@@ -72,7 +132,7 @@ const Index = () => {
     load();
   }, [useCustom, survey_details, input_title]);
 
-  // Handle sidebar taps (only relevant when !useCustom)
+
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
     const tmpl = templates[idx];
@@ -81,22 +141,21 @@ const Index = () => {
     setBackgroundImage(tmpl.image_url);
   };
 
-  // Show a loading placeholder until templates arrive (if needed)
   if (!useCustom && templates.length === 0) {
-    return <p className="text-center mt-5">Loading templates…</p>;
+    return <p className="text-center mt-5">{getLabel("Loading templates…")}</p>;
   }
+
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="container-fluid">
         <div className="row">
-          {/* Left gutter + sidebar */}
+          {/* Sidebar */}
           <div className="col-2">
             <div className="mt-5">
-              {/* 1) NOT custom & NOT published → header + cards */}
               {!useCustom && surveyStatus !== "published" && (
                 <>
-                  <h2 className="mb-4">Survey Templates</h2>
+                  <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
                   <div className="d-flex flex-column gap-3">
                     {templates.map((tmpl, idx) => (
                       <div
@@ -115,19 +174,15 @@ const Index = () => {
                   </div>
                 </>
               )}
-
-              {/* 2) NOT custom & IS published → warning */}
               {!useCustom && surveyStatus === "published" && (
                 <div className="alert alert-warning text-center">
-                  This survey has already been published.
+                 {getLabel("This survey has already been published.")}
                 </div>
               )}
-
-              {/* 3) if useCustom === true → nothing at all */}
             </div>
           </div>
 
-          {/* Center column: always 8 cols */}
+          {/* Main form */}
           <div className="col-8 mt-5">
             <SurveyForm
               title={title}
@@ -143,12 +198,17 @@ const Index = () => {
               surveyLink={surveyLink}
               description={description} 
               setDescription={setDescription} 
+              language={language}
+              setLanguage={setLanguage}
+         
+
             />
           </div>
 
-          {/* Right gutter: empty */}
+          {/* Right gutter */}
           <div className="col-2" />
         </div>
+        <ToastContainer position="top-center" autoClose={4000} />
       </div>
     </>
   );
