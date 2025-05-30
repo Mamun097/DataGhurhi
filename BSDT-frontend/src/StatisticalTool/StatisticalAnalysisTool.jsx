@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
 import WilcoxonOptions from './WilcoxonOptions';
+import MannWhitneyOptions from './MannWhitneyOptions';
 import './StatisticalAnalysisTool.css';
 
 const translations = {
@@ -285,7 +286,7 @@ const StatisticalAnalysisTool = () => {
         formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
 
         // Call the API for analysis
-        if (['kruskal', 'wilcoxon'].includes(testType)) {
+        if (['kruskal', 'wilcoxon', 'mannwhitney'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -296,8 +297,18 @@ const StatisticalAnalysisTool = () => {
                 formData.append('image_size', imageSize);
                 formData.append('palette', colorPalette);
                 formData.append('bar_width', barWidth.toString());
-                formData.append('box_width', boxWidth.toString());
-                formData.append('violin_width', violinWidth.toString());
+
+                if (['kruskal', 'mannwhitney'].includes(testType)) {
+                    formData.append('box_width', boxWidth.toString());
+                    formData.append('violin_width', violinWidth.toString());
+                }
+
+                if (testType === 'shapiro') {
+                    formData.append('bins', histogramBins.toString()); // Optional: number of bins
+                    formData.append('bar_color', barColor);             // Optional: histogram bar color
+                    formData.append('line_color', lineColor);           // Optional: normal curve color
+                    formData.append('line_style', lineStyle);           // Optional: solid/dashed/dotted
+                }
             }
         }
 
@@ -594,6 +605,35 @@ const StatisticalAnalysisTool = () => {
                                                     />
                                                 )}
 
+
+                                                {testType === 'mannwhitney' && (
+                                                    <MannWhitneyOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
                                                 {requiredFields.col3 && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
@@ -743,6 +783,8 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
             return renderKruskalResults();
         } else if (testType === 'wilcoxon') {
         return renderWilcoxonResults();
+        }  else if (testType === 'mannwhitney') {
+        return renderMannWhitneyResults();
         }
 
         switch (testType) {
@@ -938,6 +980,115 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                     className="w-full h-auto object-contain"
                                 />
                             </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderMannWhitneyResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">{t.tests.mannwhitney}</h2>
+
+                {columns && columns[0] && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong> {columns[0]}
+                        {columns[1] && ` ${language === 'bn' ? 'এবং' : 'and'} ${columns[1]}`}
+                    </p>
+                )}
+
+                {results?.statistic !== undefined && (
+                    <p className="mb-2">
+                        <strong>{t.testStatistic}:</strong> {mapDigitIfBengali(results.statistic.toFixed(4))}
+                    </p>
+                )}
+
+                {results?.p_value !== undefined && (
+                    <p className="mb-2">
+                        <strong>{t.pValue}:</strong> {mapDigitIfBengali(results.p_value.toFixed(6))}
+                    </p>
+                )}
+
+                {results?.p_value !== undefined && (
+                    <p className="mb-4">
+                        <strong>{language === 'bn' ? 'সিদ্ধান্ত:' : 'Conclusion'}:</strong>
+                        {results.p_value < 0.05 ? (
+                            <span className="text-green-600 font-medium ml-2">{t.significant}</span>
+                        ) : (
+                            <span className="text-red-600 font-medium ml-2">{t.notSignificant}</span>
+                        )}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                        <div className="relative">
+                                            <img
+                                                src={`http://127.0.0.1:8000${path}`}
+                                                alt={`${t.tests.mannwhitney} visualization ${index + 1}`}
+                                                className="w-full h-auto object-contain"
+                                            />
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                                        const blob = await response.blob();
+                                                        const url = window.URL.createObjectURL(blob);
+                                                        const link = document.createElement('a');
+                                                        const filename = path.split('/').pop() || `${t.tests.mannwhitney}_visualization_${index + 1}.png`;
+                                                        link.href = url;
+                                                        link.download = filename;
+                                                        document.body.appendChild(link);
+                                                        link.click();
+                                                        document.body.removeChild(link);
+                                                        window.URL.revokeObjectURL(url);
+                                                    } catch (error) {
+                                                        console.error('Download failed:', error);
+                                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                    }
+                                                }}
+                                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                                title={language === 'bn' ? `ছবি ${index + 1} ডাউনলোড করুন` : `Download Image ${index + 1}`}
+                                            >
+                                                <svg
+                                                    className="w-4 h-4 mr-1"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    viewBox="0 0 24 24"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        strokeWidth="2"
+                                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                    />
+                                                </svg>
+                                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
                             ))}
                         </div>
                     </div>
