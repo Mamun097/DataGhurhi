@@ -4,7 +4,7 @@ import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import LinearScaleQuestion from "../QuestionTypes/LinearScale";
-
+import "../CSS/SurveyForm.css";
 const LinearScaleQuestionView = ({ question, surveyTitle, projectTitle,newQuestion, setNewQuestion }) => {
    const [isEditing, setIsEditing] = useState(false);
   const {
