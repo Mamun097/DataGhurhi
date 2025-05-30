@@ -310,3 +310,92 @@ CREATE TABLE subscription (
     cost DOUBLE PRECISION,
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
+
+-- Optional: Create a more detailed function that returns additional statistics
+CREATE OR REPLACE FUNCTION get_detailed_user_growth_stats()
+RETURNS TABLE(
+    current_month_users INTEGER,
+    previous_month_users INTEGER,
+    current_month_days INTEGER,
+    previous_month_days INTEGER,
+    current_month_avg DECIMAL(10,2),
+    previous_month_avg DECIMAL(10,2),
+    growth_rate DECIMAL(5,2),
+    growth_percentage DECIMAL(5,2)
+) AS $$
+DECLARE
+    current_month_start DATE;
+    current_month_end DATE;
+    previous_month_start DATE;
+    previous_month_end DATE;
+BEGIN
+    -- Get current date and calculate month boundaries
+    current_month_start := DATE_TRUNC('month', CURRENT_DATE);
+    current_month_end := CURRENT_DATE;
+    previous_month_start := DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month');
+    previous_month_end := (DATE_TRUNC('month', CURRENT_DATE) - INTERVAL '1 day');
+    
+    -- Calculate days
+    current_month_days := EXTRACT(DAY FROM current_month_end);
+    previous_month_days := EXTRACT(DAY FROM previous_month_end);
+    
+    -- Count users
+    SELECT COUNT(*)
+    INTO current_month_users
+    FROM users
+    WHERE DATE(joined_at) >= current_month_start 
+    AND DATE(joined_at) <= current_month_end;
+    
+    SELECT COUNT(*)
+    INTO previous_month_users
+    FROM users
+    WHERE DATE(joined_at) >= previous_month_start 
+    AND DATE(joined_at) <= previous_month_end;
+    
+    -- Calculate averages
+    IF current_month_days > 0 THEN
+        current_month_avg := current_month_users::DECIMAL / current_month_days::DECIMAL;
+    ELSE
+        current_month_avg := 0;
+    END IF;
+    
+    IF previous_month_days > 0 THEN
+        previous_month_avg := previous_month_users::DECIMAL / previous_month_days::DECIMAL;
+    ELSE
+        previous_month_avg := 0;
+    END IF;
+    
+    -- Calculate growth rate
+    growth_rate := current_month_avg - previous_month_avg;
+    
+    -- Calculate growth percentage
+    IF previous_month_avg > 0 THEN
+        growth_percentage := ((current_month_avg - previous_month_avg) / previous_month_avg) * 100;
+    ELSE
+        growth_percentage := CASE 
+            WHEN current_month_avg > 0 THEN 100.00 
+            ELSE 0.00 
+        END;
+    END IF;
+    
+    -- Round values
+    current_month_avg := ROUND(current_month_avg, 2);
+    previous_month_avg := ROUND(previous_month_avg, 2);
+    growth_rate := ROUND(growth_rate, 2);
+    growth_percentage := ROUND(growth_percentage, 2);
+    
+    RETURN QUERY SELECT 
+        current_month_users,
+        previous_month_users,
+        current_month_days,
+        previous_month_days,
+        current_month_avg,
+        previous_month_avg,
+        growth_rate,
+        growth_percentage;
+        
+EXCEPTION
+    WHEN OTHERS THEN
+        RETURN QUERY SELECT 0, 0, 0, 0, 0.00::DECIMAL(10,2), 0.00::DECIMAL(10,2), 0.00::DECIMAL(5,2), 0.00::DECIMAL(5,2);
+END;
+$$ LANGUAGE plpgsql;
