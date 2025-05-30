@@ -1,7 +1,8 @@
+// src/Components/SurveyForm.jsx
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { handleImageUpload } from "../utils/handleImageUpload";
+import { handleImageUpload } from "../utils/handleImageUpload"; // Assuming this utility exists
 import SurveySections from "./SurveySections";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -33,20 +34,28 @@ const SurveyForm = ({
   setSections,
   questions,
   setQuestions,
-  image,
+  image: imageFromParent, 
+  setImage: setImageInParent, 
   project_id,
   survey_id,
   surveyStatus,
   surveyLink,
+  description,
+  setDescription,
   language,
   setLanguage,
 }) => {
-  const [backgroundImage, setBackgroundImage] = useState(image || "");
+  // Internal state for SurveyForm's current view of the background image
+  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(imageFromParent || "");
   const [themeColor, setThemeColor] = useState(null);
   const [translatedLabels, setTranslatedLabels] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const labelsToTranslate = [
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [localDescriptionText, setLocalDescriptionText] = useState(description || "");
+  
+   const labelsToTranslate = [
     "Save",
     "Publish",
     "Update",
@@ -81,12 +90,18 @@ const SurveyForm = ({
   ];
 
   const getLabel = (text) => translatedLabels[text] || text;
-
+   
+  // Effect to sync internal background image state when prop from parent changes
   useEffect(() => {
-    if (image) setBackgroundImage(image);
-  }, [image]);
+    setCurrentBackgroundImage(imageFromParent || "");
+  }, [imageFromParent]);
 
-useEffect(() => {
+  // Effect to sync local description text when description prop from parent changes
+  useEffect(() => {
+    setLocalDescriptionText(description || "");
+  }, [description]);
+  
+  useEffect(() => {
   const loadTranslations = async () => {
     const langCode = language === "বাংলা" || language === "bn" ? "bn" : "en";
 
@@ -107,127 +122,98 @@ useEffect(() => {
   loadTranslations();
 }, [language]);
 
+  // Wrapper function to update local background image state and call parent's setter
+  const updateAndRelayBackgroundImage = (newImageSrc) => {
+    setCurrentBackgroundImage(newImageSrc); // Update local state
+    if (setImageInParent) {
+      setImageInParent(newImageSrc);
+    }
+  };
 
   const handleAddSection = () => {
     const newSection = { id: sections.length + 1, title: "Section Title..." };
     setSections([...sections, newSection]);
   };
 
-  const handleSave = async () => {
-    try {
-      const response = await axios.put(
-        "http://localhost:2000/api/surveytemplate/save",
-        {
-          survey_id,
-          project_id,
-          survey_template: {
-            sections,
-            backgroundImage,
-            title,
-            description: null,
-            questions,
-          },
-          title,
-          user_id: `${localStorage.getItem("token").id}`,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (response.status === 201) {
-        toast.success(getLabel("Survey Saved successfully!"))
-        navigate(
-          `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
-          {
-            state: {
-              project_id,
-              survey_details: response.data.data,
-              input_title: title,
-            },
-          }
-        );
-      }
-    } catch (error) {
-      toast.error(getLabel("Error saving survey!"))
-      console.error("Error saving survey:", error);
+  const handleRemoveImage = () => {
+    updateAndRelayBackgroundImage(""); 
+    setThemeColor(null);
+    const fileInput = document.getElementById('bannerImageInput');
+    if (fileInput) {
+      fileInput.value = "";
     }
   };
 
-  const handlePublish = async () => {
-    try {
-      const response = await axios.put(
-        "http://localhost:2000/api/surveytemplate",
-        {
-          survey_id,
-          project_id,
-          survey_template: {
-            sections,
-            backgroundImage,
-            title,
-            description: null,
-            questions,
-          },
-          title,
-          user_id: `${localStorage.getItem("token").id}`,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (response.status === 201) {
-        toast.success(getLabel("Survey Published successfully!"))
-        navigate(
-          `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
-          {
-            state: {
-              project_id,
-              survey_details: response.data.data,
-              input_title: title,
-            },
-          }
-        );
-      }
-    } catch (error) {
-      toast.error(getLabel("Error publishing survey!"))
-      console.error("Error publishing survey:", error);
-    }
+  const handleAddOrEditDescriptionClick = () => {
+    setLocalDescriptionText(description || "");
+    setIsEditingDescription(true);
   };
 
-  const handleUpdate = async () => {
+  const handleSaveDescription = () => {
+    setDescription(localDescriptionText);
+    setIsEditingDescription(false);
+  };
+
+  const handleCancelEditDescription = () => {
+    setIsEditingDescription(false);
+  };
+
+  const handleDeleteDescription = () => {
+    setDescription(null);
+    setIsEditingDescription(false);
+  };
+
+  const sendSurveyData = async (url) => {
+    setIsLoading(true);
+    const bearerTokenString = localStorage.getItem("token"); 
+    let userIdInPayload = null;
+
+    if (!bearerTokenString) {
+      console.error("No token found in localStorage. Cannot authenticate.");
+      alert("Authentication error. Please log in again.");
+      setIsLoading(false);
+      return; 
+    }
+
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        "http://localhost:2000/api/surveytemplate",
-        {
-          survey_id,
-          project_id,
-          survey_template: {
-            sections,
-            backgroundImage,
-            title,
-            description: null,
-            questions,
-          },
+      const parsedToken = JSON.parse(bearerTokenString);
+      if (parsedToken && typeof parsedToken === 'object' && parsedToken.id) {
+        userIdInPayload = parsedToken.id;
+      } else {
+
+        console.warn("Could not extract 'id' from token in localStorage for user_id payload field. The backend might infer user from Authorization header.");
+      }
+    } catch (e) {
+      console.warn("Token from localStorage is not JSON. User_id for payload may need alternative extraction or is handled by backend via Authorization header.");
+
+
+    }
+
+    try {
+      const payload = {
+        survey_id: survey_id,
+        project_id: project_id,
+        survey_template: {
+          sections,
+          backgroundImage: currentBackgroundImage,
           title,
-          user_id: token?.id,
+          description: description, 
+          questions,
         },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        title: title,
+        user_id: userIdInPayload, 
+      };
+
+      const response = await axios.put(url, payload, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${bearerTokenString}`, 
+
+        },
+      });
 
       if (response.status === 201) {
+        const action = url.includes('save') ? 'Saved' : (surveyStatus !== 'published' ? 'Published' : 'Updated');
         toast.success(getLabel("Survey updated successfully!"))
         navigate(
           `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
@@ -239,32 +225,49 @@ useEffect(() => {
             },
           }
         );
+      } else {
+        const action = url.includes('save') ? 'saving' : 'publishing/updating';
+        console.error(`Error ${action} survey:`, response.statusText);
+        alert(`Error ${action} survey. Please try again.`);
       }
     } catch (error) {
-      toast.error(getLabel("Error updating survey!"))
-      console.error("Error updating survey:", error);
+      const action = url.includes('save') ? 'saving' : 'publishing/updating';
+      console.error(
+        `Error ${action} survey:`,
+        error.response?.data || error.message,
+        error.stack // Log stack trace for more details
+      );
+      alert(`An error occurred while ${action}. Please check the console and try again.`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save");
+  const handlePublish = () => sendSurveyData("http://localhost:2000/api/surveytemplate");
+  const handleUpdate = () => sendSurveyData("http://localhost:2000/api/surveytemplate");
+
   return (
     <div>
-    <ToastContainer position="top-center" autoClose={4000} />
+      {/* Action Buttons (Save, Publish, Update) */}
       <div className="mb-3">
         {surveyStatus === "published" ? (
-          <button className="btn btn-outline-primary" onClick={handleUpdate}>
-            <i className="bi bi-pencil"></i> {getLabel("Update")}
+          <button onClick={handleUpdate} disabled={isLoading} className="btn btn-outline-primary">
+             {isLoading ? (<><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Updating...</>) : (<><i className="bi bi-pencil"></i> {getLabel("Update")}</>)}
           </button>
         ) : (
           <>
-            <button className="btn btn-outline-secondary me-3" onClick={handleSave}>
-              <i className="bi bi-save"></i> {getLabel("Save")}
+            <button onClick={handleSave} disabled={isLoading} className="btn btn-outline-secondary me-3">
+                {isLoading ? (<><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Saving...</>) : (<><i className="bi bi-save"></i> {getLabel("Save")}</>)}
             </button>
-            <button className="btn btn-outline-success" onClick={handlePublish}>
-              <i className="bi bi-check-circle"></i> {getLabel("Publish")}
+            <button onClick={handlePublish} disabled={isLoading} className="btn btn-outline-success">
+                {isLoading ? (<><span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Publishing...</>) : (<><i className="bi bi-check-circle"></i> {getLabel("Publish")}</>)}
+
             </button>
           </>
         )}
         {surveyLink && (
+
           <a
             href={`http://localhost:5173/v/${surveyLink}`}
             target="_blank"
@@ -276,43 +279,94 @@ useEffect(() => {
         )}
       </div>
 
-      <div style={{ backgroundColor: themeColor || "white" }}>
+      {/* Survey Content Area */}
+      <div style={{ backgroundColor: themeColor || "white", paddingBottom: "20px" }}>
+        {/* Banner Image and Title */}
         <div style={{ position: "relative", width: "100%" }}>
-          <img
-            src={backgroundImage}
-            alt="Survey Banner"
-            className="img-fluid"
-            style={{ width: "100%", height: "400px", objectFit: "cover" }}
-          />
-          <input
-            type="text"
-            className="form-control text-center"
-            placeholder={getLabel("Enter Survey Title")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            style={{
-              position: "absolute",
-              top: "80%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
-              fontWeight: "bold",
-              background: "rgba(0, 0, 0, 0.5)",
-            }}
-          />
+          {currentBackgroundImage ? ( // Use internal state for display
+            <img src={currentBackgroundImage} alt="Survey Banner" className="img-fluid" style={{ width: "100%", height: "400px", objectFit: "cover" }} />
+          ) : (
+            <div className="img-fluid d-flex align-items-center justify-content-center" style={{ width: "100%", height: "400px", backgroundColor: "#e9ecef", border: "2px dashed #ced4da", color: "#6c757d" }}>
+              <span>No banner image selected</span>
+            </div>
+          )}
+          <input type="text" className="form-control text-center" placeholder="Enter Survey Title" value={title} onChange={(e) => setTitle(e.target.value)} style={{ position: "absolute", top: "80%", left: "50%", transform: "translate(-50%, -50%)", color: "white", fontWeight: "bold", background: "rgba(0, 0, 0, 0.5)", border: "none", borderRadius: "4px", padding: "10px", width: "50%" }}/>
         </div>
 
-        <div className="text-center mt-3">
-          <label className="btn btn-outline-secondary">
-            <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
-            <input
-              type="file"
-              hidden
-              onChange={(e) => handleImageUpload(e, setBackgroundImage, setThemeColor)}
+        {/* Banner and Description Controls */}
+        <div className="text-center mt-3 mb-3">
+          <label className="btn btn-outline-secondary me-2">
+            <i className="bi bi-image"></i> Upload Banner Image
+            <input type="file" accept="image/*" hidden
+              onChange={(e) => {
+                handleImageUpload(e, updateAndRelayBackgroundImage, setThemeColor); 
+              }}
+              id="bannerImageInput"
+
             />
           </label>
+          {currentBackgroundImage && ( 
+            <button className="btn btn-outline-danger me-2" onClick={handleRemoveImage} title="Remove current banner image">
+              <i className="bi bi-trash"></i> Remove Banner
+            </button>
+          )}
+          {!description && !isEditingDescription && (
+            <button className="btn btn-outline-info" onClick={handleAddOrEditDescriptionClick}>
+              <i className="bi bi-plus-circle"></i> Add Description
+            </button>
+          )}
         </div>
 
+        {/* Description Display or Editor Area */}
+        <div className="container mt-2">
+          {isEditingDescription ? (
+            <div className="card p-3 shadow-sm">
+              <h5 className="card-title mb-2">{description ? "Edit Description" : "Add New Description"}</h5>
+              <textarea
+                className="form-control mb-3"
+                rows="5"
+                value={localDescriptionText}
+                onChange={(e) => setLocalDescriptionText(e.target.value)}
+                placeholder="Enter survey description here..."
+              />
+              <div className="text-end">
+                <button className="btn btn-secondary me-2" onClick={handleCancelEditDescription}>
+                  Cancel
+                </button>
+                <button className="btn btn-primary" onClick={handleSaveDescription}>
+                  <i className="bi bi-save me-1"></i> Save Description
+                </button>
+              </div>
+            </div>
+          ) : (
+            description && (
+              <div className="card p-3 shadow-sm">
+                <div className="d-flex justify-content-between align-items-start">
+                  <div>
+                    <h5 className="card-title">Survey Description</h5>
+                    <p className="card-text" style={{ whiteSpace: "pre-wrap" }}>{description}</p>
+                  </div>
+                  <div className="d-flex flex-column flex-sm-row align-items-sm-center">
+                    <button className="btn btn-sm btn-outline-primary mb-2 mb-sm-0 me-sm-2" onClick={handleAddOrEditDescriptionClick}>
+                      <i className="bi bi-pencil"></i> Edit
+                    </button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={handleDeleteDescription}>
+                      <i className="bi bi-trash"></i> Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Survey Sections and Questions */}
+        <div className="mt-4 container"> {/* Added container for consistency */}
+          {sections.map((section) => (
+            <SurveySections key={section.id} section={section} sections={sections} setSections={setSections} questions={questions} setQuestions={setQuestions} />
+          ))}
+          <button className="btn btn-outline-primary mt-3 d-block mx-auto" onClick={handleAddSection}>
+            ➕ Add Section
         <div className="mt-4">
           {sections.map((section) => (
             <SurveySections

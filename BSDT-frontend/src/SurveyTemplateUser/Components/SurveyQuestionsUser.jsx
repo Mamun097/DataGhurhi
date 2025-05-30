@@ -41,8 +41,6 @@ const SurveyQuestions = ({
         return (
           <Likert
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
           />
