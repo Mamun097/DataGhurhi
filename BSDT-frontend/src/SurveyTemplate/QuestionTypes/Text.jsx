@@ -2,17 +2,36 @@ import { useState } from "react";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-
 const Text = ({ question, questions, setQuestions }) => {
-
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
-  const [inputValidation, setInputValidation] = useState(false);
-  const [validationType, setValidationType] = useState("Number");
-  const [condition, setCondition] = useState("Greater Than");
-  const [errorText, setErrorText] = useState("");
-  const [validationText, setValidationText] = useState("");
+  const [inputValidation, setInputValidation] = useState(
+    question.meta?.validationType ? true : false
+  );
+  const [validationType, setValidationType] = useState(
+    question.meta?.validationType || "Number"
+  );
+  const [condition, setCondition] = useState(
+    question.meta?.condition || "Greater Than"
+  );
+  const [errorText, setErrorText] = useState(question.meta?.errorText || "");
+  const [validationText, setValidationText] = useState(
+    question.meta?.validationText || ""
+  );
+  const [min, setMin] = useState(
+    question.meta?.validationText?.split(",")[0] || ""
+  );
+  const [max, setMax] = useState(
+    question.meta?.validationText?.split(",")[1] || ""
+  );
+
+  console.log("Text component rendered with question:", question);
+  console.log("Valuation Type:", validationType);
+  console.log("Condition:", condition);
+  console.log("validationText:", validationText);
+  console.log("Min:", min);
+  console.log("Max:", max);
 
   const conditions = {
     Number: [
@@ -41,22 +60,21 @@ const Text = ({ question, questions, setQuestions }) => {
   const handleSettings = () => {
     if (inputValidation) {
       setInputValidation(false);
-    }
-    else {
+    } else {
       setInputValidation(true);
       setQuestions((prevQuestions) =>
         prevQuestions.map((q) =>
           q.id === question.id
             ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                validationType: validationType,
-                condition: condition,
-                errorText: errorText,
-                validationText: validationText,
-              },
-            }
+                ...q,
+                meta: {
+                  ...q.meta,
+                  validationType: validationType,
+                  condition: condition,
+                  errorText: errorText,
+                  validationText: validationText,
+                },
+              }
             : q
         )
       );
@@ -125,8 +143,6 @@ const Text = ({ question, questions, setQuestions }) => {
     });
   };
 
-
-
   // Copy the current question: insert duplicate immediately below,
   // assign copied question an id equal to original id + 1,
   // and increment IDs for all subsequent questions.
@@ -157,14 +173,16 @@ const Text = ({ question, questions, setQuestions }) => {
     setCondition(conditions[selectedType][0]); // Reset condition to the first one
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? {
-          ...q,
-          meta: {
-            ...q.meta,
-            validationType: selectedType,
-            condition: conditions[selectedType][0],
-          },
-        } : q
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                validationType: selectedType,
+                condition: conditions[selectedType][0],
+              },
+            }
+          : q
       )
     );
   };
@@ -174,13 +192,15 @@ const Text = ({ question, questions, setQuestions }) => {
     setCondition(selectedCondition);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? {
-          ...q,
-          meta: {
-            ...q.meta,
-            condition: selectedCondition,
-          },
-        } : q
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                condition: selectedCondition,
+              },
+            }
+          : q
       )
     );
   };
@@ -190,13 +210,36 @@ const Text = ({ question, questions, setQuestions }) => {
     setValidationText(newValidationText);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? {
-          ...q,
-          meta: {
-            ...q.meta,
-            validationText: newValidationText,
-          },
-        } : q
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                validationText: newValidationText,
+              },
+            }
+          : q
+      )
+    );
+  };
+
+  // handle updating the min and max values for conditions like "Between" or "Not Between"
+  const handleMinMaxChange = (minValue, maxValue) => {
+    setMin(minValue);
+    setMax(maxValue);
+    const newValidationText = `${minValue},${maxValue}`;
+    setValidationText(newValidationText);
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                validationText: newValidationText,
+              },
+            }
+          : q
       )
     );
   };
@@ -207,17 +250,18 @@ const Text = ({ question, questions, setQuestions }) => {
     setErrorText(newErrorText);
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? {
-          ...q,
-          meta: {
-            ...q.meta,
-            errorText: newErrorText,
-          },
-        } : q
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                errorText: newErrorText,
+              },
+            }
+          : q
       )
     );
   };
-
 
   return (
     <div className="mb-3">
@@ -237,7 +281,6 @@ const Text = ({ question, questions, setQuestions }) => {
         />
       </div>
 
-
       {/* Question Input */}
       <div className="d-flex align-items-center mt-2 mb-2">
         <input
@@ -248,54 +291,59 @@ const Text = ({ question, questions, setQuestions }) => {
         />
       </div>
       <div className="mb-2">
-      {showCropper && selectedFile && (
-        <ImageCropper
-          file={selectedFile}
-          questionId={question.id}
-          setQuestions={setQuestions}
-          onClose={() => {
-            setShowCropper(false);
-            setSelectedFile(null);
-          }}
-        />
-      )}
+        {showCropper && selectedFile && (
+          <ImageCropper
+            file={selectedFile}
+            questionId={question.id}
+            setQuestions={setQuestions}
+            onClose={() => {
+              setShowCropper(false);
+              setSelectedFile(null);
+            }}
+          />
+        )}
 
-      {/* Image Previews with Remove and Alignment Options */}
-      {question.imageUrls && question.imageUrls.length > 0 && (
-        <div className="mb-2">
-          {question.imageUrls.map((img, idx) => (
-            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+        {/* Image Previews with Remove and Alignment Options */}
+        {question.imageUrls && question.imageUrls.length > 0 && (
+          <div className="mb-2">
+            {question.imageUrls.map((img, idx) => (
               <div
-                className={`d-flex justify-content-${img.alignment || "start"}`}
+                key={idx}
+                className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm"
               >
-                <img
-                  src={img.url}
-                  alt={`Question ${idx}`}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: 400 }}
-                />
-              </div>
-              <div className="d-flex justify-content-between mt-2 gap-2">
-                <select
-                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  value={img.alignment || "start"}
-                  onChange={(e) => updateAlignment(idx, e.target.value)}
+                <div
+                  className={`d-flex justify-content-${
+                    img.alignment || "start"
+                  }`}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
-                </select>
-                <button
-                  className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
-                  onClick={() => removeImage(idx)}
-                >
-                  <i className="bi bi-trash"></i>
-                </button>
+                  <img
+                    src={img.url}
+                    alt={`Question ${idx}`}
+                    className="img-fluid rounded"
+                    style={{ maxHeight: 400 }}
+                  />
+                </div>
+                <div className="d-flex justify-content-between mt-2 gap-2">
+                  <select
+                    className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    value={img.alignment || "start"}
+                    onChange={(e) => updateAlignment(idx, e.target.value)}
+                  >
+                    <option value="start">Left</option>
+                    <option value="center">Center</option>
+                    <option value="end">Right</option>
+                  </select>
+                  <button
+                    className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
+                    onClick={() => removeImage(idx)}
+                  >
+                    <i className="bi bi-trash"></i>
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
       </div>
       <input
         type="text"
@@ -339,16 +387,20 @@ const Text = ({ question, questions, setQuestions }) => {
                 type="text"
                 className="form-control me-2"
                 placeholder="Type here"
+                value={min}
+                onChange={(e) => handleMinMaxChange(e.target.value, max)}
               />
               <label> & </label>
               <input
                 type="text"
                 className="form-control ms-2"
                 placeholder="Type here"
+                value={max}
+                onChange={(e) => handleMinMaxChange(min, e.target.value)}
               />
             </div>
           )}
-          {(condition !== "Between" || condition !== "Not Between") && (
+          {condition !== "Between" && condition !== "Not Between" && (
             <div className="d-flex align-items-center mt-2">
               <input
                 type="text"
