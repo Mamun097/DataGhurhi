@@ -8,4 +8,5 @@ router.delete("/admin/delete-package/:id", adminController.deletePackage);
 router.put("/admin/update-package/:id", adminController.updatePackage);
 router.post("/admin/create-package", adminController.createPackage);
 router.get("/admin/most-popular-package", adminController.getMostPopularPackageId);
+router.get("/admin/user-growth-stats", adminController.getUserGrowthStats);
 module.exports = router;
