@@ -6,7 +6,7 @@ import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
-import { input } from "framer-motion/client";
+// import { input } from "framer-motion/client";
 
 const Index = () => {
   const location = useLocation();
@@ -22,14 +22,16 @@ const Index = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
-  const [title, setTitle] = useState(input_title || "Untitled Survey");
+  const [title, setTitle] = useState(input_title );
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [surveyLink, setSurveyLink] = useState(null);
+  const [description, setDescription] = useState(null);
 
   console.log("Questions:", questions);
+  console.log(input_title);
 
   // Has a custom template been passed in?
   const useCustom = survey_details?.template != null;
@@ -38,13 +40,14 @@ const Index = () => {
       if (useCustom) {
         // ==== 1) Load from survey_details ====
         console.log("Survey details:", survey_details);
-        setTitle(survey_details.title || "Untitled Survey");
+        setTitle(input_title || survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
         setQuestions(survey_details.template.questions || []);
         // `banner` field on your object holds the URL
         setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
         setSurveyLink(survey_details.survey_link || null);
+        setDescription(survey_details.description || null);
       } else {
         // ==== 2) Otherwise, fetch saved templates ====
         try {
@@ -56,7 +59,7 @@ const Index = () => {
 
           if (data.length > 0) {
             const first = data[0];
-            setTitle(input_title || "Untitled Survey");
+            setTitle(input_title || survey_details.title || first.title || "Untitled Survey");
             setQuestions(first.template);
             setBackgroundImage(first.image_url);
           }
@@ -67,14 +70,13 @@ const Index = () => {
     };
 
     load();
-    // We only want to run this once, or again if survey_details changes
-  }, [useCustom, survey_details]);
+  }, [useCustom, survey_details, input_title]);
 
   // Handle sidebar taps (only relevant when !useCustom)
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
     const tmpl = templates[idx];
-    setTitle(input_title || "Untitled Survey");
+    setTitle(input_title || tmpl.title || "Untitled Survey");
     setQuestions(tmpl.template);
     setBackgroundImage(tmpl.image_url);
   };
@@ -135,11 +137,12 @@ const Index = () => {
               questions={questions}
               setQuestions={setQuestions}
               image={backgroundImage}
-              setImage={setBackgroundImage}
               project_id={project_id}
               survey_id={survey_id}
               surveyStatus={surveyStatus}
               surveyLink={surveyLink}
+              description={description} 
+              setDescription={setDescription} 
             />
           </div>
 

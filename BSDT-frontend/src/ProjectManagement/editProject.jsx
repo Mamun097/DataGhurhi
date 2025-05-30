@@ -59,7 +59,7 @@ const EditProject = () => {
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
-  const labelsToTranslate = [
+  const labelsToTranslate = React.useMemo(() => [
     "Project Details",
     "Collaborators",
     "Cancel",
@@ -117,9 +117,9 @@ const EditProject = () => {
     "Created At",
     "Ended At",
     "Published At",
-  ];
+  ], []);
 
-  const loadTranslations = async () => {
+  const loadTranslations = useCallback(async () => {
     if (language === "English") {
       setTranslatedLabels({});
       return;
@@ -130,11 +130,11 @@ const EditProject = () => {
       translated[key] = translations[idx];
     });
     setTranslatedLabels(translated);
-  };
+  }, [language, labelsToTranslate]);
 
   useEffect(() => {
     loadTranslations();
-  }, [language]);
+  }, [language, loadTranslations]);
 
   const getLabel = (text) =>
     language === "English" ? text : translatedLabels[text] || text;
@@ -213,6 +213,7 @@ const EditProject = () => {
   useEffect(() => {
     fetchProject();
     fetchSurveys();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   const handleAddSurveyClick = async () => {
@@ -285,11 +286,12 @@ const handleDeleteSurvey = async (surveyId) => {
   }
 };
   const handleSurveyClick = (survey_id, survey, survey_title) => {
+    console.log("Survey clicked:", survey_title);
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
-        input_title: survey_title || "Untitled Survey",
+        input_title: survey_title ,
       },
     });
   };
@@ -582,13 +584,9 @@ const handleDeleteSurvey = async (surveyId) => {
                 // Check if field is date-like
                 const isDateField =
                   sortField.toLowerCase().includes("created_at") ||
-                  sortField
-                    .toLowerCase()
-                    .includes(
-                      "last_updated" ||
-                        sortField.toLowerCase().includes("published_date") ||
-                        sortField.toLowerCase().includes("ending_date")
-                    );
+                  sortField.toLowerCase().includes("last_updated") ||
+                  sortField.toLowerCase().includes("published_date") ||
+                  sortField.toLowerCase().includes("ending_date");
 
                 if (isDateField) {
                   const aTime = new Date(aVal).getTime();
@@ -706,7 +704,7 @@ const handleDeleteSurvey = async (surveyId) => {
                     <EditIcon
                       fontSize="inherit"
                       onClick={() =>
-                        handleSurveyClick(survey.survey_id, survey)
+                        handleSurveyClick(survey.survey_id, survey.survey, survey.title)
                       }
                     />
                   </IconButton>

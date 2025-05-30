@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react"; 
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
@@ -26,14 +26,11 @@ const Text = ({ question, questions, setQuestions }) => {
     question.meta?.validationText?.split(",")[1] || ""
   );
 
-  console.log("Text component rendered with question:", question);
-  console.log("Valuation Type:", validationType);
-  console.log("Condition:", condition);
-  console.log("validationText:", validationText);
-  console.log("Min:", min);
-  console.log("Max:", max);
+  const [responseType, setResponseType] = useState(
+    question.meta?.responseType || "short" // Default to 'short'
+  );
 
-  const conditions = {
+  const conditions = React.useMemo(() => ({
     Number: [
       "Greater Than",
       "Greater Than or Equal To",
@@ -54,225 +51,195 @@ const Text = ({ question, questions, setQuestions }) => {
       "Matches",
       "Doesn't Match",
     ],
-  };
+  }), []);
 
-  // Validate the input
-  const handleSettings = () => {
-    if (inputValidation) {
-      setInputValidation(false);
+  const updateQuestionMeta = useCallback((metaUpdate) => {
+    setQuestions((prevQuestions) =>
+      prevQuestions.map((q) =>
+        q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
+      )
+    );
+  }, [question.id, setQuestions]);
+
+
+  const handleSettings = useCallback(() => {
+    const newValidationState = !inputValidation;
+    setInputValidation(newValidationState);
+    if (newValidationState) {
+
+      updateQuestionMeta({
+        validationType: validationType,
+        condition: condition,
+        errorText: errorText,
+        validationText: validationText,
+      });
     } else {
-      setInputValidation(true);
-      setQuestions((prevQuestions) =>
-        prevQuestions.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  validationType: validationType,
-                  condition: condition,
-                  errorText: errorText,
-                  validationText: validationText,
-                },
-              }
-            : q
-        )
-      );
-    }
-  };
 
-  // Handle image upload trigger
-  const handleQuestionImageUpload = (event, id) => {
+      updateQuestionMeta({
+        validationType: null,
+        condition: null,
+        errorText: "",
+        validationText: "",
+      });
+      // Optionally reset local state for validation fields
+      // setValidationType("Number");
+      // setCondition(conditions["Number"][0]);
+      // setErrorText("");
+      // setValidationText("");
+      // setMin("");
+      // setMax("");
+    }
+  }, [inputValidation, validationType, condition, errorText, validationText, updateQuestionMeta]);
+
+
+  const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-  };
+    if(event.target) event.target.value = null;
+  }, []);
 
-  // Remove image
-  const removeImage = (index) => {
+  const removeImage = useCallback((index) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
+          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
           : q
       )
     );
-  };
+  },[question.id, setQuestions]);
 
-  // Update image alignment
-  const updateAlignment = (index, alignment) => {
+  const updateAlignment = useCallback((index, alignment) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
           ? {
               ...q,
-              imageUrls: q.imageUrls.map((img, i) =>
+              imageUrls: (q.imageUrls || []).map((img, i) =>
                 i === index ? { ...img, alignment } : img
               ),
             }
           : q
       )
     );
-  };
+  }, [question.id, setQuestions]);
 
-  // Toggle the required status of the question
-  const handleRequired = () => {
+  const handleRequired = useCallback(() => {
+    const newRequiredState = !required;
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, required: !q.required } : q
+        q.id === question.id ? { ...q, required: newRequiredState } : q
       )
     );
-    setRequired(!required);
-  };
+    setRequired(newRequiredState);
+  }, [required, question.id, setQuestions]);
 
-  // Update the question text
-  const handleQuestionChange = (newText) => {
+  const handleQuestionChange = useCallback((newText) => {
     setQuestions((prevQuestions) =>
       prevQuestions.map((q) =>
         q.id === question.id ? { ...q, text: newText } : q
       )
     );
-  };
+  }, [question.id, setQuestions]);
 
-  // Delete the current question and reassign sequential IDs
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setQuestions((prevQuestions) => {
       const filtered = prevQuestions.filter((q) => q.id !== question.id);
       return filtered.map((q, index) => ({ ...q, id: index + 1 }));
     });
-  };
+  }, [question.id, setQuestions]);
 
-  // Copy the current question: insert duplicate immediately below,
-  // assign copied question an id equal to original id + 1,
-  // and increment IDs for all subsequent questions.
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
-    const newId = question.id + 1;
     const copiedQuestion = {
       ...question,
-      id: newId,
+      id: questions.length + 1, 
+      meta: { 
+        ...question.meta,
+        responseType: responseType,
+
+        validationType: inputValidation ? validationType : null,
+        condition: inputValidation ? condition : null,
+        validationText: inputValidation ? validationText : "",
+        errorText: inputValidation ? errorText : "",
+      },
     };
 
-    // Increment IDs for questions with id greater than the current one
-    const updatedQuestions = questions.map((q) =>
-      q.id > question.id ? { ...q, id: q.id + 1 } : q
-    );
-
-    // Insert the copied question right after the original
+    let updatedQuestions = [...questions];
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
-    // Sort to maintain sequential order
-    updatedQuestions.sort((a, b) => a.id - b.id);
-    setQuestions(updatedQuestions);
-  };
+    updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
-  // handle updating the validation type
-  const handleValidationTypeChange = (event) => {
+    setQuestions(updatedQuestions);
+  }, [questions, question, responseType, inputValidation, validationType, condition, validationText, errorText, setQuestions]);
+
+  const handleValidationTypeChange = useCallback((event) => {
     const selectedType = event.target.value;
+    const newCondition = conditions[selectedType][0];
     setValidationType(selectedType);
-    setCondition(conditions[selectedType][0]); // Reset condition to the first one
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                validationType: selectedType,
-                condition: conditions[selectedType][0],
-              },
-            }
-          : q
-      )
-    );
-  };
-  // handle updating the condition
-  const handleConditionChange = (event) => {
+    setCondition(newCondition);
+    updateQuestionMeta({ validationType: selectedType, condition: newCondition });
+  }, [conditions, updateQuestionMeta]);
+
+  const handleConditionChange = useCallback((event) => {
     const selectedCondition = event.target.value;
     setCondition(selectedCondition);
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                condition: selectedCondition,
-              },
-            }
-          : q
-      )
-    );
-  };
-  // handle updating the validation text
-  const handleValidationTextChange = (event) => {
+    updateQuestionMeta({ condition: selectedCondition });
+  }, [updateQuestionMeta]);
+
+  const handleValidationTextChange = useCallback((event) => {
     const newValidationText = event.target.value;
     setValidationText(newValidationText);
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                validationText: newValidationText,
-              },
-            }
-          : q
-      )
-    );
-  };
+    updateQuestionMeta({ validationText: newValidationText });
+  }, [updateQuestionMeta]);
 
-  // handle updating the min and max values for conditions like "Between" or "Not Between"
-  const handleMinMaxChange = (minValue, maxValue) => {
+  const handleMinMaxChange = useCallback((minValue, maxValue) => {
     setMin(minValue);
     setMax(maxValue);
     const newValidationText = `${minValue},${maxValue}`;
-    setValidationText(newValidationText);
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                validationText: newValidationText,
-              },
-            }
-          : q
-      )
-    );
-  };
+    setValidationText(newValidationText); 
+    updateQuestionMeta({ validationText: newValidationText });
+  }, [updateQuestionMeta]);
 
-  // handle updating the error text
-  const handleErrorTextChange = (event) => {
+  const handleErrorTextChange = useCallback((event) => {
     const newErrorText = event.target.value;
     setErrorText(newErrorText);
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              meta: {
-                ...q.meta,
-                errorText: newErrorText,
-              },
-            }
-          : q
-      )
-    );
-  };
+    updateQuestionMeta({ errorText: newErrorText });
+  },[updateQuestionMeta]);
+
+
+  const handleResponseTypeToggle = useCallback(() => {
+    const newResponseType = responseType === "short" ? "long" : "short";
+    setResponseType(newResponseType);
+    updateQuestionMeta({ responseType: newResponseType });
+  }, [responseType, updateQuestionMeta]);
+
+
+  useEffect(() => {
+    setRequired(question.required || false);
+    setInputValidation(question.meta?.validationType ? true : false);
+    setValidationType(question.meta?.validationType || "Number");
+    setCondition(question.meta?.condition || conditions[question.meta?.validationType || "Number"][0]);
+    setErrorText(question.meta?.errorText || "");
+    setValidationText(question.meta?.validationText || "");
+    if (question.meta?.validationText && (question.meta?.condition === "Between" || question.meta?.condition === "Not Between")) {
+      const parts = question.meta.validationText.split(",");
+      setMin(parts[0] || "");
+      setMax(parts[1] || "");
+    } else {
+      setMin("");
+      setMax("");
+    }
+    setResponseType(question.meta?.responseType || "short");
+  }, [question]);
+
 
   return (
     <div className="mb-3">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2" style={{ fontSize: "1.2rem" }}>
-          <em>
-            <strong>Text</strong>
-          </em>
+          <em><strong>Text</strong></em>
         </label>
-
-        {/* Use the TagManager component */}
         <TagManager
           questionId={question.id}
           questionText={question.text}
@@ -281,7 +248,6 @@ const Text = ({ question, questions, setQuestions }) => {
         />
       </div>
 
-      {/* Question Input */}
       <div className="d-flex align-items-center mt-2 mb-2">
         <input
           type="text"
@@ -303,26 +269,12 @@ const Text = ({ question, questions, setQuestions }) => {
             }}
           />
         )}
-
-        {/* Image Previews with Remove and Alignment Options */}
         {question.imageUrls && question.imageUrls.length > 0 && (
           <div className="mb-2">
             {question.imageUrls.map((img, idx) => (
-              <div
-                key={idx}
-                className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm"
-              >
-                <div
-                  className={`d-flex justify-content-${
-                    img.alignment || "start"
-                  }`}
-                >
-                  <img
-                    src={img.url}
-                    alt={`Question ${idx}`}
-                    className="img-fluid rounded"
-                    style={{ maxHeight: 400 }}
-                  />
+              <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+                <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+                  <img src={img.url} alt={`Question ${idx}`} className="img-fluid rounded" style={{ maxHeight: 400 }}/>
                 </div>
                 <div className="d-flex justify-content-between mt-2 gap-2">
                   <select
@@ -346,69 +298,72 @@ const Text = ({ question, questions, setQuestions }) => {
           </div>
         )}
       </div>
-      <input
-        type="text"
-        className="form-control"
-        placeholder="Enter your answer here"
-        readOnly
-      />
+
+      {responseType === "short" ? (
+        <input
+          type="text"
+          className="form-control mb-2"
+          placeholder="Short answer text"
+          readOnly
+        />
+      ) : (
+        <textarea
+          className="form-control mb-2"
+          rows="3"
+          placeholder="Long answer text (paragraph)"
+          readOnly
+        ></textarea>
+      )}
+
       {inputValidation && (
-        <div>
+        <div className="border-top pt-3 mt-3">
+          <h6 className="mb-2">Response Validation</h6>
           <div className="d-flex align-items-center mt-2">
             <select
               className="form-select me-2"
-              onChange={(e) => {
-                handleValidationTypeChange(e);
-              }}
+              onChange={handleValidationTypeChange}
               value={validationType}
             >
               {Object.keys(conditions).map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
+                <option key={type} value={type}>{type}</option>
               ))}
             </select>
             <select
               className="form-select"
-              onChange={(e) => {
-                handleConditionChange(e);
-              }}
+              onChange={handleConditionChange}
               value={condition}
             >
-              {conditions[validationType].map((condition) => (
-                <option key={condition} value={condition}>
-                  {condition}
-                </option>
+              {conditions[validationType].map((cond) => (
+                <option key={cond} value={cond}>{cond}</option>
               ))}
             </select>
           </div>
-          {(condition === "Between" || condition === "Not Between") && (
+          {(condition === "Between" || condition === "Not Between") ? (
             <div className="d-flex align-items-center mt-2">
               <input
                 type="text"
                 className="form-control me-2"
-                placeholder="Type here"
+                placeholder="Value 1"
                 value={min}
                 onChange={(e) => handleMinMaxChange(e.target.value, max)}
               />
-              <label> & </label>
+              <span className="mx-1">&</span>
               <input
-                type="text"
+                type="text" 
                 className="form-control ms-2"
-                placeholder="Type here"
+                placeholder="Value 2"
                 value={max}
                 onChange={(e) => handleMinMaxChange(min, e.target.value)}
               />
             </div>
-          )}
-          {condition !== "Between" && condition !== "Not Between" && (
+          ) : (condition !== "Is Number" && condition !== "Is Not Number" && validationType !== "Text" || (validationType === "Text" && (condition === "Contains" || condition === "Does Not Contain"))) && ( // Show text input for relevant conditions
             <div className="d-flex align-items-center mt-2">
               <input
-                type="text"
+                type={validationType === "Number" && (condition !== "Is Number" && condition !== "Is Not Number") ? "number" : "text"}
                 className="form-control me-2"
-                placeholder="Type here"
+                placeholder="Value"
                 value={validationText}
-                onChange={(e) => handleValidationTextChange(e)}
+                onChange={handleValidationTextChange}
               />
             </div>
           )}
@@ -418,43 +373,47 @@ const Text = ({ question, questions, setQuestions }) => {
               className="form-control me-2 mt-2"
               placeholder="Custom Error Message (Optional)"
               value={errorText}
-              onChange={(e) => handleErrorTextChange(e)}
+              onChange={handleErrorTextChange}
             />
           </div>
         </div>
       )}
+
       <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
+        <button className="btn btn-outline-secondary me-2" onClick={handleCopy} title="Copy Question">
           <i className="bi bi-clipboard"></i>
         </button>
-        <button
-          className="btn btn-outline-secondary me-2"
-          onClick={handleDelete}
-        >
+        <button className="btn btn-outline-secondary me-2" onClick={handleDelete} title="Delete Question">
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors me-2">
+        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors me-2" title="Add Image">
           <i className="bi bi-image"></i>
-          <input
-            type="file"
-            hidden
-            onChange={(e) => handleQuestionImageUpload(e, question.id)}
-          />
+          <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
         </label>
-        <button
-          className="btn btn-outline-secondary me-2"
-          onClick={handleSettings}
-        >
-          <i className="bi bi-gear"></i>
+        <button className="btn btn-outline-secondary me-2" onClick={handleSettings} title="Response Validation Settings">
+          <i className={`bi ${inputValidation ? "bi-gear-fill text-primary" : "bi-gear"}`}></i>
         </button>
         <div className="form-check form-switch ms-auto">
           <input
             className="form-check-input"
             type="checkbox"
+            id={`responseTypeSwitch-${question.id}`}
+            onChange={handleResponseTypeToggle}
+            checked={responseType === "long"}
+          />
+          <label className="form-check-label" htmlFor={`responseTypeSwitch-${question.id}`}>
+            Long Answer
+          </label>
+        </div>
+        <div className="form-check form-switch ms-3">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitch-${question.id}`} 
             onChange={handleRequired}
             checked={required}
           />
-          <label className="form-check-label">Required</label>
+          <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>Required</label>
         </div>
       </div>
     </div>
