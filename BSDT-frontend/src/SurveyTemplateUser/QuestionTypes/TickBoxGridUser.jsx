@@ -2,49 +2,85 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const TickBoxGrid = ({ question, questions, setQuestions }) => {
+const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
   // Default rows and columns with fallbacks
   const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
   const columns = question.meta?.columns?.length ? question.meta.columns : ["Column 1"];
 
-  // Handle checkbox selection
-  const handleAnswerChange = (rowIndex, col, checked) => {
-    const updatedAnswers = Array.isArray(question.answer) ? [...question.answer] : [];
-    if (checked) {
-      // Add the selection
-      updatedAnswers.push({ row: rows[rowIndex], column: col });
-    } else {
-      // Remove the selection
-      const index = updatedAnswers.findIndex(
-        (ans) => ans.row === rows[rowIndex] && ans.column === col
-      );
-      if (index !== -1) updatedAnswers.splice(index, 1);
-    }
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, answer: updatedAnswers } : q
-      )
-    );
-  };
+  // Initialize user response for the question
+  const userAnswer =
+    userResponse.find(
+      (response) => response.questionText === question.text
+    )?.userResponse || [];
 
   // Check if a specific checkbox is checked
   const isChecked = (row, col) => {
-    return (
-      Array.isArray(question.answer) &&
-      question.answer.some((ans) => ans.row === row && ans.column === col)
-    );
+    return userAnswer.some((ans) => ans.row === row && ans.column === col);
+  };
+
+  // Handle checkbox selection changes
+  const handleChange = (row, col, checked) => {
+    setUserResponse((prevUserResponse) => {
+      const existingQuestionIndex = prevUserResponse.findIndex(
+        (response) => response.questionText === question.text
+      );
+
+      if (existingQuestionIndex !== -1) {
+        const existingQuestionResponse = prevUserResponse[existingQuestionIndex];
+        let updatedUserResponse = [...existingQuestionResponse.userResponse];
+
+        if (checked) {
+          // Add the selection if not already present
+          if (!updatedUserResponse.some((ans) => ans.row === row && ans.column === col)) {
+            updatedUserResponse.push({ row, column: col });
+          }
+        } else {
+          // Remove the selection
+          updatedUserResponse = updatedUserResponse.filter(
+            (ans) => !(ans.row === row && ans.column === col)
+          );
+        }
+
+        if (updatedUserResponse.length === 0) {
+          // If no selections left, remove the question response
+          return prevUserResponse.filter(
+            (response) => response.questionText !== question.text
+          );
+        } else {
+          // Update the question response
+          return [
+            ...prevUserResponse.slice(0, existingQuestionIndex),
+            { ...existingQuestionResponse, userResponse: updatedUserResponse },
+            ...prevUserResponse.slice(existingQuestionIndex + 1),
+          ];
+        }
+      } else {
+        if (checked) {
+          // Add new question response with the selection
+          return [
+            ...prevUserResponse,
+            {
+              questionText: question.text,
+              userResponse: [{ row, column: col }],
+            },
+          ];
+        }
+        // If unchecking and no existing response, do nothing
+        return prevUserResponse;
+      }
+    });
   };
 
   // Check if all required rows have at least one selection
   const isRequiredValid = () => {
     if (!question.required) return true;
     return rows.every((row) =>
-      question.answer?.some((ans) => ans.row === row)
+      userAnswer.some((ans) => ans.row === row)
     );
   };
 
   return (
-    <div className="mb-3">
+    <div className="mt-2 ms-2 me-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
         {question.text || "Untitled Question"}
@@ -52,17 +88,27 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
       </h5>
 
       {/* Image Preview */}
-      {question.image && (
-        <img
-          src={question.image}
-          alt="Question Image"
-          className="img-fluid mb-2"
-          style={{ maxHeight: "400px" }}
-        />
+      {question.imageUrls && question.imageUrls.length > 0 && (
+        <div className="mt-4 mb-4">
+          {question.imageUrls.map((img, idx) => (
+            <div key={idx} className="mb-3 bg-gray-50">
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question ${idx}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: 400 }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
 
-      {/* Checkbox Grid */}
-      <div className="table-responsive mb-3">
+      {/* Grid for Answers */}
+      <div className="table-responsive mt-4">
         <table className="table table-bordered">
           <thead>
             <tr>
@@ -82,11 +128,10 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
                   <td key={colIndex} className="text-center">
                     <input
                       type="checkbox"
+                      className="form-check-input me-2"
                       checked={isChecked(row, col)}
-                      onChange={(e) =>
-                        handleAnswerChange(rowIndex, col, e.target.checked)
-                      }
-                      disabled={question.disabled} // Optional: if you want to disable interaction
+                      onChange={(e) => handleChange(row, col, e.target.checked)}
+                      disabled={question.disabled}
                       aria-label={`Select ${col} for ${row}`}
                     />
                   </td>
