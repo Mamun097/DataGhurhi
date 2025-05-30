@@ -165,54 +165,7 @@ def analyze_data_api(request):
                 return process_wilcoxon_test(request, df, col1, col2)
             
             elif test_type == 'shapiro':
-                shapiro_results = []
-                plot_paths = []
-
-                for col in df.select_dtypes(include=['number']).columns:
-                    data = df[col].dropna()
-                    stat, p = stats.shapiro(data)
-
-                    # Append result
-                    shapiro_results.append({
-                        'Column': col,
-                        'Statistic': round(stat, 4),
-                        'p_value': round(p, 4),
-                        'Normal': p > 0.05
-                    })
-
-                    # --- Plot histogram with KDE & normal curve ---
-                    plt.figure(figsize=(10, 5))
-
-                    # Histogram with KDE
-                    sns.histplot(data, kde=True, bins=30, color='blue', stat="density", label='Data Distribution')
-
-                    # Normal distribution curve
-                    mean, std = np.mean(data), np.std(data)
-                    x = np.linspace(mean - 4*std, mean + 4*std, 100)
-                    plt.plot(x, stats.norm.pdf(x, mean, std), 'r', label='Normal Distribution')
-
-                    # Titles & labels
-                    plt.title(f"Normality Test: {col} (p = {p:.4f})", fontsize=14)
-                    plt.xlabel(col, fontsize=12)
-                    plt.ylabel("Density", fontsize=12)
-                    plt.legend()
-
-                    # Interpretation as suptitle
-                    if p > 0.05:
-                        plt.suptitle("Likely Normal (p > 0.05)", color='green', fontsize=12)
-                    else:
-                        plt.suptitle("Likely Not Normal (p ≤ 0.05)", color='red', fontsize=12)
-
-                    # Save the plot 
-                    safe_col = "".join(c if c.isalnum() or c == '_' else '_' for c in col)
-                    plot_filename = f'shapiro_{safe_col}_hist.png'
-                    plot_paths.append(save_plot(plt, plot_filename))
-
-                results = {
-                    'test': 'Shapiro-Wilk Normality Test',
-                    'results': shapiro_results,
-                    'plot_paths': plot_paths
-                }
+                return process_shapiro_test(request, df, col1)
 
             
             elif test_type == 'ttest_ind':
@@ -1296,6 +1249,134 @@ def process_mannwhitney_test(request, df, col1, col2):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+def process_shapiro_test(request, df, col1):
+    
+    from scipy.stats import shapiro, norm
+    import re
+    try:
+        # --- Request parameters ---
+        language = request.POST.get('language', 'en')
+        img_format = request.POST.get('format', 'png')
+        use_default = request.POST.get('use_default', 'true') == 'true'
+
+        # --- Translator & digit mapper ---
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        # ✅ Check for numeric column
+        if not pd.api.types.is_numeric_dtype(df[col1]):
+            return JsonResponse({
+                'success': False,
+                'error': translate("Please select a numerical column for Shapiro-Wilk test.")
+            })
+
+        # --- Font and Paths ---
+        media_root = settings.MEDIA_ROOT
+        plots_dir = os.path.join(media_root, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+
+        # --- Plot customization ---
+        if use_default:
+            label_font_size, tick_font_size = 36, 16
+            img_quality = 90
+            width, height = 800, 600
+            bins = 30
+            bar_color = 'steelblue'
+            line_color = 'red'
+            line_style = '-'
+        else:
+            label_font_size = int(request.POST.get('label_font_size', 36))
+            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            img_quality = int(request.POST.get('image_quality', 90))
+            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
+            bins = int(request.POST.get('bins', 30))
+            bar_color = request.POST.get('bar_color', 'steelblue')
+            line_color = request.POST.get('line_color', 'red')
+            style_input = request.POST.get('line_style', 'solid')
+            line_style = {'solid': '-', 'dashed': '--', 'dotted': ':'}.get(style_input, '-')
+
+        if language == 'bn' and os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            font_name = fm.FontProperties(fname=font_path).get_name()
+            plt.rcParams['font.family'] = font_name
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+        else:
+            tick_prop = fm.FontProperties(size=tick_font_size)
+
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+
+        # --- Perform test ---
+        data = df[col1].dropna()
+        stat, p_value = shapiro(data)
+        p_str = map_digits(f"{p_value:.4f}")
+        interpretation = translate("Likely Normal (p > 0.05)") if p_value > 0.05 else translate("Likely Not Normal (p ≤ 0.05)")
+
+        # --- Plot ---
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        sns.histplot(data, kde=True, bins=bins, stat='density', color=bar_color, ax=ax)
+        x_vals = np.linspace(data.mean() - 4 * data.std(), data.mean() + 4 * data.std(), 200)
+        ax.plot(x_vals, norm.pdf(x_vals, data.mean(), data.std()), color=line_color, linestyle=line_style)
+
+        ax.set_title('')
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_xticklabels([map_digits(f"{val:.0f}") for val in ax.get_xticks()], fontproperties=tick_prop)
+        ax.set_yticklabels([map_digits(f"{val:.2f}") for val in ax.get_yticks()], fontproperties=tick_prop)
+        plt.tight_layout(pad=0)
+
+        # --- Save base plot ---
+        safe_col_name = re.sub(r'[\\/*?:"<>|]', "_", col1)
+        base_name = f"shapiro_{safe_col_name.replace(' ', '_')}"
+        base_path = os.path.join(plots_dir, base_name + '.png')
+        fig.savefig(base_path, dpi=300)
+        plt.close(fig)
+
+        # --- PIL overlay ---
+        img = Image.open(base_path).convert("RGB")
+        bw, bh = img.size
+        pad = label_font_size // 2
+        xlabel = translate(col1)
+        ylabel = translate("Density")
+        title = translate(f"Normality Check of {col1}")
+
+        x_w, x_h = label_font.getbbox(xlabel)[2:]
+        y_w, y_h = label_font.getbbox(ylabel)[2:]
+        t_w, t_h = label_font.getbbox(title)[2:]
+
+        canvas = Image.new('RGB', (bw + y_h + pad * 2, bh + x_h + pad * 2 + t_h + pad), 'white')
+        canvas.paste(img, (y_h + pad, pad + t_h + pad))
+        draw = ImageDraw.Draw(canvas)
+
+        # Title
+        draw.text(((canvas.width - t_w) // 2, pad), title, font=label_font, fill='black')
+        # X-label
+        draw.text(((canvas.width - x_w) // 2, pad + t_h + pad + bh), xlabel, font=label_font, fill='black')
+        # Y-label rotated
+        y_img = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
+        ImageDraw.Draw(y_img).text((0, 0), ylabel, font=label_font, fill='black')
+        y_rot = y_img.rotate(90, expand=True)
+        canvas.paste(y_rot, ((y_h - y_rot.width) // 2, pad + t_h + pad + (bh - y_rot.height) // 2), y_rot)
+
+        final_path = os.path.join(plots_dir, base_name + '.' + img_format)
+        canvas.save(final_path, format=img_format.upper(), quality=img_quality)
+
+        return JsonResponse({
+            'success': True,
+            'test': translate("Shapiro-Wilk Test"),
+            'statistic': float(stat),
+            'p_value': float(p_value),
+            'interpretation': interpretation,
+            'image_path': os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 def save_plot(plt, filename):
     import os
