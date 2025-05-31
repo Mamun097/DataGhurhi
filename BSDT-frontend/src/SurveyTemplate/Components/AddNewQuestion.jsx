@@ -1,16 +1,32 @@
 import React from "react";
 import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
+import 'bootstrap-icons/font/bootstrap-icons.css';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 // import ImportFromQb from "./importFromQB/importFromQb";
+
 
 const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel }) => {
   return (
     <div>
       {newQuestion && (
-        <div className="mt-3">
+        <div className="mt-3 p-3 border rounded shadow-sm bg-light position-relative">       
+          {/* START: Cross Button to close the selection area */}
+          <button
+            type="button"
+            className="btn-close"
+            style={{
+              position: 'absolute',
+              top: '0.75rem', 
+              right: '0.75rem',
+            }}
+            aria-label="Close"
+            onClick={() => setNewQuestion(false)} 
+          ></button>
+          {/* END: Cross Button */}
           <p className="text-center" style={{ fontSize: '20px' }}>
             <b>{getLabel("Select the type of question you want to add")}</b>
+
           </p>
           <div className="row justify-content-around">
             <button
@@ -65,7 +81,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
               className="col-md-3 btn btn-outline-secondary me-2 mb-2"
               onClick={() => addNewQuestion("tickboxGrid")}
             >
-              {getLabel("Multiple Choice Grid")}
+              {getLabel("Tick Box Grid")}
             </button>
           </div>
         </div>

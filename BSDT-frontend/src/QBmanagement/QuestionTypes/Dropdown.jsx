@@ -4,7 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 
-const Dropdown = ({ question, questions, setQuestions }) => {
+const Dropdown = ({ question, setIsEditing,newQuestion, setNewQuestion}) => {
   // const [required, setRequired] = useState(question.required || false);
     const [updatedQuestion, setUpdatedQuestion] = useState(question);
     console.log(question  );
@@ -89,19 +89,19 @@ const handleShareWithEmail = async () => {
 
 
   // Upload image
-  const handleImageUpload = useCallback((e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id ? { ...q, image: reader.result } : q
-        )
-      );
-    };
-    reader.readAsDataURL(file);
-  }, [question.id, setQuestions]);
+  const handleImageUpload = useCallback(
+      (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setUpdatedQuestion((prev) => ({ ...prev, image: reader.result }));
+          };
+          reader.readAsDataURL(file);
+        }
+      },
+      [setUpdatedQuestion]
+    );
 
   // Add new option
   const addOption = useCallback(() => {

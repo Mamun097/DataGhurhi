@@ -28,7 +28,7 @@ const SurveySections = ({
   const addNewQuestion = (type) => {
     const baseQuestion = {
       id: questions.length + 1,
-      text: "Enter your question here",
+      // text: "Enter your question here",
       type: type,
       section: section.id,
       required: false,

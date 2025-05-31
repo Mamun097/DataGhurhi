@@ -1,153 +1,231 @@
 // Desc: Likert Scale component for the form builder
 // This is named as likert scale in microsoft forms, but it is known as multiple choice grid in google forms.
 
-import React from "react";
+import React, { useState, useCallback, useMemo } from "react"; // Added useMemo
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { useState } from "react";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
+
+const MAX_COLUMNS = 7; // Define maximum number of columns
 
 const LikertScale = ({ question, questions, setQuestions }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
-  // const [image, setImage] = useState(question.image || null);
 
-  const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
-  const columns = question.meta?.columns?.length ? question.meta.columns : ["Column 1"];
+  const [requireEachRowResponse, setRequireEachRowResponse] = useState(
+    question.meta?.requireEachRowResponse || false
+  );
+  const [enableRowShuffle, setEnableRowShuffle] = useState(
+    question.meta?.enableRowShuffle || false
+  );
 
-  const updateMeta = (metaUpdate) => {
+  const rows = useMemo( // Changed to useMemo
+    () => (question.meta?.rows?.length ? question.meta.rows : ["Row 1"]),
+    [question.meta?.rows]
+  );
+  const columns = useMemo( // Changed to useMemo
+    () =>
+      question.meta?.columns?.length
+        ? question.meta.columns
+        : ["Column 1"],
+    [question.meta?.columns]
+  );
+
+  const updateMeta = useCallback(
+    (metaUpdate) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
+
+  const handleRequired = useCallback(() => {
+    const newRequiredState = !required;
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
+        q.id === question.id ? { ...q, required: newRequiredState } : q
       )
     );
-  };
+    setRequired(newRequiredState);
+  }, [question.id, setQuestions, required]);
 
-  const handleRequired = (id) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === id ? { ...q, required: !q.required } : q
-      )
-    );
-    setRequired(!required);
-  };
 
-  const handleQuestionChange = (newText) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, text: newText } : q
-      )
-    );
-  };
+  const handleRequireEachRowResponseToggle = useCallback(() => {
+    const newValue = !requireEachRowResponse;
+    updateMeta({ requireEachRowResponse: newValue });
+    setRequireEachRowResponse(newValue);
+  }, [requireEachRowResponse, updateMeta]);
 
-  const handleRowChange = (index, newValue) => {
-    const updated = [...rows];
-    updated[index] = newValue;
-    updateMeta({ rows: updated });
-  };
 
-  const handleColumnChange = (index, newValue) => {
-    const updated = [...columns];
-    updated[index] = newValue;
-    updateMeta({ columns: updated });
-  };
+  const handleEnableRowShuffleToggle = useCallback(() => {
+    const newValue = !enableRowShuffle;
+    updateMeta({ enableRowShuffle: newValue });
+    setEnableRowShuffle(newValue);
+  }, [enableRowShuffle, updateMeta]);
 
-  const handleAddRow = () => {
+
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
+      );
+    },
+    [question.id, setQuestions]
+  );
+
+  const handleRowChange = useCallback(
+    (index, newValue) => {
+      const updated = [...rows];
+      updated[index] = newValue;
+      updateMeta({ rows: updated });
+    },
+    [rows, updateMeta]
+  );
+
+  const handleColumnChange = useCallback(
+    (index, newValue) => {
+      const updated = [...columns];
+      updated[index] = newValue;
+      updateMeta({ columns: updated });
+    },
+    [columns, updateMeta]
+  );
+
+  const handleAddRow = useCallback(() => {
     updateMeta({ rows: [...rows, `Row ${rows.length + 1}`] });
-  };
+  }, [rows, updateMeta]);
 
-  const handleAddColumn = () => {
-    updateMeta({ columns: [...columns, `Column ${columns.length + 1}`] });
-  };
+  const handleAddColumn = useCallback(() => {
+    if (columns.length < MAX_COLUMNS) { // Check before adding
+      updateMeta({ columns: [...columns, `Column ${columns.length + 1}`] });
+    }
+  }, [columns, updateMeta]);
 
-  const handleDeleteRow = (index) => {
-    const updated = rows.filter((_, i) => i !== index);
-    updateMeta({ rows: updated.length ? updated : ["Row 1"] });
-  };
+  const handleDeleteRow = useCallback(
+    (index) => {
+      const updated = rows.filter((_, i) => i !== index);
+      updateMeta({ rows: updated.length ? updated : ["Row 1"] });
+    },
+    [rows, updateMeta]
+  );
 
-  const handleDeleteColumn = (index) => {
-    const updated = columns.filter((_, i) => i !== index);
-    updateMeta({ columns: updated.length ? updated : ["Column 1"] });
-  };
+  const handleDeleteColumn = useCallback(
+    (index) => {
+      const updated = columns.filter((_, i) => i !== index);
+      updateMeta({ columns: updated.length ? updated : ["Column 1"] });
+    },
+    [columns, updateMeta]
+  );
 
-  // Handle image upload trigger
-  const handleQuestionImageUpload = (event, id) => {
+  const handleQuestionImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
+    event.target.value = null;
   };
 
-  // Remove image
-  const removeImage = (index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  };
+  const removeImage = useCallback(
+    (index) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? { ...q, imageUrls: q.imageUrls.filter((_, i) => i !== index) }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  // Update image alignment
-  const updateAlignment = (index, alignment) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              imageUrls: q.imageUrls.map((img, i) =>
-                i === index ? { ...img, alignment } : img
-              ),
-            }
-          : q
-      )
-    );
-  };
+  const updateAlignment = useCallback(
+    (index, alignment) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: q.imageUrls.map((img, i) =>
+                  i === index ? { ...img, alignment } : img
+                ),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     setQuestions((prev) => {
       const filtered = prev.filter((q) => q.id !== question.id);
-      return filtered.map((q, index) => ({ ...q, id: index + 1 }));
+      return filtered.map((q, i) => ({ ...q, id: i + 1 }));
     });
-  };
+  }, [question.id, setQuestions]);
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
-    const newId = question.id + 1;
     const copiedQuestion = {
       ...question,
-      id: newId,
+      id: questions.length + 1,
       meta: {
+        ...question.meta,
         rows: [...rows],
         columns: [...columns],
+        requireEachRowResponse: requireEachRowResponse,
+        enableRowShuffle: enableRowShuffle,
       },
-      image: image,
     };
 
-    const updated = questions.map((q) =>
-      q.id > question.id ? { ...q, id: q.id + 1 } : q
-    );
+    let updatedQuestions = [...questions];
+    updatedQuestions.splice(index + 1, 0, copiedQuestion);
+    updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
-    updated.splice(index + 1, 0, copiedQuestion);
-    setQuestions(updated.sort((a, b) => a.id - b.id));
-  };
+    setQuestions(updatedQuestions);
+  }, [question, questions, rows, columns, setQuestions, requireEachRowResponse, enableRowShuffle]);
+
+  const handleRowDragEnd = useCallback(
+    (result) => {
+      if (!result.destination) return;
+      const src = result.source.index;
+      const dest = result.destination.index;
+      const reorderedRows = Array.from(rows);
+      const [movedRow] = reorderedRows.splice(src, 1);
+      reorderedRows.splice(dest, 0, movedRow);
+      updateMeta({ rows: reorderedRows });
+    },
+    [rows, updateMeta]
+  );
+
+  const handleColumnDragEnd = useCallback(
+    (result) => {
+      if (!result.destination) return;
+      const src = result.source.index;
+      const dest = result.destination.index;
+      const reorderedColumns = Array.from(columns);
+      const [movedColumn] = reorderedColumns.splice(src, 1);
+      reorderedColumns.splice(dest, 0, movedColumn);
+      updateMeta({ columns: reorderedColumns });
+    },
+    [columns, updateMeta]
+  );
 
   return (
-    <div className="mb-3">
-      {/* Modified this part to match the Radio.jsx layout */}
+    <div className="mb-3 dnd-isolate">
       <div className="d-flex justify-content-between align-items-center mb-2">
-        <label style={{ fontSize: "1.2rem" }}>
+        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
             <strong>Likert Scale</strong>
           </em>
         </label>
-
-        {/* Use the TagManager component */}
-        <TagManager 
-          questionId={question.id} 
+        <TagManager
+          questionId={question.id}
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
@@ -155,18 +233,17 @@ const LikertScale = ({ question, questions, setQuestions }) => {
       </div>
 
       {showCropper && selectedFile && (
-              <ImageCropper
-                file={selectedFile}
-                questionId={question.id}
-                setQuestions={setQuestions}
-                onClose={() => {
-                  setShowCropper(false);
-                  setSelectedFile(null);
-                }}
-              />
-            )}
-      
-      {/* Image Previews with Remove and Alignment Options */}
+        <ImageCropper
+          file={selectedFile}
+          questionId={question.id}
+          setQuestions={setQuestions}
+          onClose={() => {
+            setShowCropper(false);
+            setSelectedFile(null);
+          }}
+        />
+      )}
+
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
@@ -203,118 +280,218 @@ const LikertScale = ({ question, questions, setQuestions }) => {
         </div>
       )}
 
-      <div className="d-flex align-items-center mt-2 mb-2">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Question"
-          value={question.text}
-          onChange={(e) => handleQuestionChange(e.target.value)}
-        />
-      </div>
+      <input
+        type="text"
+        className="form-control mb-2"
+        placeholder="Enter your question here"
+        value={question.text}
+        onChange={(e) => handleQuestionChange(e.target.value)}
+      />
 
-      {/* Rows */}
+      {/* Rows with Drag & Drop */}
       <div className="mb-3">
-        <h6><b>Rows</b></h6>
-        {rows.map((row, index) => (
-          <div key={index} className="d-flex justify-content-between">
-            <input
-              type="text"
-              className="form-control mb-1"
-              value={row}
-              onChange={(e) => handleRowChange(index, e.target.value)}
-              placeholder={`Row ${index + 1}`}
-            />
-            <button
-              className="btn btn-outline-secondary me-2"
-              onClick={() => handleDeleteRow(index)}
-            >
-              <i className="bi bi-trash"></i>
-            </button>
-          </div>
-        ))}
-        <button className="btn btn-sm btn-outline-primary mt-2" onClick={handleAddRow}>
-          Add Row
+        <h6>
+          <b>Rows</b>
+        </h6>
+        <DragDropContext onDragEnd={handleRowDragEnd}>
+          <Droppable droppableId={`likert-rows-${question.id}`}>
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                {rows.map((row, index) => (
+                  <Draggable
+                    key={`row-${question.id}-${index}`}
+                    draggableId={`likert-row-${question.id}-${index}`}
+                    index={index}
+                  >
+                    {(prov) => (
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className="d-flex align-items-center mb-2"
+                      >
+                        <span {...prov.dragHandleProps} className="me-2" style={{ cursor: "grab" }}>
+                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={row}
+                          onChange={(e) => handleRowChange(index, e.target.value)}
+                          placeholder={`Row ${index + 1}`}
+                        />
+                        <button
+                          className="btn btn-outline-secondary ms-2"
+                          onClick={() => handleDeleteRow(index)}
+                          disabled={rows.length <= 1}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <button
+          className="btn btn-sm btn-outline-primary mt-2"
+          onClick={handleAddRow}
+        >
+          ➕ Add Row
         </button>
       </div>
 
-      {/* Columns */}
+      {/* Columns with Drag & Drop */}
       <div className="mb-3">
-        <h6><b>Columns</b></h6>
-        {columns.map((col, index) => (
-          <div key={index} className="d-flex justify-content-between">
-            <input
-              type="text"
-              className="form-control mb-1"
-              value={col}
-              onChange={(e) => handleColumnChange(index, e.target.value)}
-              placeholder={`Column ${index + 1}`}
-            />
-            <button
-              className="btn btn-outline-secondary me-2"
-              onClick={() => handleDeleteColumn(index)}
-            >
-              <i className="bi bi-trash"></i>
-            </button>
-          </div>
-        ))}
-        <button className="btn btn-sm btn-outline-primary mt-2" onClick={handleAddColumn}>
-          Add Column
+        <h6>
+          <b>Columns</b>
+        </h6>
+        <DragDropContext onDragEnd={handleColumnDragEnd}>
+          <Droppable droppableId={`likert-columns-${question.id}`}>
+            {(provided) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                {columns.map((col, index) => (
+                  <Draggable
+                    key={`col-${question.id}-${index}`}
+                    draggableId={`likert-col-${question.id}-${index}`}
+                    index={index}
+                  >
+                    {(prov) => (
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className="d-flex align-items-center mb-2"
+                      >
+                         <span {...prov.dragHandleProps} className="me-2" style={{ cursor: "grab" }}>
+                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        </span>
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={col}
+                          onChange={(e) => handleColumnChange(index, e.target.value)}
+                          placeholder={`Column ${index + 1}`}
+                        />
+                        <button
+                          className="btn btn-outline-secondary ms-2"
+                          onClick={() => handleDeleteColumn(index)}
+                          disabled={columns.length <= 1}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <button
+          className="btn btn-sm btn-outline-primary mt-2"
+          onClick={handleAddColumn}
+          disabled={columns.length >= MAX_COLUMNS}
+        >
+          ➕ Add Column {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
         </button>
       </div>
 
       {/* Grid Preview */}
-      <div className="table-responsive mb-3">
-        <table className="table table-bordered">
-          <thead>
-            <tr>
-              <th></th>
-              {columns.map((col, colIndex) => (
-                <th key={colIndex} className="text-center">
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td>{row}</td>
-                {columns.map((_, colIndex) => (
-                  <td key={colIndex} className="text-center">
-                    <input type="radio" name={`row-${rowIndex}`} />
-                  </td>
+      {rows.length > 0 && columns.length > 0 && (
+        <div className="table-responsive mb-3">
+          <table className="table table-bordered">
+            <thead>
+              <tr>
+                <th style={{minWidth: '150px', wordBreak: 'break-word'}}></th> {/* Added word-break for the row header cell as well for consistency */}
+                {columns.map((col, colIndex) => (
+                  <th 
+                    key={`header-${colIndex}`} 
+                    className="text-center"
+                    style={{ wordBreak: 'break-word' }} 
+                  >
+                    {col}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {rows.map((row, rowIndex) => (
+                <tr key={`preview-row-${rowIndex}`}>
+                  <td style={{ wordBreak: 'break-word' }}>{row}</td>
+                  {columns.map((_, colIndex) => (
+                    <td key={`cell-${rowIndex}-${colIndex}`} className="text-center">
+                      <input type="radio" name={`likert-q${question.id}-row-${rowIndex}`} disabled />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-      {/* Action Buttons */}
+      {/* Action Buttons & Toggles */}
       <div className="d-flex align-items-center mt-3">
         <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete}>
+        <button
+          className="btn btn-outline-secondary me-2"
+          onClick={handleDelete}
+        >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
+        <label className="btn btn-outline-secondary me-2 hover:bg-gray-100 transition-colors">
           <i className="bi bi-image"></i>
           <input
             type="file"
+            accept="image/*"
             hidden
-            onChange={(e) => handleQuestionImageUpload(e, question.id)}
+            onChange={(e) => handleQuestionImageUpload(e)}
           />
         </label>
-        <div className="form-check form-switch ms-auto">
+      </div>
+
+      {/* Additional Toggles Separated for Clarity */}
+      <div className="mt-3 border-top pt-3">
+         <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
             type="checkbox"
-            onChange={() => handleRequired(question.id)}
+            id={`requireEachRowLikert${question.id}`}
+            onChange={handleRequireEachRowResponseToggle}
+            checked={requireEachRowResponse}
+          />
+          <label className="form-check-label" htmlFor={`requireEachRowLikert${question.id}`}>
+            Require a response in each row
+          </label>
+        </div>
+        <div className="form-check form-switch mb-2">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`enableRowShuffleLikert${question.id}`}
+            onChange={handleEnableRowShuffleToggle}
+            checked={enableRowShuffle}
+          />
+          <label className="form-check-label" htmlFor={`enableRowShuffleLikert${question.id}`}>
+            Shuffle row order
+          </label>
+        </div>
+         <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitchLikert${question.id}`}
+            onChange={handleRequired}
             checked={required}
           />
-          <label className="form-check-label">Required</label>
+          <label className="form-check-label" htmlFor={`requiredSwitchLikert${question.id}`}>
+            Required
+          </label>
         </div>
       </div>
     </div>
