@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SurveyQuestions from "./SurveyQuestions";
 import AddQuestion from "./AddNewQuestion";
 import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
-import "bootstrap-icons/font/bootstrap-icons.css";
+// import "bootstrap-icons/font/bootstrap-icons.css";
 import "../CSS/SurveyForm.css"; // Assuming you have a CSS file for styling
 import axios from "axios";
 
@@ -52,6 +52,7 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
   const userId = parseInt(localStorage.getItem("userId"), 10);
 
   const addNewQuestion = (type) => {
+    console.log("Adding new question of type:", type);
     const baseQuestion = {
       user_id: userId,
       text: "Enter your question here",
@@ -107,6 +108,8 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
       default:
         break;
     }
+    console.log("Base question created:", baseQuestion);
+    // If new question is being added, reset the newQuestion state
 
     // Add question
     const updatedQuestions = [...questions, baseQuestion];
@@ -140,66 +143,54 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
 
 const filteredQuestions = questions
   .filter((q) => {
-    const search = searchTerm.toLowerCase().trim();
-    if (!search) return true;
+    const keywords = searchTerm
+      .toLowerCase()
+      .split(" ")
+      .map((k) => k.trim())
+      .filter(Boolean);
+    if (keywords.length === 0) return true;
 
     const typeAliasText = typeAlias[q.type] || q.type;
-    const matches = [];
 
-    if (searchFields.keyword) {
-      const combined = [
+    const fieldMatchers = {
+      keyword: [
         q.text,
         q.type,
         typeAliasText,
         q.privacy,
         JSON.stringify(q.meta_data),
-      ]
-        .join(" ")
-        .toLowerCase();
-      matches.push(combined.includes(search));
+      ].join(" ").toLowerCase(),
+      project: (q.project_name || "").toLowerCase(),
+      type: typeAliasText.toLowerCase(),
+      tag: (q.tags || []).join(" ").toLowerCase(),
+      survey: (q.survey_name || "").toLowerCase(),
+      owner: (q.owner_name || "").toLowerCase(),
+    };
+
+    const selectedFields = Object.keys(searchFields).filter(
+      (key) => searchFields[key]
+    );
+
+    if (selectedFields.length === 0) {
+      const fallbackCombined = Object.values(fieldMatchers).join(" ");
+      return keywords.every((kw) => fallbackCombined.includes(kw));
     }
 
-    if (searchFields.project) {
-      matches.push((q.project_name || "").toLowerCase().includes(search));
+    if (searchLogic === "intersection") {
+      // Each keyword must match at least one selected field
+      return keywords.every((kw) =>
+        selectedFields.some((field) =>
+          fieldMatchers[field]?.includes(kw)
+        )
+      );
+    } else {
+      // At least one keyword must match at least one selected field
+      return keywords.some((kw) =>
+        selectedFields.some((field) =>
+          fieldMatchers[field]?.includes(kw)
+        )
+      );
     }
-
-    if (searchFields.type) {
-      matches.push(typeAliasText.toLowerCase().includes(search));
-    }
-
-    if (searchFields.tag) {
-      matches.push((q.tags || []).join(" ").toLowerCase().includes(search));
-    }
-
-    if (searchFields.survey) {
-      matches.push((q.survey_name || "").toLowerCase().includes(search));
-    }
-
-    if (searchFields.owner) {
-      matches.push((q.owner_name || "").toLowerCase().includes(search));
-    }
-
-    const hasAnyFieldSelected = Object.values(searchFields).some(Boolean);
-    if (!hasAnyFieldSelected) {
-      const fallbackCombined = [
-        q.text,
-        q.type,
-        typeAliasText,
-        q.privacy,
-        q.project_name,
-        q.survey_name,
-        q.owner_name,
-        (q.tags || []).join(" "),
-        JSON.stringify(q.meta_data),
-      ]
-        .join(" ")
-        .toLowerCase();
-      return fallbackCombined.includes(search);
-    }
-
-    return searchLogic === "intersection"
-      ? matches.every(Boolean)
-      : matches.some(Boolean);
   })
   .filter((q) => {
     if (filter === "mine") return q.user_id === userId;
@@ -207,6 +198,7 @@ const filteredQuestions = questions
       return q.privacy === "public" && q.user_id !== userId;
     return true;
   })
+
   .filter((q) => {
     if (languageFilter === "all") return true;
     return detectLanguage(q.text) === languageFilter;
@@ -379,10 +371,19 @@ const filteredQuestions = questions
         </div>
 
           <div className="position-relative">        
-            <div className="btn-btn-outline-secondary d-flex align-items-center gap-2">
+            <div className=".btn-outline-secondary align-items-center gap-2">
             <select
               className="form-select form-select-sm"
-              style={{ width: "140px" }}
+              style={{ width: "140px", display: "inline-block" ,
+                marginLeft: "10px" ,
+                marginRight: "10px",
+                backgroundColor: "ffffff",
+                borderColor: "#09ae30cb",
+                borderWidth: "3px",
+                borderRadius: "0.25rem",
+                height: "46px",
+                fontStyle: "italic",
+                fontcolor: "#038103"    }}
               value={languageFilter}
               onChange={(e) => setLanguageFilter(e.target.value)}
             >

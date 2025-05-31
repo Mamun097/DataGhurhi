@@ -707,7 +707,7 @@ const handleDeleteSurvey = async (surveyId) => {
                     <EditIcon
                       fontSize="inherit"
                       onClick={() =>
-                        handleSurveyClick(survey.survey_id, survey)
+                        handleSurveyClick(survey.survey_id, survey, survey.title)
                       }
                     />
                   </IconButton>

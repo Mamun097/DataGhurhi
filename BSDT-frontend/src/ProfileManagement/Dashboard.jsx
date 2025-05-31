@@ -695,20 +695,19 @@ const Dashboard = () => {
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
               </div>
             )}
+          
 
-            {!isAdmin && activeTab === "questionbank" && (
-              <div className="question-bank-section">
-                <h3>{getLabel("Question Bank")}</h3>
-                <QB language={language} setLanguage={setLanguage} />
-              </div>
-            )}
 
-            {!isAdmin && activeTab === "questionbank" && (
-              <div className="question-bank-section">
-                <h3>{getLabel("Question Bank")}</h3>
-                <QB language={language} setLanguage={setLanguage} />
-              </div>
-            )}
+          {activeTab === "questionbank" && (
+            <div className="question-bank-section">
+            
+              
+                <QB language={language} setLanguage={setLanguage}/>
+
+             
+             
+            </div>
+          )}
           </div>
         </div>
       </div>
