@@ -537,12 +537,12 @@ const Dashboard = () => {
 
           {activeTab === "questionbank" && (
             <div className="question-bank-section">
-              {/* <h3>{getLabel("Question Bank")}</h3> */}
-              <p>
+            
+              
                 <QB language={language} setLanguage={setLanguage}/>
 
-              </p>
-              {/* Future implementation for question bank */}
+             
+             
             </div>
           )}
           </div>
