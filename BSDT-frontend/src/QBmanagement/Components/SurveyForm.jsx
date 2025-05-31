@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import SurveyQuestions from "./SurveyQuestions";
 import AddQuestion from "./AddNewQuestion";
 import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
-import "bootstrap-icons/font/bootstrap-icons.css";
+// import "bootstrap-icons/font/bootstrap-icons.css";
 import "../CSS/SurveyForm.css"; // Assuming you have a CSS file for styling
 import axios from "axios";
 
@@ -371,10 +371,19 @@ const filteredQuestions = questions
         </div>
 
           <div className="position-relative">        
-            <div className="btn-btn-outline-secondary d-flex align-items-center gap-2">
+            <div className=".btn-outline-secondary align-items-center gap-2">
             <select
               className="form-select form-select-sm"
-              style={{ width: "140px" }}
+              style={{ width: "140px", display: "inline-block" ,
+                marginLeft: "10px" ,
+                marginRight: "10px",
+                backgroundColor: "ffffff",
+                borderColor: "#09ae30cb",
+                borderWidth: "3px",
+                borderRadius: "0.25rem",
+                height: "46px",
+                fontStyle: "italic",
+                fontcolor: "#038103"    }}
               value={languageFilter}
               onChange={(e) => setLanguageFilter(e.target.value)}
             >
