@@ -76,7 +76,7 @@ const Dashboard = () => {
       "Dashboard",
       "Edit Profile",
       "Projects",
-      "Collaborated Projects", 
+      "Collaborated Projects",
       "Checkout Premium Packages",
       "Customize Packages",
       "Question Bank",
@@ -126,7 +126,7 @@ const Dashboard = () => {
       "Last Updated",
 
       // Admin Dashboard Labels
-      "System Overview","Welcome to the administrative dashboard. Monitor your platform\'s performance and manage system settings.",
+      "System Overview", "Welcome to the administrative dashboard. Monitor your platform\'s performance and manage system settings.",
       "Total Users",
       "Active Surveys",
       "Total Responses",
@@ -357,7 +357,7 @@ const Dashboard = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard" },
-        { label: "Customize Packages", key: "customizepackages" },
+        // { label: "Customize Packages", key: "customizepackages" },
         { label: "Edit Profile", key: "editprofile" }
       ];
     } else {
@@ -365,7 +365,7 @@ const Dashboard = () => {
         { label: "Edit Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
-        { label: "Question Bank", key: "questionbank" }
+        { label: "Question Bank", key: "questionbank" },
       ];
     }
   };
@@ -403,13 +403,13 @@ const Dashboard = () => {
             )}
 
             {/* Token Display - Only for non-admin users */}
-            {!isAdmin && (
+            {/* {!isAdmin && (
               <TokenDisplay
                 availableTokens={availableTokens}
                 userType={userType}
                 getLabel={getLabel}
               />
-            )}
+            )} */}
 
             <div className="profile-tabs">
               <ul>
@@ -488,7 +488,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -510,7 +510,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -699,7 +699,14 @@ const Dashboard = () => {
             {!isAdmin && activeTab === "questionbank" && (
               <div className="question-bank-section">
                 <h3>{getLabel("Question Bank")}</h3>
-                <QB language={language} setLanguage={setLanguage}/>
+                <QB language={language} setLanguage={setLanguage} />
+              </div>
+            )}
+
+            {!isAdmin && activeTab === "questionbank" && (
+              <div className="question-bank-section">
+                <h3>{getLabel("Question Bank")}</h3>
+                <QB language={language} setLanguage={setLanguage} />
               </div>
             )}
           </div>
@@ -707,13 +714,13 @@ const Dashboard = () => {
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {!isAdmin && userType === 'normal' && showAdBanner && (
+      {/* {!isAdmin && userType === 'normal' && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )}
+      )} */}
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (
