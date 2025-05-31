@@ -265,7 +265,7 @@
     font-weight: 700;
 }
 
-.savings {
+/* .savings {
     color: #27ae60;
     font-weight: 600;
     font-size: 14px;
@@ -347,10 +347,10 @@
 .guarantee-icon {
     font-size: 18px;
     color: #27ae60;
-}
+} */
 
 /* Loading Styles */
-.loading-container {
+/* .loading-container {
     padding: 60px 30px;
     text-align: center;
 }
@@ -379,10 +379,10 @@
     font-size: 16px;
     color: #666;
     margin: 0;
-}
+} */
 
 /* Error Styles */
-.error-container {
+/* .error-container {
     padding: 60px 30px;
     text-align: center;
 }
@@ -418,10 +418,10 @@
 
 .retry-btn:hover {
     background: #5a67d8;
-}
+} */
 
 /* No Packages Styles */
-.no-packages-container {
+/* .no-packages-container {
     padding: 60px 30px;
     text-align: center;
 }
@@ -441,10 +441,10 @@
     font-size: 16px;
     color: #666;
     margin: 0;
-}
+} */
 
 /* Responsive Design */
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
     .modal-overlay {
         padding: 10px;
     }
@@ -529,14 +529,14 @@
     .current-price {
         font-size: 28px;
     }
-}
+} */
 
 /* ================================
    VALIDITY DISPLAY STYLES
    ================================ */
 
 /* Validity Badge (Top-right corner) */
-.validity-badge {
+/* .validity-badge {
     position: absolute;
     top: 8px;
     right: 8px;
@@ -580,10 +580,10 @@
 .validity-badge .validity-text {
     font-weight: 700;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-}
+} */
 
 /* Validity Display in Header */
-.validity-display {
+/* .validity-display {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -623,4 +623,4 @@
     font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
+} */

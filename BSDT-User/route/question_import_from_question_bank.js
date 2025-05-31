@@ -8,11 +8,10 @@ router.get("/own-questions/:userId", questionImportController.getOwnQuestions);
 
 //!Get all public questions
 router.get("/public-questions/", questionImportController.getPublicQuestions);
-/*GET /api/public-questions/:userId?tags=math,science&limit=5*/
-
+/*GET /api/public-questions/?tags=math,science&limit=5*/
 
 //!Import filtered public questions + previous own questions
 router.get("/import-questions/:userId", questionImportController.importQuestions);
-/*GET /api/public-questions/:userId?tags=math,science&limit=5*/
+/*GET /api/import-questions/:userId?tags=math,science&limit=5*/
 
 module.exports = router;
