@@ -3,10 +3,18 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../db";
 import NavbarAcholder from "./navbarAccountholder";
+import PremiumAdBanner from "./PremiumFeatures/PremiumAdBanner";
+import PremiumPackagesModal from "./PremiumFeatures/PremiumPackagesModal";
+import TokenDisplay from "./PremiumFeatures/TokenDisplay";
+import AdminDashboardOverview from "./AdminComponents/AdminDashboardOverview";
+import AdminPackageCustomizer from "./AdminComponents/AdminPackageCustomizer";
 import "./Dashboard.css";
+import "./PremiumFeatures/PremiumAdBanner.css";
+import "./PremiumFeatures/PremiumPackagesModal.css";
+import "./PremiumFeatures/TokenDisplay.css";
+import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
-
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -30,16 +38,10 @@ const translateText = async (textArray, targetLang) => {
 const Dashboard = () => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [values, setValues] = useState({});
-  const getTabFromURL = () => {
-    const params = new URLSearchParams(window.location.search);
-    return params.get("tab") || "editprofile";
-  };
-
-  const [activeTab, setActiveTab] = useState(getTabFromURL());
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
-
   const [isEditing, setIsEditing] = useState(false);
   const [editedValues, setEditedValues] = useState({});
   const [projects, setProjects] = useState([]);
@@ -48,6 +50,22 @@ const Dashboard = () => {
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
+  // Premium feature states
+  const [showAdBanner, setShowAdBanner] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [userType, setUserType] = useState('normal');
+  const [availableTokens, setAvailableTokens] = useState(0);
+
+  // Admin states
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    activeSurveys: 0,
+    totalResponses: 0,
+    premiumUsers: 0,
+    recentActivities: []
+  });
+
   const loadTranslations = async () => {
     if (language === "English") {
       setTranslatedLabels({});
@@ -55,9 +73,13 @@ const Dashboard = () => {
     }
 
     const labelsToTranslate = [
+      "Dashboard",
       "Edit Profile",
       "Projects",
       "Collaborated Projects",
+      "Checkout Premium Packages",
+      "Customize Packages",
+      "Question Bank",
       "Profile details",
       "Cancel",
       "Edit",
@@ -102,7 +124,35 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
-      "Question Bank",
+
+      // Admin Dashboard Labels
+      "System Overview", "Welcome to the administrative dashboard. Monitor your platform\'s performance and manage system settings.",
+      "Total Users",
+      "Active Surveys",
+      "Total Responses",
+      "Premium Users",
+      "User Analytics",
+      "Survey Analytics",
+      "Revenue Overview",
+      "New User at Current Month",
+      "Survey Created at Current Month",
+      "New User at Previous Month",
+      "Survey Created at Previous Month",
+      "User Growth Rate",
+      "Survey Creation Growth Rate",
+      "This Month",
+      "Last Month",
+
+      // Admin Package Customizer Labels
+      "Package Management",
+      "Add Package",
+      "Manage and customize premium packages for your users",
+      "Total Packages",
+      "Discounted",
+      "Premium",
+      "Tags",
+      "Questions",
+      "Surveys",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -161,22 +211,70 @@ const Dashboard = () => {
     }
   };
 
+  const fetchAdminStats = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.get("http://localhost:2000/api/admin/stats");
+
+      if (response.status === 200) {
+        setAdminStats(response.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch admin stats:", error);
+      // Set mock data for demonstration
+      setAdminStats({
+        totalUsers: 1250,
+        activeSurveys: 89,
+        totalResponses: 15420,
+        premiumUsers: 78,
+        recentActivities: [
+          { id: 1, activity: "New user registration", time: "2 minutes ago" },
+          { id: 2, activity: "Survey created", time: "5 minutes ago" },
+          { id: 3, activity: "Premium subscription", time: "15 minutes ago" },
+          { id: 4, activity: "Survey response submitted", time: "20 minutes ago" },
+          { id: 5, activity: "User profile updated", time: "25 minutes ago" }
+        ]
+      });
+    }
+  }, []);
+
   const getProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get("http://localhost:2000/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
+      console.log("Profile response:", response.data);
       if (response.status === 200) {
         setValues(response.data);
         setProfilePicUrl(response.data.user.image);
         setEditedValues(response.data.user);
+
+        // Set user type and available tokens
+        const currentUserType = response.data.user.user_type;
+        setUserType(currentUserType);
+        setAvailableTokens(response.data.user.available_token || 0);
+
+        // Check if user is admin
+        if (currentUserType === 'admin') {
+          setIsAdmin(true);
+          setActiveTab("dashboard"); // Set default tab for admin
+          fetchAdminStats(); // Fetch admin statistics
+        } else {
+          setIsAdmin(false);
+          setActiveTab("editprofile"); // Set default tab for normal user
+          // Show ad banner for normal users when they visit dashboard
+          if (currentUserType === 'normal') {
+            setShowAdBanner(true);
+          }
+        }
+
         localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
       console.error("Error:", error);
     }
-  }, []);
+  }, [fetchAdminStats]);
 
   useEffect(() => {
     getProfile();
@@ -220,8 +318,10 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    fetchProjects();
-  }, []);
+    if (!isAdmin) {
+      fetchProjects();
+    }
+  }, [isAdmin, fetchProjects]);
 
   const navigate = useNavigate();
 
@@ -229,10 +329,51 @@ const Dashboard = () => {
   const handleProjectClick = (projectId) =>
     navigate(`/view-project/${projectId}`);
 
+  // Premium feature handlers
+  const handleCloseAdBanner = () => {
+    setShowAdBanner(false);
+  };
+
+  const handleCheckoutClick = () => {
+    setShowAdBanner(false);
+    setShowPremiumModal(true);
+  };
+
+  const handleClosePremiumModal = () => {
+    setShowPremiumModal(false);
+  };
+
+  // Handle tab click
+  const handleTabClick = (tabKey) => {
+    if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
+      setShowPremiumModal(true);
+    } else {
+      setActiveTab(tabKey);
+    }
+  };
+
+  // Get tabs based on user type
+  const getTabs = () => {
+    if (isAdmin) {
+      return [
+        { label: "Dashboard", key: "dashboard" },
+        // { label: "Customize Packages", key: "customizepackages" },
+        { label: "Edit Profile", key: "editprofile" }
+      ];
+    } else {
+      return [
+        { label: "Edit Profile", key: "editprofile" },
+        { label: "Projects", key: "projects" },
+        { label: "Collaborated Projects", key: "collaboratedprojects" },
+        { label: "Question Bank", key: "questionbank" },
+      ];
+    }
+  };
+
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="dashboard-container">
+      <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
         <div className="dashboard-layout">
           <div className="profile-section">
             <div className="profile-pic-wrapper">
@@ -253,44 +394,65 @@ const Dashboard = () => {
               </label>
             </div>
             <h2>{values.user?.name || "Loading..."}</h2>
+
+            {/* Admin badge */}
+            {isAdmin && (
+              <div className="admin-badge">
+                <span>👑 Administrator</span>
+              </div>
+            )}
+
+            {/* Token Display - Only for non-admin users */}
+            {/* {!isAdmin && (
+              <TokenDisplay
+                availableTokens={availableTokens}
+                userType={userType}
+                getLabel={getLabel}
+              />
+            )} */}
+
             <div className="profile-tabs">
               <ul>
-                {["Edit Profile", "Projects", "Collaborated Projects", "Question Bank"].map(
-                  (label, idx) => (
-                    <li key={idx}>
-                      <button
-                        className={
-                          activeTab === label.toLowerCase().replace(/ /g, "")
-                            ? "active"
-                            : ""
-                        }
-                        onClick={() => {
-                          const tabKey = label.toLowerCase().replace(/ /g, "");
-                          setActiveTab(tabKey);
+                {getTabs().map((tab) => (
+                  <li key={tab.key}>
+                    <button
+                      className={activeTab === tab.key ? "active" : ""}
+                      onClick={() => {
+                        if (tab.key === "checkoutpremiumpackages") {
+                          setShowPremiumModal(true);
+                        } else {
+                          setActiveTab(tab.key);
                           const url = new URL(window.location);
-                          url.searchParams.set("tab", tabKey);
+                          url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
-                        }}
-                      >
-                        {getLabel(label)}
-                      </button>
-                    </li>
-                  )
-                )}
-                {/* <button>
-                  <label
-                    htmlFor="QB"
-                    className="upload-btn"
-                    onClick={() => navigate("/question-bank")}
-                  >
-                    Question Bank
-                  </label>
-                </button> */}
+                        }
+                      }}
+                    >
+                      {getLabel(tab.label)}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
           <div className="projects-section">
+            {/* Admin Dashboard Overview */}
+            {isAdmin && activeTab === "dashboard" && (
+              <AdminDashboardOverview
+                adminStats={adminStats}
+                getLabel={getLabel}
+              />
+            )}
+
+            {/* Admin Package Customizer */}
+            {isAdmin && activeTab === "customizepackages" && (
+              <AdminPackageCustomizer
+                getLabel={getLabel}
+              />
+            )}
+
+            {/* Edit Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
@@ -326,7 +488,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -348,7 +510,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -373,7 +535,8 @@ const Dashboard = () => {
               </div>
             )}
 
-            {activeTab === "projects" && (
+            {/* Normal User Tabs */}
+            {!isAdmin && activeTab === "projects" && (
               <div>
                 <h3>{getLabel("My Research Projects")}</h3>
                 {/* New Project Section */}
@@ -526,7 +689,7 @@ const Dashboard = () => {
               </div>
             )}
 
-            {activeTab === "collaboratedprojects" && (
+            {!isAdmin && activeTab === "collaboratedprojects" && (
               <div>
                 <h3>{getLabel("Collaborated Projects")}</h3>
                 <p>{getLabel("Show list of collaboratored projects here..")}</p>
@@ -546,25 +709,26 @@ const Dashboard = () => {
             </div>
           )}
           </div>
-
-          {/* Uncomment this section if you want to add trending topics in the future */}
-
-          {/* <div className="trending-section">
-            <h3>{getLabel("Trending Topics")}</h3>
-            <ul className="trending-list">
-              {[
-                "AI in Healthcare",
-                "Web3 & Blockchain",
-                "Edge Computing",
-                "Quantum Computing",
-                "Augmented Reality",
-              ].map((topic, index) => (
-                <li key={index}>{topic}</li>
-              ))}
-            </ul>
-          </div> */}
         </div>
       </div>
+
+      {/* Premium Ad Banner - Only show for normal users */}
+      {/* {!isAdmin && userType === 'normal' && showAdBanner && (
+        <PremiumAdBanner
+          onClose={handleCloseAdBanner}
+          onCheckoutClick={handleCheckoutClick}
+          getLabel={getLabel}
+        />
+      )} */}
+
+      {/* Premium Packages Modal - Only for normal users */}
+      {!isAdmin && (
+        <PremiumPackagesModal
+          isOpen={showPremiumModal}
+          onClose={handleClosePremiumModal}
+          getLabel={getLabel}
+        />
+      )}
     </>
   );
 };

@@ -8,6 +8,7 @@ import RatingQuestionView from "../viewOnlyQtypes/Rating";
 import DateTimeViewOnly from "../viewOnlyQtypes/DateTime";
 import DropdownViewOnly from "../viewOnlyQtypes/Dropdown";
 import CheckboxViewOnly from "../viewOnlyQtypes/Checkbox";
+// import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGridView from "../viewOnlyQtypes/TickboxGrid";
 import LinearScaleQuestionView from "../viewOnlyQtypes/LinearScale";
 

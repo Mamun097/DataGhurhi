@@ -16,18 +16,12 @@ exports.getOwnQuestions = async (req, res) => {
                 type, 
                 privacy, 
                 meta_data,
-                question_tag!inner(tag_id, tags!inner(tag_name))
+                question_tag(
+                    tag_id,
+                    tags(tag_id, tag_name)
+                )
             `)
             .eq("user_id", userId); // Fetch only the user's own questions
-
-        // Filter by tags if provided
-        if (tags) {
-            const tagArray = tags.split(",").map(tag => tag.trim()); // Convert to an array
-
-            if (tagArray.length > 0) {
-                query = query.in("question_tag.tags.tag_name", tagArray); // Filter by tag names
-            }
-        }
 
         // Fetch data first
         let { data, error } = await query;
@@ -35,6 +29,18 @@ exports.getOwnQuestions = async (req, res) => {
         if (error) {
             console.error("Database error:", error);
             return res.status(500).json({ error: "Database error: " + error.message });
+        }
+
+        // Filter by tags if provided (done in JavaScript since we need to check nested data)
+        if (tags) {
+            const tagArray = tags.split(",").map(tag => tag.trim().toLowerCase());
+            
+            data = data.filter(question => {
+                // Check if any of the question's tags match the requested tags
+                return question.question_tag.some(qt => 
+                    qt.tags && tagArray.includes(qt.tags.tag_name.toLowerCase())
+                );
+            });
         }
 
         // Apply randomization in JavaScript since Supabase does not support direct random ordering
@@ -54,9 +60,6 @@ exports.getOwnQuestions = async (req, res) => {
     }
 };
 
-
-
-
 // ✅ Get all public questions
 exports.getPublicQuestions = async (req, res) => {
     const { tags, limit } = req.query;
@@ -72,18 +75,12 @@ exports.getPublicQuestions = async (req, res) => {
                 type, 
                 privacy, 
                 meta_data,
-                question_tag!inner(tag_id, tags!inner(tag_name))
+                question_tag(
+                    tag_id,
+                    tags(tag_id, tag_name)
+                )
             `)
             .eq("privacy", "public"); // Only fetch public questions
-
-        // Filter by tags if provided
-        if (tags) {
-            const tagArray = tags.split(",").map(tag => tag.trim()); // Convert to an array
-
-            if (tagArray.length > 0) {
-                query = query.in("question_tag.tags.tag_name", tagArray); // Filter by tag names
-            }
-        }
 
         // Fetch data first
         let { data, error } = await query;
@@ -93,8 +90,17 @@ exports.getPublicQuestions = async (req, res) => {
             return res.status(500).json({ error: "Database error: " + error.message });
         }
 
-        // Ensure only filtered questions are considered
-        data = data.filter(q => q.question_tag.some(tag => tags.split(",").includes(tag.tags.tag_name)));
+        // Filter by tags if provided
+        if (tags) {
+            const tagArray = tags.split(",").map(tag => tag.trim().toLowerCase());
+            
+            data = data.filter(question => {
+                // Check if any of the question's tags match the requested tags
+                return question.question_tag.some(qt => 
+                    qt.tags && tagArray.includes(qt.tags.tag_name.toLowerCase())
+                );
+            });
+        }
 
         // Apply randomization
         if (data.length > 1) {
@@ -105,15 +111,13 @@ exports.getPublicQuestions = async (req, res) => {
         if (limit) {
             data = data.slice(0, parseInt(limit));
         }
-        console.log("Public Questions:", data);
-
+        
         res.status(200).json(data);
     } catch (error) {
         console.error("Server error:", error);
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
-
 
 // ✅ Import random questions based on filters
 exports.importQuestions = async (req, res) => {
@@ -124,16 +128,19 @@ exports.importQuestions = async (req, res) => {
         let query = supabase
             .from("question")
             .select(`
-                user_id, question_id, text, image, type, privacy, meta_data,
-                question_tag!inner(tag_id, tags!inner(tag_name))
+                user_id, 
+                question_id, 
+                text, 
+                image, 
+                type, 
+                privacy, 
+                meta_data,
+                question_tag(
+                    tag_id,
+                    tags(tag_id, tag_name)
+                )
             `)
             .or(`user_id.eq.${userId},privacy.eq.public`);  // Fetch user's own or public questions
-
-        // Filter by tags
-        if (tags) {
-            const tagArray = tags.split(",").map(tag => tag.trim());  // Convert to array
-            query = query.in("question_tag.tags.tag_name", tagArray);
-        }
 
         // Fetch data from the database
         let { data, error } = await query;
@@ -143,14 +150,30 @@ exports.importQuestions = async (req, res) => {
             return res.status(500).json({ error: "Database error: " + error.message });
         }
 
-        // Shuffle and apply limit
-        if (limit) {
-            data = shuffleArray(data).slice(0, parseInt(limit));
+        // Filter by tags if provided
+        if (tags) {
+            const tagArray = tags.split(",").map(tag => tag.trim().toLowerCase());
+            
+            data = data.filter(question => {
+                // Check if any of the question's tags match the requested tags
+                return question.question_tag.some(qt => 
+                    qt.tags && tagArray.includes(qt.tags.tag_name.toLowerCase())
+                );
+            });
         }
-        console.log("Imported Questions:", data);
 
+        // Shuffle and apply limit
+        if (data.length > 1) {
+            data = shuffleArray(data);
+        }
+        
+        if (limit) {
+            data = data.slice(0, parseInt(limit));
+        }
+        
         res.status(200).json(data);
     } catch (error) {
+        console.error("Server error:", error);
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };

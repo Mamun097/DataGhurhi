@@ -1,0 +1,177 @@
+.premium-ad-overlay {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(2px);
+  }
+  
+  .premium-ad-banner {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white !important;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+    border-top: 3px solid #ffd700;
+    animation: slideUp 0.5s ease-out;
+  }
+  
+  @keyframes slideUp {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .premium-ad-content {
+    flex: 1;
+    max-width: 800px;
+  }
+  
+  .premium-ad-header h3 {
+    font-size: 24px;
+    color: #ffd700 !important;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  .premium-ad-header p {
+    color: white !important;
+    font-size: 16px;
+    margin: 0 0 20px 0;
+    opacity: 0.9;
+  }
+  
+  .premium-features-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .feature-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .feature-icon {
+    font-size: 16px;
+  }
+  
+  .premium-ad-buttons {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  
+  .continue-free-btn {
+    background: transparent;
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+  }
+  
+  .continue-free-btn:hover {
+    border-color: white;
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .checkout-premium-btn {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .checkout-premium-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    background: linear-gradient(45deg, #ffed4e, #ffd700);
+  }
+  
+  .premium-ad-visual {
+    text-align: center;
+    margin-left: 30px;
+    min-width: 120px;
+  }
+  
+  .premium-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+    animation: glow 1.5s infinite alternate, sparkle 3s infinite;
+  }
+  
+  @keyframes sparkle {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(2.25) rotate(2deg); }
+  }
+  
+  .premium-text {
+    font-size: 18px;
+    color: #ffd700 !important;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .premium-ad-banner {
+      padding: 15px;
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .premium-ad-visual {
+      margin-left: 0;
+      margin-top: 15px;
+    }
+    
+    /* .premium-features-list {
+      justify-content: center;
+    } */
+    
+    .premium-ad-buttons {
+      justify-content: center;
+      width: 100%;
+    }
+    
+    .continue-free-btn,
+    .checkout-premium-btn {
+      flex: 1;
+      min-width: 140px;
+    }
+  }
