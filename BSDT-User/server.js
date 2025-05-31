@@ -54,6 +54,9 @@ const csvgenerationRouter = require('./route/csvgeneration');
 
 const questionBankRouter = require('./route/questionBankView');
 
+//admin routes
+const adminRouter = require('./route/adminroute');
+
 
 //connect db
 const supabase = require('./db');
@@ -112,6 +115,9 @@ app.use('/api/generatecsv', csvgenerationRouter);
 
 
 app.use('/api/question-bank', questionBankRouter);
+
+//admin routes
+app.use('/api', adminRouter);
 
 
 // app.use('/api/signin', signinRouter);
