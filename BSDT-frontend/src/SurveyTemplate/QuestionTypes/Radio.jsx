@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -14,7 +14,6 @@ const Radio = ({ question, questions, setQuestions }) => {
   const [enableOptionShuffle, setEnableOptionShuffle] = useState(
     question.meta?.enableOptionShuffle || false
   );
-  // New state for enabling marks
   const [enableMarks, setEnableMarks] = useState(
     question.meta?.enableMarks || false
   );
@@ -29,6 +28,7 @@ const Radio = ({ question, questions, setQuestions }) => {
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
+    // Reset file input value to allow re-uploading the same file
     if (event.target) {
         event.target.value = null;
     }
@@ -56,21 +56,21 @@ const Radio = ({ question, questions, setQuestions }) => {
     setEnableOptionShuffle(newValue);
   }, [enableOptionShuffle, question.id, setQuestions]);
 
-  // Toggle Enable Marks
   const handleEnableMarksToggle = useCallback(() => {
     const newValue = !enableMarks;
     setQuestions((prev) =>
       prev.map((q) => {
         if (q.id === question.id) {
+          // When disabling marks, reset all option values to 0
           const updatedOptions = !newValue
             ? (q.meta?.options || []).map(opt => ({ ...opt, value: 0 }))
-            : (q.meta?.options || []);
+            : (q.meta?.options || []); // Otherwise, keep existing options (marks might have values)
           return {
             ...q,
             meta: {
               ...q.meta,
               enableMarks: newValue,
-              options: updatedOptions, 
+              options: updatedOptions,
             },
           };
         }
@@ -93,6 +93,7 @@ const Radio = ({ question, questions, setQuestions }) => {
   const handleDelete = useCallback(() => {
     setQuestions((prev) => {
       const filtered = prev.filter((q) => q.id !== question.id);
+      // Re-index IDs
       return filtered.map((q, i) => ({ ...q, id: i + 1 }));
     });
   }, [question.id, setQuestions]);
@@ -102,13 +103,14 @@ const Radio = ({ question, questions, setQuestions }) => {
       prev.map((q) => {
         if (q.id === question.id) {
           const currentOptions = q.meta?.options || [];
+          // Ensure Option class is used if it adds unique IDs or other logic
           return {
             ...q,
             meta: {
               ...q.meta,
               options: [
                 ...currentOptions,
-                new Option(`Option ${currentOptions.length + 1}`, 0),
+                new Option(`Option ${currentOptions.length + 1}`, 0), // Assuming Option class constructor handles ID
               ],
             },
           };
@@ -128,7 +130,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                 meta: {
                   ...q.meta,
                   options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? { ...opt, text: newText } : opt
+                    i === idx ? { ...opt, text: newText } : opt // Create a new option object for the updated one
                   ),
                 },
               }
@@ -201,11 +203,11 @@ const Radio = ({ question, questions, setQuestions }) => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: questions.length + 1,
+      id: questions.length + 1, // Temporary ID, will be re-indexed
       meta: {
         ...question.meta,
-        options: [...(question.meta?.options || []).map(opt => new Option(opt.text, opt.value))],
-        enableOptionShuffle: enableOptionShuffle,
+        options: [...(question.meta?.options || []).map(opt => new Option(opt.text, opt.value ?? 0))],
+        enableOptionShuffle: enableOptionShuffle, // Use current state of these toggles
         enableMarks: enableMarks,
       },
     };
@@ -220,15 +222,14 @@ const Radio = ({ question, questions, setQuestions }) => {
     enableOptionShuffle,
     enableMarks,
   ]);
-
   const handleAddTag = useCallback(() => {
     const tagsInput = prompt("Enter tags (comma-separated):");
     if (tagsInput) {
-      const newTags = tagsInput.split(",").map((tag) => tag.trim());
+      const newTags = tagsInput.split(",").map((tag) => tag.trim()).filter(tag => tag); // Filter out empty tags
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
-            ? { ...q, meta: { ...q.meta, tags: [...(q.meta?.tags || []), ...newTags] } }
+            ? { ...q, meta: { ...q.meta, tags: [...new Set([...(q.meta?.tags || []), ...newTags])] } } // Ensure unique tags
             : q
         )
       );
@@ -256,14 +257,14 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   return (
-    <div className="mb-3 dnd-isolate">
+    <div className="mb-3 dnd-isolate"> {/* dnd-isolate might be from a custom CSS or dnd setup */}
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em><strong>Multiple Choice</strong></em>
         </label>
-        <TagManager
+        <TagManager 
           questionId={question.id}
-          questionText={question.text}
+          questionText={question.text} 
           questions={questions}
           setQuestions={setQuestions}
         />
@@ -284,13 +285,13 @@ const Radio = ({ question, questions, setQuestions }) => {
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
-            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
+            <div key={idx} className="mb-3 bg-light p-3 rounded shadow-sm"> 
               <div className={`d-flex justify-content-${img.alignment || "start"}`}>
-                <img src={img.url} alt={`Question ${idx}`} className="img-fluid rounded" style={{ maxHeight: 400 }} />
+                <img src={img.url} alt={`Question visual aid ${idx + 1}`} className="img-fluid rounded" style={{ maxHeight: '300px', maxWidth: '100%' }} />
               </div>
-              <div className="d-flex justify-content-between mt-2 gap-2">
+              <div className="d-flex justify-content-between align-items-center mt-2 gap-2">
                 <select
-                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  className="form-select form-select-sm w-auto" // Bootstrap select classes
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
@@ -298,7 +299,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                   <option value="center">Center</option>
                   <option value="end">Right</option>
                 </select>
-                <button className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1" onClick={() => removeImageCb(idx)}>
+                <button className="btn btn-sm btn-outline-danger" onClick={() => removeImageCb(idx)}>
                   <i className="bi bi-trash"></i>
                 </button>
               </div>
@@ -309,8 +310,8 @@ const Radio = ({ question, questions, setQuestions }) => {
 
       <input
         type="text"
-        className="form-control mb-2 mt-2 border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-        value={question.text}
+        className="form-control mb-2 mt-2"
+        value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
         placeholder="Enter your question here"
       />
@@ -319,74 +320,76 @@ const Radio = ({ question, questions, setQuestions }) => {
         <Droppable droppableId={`options-radio-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {(question.meta?.options || []).map((option, idx) => (
-                <Draggable
-                  key={`opt-radio-${question.id}-${option.text}-${idx}`}
-                  draggableId={`opt-radio-${question.id}-${idx}`}
-                  index={idx}
-                  isDragDisabled={showCropper}
-                >
-                  {(prov) => (
-                    <div ref={prov.innerRef} {...prov.draggableProps} className="row mb-1 align-items-center">
-                      <div className="col-auto" {...prov.dragHandleProps}>
-                        <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", cursor: "grab" }}></i>
-                      </div>
-                      <div className={enableMarks ? "col-6 col-md-7" : "col-10 col-md-10"}> 
-                        <input
-                          type="text"
-                          className="form-control border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                          value={option.text}
-                          onChange={(e) => updateOption(idx, e.target.value)}
-                          placeholder={`Option ${idx + 1}`}
-                        />
-                      </div>
-                      {enableMarks && ( 
-                        <div className="col-3 col-md-2">
+              {options.map((option, idx) => {
+                const stableKey = `option-${question.id}-${idx}`;
+
+                return (
+                  <Draggable
+                    key={stableKey}
+                    draggableId={`opt-radio-${question.id}-${idx}`}
+                    index={idx}
+                    isDragDisabled={showCropper}
+                  >
+                    {(prov) => (
+                      <div ref={prov.innerRef} {...prov.draggableProps} className="row mb-1 align-items-center">
+                        <div className="col-auto" {...prov.dragHandleProps}>
+                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", cursor: "grab" }}></i>
+                        </div>
+                        <div className={enableMarks ? "col-6 col-md-7" : "col-10 col-md-10"}>
                           <input
-                            type="number"
-                            className="form-control border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                            value={option.value ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '' || /^-?\d+$/.test(val)) {
-                                updateOptionValue(idx, val === '' ? 0 : parseInt(val, 10));
-                              }
-                            }}
-                            placeholder="Pts"
+                            type="text"
+                            className="form-control" // Standard Bootstrap
+                            value={option.text || ""} // Ensure value is controlled
+                            onChange={(e) => updateOption(idx, e.target.value)}
+                            placeholder={`Option ${idx + 1}`}
                           />
                         </div>
-                      )}
-                      <div className="col-1">
-                        <button
-                          className="btn btn-outline-danger hover:bg-red-100 transition-colors"
-                          onClick={() => removeOption(idx)}
-                          disabled={(question.meta?.options || []).length <= 1}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                        {enableMarks && (
+                          <div className="col-3 col-md-2">
+                            <input
+                              type="number"
+                              className="form-control" 
+                              value={option.value ?? ""} 
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                updateOptionValue(idx, val === "" ? 0 : parseFloat(val) || 0);
+                              }}
+                              placeholder="Pts"
+                            />
+                          </div>
+                        )}
+                        <div className="col-1">
+                          <button
+                            className="btn btn-sm btn-outline-danger" // Added btn-sm for consistency
+                            onClick={() => removeOption(idx)}
+                            disabled={options.length <= 1} // Use derived options.length
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+                    )}
+                  </Draggable>
+                );
+              })}
               {provided.placeholder}
             </div>
           )}
         </Droppable>
       </DragDropContext>
 
-      <button className="btn btn-sm btn-outline-primary mt-2 hover:bg-blue-100 transition-colors" onClick={addOption}>
+      <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
         ➕ Add Option
       </button>
 
       <div className="d-flex align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary hover:bg-gray-100 transition-colors" onClick={handleCopy}>
+        <button className="btn btn-outline-secondary" onClick={handleCopy}>
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary hover:bg-gray-100 transition-colors" onClick={handleDelete}>
+        <button className="btn btn-outline-secondary" onClick={handleDelete}>
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors">
+        <label className="btn btn-outline-secondary">
           <i className="bi bi-image"></i>
           <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
         </label>
@@ -397,11 +400,11 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`enableMarksRadio${question.id}`}
+            id={`enableMarksRadio-${question.id}`} // Ensure unique ID
             onChange={handleEnableMarksToggle}
             checked={enableMarks}
           />
-          <label className="form-check-label" htmlFor={`enableMarksRadio${question.id}`}>
+          <label className="form-check-label" htmlFor={`enableMarksRadio-${question.id}`}>
             Enable Marks
           </label>
         </div>
@@ -409,11 +412,11 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`enableOptionShuffleRadio${question.id}`}
+            id={`enableOptionShuffleRadio-${question.id}`} // Ensure unique ID
             onChange={handleEnableOptionShuffleToggle}
             checked={enableOptionShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableOptionShuffleRadio${question.id}`}>
+          <label className="form-check-label" htmlFor={`enableOptionShuffleRadio-${question.id}`}>
             Shuffle option order
           </label>
         </div>
@@ -421,11 +424,11 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`requiredSwitchRadio${question.id}`}
+            id={`requiredSwitchRadio-${question.id}`} // Ensure unique ID
             checked={required}
             onChange={handleRequired}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchRadio${question.id}`}>
+          <label className="form-check-label" htmlFor={`requiredSwitchRadio-${question.id}`}>
             Required
           </label>
         </div>
