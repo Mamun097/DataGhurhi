@@ -38,7 +38,13 @@ const translateText = async (textArray, targetLang) => {
 const Dashboard = () => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [values, setValues] = useState({});
-  const [activeTab, setActiveTab] = useState("dashboard");
+
+  const getTabFromURL = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("tab") ;
+  };
+
+  const [activeTab, setActiveTab] = useState(getTabFromURL() || "editprofile");
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -258,11 +264,11 @@ const Dashboard = () => {
         // Check if user is admin
         if (currentUserType === 'admin') {
           setIsAdmin(true);
-          setActiveTab("dashboard"); // Set default tab for admin
+          setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
           fetchAdminStats(); // Fetch admin statistics
         } else {
           setIsAdmin(false);
-          setActiveTab("editprofile"); // Set default tab for normal user
+          setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
           // Show ad banner for normal users when they visit dashboard
           if (currentUserType === 'normal') {
             setShowAdBanner(true);
@@ -421,10 +427,11 @@ const Dashboard = () => {
                         if (tab.key === "checkoutpremiumpackages") {
                           setShowPremiumModal(true);
                         } else {
-                          setActiveTab(tab.key);
+                          
                           const url = new URL(window.location);
                           url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
+                          setActiveTab(tab.key);
                         }
                       }}
                     >
