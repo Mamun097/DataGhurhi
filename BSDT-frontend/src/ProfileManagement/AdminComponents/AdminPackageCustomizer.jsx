@@ -325,7 +325,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         <div className="package-card-header">
                             <div className="package-header-row">
                                 <h3 className="package-title">{pkg.title}</h3>
-                                <div className="package-actions">
+                                {/* <div className="package-actions">
                                     <button
                                         onClick={() => handleDeletePackage(pkg)}
                                         className="package-action-btn dtl-btn"
@@ -343,7 +343,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         Edit
                                     </button>
 
-                                </div>
+                                </div> */}
                             </div>
                             <div className="package-validity-row">
                                 <span className="validity-badge">
@@ -356,21 +356,21 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         <div className="package-features">
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    <span className="feature-icon">🏷️</span>
+                                    {/* <span className="feature-icon">🏷️</span> */}
                                     <span>{getLabel("Tags")}</span>
                                 </div>
                                 <span className="feature-value">{pkg.tag}</span>
                             </div>
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    <span className="feature-icon">❓</span>
+                                    {/* <span className="feature-icon">❓</span> */}
                                     <span>{getLabel("Questions")}</span>
                                 </div>
                                 <span className="feature-value">{pkg.question}</span>
                             </div>
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    <span className="feature-icon">📄</span>
+                                    {/* <span className="feature-icon">📄</span> */}
                                     <span>{getLabel("Surveys")}</span>
                                 </div>
                                 <span className="feature-value">{pkg.survey}</span>
