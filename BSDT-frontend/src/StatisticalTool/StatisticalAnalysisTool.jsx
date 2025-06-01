@@ -1,12 +1,12 @@
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
-import WilcoxonOptions from './WilcoxonOptions';
 import MannWhitneyOptions from './MannWhitneyOptions';
+import PearsonOptions from './PearsonOptions';
 import ShapiroWilkOptions from './ShapiroWilkOptions';
 import SpearmanOptions from './SpearmanOptions';
-import PearsonOptions from './PearsonOptions';
 import './StatisticalAnalysisTool.css';
+import WilcoxonOptions from './WilcoxonOptions';
 
 const translations = {
     English: {
@@ -207,7 +207,7 @@ const StatisticalAnalysisTool = () => {
     const [column4, setColumn4] = useState('');
     const [column5, setColumn5] = useState('');
     const [referenceValue, setReferenceValue] = useState(0);
-    const [heatmapSize, setHeatmapSize] = useState('2x2');
+    const [heatmapSize, setHeatmapSize] = useState('');
 
     const [imageFormat, setImageFormat] = useState('png');
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
@@ -264,84 +264,138 @@ const StatisticalAnalysisTool = () => {
     };
 
     // Handle form submission
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     if (!file) {
+    //         setErrorMessage(t.uploadError || t.uploadError);
+    //         return;
+    //     }
+
+    //     if (!column1) {
+    //         setErrorMessage(t.columnError || t.columnError);
+    //         return;
+    //     }
+
+    //     setIsAnalyzing(true);
+    //     setErrorMessage('');
+
+    //     const formData = new FormData();
+    //     formData.append('file', file);
+    //     formData.append('test_type', testType);
+    //     formData.append('column1', column1);
+    //     formData.append('column2', column2);
+    //     if ((testType === 'pearson' || testType === 'spearman') && heatmapSize === '4x4') {
+    //         formData.append('column3', column3);
+    //         formData.append('column4', column4);
+    //     }
+    //     formData.append('heatmapSize', heatmapSize);
+    //     // Convert language format for API (English -> en, বাংলা -> bn)
+    //     formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
+
+    //     // Call the API for analysis
+    //     if (['kruskal', 'wilcoxon', 'mannwhitney', 'shapiro', 'spearman', 'pearson'].includes(testType)) {
+    //         formData.append('format', imageFormat);
+    //         formData.append('use_default', useDefaultSettings ? 'true' : 'false');
+
+    //         if (!useDefaultSettings) {
+    //             formData.append('label_font_size', labelFontSize.toString());
+    //             formData.append('tick_font_size', tickFontSize.toString());
+    //             formData.append('image_quality', imageQuality.toString());
+    //             formData.append('image_size', imageSize);
+    //             formData.append('palette', colorPalette);
+    //             formData.append('bar_width', barWidth.toString());
+
+    //             if (['kruskal', 'mannwhitney'].includes(testType)) {
+    //                 formData.append('box_width', boxWidth.toString());
+    //                 formData.append('violin_width', violinWidth.toString());
+    //             }
+
+    //             if (testType === 'shapiro') {
+    //                 formData.append('bins', histogramBins.toString()); // Optional: number of bins
+    //                 formData.append('bar_color', barColor);             // Optional: histogram bar color
+    //                 formData.append('line_color', lineColor);           // Optional: normal curve color
+    //                 formData.append('line_style', lineStyle);           // Optional: solid/dashed/dotted
+    //             }
+    //         }
+
+    //         if (testType === 'pearson' || testType === 'spearman') {
+    //             if (heatmapSize === '4x4') {
+    //                 formData.append('column3', column3);
+    //                 formData.append('column4', column4);
+    //             }
+    //             formData.append('heatmapSize', heatmapSize);
+    //         }
+    //     }
+
+    //     // Now send request
+    //     fetch('http://127.0.0.1:8000/api/analyze/', {
+    //         method: 'POST',
+    //         body: formData
+    //     })
+    //         .then(response => response.json())
+    //         .then(data => {
+    //             setResults(data);
+    //             setIsAnalyzing(false);
+    //         })
+    //         .catch(error => {
+    //             setErrorMessage('Error analyzing data: ' + error);
+    //             setIsAnalyzing(false);
+    //         });
+    // };
+
+
     const handleSubmit = (e) => {
-        e.preventDefault();
-        if (!file) {
-            setErrorMessage(t.uploadError || t.uploadError);
-            return;
-        }
+    e.preventDefault();
 
-        if (!column1) {
-            setErrorMessage(t.columnError || t.columnError);
-            return;
-        }
+    if (!file || !column1) {
+        setErrorMessage(t.uploadError);
+        return;
+    }
 
-        setIsAnalyzing(true);
-        setErrorMessage('');
+    setIsAnalyzing(true);
+    const langCode = language === 'বাংলা' ? 'bn' : 'en';
+    const isHeatmap4x4 = heatmapSize === '4x4';
 
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('test_type', testType);
-        formData.append('column1', column1);
-        formData.append('column2', column2);
-        if ((testType === 'pearson' || testType === 'spearman') && heatmapSize === '4x4') {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('test_type', testType);
+    formData.append('column1', column1);
+    formData.append('column2', column2);
+    formData.append('language', langCode);
+    formData.append('heatmapSize', heatmapSize);
+
+    if ((testType === 'pearson' || testType === 'spearman') && isHeatmap4x4) {
+        if (column3 && column4) {
             formData.append('column3', column3);
             formData.append('column4', column4);
+        } else {
+            setErrorMessage('Please select 4 columns for 4x4 heatmap.');
+            setIsAnalyzing(false);
+            return;
         }
-        formData.append('heatmapSize', heatmapSize);
-        // Convert language format for API (English -> en, বাংলা -> bn)
-        formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
+    }
 
-        // Call the API for analysis
-        if (['kruskal', 'wilcoxon', 'mannwhitney', 'shapiro', 'spearman', 'pearson'].includes(testType)) {
-            formData.append('format', imageFormat);
-            formData.append('use_default', useDefaultSettings ? 'true' : 'false');
+    // Debug output
+    for (let pair of formData.entries()) {
+        console.log(`${pair[0]}: ${pair[1]}`);
+    }
 
-            if (!useDefaultSettings) {
-                formData.append('label_font_size', labelFontSize.toString());
-                formData.append('tick_font_size', tickFontSize.toString());
-                formData.append('image_quality', imageQuality.toString());
-                formData.append('image_size', imageSize);
-                formData.append('palette', colorPalette);
-                formData.append('bar_width', barWidth.toString());
-
-                if (['kruskal', 'mannwhitney'].includes(testType)) {
-                    formData.append('box_width', boxWidth.toString());
-                    formData.append('violin_width', violinWidth.toString());
-                }
-
-                if (testType === 'shapiro') {
-                    formData.append('bins', histogramBins.toString()); // Optional: number of bins
-                    formData.append('bar_color', barColor);             // Optional: histogram bar color
-                    formData.append('line_color', lineColor);           // Optional: normal curve color
-                    formData.append('line_style', lineStyle);           // Optional: solid/dashed/dotted
-                }
-            }
-
-            if (testType === 'pearson' || testType === 'spearman') {
-                if (heatmapSize === '4x4') {
-                    formData.append('column3', column3);
-                    formData.append('column4', column4);
-                }
-                formData.append('heatmapSize', heatmapSize);
-            }
-        }
-
-        // Now send request
-        fetch('http://127.0.0.1:8000/api/analyze/', {
-            method: 'POST',
-            body: formData
+    fetch('http://127.0.0.1:8000/api/analyze/', {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            setResults(data);
+            setIsAnalyzing(false);
         })
-            .then(response => response.json())
-            .then(data => {
-                setResults(data);
-                setIsAnalyzing(false);
-            })
-            .catch(error => {
-                setErrorMessage('Error analyzing data: ' + error);
-                setIsAnalyzing(false);
-            });
-    };
+        .catch(err => {
+            setErrorMessage('Error analyzing: ' + err);
+            setIsAnalyzing(false);
+        });
+};
+
+
 
     // Reset form to start a new analysis
     const resetForm = () => {
@@ -357,7 +411,7 @@ const StatisticalAnalysisTool = () => {
         setColumn5('');
         setTestType('');
         setReferenceValue(0);
-        setHeatmapSize('2x2');
+        setHeatmapSize('');
     };
 
     // Get required fields based on test type
@@ -1034,12 +1088,12 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
     const renderWilcoxonResults = () => {
         const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
+            if (language !== 'বাংলা') return text;
             return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
         return (
@@ -1050,32 +1104,32 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
                 {columns?.length > 0 && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
                         {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
                     </p>
                 )}
 
                 {results.interpretation && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
+                        <strong>{language === 'বাংলা' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
                         {results.interpretation}
                     </p>
                 )}
 
                 <p className="mb-3">
-                    <strong>{language === 'bn' ? 'p-মান:' : 'p-value:'}</strong>{' '}
+                    <strong>{language === 'বাংলা' ? 'p-মান:' : 'p-value:'}</strong>{' '}
                     {mapDigitIfBengali(results.p_value?.toFixed(4))}
                 </p>
 
                 <p className="mb-3">
-                    <strong>{language === 'bn' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
+                    <strong>{language === 'বাংলা' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
                     {mapDigitIfBengali(results.statistic?.toFixed(4))}
                 </p>
 
                 {results.image_paths && results.image_paths.length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => (
@@ -1102,11 +1156,11 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                                     window.URL.revokeObjectURL(url);
                                                 } catch (error) {
                                                     console.error('Download failed:', error);
-                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
                                                 }
                                             }}
                                             className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                            title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
                                         >
                                             <svg
                                                 className="w-4 h-4 mr-1"
@@ -1137,12 +1191,12 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
     const renderMannWhitneyResults = () => {
         const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
+            if (language !== 'বাংলা') return text;
             return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
         return (
@@ -1151,8 +1205,8 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
                 {columns && columns[0] && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong> {columns[0]}
-                        {columns[1] && ` ${language === 'bn' ? 'এবং' : 'and'} ${columns[1]}`}
+                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong> {columns[0]}
+                        {columns[1] && ` ${language === 'বাংলা' ? 'এবং' : 'and'} ${columns[1]}`}
                     </p>
                 )}
 
@@ -1170,7 +1224,7 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
                 {results?.p_value !== undefined && (
                     <p className="mb-4">
-                        <strong>{language === 'bn' ? 'সিদ্ধান্ত:' : 'Conclusion'}:</strong>
+                        <strong>{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}:</strong>
                         {results.p_value < 0.05 ? (
                             <span className="text-green-600 font-medium ml-2">{t.significant}</span>
                         ) : (
@@ -1182,7 +1236,7 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                 {results.image_paths && results.image_paths.length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => (
@@ -1210,11 +1264,11 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                                         window.URL.revokeObjectURL(url);
                                                     } catch (error) {
                                                         console.error('Download failed:', error);
-                                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                        alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
                                                     }
                                                 }}
                                                 className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                                title={language === 'bn' ? `ছবি ${index + 1} ডাউনলোড করুন` : `Download Image ${index + 1}`}
+                                                title={language === 'বাংলা' ? `ছবি ${index + 1} ডাউনলোড করুন` : `Download Image ${index + 1}`}
                                             >
                                                 <svg
                                                     className="w-4 h-4 mr-1"
@@ -1246,12 +1300,12 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
     const renderShapiroResults = () => {
         const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
+            if (language !== 'বাংলা') return text;
             return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
         // ✅ NEW: Handle backend error (non-numeric column)
@@ -1271,32 +1325,32 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
                 {columns?.length > 0 && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
+                        {columns[0]}
                     </p>
                 )}
 
                 {results.interpretation && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
+                        <strong>{language === 'বাংলা' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
                         {results.interpretation}
                     </p>
                 )}
 
                 <p className="mb-3">
-                    <strong>{language === 'bn' ? 'p-মান:' : 'p-value:'}</strong>{' '}
+                    <strong>{language === 'বাংলা' ? 'p-মান:' : 'p-value:'}</strong>{' '}
                     {mapDigitIfBengali(results.p_value?.toFixed(4))}
                 </p>
 
                 <p className="mb-3">
-                    <strong>{language === 'bn' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
+                    <strong>{language === 'বাংলা' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
                     {mapDigitIfBengali(results.statistic?.toFixed(4))}
                 </p>
 
                 {results.image_path && (
                     <div className="mt-6">
                         <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <div className="relative">
@@ -1321,11 +1375,11 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                             window.URL.revokeObjectURL(url);
                                         } catch (error) {
                                             console.error('Download failed:', error);
-                                            alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
                                         }
                                     }}
                                     className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                    title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                    title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
                                 >
                                     <svg
                                         className="w-4 h-4 mr-1"
@@ -1354,29 +1408,29 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
     const renderSpearmanResults = () => {
         const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
+            if (language !== 'বাংলা') return text;
             return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
         return (
             <>
                 <h2 className="text-2xl font-bold mb-4">{t.tests.spearman || 'Spearman Correlation'}</h2>
 
-                {columns?.length > 0 && (
+                {/* {columns?.length > 0 && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'বাংলা' ? ' এবং ' : ' and ')}
                     </p>
-                )}
+                )} */}
 
                 {results.image_paths && results.image_paths.length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => (
@@ -1403,11 +1457,11 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                                     window.URL.revokeObjectURL(url);
                                                 } catch (error) {
                                                     console.error('Download failed:', error);
-                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
                                                 }
                                             }}
                                             className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                            title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
                                         >
                                             <svg
                                                 className="w-4 h-4 mr-1"
@@ -1436,29 +1490,29 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
 
     const renderPearsonResults = () => {
         const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
+            if (language !== 'বাংলা') return text;
             return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
          return (
             <>
                 <h2 className="text-2xl font-bold mb-4">{t.tests.pearson || 'Pearson Correlation'}</h2>
 
-                {columns?.length > 0 && (
+                {/* {columns?.length > 0 && (
                     <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'বাংলা' ? ' এবং ' : ' and ')}
                     </p>
-                )}
+                )} */}
 
                 {results.image_paths && results.image_paths.length > 0 && (
                     <div className="mt-6">
                         <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
                         </h3>
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => (
@@ -1485,11 +1539,11 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                                     window.URL.revokeObjectURL(url);
                                                 } catch (error) {
                                                     console.error('Download failed:', error);
-                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
                                                 }
                                             }}
                                             className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                            title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
                                         >
                                             <svg
                                                 className="w-4 h-4 mr-1"

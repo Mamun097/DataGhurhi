@@ -24,6 +24,7 @@ from scipy.stats import chi2_contingency
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import OrdinalEncoder
+
 from .forms import AnalysisForm
 
 
@@ -680,7 +681,7 @@ def process_kruskal_test(request, df, col1, col2):
         
         # Set plot parameters
         if use_default:
-            label_font_size = 36
+            label_font_size = 46
             tick_font_size = 16
             img_quality = 90
             try:
@@ -908,7 +909,7 @@ def process_wilcoxon_test(request, df, col1, col2):
 
         # Customization
         use_default = request.POST.get('use_default', 'true') == 'true'
-        label_font_size = int(request.POST.get('label_font_size', 36 if use_default else request.POST.get('label_font_size', 36)))
+        label_font_size = int(request.POST.get('label_font_size', 46 if use_default else request.POST.get('label_font_size', 46)))
         tick_font_size  = int(request.POST.get('tick_font_size', 16 if use_default else request.POST.get('tick_font_size', 16)))
         img_quality     = int(request.POST.get('image_quality', 90))
         image_size      = request.POST.get('image_size', '800x600')
@@ -1067,7 +1068,7 @@ def process_mannwhitney_test(request, df, col1, col2):
         def map_digits(s): return s.translate(digit_map_bn) if lang == 'bn' else s
 
         if use_def:
-            label_font_size, tick_font_size, img_quality = 36, 16, 90
+            label_font_size, tick_font_size, img_quality = 46, 16, 90
             fig_width, fig_height = 8, 6
             palette = 'deep'
             box_width = violin_width = rank_bar_width = 0.8
@@ -1192,8 +1193,9 @@ def process_mannwhitney_test(request, df, col1, col2):
 
 def process_shapiro_test(request, df, col1):
     
-    from scipy.stats import shapiro, norm
     import re
+
+    from scipy.stats import norm, shapiro
     try:
         # --- Request parameters ---
         language = request.POST.get('language', 'en')
@@ -1223,7 +1225,7 @@ def process_shapiro_test(request, df, col1):
 
         # --- Plot customization ---
         if use_default:
-            label_font_size, tick_font_size = 36, 16
+            label_font_size, tick_font_size = 46, 16
             img_quality = 90
             width, height = 800, 600
             bins = 30
@@ -1322,16 +1324,17 @@ def process_shapiro_test(request, df, col1):
 
 def process_spearman_test(request, df, selected_columns):
     import os
-    import seaborn as sns
-    import matplotlib.pyplot as plt
+    from itertools import combinations
+
     import matplotlib as mpl
     import matplotlib.font_manager as fm
-    from scipy.stats import spearmanr
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     from django.conf import settings
     from django.http import JsonResponse
-    from itertools import combinations
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from scipy.stats import spearmanr
 
     try:
         language = request.POST.get('language', 'en')
@@ -1485,16 +1488,17 @@ def process_spearman_test(request, df, selected_columns):
 
 def process_pearson_test(request, df, selected_columns):
     import os
-    import seaborn as sns
-    import matplotlib.pyplot as plt
+    from itertools import combinations
+
     import matplotlib as mpl
     import matplotlib.font_manager as fm
-    from scipy.stats import pearsonr
-    from itertools import combinations
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
+    import matplotlib.pyplot as plt
+    import seaborn as sns
     from django.conf import settings
     from django.http import JsonResponse
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from scipy.stats import pearsonr
 
     try:
         language = request.POST.get('language', 'en')
