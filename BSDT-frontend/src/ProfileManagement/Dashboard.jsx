@@ -372,7 +372,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} />
+      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType}/>
       <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
         <div className="dashboard-layout">
           <div className="profile-section">
@@ -713,13 +713,13 @@ const Dashboard = () => {
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {/* {!isAdmin && userType === 'normal' && showAdBanner && (
+      {!isAdmin && userType === 'normal' && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )} */}
+      )}  
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (
