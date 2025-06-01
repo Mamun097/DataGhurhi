@@ -9,6 +9,7 @@ import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
 import { FaChartBar } from "react-icons/fa";
+//import "./navbarAccountholder.css"; // Ensure this file exists for styles
 import {
   FaHome,
   FaSignOutAlt,
@@ -54,6 +55,10 @@ const NavbarAcholder = (props) => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [name, setName] = useState("");
   const [translatedLabels, setTranslatedLabels] = useState({});
+  
+  // Updated: Get admin status from both props and local check
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [userType, setUserType] = useState('normal');
 
   const labelsToTranslate = [
     "Go to Profile",
@@ -76,6 +81,11 @@ const NavbarAcholder = (props) => {
           const user = response.data.user;
           setName(user.name);
           setProfilePicUrl(user.image);
+          
+          // Update local admin state
+          const currentUserType = user.user_type;
+          setUserType(currentUserType);
+          setIsAdmin(currentUserType === 'admin');
         }
       } catch (error) {
         console.error("Failed to load profile info:", error);
@@ -84,6 +94,16 @@ const NavbarAcholder = (props) => {
 
     fetchProfile();
   }, []);
+
+  // Update admin state when props change
+  useEffect(() => {
+    if (props.isAdmin !== undefined) {
+      setIsAdmin(props.isAdmin);
+    }
+    if (props.userType !== undefined) {
+      setUserType(props.userType);
+    }
+  }, [props.isAdmin, props.userType]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -126,17 +146,20 @@ const NavbarAcholder = (props) => {
         <img src={logo_edge} alt="EDGE Logo" className="logo4" />
       </div>
 
-      <div className="search-container">
-        <input
-          type="text"
-          placeholder={getLabel("Search for projects, surveys, accounts...")}
-          className="search-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <FaSearch className="search-icon" onClick={handleSearch} />
-      </div>
+      {/* Only show search bar for non-admin users */}
+      {!isAdmin && userType !== 'admin' && (
+        <div className="search-container">
+          <input
+            type="text"
+            placeholder={getLabel("Search for projects, surveys, accounts...")}
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <FaSearch className="search-icon" onClick={handleSearch} />
+        </div>
+      )}
 
       <ul className="nav-links">
         <li className="language-toggle">
@@ -171,18 +194,21 @@ const NavbarAcholder = (props) => {
         <li>
           <a href="faq">
             <FaQuestionCircle className="nav-icon" />
-            <span>{getLabel("FAQ")}</span>
+            <span>FAQ</span>
           </a>
         </li>
 
-        <li>
-          <a href="/analysis">
-            <FaChartBar className="nav-icon" />
-            <span>
-              {language === "English" ? "Analysis" : "পরিসংখ্যান বিশ্লেষণ"}
-            </span>
-          </a>
-        </li>
+        {/* Only show Analysis link for non-admin users */}
+        {!isAdmin && userType !== 'admin' && (
+          <li>
+            <a href="/analysis">
+              <FaChartBar className="nav-icon" />
+              <span>
+                {language === "English" ? "Analysis" : "পরিসংখ্যান বিশ্লেষণ"}
+              </span>
+            </a>
+          </li>
+        )}
 
         <li>
           <div className="navbar-profile">
