@@ -325,7 +325,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         <div className="package-card-header">
                             <div className="package-header-row">
                                 <h3 className="package-title">{pkg.title}</h3>
-                                {/* <div className="package-actions">
+                                <div className="package-actions">
                                     <button
                                         onClick={() => handleDeletePackage(pkg)}
                                         className="package-action-btn dtl-btn"
@@ -343,7 +343,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         Edit
                                     </button>
 
-                                </div> */}
+                                </div>
                             </div>
                             <div className="package-validity-row">
                                 <span className="validity-badge">
