@@ -363,7 +363,7 @@ const Dashboard = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard" },
-        // { label: "Customize Packages", key: "customizepackages" },
+        { label: "Customize Packages", key: "customizepackages" },
         { label: "Edit Profile", key: "editprofile" }
       ];
     } else {
@@ -720,13 +720,13 @@ const Dashboard = () => {
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {/* {!isAdmin && userType === 'normal' && showAdBanner && (
+      {!isAdmin && userType === 'normal' && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )}   */}
+      )}  
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (

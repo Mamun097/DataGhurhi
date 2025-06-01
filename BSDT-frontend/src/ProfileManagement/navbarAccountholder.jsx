@@ -9,7 +9,6 @@ import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
 import { FaChartBar } from "react-icons/fa";
-//import "./navbarAccountholder.css"; // Ensure this file exists for styles
 import {
   FaHome,
   FaSignOutAlt,
