@@ -720,13 +720,13 @@ const Dashboard = () => {
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {!isAdmin && userType === 'normal' && showAdBanner && (
+      {/* {!isAdmin && userType === 'normal' && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )}  
+      )}   */}
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (
