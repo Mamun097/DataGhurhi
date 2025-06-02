@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import statTestDetails from './stat_tests_details';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
 import MannWhitneyOptions from './MannWhitneyOptions';
@@ -43,6 +44,25 @@ const translations = {
             chi_square: "Chi-Square Test",
             cramers_heatmap: "Cramér's V Heatmap",
             network_graph: "Network Graph"
+        },
+        descriptions: {
+            pearson: "Measures the strength and direction of the linear relationship between two continuous variables.",
+            spearman: "A non-parametric test that assesses how well the relationship between two variables can be described using a monotonic function.",
+            ttest_ind: "Compares the means of two independent groups to determine if they are statistically different.",
+            ttest_paired: "Compares the means of two related groups to determine if there is a statistically significant difference.",
+            ttest_onesample: "Tests whether the mean of a single group is different from a known or hypothesized population mean.",
+            ztest: "Tests whether the means of two groups are different when the population variance is known.",
+            ftest: "Compares the variances of two populations to test if they are significantly different.",
+            mannwhitney: "A non-parametric test used to determine whether there is a difference between two independent groups.",
+            kruskal: "A non-parametric test used to compare three or more independent groups to find significant differences.",
+            wilcoxon: "A non-parametric test used to compare two related samples to assess whether their population mean ranks differ.",
+            linear_regression: "Models the relationship between a dependent variable and one or more independent variables.",
+            anova: "Analyzes the differences among group means in a sample.",
+            ancova: "Combines ANOVA and regression to evaluate whether population means differ while controlling for covariates.",
+            shapiro: "Tests whether a sample comes from a normally distributed population.",
+            chi_square: "Tests the association between categorical variables using observed and expected frequencies.",
+            cramers_heatmap: "Visual representation of Cramér's V association strength between categorical variables.",
+            network_graph: "Displays statistical relationships between variables using a graphical network."
         },
         selectPrompt: "Choose the appropriate statistical test for your analysis",
         selectColumn: "Select a column",
@@ -118,6 +138,25 @@ const translations = {
             chi_square: "কাই-স্কয়ার টেস্ট",
             cramers_heatmap: "ক্র্যামের ভি হিটম্যাপ",
             network_graph: "নেটওয়ার্ক গ্রাফ"
+        },
+        descriptions: {
+            pearson: "দুইটি ধারাবাহিক ভেরিয়েবলের মধ্যে রৈখিক সম্পর্কের শক্তি ও দিক পরিমাপ করে।",
+            spearman: "দুইটি ভেরিয়েবলের মধ্যে একঘাত সম্পর্ক আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
+            ttest_ind: "দুটি স্বাধীন গ্রুপের গড় মানে উল্লেখযোগ্য পার্থক্য আছে কিনা তা নির্ধারণ করে।",
+            ttest_paired: "একই গ্রুপের দুটি সম্পর্কযুক্ত অবস্থার গড়ের মধ্যে পার্থক্য আছে কিনা তা যাচাই করে।",
+            ttest_onesample: "একটি গ্রুপের গড় কোনো নির্দিষ্ট মানের সাথে পার্থক্যপূর্ণ কিনা তা নির্ধারণ করে।",
+            ztest: "দুটি গোষ্ঠীর গড়ে পার্থক্য আছে কিনা তা যাচাই করে যখন জনসংখ্যার বৈচিত্র্য জানা থাকে।",
+            ftest: "দুটি গোষ্ঠীর বৈচিত্র্যের মধ্যে পার্থক্য আছে কিনা তা পরীক্ষা করে।",
+            mannwhitney: "দুটি স্বাধীন গোষ্ঠীর মধ্যে পার্থক্য আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
+            kruskal: "তিন বা ততোধিক স্বাধীন গোষ্ঠীর মধ্যে উল্লেখযোগ্য পার্থক্য আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
+            wilcoxon: "দুটি সম্পর্কযুক্ত নমুনার মধ্যকার পার্থক্য নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
+            linear_regression: "একটি নির্ভরশীল ভেরিয়েবল এবং এক বা একাধিক স্বাধীন ভেরিয়েবলের মধ্যে সম্পর্ক নির্ধারণ করে।",
+            anova: "একাধিক গোষ্ঠীর গড় মানে পার্থক্য আছে কিনা তা বিশ্লেষণ করে।",
+            ancova: "ANOVA এবং রিগ্রেশনের সমন্বয়ে গঠিত, যেখানে কভেরিয়েট নিয়ন্ত্রণ করে গোষ্ঠীর গড় মানে পার্থক্য নির্ধারণ করা হয়।",
+            shapiro: "একটি নমুনা সাধারণ বন্টন থেকে এসেছে কিনা তা নির্ধারণ করে।",
+            chi_square: "বিভিন্ন শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক নির্ধারণ করে।",
+            cramers_heatmap: "Cramér's V ব্যবহার করে শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যকার সম্পর্কের দৃঢ়তা চিত্রায়িত করে।",
+            network_graph: "ভেরিয়েবলের মধ্যকার পরিসংখ্যানগত সম্পর্ক একটি গ্রাফ নেটওয়ার্কের মাধ্যমে উপস্থাপন করে।"
         },
         selectPrompt: "আপনার বিশ্লেষণের জন্য সঠিক পরিসংখ্যান পরীক্ষাটি নির্বাচন করুন",
         selectColumn: "একটি কলাম নির্বাচন করুন",
@@ -219,6 +258,7 @@ const StatisticalAnalysisTool = () => {
     const [barWidth, setBarWidth] = useState(0.8);
     const [boxWidth, setBoxWidth] = useState(0.8);
     const [violinWidth, setViolinWidth] = useState(0.8);
+    const [detailsModalVisible, setDetailsModalVisible] = useState(false);
 
     // Results state
     const [results, setResults] = useState(null);
@@ -576,6 +616,32 @@ const StatisticalAnalysisTool = () => {
 
                                                     <div className="text-sm text-gray-600 mt-2">{t.selectPrompt}</div>
 
+                                                    {testType && t.descriptions[testType] && (
+                                                        <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
+
+                                                            <strong className="block text-gray-800 mb-1">
+                                                                {language === 'বাংলা' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
+                                                            </strong>
+                                                            
+                                                            {/* Description */}
+                                                            <div className="text-xs text-gray-600 mb-2">
+                                                                {t.descriptions[testType]}
+                                                            </div>
+
+                                                            {/* Button on new line */}
+                                                            <div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setDetailsModalVisible(true)}
+                                                                    className="text-blue-600 text-xs underline hover:text-blue-800"
+                                                                >
+                                                                    {language === 'বাংলা' ? 'বিস্তারিত দেখুন' : 'More Details'}
+                                                                </button>
+                                                            </div>
+                                                            
+                                                        </div>
+                                                    )}
+
                                                 </div>
                                             </div>
 
@@ -914,6 +980,26 @@ const StatisticalAnalysisTool = () => {
                                                 </button>
                                             </div>
                                         </form>
+
+                                        {detailsModalVisible && (
+                                            <div className="modal-overlay">
+                                                <div className="modal-content">
+                                                    <button
+                                                        
+                                                        className="modal-close"
+                                                        onClick={() => setDetailsModalVisible(false)}
+                                                    >
+                                                        &times;
+                                                    </button>
+                                                    <h2>{t.tests[testType]}</h2>
+                                                    <pre className="modal-body">
+                                                        {statTestDetails[language]?.[testType] || (
+                                                            language ===  'বাংলা' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
+                                                        )}
+                                                    </pre>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             ) : (
