@@ -303,86 +303,6 @@ const StatisticalAnalysisTool = () => {
         }
     };
 
-    // Handle form submission
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     if (!file) {
-    //         setErrorMessage(t.uploadError || t.uploadError);
-    //         return;
-    //     }
-
-    //     if (!column1) {
-    //         setErrorMessage(t.columnError || t.columnError);
-    //         return;
-    //     }
-
-    //     setIsAnalyzing(true);
-    //     setErrorMessage('');
-
-    //     const formData = new FormData();
-    //     formData.append('file', file);
-    //     formData.append('test_type', testType);
-    //     formData.append('column1', column1);
-    //     formData.append('column2', column2);
-    //     if ((testType === 'pearson' || testType === 'spearman') && heatmapSize === '4x4') {
-    //         formData.append('column3', column3);
-    //         formData.append('column4', column4);
-    //     }
-    //     formData.append('heatmapSize', heatmapSize);
-    //     // Convert language format for API (English -> en, বাংলা -> bn)
-    //     formData.append('language', language === 'বাংলা' ? 'bn' : 'en');
-
-    //     // Call the API for analysis
-    //     if (['kruskal', 'wilcoxon', 'mannwhitney', 'shapiro', 'spearman', 'pearson'].includes(testType)) {
-    //         formData.append('format', imageFormat);
-    //         formData.append('use_default', useDefaultSettings ? 'true' : 'false');
-
-    //         if (!useDefaultSettings) {
-    //             formData.append('label_font_size', labelFontSize.toString());
-    //             formData.append('tick_font_size', tickFontSize.toString());
-    //             formData.append('image_quality', imageQuality.toString());
-    //             formData.append('image_size', imageSize);
-    //             formData.append('palette', colorPalette);
-    //             formData.append('bar_width', barWidth.toString());
-
-    //             if (['kruskal', 'mannwhitney'].includes(testType)) {
-    //                 formData.append('box_width', boxWidth.toString());
-    //                 formData.append('violin_width', violinWidth.toString());
-    //             }
-
-    //             if (testType === 'shapiro') {
-    //                 formData.append('bins', histogramBins.toString()); // Optional: number of bins
-    //                 formData.append('bar_color', barColor);             // Optional: histogram bar color
-    //                 formData.append('line_color', lineColor);           // Optional: normal curve color
-    //                 formData.append('line_style', lineStyle);           // Optional: solid/dashed/dotted
-    //             }
-    //         }
-
-    //         if (testType === 'pearson' || testType === 'spearman') {
-    //             if (heatmapSize === '4x4') {
-    //                 formData.append('column3', column3);
-    //                 formData.append('column4', column4);
-    //             }
-    //             formData.append('heatmapSize', heatmapSize);
-    //         }
-    //     }
-
-    //     // Now send request
-    //     fetch('http://127.0.0.1:8000/api/analyze/', {
-    //         method: 'POST',
-    //         body: formData
-    //     })
-    //         .then(response => response.json())
-    //         .then(data => {
-    //             setResults(data);
-    //             setIsAnalyzing(false);
-    //         })
-    //         .catch(error => {
-    //             setErrorMessage('Error analyzing data: ' + error);
-    //             setIsAnalyzing(false);
-    //         });
-    // };
-
 
     const handleSubmit = (e) => {
     e.preventDefault();
@@ -1394,7 +1314,7 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
             return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
 
-        // ✅ NEW: Handle backend error (non-numeric column)
+        //  NEW: Handle backend error (non-numeric column)
         if (results.success === false && results.error) {
             return (
                 <p className="text-red-600 font-semibold">
