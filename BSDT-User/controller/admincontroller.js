@@ -190,11 +190,11 @@ exports.createPackage = async (req, res) => {
         }
 
         // Additional validation
-        if (!packageData.tag || !packageData.question || !packageData.survey || !packageData.validity) {
-            return res.status(400).json({
-                error: "All package fields (tag, question, survey, validity) are required"
-            });
-        }
+        // if (!packageData.tag || !packageData.question || !packageData.survey || !packageData.validity) {
+        //     return res.status(400).json({
+        //         error: "All package fields (tag, question, survey, validity) are required"
+        //     });
+        // }
 
         const { data, error } = await supabase
             .from("package")

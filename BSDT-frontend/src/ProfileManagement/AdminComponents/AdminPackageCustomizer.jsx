@@ -8,7 +8,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedPackage, setSelectedPackage] = useState(null);
-    const [isSubmitting, setIsSubmitting] = useState(false); // Add loading state for operations
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         tag: '',
@@ -16,7 +16,9 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         survey: '',
         original_price: '',
         discount_price: '',
-        validity: ''
+        validity_years: '0',
+        validity_months: '0',
+        validity_days: '0'
     });
     const [errors, setErrors] = useState({});
 
@@ -24,6 +26,14 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     useEffect(() => {
         fetchPackages();
     }, []);
+
+    // Auto-fill discount price when original price changes
+    useEffect(() => {
+        setFormData(prev => ({
+            ...prev,
+            discount_price: formData.original_price
+        }));
+    }, [formData.original_price]);
 
     const fetchPackages = async () => {
         try {
@@ -78,6 +88,25 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         }
     };
 
+    // Convert days to years, months, days
+    const convertDaysToYMD = (totalDays) => {
+        const years = Math.floor(totalDays / 365);
+        const remainingAfterYears = totalDays % 365;
+        const months = Math.floor(remainingAfterYears / 30);
+        const days = remainingAfterYears % 30;
+
+        return {
+            years: years.toString(),
+            months: months.toString(),
+            days: days.toString()
+        };
+    };
+
+    // Convert years, months, days to total days
+    const convertYMDToDays = (years, months, days) => {
+        return (parseInt(years) || 0) * 365 + (parseInt(months) || 0) * 30 + (parseInt(days) || 0);
+    };
+
     const resetForm = () => {
         setFormData({
             title: '',
@@ -86,20 +115,31 @@ const AdminPackageCustomizer = ({ getLabel }) => {
             survey: '',
             original_price: '',
             discount_price: '',
-            validity: ''
+            validity_years: '0',
+            validity_months: '0',
+            validity_days: '0'
         });
         setErrors({});
     };
 
     const validateForm = () => {
         const newErrors = {};
+
+        // Mandatory fields validation
         if (!formData.title.trim()) newErrors.title = getLabel('Title is required');
-        if (!formData.tag || formData.tag < 1) newErrors.tag = getLabel('Valid tag count is required');
-        if (!formData.question || formData.question < 1) newErrors.question = getLabel('Valid question count is required');
-        if (!formData.survey || formData.survey < 1) newErrors.survey = getLabel('Valid survey count is required');
         if (!formData.original_price || formData.original_price < 0) newErrors.original_price = getLabel('Valid original price is required');
-        if (!formData.discount_price || formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
-        if (!formData.validity || formData.validity < 1) newErrors.validity = getLabel('Valid validity days is required');
+
+        // Validity validation - at least one field should be filled
+        const totalValidityDays = convertYMDToDays(formData.validity_years, formData.validity_months, formData.validity_days);
+        if (totalValidityDays < 1) {
+            newErrors.validity = getLabel('At least one validity field (years, months, or days) must be greater than 0');
+        }
+
+        // Optional fields validation (only if filled)
+        if (formData.tag && formData.tag < 1) newErrors.tag = getLabel('Valid tag count is required');
+        if (formData.question && formData.question < 1) newErrors.question = getLabel('Valid question count is required');
+        if (formData.survey && formData.survey < 1) newErrors.survey = getLabel('Valid survey count is required');
+        if (formData.discount_price && formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
 
         if (parseFloat(formData.discount_price) > parseFloat(formData.original_price)) {
             newErrors.discount_price = getLabel('Discount price cannot be higher than original price');
@@ -116,14 +156,17 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
     const handleEditPackage = (pkg) => {
         setSelectedPackage(pkg);
+        const validityYMD = convertDaysToYMD(pkg.validity);
         setFormData({
             title: pkg.title,
-            tag: pkg.tag.toString(),
-            question: pkg.question.toString(),
-            survey: pkg.survey.toString(),
+            tag: pkg.tag ? pkg.tag.toString() : '',
+            question: pkg.question ? pkg.question.toString() : '',
+            survey: pkg.survey ? pkg.survey.toString() : '',
             original_price: pkg.original_price.toString(),
             discount_price: pkg.discount_price.toString(),
-            validity: pkg.validity.toString()
+            validity_years: validityYMD.years,
+            validity_months: validityYMD.months,
+            validity_days: validityYMD.days
         });
         setShowEditModal(true);
     };
@@ -175,13 +218,13 @@ const AdminPackageCustomizer = ({ getLabel }) => {
             setIsSubmitting(true);
 
             const packageData = {
-                ...formData,
-                tag: parseInt(formData.tag),
-                question: parseInt(formData.question),
-                survey: parseInt(formData.survey),
+                title: formData.title,
+                tag: formData.tag ? parseInt(formData.tag) : null,
+                question: formData.question ? parseInt(formData.question) : null,
+                survey: formData.survey ? parseInt(formData.survey) : null,
                 original_price: parseFloat(formData.original_price),
                 discount_price: parseFloat(formData.discount_price),
-                validity: parseInt(formData.validity)
+                validity: convertYMDToDays(formData.validity_years, formData.validity_months, formData.validity_days)
             };
 
             let response;
@@ -257,6 +300,17 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
     const calculateDiscount = (original, discount) => {
         return Math.round(((original - discount) / original) * 100);
+    };
+
+    const formatValidity = (days) => {
+        const { years, months, days: remainingDays } = convertDaysToYMD(days);
+        const parts = [];
+
+        if (parseInt(years) > 0) parts.push(`${years} ${getLabel(parseInt(years) === 1 ? 'year' : 'years')}`);
+        if (parseInt(months) > 0) parts.push(`${months} ${getLabel(parseInt(months) === 1 ? 'month' : 'months')}`);
+        if (parseInt(remainingDays) > 0) parts.push(`${remainingDays} ${getLabel(parseInt(remainingDays) === 1 ? 'day' : 'days')}`);
+
+        return parts.length > 0 ? parts.join(', ') : `${days} ${getLabel('days')}`;
     };
 
     if (loading) {
@@ -342,12 +396,11 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     >
                                         Edit
                                     </button>
-
                                 </div>
                             </div>
                             <div className="package-validity-row">
                                 <span className="validity-badge">
-                                    {pkg.validity} {getLabel("days")}
+                                    {formatValidity(pkg.validity)}
                                 </span>
                             </div>
                         </div>
@@ -356,24 +409,21 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         <div className="package-features">
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    {/* <span className="feature-icon">🏷️</span> */}
                                     <span>{getLabel("Tags")}</span>
                                 </div>
-                                <span className="feature-value">{pkg.tag}</span>
+                                <span className="feature-value">{pkg.tag || 0}</span>
                             </div>
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    {/* <span className="feature-icon">❓</span> */}
                                     <span>{getLabel("Questions")}</span>
                                 </div>
-                                <span className="feature-value">{pkg.question}</span>
+                                <span className="feature-value">{pkg.question || 0}</span>
                             </div>
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    {/* <span className="feature-icon">📄</span> */}
                                     <span>{getLabel("Surveys")}</span>
                                 </div>
-                                <span className="feature-value">{pkg.survey}</span>
+                                <span className="feature-value">{pkg.survey || 0}</span>
                             </div>
                         </div>
 
@@ -417,7 +467,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
                         <div className="admin-modal-body">
                             <div className="form-group">
-                                <label className="form-label">{getLabel("Title")}</label>
+                                <label className="form-label required">{getLabel("Title")} <span className="required-star">*</span></label>
                                 <input
                                     type="text"
                                     value={formData.title}
@@ -437,7 +487,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         value={formData.tag}
                                         onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
                                         className={`form-input ${errors.tag ? 'error' : ''}`}
-                                        min="1"
+                                        min="0"
+                                        placeholder="0"
                                         disabled={isSubmitting}
                                     />
                                     {errors.tag && <p className="error-message">{errors.tag}</p>}
@@ -449,7 +500,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         value={formData.question}
                                         onChange={(e) => setFormData({ ...formData, question: e.target.value })}
                                         className={`form-input ${errors.question ? 'error' : ''}`}
-                                        min="1"
+                                        min="0"
+                                        placeholder="0"
                                         disabled={isSubmitting}
                                     />
                                     {errors.question && <p className="error-message">{errors.question}</p>}
@@ -461,7 +513,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         value={formData.survey}
                                         onChange={(e) => setFormData({ ...formData, survey: e.target.value })}
                                         className={`form-input ${errors.survey ? 'error' : ''}`}
-                                        min="1"
+                                        min="0"
+                                        placeholder="0"
                                         disabled={isSubmitting}
                                     />
                                     {errors.survey && <p className="error-message">{errors.survey}</p>}
@@ -470,7 +523,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
                             <div className="form-row">
                                 <div className="form-group">
-                                    <label className="form-label">{getLabel("Original Price")} (৳)</label>
+                                    <label className="form-label required">{getLabel("Original Price")} (৳) <span className="required-star">*</span></label>
                                     <input
                                         type="number"
                                         value={formData.original_price}
@@ -498,16 +551,50 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                             </div>
 
                             <div className="form-group">
-                                <label className="form-label">{getLabel("Validity")} ({getLabel("Days")})</label>
-                                <input
-                                    type="number"
-                                    value={formData.validity}
-                                    onChange={(e) => setFormData({ ...formData, validity: e.target.value })}
-                                    className={`form-input ${errors.validity ? 'error' : ''}`}
-                                    min="1"
-                                    disabled={isSubmitting}
-                                />
+                                <label className="form-label required">{getLabel("Validity")} <span className="required-star">*</span></label>
+                                <div className="validity-inputs">
+                                    <div className="validity-input-group">
+                                        <input
+                                            type="number"
+                                            value={formData.validity_years}
+                                            onChange={(e) => setFormData({ ...formData, validity_years: e.target.value })}
+                                            className={`form-input validity-input ${errors.validity ? 'error' : ''}`}
+                                            min="0"
+                                            disabled={isSubmitting}
+                                        />
+                                        <label className="validity-label">{getLabel("Years")}</label>
+                                    </div>
+                                    <div className="validity-input-group">
+                                        <input
+                                            type="number"
+                                            value={formData.validity_months}
+                                            onChange={(e) => setFormData({ ...formData, validity_months: e.target.value })}
+                                            className={`form-input validity-input ${errors.validity ? 'error' : ''}`}
+                                            min="0"
+                                            max="11"
+                                            disabled={isSubmitting}
+                                        />
+                                        <label className="validity-label">{getLabel("Months")}</label>
+                                    </div>
+                                    <div className="validity-input-group">
+                                        <input
+                                            type="number"
+                                            value={formData.validity_days}
+                                            onChange={(e) => setFormData({ ...formData, validity_days: e.target.value })}
+                                            className={`form-input validity-input ${errors.validity ? 'error' : ''}`}
+                                            min="0"
+                                            max="29"
+                                            disabled={isSubmitting}
+                                        />
+                                        <label className="validity-label">{getLabel("Days")}</label>
+                                    </div>
+                                </div>
                                 {errors.validity && <p className="error-message">{errors.validity}</p>}
+                                <div className="validity-preview">
+                                    <small className="validity-info">
+                                        {getLabel("Total validity")}: {convertYMDToDays(formData.validity_years, formData.validity_months, formData.validity_days)} {getLabel("days")}
+                                    </small>
+                                </div>
                             </div>
 
                             {formData.original_price && formData.discount_price && (
@@ -517,26 +604,15 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     </p>
                                 </div>
                             )}
+                            
                         </div>
 
                         <div className="admin-modal-footer">
-                            {/* <button
-                                onClick={() => {
-                                    setShowAddModal(false);
-                                    setShowEditModal(false);
-                                    resetForm();
-                                }}
-                                className="modal-btn cancel-btn"
-                                disabled={isSubmitting}
-                            >
-                                {getLabel("Cancel")}
-                            </button> */}
                             <button
                                 onClick={handleSavePackage}
                                 className="modal-btn save-btn"
                                 disabled={isSubmitting}
                             >
-                                {/* <span className="btn-icon">💾</span> */}
                                 {isSubmitting
                                     ? getLabel("Saving...")
                                     : (showEditModal ? getLabel('Update') : getLabel('Create'))
