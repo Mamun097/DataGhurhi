@@ -159,13 +159,13 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                 <p>{getLabel("Organize questions with intelligent tagging system")}</p>
               </div>
             </div>
-            <div className="showcase-item">
+            {/* <div className="showcase-item">
               <div className="showcase-icon">📊</div>
               <div>
                 <h4>{getLabel("Advanced Analytics")}</h4>
                 <p>{getLabel("Get deeper insights with AI-powered analysis")}</p>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -217,6 +217,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                         <div className="discount-badge">{discount}% {getLabel("OFF")}</div>
                       )}
                     </div>
+                    
                     {/* Validity Display in Header */}
                     {validityPeriod && (
                       <div className={`validity-display ${validityType}`}>
