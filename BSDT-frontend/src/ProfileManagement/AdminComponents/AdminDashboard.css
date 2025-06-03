@@ -1446,3 +1446,101 @@
         border: 1px solid #ccc;
     }
 }
+
+/* Required field styling */
+.form-label.required {
+    position: relative;
+}
+
+.required-star {
+    color: #e74c3c;
+    margin-left: 4px;
+    font-weight: bold;
+}
+
+/* Validity inputs styling */
+.validity-inputs {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.validity-input-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 80px;
+}
+
+.validity-input {
+    margin-bottom: 4px !important;
+}
+
+.validity-label {
+    font-size: 12px;
+    color: #666;
+    text-align: center;
+    font-weight: 500;
+}
+
+.validity-preview {
+    margin-top: 8px;
+}
+
+.validity-info {
+    color: #007bff;
+    font-weight: 500;
+    font-size: 13px;
+}
+
+/* Responsive design for validity inputs */
+@media (max-width: 768px) {
+    .validity-inputs {
+        flex-direction: column;
+    }
+    
+    .validity-input-group {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .validity-input {
+        margin-bottom: 0 !important;
+        flex: 1;
+    }
+    
+    .validity-label {
+        flex-shrink: 0;
+        min-width: 60px;
+        text-align: left;
+    }
+}
+
+/* Enhanced form input styling for better visual hierarchy */
+.form-input.error {
+    border-color: #e74c3c;
+    box-shadow: 0 0 0 2px rgba(231, 76, 60, 0.1);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Discount preview styling enhancement */
+.discount-preview {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-radius: 8px;
+    padding: 2px;
+    margin-top: 16px;
+    border-left: 4px solid #007bff;
+}
+
+.discount-info {
+    margin: 0;
+    color: #1565c0;
+    font-weight: 600;
+    font-size: 14px;
+}
