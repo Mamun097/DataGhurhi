@@ -127,7 +127,8 @@ const NavbarAcholder = (props) => {
     language === "English" ? text : translatedLabels[text] || text;
 
   const toggleLanguage = () => {
-    setLanguage((prev) => (prev === "English" ? "বাংলা" : "English"));
+    localStorage.setItem("language", language === "English" ? "বাংলা" : "English");
+    setLanguage(localStorage.getItem("language"));
   };
 
   const handleSearch = () => {
