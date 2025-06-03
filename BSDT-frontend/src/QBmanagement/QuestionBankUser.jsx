@@ -1,4 +1,4 @@
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./CSS/SurveyForm.css";
@@ -22,7 +22,7 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; // If there's an error, fallback to original text
+    return textArray; // fallback
   }
 };
 
@@ -30,7 +30,7 @@ const QB = ({ language, setLanguage }) => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("mine");
   const [sharedQuestions, setSharedQuestions] = useState([]);
-  const [questions, setQuestions] = useState([]);
+  const [questions, setQuestions] = useState([]); // ✅ FIXED: was `false`
 
   const [translations, setTranslations] = useState({});
 
@@ -41,7 +41,7 @@ const QB = ({ language, setLanguage }) => {
     "Question Bank",
   ];
 
-  // Fetch questions from the server
+  // Fetch questions
   useEffect(() => {
     const load = async () => {
       try {
@@ -51,20 +51,18 @@ const QB = ({ language, setLanguage }) => {
           },
         });
         const data = resp.data;
-        console.log("Fetched questions:", data);
-        if (data.length > 0) {
-          setQuestions(data || []);
-        }
+        if (Array.isArray(data)) setQuestions(data);
       } catch (err) {
         console.error("Failed to load questions:", err);
       }
     };
-
     load();
   }, []);
 
   // Fetch shared questions
   useEffect(() => {
+    if (activeTab !== "shared") return;
+
     const fetchSharedQuestions = async () => {
       try {
         const resp = await axios.get("http://localhost:2000/api/question-bank/shared", {
@@ -73,24 +71,22 @@ const QB = ({ language, setLanguage }) => {
           },
         });
         const data = resp.data;
-        console.log("Fetched shared questions:", data);
-        if (Array.isArray(data)) {
-          setSharedQuestions(data);
-        }
+        if (Array.isArray(data)) setSharedQuestions(data);
       } catch (err) {
         console.error("Failed to load shared questions:", err);
       }
     };
 
-    if (activeTab === "shared") {
-      fetchSharedQuestions();
-    }
+    fetchSharedQuestions();
   }, [activeTab]);
 
-  // Fetch translations when language changes
+  // Fetch translations
   useEffect(() => {
     const loadTranslations = async () => {
-      const translated = await translateText(labelsToTranslate, language === "English" ? "en" : "bn");
+      const translated = await translateText(
+        labelsToTranslate,
+        language === "English" ? "en" : "bn"
+      );
 
       const translatedMap = {};
       labelsToTranslate.forEach((label, idx) => {
@@ -103,9 +99,6 @@ const QB = ({ language, setLanguage }) => {
     loadTranslations();
   }, [language]);
 
-  
-
-  // Function to get the translated text based on selected language
   const getLabel = (text) => translations[text] || text;
 
   if (questions.length === 0) {
@@ -113,40 +106,50 @@ const QB = ({ language, setLanguage }) => {
   }
 
   return (
-    <>
-      <div className="bg-white rounded shadow p-4 mb-4">
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <h1 className="text-success mb-0 text-center w-100">
-            <i className="bi bi-journal-text me-2"></i> {getLabel("Question Bank")}
-          </h1>
-        </div>
-        <div className="d-flex justify-content-end gap-2 mb-3">
-          <button
-            className={`btn btn-sm ${activeTab === "mine" ? "btn-success" : "btn-outline-success"}`}
-            onClick={() => setActiveTab("mine")}
-          >
-            <i className="bi bi-person me-1"></i> {getLabel("My Questions")}
-          </button>
-
-          <button
-            className={`btn btn-sm ${activeTab === "shared" ? "btn-success" : "btn-outline-success"}`}
-            onClick={() => setActiveTab("shared")}
-          >
-            <i className="bi bi-people me-1"></i> {getLabel("Shared with Me")}
-          </button>
-        </div>
-
-        {activeTab === "mine" && (
-          <SurveyForm questions={questions} setQuestions={setQuestions} activeTab={activeTab} language={language} setLanguage={setLanguage} />
-        )}
-
-        {activeTab === "shared" && (
-          <SurveyForm questions={sharedQuestions} setQuestions={() => {}} activeTab={activeTab} language={language} setLanguage={setLanguage} />
-        )}
+    <div className="bg-white rounded shadow p-4 mb-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1 className="text-success mb-0 text-center w-100">
+          <i className="bi bi-journal-text me-2"></i> {getLabel("Question Bank")}
+        </h1>
       </div>
 
-  
-    </>
+      <div className="d-flex justify-content-end gap-2 mb-3">
+        <button
+          className={`btn btn-sm ${activeTab === "mine" ? "btn-success" : "btn-outline-success"}`}
+          onClick={() => setActiveTab("mine")}
+        >
+          <i className="bi bi-person me-1"></i> {getLabel("My Questions")}
+        </button>
+        <button
+          className={`btn btn-sm ${activeTab === "shared" ? "btn-success" : "btn-outline-success"}`}
+          onClick={() => setActiveTab("shared")}
+        >
+          <i className="bi bi-people me-1"></i> {getLabel("Shared with Me")}
+        </button>
+      </div>
+
+      {activeTab === "mine" && (
+        <SurveyForm
+          questions={questions}
+          setQuestions={setQuestions}
+          activeTab={activeTab}
+          language={language}
+          setLanguage={setLanguage}
+          getLabel={getLabel}
+        />
+      )}
+
+      {activeTab === "shared" && (
+        <SurveyForm
+          questions={sharedQuestions}
+          setQuestions={() => {}}
+          activeTab={activeTab}
+          language={language}
+          setLanguage={setLanguage}
+          getLabel={getLabel}
+        />
+      )}
+    </div>
   );
 };
 

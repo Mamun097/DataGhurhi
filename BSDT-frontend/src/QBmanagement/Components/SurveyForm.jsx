@@ -240,7 +240,7 @@ const filteredQuestions = questions
         "Result Option:",
         "Both keyword",
         "Any selected keyword",
-         "Language",
+        "Language",
         "All Languages",
         "English",
         "Bangla",
@@ -463,6 +463,8 @@ const filteredQuestions = questions
           newQuestion={newQuestion}
           setNewQuestion={setNewQuestion}
           addNewQuestion={addNewQuestion}
+          language={language}
+          setLanguage={setLanguage}
         />
       )}
 

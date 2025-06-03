@@ -29,7 +29,7 @@ const slidesEnglish = [
     image: "/assets/images/collaborate_slide.png",
   },
   {
-    title: "📊 Visualize Instantly",
+    title: "📊 Quick Overview",
     description: [
       "Visualize dataset with beautiful charts and graphs.",
       "Generate demographic and statistical analysis by selecting attributes.",

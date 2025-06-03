@@ -1210,7 +1210,7 @@ def process_shapiro_test(request, df, col1):
         def map_digits(s):
             return s.translate(digit_map_bn) if language == 'bn' else s
 
-        # ✅ Check for numeric column
+        # Check for numeric column
         if not pd.api.types.is_numeric_dtype(df[col1]):
             return JsonResponse({
                 'success': False,
