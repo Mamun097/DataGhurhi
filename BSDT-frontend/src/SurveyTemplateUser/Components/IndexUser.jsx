@@ -14,7 +14,7 @@ const Index = () => {
   );
 
   // Sidebar templates state
-  const [templates, setTemplates] = useState([]);
+  const [template, setTemplate] = useState();
 
   // Props for SurveyForm
   const [title, setTitle] = useState(null);
@@ -40,7 +40,7 @@ const Index = () => {
             }
           );
           console.log("Template data:", response.data);
-          setTemplates(response.data.data);
+          setTemplate(response.data.data);
           setTitle(response.data.data.title);
           setSections(response.data.data.template.sections);
           setQuestions(response.data.data.template.questions);
@@ -80,7 +80,7 @@ const Index = () => {
   }
 
   // Show a loading placeholder until templates arrive (if needed)
-  if ( templates.length === 0) {
+  if ( template === undefined || template === null) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
   return (
@@ -89,12 +89,10 @@ const Index = () => {
       <div className="container-fluid">
         <div className="row">
           <div className="col-2">
-            <div className="mt-5">
-            </div>
           </div>
 
           {/* Center column: always 8 cols */}
-          <div className="col-8 mt-5">
+          <div className="col-8">
             <SurveyForm
               title={title}
               sections={sections}
@@ -103,6 +101,7 @@ const Index = () => {
               image={backgroundImage}
               userResponse={userResponse} 
               setUserResponse={setUserResponse}
+              template={template}
             />
             <div style={{ minHeight: "100vh" }}>
               <button
