@@ -1,118 +1,117 @@
 /* General Styling */
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f8f9fa;
-    margin: 0;
-    padding: 0;
-  }
-  
-  /* Survey Container */
-  .container {
-    max-width: 700px;
-    margin: 0 auto;
-    background-color: #fff;
-    padding: 30px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  }
-  
-  /* Header Image */
-  .img-fluid {
-    max-width: 100%;
-    height: auto;
-  }
-  
-  /* Title and Date */
-  h1 {
-    font-size: 2rem;
-    color: #343a40;
-    margin-bottom: 10px;
-  }
-  
-  .text-muted {
-    color: #6c757d;
-    font-size: 0.9rem;
-  }
-  
-  /* Select and Radio Buttons */
-  .form-select,
-  .form-check-input {
-    border-radius: 5px;
-  }
-  
-  .form-select {
-    height: 40px;
-    font-size: 1rem;
-  }
-  
-  .form-check-input {
-    width: 20px;
-    height: 20px;
-  }
-  
-  .form-check-label {
-    font-size: 1rem;
-  }
-  
-  /* Survey Section */
-  .mb-3 {
-    margin-bottom: 1.5rem;
-  }
-  
-  .fw-bold {
-    font-weight: bold;
-    font-size: 1.1rem;
-    color: #343a40;
-  }
-  
-  .ms-2 {
-    margin-left: 0.5rem;
-  }
-  
-  /* Button Styling */
-  .btn {
-    padding: 10px 20px;
-    font-size: 1.1rem;
-    border-radius: 5px;
-  }
-  
-  .btn-primary {
-    background-color: #007bff;
-    border: none;
-    color: white;
-  }
-  
-  .btn-primary:hover {
-    background-color: #0056b3;
-  }
+  font-family: "Arial", sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 0;
+}
 
-  th:hover .hover-visible {
-    visibility: visible !important;
-  }
-  
-  td:hover .hover-visible {
-    visibility: visible !important;
-  }
+/* Survey Container */
+.container {
+  max-width: 700px;
+  margin: 0 auto;
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
 
-  .sidebar {
-    position: sticky;
-    top: 1rem;               /* stays 1rem from top of viewport */
-    contain: layout paint;   /* isolates layout & paint for performance */
-    will-change: transform;  /* hints browser that transform may change */
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;        /* scroll within sidebar if content grows */
-  }
-  
-  .sidebar .card.border-primary {
-    border-width: 2px;
-  }
-  
-  .content h2 {
-    text-align: center;
-  }
-  .sidebar {
-    background: #fff;
-    z-index: 10;  /* make sure it sits above page content */
-    padding-bottom: 1rem;
-  }
-  
+/* Header Image */
+.img-fluid {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Title and Date */
+h1 {
+  font-size: 2rem;
+  color: #343a40;
+  margin-bottom: 10px;
+}
+
+.text-muted {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+/* Select and Radio Buttons */
+.form-select,
+.form-check-input {
+  border-radius: 5px;
+}
+
+.form-select {
+  height: 40px;
+  font-size: 1rem;
+}
+
+.form-check-input {
+  width: 20px;
+  height: 20px;
+}
+
+.form-check-label {
+  font-size: 1rem;
+}
+
+/* Survey Section */
+.mb-3 {
+  margin-bottom: 1.5rem;
+}
+
+.fw-bold {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #343a40;
+}
+
+.ms-2 {
+  margin-left: 0.5rem;
+}
+
+/* Button Styling */
+.btn {
+  padding: 10px 20px;
+  font-size: 1.1rem;
+  border-radius: 5px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border: none;
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+th:hover .hover-visible {
+  visibility: visible !important;
+}
+
+td:hover .hover-visible {
+  visibility: visible !important;
+}
+
+.sidebar {
+  position: sticky;
+  top: 1rem; /* stays 1rem from top of viewport */
+  contain: layout paint; /* isolates layout & paint for performance */
+  will-change: transform; /* hints browser that transform may change */
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto; /* scroll within sidebar if content grows */
+}
+
+.sidebar .card.border-primary {
+  border-width: 2px;
+}
+
+.content h2 {
+  text-align: center;
+}
+.sidebar {
+  background: #fff;
+  z-index: 10; /* make sure it sits above page content */
+  padding-bottom: 1rem;
+}

@@ -48,7 +48,6 @@ const SurveyForm = ({
 }) => {
   // Internal state for SurveyForm's current view of the background image
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(imageFromParent || "");
-  const [themeColor, setThemeColor] = useState(null);
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -151,7 +150,6 @@ useEffect(() => {
 
   const handleRemoveImage = () => {
     updateAndRelayBackgroundImage(""); 
-    setThemeColor(null);
     const fileInput = document.getElementById('bannerImageInput');
     if (fileInput) {
       fileInput.value = "";
@@ -292,7 +290,7 @@ useEffect(() => {
       </div>
 
       {/* Survey Content Area */}
-      <div style={{ backgroundColor: themeColor || "white", paddingBottom: "20px" }}>
+      <div style={{ backgroundColor: "white", paddingBottom: "20px" }}>
         {/* Banner Image and Title */}
         <div style={{ position: "relative", width: "100%" }}>
           {currentBackgroundImage ? ( // Use internal state for display
@@ -311,7 +309,7 @@ useEffect(() => {
             <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
             <input type="file" accept="image/*" hidden
               onChange={(e) => {
-                handleImageUpload(e, updateAndRelayBackgroundImage, setThemeColor); 
+                handleImageUpload(e, updateAndRelayBackgroundImage); 
               }}
               id="bannerImageInput"
 
@@ -330,18 +328,18 @@ useEffect(() => {
         </div>
 
         {/* Description Display or Editor Area */}
-        <div className="container mt-2">
+        <div className="container">
           {isEditingDescription ? (
             <div className="card p-3 shadow-sm">
-              <h5 className="card-title mb-2">{description ? getLabel("Edit Description") : getLabel("Add New Description")}</h5>
+              <h5 className="card-title">{description ? getLabel("Edit Description") : getLabel("Add New Description")}</h5>
               <textarea
-                className="form-control mb-3"
+                className="form-control"
                 rows="5"
                 value={localDescriptionText}
                 onChange={(e) => setLocalDescriptionText(e.target.value)}
                 placeholder={getLabel("Enter your survey description here")}
               />
-              <div className="text-end">
+              <div className="text-end mt-2">
                 <button className="btn btn-secondary me-2" onClick={handleCancelEditDescription}>
                   {getLabel("Cancel")}
                 </button>

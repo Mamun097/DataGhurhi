@@ -12,10 +12,14 @@ const SurveyForm = ({
   image,
   userResponse,
   setUserResponse,
+  template,
 }) => {
   // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
-
+  const [description, setDescription] = useState(
+    template?.template?.description || ""
+  );
+  console.log("Description:", description);
   console.log("SurveyForm Sections:", sections);
   console.log("SurveyForm Questions:", questions);
 
@@ -26,56 +30,74 @@ const SurveyForm = ({
     }
   }, [image]);
 
-
   return (
     <div>
-      <div className="mb-3"></div>
-
       <div style={{ backgroundColor: "white" }}>
         {/* Survey Header */}
         <div style={{ position: "relative", width: "100%" }}>
-          <img
-            src={backgroundImage || "https://via.placeholder.com/1200x400"} // Fallback image
-            alt="Survey Banner"
-            className="img-fluid"
-            style={{ width: "100%", height: "400px", objectFit: "cover" }}
-          />
+          {/* Background Image */}
+          {backgroundImage && (
+            <img
+              src={backgroundImage || "https://via.placeholder.com/1200x400"} // Fallback image
+              alt="Survey Banner"
+              className="img-fluid"
+              style={{ width: "100%", maxHeight: "400px", objectFit: "cover" }}
+            />
+          )}
 
           {/* Survey Title as Static Text */}
-          <div
-            className="text-center"
-            style={{
-              position: "absolute",
-              top: "80%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
-              fontWeight: "bold",
-              background: "rgba(0, 0, 0, 0.5)",
-              padding: "10px 20px",
-              borderRadius: "4px",
-              width: "100%",
-            }}
-          >
-            {title || "Untitled Survey"}
+          {backgroundImage && (
+            <div
+              className="text-center"
+              style={{
+                position: "absolute",
+                top: "80%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+                color: "white",
+                fontWeight: "bold",
+                background: "rgba(0, 0, 0, 0.5)",
+                padding: "10px 20px",
+                borderRadius: "4px",
+                width: "80%",
+              }}
+            >
+              {title || "Untitled Survey"}
+            </div>
+          )}
+          {/* Fallback Title if no background image */}
+          {!backgroundImage && (
+            <h1 className="text-center mt-2" style={{ color: "#333" }}>
+              {title || "Untitled Survey"}
+            </h1>
+          )}
+        </div>
+        {/* Survey Description */}
+        {description && (
+          <div className="container rounded">
+            <p className="text-muted" style={{ fontSize: "1.2rem" }}>
+              {description}
+            </p>
           </div>
-        </div>
-        <div className="text-center mt-3"></div>
+        )}
 
-        {/* Survey Sections and Questions */}
-        <div className="mt-5">
-          {sections.map((section) => (
-            <SurveySections
-              key={section.id}
-              section={section}
-              sections={sections}
-              questions={questions}
-              setQuestions={setQuestions}
-              userResponse={userResponse}
-              setUserResponse={setUserResponse}
-            />
-          ))}
-        </div>
+        <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.2rem" }}>
+          * Required fields are marked with an asterisk.
+        </p>
+      </div>
+      {/* Survey Sections and Questions */}
+      <div>
+        {sections.map((section) => (
+          <SurveySections
+            key={section.id}
+            section={section}
+            sections={sections}
+            questions={questions}
+            setQuestions={setQuestions}
+            userResponse={userResponse}
+            setUserResponse={setUserResponse}
+          />
+        ))}
       </div>
     </div>
   );

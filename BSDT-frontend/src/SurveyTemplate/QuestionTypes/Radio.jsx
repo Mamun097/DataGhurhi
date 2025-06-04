@@ -291,7 +291,8 @@ const Radio = ({ question, questions, setQuestions }) => {
               </div>
               <div className="d-flex justify-content-between align-items-center mt-2 gap-2">
                 <select
-                  className="form-select form-select-sm w-auto" // Bootstrap select classes
+                  className="form-select form-select-sm" // Bootstrap select classes
+                  style={{ maxWidth: '100px' }} // Optional: limit width
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >

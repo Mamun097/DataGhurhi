@@ -59,7 +59,8 @@ const Dropdown = ({ question, userResponse, setUserResponse }) => {
       {/* Dropdown Options */}
       <div className="mt-3 mb-3">
         <select
-          className="form-select w-auto"
+          className="form-select"
+          style={{ maxWidth: "200px" }}
           value={userAnswer || ""}
           onChange={handleAnswerChange}
           required={question.required}
@@ -69,7 +70,7 @@ const Dropdown = ({ question, userResponse, setUserResponse }) => {
             Select an option
           </option>
           {question.meta?.options?.map((option, idx) => (
-            <option key={idx} value={option}>
+            <option key={idx} value={option} className="max-md-2">
               {option || `Option ${idx + 1}`}
             </option>
           ))}
