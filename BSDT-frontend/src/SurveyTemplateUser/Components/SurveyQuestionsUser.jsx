@@ -81,8 +81,6 @@ const SurveyQuestions = ({
         return (
           <TickBoxGrid
             question={question}
-            questions={questions}
-            setQuestions={setQuestions}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
           />
@@ -102,10 +100,10 @@ const SurveyQuestions = ({
   };
 
   return (
-    <div className="mt-3 mb-3 bg-white">
+    <div >
       {sectionQuestions.map((question) => (
         <div
-          className="mt-4 mb-4 bg-light"
+          className="mt-4 mb-4 bg-light rounded"
           key={question.id}
           style={{
             padding: 8,

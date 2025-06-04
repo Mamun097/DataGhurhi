@@ -1,6 +1,5 @@
 import React from "react";
 import SurveyQuestions from "../Components/SurveyQuestionsUser";
-import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 
 const SurveySections = ({
     section,
@@ -13,7 +12,7 @@ const SurveySections = ({
 
   
   return (
-    <div className="container-fluid shadow border rounded p-3 mt-5 mb-5">
+    <div className="container mb-3">
       {sections.length !== 1 && (
         <div>
           <h4 className="text-left">
