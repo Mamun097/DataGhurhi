@@ -183,7 +183,7 @@ const Index = () => {
           </div>
 
           {/* Main form */}
-          <div className="col-8 mt-5">
+          <div className="col-8 mt-3">
             <SurveyForm
               title={title}
               setTitle={setTitle}

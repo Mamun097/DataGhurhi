@@ -40,7 +40,6 @@ const RatingQuestion = ({ question, userResponse, setUserResponse }) => {
       </h5>
 
       {/* Image Preview */}
-      {/* Image Preview */}
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mt-4 mb-4">
           {question.imageUrls.map((img, idx) => (
@@ -61,9 +60,12 @@ const RatingQuestion = ({ question, userResponse, setUserResponse }) => {
       )}
 
       {/* Rating Stars */}
-      <div className="d-flex justify-content-start mt-3 mb-3 gap-3">
+      <div
+        className="d-flex flex-wrap justify-content-center mt-3 mb-3 gap-2"
+        style={{ maxWidth: "100%", overflowX: "auto" }}
+      >
         {[...Array(scale)].map((_, idx) => (
-          <div key={idx} className="text-center">
+          <div key={idx} className="text-center" style={{ minWidth: 40 }}>
             <button
               type="button"
               className="btn btn-link p-0 border-0"
