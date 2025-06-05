@@ -202,7 +202,6 @@ const Index = () => {
                 setLanguage={setLanguage}
               />
             </div>
-            {/* Right gutter (optional on mobile) */}
             <div className="d-none d-md-block col-md-2" />
           </div>
           <ToastContainer position="top-center" autoClose={4000} />
