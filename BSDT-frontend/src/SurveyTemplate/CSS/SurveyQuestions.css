@@ -1,0 +1,32 @@
+.survey-question-draggable-item {
+  margin-bottom: 8px; /* Replaces margin: "0 0 8px 0" */
+}
+
+.survey-question-inner-container {
+  user-select: none;
+  padding: 8px;
+  background: #ffffff;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+}
+
+.survey-question-inner-container.is-dragging {
+  background: #e0e0e0;
+}
+
+.survey-question-drag-handle {
+  cursor: grab;
+  margin-right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.survey-question-drag-icon {
+  font-size: 1.5rem;
+}
+
+.survey-question-content-wrapper {
+  flex-grow: 1;
+}

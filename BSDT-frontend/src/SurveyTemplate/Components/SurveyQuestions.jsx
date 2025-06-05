@@ -1,7 +1,6 @@
 import React from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
-// Import your question type components:
 import Radio from "../QuestionTypes/Radio";
 import Text from "../QuestionTypes/Text";
 import Likert from "../QuestionTypes/LikertScale";
@@ -11,9 +10,9 @@ import DropdownQuestion from "../QuestionTypes/Dropdown";
 import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
+import "../CSS/SurveyQuestions.css"; 
 
 const SurveyQuestions = ({ section, questions, setQuestions }) => {
-  // Filter only the questions for the current section.
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
   const handleDragEnd = (result) => {
@@ -122,14 +121,14 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
   };
 
   return (
-    <div className="mb-3 ">
+    <div className="mb-3">
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId={`section-${section.id}`}>
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="mt-2"
+              className="survey-questions-droppable-area mt-2"
             >
               {sectionQuestions.map((question, index) => (
                 <Draggable
@@ -141,42 +140,24 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
                     <div
                       ref={providedDraggable.innerRef}
                       {...providedDraggable.draggableProps}
-                      style={{
-                        ...providedDraggable.draggableProps.style,
-                        margin: "0 0 8px 0",
-                      }}
+                      style={providedDraggable.draggableProps.style}
+                      className="survey-question-draggable-item"
                     >
                       <div
-                        style={{
-                          userSelect: "none",
-                          padding: 8,
-                          background: snapshot.isDragging
-                            ? "#e0e0e0"
-                            : "#ffffff",
-                          border: "1px solid #ccc",
-                          display: "flex",
-                          alignItems: "center",
-                        }}
+                        className={`survey-question-inner-container ${
+                          snapshot.isDragging ? "is-dragging" : ""
+                        }`}
                       >
                         <div
                           {...providedDraggable.dragHandleProps}
-                          style={{
-                            cursor: "grab",
-                            marginRight: "12px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
+                          className="survey-question-drag-handle"
                           aria-label="Drag question"
                         >
                           <i
-                            className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.5rem", cursor: "grab" }}
+                            className="bi bi-grip-vertical survey-question-drag-icon"
                           ></i>
                         </div>
-                        <div style={{ flexGrow: 1 }}>
-                          {" "}
-                          {/* Ensures question content takes remaining space */}
+                        <div className="survey-question-content-wrapper">
                           {renderQuestionComponent(question)}
                         </div>
                       </div>
