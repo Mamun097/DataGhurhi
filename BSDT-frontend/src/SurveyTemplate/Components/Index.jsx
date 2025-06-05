@@ -148,68 +148,64 @@ const Index = () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container-fluid">
-        <div className="row">
-          {/* Sidebar */}
-          <div className="col-2">
-            <div className="mt-5">
-              {!useCustom && surveyStatus !== "published" && (
-                <>
-                  <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
-                  <div className="d-flex flex-column gap-3">
-                    {templates.map((tmpl, idx) => (
-                      <div
-                        key={tmpl.id}
-                        className={`card text-center shadow-sm ${
-                          idx === selectedIndex ? "border-primary" : ""
-                        }`}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleSelect(idx)}
-                      >
-                        <div className="card-body">
-                          <h5 className="card-title">{tmpl.title}</h5>
+        <div className="container-fluid">
+          <div className="row">
+            {/* Sidebar */}
+            <div className="col-12 col-md-2"> 
+              <div className="mt-md-5"> 
+                {!useCustom && surveyStatus !== "published" && (
+                  <>
+                    <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
+                    <div className="d-flex flex-column gap-3">
+                      {templates.map((tmpl, idx) => (
+                        <div
+                          key={tmpl.id}
+                          className={`card text-center shadow-sm ${
+                            idx === selectedIndex ? "border-primary" : ""
+                          }`}
+                          style={{ cursor: "pointer" }}
+                          onClick={() => handleSelect(idx)}
+                        >
+                          <div className="card-body">
+                            <h5 className="card-title">{tmpl.title}</h5>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </>
+                )}
+                {!useCustom && surveyStatus === "published" && (
+                  <div className="alert alert-warning text-center">
+                  {getLabel("This survey has already been published.")}
                   </div>
-                </>
-              )}
-              {!useCustom && surveyStatus === "published" && (
-                <div className="alert alert-warning text-center">
-                 {getLabel("This survey has already been published.")}
-                </div>
-              )}
+                )}
+              </div>
             </div>
+
+            {/* Main form */}
+            <div className="col-12 col-md-8 mt-3"> 
+              <SurveyForm
+                title={title}
+                setTitle={setTitle}
+                sections={sections}
+                setSections={setSections}
+                questions={questions}
+                setQuestions={setQuestions}
+                image={backgroundImage}
+                project_id={project_id}
+                survey_id={survey_id}
+                surveyStatus={surveyStatus}
+                surveyLink={surveyLink}
+                description={description}
+                setDescription={setDescription}
+                language={language}
+                setLanguage={setLanguage}
+              />
+            </div>
+            <div className="d-none d-md-block col-md-2" />
           </div>
-
-          {/* Main form */}
-          <div className="col-8 mt-3">
-            <SurveyForm
-              title={title}
-              setTitle={setTitle}
-              sections={sections}
-              setSections={setSections}
-              questions={questions}
-              setQuestions={setQuestions}
-              image={backgroundImage}
-              project_id={project_id}
-              survey_id={survey_id}
-              surveyStatus={surveyStatus}
-              surveyLink={surveyLink}
-              description={description} 
-              setDescription={setDescription} 
-              language={language}
-              setLanguage={setLanguage}
-         
-
-            />
-          </div>
-
-          {/* Right gutter */}
-          <div className="col-2" />
+          <ToastContainer position="top-center" autoClose={4000} />
         </div>
-        <ToastContainer position="top-center" autoClose={4000} />
-      </div>
     </>
   );
 };

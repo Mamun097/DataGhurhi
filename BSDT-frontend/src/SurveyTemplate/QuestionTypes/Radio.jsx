@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import Option from "./QuestionSpecificUtils/OptionClass";
+import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is correctly imported and used
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 
@@ -28,7 +28,6 @@ const Radio = ({ question, questions, setQuestions }) => {
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-    // Reset file input value to allow re-uploading the same file
     if (event.target) {
         event.target.value = null;
     }
@@ -61,10 +60,9 @@ const Radio = ({ question, questions, setQuestions }) => {
     setQuestions((prev) =>
       prev.map((q) => {
         if (q.id === question.id) {
-          // When disabling marks, reset all option values to 0
           const updatedOptions = !newValue
             ? (q.meta?.options || []).map(opt => ({ ...opt, value: 0 }))
-            : (q.meta?.options || []); // Otherwise, keep existing options (marks might have values)
+            : (q.meta?.options || []);
           return {
             ...q,
             meta: {
@@ -93,7 +91,6 @@ const Radio = ({ question, questions, setQuestions }) => {
   const handleDelete = useCallback(() => {
     setQuestions((prev) => {
       const filtered = prev.filter((q) => q.id !== question.id);
-      // Re-index IDs
       return filtered.map((q, i) => ({ ...q, id: i + 1 }));
     });
   }, [question.id, setQuestions]);
@@ -103,14 +100,13 @@ const Radio = ({ question, questions, setQuestions }) => {
       prev.map((q) => {
         if (q.id === question.id) {
           const currentOptions = q.meta?.options || [];
-          // Ensure Option class is used if it adds unique IDs or other logic
           return {
             ...q,
             meta: {
               ...q.meta,
               options: [
                 ...currentOptions,
-                new Option(`Option ${currentOptions.length + 1}`, 0), // Assuming Option class constructor handles ID
+                new Option(`Option ${currentOptions.length + 1}`, 0),
               ],
             },
           };
@@ -130,7 +126,7 @@ const Radio = ({ question, questions, setQuestions }) => {
                 meta: {
                   ...q.meta,
                   options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? { ...opt, text: newText } : opt // Create a new option object for the updated one
+                    i === idx ? { ...opt, text: newText } : opt
                   ),
                 },
               }
@@ -203,11 +199,11 @@ const Radio = ({ question, questions, setQuestions }) => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: questions.length + 1, // Temporary ID, will be re-indexed
+      id: questions.length + 1,
       meta: {
         ...question.meta,
         options: [...(question.meta?.options || []).map(opt => new Option(opt.text, opt.value ?? 0))],
-        enableOptionShuffle: enableOptionShuffle, // Use current state of these toggles
+        enableOptionShuffle: enableOptionShuffle,
         enableMarks: enableMarks,
       },
     };
@@ -222,19 +218,6 @@ const Radio = ({ question, questions, setQuestions }) => {
     enableOptionShuffle,
     enableMarks,
   ]);
-  const handleAddTag = useCallback(() => {
-    const tagsInput = prompt("Enter tags (comma-separated):");
-    if (tagsInput) {
-      const newTags = tagsInput.split(",").map((tag) => tag.trim()).filter(tag => tag); // Filter out empty tags
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? { ...q, meta: { ...q.meta, tags: [...new Set([...(q.meta?.tags || []), ...newTags])] } } // Ensure unique tags
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
 
   const removeImageCb = useCallback((index) => {
     setQuestions((prev) =>
@@ -257,14 +240,14 @@ const Radio = ({ question, questions, setQuestions }) => {
   }, [question.id, setQuestions]);
 
   return (
-    <div className="mb-3 dnd-isolate"> {/* dnd-isolate might be from a custom CSS or dnd setup */}
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
+    <div className="mb-3 dnd-isolate">
+      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+        <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em><strong>Multiple Choice</strong></em>
         </label>
-        <TagManager 
+        <TagManager
           questionId={question.id}
-          questionText={question.text} 
+          questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
         />
@@ -285,14 +268,13 @@ const Radio = ({ question, questions, setQuestions }) => {
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
-            <div key={idx} className="mb-3 bg-light p-3 rounded shadow-sm"> 
+            <div key={idx} className="mb-3 bg-light p-3 rounded shadow-sm">
               <div className={`d-flex justify-content-${img.alignment || "start"}`}>
                 <img src={img.url} alt={`Question visual aid ${idx + 1}`} className="img-fluid rounded" style={{ maxHeight: '300px', maxWidth: '100%' }} />
               </div>
-              <div className="d-flex justify-content-between align-items-center mt-2 gap-2">
+              <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
                 <select
-                  className="form-select form-select-sm" // Bootstrap select classes
-                  style={{ maxWidth: '100px' }} // Optional: limit width
+                  className="form-select form-select-sm w-auto"
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
@@ -322,35 +304,37 @@ const Radio = ({ question, questions, setQuestions }) => {
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {options.map((option, idx) => {
-                const stableKey = `option-${question.id}-${idx}`;
+                // Ensure key and draggableId are stable and unique strings
+                const keyForOption = `option-${question.id}-${option.id || idx}`; 
+                const draggableIdForOption = `draggable-option-${question.id}-${option.id || idx}`;
 
                 return (
                   <Draggable
-                    key={stableKey}
-                    draggableId={`opt-radio-${question.id}-${idx}`}
+                    key={keyForOption}
+                    draggableId={draggableIdForOption}
                     index={idx}
                     isDragDisabled={showCropper}
                   >
                     {(prov) => (
-                      <div ref={prov.innerRef} {...prov.draggableProps} className="row mb-1 align-items-center">
+                      <div ref={prov.innerRef} {...prov.draggableProps} className="row g-2 mb-2 align-items-center">
                         <div className="col-auto" {...prov.dragHandleProps}>
                           <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", cursor: "grab" }}></i>
                         </div>
-                        <div className={enableMarks ? "col-6 col-md-7" : "col-10 col-md-10"}>
+                        <div className="col">
                           <input
                             type="text"
-                            className="form-control" // Standard Bootstrap
-                            value={option.text || ""} // Ensure value is controlled
+                            className="form-control form-control-sm"
+                            value={option.text || ""}
                             onChange={(e) => updateOption(idx, e.target.value)}
                             placeholder={`Option ${idx + 1}`}
                           />
                         </div>
                         {enableMarks && (
-                          <div className="col-3 col-md-2">
+                          <div className="col-auto" style={{ minWidth: "75px", maxWidth: "100px" }}>
                             <input
                               type="number"
-                              className="form-control" 
-                              value={option.value ?? ""} 
+                              className="form-control form-control-sm"
+                              value={option.value ?? ""}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 updateOptionValue(idx, val === "" ? 0 : parseFloat(val) || 0);
@@ -359,11 +343,11 @@ const Radio = ({ question, questions, setQuestions }) => {
                             />
                           </div>
                         )}
-                        <div className="col-1">
+                        <div className="col-auto">
                           <button
-                            className="btn btn-sm btn-outline-danger" // Added btn-sm for consistency
+                            className="btn btn-sm btn-outline-secondary w-auto"
                             onClick={() => removeOption(idx)}
-                            disabled={options.length <= 1} // Use derived options.length
+                            disabled={options.length <= 1}
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -379,18 +363,18 @@ const Radio = ({ question, questions, setQuestions }) => {
         </Droppable>
       </DragDropContext>
 
-      <button className="btn btn-sm btn-outline-primary mt-2" onClick={addOption}>
+      <button className="btn btn-sm btn-outline-secondary w-auto" onClick={addOption}>
         ➕ Add Option
       </button>
 
-      <div className="d-flex align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary" onClick={handleCopy}>
+      <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
+        <button className="btn btn-outline-secondary w-auto" onClick={handleCopy} title="Copy Question">
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary" onClick={handleDelete}>
+        <button className="btn btn-outline-secondary w-auto" onClick={handleDelete} title="Delete Question">
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary">
+        <label className="btn btn-outline-secondary w-auto" title="Add Image">
           <i className="bi bi-image"></i>
           <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
         </label>
@@ -401,7 +385,7 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`enableMarksRadio-${question.id}`} // Ensure unique ID
+            id={`enableMarksRadio-${question.id}`}
             onChange={handleEnableMarksToggle}
             checked={enableMarks}
           />
@@ -413,7 +397,7 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`enableOptionShuffleRadio-${question.id}`} // Ensure unique ID
+            id={`enableOptionShuffleRadio-${question.id}`}
             onChange={handleEnableOptionShuffleToggle}
             checked={enableOptionShuffle}
           />
@@ -425,7 +409,7 @@ const Radio = ({ question, questions, setQuestions }) => {
           <input
             className="form-check-input"
             type="checkbox"
-            id={`requiredSwitchRadio-${question.id}`} // Ensure unique ID
+            id={`requiredSwitchRadio-${question.id}`}
             checked={required}
             onChange={handleRequired}
           />
