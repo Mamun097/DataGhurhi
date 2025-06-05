@@ -22,10 +22,6 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
   const [enableRowShuffle, setEnableRowShuffle] = useState(
     question.meta?.enableRowShuffle || false
   );
-
-  // Assuming question.imageUrls is the standard, removing 'image' state from original TickBoxGrid
-  // const [image, setImage] = useState(question.image || null);
-
   const rows = useMemo(
     () => (question.meta?.rows?.length ? question.meta.rows : ["Row 1"]),
     [question.meta?.rows]
@@ -321,7 +317,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
                           placeholder={`Row ${index + 1}`}
                         />
                         <button
-                          className="btn btn-outline-secondary ms-2"
+                          className="btn btn-outline-secondary ms-2 w-auto"
                           onClick={() => handleDeleteRow(index)}
                           disabled={rows.length <= 1}
                         >
@@ -337,7 +333,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           </Droppable>
         </DragDropContext>
         <button
-          className="btn btn-sm btn-outline-primary mt-2"
+          className="btn btn-sm btn-outline-primary mt-2 w-auto"
           onClick={handleAddRow}
         >
           ➕ Add Row
@@ -376,7 +372,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
                           placeholder={`Column ${index + 1}`}
                         />
                         <button
-                          className="btn btn-outline-secondary ms-2"
+                          className="btn btn-outline-secondary ms-2 w-auto"
                           onClick={() => handleDeleteColumn(index)}
                           disabled={columns.length <= 1}
                         >
@@ -392,7 +388,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           </Droppable>
         </DragDropContext>
         <button
-          className="btn btn-sm btn-outline-primary mt-2"
+          className="btn btn-sm btn-outline-primary mt-2 w-auto"
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
@@ -401,12 +397,12 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
       </div>
 
       {/* Grid Preview */}
-      {rows.length > 0 && columns.length > 0 && (
+      {/* {rows.length > 0 && columns.length > 0 && (
         <div className="table-responsive mb-3">
           <table className="table table-bordered">
             <thead>
               <tr>
-                <th style={{minWidth: '150px', wordBreak: 'break-word'}}></th>
+                <th style={{minWidth: '120px', wordBreak: 'break-word'}}></th>
                 {columns.map((col, colIndex) => (
                   <th
                     key={`header-tickbox-${colIndex}`}
@@ -424,7 +420,6 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
                   <td style={{ wordBreak: 'break-word' }}>{row}</td>
                   {columns.map((_, colIndex) => (
                     <td key={`cell-tickbox-${rowIndex}-${colIndex}`} className="text-center">
-                      {/* Use checkbox for TickBoxGrid */}
                       <input
                         type="checkbox"
                         name={`tickbox-q${question.id}-row${rowIndex}-col${colIndex}`}
@@ -437,20 +432,20 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
             </tbody>
           </table>
         </div>
-      )}
+      )} */}
 
       {/* Action Buttons */}
       <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handleCopy}>
+        <button className="btn btn-sm btn-outline-secondary w-auto me-2" onClick={handleCopy}>
           <i className="bi bi-clipboard"></i>
         </button>
         <button
-          className="btn btn-outline-secondary me-2"
+          className="btn btn-sm btn-outline-secondary w-auto me-2"
           onClick={handleDelete}
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary me-2 hover:bg-gray-100 transition-colors">
+        <label className="btn btn-sm btn-outline-secondary w-auto me-2">
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -474,8 +469,8 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           <label className="form-check-label" htmlFor={`requireEachRowTickbox${question.id}`}>
             Require a response in each row
           </label>
-        </div>
-        <div className="form-check form-switch mb-2">
+          </div>
+          <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
             type="checkbox"
@@ -486,8 +481,8 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           <label className="form-check-label" htmlFor={`enableRowShuffleTickbox${question.id}`}>
             Shuffle row order
           </label>
-        </div>
-         <div className="form-check form-switch">
+          </div>
+          <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
@@ -498,7 +493,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           <label className="form-check-label" htmlFor={`requiredSwitchTickbox${question.id}`}>
             Required
           </label>
-        </div>
+          </div>
       </div>
     </div>
   );

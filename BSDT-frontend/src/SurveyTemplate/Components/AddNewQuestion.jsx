@@ -8,6 +8,21 @@ import "react-toastify/dist/ReactToastify.css";
 const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel }) => {
   return (
     <div>
+      <style>
+        {`
+          .btn-outline-secondary {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          @media (max-width: 576px) {
+            .btn-outline-secondary {
+              font-size: 0.85rem;
+              padding: 0.5rem 0.25rem;
+            }
+          }
+        `}
+      </style>
       {newQuestion && (
         <div className="mt-3 p-3 border rounded shadow-sm bg-light position-relative">
           <button
@@ -17,25 +32,24 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
               position: 'absolute',
               top: '0.75rem',
               right: '0.75rem',
-              zIndex: 2, 
+              zIndex: 2,
             }}
             aria-label="Close"
             onClick={() => setNewQuestion(false)}
           ></button>
-          <p className="text-center h6 mt-2 mb-3 mx-3"> 
+          <p className="text-center h6 mt-2 mb-3 mx-3">
             <b>{getLabel("Select the type of question you want to add")}</b>
           </p>
-          {/* Responsive grid for question type buttons */}
-          <div className="row justify-content-start g-2"> 
-            <div className="col-6 col-md-4 col-lg-3">
+          <div className="row justify-content-start g-2">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
-                className="btn btn-outline-secondary w-100" 
+                className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("radio")}
               >
                 {getLabel("Multiple Choice")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("text")}
@@ -43,7 +57,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Text")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("rating")}
@@ -51,7 +65,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Rating")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("linearScale")}
@@ -59,7 +73,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Linear Scale")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("checkbox")}
@@ -67,7 +81,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Checkbox")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("dropdown")}
@@ -75,7 +89,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Dropdown")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("datetime")}
@@ -83,7 +97,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Date/Time")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("likert")}
@@ -91,7 +105,7 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
                 {getLabel("Likert Scale")}
               </button>
             </div>
-            <div className="col-6 col-md-4 col-lg-3">
+            <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
                 onClick={() => addNewQuestion("tickboxGrid")}
@@ -103,29 +117,27 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
         </div>
       )}
 
-      {/* Container for bottom action buttons, responsive flex layout */}
       <div className="d-flex flex-column flex-md-row align-items-center justify-content-center mt-3 text-center">
         <button
-          className="btn btn-outline-primary mb-2 mb-md-0 me-md-3" 
+          className="btn btn-outline-primary mb-2 mb-md-0 me-md-3"
           onClick={() => setNewQuestion(true)}
         >
-          <i className="bi bi-plus-lg"></i> {getLabel("Add Question")} 
+          <i className="bi bi-plus-lg"></i> {getLabel("Add Question")}
         </button>
 
-        <div className="mb-2 mb-md-0 me-md-3"> 
-            <AutoGeneration
-              addGeneratedQuestion={addGeneratedQuestion}
-              questionInfo={questionInfo}
-              getLabel={getLabel}
-            />
+        <div className="mb-2 mb-md-0 me-md-3">
+          <AutoGeneration
+            addGeneratedQuestion={addGeneratedQuestion}
+            questionInfo={questionInfo}
+            getLabel={getLabel}
+          />
         </div>
-        {/* <div className="mb-2 mb-md-0"> 
-            <ImportFromQb
-              addImportedQuestion={addImportedQuestion}
-              questionInfo={questionInfo}
-            />
-        </div>
-        */}
+        {/* <div className="mb-2 mb-md-0">
+          <ImportFromQb
+            addImportedQuestion={addImportedQuestion}
+            questionInfo={questionInfo}
+          />
+        </div> */}
       </div>
     </div>
   );

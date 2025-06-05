@@ -114,9 +114,7 @@ const SurveyForm = ({
       }
     };
     loadTranslations();
-  }, [language, labelsToTranslate]); // GOOGLE_API_KEY is not needed as a dep for useEffect if its absence is handled inside
-
-  // ... (other functions: updateAndRelayBackgroundImage, handleAddSection, etc. remain the same) ...
+  }, [language, labelsToTranslate]); 
   const updateAndRelayBackgroundImage = (newImageSrc) => {
     setCurrentBackgroundImage(newImageSrc);
     if (setImageInParent) {
@@ -178,19 +176,11 @@ const SurveyForm = ({
         const parsedToken = JSON.parse(bearerTokenString);
         if (parsedToken && typeof parsedToken === 'object') {
             if(parsedToken.id) userIdInPayload = parsedToken.id;
-            // If the token is an object containing the actual token (e.g., { token: "actual_jwt" })
-            // and your backend expects just the JWT, you might need to extract it.
-            // For this example, let's assume bearerTokenString is either the direct token or a JSON obj with an id.
-            // If it's an object and doesn't contain the actual token string for the header, adjust here.
-            // tokenToUse = parsedToken.token || bearerTokenString; // Example if token is nested
         }
       } catch (e) {
         // If not JSON, assume bearerTokenString is the token itself. id extraction won't work here.
         console.warn("Token from localStorage is not JSON. 'id' for user_id payload field cannot be extracted this way.");
       }
-      // If Authorization header expects just the token string, and localStorage stores it as JSON like {"token":"value"},
-      // ensure tokenToUse is the actual string. For now, assuming bearerTokenString is directly usable or backend handles it.
-
     } catch (e) {
       console.warn("Error processing token from localStorage:", e);
     }
@@ -260,8 +250,8 @@ const SurveyForm = ({
 
 
   const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save");
-  const handlePublish = () => sendSurveyData("http://localhost:2000/api/surveytemplate"); // Assuming this is publish
-  const handleUpdate = () => sendSurveyData("http://localhost:2000/api/surveytemplate"); // And this is update
+  const handlePublish = () => sendSurveyData("http://localhost:2000/api/surveytemplate"); 
+  const handleUpdate = () => sendSurveyData("http://localhost:2000/api/surveytemplate"); 
 
     return (
       <div className="container-fluid px-2 px-md-3">
@@ -269,15 +259,15 @@ const SurveyForm = ({
         {/* Added button-group-mobile-compact and justify-content-start */}
         <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
           {surveyStatus === "published" ? (
-            <button onClick={handleUpdate} disabled={isLoading} className="btn btn-outline-primary btn-sm me-2"> {/* Ensure btn-sm is present */}
+            <button onClick={handleUpdate} disabled={isLoading} className="btn btn-outline-primary btn-sm me-2">
               {isLoading ? (<><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{getLabel("Updating")}</>) : (<><i className="bi bi-pencil"></i> {getLabel("Update")}</>)}
             </button>
           ) : (
             <>
-              <button onClick={handleSave} disabled={isLoading} className="btn btn-outline-secondary btn-sm me-2"> {/* Ensure btn-sm */}
+              <button onClick={handleSave} disabled={isLoading} className="btn btn-outline-secondary btn-sm me-2">
                   {isLoading ? (<><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{getLabel("Saving")}</>) : (<><i className="bi bi-save"></i> {getLabel("Save")}</>)}
               </button>
-              <button onClick={handlePublish} disabled={isLoading} className="btn btn-outline-success btn-sm me-2"> {/* Ensure btn-sm */}
+              <button onClick={handlePublish} disabled={isLoading} className="btn btn-outline-success btn-sm me-2"> 
                   {isLoading ? (<><span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>{getLabel("Publishing")}</>) : (<><i className="bi bi-check-circle"></i> {getLabel("Publish")}</>)}
               </button>
             </>
@@ -287,7 +277,7 @@ const SurveyForm = ({
               href={`http://localhost:5173/v/${surveyLink}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="btn btn-outline-info btn-sm" // Ensure btn-sm. Removed me-2 if it's last, otherwise me-1 or me-2 for spacing.
+              className="btn btn-outline-info btn-sm" 
             >
               <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
             </a>
@@ -295,7 +285,6 @@ const SurveyForm = ({
         </div>
 
         <div style={{ backgroundColor: "white", paddingBottom: "20px" }} className="shadow-sm rounded">
-          {/* ... (banner image and title input remain the same) ... */}
           <div style={{ position: "relative", width: "100%" }}>
             {currentBackgroundImage ? (
               <img
@@ -334,7 +323,6 @@ const SurveyForm = ({
 
 
           {/* Banner and Description Controls: Apply the new class here */}
-          {/* Added button-group-mobile-compact and justify-content-center */}
           <div className="mt-3 mb-3 button-group-mobile-compact justify-content-center">
             <label className="btn btn-outline-secondary btn-sm me-1"> 
               <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
@@ -344,12 +332,12 @@ const SurveyForm = ({
               />
             </label>
             {currentBackgroundImage && (
-              <button className="btn btn-outline-danger btn-sm me-1" onClick={handleRemoveImage} title={getLabel("Remove current banner image")}> {/* Ensure btn-sm, me-1 */}
+              <button className="btn btn-outline-danger btn-sm me-1" onClick={handleRemoveImage} title={getLabel("Remove current banner image")}> 
                 <i className="bi bi-trash"></i> {getLabel("Remove Banner")}
               </button>
             )}
             {!description && !isEditingDescription && (
-              <button className="btn btn-outline-info btn-sm" onClick={handleAddOrEditDescriptionClick}> {/* Ensure btn-sm. No margin if last button */}
+              <button className="btn btn-outline-info btn-sm" onClick={handleAddOrEditDescriptionClick}> 
                 <i className="bi bi-plus-circle"></i> {getLabel("Add Description")}
               </button>
             )}

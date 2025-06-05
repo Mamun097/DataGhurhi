@@ -18,13 +18,11 @@ const SurveySections = ({
   const [newQuestion, setNewQuestion] = useState(false);
 
   useEffect(() => {
-    // console.table("sections: ", sections); 
   }, [sections]);
 
   const questionInfo = {
     id: questions.length + 1,
     section: section.id,
-    // questions: questions, // This seems redundant as 'questions' is already available in scope
   };
 
   const addNewQuestion = (type) => {
@@ -81,7 +79,7 @@ const SurveySections = ({
         ];
         break;
       case "text":
-        newQ.meta.options = []; // Or remove if not needed for text type
+        newQ.meta.options = []; 
         break;
       default:
         break;
@@ -93,7 +91,6 @@ const SurveySections = ({
 
   const addGeneratedQuestion = (generatedQuestion) => {
     setQuestions([...questions, generatedQuestion]);
-    // console.log(questions);
   };
 
   const questionCount = questions.filter(
@@ -132,7 +129,7 @@ const SurveySections = ({
   };
 
   const handleMergeWithAbove = () => {
-    if (section.id === 1) { // Cannot merge the first section
+    if (section.id === 1) {
         toast.warn("Cannot merge the first section.");
         return;
     }
@@ -143,7 +140,6 @@ const SurveySections = ({
         if (question.section === currentSectionId) {
             return { ...question, section: targetSectionId };
         }
-        // Re-index sections that are after the merged section
         if (question.section > currentSectionId) {
             return { ...question, section: question.section - 1 };
         }
@@ -199,15 +195,15 @@ const SurveySections = ({
           getLabel={getLabel}
         />
         <div className="survey-section__buttons d-flex justify-content-end mt-2">
-          {sections.length > 1 && section.id !== 1 && ( // Only show merge if not the first section and more than one section exists
+          {sections.length > 1 && section.id !== 1 && (
             <button
-              className="btn btn-outline-primary btn-sm me-2" // Removed mt-2 as parent div has mt-3
+              className="btn btn-outline-primary btn-sm me-2" 
               onClick={handleMergeWithAbove}
             >
               {getLabel("Merge with above")}
             </button>
           )}
-          {sections.length > 1 && ( // Only show delete if more than one section exists
+          {sections.length > 1 && (
              <button
                 className="btn btn-outline-danger btn-sm" // Removed mt-2
                 onClick={onPressDeleteSection}

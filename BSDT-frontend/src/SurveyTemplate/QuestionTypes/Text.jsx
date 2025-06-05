@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react"; 
+import React, { useState, useEffect, useCallback } from "react";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
@@ -27,7 +27,7 @@ const Text = ({ question, questions, setQuestions }) => {
   );
 
   const [responseType, setResponseType] = useState(
-    question.meta?.responseType || "short" // Default to 'short'
+    question.meta?.responseType || "short"
   );
 
   const conditions = React.useMemo(() => ({
@@ -66,7 +66,6 @@ const Text = ({ question, questions, setQuestions }) => {
     const newValidationState = !inputValidation;
     setInputValidation(newValidationState);
     if (newValidationState) {
-
       updateQuestionMeta({
         validationType: validationType,
         condition: condition,
@@ -74,20 +73,12 @@ const Text = ({ question, questions, setQuestions }) => {
         validationText: validationText,
       });
     } else {
-
       updateQuestionMeta({
         validationType: null,
         condition: null,
         errorText: "",
         validationText: "",
       });
-      // Optionally reset local state for validation fields
-      // setValidationType("Number");
-      // setCondition(conditions["Number"][0]);
-      // setErrorText("");
-      // setValidationText("");
-      // setMin("");
-      // setMax("");
     }
   }, [inputValidation, validationType, condition, errorText, validationText, updateQuestionMeta]);
 
@@ -154,11 +145,10 @@ const Text = ({ question, questions, setQuestions }) => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: questions.length + 1, 
-      meta: { 
+      id: questions.length + 1,
+      meta: {
         ...question.meta,
         responseType: responseType,
-
         validationType: inputValidation ? validationType : null,
         condition: inputValidation ? condition : null,
         validationText: inputValidation ? validationText : "",
@@ -175,7 +165,7 @@ const Text = ({ question, questions, setQuestions }) => {
 
   const handleValidationTypeChange = useCallback((event) => {
     const selectedType = event.target.value;
-    const newCondition = conditions[selectedType][0];
+    const newCondition = conditions[selectedType]?.[0] || conditions[Object.keys(conditions)[0]][0]; 
     setValidationType(selectedType);
     setCondition(newCondition);
     updateQuestionMeta({ validationType: selectedType, condition: newCondition });
@@ -197,7 +187,7 @@ const Text = ({ question, questions, setQuestions }) => {
     setMin(minValue);
     setMax(maxValue);
     const newValidationText = `${minValue},${maxValue}`;
-    setValidationText(newValidationText); 
+    setValidationText(newValidationText);
     updateQuestionMeta({ validationText: newValidationText });
   }, [updateQuestionMeta]);
 
@@ -218,8 +208,9 @@ const Text = ({ question, questions, setQuestions }) => {
   useEffect(() => {
     setRequired(question.required || false);
     setInputValidation(question.meta?.validationType ? true : false);
-    setValidationType(question.meta?.validationType || "Number");
-    setCondition(question.meta?.condition || conditions[question.meta?.validationType || "Number"][0]);
+    const initialValidationType = question.meta?.validationType || "Number";
+    setValidationType(initialValidationType);
+    setCondition(question.meta?.condition || conditions[initialValidationType]?.[0] || conditions[Object.keys(conditions)[0]][0]);
     setErrorText(question.meta?.errorText || "");
     setValidationText(question.meta?.validationText || "");
     if (question.meta?.validationText && (question.meta?.condition === "Between" || question.meta?.condition === "Not Between")) {
@@ -231,13 +222,13 @@ const Text = ({ question, questions, setQuestions }) => {
       setMax("");
     }
     setResponseType(question.meta?.responseType || "short");
-  }, [question]);
+  }, [question, conditions]);
 
 
   return (
     <div className="mb-3">
-      <div className="d-flex justify-content-between align-items-center mb-2">
-        <label className="ms-2" style={{ fontSize: "1.2rem" }}>
+      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+        <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em><strong>Text</strong></em>
         </label>
         <TagManager
@@ -276,7 +267,7 @@ const Text = ({ question, questions, setQuestions }) => {
                 <div className={`d-flex justify-content-${img.alignment || "start"}`}>
                   <img src={img.url} alt={`Question ${idx}`} className="img-fluid rounded" style={{ maxHeight: 400 }}/>
                 </div>
-                <div className="d-flex justify-content-between mt-2 gap-2">
+                <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
                   <select
                     className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
                     value={img.alignment || "start"}
@@ -287,7 +278,7 @@ const Text = ({ question, questions, setQuestions }) => {
                     <option value="end">Right</option>
                   </select>
                   <button
-                    className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
+                    className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
                     onClick={() => removeImage(idx)}
                   >
                     <i className="bi bi-trash"></i>
@@ -318,9 +309,9 @@ const Text = ({ question, questions, setQuestions }) => {
       {inputValidation && (
         <div className="border-top pt-3 mt-3">
           <h6 className="mb-2">Response Validation</h6>
-          <div className="d-flex align-items-center mt-2">
+          <div className="d-flex flex-column flex-sm-row align-items-stretch mt-2">
             <select
-              className="form-select me-2"
+              className="form-select mb-2 mb-sm-0 me-sm-2"
               onChange={handleValidationTypeChange}
               value={validationType}
             >
@@ -333,34 +324,34 @@ const Text = ({ question, questions, setQuestions }) => {
               onChange={handleConditionChange}
               value={condition}
             >
-              {conditions[validationType].map((cond) => (
+              {conditions[validationType]?.map((cond) => (
                 <option key={cond} value={cond}>{cond}</option>
               ))}
             </select>
           </div>
           {(condition === "Between" || condition === "Not Between") ? (
-            <div className="d-flex align-items-center mt-2">
+            <div className="d-flex flex-column flex-sm-row align-items-sm-center mt-2">
               <input
                 type="text"
-                className="form-control me-2"
+                className="form-control mb-2 mb-sm-0 me-sm-2"
                 placeholder="Value 1"
                 value={min}
                 onChange={(e) => handleMinMaxChange(e.target.value, max)}
               />
-              <span className="mx-1">&</span>
+              <span className="mx-0 mx-sm-1 mb-2 mb-sm-0">&</span>
               <input
-                type="text" 
-                className="form-control ms-2"
+                type="text"
+                className="form-control"
                 placeholder="Value 2"
                 value={max}
                 onChange={(e) => handleMinMaxChange(min, e.target.value)}
               />
             </div>
-          ) : (condition !== "Is Number" && condition !== "Is Not Number" && validationType !== "Text" || (validationType === "Text" && (condition === "Contains" || condition === "Does Not Contain"))) && ( // Show text input for relevant conditions
+          ) : (condition !== "Is Number" && condition !== "Is Not Number" && validationType !== "Text" || (validationType === "Text" && (condition === "Contains" || condition === "Does Not Contain"))) && (
             <div className="d-flex align-items-center mt-2">
               <input
                 type={validationType === "Number" && (condition !== "Is Number" && condition !== "Is Not Number") ? "number" : "text"}
-                className="form-control me-2"
+                className="form-control"
                 placeholder="Value"
                 value={validationText}
                 onChange={handleValidationTextChange}
@@ -370,7 +361,7 @@ const Text = ({ question, questions, setQuestions }) => {
           <div>
             <input
               type="text"
-              className="form-control me-2 mt-2"
+              className="form-control mt-2"
               placeholder="Custom Error Message (Optional)"
               value={errorText}
               onChange={handleErrorTextChange}
@@ -379,41 +370,44 @@ const Text = ({ question, questions, setQuestions }) => {
         </div>
       )}
 
-      <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-outline-secondary me-2" onClick={handleCopy} title="Copy Question">
+      <div className="d-flex flex-wrap align-items-center gy-5">
+        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleCopy} title="Copy Question">
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary me-2" onClick={handleDelete} title="Delete Question">
+        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleDelete} title="Delete Question">
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary hover:bg-gray-100 transition-colors me-2" title="Add Image">
+        <label className="btn btn-outline-secondary w-auto me-2 mt-3" title="Add Image">
           <i className="bi bi-image"></i>
           <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
         </label>
-        <button className="btn btn-outline-secondary me-2" onClick={handleSettings} title="Response Validation Settings">
+        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleSettings} title="Response Validation Settings">
           <i className={`bi ${inputValidation ? "bi-gear-fill text-primary" : "bi-gear"}`}></i>
         </button>
-        <div className="form-check form-switch ms-auto">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            id={`responseTypeSwitch-${question.id}`}
-            onChange={handleResponseTypeToggle}
-            checked={responseType === "long"}
-          />
-          <label className="form-check-label" htmlFor={`responseTypeSwitch-${question.id}`}>
-            Long Answer
-          </label>
-        </div>
-        <div className="form-check form-switch ms-3">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            id={`requiredSwitch-${question.id}`} 
-            onChange={handleRequired}
-            checked={required}
-          />
-          <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>Required</label>
+
+        <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
+            <div className="form-check form-switch">
+            <input
+                className="form-check-input"
+                type="checkbox"
+                id={`responseTypeSwitch-${question.id}`}
+                onChange={handleResponseTypeToggle}
+                checked={responseType === "long"}
+            />
+            <label className="form-check-label" htmlFor={`responseTypeSwitch-${question.id}`}>
+                Long Answer
+            </label>
+            </div>
+            <div className="form-check form-switch ms-3">
+            <input
+                className="form-check-input"
+                type="checkbox"
+                id={`requiredSwitch-${question.id}`}
+                onChange={handleRequired}
+                checked={required}
+            />
+            <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>Required</label>
+            </div>
         </div>
       </div>
     </div>
