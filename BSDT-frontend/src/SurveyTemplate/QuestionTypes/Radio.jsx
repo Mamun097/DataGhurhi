@@ -6,7 +6,7 @@ import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is co
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 
-const Radio = ({ question, questions, setQuestions }) => {
+const Radio = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -243,7 +243,7 @@ const Radio = ({ question, questions, setQuestions }) => {
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em><strong>Multiple Choice</strong></em>
+          <em><strong>{getLabel("Multiple Choice Question")}</strong></em>
         </label>
         <TagManager
           questionId={question.id}
@@ -278,9 +278,9 @@ const Radio = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button className="btn btn-sm btn-outline-danger" onClick={() => removeImageCb(idx)}>
                   <i className="bi bi-trash"></i>
@@ -296,7 +296,7 @@ const Radio = ({ question, questions, setQuestions }) => {
         className="form-control mb-2 mt-2"
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
-        placeholder="Enter your question here"
+        placeholder={getLabel("Enter your question here")}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -364,7 +364,7 @@ const Radio = ({ question, questions, setQuestions }) => {
       </DragDropContext>
 
       <button className="btn btn-sm btn-outline-secondary w-auto" onClick={addOption}>
-        ➕ Add Option
+        ➕ {getLabel("Add Option")}
       </button>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
@@ -390,7 +390,7 @@ const Radio = ({ question, questions, setQuestions }) => {
             checked={enableMarks}
           />
           <label className="form-check-label" htmlFor={`enableMarksRadio-${question.id}`}>
-            Enable Marks
+            {getLabel("Enable Marking System")}
           </label>
         </div>
         <div className="form-check form-switch mb-2">
@@ -402,7 +402,7 @@ const Radio = ({ question, questions, setQuestions }) => {
             checked={enableOptionShuffle}
           />
           <label className="form-check-label" htmlFor={`enableOptionShuffleRadio-${question.id}`}>
-            Shuffle option order
+            {getLabel("Shuffle option order")}
           </label>
         </div>
         <div className="form-check form-switch">
@@ -414,7 +414,7 @@ const Radio = ({ question, questions, setQuestions }) => {
             onChange={handleRequired}
           />
           <label className="form-check-label" htmlFor={`requiredSwitchRadio-${question.id}`}>
-            Required
+            {getLabel("Required")}
           </label>
         </div>
       </div>

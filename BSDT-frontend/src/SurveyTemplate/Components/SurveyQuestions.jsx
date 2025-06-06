@@ -12,7 +12,7 @@ import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
 import "../CSS/SurveyQuestions.css"; 
 
-const SurveyQuestions = ({ section, questions, setQuestions }) => {
+const SurveyQuestions = ({ section, questions, setQuestions, language, setLanguage, getLabel }) => {
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
   const handleDragEnd = (result) => {
@@ -49,6 +49,9 @@ const SurveyQuestions = ({ section, questions, setQuestions }) => {
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "text":
