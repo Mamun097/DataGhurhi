@@ -13,6 +13,8 @@ const SurveySections = ({
   sections,
   questions,
   setQuestions,
+  language,
+  setLanguage,
   getLabel,
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
@@ -42,24 +44,24 @@ const SurveySections = ({
     switch (type) {
       case "radio":
         newQ.meta.options = [
-          new Option("Option 1", 0),
-          new Option("Option 2", 0),
+          new Option(getLabel("Option 1"), 0),
+          new Option(getLabel("Option 2"), 0),
         ];
         break;
       case "checkbox":
       case "dropdown":
-        newQ.meta.options = ["Option 1", "Option 2"];
+        newQ.meta.options = [getLabel("Option 1"), getLabel("Option 2")];
         break;
       case "tickboxGrid":
-        newQ.meta.rows = ["Row 1", "Row 2"];
-        newQ.meta.columns = ["Column 1", "Column 2"];
+        newQ.meta.rows = [getLabel("Row 1"), getLabel("Row 2")];
+        newQ.meta.columns = [getLabel("Column 1"), getLabel("Column 2")];
         break;
       case "linearScale":
         newQ.meta = {
           min: 1,
           max: 5,
-          leftLabel: "Poor",
-          rightLabel: "Excellent",
+          leftLabel: getLabel("Poor"),
+          rightLabel: getLabel("Excellent"),
         };
         break;
       case "rating":
@@ -69,13 +71,13 @@ const SurveySections = ({
         newQ.meta.dateType = "date";
         break;
       case "likert":
-        newQ.meta.rows = ["Subtext 1", "Subtext 2", "Subtext 3"];
+        newQ.meta.rows = [getLabel("Subtext 1"), getLabel("Subtext 2"), getLabel("Subtext 3")];
         newQ.meta.columns = [
-          "Strongly Disagree",
-          "Disagree",
-          "Neutral",
-          "Agree",
-          "Strongly Agree",
+          getLabel("Strongly Disagree"),
+          getLabel("Disagree"),
+          getLabel("Neutral"),
+          getLabel("Agree"),
+          getLabel("Strongly Agree"),
         ];
         break;
       case "text":
@@ -182,6 +184,9 @@ const SurveySections = ({
           section={section}
           questions={questions}
           setQuestions={setQuestions}
+          language={language}
+          setLanguage={setLanguage}
+          getLabel={getLabel}
         />
       </div>
 
@@ -192,6 +197,8 @@ const SurveySections = ({
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
           questionInfo={questionInfo}
+          language={language}
+          setLanguage={setLanguage}
           getLabel={getLabel}
         />
         <div className="survey-section__buttons d-flex justify-content-end mt-2">
