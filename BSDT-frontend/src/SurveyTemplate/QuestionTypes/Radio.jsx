@@ -258,6 +258,7 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);

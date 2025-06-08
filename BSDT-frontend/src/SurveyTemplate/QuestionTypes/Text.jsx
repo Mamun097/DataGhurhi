@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-const Text = ({ question, questions, setQuestions }) => {
+const Text = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
@@ -31,25 +31,33 @@ const Text = ({ question, questions, setQuestions }) => {
   );
 
   const conditions = React.useMemo(() => ({
-    Number: [
-      "Greater Than",
-      "Greater Than or Equal To",
-      "Less Than",
-      "Less Than or Equal To",
-      "Equal To",
-      "Not Equal To",
-      "Between",
-      "Not Between",
-      "Is Number",
-      "Is Not Number",
+    [getLabel("Number")]: [
+      getLabel("Greater Than"),
+      getLabel("Greater Than or Equal To"),
+      getLabel("Less Than"),
+      getLabel("Less Than or Equal To"),
+      getLabel("Equal To"),
+      getLabel("Not Equal To"),
+      getLabel("Between"),
+      getLabel("Not Between"),
+      getLabel("Is Number"),
+      getLabel("Is Not Number"),
     ],
-    Text: ["Contains", "Does Not Contain", "Email", "URL"],
-    Length: ["Maximum character Count", "Minimum character Count"],
-    RegularExpression: [
-      "Contains",
-      "Doesn't Contain",
-      "Matches",
-      "Doesn't Match",
+    [getLabel("Text")]: [
+      getLabel("Contains"),
+      getLabel("Does Not Contain"),
+      getLabel("Email"),
+      getLabel("URL"),
+    ],
+    [getLabel("Length")]: [
+      getLabel("Maximum character Count"),
+      getLabel("Minimum character Count"),
+    ],
+    [getLabel("Regex")]: [
+      getLabel("Contains"),
+      getLabel("Doesn't Contain"),
+      getLabel("Matches"),
+      getLabel("Doesn't Match"),
     ],
   }), []);
 
@@ -229,7 +237,7 @@ const Text = ({ question, questions, setQuestions }) => {
     <div className="mb-3">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em><strong>Text</strong></em>
+          <em><strong>{getLabel("Text")}</strong></em>
         </label>
         <TagManager
           questionId={question.id}
@@ -245,7 +253,7 @@ const Text = ({ question, questions, setQuestions }) => {
           className="form-control"
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
-          placeholder="Enter your question here"
+          placeholder={getLabel("Enter your question here")}
         />
       </div>
       <div className="mb-2">
@@ -254,6 +262,7 @@ const Text = ({ question, questions, setQuestions }) => {
             file={selectedFile}
             questionId={question.id}
             setQuestions={setQuestions}
+            getLabel={getLabel}
             onClose={() => {
               setShowCropper(false);
               setSelectedFile(null);
@@ -273,9 +282,9 @@ const Text = ({ question, questions, setQuestions }) => {
                     value={img.alignment || "start"}
                     onChange={(e) => updateAlignment(idx, e.target.value)}
                   >
-                    <option value="start">Left</option>
-                    <option value="center">Center</option>
-                    <option value="end">Right</option>
+                    <option value="start">{getLabel("Left")}</option>
+                    <option value="center">{getLabel("Center")}</option>
+                    <option value="end">{getLabel("Right")}</option>
                   </select>
                   <button
                     className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
@@ -294,21 +303,21 @@ const Text = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control mb-2"
-          placeholder="Short answer text"
+          placeholder={getLabel("Short answer text")}
           readOnly
         />
       ) : (
         <textarea
           className="form-control mb-2"
           rows="3"
-          placeholder="Long answer text (paragraph)"
+          placeholder={getLabel("Long answer text (paragraph)")}
           readOnly
         ></textarea>
       )}
 
       {inputValidation && (
         <div className="border-top pt-3 mt-3">
-          <h6 className="mb-2">Response Validation</h6>
+          <h6 className="mb-2">{getLabel("Response Validation")}</h6>
           <div className="d-flex flex-column flex-sm-row align-items-stretch mt-2">
             <select
               className="form-select mb-2 mb-sm-0 me-sm-2"
@@ -362,7 +371,7 @@ const Text = ({ question, questions, setQuestions }) => {
             <input
               type="text"
               className="form-control mt-2"
-              placeholder="Custom Error Message (Optional)"
+              placeholder={getLabel("Custom Error Message (Optional)")}
               value={errorText}
               onChange={handleErrorTextChange}
             />
@@ -395,7 +404,7 @@ const Text = ({ question, questions, setQuestions }) => {
                 checked={responseType === "long"}
             />
             <label className="form-check-label" htmlFor={`responseTypeSwitch-${question.id}`}>
-                Long Answer
+                {getLabel("Long Answer")}
             </label>
             </div>
             <div className="form-check form-switch ms-3">
@@ -406,7 +415,9 @@ const Text = ({ question, questions, setQuestions }) => {
                 onChange={handleRequired}
                 checked={required}
             />
-            <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>Required</label>
+            <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>
+                {getLabel("Required")}
+            </label>
             </div>
         </div>
       </div>

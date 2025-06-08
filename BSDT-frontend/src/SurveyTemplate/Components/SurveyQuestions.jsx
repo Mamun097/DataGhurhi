@@ -60,6 +60,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "likert":
@@ -68,6 +71,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "rating":
@@ -76,6 +82,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "linearScale":
@@ -84,6 +93,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "datetime":
@@ -92,6 +104,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "dropdown":
@@ -100,6 +115,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "tickboxGrid":
@@ -108,6 +126,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       case "checkbox":
@@ -116,6 +137,9 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             question={question}
             questions={questions}
             setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
           />
         );
       default:

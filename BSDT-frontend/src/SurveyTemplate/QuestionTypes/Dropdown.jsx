@@ -5,7 +5,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-const Dropdown = ({ question, questions, setQuestions }) => {
+const Dropdown = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -210,7 +210,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>Dropdown</strong>
+            <strong>{getLabel("Dropdown")}</strong>
           </em>
         </label>
         <TagManager
@@ -226,6 +226,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);
@@ -251,9 +252,9 @@ const Dropdown = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
@@ -270,7 +271,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
       <input
         type="text"
         className="form-control mb-3"
-        placeholder="Enter your question here"
+        placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
       />
@@ -328,7 +329,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
         className="btn btn-sm btn-outline-secondary w-auto" // Removed w-100
         onClick={addOption}
       >
-        ➕ Add Option
+        ➕ {getLabel("Add Option")}
       </button>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
@@ -363,7 +364,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
             checked={enableOptionShuffle}
           />
           <label className="form-check-label" htmlFor={`enableOptionShuffleDropdown${question.id}`}>
-            Shuffle option order
+            {getLabel("Shuffle option order")}
           </label>
         </div>
         <div className="form-check form-switch">
@@ -375,7 +376,7 @@ const Dropdown = ({ question, questions, setQuestions }) => {
             onChange={handleRequired} 
           />
           <label className="form-check-label" htmlFor={`requiredSwitchDropdown${question.id}`}>
-            Required
+            {getLabel("Required")}
           </label>
         </div>
       </div>

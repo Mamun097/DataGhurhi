@@ -10,7 +10,7 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
 const MAX_COLUMNS = 7; // Define maximum number of columns
 
-const TickBoxGrid = ({ question, questions, setQuestions }) => {
+const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => { 
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -218,7 +218,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>Tick Box Grid</strong>
+            <strong>{getLabel("Tick Box Grid")}</strong>
           </em>
         </label>
         <TagManager
@@ -234,6 +234,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);
@@ -261,9 +262,9 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignment(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors me-1"
@@ -288,7 +289,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
       {/* Rows with Drag & Drop */}
       <div className="mb-3">
         <h6>
-          <b>Rows</b>
+          <b>{getLabel("Rows")}</b>
         </h6>
         <DragDropContext onDragEnd={handleRowDragEnd}>
           <Droppable droppableId={`tickbox-rows-${question.id}`}>
@@ -336,14 +337,14 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           className="btn btn-sm btn-outline-primary mt-2 w-auto"
           onClick={handleAddRow}
         >
-          ➕ Add Row
+          ➕ {getLabel("Add Row")}
         </button>
       </div>
 
       {/* Columns with Drag & Drop */}
       <div className="mb-3">
         <h6>
-          <b>Columns</b>
+          <b>{getLabel("Columns")}</b>
         </h6>
         <DragDropContext onDragEnd={handleColumnDragEnd}>
           <Droppable droppableId={`tickbox-columns-${question.id}`}>
@@ -392,7 +393,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
-          ➕ Add Column {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
+          ➕ {getLabel("Add Column")} {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
         </button>
       </div>
 
@@ -467,7 +468,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
             checked={requireEachRowResponse}
           />
           <label className="form-check-label" htmlFor={`requireEachRowTickbox${question.id}`}>
-            Require a response in each row
+            {getLabel("Require a response in each row")}
           </label>
           </div>
           <div className="form-check form-switch mb-2">
@@ -479,7 +480,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
             checked={enableRowShuffle}
           />
           <label className="form-check-label" htmlFor={`enableRowShuffleTickbox${question.id}`}>
-            Shuffle row order
+            {getLabel("Shuffle row order")}
           </label>
           </div>
           <div className="form-check form-switch">
@@ -491,7 +492,7 @@ const TickBoxGrid = ({ question, questions, setQuestions }) => {
             checked={required}
           />
           <label className="form-check-label" htmlFor={`requiredSwitchTickbox${question.id}`}>
-            Required
+            {getLabel("Required")}
           </label>
           </div>
       </div>

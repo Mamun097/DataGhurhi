@@ -7,7 +7,7 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 
 const MAX_COLUMNS = 7; 
 
-const LikertScale = ({ question, questions, setQuestions }) => {
+const LikertScale = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
@@ -227,7 +227,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>Likert Scale</strong>
+            <strong>{getLabel("Likert Scale")}</strong>
           </em>
         </label>
         <TagManager
@@ -243,6 +243,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);
@@ -268,9 +269,9 @@ const LikertScale = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignment(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
@@ -287,13 +288,13 @@ const LikertScale = ({ question, questions, setQuestions }) => {
       <input
         type="text"
         className="form-control mb-2"
-        placeholder="Enter your question here"
+        placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
       />
 
       <div className="mb-3">
-        <h6><b>Rows</b></h6>
+        <h6><b>{getLabel("Rows")}</b></h6>
         <DragDropContext onDragEnd={handleRowDragEnd}>
           <Droppable droppableId={`likert-rows-${question.id}`}>
             {(provided) => (
@@ -340,12 +341,12 @@ const LikertScale = ({ question, questions, setQuestions }) => {
           className="btn btn-sm btn-outline-primary mt-2 w-auto"
           onClick={handleAddRow}
         >
-          ➕ Add Row
+          ➕ {getLabel("Add Row")}
         </button>
       </div>
 
       <div className="mb-3">
-        <h6><b>Columns</b></h6>
+        <h6><b>{getLabel("Columns")}</b></h6>
         <DragDropContext onDragEnd={handleColumnDragEnd}>
           <Droppable droppableId={`likert-columns-${question.id}`}>
             {(provided) => (
@@ -393,7 +394,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
-          ➕ Add Column {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
+          ➕ {getLabel("Add Column")} {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
         </button>
       </div>
       
@@ -464,7 +465,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
             checked={requireEachRowResponse}
           />
           <label className="form-check-label" htmlFor={`requireEachRowLikert${question.id}`}>
-            Require a response in each row
+            {getLabel("Require a response in each row")}
           </label>
         </div>
         <div className="form-check form-switch mb-2">
@@ -476,7 +477,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
             checked={enableRowShuffle}
           />
           <label className="form-check-label" htmlFor={`enableRowShuffleLikert${question.id}`}>
-            Shuffle row order
+            {getLabel("Shuffle row order")}
           </label>
         </div>
          <div className="form-check form-switch">
@@ -488,7 +489,7 @@ const LikertScale = ({ question, questions, setQuestions }) => {
             checked={required}
           />
           <label className="form-check-label" htmlFor={`requiredSwitchLikert${question.id}`}>
-            Required
+            {getLabel("Required")}
           </label>
         </div>
       </div>
