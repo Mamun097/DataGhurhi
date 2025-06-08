@@ -4,7 +4,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
+const LinearScaleQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -165,7 +165,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>Linear Scale</strong>
+            <strong>{getLabel("Linear Scale")}</strong>
           </em>
         </label>
         <TagManager
@@ -181,6 +181,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);
@@ -206,9 +207,9 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignment(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
@@ -226,7 +227,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control"
-          placeholder="Enter your question here"
+          placeholder={getLabel("Enter your question here")}
           value={question.text || ""}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
@@ -236,7 +237,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
         <div className="row g-3 align-items-center mb-3">
           <div className="col-12 col-sm-auto">
             <div className="d-flex align-items-center">
-              <label htmlFor={`min-${question.id}`} className="form-label me-2 mb-0"><i>Min</i></label>
+              <label htmlFor={`min-${question.id}`} className="form-label me-2 mb-0"><i>{getLabel("Min")}</i></label>
               <input
                 type="number"
                 id={`min-${question.id}`}
@@ -249,7 +250,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
           </div>
           <div className="col-12 col-sm-auto">
             <div className="d-flex align-items-center mt-2 mt-sm-0">
-              <label htmlFor={`max-${question.id}`} className="form-label me-2 mb-0"><i>Max</i></label>
+              <label htmlFor={`max-${question.id}`} className="form-label me-2 mb-0"><i>{getLabel("Max")}</i></label>
               <input
                 type="number"
                 id={`max-${question.id}`}
@@ -315,7 +316,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
               onChange={handleRequired}
               checked={required}
             />
-            <label className="form-check-label" htmlFor={`linearRequired-${question.id}`}>Required</label>
+            <label className="form-check-label" htmlFor={`linearRequired-${question.id}`}>{getLabel("Required")}</label>
           </div>
           <div className="form-check form-switch mb-3">
           <input
@@ -325,7 +326,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions }) => {
             checked={showLabels}
             onChange={toggleLabels}
           />
-          <label className="form-check-label" htmlFor={`showLabels-${question.id}`}>Show Labels</label>
+          <label className="form-check-label" htmlFor={`showLabels-${question.id}`}>{getLabel("Show Labels")}</label>
         </div>
         </div>
       </div>
