@@ -9,7 +9,7 @@ const DEFAULT_SCALE = 5;
 
 const SCALE_OPTIONS = [3, 5, 7, 10];
 
-const RatingQuestion = ({ question, questions, setQuestions }) => {
+const RatingQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [required, setRequired] = useState(question.required || false);
   const [scale, setScale] = useState(question.meta?.scale || DEFAULT_SCALE);
   const [showCropper, setShowCropper] = useState(false);
@@ -104,7 +104,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>Rating</strong>
+            <strong>{getLabel("Rating")}</strong>
           </em>
         </label>
         <TagManager
@@ -120,6 +120,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
           file={selectedFile}
           questionId={question.id}
           setQuestions={setQuestions}
+          getLabel={getLabel}
           onClose={() => {
             setShowCropper(false);
             setSelectedFile(null);
@@ -147,9 +148,9 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
-                  <option value="start">Left</option>
-                  <option value="center">Center</option>
-                  <option value="end">Right</option>
+                  <option value="start">{getLabel("Left")}</option>
+                  <option value="center">{getLabel("Center")}</option>
+                  <option value="end">{getLabel("Right")}</option>
                 </select>
                 <button
                   className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors" /* Removed me-1 as gap-2 on parent should handle spacing */
@@ -168,7 +169,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control"
-          placeholder="Enter your question here"
+          placeholder={getLabel("Enter your question here")}
           value={question.text || ""}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
@@ -176,7 +177,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
 
       {/* Scale Selector */}
       <div className="d-flex flex-wrap align-items-center my-3 gap-2"> {/* Added flex-wrap and gap-2 */}
-        <label htmlFor={`scale-select-${question.id}`} className="form-label mb-0">Levels:</label> {/* Removed me-2, gap-2 on parent handles spacing */}
+        <label htmlFor={`scale-select-${question.id}`} className="form-label mb-0">{getLabel("Levels:")}</label> {/* Removed me-2, gap-2 on parent handles spacing */}
         <select
           id={`scale-select-${question.id}`}
           className="form-select form-select-sm w-auto"
@@ -228,7 +229,7 @@ const RatingQuestion = ({ question, questions, setQuestions }) => {
               checked={required}
               onChange={handleRequired}
             />
-            <label className="form-check-label" htmlFor={`requiredSwitchRating-${question.id}`}>Required</label>
+            <label className="form-check-label" htmlFor={`requiredSwitchRating-${question.id}`}>{getLabel("Required")}</label>
           </div>
         </div>
       </div>

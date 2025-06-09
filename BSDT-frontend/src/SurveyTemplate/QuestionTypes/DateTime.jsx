@@ -4,7 +4,7 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 
-const DateTimeQuestion = ({ question, questions, setQuestions }) => {
+const DateTimeQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   
@@ -114,7 +114,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2em" }}>
           <em>
-            <strong>Date/Time</strong>
+            <strong>{getLabel("Date/Time")}</strong>
           </em>
         </label>
         <TagManager
@@ -132,6 +132,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
             file={selectedFile}
             questionId={question.id}
             setQuestions={setQuestions}
+            getLabel={getLabel}
             onClose={() => {
               setShowCropper(false);
               setSelectedFile(null);
@@ -156,9 +157,9 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
                     value={img.alignment || "start"}
                     onChange={(e) => updateAlignment(idx, e.target.value)}
                   >
-                    <option value="start">Left</option>
-                    <option value="center">Center</option>
-                    <option value="end">Right</option>
+                    <option value="start">{getLabel("Left")}</option>
+                    <option value="center">{getLabel("Center")}</option>
+                    <option value="end">{getLabel("Right")}</option>
                   </select>
                   <button
                     className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
@@ -178,7 +179,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
         <input
           type="text"
           className="form-control"
-          placeholder="Enter your question here"
+          placeholder={getLabel("Enter your question here")}
           value={question.text || ""}
           onChange={(e) => handleQuestionChange(e.target.value)}
         />
@@ -196,8 +197,8 @@ const DateTimeQuestion = ({ question, questions, setQuestions }) => {
           onChange={(e) => handleTypeChange(e.target.value)}
           value={question.dateType || "date"}
         >
-          <option value="date">Date</option>
-          <option value="time">Time</option>
+          <option value="date">{getLabel("Date")}</option>
+          <option value="time">{getLabel("Time")}</option>
         </select>
       </div>
 
