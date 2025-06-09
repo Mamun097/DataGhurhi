@@ -39,6 +39,7 @@ export default function ImageCropper({
   file,
   questionId,
   setQuestions,
+  getLabel,
   onClose,
 }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -113,7 +114,7 @@ export default function ImageCropper({
         <div className="modal-content bg-white rounded-lg shadow-xl">
           <div className="modal-header border-b border-gray-200 p-4">
             <h5 className="modal-title text-lg font-semibold text-gray-800">
-              Crop Your Image
+              {getLabel("Crop Your Image")}
             </h5>
             <button
               type="button"
@@ -149,7 +150,7 @@ export default function ImageCropper({
               className="form-range w-1/2"
             />
             <div className="d-flex items-center gap-2">
-              <label className="me-1">Aspect Ratio:</label>
+              <label className="me-1">{getLabel("Aspect Ratio:")}</label>
               <input
                 type="number"
                 min={1}
@@ -174,14 +175,14 @@ export default function ImageCropper({
                 className="btn btn-outline-primary hover:bg-blue-700 rounded-md px-4 py-2 transition-colors me-2"
                 onClick={uploadCroppedImage}
               >
-                Upload
+                {getLabel("Upload")}
               </button>
               <button
                 type="button"
                 className="btn btn-outline-danger hover:bg-gray-600 rounded-md px-4 py-2 transition-colors"
                 onClick={handleClose}
               >
-                Cancel
+                {getLabel("Cancel")}
               </button>
             </div>
           </div>
