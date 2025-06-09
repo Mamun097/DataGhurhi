@@ -95,6 +95,18 @@ const SurveySections = ({
     setQuestions([...questions, generatedQuestion]);
   };
 
+
+    // function to add imported question
+ const addImportedQuestion = (importedQuestions) => {
+  console.log("Imported Questions:", importedQuestions);
+
+  setQuestions(prevQuestions => [
+    ...prevQuestions,
+    ...importedQuestions, 
+  ]);
+  console.log("Updated Questions after import:", questions);
+};
+
   const questionCount = questions.filter(
     (question) => question.section === section.id
   ).length;
@@ -196,6 +208,7 @@ const SurveySections = ({
           setNewQuestion={setNewQuestion}
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
+          addImportedQuestion={addImportedQuestion}
           questionInfo={questionInfo}
           language={language}
           setLanguage={setLanguage}
