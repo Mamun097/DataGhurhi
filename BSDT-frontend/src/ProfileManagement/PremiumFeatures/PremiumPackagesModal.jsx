@@ -1,11 +1,41 @@
 import React, { useState, useEffect } from 'react';
 import './PremiumPackagesModal.css';
+import CustomPackageBuilder from './CustomPackage';
+import './CustomPackage.css';
 
+// Tab Navigation Component
+const PackageTabNavigation = ({ activeTab, onTabChange, getLabel }) => {
+  return (
+    <div className="package-tabs">
+      <button
+        className={`tab-button ${activeTab === 'fixed' ? 'active' : ''}`}
+        onClick={() => onTabChange('fixed')}
+      >
+        {getLabel("Fixed Packages")}
+      </button>
+      <button
+        className={`tab-button ${activeTab === 'custom' ? 'active' : ''}`}
+        onClick={() => onTabChange('custom')}
+      >
+        {getLabel("Custom Package")}
+      </button>
+    </div>
+  );
+};
+
+// Main Modal Component (Enhanced)
 const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
   const [packages, setPackages] = useState([]);
   const [mostPopularPackageId, setMostPopularPackageId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('fixed');
+  const [customPackage, setCustomPackage] = useState({
+    items: { tag: 0, question: 0, survey: 0 },
+    validity: null,
+    totalPrice: 0,
+    isValid: false
+  });
 
   // Fetch packages and most popular package when modal opens
   useEffect(() => {
@@ -26,7 +56,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
       }
       const packagesData = await packagesResponse.json();
 
-      // 🐛 BUG FIX: Extract the packages array from the response
+      // Extract the packages array from the response
       console.log('Packages API Response:', packagesData);
       const packagesArray = packagesData.packages || packagesData || [];
 
@@ -45,7 +75,6 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
       console.log('Packages Array:', packagesArray);
       console.log('Packages Array Length:', packagesArray.length);
 
-      // 🐛 BUG FIX: Set the packages array, not the whole response object
       setPackages(packagesArray);
       setMostPopularPackageId(popularPackageId);
 
@@ -71,7 +100,6 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     return Math.round(((originalPrice - discountPrice) / originalPrice) * 100);
   };
 
-  // New function to format validity period
   const formatValidityPeriod = (validity) => {
     if (!validity) return null;
 
@@ -84,7 +112,6 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     }
   };
 
-  // New function to get validity display type for styling
   const getValidityType = (validity) => {
     if (validity >= 36) return 'premium';
     if (validity >= 12) return 'popular';
@@ -94,25 +121,21 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
   const getPackageFeatures = (pkg) => {
     const features = [];
 
-    // Add token features
     if (pkg.tag > 0) {
       features.push(getLabel(`${pkg.tag.toLocaleString()} Automatic Question Tag Generation`));
     }
     if (pkg.question > 0) {
       features.push(getLabel(`${pkg.question.toLocaleString()} Automatic Question Generation`));
     }
-
     if (pkg.survey > 0) {
       features.push(getLabel(`${pkg.survey.toLocaleString()} Automatic Survey Template Generation`));
     }
 
-    // Add survey templates based on package type
     if (pkg.title.toLowerCase().includes('starter')) {
       features.push(getLabel("Basic Survey Templates"));
     } else if (pkg.title.toLowerCase().includes('professional') || pkg.title.toLowerCase().includes('yearly')) {
       features.push(getLabel("Advanced Survey Templates"));
-    }
-    else if (pkg.title.toLowerCase().includes('enterprise')) {
+    } else if (pkg.title.toLowerCase().includes('enterprise')) {
       features.push(getLabel("Premium Survey Templates"));
     }
 
@@ -122,7 +145,17 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
   const handleBuyClick = (packageId) => {
     console.log(`Buying package: ${packageId}`);
     // Payment gateway integration will be implemented here
-    // You can add your payment logic here
+  };
+
+  const handleCustomPackageChange = (packageData) => {
+    setCustomPackage(packageData);
+  };
+
+  const handleBuyCustomPackage = () => {
+    if (customPackage.isValid) {
+      console.log('Buying custom package:', customPackage);
+      // Payment gateway integration for custom package
+    }
   };
 
   if (!isOpen) return null;
@@ -159,107 +192,127 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                 <p>{getLabel("Organize questions with intelligent tagging system")}</p>
               </div>
             </div>
-            {/* <div className="showcase-item">
-              <div className="showcase-icon">📊</div>
-              <div>
-                <h4>{getLabel("Advanced Analytics")}</h4>
-                <p>{getLabel("Get deeper insights with AI-powered analysis")}</p>
-              </div>
-            </div> */}
           </div>
         </div>
 
-        {loading && (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>{getLabel("Loading packages...")}</p>
-          </div>
-        )}
+        <PackageTabNavigation
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          getLabel={getLabel}
+        />
 
-        {error && (
-          <div className="error-container">
-            <div className="error-message">
-              <span className="error-icon">⚠️</span>
-              <p>{getLabel("Failed to load packages. Please try again.")}</p>
-              <button className="retry-btn" onClick={fetchPackagesData}>
-                {getLabel("Retry")}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {!loading && !error && packages.length > 0 && (
-          <div className="packages-container">
-            {packages.map((pkg) => {
-              const isPopular = pkg.package_id === mostPopularPackageId;
-              const discount = calculateDiscount(pkg.original_price, pkg.discount_price);
-              const totalTokens = (pkg.question || 0) + (pkg.survey || 0) + (pkg.tag || 0);
-              const validityPeriod = formatValidityPeriod(pkg.validity);
-              const validityType = getValidityType(pkg.validity);
-
-              return (
-                <div key={pkg.package_id} className={`package-card ${isPopular ? 'popular' : ''}`}>
-                  {isPopular && (
-                    <div className="popular-badge">{getLabel("Most Popular")}</div>
-                  )}
-
-                  <div className="package-header">
-                    <h3>{pkg.title}</h3>
-
-                    
-
-                    <div className="price-section">
-                      {discount > 0 && (
-                        <div className="original-price">৳{pkg.original_price}</div>
-                      )}
-                      <div className="current-price">৳{pkg.discount_price}</div>
-                      {discount > 0 && (
-                        <div className="discount-badge">{discount}% {getLabel("OFF")}</div>
-                      )}
-                    </div>
-                    
-                    {/* Validity Display in Header */}
-                    {validityPeriod && (
-                      <div className={`validity-display ${validityType}`}>
-                        <span className="validity-label">{getLabel("For ")}</span>
-                        <span className="validity-period">{validityPeriod}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="package-features">
-                    {getPackageFeatures(pkg).map((feature, index) => (
-                      <div key={index} className="feature">
-                        <span className="check-icon">✓</span>
-                        {feature}
-                      </div>
-                    ))}
-                  </div>
-
-                  <button
-                    className="buy-btn"
-                    onClick={() => handleBuyClick(pkg.package_id)}
-                    disabled={loading}
-                  >
-                    {getLabel("Buy Now")}
-                  </button>
+        <div className="tab-content">
+          {activeTab === 'fixed' && (
+            <>
+              {loading && (
+                <div className="loading-container">
+                  <div className="loading-spinner"></div>
+                  <p>{getLabel("Loading packages...")}</p>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
 
-        {!loading && !error && packages.length === 0 && (
-          <div className="no-packages-container">
-            <div className="no-packages-message">
-              <span className="no-packages-icon">📦</span>
-              <p>{getLabel("No packages available at the moment.")}</p>
-              <button className="retry-btn" onClick={fetchPackagesData}>
-                {getLabel("Retry Loading")}
-              </button>
+              {error && (
+                <div className="error-container">
+                  <div className="error-message">
+                    <span className="error-icon">⚠️</span>
+                    <p>{getLabel("Failed to load packages. Please try again.")}</p>
+                    <button className="retry-btn" onClick={fetchPackagesData}>
+                      {getLabel("Retry")}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {!loading && !error && packages.length > 0 && (
+                <div className="packages-container">
+                  {packages.map((pkg) => {
+                    const isPopular = pkg.package_id === mostPopularPackageId;
+                    const discount = calculateDiscount(pkg.original_price, pkg.discount_price);
+                    const validityPeriod = formatValidityPeriod(pkg.validity);
+                    const validityType = getValidityType(pkg.validity);
+
+                    return (
+                      <div key={pkg.package_id} className={`package-card ${isPopular ? 'popular' : ''}`}>
+                        {isPopular && (
+                          <div className="popular-badge">{getLabel("Most Popular")}</div>
+                        )}
+
+                        <div className="package-header">
+                          <h3>{pkg.title}</h3>
+
+                          <div className="price-section">
+                            {discount > 0 && (
+                              <div className="original-price">৳{pkg.original_price}</div>
+                            )}
+                            <div className="current-price">৳{pkg.discount_price}</div>
+                            {discount > 0 && (
+                              <div className="discount-badge">{discount}% {getLabel("OFF")}</div>
+                            )}
+                          </div>
+
+                          {validityPeriod && (
+                            <div className={`validity-display ${validityType}`}>
+                              <span className="validity-label">{getLabel("For ")}</span>
+                              <span className="validity-period">{validityPeriod}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="package-features">
+                          {getPackageFeatures(pkg).map((feature, index) => (
+                            <div key={index} className="feature">
+                              <span className="check-icon">✓</span>
+                              {feature}
+                            </div>
+                          ))}
+                        </div>
+
+                        <button
+                          className="buy-btn"
+                          onClick={() => handleBuyClick(pkg.package_id)}
+                          disabled={loading}
+                        >
+                          {getLabel("Buy Now")}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {!loading && !error && packages.length === 0 && (
+                <div className="no-packages-container">
+                  <div className="no-packages-message">
+                    <span className="no-packages-icon">📦</span>
+                    <p>{getLabel("No packages available at the moment.")}</p>
+                    <button className="retry-btn" onClick={fetchPackagesData}>
+                      {getLabel("Retry Loading")}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'custom' && (
+            <div className="custom-package-tab">
+              <CustomPackageBuilder
+                getLabel={getLabel}
+                onPackageChange={handleCustomPackageChange}
+              />
+
+
+              <div className="custom-package-actions">
+                <button
+                  className="buy-custom-btn"
+                  onClick={handleBuyCustomPackage}
+                >
+                  {getLabel("Buy Now")}
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="modal-footer">
           <p className="guarantee">

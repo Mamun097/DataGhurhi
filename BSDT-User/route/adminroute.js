@@ -10,4 +10,7 @@ router.post("/admin/create-package", adminController.createPackage);
 router.get("/admin/most-popular-package", adminController.getMostPopularPackageId);
 router.get("/admin/user-growth-stats", adminController.getUserGrowthStats);
 router.get("/admin/survey-growth-stats", adminController.getSurveyGrowthStats);
+router.get("/admin/get-package-items", adminController.getAllPackageItems);
+router.get("/admin/get-validity-periods", adminController.getAllValidityPeriods);
+
 module.exports = router;
