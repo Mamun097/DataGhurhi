@@ -11,29 +11,23 @@ const PremiumAdBanner = ({ onClose, onCheckoutClick, getLabel }) => {
                         <p>{getLabel("Take your surveys to the next level with AI-powered tools")}</p>
                     </div>
 
-                    <div className="premium-features-list" style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between', 
-                        flexDirection: 'row',
-                        flexWrap: 'nowrap',
-                        overflow: 'auto'
-                    }}>
-                        <div className="feature-item" style={{ flex: '1', minWidth: 'auto', textAlign: 'center', padding: '0 8px' }}>
+                    <div className="premium-features-list">
+                        <div className="feature-item">
                             <span className="feature-icon">🤖</span>
-                            <span style={{ display: 'block' }}>{getLabel("AI Survey Template Generation")}</span>
+                            <span className="feature-text">{getLabel("AI Survey Template Generation")}</span>
                         </div>
-                        <div className="feature-item" style={{ flex: '1', minWidth: 'auto', textAlign: 'center', padding: '0 8px' }}>
+                        <div className="feature-item">
                             <span className="feature-icon">❓</span>
-                            <span style={{ display: 'block' }}>{getLabel("Smart Question Generation")}</span>
+                            <span className="feature-text">{getLabel("Smart Question Generation")}</span>
                         </div>
-                        <div className="feature-item" style={{ flex: '1', minWidth: 'auto', textAlign: 'center', padding: '0 8px' }}>
+                        <div className="feature-item">
                             <span className="feature-icon">🏷️</span>
-                            <span style={{ display: 'block' }}>{getLabel("Automatic Question Tagging")}</span>
+                            <span className="feature-text">{getLabel("Automatic Question Tagging")}</span>
                         </div>
-                        <div className="feature-item" style={{ flex: '1', minWidth: 'auto', textAlign: 'center', padding: '0 8px' }}>
+                        {/* <div className="feature-item">
                             <span className="feature-icon">📊</span>
-                            <span style={{ display: 'block' }}>{getLabel("Advanced Analytics")}</span>
-                        </div>
+                            <span className="feature-text">{getLabel("Advanced Analytics")}</span>
+                        </div> */}
                     </div>
 
                     <div className="premium-ad-buttons">
