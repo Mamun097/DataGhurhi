@@ -3,9 +3,9 @@ import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
 import 'bootstrap-icons/font/bootstrap-icons.css';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// import ImportFromQb from "./importFromQB/importFromQb";
+import ImportFromQb from "./importFromQB/importFromQb";
 
-const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel }) => {
+const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel, addImportedQuestion }) => {
   return (
     <div>
       <style>
@@ -124,6 +124,10 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
         >
           <i className="bi bi-plus-lg"></i> {getLabel("Add Question")}
         </button>
+          <ImportFromQb
+            addImportedQuestion={addImportedQuestion}
+            questionInfo={questionInfo}
+          />
 
         <div className="mb-2 mb-md-0 me-md-3">
           <AutoGeneration
@@ -132,12 +136,8 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
             getLabel={getLabel}
           />
         </div>
-        {/* <div className="mb-2 mb-md-0">
-          <ImportFromQb
-            addImportedQuestion={addImportedQuestion}
-            questionInfo={questionInfo}
-          />
-        </div> */}
+
+       
       </div>
     </div>
   );
