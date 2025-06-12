@@ -468,3 +468,49 @@ exports.getSurveyGrowthStats = async (req, res) => {
         });
     }
 };
+
+// ✅ Get all package items
+exports.getAllPackageItems = async (req, res) => {
+    try {
+        const { data: packageItems, error } = await supabase
+            .from("package_items")
+            .select("*");
+
+        if (error) {
+            console.error("Error fetching package items:", error);
+            return res.status(500).json({ error: "Error fetching package items: " + error.message });
+        }
+
+        res.status(200).json({
+            packageItems: packageItems || [],
+            count: packageItems?.length || 0
+        });
+
+    } catch (error) {
+        console.error("Server error:", error);
+        res.status(500).json({ error: "Server error: " + error.message });
+    }
+};
+
+// ✅ Get all validity periods
+exports.getAllValidityPeriods = async (req, res) => {
+    try {
+        const { data: validityPeriods, error } = await supabase
+            .from("validity_periods")
+            .select("*");
+
+        if (error) {
+            console.error("Error fetching validity periods:", error);
+            return res.status(500).json({ error: "Error fetching validity periods: " + error.message });
+        }
+
+        res.status(200).json({
+            validityPeriods: validityPeriods || [],
+            count: validityPeriods?.length || 0
+        });
+
+    } catch (error) {
+        console.error("Server error:", error);
+        res.status(500).json({ error: "Server error: " + error.message });
+    }
+};
