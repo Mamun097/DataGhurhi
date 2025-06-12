@@ -399,3 +399,34 @@ EXCEPTION
         RETURN QUERY SELECT 0, 0, 0, 0, 0.00::DECIMAL(10,2), 0.00::DECIMAL(10,2), 0.00::DECIMAL(5,2), 0.00::DECIMAL(5,2);
 END;
 $$ LANGUAGE plpgsql;
+
+-- Store different validity periods and their pricing multipliers
+CREATE TABLE validity_periods (
+    id SERIAL PRIMARY KEY,
+    days INTEGER NOT NULL,
+    name VARCHAR(50) NOT NULL, -- '30 days', '90 days', '1 year'
+    price_multiplier DECIMAL(4,2) NOT NULL, -- 1.0, 0.9, 0.8 for bulk discounts
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Store item types (tags, questions, surveys) with base pricing
+CREATE TYPE item_type_enum AS ENUM ('tag', 'question', 'survey');
+
+CREATE TABLE package_items (
+    id SERIAL PRIMARY KEY,
+    item_type item_type_enum NOT NULL,
+    base_price_per_unit DECIMAL(8,4) NOT NULL, -- Price per single item
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Store minimum requirements for each validity period and item type
+CREATE TABLE minimum_requirements (
+    id SERIAL PRIMARY KEY,
+    validity_period_id INTEGER NOT NULL,
+    item_type item_type_enum NOT NULL,
+    minimum_quantity INTEGER NOT NULL,
+    CONSTRAINT fk_validity_period FOREIGN KEY (validity_period_id) REFERENCES validity_periods(id),
+    CONSTRAINT unique_requirement UNIQUE (validity_period_id, item_type)
+);
