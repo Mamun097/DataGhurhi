@@ -18,6 +18,7 @@ findUserByEmail(email) {
         console.error(error)
         return null
     }
+    console.log(data);
     
   return {data};
 }

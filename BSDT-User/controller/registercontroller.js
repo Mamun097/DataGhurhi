@@ -12,7 +12,7 @@ exports.register = async (req, res) => {
         }
         // Check if user already exists
         const
-        user = await User.findUserByEmail(email);
+        {data:user} = await User.findUserByEmail(email);
         console.log(user.length);
         if (user.length != 0) {
             // console.log(user);
