@@ -1,177 +1,308 @@
 .premium-ad-overlay {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
-    background: rgba(0, 0, 0, 0.1);
-    backdrop-filter: blur(2px);
-  }
-  
-  .premium-ad-banner {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white !important;
-    padding: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
-    border-top: 3px solid #ffd700;
-    animation: slideUp 0.5s ease-out;
-  }
-  
-  @keyframes slideUp {
-    from {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(2px);
+}
+
+.premium-ad-banner {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white !important;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+  border-top: 3px solid #ffd700;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
       transform: translateY(100%);
       opacity: 0;
-    }
-    to {
+  }
+  to {
       transform: translateY(0);
       opacity: 1;
-    }
   }
-  
-  .premium-ad-content {
-    flex: 1;
-    max-width: 800px;
+}
+
+.premium-ad-content {
+  flex: 1;
+  max-width: 800px;
+}
+
+.premium-ad-header h3 {
+  font-size: 24px;
+  color: #ffd700 !important;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.premium-ad-header p {
+  color: white !important;
+  font-size: 16px;
+  margin: 0 0 20px 0;
+  opacity: 0.9;
+}
+
+.premium-features-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+  justify-content: flex-start;
+}
+
+.feature-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.feature-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.feature-text {
+  white-space: nowrap;
+}
+
+.premium-ad-buttons {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.continue-free-btn {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+}
+
+.continue-free-btn:hover {
+  border-color: white;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.checkout-premium-btn {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #333;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.checkout-premium-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+  background: linear-gradient(45deg, #ffed4e, #ffd700);
+}
+
+.premium-ad-visual {
+  text-align: center;
+  margin-left: 30px;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.premium-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+  animation: glow 1.5s infinite alternate, sparkle 3s infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { 
+      transform: scale(1) rotate(0deg); 
+  }
+  50% { 
+      transform: scale(1.25) rotate(2deg); 
+  }
+}
+
+.premium-text {
+  font-size: 18px;
+  color: #ffd700 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Tablet Responsive Design */
+@media (max-width: 1024px) {
+  .premium-ad-banner {
+      padding: 18px;
   }
   
   .premium-ad-header h3 {
-    font-size: 24px;
-    color: #ffd700 !important;
-    font-weight: 700;
-    margin: 0 0 8px 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      font-size: 22px;
   }
   
   .premium-ad-header p {
-    color: white !important;
-    font-size: 16px;
-    margin: 0 0 20px 0;
-    opacity: 0.9;
-  }
-  
-  .premium-features-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    margin-bottom: 20px;
+      font-size: 15px;
   }
   
   .feature-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 8px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+      font-size: 13px;
   }
-  
-  .feature-icon {
-    font-size: 16px;
+}
+
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .premium-ad-overlay {
+    padding: 0 10px;
+    box-sizing: border-box;
   }
-  
-  .premium-ad-buttons {
-    display: flex;
-    gap: 15px;
-    flex-wrap: wrap;
-  }
-  
-  .continue-free-btn {
-    background: transparent;
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    padding: 12px 24px;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-  }
-  
-  .continue-free-btn:hover {
-    border-color: white;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-  }
-  
-  .checkout-premium-btn {
-    background: linear-gradient(45deg, #ffd700, #ffed4e);
-    color: #333;
-    border: none;
-    padding: 12px 30px;
-    border-radius: 25px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  
-  .checkout-premium-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-    background: linear-gradient(45deg, #ffed4e, #ffd700);
-  }
-  
-  .premium-ad-visual {
+
+  .premium-ad-banner {
+    padding: 16px;
+    flex-direction: column;
     text-align: center;
-    margin-left: 30px;
+    margin: 0 auto;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .premium-ad-content {
+    max-width: 100%;
+    width: 100%;
+    margin-bottom: 16px;
+  }
+
+  .premium-ad-header h3 {
+    font-size: 20px;
+    margin-bottom: 8px;
+  }
+
+  .premium-ad-header p {
+    font-size: 14px;
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .premium-features-list {
+    justify-content: center;
+    margin-bottom: 16px;
+    gap: 10px;
+  }
+
+  .feature-item {
+    flex: 1 1 45%;
     min-width: 120px;
+    max-width: 160px;
+    font-size: 12px;
+    padding: 8px 10px;
+    gap: 5px;
+    text-align: center;
+    justify-content: center;
   }
-  
+
+  .premium-ad-buttons {
+    justify-content: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .continue-free-btn,
+  .checkout-premium-btn {
+    flex: 1 1 45%;
+    min-width: 130px;
+    font-size: 14px;
+    padding: 10px 18px;
+  }
+
+  .premium-ad-visual {
+    margin-left: 0;
+    margin-top: 16px;
+  }
+
   .premium-icon {
-    font-size: 48px;
-    margin-bottom: 10px;
-    animation: glow 1.5s infinite alternate, sparkle 3s infinite;
+    font-size: 36px;
+    margin-bottom: 6px;
   }
-  
-  @keyframes sparkle {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(2.25) rotate(2deg); }
-  }
-  
+
   .premium-text {
-    font-size: 18px;
-    color: #ffd700 !important;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    font-size: 15px;
   }
-  
-  /* Responsive Design */
-  @media (max-width: 768px) {
-    .premium-ad-banner {
-      padding: 15px;
-      flex-direction: column;
-      text-align: center;
-    }
-    
-    .premium-ad-visual {
-      margin-left: 0;
-      margin-top: 15px;
-    }
-    
-    /* .premium-features-list {
-      justify-content: center;
-    } */
-    
-    .premium-ad-buttons {
-      justify-content: center;
-      width: 100%;
-    }
-    
-    .continue-free-btn,
-    .checkout-premium-btn {
-      flex: 1;
-      min-width: 140px;
-    }
+}
+
+
+/* Small Mobile Responsive Design */
+@media (max-width: 480px) {
+  .premium-ad-banner {
+    padding: 12px;
   }
+
+  .premium-ad-header h3 {
+    font-size: 16px;
+  }
+
+  .premium-ad-header p {
+    font-size: 12px;
+  }
+
+  .premium-features-list {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .feature-item {
+    width: 100%;
+    max-width: 100%;
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+
+  .premium-ad-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .continue-free-btn,
+  .checkout-premium-btn {
+    width: 100%;
+    font-size: 13px;
+  }
+
+  .premium-icon {
+    font-size: 28px;
+  }
+
+  .premium-text {
+    font-size: 12px;
+  }
+}
