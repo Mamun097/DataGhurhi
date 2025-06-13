@@ -189,7 +189,7 @@
 /* Section Titles */
 .projects-section h3 {
   text-align: center;
-  font-size: 2.5 rem;
+  font-size: 2.5rem;
   margin-bottom: 1rem;
   color: #054f13;
   font-weight: 800;
@@ -345,4 +345,18 @@
   cursor: pointer;
   min-width: 140px;
   text-align: center;
+}
+@media (max-width: 480px) {
+  .dashboard-container {
+    padding: 1rem;
+  }
+
+  .project-grid {
+    gap: 1rem;
+  }
+
+  .project-card,
+  .add-project-card {
+    width: 100%;
+  }
 }

@@ -8,10 +8,18 @@
 /* Grid container */
 .edit-project-grid {
   display: flex;
+  flex-direction: row;
   gap: 24px;
   padding: 32px;
   background: #f9fbfc;
+  
 }
+.edit-left,
+.edit-right {
+  flex: 1 1 100%;
+  max-width: 100%;
+}
+
 
 .edit-left {
   flex: 0 0 30%;
@@ -255,7 +263,8 @@ textarea {
   display: grid;
   grid-template-rows: auto; /* Auto height for rows */
   grid-auto-flow: row; /* Flow items in rows */
-  grid-template-columns: repeat(3, 300px); /* Fixed-size columns */
+  /* grid-template-columns: repeat(3, 300px); Fixed-size columns */
+  grid-template-columns: repeat(3, minmax(300px, 1fr));
   gap: 20px;
   justify-content: center; /* Center the grid itself */
 }
@@ -510,3 +519,78 @@ textarea {
   border-color: #097287;
 }
 
+@media (max-width: 1024px) {
+  .edit-project-grid {
+    flex-direction: column;
+    padding: 16px;
+  }
+
+  .edit-left,
+  .edit-right {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .tab-header-container h2 {
+    font-size: 32px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tabs button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .survey-section-heading {
+    font-size: 20px;
+  }
+
+  .project-form {
+    padding: 16px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 16px;
+  }
+
+  .survey-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-survey-card {
+    width: 100%;
+  }
+
+  .survey-card {
+    width: 100%;
+  }
+
+  .survey-banner {
+    height: 120px;
+  }
+
+  .tab-header-container h2 {
+    font-size: 26px;
+  }
+}
+/* For tablets: 2 cards per row */
+@media (max-width: 992px) {
+  .survey-grid {
+    grid-template-columns: repeat(2, minmax(250px, 1fr));
+  }
+}
+
+/* For mobile: 1 card per row */
+@media (max-width: 600px) {
+  .survey-grid {
+    grid-template-columns: 1fr;
+  }
+}
