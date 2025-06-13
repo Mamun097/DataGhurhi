@@ -16,6 +16,7 @@ import {
   FaQuestionCircle,
   FaSearch,
 } from "react-icons/fa";
+import "./navbarAccountholder.css";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
