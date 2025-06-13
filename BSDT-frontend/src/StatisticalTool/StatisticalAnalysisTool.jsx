@@ -8,6 +8,11 @@ import ShapiroWilkOptions from './ShapiroWilkOptions';
 import SpearmanOptions from './SpearmanOptions';
 import './StatisticalAnalysisTool.css';
 import WilcoxonOptions from './WilcoxonOptions';
+import LinearRegressionOptions from './LinearRegressionOptions';
+import AnovaOptions from './AnovaOptions';
+import AncovaOptions from './AncovaOptions';
+import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
+import AndersonDarlingOptions from './AndersonDarlingOptions';
 
 const translations = {
     English: {
@@ -259,7 +264,15 @@ const StatisticalAnalysisTool = () => {
     const [boxWidth, setBoxWidth] = useState(0.8);
     const [violinWidth, setViolinWidth] = useState(0.8);
     const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-
+    //
+    const [legendFontSize, setLegendFontSize] = useState(16);
+    const [lineColor, setLineColor] = useState('red');
+    const [lineStyle, setLineStyle] = useState('solid');
+    const [lineWidth, setLineWidth] = useState(2);
+    const [dotColor, setDotColor] = useState('blue');
+    const [dotWidth, setDotWidth] = useState(5);
+    const [boxColor, setBoxColor] = useState('steelblue');
+    const [medianColor, setMedianColor] = useState('red');
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -312,6 +325,16 @@ const StatisticalAnalysisTool = () => {
         return;
     }
 
+     if (testType === 'linear_regression' && !column2) {
+            setErrorMessage(t.column2Error || "Please select a second column for regression.");
+            return;
+        }
+
+        if (testType === 'ancova' && (!column1 || !column2 || !column3)) {
+            setErrorMessage(t.column3Error || "Please select group, covariate, and dependent columns for ANCOVA.");
+            return;
+        }
+
     setIsAnalyzing(true);
     const langCode = language === 'বাংলা' ? 'bn' : 'en';
     const isHeatmap4x4 = heatmapSize === '4x4';
@@ -323,6 +346,17 @@ const StatisticalAnalysisTool = () => {
     formData.append('column2', column2);
     formData.append('language', langCode);
     formData.append('heatmapSize', heatmapSize);
+/////
+    if (testType === 'ancova') {
+            formData.append('primary_col', column1);    
+            formData.append('secondary_col', column2);  
+            formData.append('dependent_col', column3);  
+        } else if (testType === 'kolmogorov' || testType === 'anderson') {
+            formData.append('column', column1); 
+        } else {
+            formData.append('column1', column1);
+            formData.append('column2', column2);
+        }
 
     if ((testType === 'pearson' || testType === 'spearman') && isHeatmap4x4) {
         if (column3 && column4) {
@@ -334,6 +368,7 @@ const StatisticalAnalysisTool = () => {
             return;
         }
     }
+    //
 
     // Debug output
     for (let pair of formData.entries()) {
@@ -398,6 +433,8 @@ const StatisticalAnalysisTool = () => {
                     heatmapSize: true
                 };
             case 'shapiro':
+            case 'kolmogorov':
+            case 'anderson':
             case 'chi_square':
             case 'cramers_heatmap':
             case 'network_graph':
@@ -540,7 +577,7 @@ const StatisticalAnalysisTool = () => {
                                                         <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
 
                                                             <strong className="block text-gray-800 mb-1">
-                                                                {language === 'বাংলা' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
+                                                                {language === 'bn' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
                                                             </strong>
                                                             
                                                             {/* Description */}
@@ -555,7 +592,7 @@ const StatisticalAnalysisTool = () => {
                                                                     onClick={() => setDetailsModalVisible(true)}
                                                                     className="text-blue-600 text-xs underline hover:text-blue-800"
                                                                 >
-                                                                    {language === 'বাংলা' ? 'বিস্তারিত দেখুন' : 'More Details'}
+                                                                    {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
                                                                 </button>
                                                             </div>
                                                             
@@ -773,6 +810,156 @@ const StatisticalAnalysisTool = () => {
                                                         t={t}
                                                     />
                                                 )}
+{testType === 'linear_regression' && (
+                                                    <LinearRegressionOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
+                                                        legendFontSize={legendFontSize}
+                                                        setLegendFontSize={setLegendFontSize}
+                                                        lineColor={lineColor}
+                                                        setLineColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        lineWidth={lineWidth}
+                                                        setLineWidth={setLineWidth}
+                                                        dotColor={dotColor}
+                                                        setDotColor={setDotColor}
+                                                        dotWidth={dotWidth}
+                                                        setDotWidth={setDotWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'anova' && (
+                                                    <AnovaOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        boxColor={boxColor}
+                                                        setBoxColor={setBoxColor}
+                                                        medianColor={medianColor}
+                                                        setMedianColor={setMedianColor}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'ancova' && (
+                                                    <AncovaOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        dotColor={dotColor}
+                                                        setDotColor={setDotColor}
+                                                        lineColor={lineColor}
+                                                        setLineColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        dotWidth={dotWidth}
+                                                        setDotWidth={setDotWidth}
+                                                        lineWidth={lineWidth}
+                                                        setLineWidth={setLineWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'kolmogorov' && (
+                                                    <KolmogorovSmirnovOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        ecdfColor={dotColor}            // reuse dotColor for ECDF
+                                                        setEcdfColor={setDotColor}
+                                                        cdfColor={lineColor}            // reuse lineColor for CDF
+                                                        setCdfColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        t={t}
+                                                        selectedColumn={column1}
+                                                        setSelectedColumn={setColumn1}
+                                                    />
+                                                )}
+                            
+                                                {testType === 'anderson' && (
+                                                    <AndersonDarlingOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        scatterColor={dotColor}         // reuse dotColor for scatter
+                                                        setScatterColor={setDotColor}
+                                                        lineColor={lineColor}
+                                                        setLineColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        selectedColumn={column1}
+                                                        setSelectedColumn={setColumn1}
+                                                        t={t}
+                                                    />
+                                                )}
+
 
                                                 {requiredFields.col3 && (
                                                     <div className="mb-4">
@@ -914,7 +1101,7 @@ const StatisticalAnalysisTool = () => {
                                                     <h2>{t.tests[testType]}</h2>
                                                     <pre className="modal-body">
                                                         {statTestDetails[language]?.[testType] || (
-                                                            language ===  'বাংলা' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
+                                                            language === 'bn' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
                                                         )}
                                                     </pre>
                                                 </div>
@@ -951,6 +1138,16 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
         return renderSpearmanResults();
         }  else if (testType === 'pearson') {
         return renderPearsonResults();
+        }else if (testType === 'linear_regression') {
+        return renderLinearRegressionResults();
+        } else if (testType === 'anova') {
+        return renderAnovaResults();
+        } else if (testType === 'ancova') {
+        return renderAncovaResults();
+        } else if (testType === 'kolmogorov') {
+        return renderKolmogorovResults();
+        } else if (testType === 'anderson') {
+        return renderAndersonDarlingResults();
         }
 
         switch (testType) {
@@ -1569,6 +1766,352 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+const renderLinearRegressionResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {t.tests.linear_regression || "Linear Regression"}
+                </h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                    </p>
+                )}
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'ইন্টারসেপ্ট:' : 'Intercept:'}</strong>{' '}
+                    {results.intercept !== undefined ? mapDigitIfBengali(results.intercept) : '—'}
+                </p>
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'কোইফিশিয়েন্ট:' : 'Coefficient:'}</strong>{' '}
+                    {results.coefficient !== undefined ? mapDigitIfBengali(results.coefficient) : '—'}
+                </p>
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'আর-স্কোয়ারড মান (R²):' : 'R-squared (R²):'}</strong>{' '}
+                    {results.r2_score !== undefined ? mapDigitIfBengali(results.r2_score) : '—'}
+                </p>
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'গড় স্কোয়ার্ড ত্রুটি (MSE):' : 'Mean Squared Error (MSE):'}</strong>{' '}
+                    {results.mse !== undefined ? mapDigitIfBengali(results.mse) : '—'}
+                </p>
+
+                {results.image_paths?.[0] && (
+                        
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                        </h3>
+                        <div className="bg-white rounded-lg shadow-md p-4">
+                            <img
+                                src={`http://127.0.0.1:8000${results.image_paths[0]}`}
+                                alt="Linear Regression Plot"
+                                className="w-full h-auto object-contain"
+                            />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const response = await fetch(`http://127.0.1:8000${results.image_paths[0]}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        const filename = results.image_paths[0].split('/').pop() || 'linear_regression_plot.png';
+                                        link.href = url;
+                                        link.download = filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                }}
+                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                            </button>
+                                
+                        </div>
+                    </div>
+                )}
+
+            </>
+        );
+    };
+
+    const renderAnovaResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">{t.anovaTitle}</h2>
+
+                {columns && columns[0] && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong> {columns[0]}
+                        {columns[1] && ` ${language === 'bn' ? 'এবং' : 'and'} ${columns[1]}`}
+                    </p>
+                )}
+
+                {results?.anova_table && (
+                    <div className="mb-6">
+                        <h3 className="text-xl font-semibold mb-2">{language === 'bn' ? 'ANOVA টেবিল' : 'ANOVA Table'}</h3>
+                            <div
+                            className="overflow-x-auto"
+                            dangerouslySetInnerHTML={{ __html: results.anova_table }}
+                            />
+
+                    </div>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.1:8000${path}`}
+                                        alt={`${t.anovaTitle} visualization ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${path}`);
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = path.split('/').pop() || `${t.anovaTitle}_visualization_${index + 1}.png`;
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                    >
+                                        <svg
+                                            className="w-4 h-4 mr-1"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderAncovaResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {t.tests.ancova || "ANCOVA Test"}
+                </h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
+                    </p>
+                )}
+
+                {results.table_html && (
+                    <div
+                        className="bg-white rounded-lg shadow-md p-4 my-4 overflow-x-auto"
+                        dangerouslySetInnerHTML={{ __html: results.table_html }}
+                    />
+                )}
+
+                {results.image_paths?.[0] && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                        </h3>
+                        <div className="bg-white rounded-lg shadow-md p-4">
+                            <img
+                                src={results.image_paths[0]}
+                                alt="ANCOVA Plot"
+                                className="w-full h-auto object-contain"
+                            />
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderKolmogorovResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {t.tests.kolmogorov || "Kolmogorov–Smirnov Test"}
+                </h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
+                        {columns[0]}
+                    </p>
+                )}
+
+                {results.p_value && (
+                    <p className="mb-3">
+                        <strong>p-value:</strong> {results.p_value}
+                    </p>
+                )}
+
+                {results.interpretation && (
+                    <p className="mb-4 text-blue-700 font-semibold">
+                        {results.interpretation}
+                    </p>
+                )}
+
+                {results.image_paths?.[0] && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                        </h3>
+                        <div className="bg-white rounded-lg shadow-md p-4">
+                            <img
+                                src={results.image_paths[0]}
+                                alt="K–S Plot"
+                                className="w-full h-auto object-contain"
+                            />
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+                        
+    const renderAndersonDarlingResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {t.tests.anderson || "Anderson–Darling Test"}
+                </h2>
+
+                {columns?.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
+                        {columns[0]}
+                    </p>
+                )}
+
+                {results.a_stat && (
+                    <p className="mb-3">
+                        <strong>A²:</strong> {results.a_stat}
+                    </p>
+                )}
+
+                {results.interpretation && (
+                    <p className="mb-4 text-blue-700 font-semibold">
+                        {results.interpretation}
+                    </p>
+                )}
+
+                {results.image_paths?.[0] && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                        </h3>
+                        <div className="bg-white rounded-lg shadow-md p-4">
+                            <img
+                                src={results.image_paths[0]}
+                                alt="Anderson–Darling Plot"
+                                className="w-full h-auto object-contain"
+                            />
                         </div>
                     </div>
                 )}
