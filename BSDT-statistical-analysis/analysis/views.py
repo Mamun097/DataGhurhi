@@ -57,6 +57,7 @@ def analyze_data_api(request):
             col1 = request.POST.get('column1', '')
             col2 = request.POST.get('column2', '')
             col3 = request.POST.get('column3', '')
+            print(f"Received test_type: {test_type}, col1: {col1}, col2: {col2}, col3: {col3}")
             
             # Validate columns
             if not col1 or col1 not in df.columns:
@@ -107,7 +108,26 @@ def analyze_data_api(request):
             
             elif test_type == 'shapiro':
                 return process_shapiro_test(request, df, col1)
+            
+            elif test_type == 'linear_regression':
+                return process_linear_regression_test(request, df, col1, col2)
+            
+            elif test_type == 'anova':
+                return process_anova_test(request, df, col1, col2)
+            
+            elif test_type == 'ancova':
+                col_group = request.POST.get('primary_col')
+                col_covariate = request.POST.get('secondary_col')
+                col_outcome = request.POST.get('dependent_col')
+                return process_ancova_test(request, df, col_group, col_covariate, col_outcome)
 
+            elif test_type == 'kolmogorov':
+                column = request.POST.get('column')
+                return process_ks_test(request, df, column)
+
+            elif test_type == 'anderson':
+                column = request.POST.get('column')
+                return process_anderson_darling_test(request, df, column)  
             
             elif test_type == 'ttest_ind':
                 stat, p_value = stats.ttest_ind(df[col1], df[col2], equal_var=False, nan_policy='omit')
@@ -1667,7 +1687,762 @@ def process_pearson_test(request, df, selected_columns):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-    
+def process_linear_regression_test(request, df, col1, col2):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from sklearn.linear_model import LinearRegression
+    from sklearn.metrics import r2_score, mean_squared_error
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        # Handle options from request
+        lang = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        use_default = request.POST.get('use_default', 'true') == 'true'
+
+        # Plot settings
+        if use_default:
+            axis_label_size = 36
+            tick_label_size = 16
+            legend_font_size = 16
+            line_color = 'red'
+            line_style = '-'
+            image_quality = 90
+            dot_width = 5
+            line_width = 2
+            dot_color = 'blue'
+        else:
+            axis_label_size = int(request.POST.get('label_font_size', 36))
+            tick_label_size = int(request.POST.get('tick_label_size', 16))
+            legend_font_size = int(request.POST.get('legend_font_size', 16))
+            line_color = request.POST.get('line_color', 'red')
+            line_style = request.POST.get('line_style', '-')
+            image_quality = int(request.POST.get('image_quality', 90))
+            dot_width = int(request.POST.get('dot_width', 5))
+            line_width = int(request.POST.get('line_width', 2))
+            dot_color = request.POST.get('dot_color', 'blue')
+
+        # Setup font and translator
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        def translate(text):
+            return translator.translate(text, dest='bn').text if lang == 'bn' else text
+
+        def map_digits(s):
+            return s.translate(digit_map_bn) if lang == 'bn' else s
+
+        # Font config
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_label_size) if lang == 'bn' else fm.FontProperties(size=tick_label_size)
+            title_font = ImageFont.truetype(font_path, size=axis_label_size)
+            xlabel_font = ImageFont.truetype(font_path, size=axis_label_size)
+            ylabel_font = ImageFont.truetype(font_path, size=axis_label_size)
+            legend_font = ImageFont.truetype(font_path, size=legend_font_size)
+        else:
+            tick_prop = fm.FontProperties(size=tick_label_size)
+            title_font = xlabel_font = ylabel_font = legend_font = ImageFont.load_default()
+
+        # Linear Regression
+        X = df[[col1]]
+        y = df[col2]
+        model = LinearRegression().fit(X, y)
+        y_pred = model.predict(X)
+
+        # Metrics
+        intercept = model.intercept_
+        coef = model.coef_[0]
+        r2 = r2_score(y, y_pred)
+        mse = mean_squared_error(y, y_pred)
+
+        # Round and localize
+        def format_metric(value, decimals):
+            return f"{value:.{decimals}f}" if lang == 'en' else map_digits(f"{value:.{decimals}f}")
+
+        result = {
+            'test': 'Linear Regression' if lang == 'en' else 'লিনিয়ার রিগ্রেশন',
+            'intercept': format_metric(intercept, 2),
+            'coefficient': format_metric(coef, 2),
+            'r2_score': format_metric(r2, 3),
+            'mse': format_metric(mse, 3),
+            'success': True
+        }
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+        ax.scatter(X, y, s=dot_width, color=dot_color, alpha=0.7)
+        ax.plot(X, y_pred, color=line_color, linestyle=line_style, linewidth=line_width)
+        ax.set_xticks(ax.get_xticks())
+        ax.set_xticklabels([map_digits(f"{t:.0f}") for t in ax.get_xticks()], fontproperties=tick_prop)
+        ax.set_yticks(ax.get_yticks())
+        ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
+        plt.tight_layout(pad=0)
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, f'regression_base.{file_format}')
+        fig.savefig(base_path, format=file_format.upper())
+        plt.close(fig)
+
+        # PIL overlay
+        canvas = Image.open(base_path).convert('RGB')
+        bw, bh = canvas.size
+        pad = 50
+        title_txt = translate(f"Linear Regression: {col2} vs {col1}")
+        xlabel_txt = translate(col1)
+        ylabel_txt = translate(col2)
+        legend_items = [
+            (translate('Data Points'), 'dot', dot_color),
+            (translate('Regression Line'), 'line', line_color)
+        ]
+
+        draw = ImageDraw.Draw(canvas)
+        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
+        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
+        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
+
+        left_margin = yw + pad
+        legend_text_max = max(draw.textlength(item[0], font=legend_font) for item in legend_items)
+        legend_height = (legend_font_size + 10) * len(legend_items)
+        legend_width = 20 + 10 + legend_text_max
+        right_margin = legend_width + pad
+        top_margin = th + pad
+        bottom_margin = xh + pad
+
+        W = left_margin + bw + right_margin
+        H = max(top_margin + bh + bottom_margin, top_margin + legend_height + pad)
+        new_canvas = Image.new('RGB', (int(W), int(H)), 'white')
+        new_canvas.paste(canvas, (left_margin, top_margin))
+
+        draw = ImageDraw.Draw(new_canvas)
+        draw.text(((W - tw) // 2, 0), title_txt, font=title_font, fill='black')
+        draw.text((left_margin + (bw - xw) // 2, top_margin + bh + (bottom_margin - xh) // 2), xlabel_txt, font=xlabel_font, fill='black')
+
+        Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0))
+        Ydraw = ImageDraw.Draw(Yimg)
+        Ydraw.text((0, 0), ylabel_txt, font=ylabel_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+        y_x = (left_margin - Yrot.width) // 2
+        y_y = top_margin + (bh - Yrot.height) // 2
+        new_canvas.paste(Yrot, (y_x, y_y), Yrot)
+
+        lx = left_margin + bw + pad
+        ly = top_margin
+        for label, style, color in legend_items:
+            if style == 'dot':
+                draw.ellipse((lx, ly + 5, lx + dot_width, ly + 5 + dot_width), fill=color)
+            else:
+                y_mid = ly + legend_font_size // 2
+                draw.line((lx, y_mid, lx + 20, y_mid), fill=color, width=line_width)
+            draw.text((lx + 30, ly), label, font=legend_font, fill='black')
+            ly += legend_font_size + 10
+
+        final_path = os.path.join(plots_dir, f'regression_plot.{file_format}')
+        new_canvas.save(final_path, format=file_format.upper(), quality=image_quality)
+        result['image_paths'] = [os.path.join(settings.MEDIA_URL, 'plots/', 'regression_plot.' + file_format)]
+
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_anova_test(request, df, col1, col2):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    from statsmodels.formula.api import ols
+    import statsmodels.api as sm
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        # Language & format
+        language = request.POST.get('language', 'en')
+        img_format = request.POST.get('format', 'png').lower()
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        image_quality = int(request.POST.get('image_quality', 90))
+
+        # Plot style settings
+        if use_default:
+            axis_label_size = 36
+            tick_label_size = 16
+            box_color = 'steelblue'
+            median_color = 'red'
+        else:
+            axis_label_size = int(request.POST.get('label_font_size', 36))
+            tick_label_size = int(request.POST.get('tick_font_size', 16))
+            box_color = request.POST.get('box_color', 'steelblue')
+            median_color = request.POST.get('median_color', 'red')
+
+        # Font
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        if language == 'bn' and os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            font_name = fm.FontProperties(fname=font_path).get_name()
+            plt.rcParams['font.family'] = font_name
+        title_font = ImageFont.truetype(font_path, size=axis_label_size)
+        xlabel_font = ImageFont.truetype(font_path, size=axis_label_size)
+        ylabel_font = ImageFont.truetype(font_path, size=axis_label_size)
+        tick_font = ImageFont.truetype(font_path, size=tick_label_size)
+
+        # Translator
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text): return translator.translate(text, dest='bn').text if language == 'bn' else text
+        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
+        print(f"Using language: {language}, image format: {img_format}, quality: {image_quality}")
+        # Translate column names if in Bangla mode
+        col1_display = translate(col1)
+        col2_display = translate(col2)
+
+        # ANOVA using typ=2
+        formula = f"{col2} ~ C({col1})"
+        model = ols(formula, data=df).fit()
+        anova_table = sm.stats.anova_lm(model, typ=2)
+        print(f"ANOVA table:\n{anova_table}")
+
+        # Fix PR(>F) formatting
+        anova_table['PR(>F)'] = anova_table['PR(>F)'].apply(lambda p: f"{p:.6e}" if not np.isnan(p) else 'NaN')
+        anova_table['F'] = anova_table['F'].apply(lambda f: round(f, 6) if not np.isnan(f) else 'NaN')
+        anova_table['sum_sq'] = anova_table['sum_sq'].apply(lambda s: round(s, 6))
+        anova_table['df'] = anova_table['df'].apply(lambda d: round(d, 1))
+
+
+
+        if language == 'bn':
+            anova_table.index = [translate(str(idx)) for idx in anova_table.index]
+            anova_table.columns = [translate(str(col)) for col in anova_table.columns]
+            anova_table = anova_table.applymap(lambda x: map_digits(str(x)))
+        print(anova_table)
+
+        result = {
+            'test': 'ANOVA' if language == 'en' else 'এনওভিএ',
+            'anova_table': f"""
+                <div style='display: flex; justify-content: center; margin-top: 10px;'>
+                    {anova_table.to_html(classes='table table-striped', border=1)}
+                </div>
+            """,
+            'success': True
+        }
+
+        # Plot
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+        sns.boxplot(x=col1, y=col2, data=df, palette=[box_color], medianprops=dict(color=median_color), ax=ax)
+        ax.grid(True)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        ax.set_title("")
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        plt.tight_layout(pad=0.5)
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, f"anova_base.{img_format}")
+        print(f"Saving base plot to {base_path}")
+        fig.savefig(base_path, format=img_format.upper(), bbox_inches='tight')
+        plt.close(fig)
+
+        # Overlay with PIL
+        canvas = Image.open(base_path).convert('RGB')
+        bw, bh = canvas.size
+        pad = 70  # increased pad
+        title_txt = translate(f"ANOVA: {col2} by {col1}")
+        xlabel_txt = col1_display
+        ylabel_txt = col2_display
+        xt_vals = [str(g) for g in df[col1].unique()]
+        yt_vals = np.linspace(df[col2].min(), df[col2].max(), num=5)
+
+        draw = ImageDraw.Draw(canvas)
+        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
+        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
+        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
+
+        left_margin = yw + pad
+        right_margin = pad + 100
+        top_margin = th + pad
+        bottom_margin = xh + pad
+
+        W = left_margin + bw + right_margin
+        H = top_margin + bh + bottom_margin
+        final_canvas = Image.new("RGB", (W, H), 'white')
+        final_canvas.paste(canvas, (left_margin, top_margin))
+
+        draw = ImageDraw.Draw(final_canvas)
+        draw.text(((W - tw)//2, 0), title_txt, font=title_font, fill='black')
+        draw.text((left_margin + (bw - xw)//2, top_margin + bh + pad//2), xlabel_txt, font=xlabel_font, fill='black')
+
+        Yimg = Image.new('RGBA', (yw, yh), (255,255,255,0))
+        Ydraw = ImageDraw.Draw(Yimg)
+        Ydraw.text((0,0), ylabel_txt, font=ylabel_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+        y_x = (left_margin - Yrot.width)//2
+        y_y = top_margin + (bh - Yrot.height)//2
+        final_canvas.paste(Yrot, (y_x, y_y), Yrot)
+
+        for i, lab in enumerate(xt_vals):
+            fx = left_margin + bw * (i + 0.5) / len(xt_vals)
+            fy = top_margin + bh + pad / 3
+            draw.text((fx - draw.textlength(lab, font=tick_font)/2, fy), map_digits(lab), font=tick_font, fill='black')
+
+        for yt in yt_vals:
+            frac = (yt - yt_vals.min()) / (yt_vals.max() - yt_vals.min())
+            fy = top_margin + bh - frac * bh
+            fx = left_margin - pad // 2 - draw.textlength(f"{yt:.2f}", font=tick_font)
+            draw.text((fx, fy - tick_label_size/2), map_digits(f"{yt:.2f}"), font=tick_font, fill='black')
+
+        final_path = os.path.join(plots_dir, f"anova_plot.{img_format}")
+        final_canvas.save(final_path, format=img_format.upper(), quality=image_quality)
+        result['image_paths'] = [os.path.join(settings.MEDIA_URL, 'plots', f"anova_plot.{img_format}")]
+
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    import statsmodels.api as sm
+    import statsmodels.formula.api as smf
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        image_quality = int(request.POST.get('image_quality', 90))
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        def translate(text):
+            try:
+                return translator.translate(text, dest='bn').text if language == 'bn' else text
+            except:
+                return text
+
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            font_name = fm.FontProperties(fname=font_path).get_name()
+            plt.rcParams['font.family'] = font_name
+            tick_prop = fm.FontProperties(fname=font_path, size=16)
+            title_font = ImageFont.truetype(font_path, size=36)
+            xlabel_font = ImageFont.truetype(font_path, size=36)
+            ylabel_font = ImageFont.truetype(font_path, size=36)
+            legend_font = ImageFont.truetype(font_path, size=16)
+        else:
+            tick_prop = fm.FontProperties(size=16)
+            title_font = xlabel_font = ylabel_font = legend_font = ImageFont.load_default()
+
+        df[col_group] = df[col_group].astype(str)
+
+        # Corrected ANCOVA model: outcome ~ covariate + group
+        formula = f"{col_outcome} ~ {col_covariate} + C({col_group})"
+        ancova_model = smf.ols(formula, data=df).fit()
+        ancova_table = sm.stats.anova_lm(ancova_model, typ=2)
+
+        ancova_table = ancova_table.copy()
+        ancova_table['PR(>F)'] = ancova_table['PR(>F)'].apply(
+            lambda p: f"{p:.6e}" if not np.isnan(p) else 'NaN')
+        ancova_table['F'] = ancova_table['F'].apply(lambda f: round(f, 6) if not np.isnan(f) else 'NaN')
+        ancova_table['sum_sq'] = ancova_table['sum_sq'].apply(lambda s: round(s, 6))
+        ancova_table['df'] = ancova_table['df'].apply(lambda d: round(d, 1))
+
+        if language == 'bn':
+            ancova_table.index = [translate(str(idx)) for idx in ancova_table.index]
+            ancova_table.columns = [translate(str(col)) for col in ancova_table.columns]
+            ancova_table = ancova_table.applymap(lambda x: map_digits(str(x)))
+
+        table_html = f"""
+            <div style='display: flex; justify-content: center; margin-top: 10px;'>
+                {ancova_table.to_html(classes='table table-striped', border=1)}
+            </div>
+        """
+
+        groups = list(df[col_group].unique())
+        palette = sns.color_palette('Set2', n_colors=len(groups))
+        dot_colors = [tuple(int(255 * c) for c in color) for color in palette]
+        line_colors = dot_colors.copy()
+
+        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
+        for i, group in enumerate(groups):
+            group_df = df[df[col_group] == group]
+            ax.scatter(group_df[col_covariate], group_df[col_outcome], s=50, color=palette[i], alpha=0.7,
+                       label=f"{group} points")
+            sns.regplot(x=col_covariate, y=col_outcome, data=group_df, ax=ax, scatter=False, ci=None,
+                        line_kws={'linewidth': 2, 'color': palette[i], 'linestyle': 'solid', 'label': f"{group} fit"})
+
+        ax.grid(True)
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        ax.set_title('')
+        ax.set_xticklabels([map_digits(f"{t:.2f}") for t in ax.get_xticks()], fontproperties=tick_prop)
+        ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
+        plt.tight_layout(pad=0)
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, f'ancova_base.{file_format}')
+        final_path = os.path.join(plots_dir, f'ancova_plot.{file_format}')
+        fig.savefig(base_path, format=file_format.upper())
+        plt.close(fig)
+
+        canvas = Image.open(base_path).convert('RGB')
+        bw, bh = canvas.size
+        pad = 50
+        title_txt = translate(f"ANCOVA: {col_outcome} by {col_group} with {col_covariate} control")
+        xlabel_txt = translate(f"Covariate ({col_covariate})")
+        ylabel_txt = translate(f"Outcome ({col_outcome})")
+
+        draw = ImageDraw.Draw(canvas)
+        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
+        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
+        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
+
+        left_margin = yw + pad
+        right_margin = 250
+        top_margin = th + pad
+        bottom_margin = xh + pad
+        W = left_margin + bw + right_margin
+        H = top_margin + bh + bottom_margin
+        final_img = Image.new("RGB", (W, H), "white")
+        final_img.paste(canvas, (left_margin, top_margin))
+
+        draw = ImageDraw.Draw(final_img)
+        draw.text(((W - tw) // 2, 0), title_txt, font=title_font, fill='black')
+        draw.text((left_margin + (bw - xw) // 2, top_margin + bh + pad // 2), xlabel_txt, font=xlabel_font, fill='black')
+
+        Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0))
+        Ydraw = ImageDraw.Draw(Yimg)
+        Ydraw.text((0, 0), ylabel_txt, font=ylabel_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+        y_x = (left_margin - Yrot.width) // 2
+        y_y = top_margin + (bh - Yrot.height) // 2
+        final_img.paste(Yrot, (y_x, y_y), Yrot)
+
+        draw = ImageDraw.Draw(final_img)
+        legend_x = left_margin + bw + 10
+        legend_y = top_margin + 10
+        symbol_size = 6
+        line_len = 20
+
+        for i, grp in enumerate(groups):
+            col = dot_colors[i]
+            draw.ellipse((legend_x, legend_y, legend_x + symbol_size, legend_y + symbol_size), fill=col)
+            lbl = translate(f"{grp} points")
+            draw.text((legend_x + symbol_size + 5, legend_y), lbl, font=legend_font, fill='black')
+            legend_y += 20
+
+        legend_y += 10
+        for i, grp in enumerate(groups):
+            col = line_colors[i]
+            y_mid = legend_y + symbol_size // 2
+            draw.line((legend_x, y_mid, legend_x + line_len, y_mid), fill=col, width=2)
+            lbl = translate(f"{grp} fit")
+            draw.text((legend_x + line_len + 5, legend_y), lbl, font=legend_font, fill='black')
+            legend_y += 20
+
+        final_img.save(final_path, format=file_format.upper(), quality=image_quality)
+
+        return JsonResponse({
+            'success': True,
+            'test': translate('ANCOVA'),
+            'table_html': table_html,
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', f'ancova_plot.{file_format}')],
+            'columns': [col_group, col_covariate, col_outcome]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_ks_test(request, df, col):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from scipy.stats import kstest, norm
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        image_quality = int(request.POST.get('image_quality', 90))
+        label_font_size = int(request.POST.get('label_font_size', 36))
+        tick_font_size = int(request.POST.get('tick_font_size', 16))
+        width = int(request.POST.get('image_width', 800))
+        height = int(request.POST.get('image_height', 600))
+        ecdf_color = request.POST.get('ecdf_color', 'steelblue')
+        cdf_color = request.POST.get('cdf_color', 'red')
+        line_style = request.POST.get('line_style', 'solid')
+        style_map = {'solid': '-', 'dashed': '--', 'dotted': ':'}
+        line_style = style_map.get(line_style, '-')
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+            label_font = ImageFont.truetype(font_path, size=label_font_size)
+        else:
+            tick_prop = fm.FontProperties(size=tick_font_size)
+            label_font = ImageFont.load_default()
+
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        data = df[col].dropna()
+        mean_, std_ = np.mean(data), np.std(data, ddof=0)
+        stat, p_value = kstest(data, 'norm', args=(mean_, std_))
+        p_str = map_digits(f"{p_value:.4f}")
+        interpretation = translate("Consistent with Normal (p > 0.05)") if p_value > 0.05 else translate("Not Normal (p ≤ 0.05)")
+
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        sns.ecdfplot(data=data, ax=ax, marker='.', linestyle=line_style, color=ecdf_color, linewidth=1.5)
+        x_vals = np.linspace(data.min(), data.max(), 200)
+        ax.plot(x_vals, norm.cdf(x_vals, mean_, std_), color=cdf_color, linestyle=line_style, linewidth=2)
+
+        ax.set_title('')
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+        ax.set_xticklabels([
+            map_digits(f"{val:.0f}") for val in ax.get_xticks()
+        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_xticks()], fontproperties=tick_prop)
+
+        ax.set_yticklabels([
+            map_digits(f"{val:.2f}") for val in ax.get_yticks()
+        ] if language == 'bn' else [f"{val:.2f}" for val in ax.get_yticks()], fontproperties=tick_prop)
+
+        plt.tight_layout(pad=0)
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, f'ks_base.{file_format}')
+        final_path = os.path.join(plots_dir, f'ks_{col.replace(" ", "_")}.{file_format}')
+        fig.savefig(base_path, dpi=fig.dpi, format=file_format.upper())
+        plt.close(fig)
+
+        canvas_img = Image.open(base_path).convert('RGB')
+        bw, bh = canvas_img.size
+        pad = label_font_size // 2
+        xlabel = translate(col)
+        ylabel = translate('Cumulative Probability')
+        x_w, x_h = label_font.getbbox(xlabel)[2:4]
+        y_w, y_h = label_font.getbbox(ylabel)[2:4]
+
+        left = y_h + pad
+        top = pad
+        right = pad
+        bottom = x_h + pad
+        W = bw + left + right
+        H = bh + top + bottom
+
+        canvas = Image.new('RGB', (W, H), 'white')
+        canvas.paste(canvas_img, (left, top))
+        draw = ImageDraw.Draw(canvas)
+
+        def center_h(text, font, width):
+            return (width - int(draw.textlength(text, font=font))) // 2
+
+        xx = center_h(xlabel, label_font, W)
+        draw.text((xx, top + bh + (bottom - x_h) // 2), xlabel, font=label_font, fill='black')
+
+        Yimg = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
+        Ydraw = ImageDraw.Draw(Yimg)
+        Ydraw.text((0, 0), ylabel, font=label_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+        canvas.paste(Yrot, ((left - Yrot.width) // 2, top + (bh - Yrot.height) // 2), Yrot)
+
+        canvas.save(final_path, format=file_format.upper(), quality=image_quality)
+
+        return JsonResponse({
+            'success': True,
+            'test': translate('Kolmogorov–Smirnov Test'),
+            'p_value': p_str,
+            'interpretation': interpretation,
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))],
+            'columns': [col]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def process_anderson_darling_test(request, df, col):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from scipy.stats import anderson, norm
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        # Get settings
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        image_quality = int(request.POST.get('image_quality', 90))
+        label_font_size = int(request.POST.get('label_font_size', 36))
+        tick_font_size = int(request.POST.get('tick_font_size', 16))
+        width = int(request.POST.get('image_width', 800))
+        height = int(request.POST.get('image_height', 600))
+        scatter_color = request.POST.get('scatter_color', 'steelblue')
+        line_color = request.POST.get('line_color', 'red')
+        style_input = request.POST.get('line_style', 'solid')
+        line_style = {'solid': '-', 'dashed': '--', 'dotted': ':'}.get(style_input, '-')
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+            label_font = ImageFont.truetype(font_path, size=label_font_size)
+        else:
+            tick_prop = fm.FontProperties(size=tick_font_size)
+            label_font = ImageFont.load_default()
+
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        # Anderson–Darling test
+        data = df[col].dropna().to_numpy()
+        result = anderson(data, dist='norm')
+        stat = result.statistic
+        try:
+            crit_idx = list(result.significance_level).index(5.0)
+            crit_value = result.critical_values[crit_idx]
+            sig_level = result.significance_level[crit_idx]
+        except ValueError:
+            crit_value = result.critical_values[0]
+            sig_level = result.significance_level[0]
+
+        interpretation = (
+            translate(f"Likely Normal (A² = {stat:.3f} < {crit_value:.3f} at {sig_level}% )")
+            if stat < crit_value else
+            translate(f"Not Normal (A² = {stat:.3f} ≥ {crit_value:.3f} at {sig_level}% )")
+        )
+
+        stat_str = map_digits(f"{stat:.3f}")
+
+        # Q–Q plot
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        n = len(data)
+        prob = (np.arange(1, n+1) - 0.5) / n
+        theor_q = norm.ppf(prob, loc=np.mean(data), scale=np.std(data, ddof=0))
+        sample_q = np.sort(data)
+        ax.scatter(theor_q, sample_q, color=scatter_color, s=30)
+        lims = [min(theor_q.min(), sample_q.min()), max(theor_q.max(), sample_q.max())]
+        ax.plot(lims, lims, color=line_color, linestyle=line_style, linewidth=2)
+
+        ax.set_title('')
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+        if ax.get_legend():
+            ax.get_legend().remove()
+
+        ax.set_xticklabels([
+            map_digits(f"{val:.0f}") for val in ax.get_xticks()
+        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_xticks()], fontproperties=tick_prop)
+
+        ax.set_yticklabels([
+            map_digits(f"{val:.0f}") for val in ax.get_yticks()
+        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_yticks()], fontproperties=tick_prop)
+
+        plt.tight_layout(pad=0)
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, f'ad_base.{file_format}')
+        final_path = os.path.join(plots_dir, f'ad_{col.replace(" ", "_")}.{file_format}')
+        fig.savefig(base_path, format=file_format.upper(), dpi=fig.dpi)
+        plt.close(fig)
+
+        # Add axis labels with PIL
+        canvas_img = Image.open(base_path).convert('RGB')
+        bw, bh = canvas_img.size
+        pad = label_font_size // 2
+
+        xlabel = translate('Theoretical Quantiles')
+        ylabel = translate('Sample Quantiles')
+        x_w, x_h = label_font.getbbox(xlabel)[2:4]
+        y_w, y_h = label_font.getbbox(ylabel)[2:4]
+
+        left = y_h + pad
+        top = pad
+        right = pad
+        bottom = x_h + pad
+        W = bw + left + right
+        H = bh + top + bottom
+
+        canvas = Image.new('RGB', (W, H), 'white')
+        canvas.paste(canvas_img, (left, top))
+        draw = ImageDraw.Draw(canvas)
+
+        def center_h(text, font, width):
+            return (width - int(draw.textlength(text, font=font))) // 2
+
+        xx = center_h(xlabel, label_font, W)
+        draw.text((xx, top + bh + (bottom - x_h) // 2), xlabel, font=label_font, fill='black')
+
+        Yimg = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
+        Ydraw = ImageDraw.Draw(Yimg)
+        Ydraw.text((0, 0), ylabel, font=label_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+        canvas.paste(Yrot, ((left - Yrot.width) // 2, top + (bh - Yrot.height) // 2), Yrot)
+
+        canvas.save(final_path, format=file_format.upper(), quality=image_quality)
+
+        return JsonResponse({
+            'success': True,
+            'test': translate('Anderson–Darling Test'),
+            'a_stat': stat_str,
+            'interpretation': interpretation,
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))],
+            'columns': [col]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
 
 def save_plot(plt, filename):
     import os
