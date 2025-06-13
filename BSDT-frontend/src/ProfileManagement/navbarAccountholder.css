@@ -155,3 +155,45 @@ input:checked + .slider:before {
   color: #333;
 }
 
+/* Responsive Layout */
+@media (max-width: 768px) {
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .search-container {
+    width: 80%;
+    margin: 10px 0;
+    padding: 0 10px;
+  }
+
+  .search-input {
+    width: 100%;
+    font-size: smaller;
+  }
+
+  
+}
+
+@media (max-width: 480px) {
+  .logo-container img {
+    height: 30px;
+    max-width: 80px;
+  }
+
+  .nav-links {
+    font-size: 14px;
+  }
+
+  .profile-name {
+    display: none; /* hide for very small screens */
+  }
+}
