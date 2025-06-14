@@ -120,10 +120,14 @@ exports.inviteCollaborator = async (req, res) => {
     if (!projectData.length) {
         return res.status(404).json({ error: 'Project not found' });
     }
-    const { data, error } = await Project.inviteCollaborator(projectId, req.body);
+    const { data, error } = await Project.inviteCollaborator(projectId, req.body,res);
     if (error) {
         console.error(error);
-        return res.status(500).json({ error: 'Internal server error' });
+        if (error== 'Collaborator exists') {
+            return res.status(401).json({ error: 'Collaborator already exists' });
+        }
+    
+        return res.status(500).json({ error: error });
     }
     return res.status(200).json({ message: 'Collaborator invited successfully' });
 }

@@ -8,6 +8,7 @@ exports.acceptInvitation = async (req, res) => {
     console.log(userId);
     console.log(projectID);
     const { data, error } = await Collaborator.acceptInvitation(userId, projectID);
+    console.log(data);
     if (error) {
         console.error(error);
         return res.status(500).json({ error: 'Internal server error' });
