@@ -608,6 +608,9 @@ const handleDeleteSurvey = async (surveyId) => {
                   key={survey.survey_id}
                   className="survey-card"
                   style={{ cursor: "pointer" }}
+                  onClick={() =>
+                    handleSurveyClick(survey.survey_id, survey, survey.title)
+                  }
                 >
                   <img
                     src={

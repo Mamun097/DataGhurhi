@@ -375,8 +375,8 @@ const filteredQuestions = questions
             <select
               className="form-select form-select-sm"
               style={{ width: "140px", display: "inline-block" ,
-                marginLeft: "10px" ,
-                marginRight: "10px",
+                marginLeft: "0px" ,
+                marginRight: "0px",
                 backgroundColor: "ffffff",
                 borderColor: "#09ae30cb",
                 borderWidth: "3px",
