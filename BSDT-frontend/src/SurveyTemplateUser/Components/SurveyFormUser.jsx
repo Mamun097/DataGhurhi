@@ -19,7 +19,7 @@ const SurveyForm = ({
   const [description, setDescription] = useState(
     template?.template?.description || ""
   );
-  console.log("Description:", description);
+  // console.log("Description:", description);
   console.log("SurveyForm Sections:", sections);
   console.log("SurveyForm Questions:", questions);
 
