@@ -299,17 +299,8 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
               <CustomPackageBuilder
                 getLabel={getLabel}
                 onPackageChange={handleCustomPackageChange}
+                handleBuyCustomPackage={handleBuyCustomPackage}
               />
-
-
-              <div className="custom-package-actions">
-                <button
-                  className="buy-custom-btn"
-                  onClick={handleBuyCustomPackage}
-                >
-                  {getLabel("Buy Now")}
-                </button>
-              </div>
             </div>
           )}
         </div>

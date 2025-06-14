@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Fixed Custom Package Builder Component
-const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
+const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage}) => {
   const [packageItems, setPackageItems] = useState([]);
   const [validityPeriods, setValidityPeriods] = useState([]);
   const [selectedItems, setSelectedItems] = useState({
@@ -22,7 +22,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
     if (onPackageChange && packageItems.length > 0) {
       const totalPrice = calculateCustomPackagePrice();
       const isValid = selectedValidity && totalPrice > 0 && (selectedItems.tag > 0 || selectedItems.question > 0 || selectedItems.survey > 0);
-      
+
       onPackageChange({
         items: selectedItems,
         validity: selectedValidity,
@@ -41,7 +41,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
       const fetchWithTimeout = (url, timeout = 10000) => {
         return Promise.race([
           fetch(url),
-          new Promise((_, reject) => 
+          new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Request timeout')), timeout)
           )
         ]);
@@ -119,7 +119,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
     } catch (err) {
       console.error('Error in fetchCustomPackageData:', err);
       setError(err.message);
-      
+
       // Set fallback data even on error
       setPackageItems([
         { item_type: 'tag', base_price_per_unit: 5 },
@@ -210,8 +210,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                 <span className="item-price">৳{getItemPrice('tag')}/{getLabel ? getLabel("unit") : "unit"}</span>
               </div>
               <div className="quantity-controls">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('tag', selectedItems.tag - 1)}
                   disabled={selectedItems.tag <= 0}
                 >
@@ -224,8 +224,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                   onChange={(e) => handleItemChange('tag', e.target.value)}
                   placeholder="0"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('tag', selectedItems.tag + 1)}
                 >
                   +
@@ -240,8 +240,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                 <span className="item-price">৳{getItemPrice('question')}/{getLabel ? getLabel("unit") : "unit"}</span>
               </div>
               <div className="quantity-controls">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('question', selectedItems.question - 1)}
                   disabled={selectedItems.question <= 0}
                 >
@@ -254,8 +254,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                   onChange={(e) => handleItemChange('question', e.target.value)}
                   placeholder="0"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('question', selectedItems.question + 1)}
                 >
                   +
@@ -270,8 +270,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                 <span className="item-price">৳{getItemPrice('survey')}/{getLabel ? getLabel("unit") : "unit"}</span>
               </div>
               <div className="quantity-controls">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('survey', selectedItems.survey - 1)}
                   disabled={selectedItems.survey <= 0}
                 >
@@ -284,8 +284,8 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                   onChange={(e) => handleItemChange('survey', e.target.value)}
                   placeholder="0"
                 />
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => handleItemChange('survey', selectedItems.survey + 1)}
                 >
                   +
@@ -310,11 +310,11 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
                     <div className="validity-card">
                       <span className="validity-duration">{formatValidityDisplay(period.days)}</span>
                       <span className="validity-multiplier">
-                        {period.price_multiplier < 1 
+                        {period.price_multiplier < 1
                           ? `${Math.round((1 - period.price_multiplier) * 100)}% ${getLabel ? getLabel("OFF") : "OFF"}`
-                          : period.price_multiplier > 1 
-                          ? `+${Math.round((period.price_multiplier - 1) * 100)}%`
-                          : (getLabel ? getLabel("Standard") : "Standard")
+                          : period.price_multiplier > 1
+                            ? `+${Math.round((period.price_multiplier - 1) * 100)}%`
+                            : (getLabel ? getLabel("Standard") : "Standard")
                         }
                       </span>
                     </div>
@@ -360,6 +360,15 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange }) => {
               <strong>{getLabel ? getLabel("Total") : "Total"}: ৳ {calculateCustomPackagePrice()}</strong>
             </div>
           </div>
+
+              <div className="custom-package-actions">
+                <button
+                  className="buy-custom-btn"
+                  onClick={handleBuyCustomPackage}
+                >
+                  {getLabel("Buy Now")}
+                </button>
+              </div>
         </>
       )}
     </div>
