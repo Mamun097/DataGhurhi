@@ -5,17 +5,20 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
   // Default rows and columns with fallbacks
   const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
-  const columns = question.meta?.columns?.length ? question.meta.columns : ["Column 1"];
+  const columns = question.meta?.columns?.length
+    ? question.meta.columns
+    : ["Column 1"];
 
   // Initialize user response for the question
   const userAnswer =
-    userResponse.find(
-      (response) => response.questionText === question.text
-    )?.userResponse || [];
+    userResponse.find((response) => response.questionText === question.text)
+      ?.userResponse || [];
 
   // Check if a specific checkbox is checked
   const isChecked = (row, col) => {
-    return userAnswer.some((ans) => ans.row === row && ans.column === col);
+    return userAnswer.some(
+      (ans) => ans.row === row && ans.column.includes(col)
+    );
   };
 
   // Handle checkbox selection changes
@@ -31,14 +34,43 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
 
         if (checked) {
           // Add the selection if not already present
-          if (!updatedUserResponse.some((ans) => ans.row === row && ans.column === col)) {
-            updatedUserResponse.push({ row, column: col });
+          const existingRowIndex = updatedUserResponse.findIndex(
+            (ans) => ans.row === row
+          );
+          if (existingRowIndex !== -1) {
+            // Update the existing row with the new column
+            const existingRow = updatedUserResponse[existingRowIndex];
+            if (!existingRow.column.includes(col)) {
+              updatedUserResponse[existingRowIndex] = {
+                ...existingRow,
+                column: [...(existingRow.column || []), col],
+              };
+            }
+          } else {
+            // Add a new selection for the row and column
+            updatedUserResponse.push({ row, column: [col] });
           }
         } else {
           // Remove the selection
-          updatedUserResponse = updatedUserResponse.filter(
-            (ans) => !(ans.row === row && ans.column === col)
+          const existingRowIndex = updatedUserResponse.findIndex(
+            (ans) => ans.row === row
           );
+          if (existingRowIndex !== -1) {
+            const existingRow = updatedUserResponse[existingRowIndex];
+            const updatedColumns = existingRow.column.filter((c) => c !== col);
+            if (updatedColumns.length === 0) {
+              // If no columns left for the row, remove the row
+              updatedUserResponse = updatedUserResponse.filter(
+                (ans) => ans.row !== row
+              );
+            } else {
+              // Update the row with remaining columns
+              updatedUserResponse[existingRowIndex] = {
+                ...existingRow,
+                column: updatedColumns,
+              };
+            }
+          }
         }
 
         if (updatedUserResponse.length === 0) {
@@ -61,7 +93,7 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
             ...prevUserResponse,
             {
               questionText: question.text,
-              userResponse: [{ row, column: col }],
+              userResponse: [{ row, column: [col] }],
             },
           ];
         }
@@ -71,12 +103,11 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
     });
   };
 
+
   // Check if all required rows have at least one selection
   const isRequiredValid = () => {
     if (!question.required) return true;
-    return rows.every((row) =>
-      userAnswer.some((ans) => ans.row === row)
-    );
+    return rows.every((row) => userAnswer.some((ans) => ans.row === row));
   };
 
   return (
