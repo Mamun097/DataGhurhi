@@ -122,13 +122,13 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     const features = [];
 
     if (pkg.tag > 0) {
-      features.push(getLabel(`${pkg.tag.toLocaleString()} Automatic Question Tag Generation`));
+      features.push(`${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`);
     }
     if (pkg.question > 0) {
-      features.push(getLabel(`${pkg.question.toLocaleString()} Automatic Question Generation`));
+      features.push(`${pkg.question.toLocaleString()} ${getLabel("Automatic Question Generation")}`);
     }
     if (pkg.survey > 0) {
-      features.push(getLabel(`${pkg.survey.toLocaleString()} Automatic Survey Template Generation`));
+      features.push(`${pkg.survey.toLocaleString()} ${getLabel("Automatic Survey Template Generation")}`);
     }
 
     if (pkg.title.toLowerCase().includes('starter')) {
@@ -299,27 +299,18 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
               <CustomPackageBuilder
                 getLabel={getLabel}
                 onPackageChange={handleCustomPackageChange}
+                handleBuyCustomPackage={handleBuyCustomPackage}
               />
-
-
-              <div className="custom-package-actions">
-                <button
-                  className="buy-custom-btn"
-                  onClick={handleBuyCustomPackage}
-                >
-                  {getLabel("Buy Now")}
-                </button>
-              </div>
             </div>
           )}
         </div>
 
-        <div className="modal-footer">
+        {/* <div className="modal-footer">
           <p className="guarantee">
             <span className="guarantee-icon">🛡️</span>
             {getLabel("Payment is 100% secure and protected.")}
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );

@@ -128,7 +128,7 @@ const handleReject = async (projectId) => {
       "Edit Profile",
       "Projects",
       "Collaborated Projects",
-      "Checkout Premium Packages",
+      "Premium Packages",
       "Customize Packages",
       "Question Bank",
       "Profile details",
@@ -204,6 +204,57 @@ const handleReject = async (projectId) => {
       "Tags",
       "Questions",
       "Surveys",
+
+      // Premium Features Labels
+      "Choose Your Premium Package",
+      "Unlock Powerful AI Features",
+      "AI Survey Generation",
+      "Create professional surveys in seconds with AI assistance",
+      "Smart Question Creation",
+      "Generate relevant questions based on your research goals",
+      "Automatic Tagging",
+      "Organize questions with intelligent tagging system",
+      "Loading packages...",
+      "Failed to load packages. Please try again.",
+      "Most Popular",
+      "No packages available at the moment.",
+      "Loading customization options...",
+      "Build Your Custom Package",
+      "Select the items you need and choose validity period",
+      "Question Tags",
+      "unit",
+      "Questions",
+      "Surveys",
+      "Choose Validity Period",
+      "Standard",
+      "Validity",
+      "Total",
+      "Fixed Packages",
+      "Custom Package",
+      "Automatic Question Tag Generation",
+      "Automatic Question Generation",
+      "Automatic Survey Template Generation",
+      "Basic Survey Templates",
+      "Advanced Survey Templates",
+      "Premium Survey Templates",
+      "Package Summary",
+
+      "Unlock Premium Features",
+      "Take your surveys to the next level with AI-powered tools",
+      "AI Survey Template Generation",
+      "Smart Question Generation",
+      "Automatic Question Tagging",
+      "Continue as Free User",
+      "Checkout Premium Packages",
+      "Add New Package",
+      "Original Price",
+      "Discount Price",
+      "Edit Package",
+      "Total validity",
+      "Delete Package",
+      "Are you sure you want to delete the",
+      "package? This action cannot be undone.",
+      "Delete",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -314,9 +365,18 @@ const handleReject = async (projectId) => {
         } else {
           setIsAdmin(false);
           setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
-          // Show ad banner for normal users when they visit dashboard
+          
+          // Show ad banner for normal users only once per session
           if (currentUserType === 'normal') {
-            setShowAdBanner(true);
+            // Check if the banner has already been shown in this session
+            const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
+            const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
+            
+            if (!bannerAlreadyShown) {
+              setShowAdBanner(true);
+              // Mark banner as shown in this session
+              sessionStorage.setItem(bannerShownKey, 'true');
+            }
           }
         }
 
@@ -475,6 +535,7 @@ const sortedRequests = [...collabRequests].sort(
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
         { label: "Question Bank", key: "questionbank" },
+        { label: "Premium Packages", key: "premiumpackages" },
       ];
     }
   };
@@ -527,7 +588,7 @@ const sortedRequests = [...collabRequests].sort(
                     <button
                       className={activeTab === tab.key ? "active" : ""}
                       onClick={() => {
-                        if (tab.key === "checkoutpremiumpackages") {
+                        if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
                           
