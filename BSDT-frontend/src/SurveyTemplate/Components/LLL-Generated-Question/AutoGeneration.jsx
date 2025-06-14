@@ -58,7 +58,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
   return (
     <>
       <button
-        className="btn btn-outline-primary btn-lg mt-4 ms-4"
+        className="btn btn-outline-primary btn-lg mb-2 mt-2"
         onClick={() => setShowChatbot(true)}
       >
         <svg 

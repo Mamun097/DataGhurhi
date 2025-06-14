@@ -1,11 +1,19 @@
 import React from "react";
 import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import "bootstrap-icons/font/bootstrap-icons.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ImportFromQb from "./importFromQB/importFromQb";
 
-const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGeneratedQuestion, questionInfo, getLabel, addImportedQuestion }) => {
+const AddQuestion = ({
+  newQuestion,
+  setNewQuestion,
+  addNewQuestion,
+  addGeneratedQuestion,
+  questionInfo,
+  getLabel,
+  addImportedQuestion,
+}) => {
   return (
     <div>
       <style>
@@ -29,9 +37,9 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
             type="button"
             className="btn-close"
             style={{
-              position: 'absolute',
-              top: '0.75rem',
-              right: '0.75rem',
+              position: "absolute",
+              top: "0.75rem",
+              right: "0.75rem",
               zIndex: 2,
             }}
             aria-label="Close"
@@ -124,20 +132,15 @@ const AddQuestion = ({ newQuestion, setNewQuestion, addNewQuestion, addGenerated
         >
           <i className="bi bi-plus-lg"></i> {getLabel("Add Question")}
         </button>
-          <ImportFromQb
-            addImportedQuestion={addImportedQuestion}
-            questionInfo={questionInfo}
-          />
-
-        <div className="mb-2 mb-md-0 me-md-3">
-          <AutoGeneration
-            addGeneratedQuestion={addGeneratedQuestion}
-            questionInfo={questionInfo}
-            getLabel={getLabel}
-          />
-        </div>
-
-       
+        <ImportFromQb
+          addImportedQuestion={addImportedQuestion}
+          questionInfo={questionInfo}
+        />
+        <AutoGeneration
+          addGeneratedQuestion={addGeneratedQuestion}
+          questionInfo={questionInfo}
+          getLabel={getLabel}
+        />
       </div>
     </div>
   );
