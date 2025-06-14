@@ -394,7 +394,7 @@ const SurveyForm = ({
     sendSurveyData("http://localhost:2000/api/surveytemplate");
 
   return (
-    <div className="container-fluid px-2 px-md-3">
+    <div className="px-2 px-md-3">
       {/* Action Buttons: Apply the new class here */}
       {/* Added button-group-mobile-compact and justify-content-start */}
       <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
@@ -503,7 +503,7 @@ const SurveyForm = ({
                 color: "#6c757d",
               }}
             >
-              <span>{getLabel("No banner image selected")}</span>
+              {/* <span>{getLabel("No banner image selected")}</span> */}
             </div>
           )}
           <input
@@ -559,7 +559,7 @@ const SurveyForm = ({
             </button>
           )}
         </div>
-        <div className="container mt-3">
+        <div className="mt-3">
           {isEditingDescription ? (
             <div className="card p-3 shadow-sm">
               <h5 className="card-title">
@@ -622,7 +622,7 @@ const SurveyForm = ({
           )}
         </div>
 
-        <div className="mt-4 container">
+        <div className="mt-4 ">
           {sections.map((section, index) => (
             <SurveySections
               key={section.id || `section-${index}`}
