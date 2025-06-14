@@ -78,6 +78,7 @@ const SurveyForm = ({
       "Publish",
       "Update",
       "View Survey Link",
+      "View Response", // Added for the new button
       "Upload Banner Image",
       "Enter Survey Title",
       "Add Section",
@@ -169,11 +170,9 @@ const SurveyForm = ({
       "Shuffle row order",
       "Require at least one selection",
       "Shuffle option order",
-      "Date", "Time", "Select Date/Time"
-
-
-
-
+      "Date",
+      "Time",
+      "Select Date/Time",
     ],
     []
   );
@@ -223,6 +222,7 @@ const SurveyForm = ({
     };
     loadTranslations();
   }, [language, labelsToTranslate]);
+
   const updateAndRelayBackgroundImage = (newImageSrc) => {
     setCurrentBackgroundImage(newImageSrc);
     if (setImageInParent) {
@@ -231,7 +231,6 @@ const SurveyForm = ({
   };
 
   const handleAddSection = () => {
-    // Ensure new sections have a unique ID if possible, or use index as key carefully
     const newSectionId =
       sections.length > 0 ? Math.max(...sections.map((s) => s.id)) + 1 : 1;
     const newSection = { id: newSectionId, title: "", questions: [] };
@@ -282,7 +281,6 @@ const SurveyForm = ({
     }
 
     try {
-      // Attempt to parse, but handle if it's not JSON (e.g., just the token string)
       let tokenToUse = bearerTokenString;
       try {
         const parsedToken = JSON.parse(bearerTokenString);
@@ -290,7 +288,6 @@ const SurveyForm = ({
           if (parsedToken.id) userIdInPayload = parsedToken.id;
         }
       } catch (e) {
-        // If not JSON, assume bearerTokenString is the token itself. id extraction won't work here.
         console.warn(
           "Token from localStorage is not JSON. 'id' for user_id payload field cannot be extracted this way."
         );
@@ -310,19 +307,18 @@ const SurveyForm = ({
           description: description,
           questions,
         },
-        title: title, // Survey title
-        user_id: userIdInPayload, // user_id from token if available
+        title: title,
+        user_id: userIdInPayload,
       };
 
       const response = await axios.put(url, payload, {
         headers: {
           "Content-Type": "application/json",
-          // Assuming bearerTokenString is the raw token to be sent
           Authorization: `Bearer ${
             bearerTokenString.startsWith("{")
               ? JSON.parse(bearerTokenString).token
               : bearerTokenString
-          }`, // Adjust if token is nested
+          }`,
         },
       });
 
@@ -334,7 +330,6 @@ const SurveyForm = ({
         if (isSave) {
           successMessageKey = "Survey Saved successfully!";
         } else if (!isUpdate) {
-          // It's a new publish
           successMessageKey = "Survey Published successfully!";
         }
         toast.success(getLabel(successMessageKey));
@@ -352,7 +347,6 @@ const SurveyForm = ({
           }
         );
       } else {
-        // This block might not be reached if axios throws error for non-2xx status
         const action = url.includes("save")
           ? "saving"
           : surveyStatus !== "published"
@@ -392,11 +386,12 @@ const SurveyForm = ({
     sendSurveyData("http://localhost:2000/api/surveytemplate");
   const handleUpdate = () =>
     sendSurveyData("http://localhost:2000/api/surveytemplate");
-
+  const handleSurveyResponses = () => {
+    navigate(`/survey-responses/${survey_id}`);
+  };
   return (
     <div className="px-2 px-md-3">
-      {/* Action Buttons: Apply the new class here */}
-      {/* Added button-group-mobile-compact and justify-content-start */}
+      {/* Action Buttons */}
       <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
         {surveyStatus === "published" ? (
           <button
@@ -464,14 +459,22 @@ const SurveyForm = ({
           </>
         )}
         {surveyLink && (
-          <a
-            href={`http://localhost:5173/v/${surveyLink}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-outline-info btn-sm"
-          >
-            <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
-          </a>
+          <>
+            <a
+              href={`http://localhost:5173/v/${surveyLink}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-outline-info btn-sm me-2"
+            >
+              <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
+            </a>
+            <button
+              onClick={handleSurveyResponses}
+              className="btn btn-outline-info btn-sm"
+            >
+              <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
+            </button>
+          </>
         )}
       </div>
 
@@ -526,7 +529,7 @@ const SurveyForm = ({
           />
         </div>
 
-        {/* Banner and Description Controls: Apply the new class here */}
+        {/* Banner and Description Controls */}
         <div className="mt-3 mb-3 button-group-mobile-compact justify-content-center">
           <label className="btn btn-outline-secondary btn-sm me-1">
             <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
@@ -622,7 +625,7 @@ const SurveyForm = ({
           )}
         </div>
 
-        <div className="mt-4 ">
+        <div className="mt-4">
           {sections.map((section, index) => (
             <SurveySections
               key={section.id || `section-${index}`}
