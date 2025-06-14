@@ -269,9 +269,18 @@ const Dashboard = () => {
         } else {
           setIsAdmin(false);
           setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
-          // Show ad banner for normal users when they visit dashboard
+          
+          // Show ad banner for normal users only once per session
           if (currentUserType === 'normal') {
-            setShowAdBanner(true);
+            // Check if the banner has already been shown in this session
+            const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
+            const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
+            
+            if (!bannerAlreadyShown) {
+              setShowAdBanner(true);
+              // Mark banner as shown in this session
+              sessionStorage.setItem(bannerShownKey, 'true');
+            }
           }
         }
 
@@ -372,6 +381,7 @@ const Dashboard = () => {
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
         { label: "Question Bank", key: "questionbank" },
+        { label: "Premium Packages", key: "premiumpackages" },
       ];
     }
   };
@@ -424,7 +434,7 @@ const Dashboard = () => {
                     <button
                       className={activeTab === tab.key ? "active" : ""}
                       onClick={() => {
-                        if (tab.key === "checkoutpremiumpackages") {
+                        if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
                           

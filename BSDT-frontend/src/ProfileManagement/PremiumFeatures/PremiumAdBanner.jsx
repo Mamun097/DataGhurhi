@@ -13,16 +13,16 @@ const PremiumAdBanner = ({ onClose, onCheckoutClick, getLabel }) => {
 
                     <div className="premium-features-list">
                         <div className="feature-item">
-                            <span className="feature-icon">🤖</span>
-                            <span className="feature-text">{getLabel("AI Survey Template Generation")}</span>
+                            {/* <span className="feature-icon">🤖</span> */}
+                            <span className="feature-text">🤖 {getLabel("AI Survey Template Generation")}</span>
                         </div>
                         <div className="feature-item">
-                            <span className="feature-icon">❓</span>
-                            <span className="feature-text">{getLabel("Smart Question Generation")}</span>
+                            {/* <span className="feature-icon">❓</span> */}
+                            <span className="feature-text">❓{getLabel("Smart Question Generation")}</span>
                         </div>
                         <div className="feature-item">
-                            <span className="feature-icon">🏷️</span>
-                            <span className="feature-text">{getLabel("Automatic Question Tagging")}</span>
+                            {/* <span className="feature-icon">🏷️</span> */}
+                            <span className="feature-text">🏷️ {getLabel("Automatic Question Tagging")}</span>
                         </div>
                         {/* <div className="feature-item">
                             <span className="feature-icon">📊</span>

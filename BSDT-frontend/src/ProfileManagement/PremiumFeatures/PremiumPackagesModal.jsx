@@ -314,12 +314,12 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
           )}
         </div>
 
-        <div className="modal-footer">
+        {/* <div className="modal-footer">
           <p className="guarantee">
             <span className="guarantee-icon">🛡️</span>
             {getLabel("Payment is 100% secure and protected.")}
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
