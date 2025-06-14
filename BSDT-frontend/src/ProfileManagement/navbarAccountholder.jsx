@@ -181,19 +181,19 @@ const NavbarAcholder = (props) => {
         </li>
 
         <li>
-          <a href="home">
-            <FaHome className="nav-icon" />
+          <FaHome className="nav-icon" />
+          <a href="/">
             <span> {getLabel("Home")} </span>
           </a>
         </li>
         <li>
-          <a href="about">
+          <a href="/about">
             <FaInfoCircle className="nav-icon" />
             <span>{getLabel("About")}</span>
           </a>
         </li>
         <li>
-          <a href="faq">
+          <a href="/faq">
             <FaQuestionCircle className="nav-icon" />
             <span>FAQ</span>
           </a>
