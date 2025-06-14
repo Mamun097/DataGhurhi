@@ -155,9 +155,23 @@ async function inviteCollaborator(projectId, user_data) {
 
   const id = data;
   console.log(data);
+  //check if exists in table
+  const { data: existingCollaborator, error: fetchError } = await supabase
+    .from("project_shared_with_collaborator")
+    .select("*")
+    .eq("user_id", id)
+    .eq("project_id", projectId)
+    .single();
+  
+  if (fetchError && fetchError.code !== "PGRST116") {
+    return { error: fetchError };
+  }
+  if (existingCollaborator) {
+    return { error: "Collaborator exists" };
+  }
 
   const { error: insertError } = await supabase
-    .from("survey_shared_with_collaborators")
+    .from("project_shared_with_collaborator")
     .insert([
       {
         user_id: id,
@@ -170,7 +184,7 @@ async function inviteCollaborator(projectId, user_data) {
 }
 async function getCollaborators(projectId) {
   const { data, error } = await supabase
-    .from("survey_shared_with_collaborators")
+    .from("project_shared_with_collaborator")
     .select(
       `
             *,
@@ -186,7 +200,7 @@ async function getCollaborators(projectId) {
 
 async function removeCollaborator(projectId, collaboratorId) {
   const { error } = await supabase
-    .from("survey_shared_with_collaborators")
+    .from("project_shared_with_collaborator")
     .delete()
     .eq("project_id", projectId)
     .eq("user_id", collaboratorId);

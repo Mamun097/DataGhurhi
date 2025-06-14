@@ -318,6 +318,50 @@ const handleDeleteSurvey = async (surveyId) => {
       toast.error(getLabel("❌ Failed to update project."));
     }
   };
+  const handleAddCollaborator = async () => {
+    if (!collabEmail) {
+      toast.error(getLabel("Email is required!"));
+      return;
+    }
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/project/${projectId}/invite-collaborator`,
+        {
+          email: collabEmail,
+          access_role: accessControl,
+          invitation: "pending", // Assuming you want to set the initial invitation status
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status === 200) {
+        toast.success(getLabel("Collaborator added successfully!"));
+        setCollabEmail("");
+        setAccessControl("view");
+        setShowModal(false);
+        await fetchCollaborators();
+      } else {
+        console.error("Error adding collaborator:", error);
+        toast.error(getLabel("Failed to add collaborator."));
+      }
+    } catch (error) {
+      if (error.response && error.response.data) {
+        // Handle specific error messages from the server
+        const errorMessage = error.response.data.error || getLabel("Failed to add collaborator.");
+        toast.error(errorMessage);
+      }
+      else{
+      console.error("Error adding collaborator:", error);
+      toast.error(getLabel("Failed to add collaborator."));
+    }
+  }
+  };
+
 
   // if (loading) return <p>Loading...</p>;
 
@@ -442,37 +486,6 @@ const handleDeleteSurvey = async (surveyId) => {
                   </div>
                 )}
               </div>
-
-              {showModal && (
-                <div className="modal-overlay">
-                  <div className="modal-content">
-                    <h3>{getLabel("Add Collaborator")}</h3>
-                    <label>{getLabel("Email")}</label>
-                    <input
-                      type="email"
-                      value={collabEmail}
-                      onChange={(e) => setCollabEmail(e.target.value)}
-                      required
-                    />
-                    <label>{getLabel("Access Control")}</label>
-                    <select
-                      value={accessControl}
-                      onChange={(e) => setAccessControl(e.target.value)}
-                    >
-                      <option value="view">{getLabel("View Only")}</option>
-                      <option value="edit">{getLabel("Can Edit")}</option>
-                    </select>
-                    <div className="modal-buttons">
-                      <button onClick={handleAddCollaborator}>
-                        {getLabel("Add")}
-                      </button>
-                      <button onClick={() => setShowModal(false)}>
-                        {getLabel("Cancel")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           ) : (
             <div className="collaborator-list">
@@ -510,6 +523,36 @@ const handleDeleteSurvey = async (surveyId) => {
                   )}
                 </tbody>
               </table>
+              {showModal && (
+                <div className="modal-overlay">
+                  <div className="modal-content">
+                    <h3>{getLabel("Add Collaborator")}</h3>
+                    <label>{getLabel("Email")}</label>
+                    <input
+                      type="email"
+                      value={collabEmail}
+                      onChange={(e) => setCollabEmail(e.target.value)}
+                      required
+                    />
+                    <label>{getLabel("Access Control")}</label>
+                    <select
+                      value={accessControl}
+                      onChange={(e) => setAccessControl(e.target.value)}
+                    >
+                      <option value="view">{getLabel("View Only")}</option>
+                      <option value="edit">{getLabel("Can Edit")}</option>
+                    </select>
+                    <div className="modal-buttons">
+                      <button onClick={handleAddCollaborator}>
+                        {getLabel("Add")}
+                      </button>
+                      <button onClick={() => setShowModal(false)}>
+                        {getLabel("Cancel")}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
