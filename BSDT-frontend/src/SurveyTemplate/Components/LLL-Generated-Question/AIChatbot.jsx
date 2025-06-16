@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
-import "./ChatbotLoading.css"
+import "./ChatbotLoading.css";
 
-const AIChatbot = ({ onClose, onGenerate }) => {
+const AIChatbot = ({ onClose, onGenerate , getLabel}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [currentStep, setCurrentStep] = useState("greeting");
@@ -102,7 +102,7 @@ const AIChatbot = ({ onClose, onGenerate }) => {
       case "text":
       case "datetime":
         // These types don't need additional metadata
-        nextMessage = "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)";
+        nextMessage = "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question?";
         setCurrentStep("additionalInfo");
         break;
     }
@@ -183,7 +183,6 @@ const AIChatbot = ({ onClose, onGenerate }) => {
 
   const handleAdditionalInfo = (info) => {
     setAdditionalInfo(info);
-    // No longer adding user message here - it will be handled by handleInputSubmit
     addMessage("bot", "Great! I have everything I need. Click 'Generate Question' when you're ready.");
     setCurrentStep("generate");
   };
@@ -230,18 +229,25 @@ const AIChatbot = ({ onClose, onGenerate }) => {
     }
   };
 
+  const isInputDisabled = () => {
+    return currentStep === "greeting" ||
+      (currentStep === "metadata" && !messages.some(m =>
+        m.options && m.options.some(o => o.id === "custom")
+      ));
+  };
+
   return (
     <div className="ai-chatbot-container">
       <div className="chatbot-header">
         <h5>AI Question Generator</h5>
-        <button className="close-btn" onClick={onClose}>×</button>
+        <button className="close-btn-chat" onClick={onClose}>×</button>
       </div>
 
       <div className="chatbot-messages" ref={chatContainerRef}>
         {messages.map((message, index) => (
           <div key={index} className={`message ${message.sender}`}>
             <div className="message-content">
-              {message.text}
+              {getLabel(message.text)}
             </div>
 
             {message.options && message.options.length > 0 && (
@@ -275,12 +281,20 @@ const AIChatbot = ({ onClose, onGenerate }) => {
               value={input}
               onChange={handleInputChange}
               placeholder="Type your response..."
-              disabled={currentStep === "greeting" || (currentStep === "metadata" && !messages.some(m => m.options && m.options.some(o => o.id === "custom")))}
+              disabled={isInputDisabled()}
             />
-            <button type="submit" disabled={!input.trim() && currentStep !== "additionalInfo"}>Send</button>
-            {currentStep === "additionalInfo" && (
-              <button type="button" onClick={handleSkip}>Skip</button>
-            )}
+            <button
+              type="submit"
+              className="send-btn"
+              disabled={!input.trim() && currentStep !== "additionalInfo"}
+            >
+              {/* <svg  width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+              </svg> */}
+
+              Send
+              
+            </button>
           </>
         ) : (
           <button
