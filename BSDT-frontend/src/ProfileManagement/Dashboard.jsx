@@ -126,7 +126,7 @@ const Dashboard = () => {
 
     const labelsToTranslate = [
       "Dashboard",
-      "Edit Profile",
+      "Profile",
       "Projects",
       "Collaborated Projects",
       "Premium Packages",
@@ -528,11 +528,11 @@ const Dashboard = () => {
       return [
         { label: "Dashboard", key: "dashboard" },
         { label: "Customize Packages", key: "customizepackages" },
-        { label: "Edit Profile", key: "editprofile" }
+        { label: "Profile", key: "editprofile" }
       ];
     } else {
       return [
-        { label: "Edit Profile", key: "editprofile" },
+        { label: "Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
         { label: "Question Bank", key: "questionbank" },
@@ -624,7 +624,7 @@ const Dashboard = () => {
               />
             )}
 
-            {/* Edit Profile - Common for both admin and normal users */}
+            {/* Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
