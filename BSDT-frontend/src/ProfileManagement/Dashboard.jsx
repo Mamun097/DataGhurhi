@@ -15,6 +15,7 @@ import "./PremiumFeatures/TokenDisplay.css";
 import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
+import UserSubscriptions from './PremiumFeatures/UserSubscription';
 
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
   const getTabFromURL = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("tab") ;
+    return urlParams.get("tab");
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "editprofile");
@@ -56,50 +57,50 @@ const Dashboard = () => {
     localStorage.getItem("language") || "English"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
-// collab
+  // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-  
 
-const handleAccept = async (projectId) => {
-  
-  console.log("Accepted request:", projectId);
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.post(
-      `http://localhost:2000/api/collaborator/${projectId}/accept-invitation`,
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    if (response.status === 200) {
-      console.log("Invitation accepted successfully");
-      fetchCollaborationRequests(); // Refresh requests
-    }
-  } catch (error) {
-    console.error("Failed to accept invitation:", error);
-  }
-};
 
-const handleReject = async (projectId) => {
-  console.log("Rejected request:", projectId);
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.post(
-      `http://localhost:2000/api/collaborator/${projectId}/decline-invitation`,
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
+  const handleAccept = async (projectId) => {
+
+    console.log("Accepted request:", projectId);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/collaborator/${projectId}/accept-invitation`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        console.log("Invitation accepted successfully");
+        fetchCollaborationRequests(); // Refresh requests
       }
-    );
-    if (response.status === 200) {
-      console.log("Invitation rejected successfully");
-      fetchCollaborationRequests(); // Refresh requests
+    } catch (error) {
+      console.error("Failed to accept invitation:", error);
     }
-  } catch (error) {
-    console.error("Failed to reject invitation:", error);
-  }
-};
+  };
+
+  const handleReject = async (projectId) => {
+    console.log("Rejected request:", projectId);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/collaborator/${projectId}/decline-invitation`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        console.log("Invitation rejected successfully");
+        fetchCollaborationRequests(); // Refresh requests
+      }
+    } catch (error) {
+      console.error("Failed to reject invitation:", error);
+    }
+  };
 
   // Premium feature states
   const [showAdBanner, setShowAdBanner] = useState(false);
@@ -365,13 +366,13 @@ const handleReject = async (projectId) => {
         } else {
           setIsAdmin(false);
           setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
-          
+
           // Show ad banner for normal users only once per session
           if (currentUserType === 'normal') {
             // Check if the banner has already been shown in this session
             const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
             const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
-            
+
             if (!bannerAlreadyShown) {
               setShowAdBanner(true);
               // Mark banner as shown in this session
@@ -475,7 +476,7 @@ const handleReject = async (projectId) => {
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
         console.log("Collaborated Projects:", response.data.projects);
-        
+
       }
     } catch (error) {
       console.error("Failed to fetch collaborated projects:", error);
@@ -504,12 +505,12 @@ const handleReject = async (projectId) => {
   }, []);
 
   const [expandedRows, setExpandedRows] = useState(new Set());
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
-const sortedRequests = [...collabRequests].sort(
-  (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
-);
+  const sortedRequests = [...collabRequests].sort(
+    (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
+  );
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -542,7 +543,7 @@ const sortedRequests = [...collabRequests].sort(
 
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType}/>
+      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType} />
       <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
         <div className="dashboard-layout">
           <div className="profile-section">
@@ -591,7 +592,7 @@ const sortedRequests = [...collabRequests].sort(
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
-                          
+
                           const url = new URL(window.location);
                           url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
@@ -704,6 +705,13 @@ const sortedRequests = [...collabRequests].sort(
                   </button>
                 )}
               </div>
+            )}
+
+            {activeTab === "editprofile" && !isAdmin && (
+              <UserSubscriptions
+                getLabel={getLabel}
+                userType={userType}
+              />
             )}
 
             {/* Normal User Tabs */}
@@ -860,25 +868,25 @@ const sortedRequests = [...collabRequests].sort(
               </div>
             )}
             {!isAdmin && activeTab === "collaboratedprojects" && (
-                <div className="p-3">
-                  <div className="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                      <h3>{getLabel("Collaborated Projects")}</h3>
-                      <p className="text-muted">{getLabel("Projects shared with you will appear below.")}</p>
-                    </div>
-                                        <button
-                      className="btn view-requests-btn btn-sm btn-outline-primary"
-                      onClick={() => {
-                        setShowCollabModal(true);
-                        fetchCollaborationRequests();
-                      }}
-                      title={getLabel("View Collaboration Requests")}
-                    >
-                      <i className="bi bi-eye me-1"></i>
-                      <span className="d-none d-sm-inline text-muted " >{getLabel("View Request")}</span>
-                    </button>
+              <div className="p-3">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <h3>{getLabel("Collaborated Projects")}</h3>
+                    <p className="text-muted">{getLabel("Projects shared with you will appear below.")}</p>
                   </div>
-                  <div className="collaborated-projects-list">
+                  <button
+                    className="btn view-requests-btn btn-sm btn-outline-primary"
+                    onClick={() => {
+                      setShowCollabModal(true);
+                      fetchCollaborationRequests();
+                    }}
+                    title={getLabel("View Collaboration Requests")}
+                  >
+                    <i className="bi bi-eye me-1"></i>
+                    <span className="d-none d-sm-inline text-muted " >{getLabel("View Request")}</span>
+                  </button>
+                </div>
+                <div className="collaborated-projects-list">
 
                   {collaboratedProjects.length === 0 ? (
                     <div className="alert alert-warning">
@@ -907,13 +915,12 @@ const sortedRequests = [...collabRequests].sort(
                                 </p>
                                 <p className="mb-1 text-muted">{ownerEmail}</p>
                                 <span
-                                  className={`badge mt-2 align-self-start bg-${
-                                    access_role === "editor"
-                                      ? "primary"
-                                      : access_role === "viewer"
+                                  className={`badge mt-2 align-self-start bg-${access_role === "editor"
+                                    ? "primary"
+                                    : access_role === "viewer"
                                       ? "secondary"
                                       : "warning"
-                                  }`}
+                                    }`}
                                 >
                                   {getLabel("Role")}: {access_role}
                                 </span>
@@ -924,41 +931,37 @@ const sortedRequests = [...collabRequests].sort(
                       })}
                     </div>
                   )}
+                </div>
 
+                {/* Collaborated Projects List */}
+                <ul className="list-group mt-3">
+                  {collaboratedProjects.map((proj) => (
+                    <li className="list-group-item" key={proj.project_id}>
+                      {proj.title}
+                    </li>
+                  ))}
+                </ul>
 
+                {/* Custom Modal */}
+                {showCollabModal && (
+                  <div className="custom-modal-overlay" onClick={() => setShowCollabModal(false)}>
+                    <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
+                      <div className="modal-header d-flex justify-content-between align-items-center">
+                        <button
+                          type="button"
+                          className="btn btn-outline-secondary btn-sm"
+                          onClick={() => setShowCollabModal(false)}
+                        >
+                          <i className="bi bi-x-lg me-1"></i> {getLabel("Close")}
+                        </button>
 
+                        <h5 className="modal-title mb-0">{getLabel("Collaboration Requests")}</h5>
 
-                  </div>
-
-                  {/* Collaborated Projects List */}
-                  <ul className="list-group mt-3">
-                    {collaboratedProjects.map((proj) => (
-                      <li className="list-group-item" key={proj.project_id}>
-                        {proj.title}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Custom Modal */}
-                  {showCollabModal && (
-                    <div className="custom-modal-overlay" onClick={() => setShowCollabModal(false)}>
-                      <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header d-flex justify-content-between align-items-center">
-                          <button
-                            type="button"
-                            className="btn btn-outline-secondary btn-sm"
-                            onClick={() => setShowCollabModal(false)}
-                          >
-                            <i className="bi bi-x-lg me-1"></i> {getLabel("Close")}
-                          </button>
-
-                          <h5 className="modal-title mb-0">{getLabel("Collaboration Requests")}</h5>
-
-                          <span /> {/* Empty span to balance layout */}
-                        </div>
-                        <div className="custom-modal-body">
-                          {collabRequests.length > 0 ? (
-                           <div className="table-responsive rounded shadow-sm border">
+                        <span /> {/* Empty span to balance layout */}
+                      </div>
+                      <div className="custom-modal-body">
+                        {collabRequests.length > 0 ? (
+                          <div className="table-responsive rounded shadow-sm border">
                             <table className="table table-hover align-middle mb-0">
                               <thead className="table-dark text-white">
                                 <tr>
@@ -997,7 +1000,8 @@ const sortedRequests = [...collabRequests].sort(
                                           </button>
                                           <button
                                             className="btn btn-sm btn-danger"
-                                            onClick={() => {handleReject(req.pr)
+                                            onClick={() => {
+                                              handleReject(req.pr)
                                             }}
                                           >
                                             <i className="bi bi-x-circle me-1"></i>{getLabel("Reject")}
@@ -1043,31 +1047,31 @@ const sortedRequests = [...collabRequests].sort(
                               </ul>
                             </nav>
                           </div>
-                          ) : (
-                            <p>{getLabel("No collaboration requests")}</p>
-                          )}
+                        ) : (
+                          <p>{getLabel("No collaboration requests")}</p>
+                        )}
 
 
-                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
+            )}
 
 
 
 
-          {activeTab === "questionbank" && (
-            <div className="question-bank-section">
-            
-              
-                <QB language={language} setLanguage={setLanguage}/>
+            {activeTab === "questionbank" && (
+              <div className="question-bank-section">
 
-             
-             
-            </div>
-          )}
+
+                <QB language={language} setLanguage={setLanguage} />
+
+
+
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1079,7 +1083,7 @@ const sortedRequests = [...collabRequests].sort(
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )}  
+      )}
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (

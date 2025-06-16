@@ -119,6 +119,10 @@ app.use('/api/question-bank', questionBankRouter);
 //admin routes
 app.use('/api', adminRouter);
 
+// User subscription routes
+const userSubscriptionRouter = require('./route/usersubscription');
+app.use('/api', userSubscriptionRouter);
+
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
