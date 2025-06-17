@@ -38,6 +38,7 @@
 
   display: flex;
   flex-direction: column;
+  padding: 24px;
   align-items: center; /* Center all child content */
   text-align: center;
 }
@@ -235,6 +236,8 @@ textarea {
   color: #333;
 }
 
+
+
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -421,7 +424,12 @@ textarea {
 .add-collab-btn:hover {
   background-color: #1565c0;
 }
-
+.disabled-btn {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  border: 1px solid #aaa;
+}
 .collab-table {
   width: 100%;
   border-collapse: collapse;
@@ -530,10 +538,59 @@ textarea {
     max-width: 100%;
     flex: 1 1 100%;
   }
+  .edit-right {
+    margin-right: 20px;
+  }
+
+
+
+  .survey-section-heading {
+    font-size: 20px;
+  }
+
+  .project-form {
+    padding: 16px;
+  }
+
+  .modal-content {
+    width: 95%;
+    padding: 16px;
+  }
+
+  .survey-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-survey-card {
+    width: 100%;
+  }
+
+  .survey-card {
+    width: 100%;
+  }
+
+  .survey-banner {
+    height: 120px;
+  }
 
   .tab-header-container h2 {
-    font-size: 32px;
+    font-size: 26px;
   }
+  .survey-grid-center {
+    width: 100%;
+    flex-direction: column;
+    align-items: center;
+  }
+ 
+  .collab-table {
+     display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+
+
   
 }
 

@@ -88,3 +88,68 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                 return res.status(401).send({ error: "Please attach access token in headers." });
         }
     }
+
+module.exports.jwtAuthMiddlewareSurvey = async(req, res, next) => {
+    console.log('Entered jwtAuthMiddlewareSurvey');
+    console.log(req.headers);
+    const surveyID= req.params.surveyID || req.body.surveyID;
+    if (req.headers['authorization']) {
+        try {
+            let authorization = req.headers['authorization'].split(' ');
+            if (authorization[0] != 'Bearer') {
+                return res.status(401).json({ error: "Unauthorized" });
+            } else {
+                req.jwt = jwt.verify(authorization[1], process.env.JWT_SECRET_USER);
+                const userData = jwt.verify(authorization[1], process.env.JWT_SECRET_USER);
+                //    add necessary data to request body. Here i added only userId
+                req.body.userId = req.jwt.id;
+                console.log('User ID:', req.jwt.id);
+                // req.body.role = userData.role;
+
+                
+            // Fetch survey data from the database using the survey ID
+            const { data, error } = await supabase 
+                .from('survey_shared_with_collaborators')
+                .select('access_role, survey_id, survey(survey_id, user_id)')
+                .eq('user_id', req.body.userId)
+                .eq('survey_id', surveyID)
+                .single();
+            if (error) {
+                console.error('Error fetching survey data:', error.message);
+                return res.status(500).send({ error: 'Internal server error' });
+            }
+            if (!data) {
+                return res.status(403).send({ error: 'You do not have permission to access this survey.' });
+            }
+            // Check if the user has the required role for the survey
+            if ( data.survey.user_id === req.body.userId) {
+            const userRole = 'owner'; // If the user is the owner of the survey, set role to 'owner'
+            } else {
+            const userRole = data.access_role; // Get the user's role from the survey data
+            }
+
+            if (userRole !== 'owner' && userRole !== 'editor' && userRole !== 'viewer') {
+                console.log(data);
+                // User does not have the required role, send a 403 Forbidden response  
+                return res.status(404).send({ error: 'You do not have permission to access this survey.' });
+            } else {
+                // User has the required role, proceed to the next middleware or route handler
+                req.body.surveyrole = userRole; // Add the role to the request body for further use
+                
+                console.log('User ID:', req.body.userId);
+                console.log('User survey role:', req.body.surveyrole);
+                console.log('Survey ID:', surveyID);
+
+                // Proceed to the next middleware or route handler
+                next();
+            }
+            }
+        } catch (err) {
+            console.error('Error in jwtAuthMiddlewareSurvey:', err.message);
+            return res.status(403).send({ error: 'Forbidden' });
+        }
+    }
+    else {
+        return res.status(401).send({ error: "Please attach access token in headers." });
+    }
+}
