@@ -39,6 +39,8 @@ const surveyTemplateRouter = require('./route/surveytemplate');
 //Automatic Question Tag Generation
 const automatic_question_tag= require('./route/automatic_question_tag');
 const generate_question_with_llm= require('./route/generatequestionwithllm');
+const generateMultipleQuestionsWithLLMRouter = require('./route/generatequestionwithllm');
+
 
 // saved templates
 const createSurveyRouter = require('./route/createsurvey');
@@ -126,6 +128,8 @@ const userSubscriptionRouter = require('./route/usersubscription');
 app.use('/api', userSubscriptionRouter);
 // survey collab routes
 app.use('/api/survey-collaborator', surveyCollabRouter);
+
+app.use('/api', generateMultipleQuestionsWithLLMRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...

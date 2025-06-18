@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./ChatbotLoading.css";
 
 const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
@@ -66,12 +66,12 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
     } else if (step === "audience") {
       setSurveyMeta((prev) => ({ ...prev, audience: value }));
       setStep("numQuestions");
-      addMessage("bot", "How many questions? (default is 2)");
+      addMessage("bot", "How many questions? (default is 10)");
     } else if (step === "numQuestions") {
       const num = parseInt(value);
       setSurveyMeta((prev) => ({ ...prev, numQuestions: isNaN(num) ? 10 : num }));
       setStep("questionTypes");
-      addMessage("bot", "What type of questions? (e.g., mixed, radio, text)");
+      addMessage("bot", "What type of questions? (e.g., Mixed, MCQ, Text, Rating, Linear Scale, Checkbox, Dropdown, Date/Time, Likert Scale, Multiple Choice Grid)");
     } else if (step === "questionTypes") {
       setSurveyMeta((prev) => ({ ...prev, questionTypes: value }));
       setStep("confirm");
