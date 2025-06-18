@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "axios";
 import "./createProject.css";
 import "./editProject.css";
@@ -57,6 +58,10 @@ const EditProject = () => {
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
+  const location = useLocation();
+  const userRroleProject=location.state?.role || " ";
+  console.log("User Role in Project:", userRroleProject);
+  const canEdit = userRroleProject === "owner" || userRroleProject=== "editor";
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const labelsToTranslate = [
@@ -397,12 +402,15 @@ const handleDeleteSurvey = async (surveyId) => {
             <div className="project-form">
               <div className="header-with-button">
                 {/* <h2>{getLabel("Project Details")}</h2> */}
+              
                 <button
-                  className="edit-toggle-btn"
+                  className={`edit-toggle-btn ${!canEdit ? "disabled-btn" : ""}`}
                   onClick={() => setIsEditing(!isEditing)}
+                  disabled={!canEdit}
                 >
                   {isEditing ? getLabel("Cancel") : getLabel("Edit")}
                 </button>
+
               </div>
               <div className="project-form-2">
                 {isEditing ? (
@@ -490,8 +498,9 @@ const handleDeleteSurvey = async (surveyId) => {
           ) : (
             <div className="collaborator-list">
               <button
-                className="add-collab-btn"
-                onClick={() => setShowModal(true)}
+                className={`add-collab-btn ${!canEdit ? "disabled-btn" : ""}`}
+                onClick={() => canEdit && setShowModal(true)}
+                disabled={!canEdit}
               >
                 {getLabel("Add Collaborator")}
               </button>
@@ -523,7 +532,7 @@ const handleDeleteSurvey = async (surveyId) => {
                   )}
                 </tbody>
               </table>
-              {showModal && (
+              {showModal && canEdit &&(
                 <div className="modal-overlay">
                   <div className="modal-content">
                     <h3>{getLabel("Add Collaborator")}</h3>
@@ -539,8 +548,8 @@ const handleDeleteSurvey = async (surveyId) => {
                       value={accessControl}
                       onChange={(e) => setAccessControl(e.target.value)}
                     >
-                      <option value="view">{getLabel("View Only")}</option>
-                      <option value="edit">{getLabel("Can Edit")}</option>
+                      <option value="viewer">{getLabel("View Only")}</option>
+                      <option value="editor">{getLabel("Can Edit")}</option>
                     </select>
                     <div className="modal-buttons">
                       <button onClick={handleAddCollaborator}>
@@ -562,11 +571,16 @@ const handleDeleteSurvey = async (surveyId) => {
           <h3 className="survey-section-heading">
             {getLabel("Create a New Survey")}
           </h3>
-          <div className="survey-grid-center">
-            <div className="add-survey-card" onClick={handleAddSurveyClick}>
-              <div className="plus-icon">+</div>
+            <div className="survey-grid-center">
+              <div
+                className={`add-survey-card ${!canEdit ? "disabled-btn" : ""}`}
+                onClick={canEdit ? handleAddSurveyClick : null}
+                style={{ pointerEvents: canEdit ? "auto" : "none" }}
+              >
+                <div className="plus-icon">+</div>
+              </div>
             </div>
-          </div>
+
           <hr className="section-divider" />
           <h3 className="survey-section-heading">
             {getLabel("Existing Surveys")}
@@ -739,24 +753,29 @@ const handleDeleteSurvey = async (surveyId) => {
                   >
                     <SendIcon fontSize="inherit" />
                   </IconButton>
+                    <IconButton
+                      aria-label="edit"
+                      size="large"
+                      disabled={!canEdit}
+                      sx={{
+                        "&:hover": {
+                          color: canEdit ? "blue" : "inherit",
+                          backgroundColor: canEdit ? "#e6f0ff" : "transparent",
+                        },
+                        color: !canEdit ? "#ccc" : "inherit",
+                      }}
+                    >
+                      <EditIcon
+                        fontSize="inherit"
+                        onClick={
+                          canEdit
+                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title)
+                            : undefined
+                        }
+                        style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
+                      />
+                    </IconButton>
 
-                  <IconButton
-                    aria-label="edit"
-                    size="large"
-                    sx={{
-                      "&:hover": {
-                        color: "blue",
-                        backgroundColor: "#e6f0ff",
-                      },
-                    }}
-                  >
-                    <EditIcon
-                      fontSize="inherit"
-                      onClick={() =>
-                        handleSurveyClick(survey.survey_id, survey, survey.title)
-                      }
-                    />
-                  </IconButton>
                   <IconButton
                     aria-label="delete"
                     size="large"
