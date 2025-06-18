@@ -256,6 +256,25 @@ const Dashboard = () => {
       "Are you sure you want to delete the",
       "package? This action cannot be undone.",
       "Delete",
+
+      // User Subscription Labels
+      // "Active",
+      // "Expired",
+      // "Expiring Soon",
+      // "Loading subscription packages...","Retry","My Subscription Packages","Manage and view your premium subscription packages","Active Packages",
+      // "Auto Tag Generation",
+      // "Auto Question Generation",
+      // "Auto Survey Generation",
+      // "Days Remaining",
+      // "Started",
+      // "Expires",
+      // "Package Cost",
+      // "No Active Packages",
+      // "You don\'t have any active subscription packages at the moment.",
+      // "Hide Package History",
+      // "View Package History",
+      // "Package History",
+
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
