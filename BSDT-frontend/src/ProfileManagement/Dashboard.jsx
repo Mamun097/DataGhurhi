@@ -440,9 +440,10 @@ const handleReject = async (projectId) => {
 
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId, role) => {
-    navigate(`/view-project/${projectId}`),{
-      state: { role: role  }
-    };
+    console.log("Project clicked:", projectId, "Role:", role);
+     navigate(`/view-project/${projectId}`, {
+                    state: { role: role },
+                    });
   };
   // Premium feature handlers
   const handleCloseAdBanner = () => {
