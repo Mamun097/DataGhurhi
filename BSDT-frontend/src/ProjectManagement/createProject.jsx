@@ -61,10 +61,8 @@ const navigate = useNavigate();
       "Public",
       "Choose whether you want the project to be public or private.",
       "Create Project",
-      "Cancel",
       "Project created successfully",
       "An error occurred while creating the project",
-
     ];
 
     const translated = await translateText(labels, "bn");
@@ -81,7 +79,6 @@ const navigate = useNavigate();
       "public",
       "visibilityDesc",
       "submit",
-      "cancel",
       "successToast",
       "errorToast",
     ];
@@ -237,9 +234,6 @@ const navigate = useNavigate();
 
             <button type="submit" className="submit-btn">
               {getLabel("Create Project", "submit")}
-            </button>
-            <button type="button" className="cancel-btn" onClick={() => navigate("/dashboard?tab=projects")}>
-              {getLabel("Cancel", "cancel")}
             </button>
           </form>
         </div>
