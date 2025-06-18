@@ -309,7 +309,6 @@ const Dashboard = () => {
         console.error("Upload failed:", error.message);
         return;
       }
-
       const urlData = supabase.storage
         .from("media")
         .getPublicUrl(`profile_pics/${file.name}`);
@@ -334,7 +333,6 @@ const Dashboard = () => {
       console.error("Failed to update ${type} image in DB:", error);
     }
   };
-
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
@@ -401,7 +399,6 @@ const Dashboard = () => {
             }
           }
         }
-
         localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
@@ -457,11 +454,10 @@ const Dashboard = () => {
   }, [isAdmin, fetchProjects]);
 
   const navigate = useNavigate();
-
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId, role) => {
-    navigate(`/view-project/${projectId}`),{
-      state: { role: role  }
+    navigate(`/view-project/${projectId}`), {
+      state: { role: role }
     };
   };
   // Premium feature handlers
@@ -499,7 +495,6 @@ const Dashboard = () => {
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
         console.log("Collaborated Projects:", response.data.projects);
-
       }
     } catch (error) {
       console.error("Failed to fetch collaborated projects:", error);
@@ -528,7 +523,6 @@ const Dashboard = () => {
   }, []);
 
   const [expandedRows, setExpandedRows] = useState(new Set());
-
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
   const sortedRequests = [...collabRequests].sort(
@@ -538,13 +532,7 @@ const Dashboard = () => {
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
-
   const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
-
-
-
-
-
   // Get tabs based on user type
   const getTabs = () => {
     if (isAdmin) {
@@ -595,15 +583,6 @@ const Dashboard = () => {
                 <span>👑 Administrator</span>
               </div>
             )}
-
-            {/* Token Display - Only for non-admin users */}
-            {/* {!isAdmin && (
-              <TokenDisplay
-                availableTokens={availableTokens}
-                userType={userType}
-                getLabel={getLabel}
-              />
-            )} */}
 
             <div className="profile-tabs">
               <ul>
@@ -740,20 +719,20 @@ const Dashboard = () => {
             {/* Normal User Tabs */}
             {!isAdmin && activeTab === "projects" && (
               <ProjectTab
-              getLabel={getLabel}
-              handleAddProjectClick={handleAddProjectClick}
-              privacyFilter={privacyFilter}
-              sortField={sortField}
-              sortOrder={sortOrder}
-              projects={projects}
-              setSortOrder={setSortOrder}
-              setSortField={setSortField}
-              setPrivacyFilter={setPrivacyFilter}
-              handleProjectClick={handleProjectClick}
+                getLabel={getLabel}
+                handleAddProjectClick={handleAddProjectClick}
+                privacyFilter={privacyFilter}
+                sortField={sortField}
+                sortOrder={sortOrder}
+                projects={projects}
+                setSortOrder={setSortOrder}
+                setSortField={setSortField}
+                setPrivacyFilter={setPrivacyFilter}
+                handleProjectClick={handleProjectClick}
               />
             )}
             {!isAdmin && activeTab === "collaboratedprojects" && (
-                <CollabProjectTab
+              <CollabProjectTab
                 getLabel={getLabel}
                 collaboratedProjects={collaboratedProjects}
                 showCollabModal={showCollabModal}
@@ -763,20 +742,11 @@ const Dashboard = () => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-                />
-              )}
-
-
-
-
+              />
+            )}
             {activeTab === "questionbank" && (
               <div className="question-bank-section">
-
-
                 <QB language={language} setLanguage={setLanguage} />
-
-
-
               </div>
             )}
           </div>
