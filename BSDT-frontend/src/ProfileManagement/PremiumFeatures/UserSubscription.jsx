@@ -66,11 +66,11 @@ const UserSubscriptions = ({ getLabel, userType }) => {
         const daysRemaining = getDaysRemaining(subscription.end_date);
 
         if (!isActive) {
-            return <span className="status-badge expired">{getLabel('Expired')}</span>;
+            return <span className="status-badge expired">{getLabel("Expired")}</span>;
         } else if (daysRemaining <= 7) {
-            return <span className="status-badge expiring-soon">{getLabel('Expiring Soon')}</span>;
+            return <span className="status-badge expiring-soon">{getLabel("Expiring Soon")}</span>;
         } else {
-            return <span className="status-badge active">{getLabel('Active')}</span>;
+            return <span className="status-badge active">{getLabel("Active")}</span>;
         }
     };
 
@@ -86,7 +86,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
             <div className="subscriptions-section">
                 <div className="subscriptions-loading">
                     <div className="loading-spinner"></div>
-                    <p>{getLabel('Loading subscription packages...')}</p>
+                    <p>{getLabel("Loading subscription packages...")}</p>
                 </div>
             </div>
         );
@@ -98,7 +98,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                 <div className="subscriptions-error">
                     <p>{getLabel(error)}</p>
                     <button onClick={fetchUserPackages} className="retry-btn">
-                        {getLabel('Retry')}
+                        {getLabel("Retry")}
                     </button>
                 </div>
             </div>
@@ -108,9 +108,9 @@ const UserSubscriptions = ({ getLabel, userType }) => {
     return (
         <div className="subscriptions-section">
             <div className="subscriptions-header">
-                <h3>{getLabel('My Subscription Packages')}</h3>
+                <h3>{getLabel("My Subscription Packages")}</h3>
                 <p className="subscriptions-subtitle">
-                    {getLabel('Manage and view your premium subscription packages')}
+                    {getLabel("Manage and view your premium subscription packages")}
                 </p>
             </div>
 
@@ -119,7 +119,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                 <div className="active-packages">
                     <h4 className="packages-section-title">
                         <span className="title-icon">🟢</span>
-                        {getLabel('Active Packages')} ({activePackages.length})
+                        {getLabel("Active Packages")} ({activePackages.length})
                     </h4>
                     <div className="packages-grid">
                         {activePackages.map((subscription) => (
@@ -130,37 +130,38 @@ const UserSubscriptions = ({ getLabel, userType }) => {
 
                                 <div className="package-details">
                                     <div className="package-features">
-                                        {subscription.tag > 0 && (
+                                        {subscription.survey > 0 && (
                                             <div className="feature-item">
-                                                <span className="feature-icon">🏷️</span>
-                                                <span>{subscription.tag} {getLabel('Auto Tag Generation')}</span>
+                                                <span className="feature-icon">📊</span>
+                                                <span>{subscription.survey} {getLabel("Auto Survey Generation")}</span>
                                             </div>
                                         )}
                                         {subscription.question > 0 && (
                                             <div className="feature-item">
                                                 <span className="feature-icon">❓</span>
-                                                <span>{subscription.question} {getLabel('Auto Question Generation')}</span>
+                                                <span>{subscription.question} {getLabel("Auto Question Generation")}</span>
                                             </div>
                                         )}
-                                        {subscription.survey > 0 && (
+
+                                        {subscription.tag > 0 && (
                                             <div className="feature-item">
-                                                <span className="feature-icon">📊</span>
-                                                <span>{subscription.survey} {getLabel('Auto Survey Generation')}</span>
+                                                <span className="feature-icon">🏷️</span>
+                                                <span>{subscription.tag} {getLabel("Auto Tag Generation")}</span>
                                             </div>
                                         )}
                                     </div>
 
                                     <div className="package-timeline">
                                         <div className="timeline-item">
-                                            <span className="timeline-label">{getLabel('Started')}:</span>
+                                            <span className="timeline-label">{getLabel("Started")}:</span>
                                             <span className="timeline-date">{formatDate(subscription.start_date)}</span>
                                         </div>
                                         <div className="timeline-item">
-                                            <span className="timeline-label">{getLabel('Expires')}:</span>
+                                            <span className="timeline-label">{getLabel("Expires")}:</span>
                                             <span className="timeline-date">{formatDate(subscription.end_date)}</span>
                                         </div>
                                         <div className="timeline-item">
-                                            <span className="timeline-label">{getLabel('Days Remaining')}:</span>
+                                            <span className="timeline-label">{getLabel("Days Remaining")}:</span>
                                             <span className={`timeline-date ${getDaysRemaining(subscription.end_date) <= 7 ? 'urgent' : ''}`}>
                                                 {getDaysRemaining(subscription.end_date)} {getLabel('days')}
                                             </span>
@@ -168,7 +169,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                                     </div>
 
                                     <div className="package-cost">
-                                        <span className="cost-label">{getLabel('Package Cost')}</span>
+                                        <span className="cost-label">{getLabel("Package Cost")}</span>
                                         <span className="cost-amount">৳ {subscription.cost}</span>
                                     </div>
                                 </div>
@@ -182,8 +183,8 @@ const UserSubscriptions = ({ getLabel, userType }) => {
             {activePackages.length === 0 && (
                 <div className="no-packages">
                     <div className="no-packages-icon">📦</div>
-                    <h4>{getLabel('No Active Packages')}</h4>
-                    <p>{getLabel('You don\'t have any active subscription packages at the moment.')}</p>
+                    <h4>{getLabel("No Active Packages")}</h4>
+                    <p>{getLabel("You don\'t have any active subscription packages at the moment.")}</p>
                 </div>
             )}
 
@@ -196,8 +197,8 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                     >
                         <span className="toggle-icon">{showExpired ? '📉' : '📋'}</span>
                         {showExpired
-                            ? getLabel('Hide Package History')
-                            : `${getLabel('View Package History')} (${expiredPackages.length})`
+                            ? getLabel("Hide Package History")
+                            : `${getLabel("View Package History")} (${expiredPackages.length})`
                         }
                         <span className={`chevron ${showExpired ? 'up' : 'down'}`}>
                             {showExpired ? '▲' : '▼'}
@@ -208,7 +209,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                         <div className="expired-packages">
                             <h4 className="packages-section-title">
                                 <span className="title-icon">🔴</span>
-                                {getLabel('Package History')}
+                                {getLabel("Package History")}
                             </h4>
                             <div className="packages-grid">
                                 {expiredPackages.map((subscription) => (
@@ -219,39 +220,41 @@ const UserSubscriptions = ({ getLabel, userType }) => {
 
                                         <div className="package-details">
                                             <div className="package-features">
-                                                {subscription.tag > 0 && (
+                                            {subscription.survey > 0 && (
                                                     <div className="feature-item">
-                                                        <span className="feature-icon">🏷️</span>
-                                                        <span>{subscription.tag} {getLabel('Auto Tag Generation')}</span>
+                                                        <span className="feature-icon">📊</span>
+                                                        <span>{subscription.survey} {getLabel("Auto Survey Generation")}</span>
                                                     </div>
                                                 )}
+
                                                 {subscription.question > 0 && (
                                                     <div className="feature-item">
                                                         <span className="feature-icon">❓</span>
-                                                        <span>{subscription.question} {getLabel('Auto Question Generation')}</span>
+                                                        <span>{subscription.question} {getLabel("Auto Question Generation")}</span>
                                                     </div>
                                                 )}
-                                                {subscription.survey > 0 && (
+
+                                                {subscription.tag > 0 && (
                                                     <div className="feature-item">
-                                                        <span className="feature-icon">📊</span>
-                                                        <span>{subscription.survey} {getLabel('Auto Survey Generation')}</span>
+                                                        <span className="feature-icon">🏷️</span>
+                                                        <span>{subscription.tag} {getLabel("Auto Tag Generation")}</span>
                                                     </div>
                                                 )}
                                             </div>
 
                                             <div className="package-timeline">
                                                 <div className="timeline-item">
-                                                    <span className="timeline-label">{getLabel('Started')}:</span>
+                                                    <span className="timeline-label">{getLabel("Started")}:</span>
                                                     <span className="timeline-date">{formatDate(subscription.start_date)}</span>
                                                 </div>
                                                 <div className="timeline-item">
-                                                    <span className="timeline-label">{getLabel('Expired')}:</span>
+                                                    <span className="timeline-label">{getLabel("Expired")}:</span>
                                                     <span className="timeline-date expired-date">{formatDate(subscription.end_date)}</span>
                                                 </div>
                                             </div>
 
                                             <div className="package-cost">
-                                                <span className="cost-label">{getLabel('Package Cost')}</span>
+                                                <span className="cost-label">{getLabel("Package Cost")}</span>
                                                 <span className="cost-amount">৳ {subscription.cost}</span>
                                             </div>
                                         </div>
