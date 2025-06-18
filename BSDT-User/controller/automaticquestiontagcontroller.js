@@ -19,12 +19,9 @@ exports.generateTagsForQuestion = async (req, res) => {
     // Gemini Prompt
     const prompt = `You are an intelligent tagging assistant.
 
-Given a question and a list of existing tags, generate 3 to 4 short, relevant tags (1–3 words each). 
-In meta_data, you will find tags if the question already has some tags. In that case, your generated
-tags should not contains those. Also, in that case, you can generate fewer tags.
+Given a question and a list of existing tags, generate 3 to 4 short, relevant tags (1–3 words each).
 - Use English only.
 - Capitalize the first letter of each word.
-- Reuse tags from the existing tag list if they are appropriate.
 
 ⚠️ Return ONLY the following:
 A valid JSON object with this structure (no code blocks, no extra quotes, no explanation):
@@ -33,9 +30,9 @@ A valid JSON object with this structure (no code blocks, no extra quotes, no exp
   "tags": ["Tag1", "Tag2", "Tag3"]
 }
 
-Question: ${questionText}
-Question Meta Data: ${meta_data}
-Existing Tags: [${tagList}]`;
+Question: ${questionText}`;
+//Existing Tags: [${tagList}]
+//Question Meta Data: ${meta_data}
 
     // Use Gemini API
     const model = genAI.getGenerativeModel({ model: "models/gemini-1.5-flash" });
