@@ -1,20 +1,16 @@
-// src/Components/SurveyResponses.jsx
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import axios from "axios";
+import { Pie } from "react-chartjs-2";
+import "chart.js/auto";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 
+// Translation setup
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
-  if (!GOOGLE_API_KEY) {
-    console.warn("Google Translate API key is missing. Translations will not be loaded.");
-    return textArray;
-  }
+  if (!GOOGLE_API_KEY) return textArray;
   try {
     const response = await axios.post(
       `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
@@ -23,17 +19,17 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; 
+    return textArray;
   }
 };
 
 const parseCSV = (csvText) => {
-  if (!csvText || typeof csvText !== 'string') return { headers: [], rows: [] };
+  if (!csvText || typeof csvText !== "string") return { headers: [], rows: [] };
   const lines = csvText.trim().split(/\r?\n/);
   if (lines.length === 0) return { headers: [], rows: [] };
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-  const rows = lines.slice(1).map(line =>
-    line.split(',').map(cell => cell.trim().replace(/"/g, ''))
+  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
+  const rows = lines.slice(1).map((line) =>
+    line.split(",").map((cell) => cell.trim().replace(/"/g, ""))
   );
   return { headers, rows };
 };
@@ -41,176 +37,232 @@ const parseCSV = (csvText) => {
 const SurveyResponses = () => {
   const { survey_id } = useParams();
   const [responses, setResponses] = useState({ headers: [], rows: [] });
-  const [rawCsv, setRawCsv] = useState('');
+  const [rawCsv, setRawCsv] = useState("");
+  const [activeTab, setActiveTab] = useState("summary");
+  const [selectedQuestion, setSelectedQuestion] = useState(0);
+  const [currentResponse, setCurrentResponse] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [language, setLanguage] = useState(localStorage.getItem("language") || 'en');
+
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en"
+  );
   const [translatedLabels, setTranslatedLabels] = useState({});
+
+  const labelsToTranslate = [
+    "Survey Responses",
+    "Download CSV",
+    "Loading responses...",
+    "No responses found.",
+    "Summary",
+    "Questions",
+    "Individual",
+    "Previous",
+    "Next",
+  ];
+
+  const getLabel = (label) => translatedLabels[label] || label;
 
   useEffect(() => {
     localStorage.setItem("language", language);
   }, [language]);
 
-  const labelsToTranslate = useMemo(() => [
-    "Survey Responses",
-    "Download CSV",
-    "Loading...",
-    "Loading Survey Responses...",
-    "Failed to load responses",
-    "No responses found for this survey.",
-    "Survey ID is missing from the URL.",
-    "Authentication token not found. Please log in again.",
-    "Received empty or invalid data from the server.",
-    "An unknown error occurred."
-  ], []);
-
-  const getLabel = (text) => translatedLabels[text] || text;
-
-  // Load translations
   useEffect(() => {
+    const englishMap = {};
+    labelsToTranslate.forEach((label) => (englishMap[label] = label));
+
     const loadTranslations = async () => {
-      const englishMap = {};
-      labelsToTranslate.forEach(label => (englishMap[label] = label));
-
-      if (!GOOGLE_API_KEY) {
-        console.warn("Google Translate API key is missing. Translations will not be loaded.");
-        setTranslatedLabels(englishMap);
-        return;
-      }
-
       const langCode = language === "বাংলা" || language === "bn" ? "bn" : "en";
-      if (langCode === "en") {
+      if (langCode === "en" || !GOOGLE_API_KEY) {
         setTranslatedLabels(englishMap);
       } else {
-        try {
-          const translated = await translateText(labelsToTranslate, langCode);
-          const translatedMap = {};
-          labelsToTranslate.forEach((label, idx) => {
-            translatedMap[label] = translated[idx];
-          });
-          setTranslatedLabels(translatedMap);
-        } catch (e) {
-          console.error("Error during translation effect:", e);
-          setTranslatedLabels(englishMap); // Fallback to English
-        }
+        const translated = await translateText(labelsToTranslate, langCode);
+        const map = {};
+        labelsToTranslate.forEach((label, idx) => {
+          map[label] = translated[idx];
+        });
+        setTranslatedLabels(map);
       }
     };
     loadTranslations();
-  }, [language, labelsToTranslate]);
+  }, [language]);
 
-  // Fetch survey responses
   useEffect(() => {
-    const fetchSurveyResponses = async () => {
+    const fetchResponses = async () => {
       setIsLoading(true);
-      setError(null);
-      if (!survey_id) {
-        setError("Survey ID is missing from the URL.");
-        setIsLoading(false);
-        return;
-      }
-      const bearerTokenString = localStorage.getItem("token");
-      if (!bearerTokenString) {
-        setError("Authentication token not found. Please log in again.");
-        setIsLoading(false);
-        return;
-      }
-      const token = bearerTokenString.startsWith("{") ? JSON.parse(bearerTokenString).token : bearerTokenString;
       try {
+        const tokenData = localStorage.getItem("token");
+        const token = tokenData.startsWith("{")
+          ? JSON.parse(tokenData).token
+          : tokenData;
         const response = await axios.get(
           `http://localhost:2000/api/generatecsv/${survey_id}`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (typeof response.data === 'string' && response.data.trim()) {
+        if (typeof response.data === "string") {
           setRawCsv(response.data);
           setResponses(parseCSV(response.data));
-        } else {
-          setResponses({ headers: [], rows: [] });
-          setError("Received empty or invalid data from the server.");
         }
-      } catch (err) {
-        console.error("Error fetching survey responses:", err);
-        setError(err.response?.data?.message || err.message || "An unknown error occurred.");
+      } catch (error) {
+        console.error("Error loading survey responses", error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchSurveyResponses();
+    fetchResponses();
   }, [survey_id]);
 
-  const handleDownload = () => {
-    if (!rawCsv) return;
-    const blob = new Blob([rawCsv], { type: 'text/csv;charset=utf-8;' });
+  const countResponses = (index) => {
+    const counts = {};
+    responses.rows.forEach((row) => {
+      const answer = row[index] || "Empty";
+      counts[answer] = (counts[answer] || 0) + 1;
+    });
+    return counts;
+  };
+
+  const renderSummaryCharts = () => {
+    return responses.headers.map((header, index) => {
+      const counts = countResponses(index);
+      const labels = Object.keys(counts);
+      const values = Object.values(counts);
+
+      return (
+        <div className="mb-4" key={index}>
+          <h6>{header}</h6>
+          <div style={{ maxWidth: 400 }}>
+            <Pie data={{ labels, datasets: [{ data: values }] }} />
+          </div>
+        </div>
+      );
+    });
+  };
+
+  const renderQuestionTab = () => {
+    const allAnswers = responses.rows.map(
+      (row) => row[selectedQuestion] || "Empty"
+    );
+    const counts = allAnswers.reduce((acc, val) => {
+      acc[val] = (acc[val] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedOptions = Object.keys(counts).sort();
+
+    return (
+      <div>
+        <select
+          className="form-select mb-3"
+          value={selectedQuestion}
+          onChange={(e) => setSelectedQuestion(Number(e.target.value))}
+        >
+          {responses.headers.map((header, i) => (
+            <option key={i} value={i}>
+              {header}
+            </option>
+          ))}
+        </select>
+
+        {sortedOptions.map((option, i) => (
+          <div key={i} className="card mb-2">
+            <div className="card-body d-flex justify-content-between align-items-center">
+              <span>{option}</span>
+              <span className="badge bg-primary">{counts[option]}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderIndividualTab = () => {
+    const response = responses.rows[currentResponse];
+    return (
+      <div>
+        <table className="table table-bordered">
+          <tbody>
+            {responses.headers.map((header, i) => (
+              <tr key={i}>
+                <th>{header}</th>
+                <td>{response[i]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="d-flex justify-content-between">
+          <button
+            className="btn btn-secondary"
+            disabled={currentResponse === 0}
+            onClick={() => setCurrentResponse((prev) => prev - 1)}
+          >
+            {getLabel("Previous")}
+          </button>
+          <span>
+            {currentResponse + 1} of {responses.rows.length}
+          </span>
+          <button
+            className="btn btn-secondary"
+            disabled={currentResponse === responses.rows.length - 1}
+            onClick={() => setCurrentResponse((prev) => prev + 1)}
+          >
+            {getLabel("Next")}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const downloadCSV = () => {
+    const blob = new Blob([rawCsv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `survey_${survey_id}_responses.csv`);
-    document.body.appendChild(link);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `survey_${survey_id}_responses.csv`;
     link.click();
-    document.body.removeChild(link);
   };
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="container my-4">
-        <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-          <h2 className="mb-0">{getLabel("Survey Responses")}</h2>
-          <button
-            className="btn btn-outline-primary"
-            onClick={handleDownload}
-            disabled={!rawCsv || isLoading}
-          >
-            <i className="bi bi-download me-2"></i>
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h3>{getLabel("Survey Responses")}</h3>
+          <button className="btn btn-primary" onClick={downloadCSV}>
             {getLabel("Download CSV")}
           </button>
         </div>
 
-        {isLoading && (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">{getLabel("Loading...")}</span>
-            </div>
-            <p className="mt-2">{getLabel("Loading Survey Responses...")}</p>
+        <ul className="nav nav-tabs mb-3">
+          {["summary", "questions", "individual"].map((tab) => (
+            <li className="nav-item" key={tab}>
+              <button
+                className={`nav-link ${
+                  activeTab === tab ? "active" : ""
+                }`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {getLabel(tab.charAt(0).toUpperCase() + tab.slice(1))}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        {isLoading && <p>{getLabel("Loading responses...")}</p>}
+
+        {!isLoading && responses.rows.length === 0 && (
+          <div className="alert alert-info">
+            {getLabel("No responses found.")}
           </div>
         )}
 
-        {error && !isLoading && (
-          <div className="alert alert-danger" role="alert">
-            <h4 className="alert-heading">{getLabel("Failed to load responses")}</h4>
-            <p>{getLabel(error)}</p>
+        {!isLoading && responses.rows.length > 0 && (
+          <div>
+            {activeTab === "summary" && renderSummaryCharts()}
+            {activeTab === "questions" && renderQuestionTab()}
+            {activeTab === "individual" && renderIndividualTab()}
           </div>
-        )}
-
-        {!isLoading && !error && (
-          responses.rows.length > 0 ? (
-            <div className="table-responsive shadow-sm bg-white rounded">
-              <table className="table table-striped table-hover mb-0">
-                <thead className="table-dark" style={{ position: 'sticky', top: 0, zIndex: 1 }}>
-                  <tr>
-                    {responses.headers.map((header, index) => (
-                      <th key={index} scope="col">{header}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {responses.rows.map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {row.map((cell, cellIndex) => (
-                        <td key={cellIndex}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="alert alert-info text-center">
-              {getLabel("No responses found for this survey.")}
-            </div>
-          )
         )}
       </div>
-      <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
     </>
   );
 };
