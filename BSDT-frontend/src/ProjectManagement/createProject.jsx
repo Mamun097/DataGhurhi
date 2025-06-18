@@ -52,7 +52,7 @@ const navigate = useNavigate();
       "Create a New Project",
       "Project Name",
       "Enter project name",
-      "Field",
+      "Research Field",
       "Enter field of project",
       "Description (Optional)",
       "Describe your project",
@@ -162,7 +162,7 @@ const navigate = useNavigate();
             </div>
 
             <div className="form-group">
-              <label htmlFor="field">{getLabel("Field", "field")}</label>
+              <label htmlFor="field">{getLabel("Research Field", "field")}</label>
               <input
                 type="text"
                 id="field"
