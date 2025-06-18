@@ -78,6 +78,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
         <AIChatbot 
           onClose={() => setShowChatbot(false)} 
           onGenerate={handleGenerateQuestion}
+          getLabel={getLabel}
         />
       )}
       

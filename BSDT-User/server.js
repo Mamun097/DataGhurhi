@@ -120,6 +120,10 @@ app.use('/api/question-bank', questionBankRouter);
 
 //admin routes
 app.use('/api', adminRouter);
+
+// User subscription routes
+const userSubscriptionRouter = require('./route/usersubscription');
+app.use('/api', userSubscriptionRouter);
 // survey collab routes
 app.use('/api/survey-collaborator', surveyCollabRouter);
 
