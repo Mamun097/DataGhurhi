@@ -14,7 +14,13 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import SendIcon from "@mui/icons-material/Send";
+
+// new code start
+import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
+// new code end
+
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
 
 const translateText = async (textArray, targetLang) => {
   try {
@@ -52,6 +58,12 @@ const EditProject = () => {
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
+
+  // new code start
+  const [showSurveyChatbot, setShowSurveyChatbot] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState("initial");
+  // new code end
 
   const [sortOrder, setSortOrder] = useState("asc");
   const [sortField, setSortField] = useState("title");
@@ -220,6 +232,79 @@ const EditProject = () => {
     fetchProject();
     fetchSurveys();
   }, [projectId]);
+
+
+  // new code start
+  const handleGenerateSurvey = async (surveyMeta) => {
+    setShowSurveyChatbot(false);
+    setIsLoading(true);
+    setLoadingPhase("initial");
+
+    const token = localStorage.getItem("token");
+
+    try {
+      // create blank survey
+      const resSurvey = await axios.post(
+        `http://localhost:2000/api/project/${projectId}/create-survey`,
+        { title: surveyMeta.topic || "Untitled Survey" },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const survey_id = resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
+      if (!survey_id) throw new Error("Survey not created");
+
+      // call LLM to generate questions
+      const resLLM = await axios.post(
+        `http://localhost:2000/api/generate-question-with-llm`,
+        {
+          questionData: {
+            type: surveyMeta.questionTypes,
+            metadata: {
+              numQuestions: surveyMeta.numQuestions,
+              audience: surveyMeta.audience,
+            },
+            additionalInfo: surveyMeta.topic,
+          },
+          questionInfo: { survey_id },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("🔍 LLM Generated Questions:", resLLM.data);
+
+      toast.success(getLabel("Survey created successfully!"));
+      await fetchSurveys();
+
+      setTimeout(() => {
+        navigate(`/view-survey/${survey_id}`, {
+          state: {
+            project_id: projectId,
+            input_title: surveyMeta.topic,
+            survey_details: {
+              survey_id,
+              questions: resLLM.data,
+            },
+          },
+        });
+      }, 3000);
+    } catch (error) {
+      console.error("Survey creation error:", error);
+      toast.error(getLabel("Failed to generate survey."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  // new code end
 
   const handleAddSurveyClick = async () => {
     const result = await Swal.fire({
@@ -581,6 +666,20 @@ const handleDeleteSurvey = async (surveyId) => {
               </div>
             </div>
 
+
+            {/*new code start */}
+            {canEdit && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                <button
+                  className="btn btn-outline-success"
+                  onClick={() => setShowSurveyChatbot(true)}
+                >
+                  <i className="bi bi-robot me-2" /> {getLabel("Generate Survey with LLM")}
+                </button>
+              </div>
+            )}
+            {/* new code end */}
+
           <hr className="section-divider" />
           <h3 className="survey-section-heading">
             {getLabel("Existing Surveys")}
@@ -810,6 +909,15 @@ const handleDeleteSurvey = async (surveyId) => {
         </div>
         <ToastContainer position="top-center" autoClose={3000} />
       </div>
+
+      {/* new code starts */}
+      {showSurveyChatbot && (
+        <AISurveyChatbot
+          onClose={() => setShowSurveyChatbot(false)}
+          onGenerateSurvey={handleGenerateSurvey}
+        />
+      )}
+      {/* new code ends */}
     </>
   );
 };
