@@ -56,6 +56,8 @@ const questionBankRouter = require('./route/questionBankView');
 
 //admin routes
 const adminRouter = require('./route/adminroute');
+//survey collab routes
+const surveyCollabRouter = require('./route/surveyCollaborator');
 
 
 //connect db
@@ -122,7 +124,8 @@ app.use('/api', adminRouter);
 // User subscription routes
 const userSubscriptionRouter = require('./route/usersubscription');
 app.use('/api', userSubscriptionRouter);
-
+// survey collab routes
+app.use('/api/survey-collaborator', surveyCollabRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
