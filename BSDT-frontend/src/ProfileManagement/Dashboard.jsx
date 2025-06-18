@@ -730,6 +730,7 @@ const Dashboard = () => {
                 setSortField={setSortField}
                 setPrivacyFilter={setPrivacyFilter}
                 handleProjectClick={handleProjectClick}
+                setProjects={setProjects}
               />
             )}
             {!isAdmin && activeTab === "collaboratedprojects" && (
