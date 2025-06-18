@@ -2,15 +2,13 @@ import React from "react";
 import SurveyQuestions from "../Components/SurveyQuestionsUser";
 
 const SurveySections = ({
-    section,
-    sections,
-    questions,
-    setQuestions,
-    userResponse,
-    setUserResponse,
-  }) => {
-
-  
+  section,
+  sections,
+  questions,
+  setQuestions,
+  userResponse,
+  setUserResponse,
+}) => {
   return (
     <div className="container mb-3">
       {sections.length !== 1 && (
@@ -19,6 +17,13 @@ const SurveySections = ({
             <i>Section </i>
             {section.id}
           </h4>
+          <div className="container">
+            {section.title && (
+              <h5 className="text-left">
+                <i>{section.title}</i>
+              </h5>
+            )}
+          </div>
         </div>
       )}
 
@@ -29,8 +34,8 @@ const SurveySections = ({
         setQuestions={setQuestions}
         userResponse={userResponse}
         setUserResponse={setUserResponse}
-      />        
-      </div>
+      />
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-// src/Components/SurveyForm.jsx
 import React, { useState, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useMemo } from "react";
@@ -12,7 +11,6 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
-// ... (translateText function remains the same) ...
 const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
@@ -26,7 +24,7 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; // Return original text array on error
+    return textArray;
   }
 };
 
@@ -48,8 +46,9 @@ const SurveyForm = ({
   language,
   setLanguage,
 }) => {
-  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
-    imageFromParent || ""
+  // Modified: Changed to array for multiple images
+  const [backgroundImages, setBackgroundImages] = useState(
+    imageFromParent ? [imageFromParent] : []
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -58,6 +57,13 @@ const SurveyForm = ({
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
+  // Modified: Array to store dimensions and alignment for each image
+  const [imageDimensions, setImageDimensions] = useState(
+    imageFromParent ? [{ width: "100%", height: "auto", alignment: "center" }] : []
+  );
+
+  const MAX_WIDTH = 1200; // Fixed max width in pixels
+  const MAX_HEIGHT = 400; // Fixed max height in pixels
 
   const labelsToTranslate = useMemo(
     () => [
@@ -66,7 +72,6 @@ const SurveyForm = ({
       "Publishing",
       "Add Description",
       "Remove Banner",
-      "Save Description",
       "Edit Description",
       "Add New Description",
       "Survey Description",
@@ -78,7 +83,7 @@ const SurveyForm = ({
       "Publish",
       "Update",
       "View Survey Link",
-      "View Response", // Added for the new button
+      "View Response",
       "Upload Banner Image",
       "Enter Survey Title",
       "Add Section",
@@ -173,14 +178,21 @@ const SurveyForm = ({
       "Date",
       "Time",
       "Select Date/Time",
+      "Image Width (px)",
+      "Image Height (px)",
+      "Image Alignment",
     ],
     []
   );
 
   const getLabel = (text) => translatedLabels[text] || text;
 
+  // Modified: Updated useEffect to handle array of images
   useEffect(() => {
-    setCurrentBackgroundImage(imageFromParent || "");
+    setBackgroundImages(imageFromParent ? [imageFromParent] : []);
+    setImageDimensions(
+      imageFromParent ? [{ width: "100%", height: "auto", alignment: "center" }] : []
+    );
   }, [imageFromParent]);
 
   useEffect(() => {
@@ -213,7 +225,6 @@ const SurveyForm = ({
           setTranslatedLabels(translatedMap);
         } catch (e) {
           console.error("Error during translation effect:", e);
-          // Fallback to English if translation fails
           const englishMap = {};
           labelsToTranslate.forEach((label) => (englishMap[label] = label));
           setTranslatedLabels(englishMap);
@@ -223,10 +234,15 @@ const SurveyForm = ({
     loadTranslations();
   }, [language, labelsToTranslate]);
 
+  // Modified: Updated to append new image to array
   const updateAndRelayBackgroundImage = (newImageSrc) => {
-    setCurrentBackgroundImage(newImageSrc);
+    setBackgroundImages((prev) => [...prev, newImageSrc]);
+    setImageDimensions((prev) => [
+      ...prev,
+      { width: "100%", height: "auto", alignment: "center" },
+    ]);
     if (setImageInParent) {
-      setImageInParent(newImageSrc);
+      setImageInParent(newImageSrc); // Maintain compatibility with parent
     }
   };
 
@@ -237,8 +253,10 @@ const SurveyForm = ({
     setSections([...sections, newSection]);
   };
 
-  const handleRemoveImage = () => {
-    updateAndRelayBackgroundImage("");
+  // Modified: Updated to remove image at specific index
+  const handleRemoveImage = (index) => {
+    setBackgroundImages((prev) => prev.filter((_, i) => i !== index));
+    setImageDimensions((prev) => prev.filter((_, i) => i !== index));
     const fileInput = document.getElementById("bannerImageInput");
     if (fileInput) {
       fileInput.value = "";
@@ -250,21 +268,42 @@ const SurveyForm = ({
     setIsEditingDescription(true);
   };
 
-  const handleSaveDescription = () => {
-    setDescription(localDescriptionText);
-    setIsEditingDescription(false);
-  };
-
   const handleCancelEditDescription = () => {
     setIsEditingDescription(false);
   };
 
   const handleDeleteDescription = () => {
-    setDescription(null); // Or ""
+    setDescription(null);
     setLocalDescriptionText("");
     setIsEditingDescription(false);
   };
 
+  // Modified: Updated to handle dimensions for specific image index
+  const handleDimensionChange = (e, dimension, index) => {
+    const value = e.target.value;
+    if (
+      value === "" ||
+      (Number(value) > 0 &&
+        Number(value) <= (dimension === "width" ? MAX_WIDTH : MAX_HEIGHT))
+    ) {
+      setImageDimensions((prev) =>
+        prev.map((dim, i) =>
+          i === index
+            ? { ...dim, [dimension]: value ? `${value}px` : "auto" }
+            : dim
+        )
+      );
+    }
+  };
+
+  // Modified: Updated to handle alignment for specific image index
+  const handleAlignmentChange = (alignment, index) => {
+    setImageDimensions((prev) =>
+      prev.map((dim, i) => (i === index ? { ...dim, alignment } : dim))
+    );
+  };
+
+  // Modified: Updated payload to include array of images
   const sendSurveyData = async (url) => {
     setIsLoading(true);
     const bearerTokenString = localStorage.getItem("token");
@@ -302,10 +341,11 @@ const SurveyForm = ({
         project_id: project_id,
         survey_template: {
           sections,
-          backgroundImage: currentBackgroundImage,
+          backgroundImages, // Modified: Send array of images
           title,
           description: description,
           questions,
+          imageDimensions, // Modified: Send array of dimensions
         },
         title: title,
         user_id: userIdInPayload,
@@ -389,6 +429,7 @@ const SurveyForm = ({
   const handleSurveyResponses = () => {
     navigate(`/survey-responses/${survey_id}`);
   };
+
   return (
     <div className="px-2 px-md-3">
       {/* Action Buttons */}
@@ -478,90 +519,25 @@ const SurveyForm = ({
         )}
       </div>
 
-      <div
-        style={{ backgroundColor: "white", paddingBottom: "20px" }}
-        className="shadow-sm rounded"
-      >
+      {/* Container for title and description */}
+      <div className="mb-3 shadow-sm rounded" style={{ backgroundColor: "white", padding: "20px" }}>
+        {/* Title Input */}
         <div style={{ position: "relative", width: "100%" }}>
-          {currentBackgroundImage ? (
-            <img
-              src={currentBackgroundImage}
-              alt={getLabel("Survey Banner") || "Survey Banner"}
-              className="img-fluid"
-              style={{
-                width: "100%",
-                height: "auto",
-                maxHeight: "400px",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              className="img-fluid d-flex align-items-center justify-content-center"
-              style={{
-                width: "100%",
-                minHeight: "150px",
-                backgroundColor: "#e9ecef",
-                border: "2px dashed #ced4da",
-                color: "#6c757d",
-              }}
-            >
-              {/* <span>{getLabel("No banner image selected")}</span> */}
-            </div>
-          )}
           <input
             type="text"
-            className="form-control text-center survey-title-overlay"
+            className="form-control text-center"
             placeholder={getLabel("Enter Survey Title")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
+              color: "#333",
               fontWeight: "bold",
-              background: "rgba(0, 0, 0, 0.6)",
-              border: "none",
               borderRadius: "4px",
             }}
           />
         </div>
 
-        {/* Banner and Description Controls */}
-        <div className="mt-3 mb-3 button-group-mobile-compact justify-content-center">
-          <label className="btn btn-outline-secondary btn-sm me-1">
-            <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                handleImageUpload(e, updateAndRelayBackgroundImage);
-              }}
-              id="bannerImageInput"
-            />
-          </label>
-          {currentBackgroundImage && (
-            <button
-              className="btn btn-outline-danger btn-sm me-1"
-              onClick={handleRemoveImage}
-              title={getLabel("Remove current banner image")}
-            >
-              <i className="bi bi-trash"></i> {getLabel("Remove Banner")}
-            </button>
-          )}
-          {!description && !isEditingDescription && (
-            <button
-              className="btn btn-outline-info btn-sm"
-              onClick={handleAddOrEditDescriptionClick}
-            >
-              <i className="bi bi-plus-circle"></i>{" "}
-              {getLabel("Add Description")}
-            </button>
-          )}
-        </div>
+        {/* Description Section */}
         <div className="mt-3">
           {isEditingDescription ? (
             <div className="card p-3 shadow-sm">
@@ -583,13 +559,6 @@ const SurveyForm = ({
                   onClick={handleCancelEditDescription}
                 >
                   {getLabel("Cancel")}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={handleSaveDescription}
-                >
-                  <i className="bi bi-save me-1"></i>{" "}
-                  {getLabel("Save Description")}
                 </button>
               </div>
             </div>
@@ -623,29 +592,194 @@ const SurveyForm = ({
               </div>
             )
           )}
+          {!description && !isEditingDescription && (
+            <button
+              className="btn btn-outline-info btn-sm mt-3"
+              onClick={handleAddOrEditDescriptionClick}
+            >
+              <i className="bi bi-plus-circle"></i>{" "}
+              {getLabel("Add Description")}
+            </button>
+          )}
         </div>
+      </div>
 
-        <div className="mt-4">
-          {sections.map((section, index) => (
-            <SurveySections
-              key={section.id || `section-${index}`}
-              section={section}
-              sections={sections}
-              setSections={setSections}
-              questions={questions}
-              setQuestions={setQuestions}
-              language={language}
-              setLanguage={setLanguage}
-              getLabel={getLabel}
-            />
-          ))}
-          <button
-            className="btn btn-outline-primary mt-3 d-block mx-auto"
-            onClick={handleAddSection}
+      {/* Modified: Container for multiple banner images */}
+      <div className="mb-3 shadow-sm rounded" style={{ backgroundColor: "white", padding: "20px" }}>
+        {/* Modified: Render each image with its controls */}
+        {backgroundImages.length > 0 ? (
+          backgroundImages.map((image, index) => (
+            <div key={`banner-${index}`} className="container mb-4">
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: imageDimensions[index]?.alignment || "center",
+                }}
+              >
+                <img
+                  src={image}
+                  alt={`${getLabel("Survey Banner")} ${index + 1}`}
+                  className="img-fluid"
+                  style={{
+                    width: imageDimensions[index]?.width || "100%",
+                    height: imageDimensions[index]?.height || "auto",
+                    maxWidth: `${MAX_WIDTH}px`,
+                    maxHeight: `${MAX_HEIGHT}px`,
+                    objectFit: "cover",
+                  }}
+                />
+              </div>
+              {/* Image Controls */}
+              <div className="mt-3 button-group-mobile-compact justify-content-center">
+                <button
+                  className="btn btn-outline-danger btn-sm me-1"
+                  onClick={() => handleRemoveImage(index)}
+                  title={getLabel("Remove current banner image")}
+                >
+                  <i className="bi bi-trash"></i> {getLabel("Remove Banner")}
+                </button>
+              </div>
+              <div className="d-flex flex-wrap justify-content-center align-items-center mt-3">
+                <div className="d-flex align-items-center me-3">
+                  <label className="me-2">{getLabel("Image Width (px)")}</label>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    style={{ width: "80px" }}
+                    value={
+                      imageDimensions[index]?.width === "100%" ||
+                      imageDimensions[index]?.width === "auto"
+                        ? ""
+                        : parseInt(imageDimensions[index]?.width || "0")
+                    }
+                    onChange={(e) => handleDimensionChange(e, "width", index)}
+                    placeholder="Auto"
+                    min="1"
+                    max={MAX_WIDTH}
+                  />
+                </div>
+                <div className="d-flex align-items-center me-3">
+                  <label className="me-2">{getLabel("Image Height (px)")}</label>
+                  <input
+                    type="number"
+                    className="form-control form-control-sm"
+                    style={{ width: "80px" }}
+                    value={
+                      imageDimensions[index]?.height === "auto"
+                        ? ""
+                        : parseInt(imageDimensions[index]?.height || "0")
+                    }
+                    onChange={(e) => handleDimensionChange(e, "height", index)}
+                    placeholder="Auto"
+                    min="1"
+                    max={MAX_HEIGHT}
+                  />
+                </div>
+                <div className="d-flex align-items-center">
+                  <label className="me-2">{getLabel("Image Alignment")}</label>
+                  <div className="btn-group btn-group-sm">
+                    <input
+                      type="radio"
+                      className="btn-check"
+                      name={`alignment-${index}`}
+                      id={`align-left-${index}`}
+                      checked={imageDimensions[index]?.alignment === "left"}
+                      onChange={() => handleAlignmentChange("left", index)}
+                    />
+                    <label
+                      className="btn btn-outline-secondary"
+                      htmlFor={`align-left-${index}`}
+                    >
+                      {getLabel("Left")}
+                    </label>
+                    <input
+                      type="radio"
+                      className="btn-check"
+                      name={`alignment-${index}`}
+                      id={`align-center-${index}`}
+                      checked={imageDimensions[index]?.alignment === "center"}
+                      onChange={() => handleAlignmentChange("center", index)}
+                    />
+                    <label
+                      className="btn btn-outline-secondary"
+                      htmlFor={`align-center-${index}`}
+                    >
+                      {getLabel("Center")}
+                    </label>
+                    <input
+                      type="radio"
+                      className="btn-check"
+                      name={`alignment-${index}`}
+                      id={`align-right-${index}`}
+                      checked={imageDimensions[index]?.alignment === "right"}
+                      onChange={() => handleAlignmentChange("right", index)}
+                    />
+                    <label
+                      className="btn btn-outline-secondary"
+                      htmlFor={`align-right-${index}`}
+                    >
+                      {getLabel("Right")}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div
+            className="img-fluid d-flex align-items-center justify-content-center"
+            style={{
+              width: "100%",
+              minHeight: "150px",
+              backgroundColor: "#e9ecef",
+              border: "2px dashed #ced4da",
+              color: "#6c757d",
+            }}
           >
-            ➕ {getLabel("Add Section")}
-          </button>
+            <span>{getLabel("No banner image selected")}</span>
+          </div>
+        )}
+
+        {/* Modified: Upload button for adding new images */}
+        <div className="mt-3 button-group-mobile-compact justify-content-center">
+          <label className="btn btn-outline-secondary btn-sm me-1">
+            <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                handleImageUpload(e, updateAndRelayBackgroundImage);
+              }}
+              id="bannerImageInput"
+            />
+          </label>
         </div>
+      </div>
+
+      {/* Sections */}
+      <div className="mt-4">
+        {sections.map((section, index) => (
+          <SurveySections
+            key={section.id || `section-${index}`}
+            section={section}
+            sections={sections}
+            setSections={setSections}
+            questions={questions}
+            setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
+          />
+        ))}
+        <button
+          className="btn btn-outline-primary mt-3 d-block mx-auto"
+          onClick={handleAddSection}
+        >
+          ➕ {getLabel("Add Section")}
+        </button>
       </div>
       <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
     </div>

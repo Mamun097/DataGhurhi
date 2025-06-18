@@ -43,7 +43,7 @@ const Index = () => {
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
-  const [title, setTitle] = useState(input_title );
+  const [title, setTitle] = useState(input_title);
 
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
@@ -119,7 +119,12 @@ const Index = () => {
 
           if (data.length > 0) {
             const first = data[0];
-            setTitle(input_title || survey_details.title || first.title || "Untitled Survey");
+            setTitle(
+              input_title ||
+                survey_details.title ||
+                first.title ||
+                "Untitled Survey"
+            );
             setQuestions(first.template);
             setBackgroundImage(first.image_url);
           }
@@ -131,7 +136,6 @@ const Index = () => {
 
     load();
   }, [useCustom, survey_details, input_title]);
-
 
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
@@ -148,64 +152,66 @@ const Index = () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-        <div className="container-fluid">
-          <div className="row">
-            {/* Sidebar */}
-            <div className="col-12 col-md-2"> 
-              <div className="mt-md-5"> 
-                {!useCustom && surveyStatus !== "published" && (
-                  <>
-                    <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
-                    <div className="d-flex flex-column gap-3">
-                      {templates.map((tmpl, idx) => (
-                        <div
-                          key={tmpl.id}
-                          className={`card text-center shadow-sm ${
-                            idx === selectedIndex ? "border-primary" : ""
-                          }`}
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handleSelect(idx)}
-                        >
-                          <div className="card-body">
-                            <h5 className="card-title">{tmpl.title}</h5>
-                          </div>
+      <div className="container-fluid">
+        <div className="row">
+          {/* Sidebar */}
+          <div className="col-2">
+            <div className="mt-4">
+              {!useCustom && surveyStatus !== "published" && (
+                <>
+                  <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
+                  <div className="d-flex flex-column gap-3">
+                    {templates.map((tmpl, idx) => (
+                      <div
+                        key={tmpl.id}
+                        className={`card text-center shadow-sm ${
+                          idx === selectedIndex ? "border-primary" : ""
+                        }`}
+                        style={{ cursor: "pointer" }}
+                        onClick={() => handleSelect(idx)}
+                      >
+                        <div className="card-body">
+                          <h5 className="card-title">{tmpl.title}</h5>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-                {!useCustom && surveyStatus === "published" && (
-                  <div className="alert alert-warning text-center">
-                  {getLabel("This survey has already been published.")}
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
+                </>
+              )}
+              {!useCustom && surveyStatus === "published" && (
+                <div className="alert alert-warning text-center">
+                  {getLabel("This survey has already been published.")}
+                </div>
+              )}
             </div>
-
-            {/* Main form */}
-            <div className="col-12 col-md-8 mt-3"> 
-              <SurveyForm
-                title={title}
-                setTitle={setTitle}
-                sections={sections}
-                setSections={setSections}
-                questions={questions}
-                setQuestions={setQuestions}
-                image={backgroundImage}
-                project_id={project_id}
-                survey_id={survey_id}
-                surveyStatus={surveyStatus}
-                surveyLink={surveyLink}
-                description={description}
-                setDescription={setDescription}
-                language={language}
-                setLanguage={setLanguage}
-              />
-            </div>
-            <div className="d-none d-md-block col-md-2" />
           </div>
-          <ToastContainer position="top-center" autoClose={4000} />
+
+          {/* Main form */}
+          <div className="col-8 mt-3">
+            <SurveyForm
+              title={title}
+              setTitle={setTitle}
+              sections={sections}
+              setSections={setSections}
+              questions={questions}
+              setQuestions={setQuestions}
+              image={backgroundImage}
+              project_id={project_id}
+              survey_id={survey_id}
+              surveyStatus={surveyStatus}
+              surveyLink={surveyLink}
+              description={description}
+              setDescription={setDescription}
+              language={language}
+              setLanguage={setLanguage}
+            />
+          </div>
+
+          {/* Right gutter: empty */}
+          <div className="col-2" />
         </div>
+        <ToastContainer position="top-center" autoClose={4000} />
+      </div>
     </>
   );
 };
