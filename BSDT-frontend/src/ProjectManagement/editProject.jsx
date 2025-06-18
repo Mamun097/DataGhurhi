@@ -375,12 +375,13 @@ const handleDeleteSurvey = async (surveyId) => {
     toast.error(getLabel("Failed to delete survey."));
   }
 };
-  const handleSurveyClick = (survey_id, survey, survey_title) => {
+  const handleSurveyClick = (survey_id, survey, survey_title, response_user_logged_in_status) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
         input_title: survey_title || "Untitled Survey",
+        response_user_logged_in_status: response_user_logged_in_status
       },
     });
   };
@@ -765,7 +766,7 @@ const handleDeleteSurvey = async (surveyId) => {
                   className="survey-card"
                   style={{ cursor: "pointer" }}
                   onClick={() =>
-                    handleSurveyClick(survey.survey_id, survey, survey.title)
+                    handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
                   }
                 >
                   <img
@@ -868,7 +869,7 @@ const handleDeleteSurvey = async (surveyId) => {
                         fontSize="inherit"
                         onClick={
                           canEdit
-                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title)
+                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
                             : undefined
                         }
                         style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
