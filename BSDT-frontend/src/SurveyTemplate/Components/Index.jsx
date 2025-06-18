@@ -32,7 +32,7 @@ const translateText = async (textArray, targetLang) => {
 const Index = () => {
   const location = useLocation();
   const { survey_id } = useParams();
-  const { project_id, survey_details, input_title } = location.state || {};
+  const { project_id, survey_details, input_title, response_user_logged_in_status } = location.state || {};
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
@@ -51,6 +51,7 @@ const Index = () => {
   const [surveyStatus, setSurveyStatus] = useState(null);
   const [surveyLink, setSurveyLink] = useState(null);
   const [description, setDescription] = useState(null);
+  const [isLoggedInRequired, setIsLoggedInRequired] = useState(response_user_logged_in_status || false);
   const useCustom = survey_details?.template != null;
 
   const labelsToTranslate = [
@@ -109,6 +110,8 @@ const Index = () => {
         setSurveyStatus(survey_details.survey_status || null);
         setSurveyLink(survey_details.survey_link || null);
         setDescription(survey_details.description || null);
+        setIsLoggedInRequired(survey_details.response_user_logged_in_status || false);
+        console.log("user logged in status", survey_details.response_user_logged_in_status);
       } else {
         try {
           const resp = await axios.get(
@@ -122,6 +125,7 @@ const Index = () => {
             setTitle(input_title || survey_details.title || first.title || "Untitled Survey");
             setQuestions(first.template);
             setBackgroundImage(first.image_url);
+            setIsLoggedInRequired(first.response_user_logged_in_status || false);
           }
         } catch (err) {
           console.error("Failed to load templates:", err);
@@ -200,6 +204,8 @@ const Index = () => {
                 setDescription={setDescription}
                 language={language}
                 setLanguage={setLanguage}
+                isLoggedInRequired={isLoggedInRequired}
+                setIsLoggedInRequired={setIsLoggedInRequired}
               />
             </div>
             <div className="d-none d-md-block col-md-2" />
