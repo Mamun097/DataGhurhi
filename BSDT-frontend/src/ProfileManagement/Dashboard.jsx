@@ -15,6 +15,7 @@ import "./PremiumFeatures/TokenDisplay.css";
 import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
+import UserSubscriptions from './PremiumFeatures/UserSubscription';
 import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
 
@@ -44,7 +45,7 @@ const Dashboard = () => {
 
   const getTabFromURL = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get("tab") ;
+    return urlParams.get("tab");
   };
 
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "editprofile");
@@ -58,50 +59,50 @@ const Dashboard = () => {
     localStorage.getItem("language") || "English"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
-// collab
+  // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-  
 
-const handleAccept = async (projectId) => {
-  
-  console.log("Accepted request:", projectId);
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.post(
-      `http://localhost:2000/api/collaborator/${projectId}/accept-invitation`,
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-    if (response.status === 200) {
-      console.log("Invitation accepted successfully");
-      fetchCollaborationRequests(); // Refresh requests
-    }
-  } catch (error) {
-    console.error("Failed to accept invitation:", error);
-  }
-};
 
-const handleReject = async (projectId) => {
-  console.log("Rejected request:", projectId);
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.post(
-      `http://localhost:2000/api/collaborator/${projectId}/decline-invitation`,
-      {},
-      {
-        headers: { Authorization: `Bearer ${token}` },
+  const handleAccept = async (projectId) => {
+
+    console.log("Accepted request:", projectId);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/collaborator/${projectId}/accept-invitation`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        console.log("Invitation accepted successfully");
+        fetchCollaborationRequests(); // Refresh requests
       }
-    );
-    if (response.status === 200) {
-      console.log("Invitation rejected successfully");
-      fetchCollaborationRequests(); // Refresh requests
+    } catch (error) {
+      console.error("Failed to accept invitation:", error);
     }
-  } catch (error) {
-    console.error("Failed to reject invitation:", error);
-  }
-};
+  };
+
+  const handleReject = async (projectId) => {
+    console.log("Rejected request:", projectId);
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.post(
+        `http://localhost:2000/api/collaborator/${projectId}/decline-invitation`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
+        console.log("Invitation rejected successfully");
+        fetchCollaborationRequests(); // Refresh requests
+      }
+    } catch (error) {
+      console.error("Failed to reject invitation:", error);
+    }
+  };
 
   // Premium feature states
   const [showAdBanner, setShowAdBanner] = useState(false);
@@ -127,7 +128,7 @@ const handleReject = async (projectId) => {
 
     const labelsToTranslate = [
       "Dashboard",
-      "Edit Profile",
+      "Profile",
       "Projects",
       "Collaborated Projects",
       "Premium Packages",
@@ -257,6 +258,25 @@ const handleReject = async (projectId) => {
       "Are you sure you want to delete the",
       "package? This action cannot be undone.",
       "Delete",
+
+      // User Subscription Labels
+      // "Active",
+      // "Expired",
+      // "Expiring Soon",
+      // "Loading subscription packages...","Retry","My Subscription Packages","Manage and view your premium subscription packages","Active Packages",
+      // "Auto Tag Generation",
+      // "Auto Question Generation",
+      // "Auto Survey Generation",
+      // "Days Remaining",
+      // "Started",
+      // "Expires",
+      // "Package Cost",
+      // "No Active Packages",
+      // "You don\'t have any active subscription packages at the moment.",
+      // "Hide Package History",
+      // "View Package History",
+      // "Package History",
+
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -289,7 +309,6 @@ const handleReject = async (projectId) => {
         console.error("Upload failed:", error.message);
         return;
       }
-
       const urlData = supabase.storage
         .from("media")
         .getPublicUrl(`profile_pics/${file.name}`);
@@ -314,7 +333,6 @@ const handleReject = async (projectId) => {
       console.error("Failed to update ${type} image in DB:", error);
     }
   };
-
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
@@ -367,13 +385,13 @@ const handleReject = async (projectId) => {
         } else {
           setIsAdmin(false);
           setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
-          
+
           // Show ad banner for normal users only once per session
           if (currentUserType === 'normal') {
             // Check if the banner has already been shown in this session
             const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
             const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
-            
+
             if (!bannerAlreadyShown) {
               setShowAdBanner(true);
               // Mark banner as shown in this session
@@ -381,7 +399,6 @@ const handleReject = async (projectId) => {
             }
           }
         }
-
         localStorage.setItem("userId", response.data.user.user_id);
       }
     } catch (error) {
@@ -437,7 +454,6 @@ const handleReject = async (projectId) => {
   }, [isAdmin, fetchProjects]);
 
   const navigate = useNavigate();
-
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId, role) => {
     console.log("Project clicked:", projectId, "Role:", role);
@@ -480,7 +496,6 @@ const handleReject = async (projectId) => {
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
         console.log("Collaborated Projects:", response.data.projects);
-        
       }
     } catch (error) {
       console.error("Failed to fetch collaborated projects:", error);
@@ -509,34 +524,27 @@ const handleReject = async (projectId) => {
   }, []);
 
   const [expandedRows, setExpandedRows] = useState(new Set());
-  
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
-const sortedRequests = [...collabRequests].sort(
-  (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
-);
+  const sortedRequests = [...collabRequests].sort(
+    (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
+  );
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
-
   const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
-
-
-
-
-
   // Get tabs based on user type
   const getTabs = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard" },
         { label: "Customize Packages", key: "customizepackages" },
-        { label: "Edit Profile", key: "editprofile" }
+        { label: "Profile", key: "editprofile" }
       ];
     } else {
       return [
-        { label: "Edit Profile", key: "editprofile" },
+        { label: "Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
         { label: "Question Bank", key: "questionbank" },
@@ -547,7 +555,7 @@ const sortedRequests = [...collabRequests].sort(
 
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType}/>
+      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType} />
       <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
         <div className="dashboard-layout">
           <div className="profile-section">
@@ -577,15 +585,6 @@ const sortedRequests = [...collabRequests].sort(
               </div>
             )}
 
-            {/* Token Display - Only for non-admin users */}
-            {/* {!isAdmin && (
-              <TokenDisplay
-                availableTokens={availableTokens}
-                userType={userType}
-                getLabel={getLabel}
-              />
-            )} */}
-
             <div className="profile-tabs">
               <ul>
                 {getTabs().map((tab) => (
@@ -596,7 +595,7 @@ const sortedRequests = [...collabRequests].sort(
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
-                          
+
                           const url = new URL(window.location);
                           url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
@@ -628,7 +627,7 @@ const sortedRequests = [...collabRequests].sort(
               />
             )}
 
-            {/* Edit Profile - Common for both admin and normal users */}
+            {/* Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
                 <div className="edit-profile-header">
@@ -711,23 +710,30 @@ const sortedRequests = [...collabRequests].sort(
               </div>
             )}
 
+            {activeTab === "editprofile" && !isAdmin && (
+              <UserSubscriptions
+                getLabel={getLabel}
+                userType={userType}
+              />
+            )}
+
             {/* Normal User Tabs */}
             {!isAdmin && activeTab === "projects" && (
               <ProjectTab
-              getLabel={getLabel}
-              handleAddProjectClick={handleAddProjectClick}
-              privacyFilter={privacyFilter}
-              sortField={sortField}
-              sortOrder={sortOrder}
-              projects={projects}
-              setSortOrder={setSortOrder}
-              setSortField={setSortField}
-              setPrivacyFilter={setPrivacyFilter}
-              handleProjectClick={handleProjectClick}
+                getLabel={getLabel}
+                handleAddProjectClick={handleAddProjectClick}
+                privacyFilter={privacyFilter}
+                sortField={sortField}
+                sortOrder={sortOrder}
+                projects={projects}
+                setSortOrder={setSortOrder}
+                setSortField={setSortField}
+                setPrivacyFilter={setPrivacyFilter}
+                handleProjectClick={handleProjectClick}
               />
             )}
             {!isAdmin && activeTab === "collaboratedprojects" && (
-                <CollabProjectTab
+              <CollabProjectTab
                 getLabel={getLabel}
                 collaboratedProjects={collaboratedProjects}
                 showCollabModal={showCollabModal}
@@ -737,22 +743,13 @@ const sortedRequests = [...collabRequests].sort(
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-                />
-              )}
-
-
-
-
-          {activeTab === "questionbank" && (
-            <div className="question-bank-section">
-            
-              
-                <QB language={language} setLanguage={setLanguage}/>
-
-             
-             
-            </div>
-          )}
+              />
+            )}
+            {activeTab === "questionbank" && (
+              <div className="question-bank-section">
+                <QB language={language} setLanguage={setLanguage} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -764,7 +761,7 @@ const sortedRequests = [...collabRequests].sort(
           onCheckoutClick={handleCheckoutClick}
           getLabel={getLabel}
         />
-      )}  
+      )}
 
       {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (
