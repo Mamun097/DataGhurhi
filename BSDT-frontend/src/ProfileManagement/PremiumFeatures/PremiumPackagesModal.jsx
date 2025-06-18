@@ -121,15 +121,16 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
   const getPackageFeatures = (pkg) => {
     const features = [];
 
-    if (pkg.tag > 0) {
-      features.push(`${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`);
+    if (pkg.survey > 0) {
+      features.push(`${pkg.survey.toLocaleString()} ${getLabel("Automatic Survey Template Generation")}`);
     }
     if (pkg.question > 0) {
       features.push(`${pkg.question.toLocaleString()} ${getLabel("Automatic Question Generation")}`);
     }
-    if (pkg.survey > 0) {
-      features.push(`${pkg.survey.toLocaleString()} ${getLabel("Automatic Survey Template Generation")}`);
+    if (pkg.tag > 0) {
+      features.push(`${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`);
     }
+    
 
     if (pkg.title.toLowerCase().includes('starter')) {
       features.push(getLabel("Basic Survey Templates"));
