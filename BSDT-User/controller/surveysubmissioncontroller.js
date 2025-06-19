@@ -1,45 +1,75 @@
 const supabase = require("../db");
 
 exports.submitSurvey = async (req, res) => {
-    try {
-        const slug = req.params.slug;
+try {
+        const { slug } = req.params;
         const { userResponse } = req.body;
-        const user_id = req.jwt.id;
-        console.log('Received slug:', slug);
-        console.log(userResponse);
-        //fetch survey id by slug
-        const { data: surveyData, error: surveyError } = await supabase
+        const userId = req.jwt?.id; 
+
+        // 1. Fetch the survey's rules (ID and login requirement) in one call.
+        const { data: survey, error: surveyError } = await supabase
             .from('survey')
-            .select('survey_id')
+            .select('survey_id, user_response_logged_in_status')
             .eq('survey_link', slug)
             .single();
-        if (surveyError) {
-            console.error('Error fetching survey by slug:', surveyError);
-            return res.status(500).json({ error: 'Internal server error' });
+
+        if (surveyError || !survey) {
+            return res.status(404).json({ error: 'Survey not found.' });
         }
-        if (!surveyData) {
-            console.error('Survey not found for slug:', slug);
-            return res.status(404).json({ error: 'Survey not found' });
+
+        const surveyId = survey.survey_id;
+
+        if (survey.user_response_logged_in_status === true) {
+            // --- PROTECTED SURVEY SUBMISSION ---
+            // If login is required, a user ID must be present.
+            if (!userId) {
+                return res.status(401).json({ error: 'You must be logged in to submit a response to this survey.' });
+            }
+
+            // // CRITICAL: Check for duplicate submissions to maintain data integrity.
+            // const { count, error: duplicateCheckError } = await supabase
+            //     .from('response') // Note: Make sure your table is named 'response' or 'survey_responses'
+            //     .select('*', { count: 'exact', head: true })
+            //     .eq('survey_id', surveyId)
+            //     .eq('user_id', userId);
+
+            // if (duplicateCheckError) throw duplicateCheckError;
+
+            // if (count > 0) {
+            //     return res.status(409).json({ error: 'You have already submitted a response for this survey.' });
+            // }
+
+            // If all checks pass, insert the response with the user's ID.
+            const { data, error } = await supabase
+                .from('response')
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse }])
+                .select()
+                .single();
+                
+            if (error) throw error;
+            return res.status(201).json({ message: 'Response submitted successfully.', data });
+
+        } else {
+            // --- PUBLIC SURVEY SUBMISSION ---
+
+            // Anyone can submit. The userId will be saved if the user happens to be logged in,
+            // otherwise it will be saved as NULL. This is why the column must be nullable.
+            const { data, error } = await supabase
+                .from('response')
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse }])
+                .select()
+                .single();
+
+            if (error) throw error;
+            return res.status(201).json({ message: 'Response submitted successfully.', data });
         }
-        const surveyId = surveyData.survey_id;
-        console.log('Survey ID:', surveyId);
-        //insert the survey response
-        const { data: responseData, error: responseError } = await supabase
-            .from('response')
-            .insert([{ survey_id: surveyId, user_id: user_id, response_data: userResponse }])
-            .select();
-        if (responseError) {
-            console.error('Error inserting survey response:', responseError);
-            return res.status(500).json({ error: 'Internal server error' });
-        }
-        if (!responseData || responseData.length === 0) {
-            console.error('No response data returned after insertion');
-            return res.status(500).json({ error: 'Failed to submit survey response' });
-        }
-        console.log('Survey response submitted successfully:', responseData);
-        res.status(200).json({ message: 'Survey response submitted successfully', data: responseData });
+
     } catch (err) {
-        console.error('Error in submitSurvey:', err);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('Error in submitSurveyResponse:', err.message);
+        // Check for specific Supabase errors, like unique constraint violation
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'A response from this user for this survey may already exist.' });
+        }
+        return res.status(500).json({ error: 'An internal server error occurred.' });
     }
 }

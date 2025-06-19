@@ -88,7 +88,25 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                 return res.status(401).send({ error: "Please attach access token in headers." });
         }
     }
+module.exports.optionalJwtAuthMiddleware = (req, res, next) => {
+    const authHeader = req.headers.authorization;
 
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        // No token provided, which is okay for this middleware.
+        return next();
+    }
+    const token = authHeader.split(' ')[1];
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET_USER);
+        req.user = decoded; 
+        req.jwt = decoded;         
+        next();
+    } catch (err) {
+        // This part is correct: if a token is provided, it must be valid.
+        console.error('Optional Auth Error: Invalid token provided.', err.message);
+        return res.status(401).json({ error: 'Invalid or expired token.' });
+    }
+};
 module.exports.jwtAuthMiddlewareSurvey = async(req, res, next) => {
     console.log('Entered jwtAuthMiddlewareSurvey');
     console.log(req.headers);
