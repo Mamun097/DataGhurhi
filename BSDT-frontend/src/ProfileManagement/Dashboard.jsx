@@ -456,9 +456,10 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId, role) => {
-    navigate(`/view-project/${projectId}`), {
-      state: { role: role }
-    };
+    console.log("Project clicked:", projectId, "Role:", role);
+     navigate(`/view-project/${projectId}`, {
+                    state: { role: role },
+                    });
   };
   // Premium feature handlers
   const handleCloseAdBanner = () => {
@@ -729,6 +730,7 @@ const Dashboard = () => {
                 setSortField={setSortField}
                 setPrivacyFilter={setPrivacyFilter}
                 handleProjectClick={handleProjectClick}
+                setProjects={setProjects}
               />
             )}
             {!isAdmin && activeTab === "collaboratedprojects" && (
