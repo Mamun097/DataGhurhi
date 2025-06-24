@@ -236,8 +236,8 @@
   .validity-option input[type="radio"]:checked + .validity-card::after {
     content: "✓";
     position: absolute;
-    top: -8px;
-    right: -8px;
+    top: 8px;
+    right: 8px;
     width: 24px;
     height: 24px;
     background: #3b82f6;

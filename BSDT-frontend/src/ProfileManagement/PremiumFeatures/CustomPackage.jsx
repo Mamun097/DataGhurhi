@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 // Fixed Custom Package Builder Component
-const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage}) => {
+const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage }) => {
   const [packageItems, setPackageItems] = useState([]);
   const [validityPeriods, setValidityPeriods] = useState([]);
   const [selectedItems, setSelectedItems] = useState({
@@ -203,30 +203,30 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
           </div>
 
           <div className="items-selector">
-            <div className="item-selector">
+          <div className="item-selector">
               <div className="item-header">
-                <span className="item-icon">🏷️</span>
-                <h4>{getLabel ? getLabel("Question Tags") : "Question Tags"}</h4>
-                <span className="item-price">৳{getItemPrice('tag')}/{getLabel ? getLabel("unit") : "unit"}</span>
+                <span className="item-icon">📋</span>
+                <h4>{getLabel ? getLabel("Surveys") : "Surveys"}</h4>
+                <span className="item-price">৳{getItemPrice('survey')}/{getLabel ? getLabel("unit") : "unit"}</span>
               </div>
               <div className="quantity-controls">
                 <button
                   type="button"
-                  onClick={() => handleItemChange('tag', selectedItems.tag - 1)}
-                  disabled={selectedItems.tag <= 0}
+                  onClick={() => handleItemChange('survey', selectedItems.survey - 1)}
+                  disabled={selectedItems.survey <= 0}
                 >
                   -
                 </button>
                 <input
                   type="number"
                   min="0"
-                  value={selectedItems.tag}
-                  onChange={(e) => handleItemChange('tag', e.target.value)}
+                  value={selectedItems.survey}
+                  onChange={(e) => handleItemChange('survey', e.target.value)}
                   placeholder="0"
                 />
                 <button
                   type="button"
-                  onClick={() => handleItemChange('tag', selectedItems.tag + 1)}
+                  onClick={() => handleItemChange('survey', selectedItems.survey + 1)}
                 >
                   +
                 </button>
@@ -265,33 +265,34 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
 
             <div className="item-selector">
               <div className="item-header">
-                <span className="item-icon">📋</span>
-                <h4>{getLabel ? getLabel("Surveys") : "Surveys"}</h4>
-                <span className="item-price">৳{getItemPrice('survey')}/{getLabel ? getLabel("unit") : "unit"}</span>
+                <span className="item-icon">🏷️</span>
+                <h4>{getLabel ? getLabel("Question Tags") : "Question Tags"}</h4>
+                <span className="item-price">৳{getItemPrice('tag')}/{getLabel ? getLabel("unit") : "unit"}</span>
               </div>
               <div className="quantity-controls">
                 <button
                   type="button"
-                  onClick={() => handleItemChange('survey', selectedItems.survey - 1)}
-                  disabled={selectedItems.survey <= 0}
+                  onClick={() => handleItemChange('tag', selectedItems.tag - 1)}
+                  disabled={selectedItems.tag <= 0}
                 >
                   -
                 </button>
                 <input
                   type="number"
                   min="0"
-                  value={selectedItems.survey}
-                  onChange={(e) => handleItemChange('survey', e.target.value)}
+                  value={selectedItems.tag}
+                  onChange={(e) => handleItemChange('tag', e.target.value)}
                   placeholder="0"
                 />
                 <button
                   type="button"
-                  onClick={() => handleItemChange('survey', selectedItems.survey + 1)}
+                  onClick={() => handleItemChange('tag', selectedItems.tag + 1)}
                 >
                   +
                 </button>
               </div>
             </div>
+
           </div>
 
           {validityPeriods.length > 0 && (
@@ -361,14 +362,14 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
             </div>
           </div>
 
-              <div className="custom-package-actions">
-                <button
-                  className="buy-custom-btn"
-                  onClick={handleBuyCustomPackage}
-                >
-                  {getLabel("Buy Now")}
-                </button>
-              </div>
+          <div className="custom-package-actions">
+            <button
+              className="buy-custom-btn"
+              onClick={handleBuyCustomPackage}
+            >
+              {getLabel("Buy Now")}
+            </button>
+          </div>
         </>
       )}
     </div>
