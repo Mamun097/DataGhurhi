@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
+
 
 const LinearScaleQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
@@ -37,11 +39,14 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
     setShowLabels(!!(question.leftLabel || question.rightLabel));
   }, [question.leftLabel, question.rightLabel]);
 
-  const updateQuestion = (updates) => {
-    setQuestions((prev) =>
-      prev.map((q) => (q.id === question.id ? { ...q, ...updates } : q))
-    );
-  };
+  const updateQuestion = useCallback(
+    (updates) => {
+      setQuestions((prev) =>
+        prev.map((q) => (q.id === question.id ? { ...q, ...updates } : q))
+      );
+    },
+    [setQuestions, question.id]
+  );
 
   const handleRequired = () => {
     const newRequiredState = !required;
@@ -49,9 +54,12 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
     setRequired(newRequiredState);
   };
 
-  const handleQuestionChange = (newText) => {
-    updateQuestion({ text: newText });
-  };
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      updateQuestion({ text: newText });
+    },
+    [updateQuestion]
+  );
 
   const handleMinChange = (e) => {
     const newMin = Number(e.target.value);
@@ -158,6 +166,49 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
 
     setQuestions(updatedQuestions);
   };
+  const handleTranslation = useCallback(async () => {
+  try {
+    const questionResponse = await translateText(question.text);
+    if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+      throw new Error("No translation returned for question");
+    }
+    handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+
+    const metaResponse = await translateText([
+      question.meta?.min?.toString() || "",
+      question.meta?.max?.toString() || "",
+      question.leftLabel || "",
+      question.rightLabel || ""
+    ]);
+    if (!metaResponse?.data?.data?.translations) {
+      throw new Error("No translations returned for meta properties");
+    }
+    const [minTranslation, maxTranslation, leftLabelTranslation, rightLabelTranslation] = 
+      metaResponse.data.data.translations.map(t => t.translatedText || "");
+
+    setMinValue(minTranslation);
+    setMaxValue(maxTranslation);
+    setLeftLabel(leftLabelTranslation);
+    setRightLabel(rightLabelTranslation);
+    updateQuestion({
+      min: minTranslation,
+      max: maxTranslation,
+      leftLabel: leftLabelTranslation,
+      rightLabel: rightLabelTranslation,
+    });
+
+  } catch (error) {
+    console.error("Error in handleTranslation:", error.message);
+  }
+}, [
+  question.text,
+  question.leftLabel,
+  question.rightLabel,
+  question.meta?.min,
+  question.meta?.max,
+  handleQuestionChange,
+  updateQuestion
+]);
 
 
   return (
@@ -307,6 +358,13 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
             onChange={handleQuestionImageUpload}
           />
         </label>
+                <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
         <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
           <div className="form-check form-switch">
             <input

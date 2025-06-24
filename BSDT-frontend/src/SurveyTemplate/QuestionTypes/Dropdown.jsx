@@ -208,18 +208,36 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
   }, [question.id, setQuestions]);
 
   const handleTranslation = useCallback(async () => {
-    const response = await translateText(question.text);
-    const optionTexts = (question.meta.options || []).map((opt) => opt.text);
+    try {
+      const questionResponse = await translateText(question.text);
+      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+        throw new Error("No translation returned for question");
+      }
+      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
 
-    const translatedOptions = await translateText(optionTexts, "bn");
-    const translatedTexts = translatedOptions.data.data.translations.map(
-      (t) => t.translatedText
-    );
-    handleQuestionChange(response.data.data.translations[0].translatedText);
-    translatedTexts.forEach((translatedText, idx) => {
-      updateOption(idx, translatedText);
-    });
-  }, [question.id, setQuestions, updateOption, handleQuestionChange]);
+      const optionTexts = (question.meta.options || []).map((opt) => opt.trim()).filter((opt) => opt);
+
+      if (!optionTexts.length) {
+        console.warn("No options to translate");
+        return;
+      }
+
+      const translatedOptions = await translateText(optionTexts, "bn");
+      if (!translatedOptions?.data?.data?.translations) {
+        throw new Error("No translations returned for options");
+      }
+
+      const translatedTexts = translatedOptions.data.data.translations.map(
+        (t) => t.translatedText
+      );
+
+      translatedTexts.forEach((translatedText, idx) => {
+        updateOption(idx, translatedText);
+      });
+    } catch (error) {
+      console.error("Error in handleTranslation:", error.message);
+    }
+  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
 
   return (
     <div className="mb-3 dnd-isolate">

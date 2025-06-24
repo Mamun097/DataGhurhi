@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -16,6 +16,11 @@ const Radio = ({
   setLanguage,
   getLabel,
 }) => {
+
+  // useEffect(() => {
+  // console.log("Updated questions:", questions);
+  // }, [questions]);
+
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -264,7 +269,6 @@ const Radio = ({
   const handleTranslation = useCallback(async () => {
     const response = await translateText(question.text);
     const optionTexts = (question.meta.options || []).map((opt) => opt.text);
-
     const translatedOptions = await translateText(optionTexts, "bn");
     const translatedTexts = translatedOptions.data.data.translations.map(
       (t) => t.translatedText
@@ -273,7 +277,7 @@ const Radio = ({
     translatedTexts.forEach((translatedText, idx) => {
       updateOption(idx, translatedText);
     });
-  }, [question.id, setQuestions, updateOption, handleQuestionChange]);
+  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
 
   return (
     <div className="mb-3 dnd-isolate">
