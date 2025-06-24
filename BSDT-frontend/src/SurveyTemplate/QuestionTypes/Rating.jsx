@@ -3,6 +3,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
+import axios from "axios";
 
 // Default scale if not provided in question.meta
 const DEFAULT_SCALE = 5;
@@ -97,6 +99,12 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
 
     setQuestions(updatedQuestions);
   }, [questions, question, scale, setQuestions]);
+
+  const handleTranslation = useCallback(async () => {
+    const response = await translateText(question.text);
+    handleQuestionChange(response.data.data.translations[0].translatedText);
+
+  }, [question.id, setQuestions, handleQuestionChange]);
 
   return (
     <div className="mb-3">
@@ -219,6 +227,13 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
             onChange={handleQuestionImageUpload}
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
         {/* Required Switch Group */}
         <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
           <div className="form-check form-switch">

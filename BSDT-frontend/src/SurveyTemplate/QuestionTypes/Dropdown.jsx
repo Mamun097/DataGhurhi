@@ -4,6 +4,8 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import axios from "axios";
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const Dropdown = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
@@ -205,6 +207,20 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
     );
   }, [question.id, setQuestions]);
 
+  const handleTranslation = useCallback(async () => {
+    const response = await translateText(question.text);
+    const optionTexts = (question.meta.options || []).map((opt) => opt.text);
+
+    const translatedOptions = await translateText(optionTexts, "bn");
+    const translatedTexts = translatedOptions.data.data.translations.map(
+      (t) => t.translatedText
+    );
+    handleQuestionChange(response.data.data.translations[0].translatedText);
+    translatedTexts.forEach((translatedText, idx) => {
+      updateOption(idx, translatedText);
+    });
+  }, [question.id, setQuestions, updateOption, handleQuestionChange]);
+
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
@@ -352,6 +368,13 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
             onChange={handleQuestionImageUpload} 
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
       </div>
 
       <div className="mt-3 border-top pt-3">
