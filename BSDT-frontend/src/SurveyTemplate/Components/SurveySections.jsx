@@ -92,7 +92,54 @@ const SurveySections = ({
   };
 
   const addGeneratedQuestion = (generatedQuestion) => {
-    setQuestions([...questions, generatedQuestion]);
+    // Process the generated question to ensure proper structure
+    let processedQuestion = { ...generatedQuestion };
+    
+    // Ensure the question has proper ID and section
+    processedQuestion.id = questions.length + 1;
+    processedQuestion.section = section.id;
+    
+    // Process options based on question type
+    if (processedQuestion.type === "radio" || processedQuestion.type === "checkbox") {
+      if (processedQuestion.meta && processedQuestion.meta.options) {
+        // Convert backend options to Option class instances
+        processedQuestion.meta.options = processedQuestion.meta.options.map(option => {
+          // Handle different backend option formats
+          if (typeof option === 'string') {
+            return new Option(option, 0);
+          } else if (option && typeof option === 'object') {
+            return new Option(option.text || option.label || option, option.value || 0);
+          }
+          return new Option(option, 0);
+        });
+      } else {
+        // Fallback: create default options if none provided
+        processedQuestion.meta = {
+          ...processedQuestion.meta,
+          options: [
+            new Option(getLabel("Option 1"), 0),
+            new Option(getLabel("Option 2"), 0),
+          ]
+        };
+      }
+    }
+    
+    // Handle other question types with options
+    if (processedQuestion.type === "dropdown") {
+      if (processedQuestion.meta && processedQuestion.meta.options) {
+        // For dropdown, options might be simple strings
+        if (processedQuestion.meta.options[0] && typeof processedQuestion.meta.options[0] === 'object') {
+          processedQuestion.meta.options = processedQuestion.meta.options.map(opt => 
+            opt.text || opt.label || opt
+          );
+        }
+      }
+    }
+    
+    // Add the processed question
+    setQuestions(prevQuestions => [...prevQuestions, processedQuestion]);
+    
+    console.log("Processed generated question:", processedQuestion);
   };
 
 

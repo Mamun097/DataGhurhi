@@ -102,7 +102,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
     const validateUnitPriceForm = () => {
         const errors = {};
         if (!unitPriceFormData.base_price_per_unit || parseFloat(unitPriceFormData.base_price_per_unit) < 0) {
-            errors.base_price_per_unit = getLabel('Valid price is required');
+            errors.base_price_per_unit = getLabel("Valid price is required");
         }
         setUnitPriceErrors(errors);
         return Object.keys(errors).length === 0;
@@ -174,15 +174,15 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
     const validateValidityForm = () => {
         const errors = {};
         if (!validityFormData.days || parseInt(validityFormData.days) < 1) {
-            errors.days = getLabel('Valid days is required');
+            errors.days = getLabel("Valid days is required");
         }
         if (!validityFormData.price_multiplier || parseFloat(validityFormData.price_multiplier) < 0) {
-            errors.price_multiplier = getLabel('Valid price multiplier is required');
+            errors.price_multiplier = getLabel("Valid price multiplier is required");
         }
         
         // Check if days already exist (for add mode)
         if (showAddValidityModal && validityPeriods.some(v => v.days === parseInt(validityFormData.days))) {
-            errors.days = getLabel('This validity period already exists');
+            errors.days = getLabel("This validity period already exists");
         }
 
         setValidityErrors(errors);
@@ -286,9 +286,9 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const getItemTypeLabel = (itemType) => {
         switch (itemType) {
-            case 'tag': return getLabel('Tag');
-            case 'question': return getLabel('Question');
-            case 'survey': return getLabel('Survey');
+            case 'tag': return getLabel("Tag");
+            case 'question': return getLabel("Question");
+            case 'survey': return getLabel("Survey");
             default: return itemType;
         }
     };
@@ -376,7 +376,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                     className="edit-price-btn"
                                     disabled={isSubmitting}
                                 >
-                                    <span className="btn-icon">✏️</span>
+                                    {/* <span className="btn-icon">✏️</span> */}
                                     {getLabel("Edit Price")}
                                 </button>
                             </div>
@@ -457,7 +457,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                     <div className="admin-modal">
                         <div className="admin-modal-header">
                             <h3 className="modal-title">
-                                {getLabel('Edit Unit Price')} - {getItemTypeLabel(selectedUnitPrice?.item_type)}
+                                {getLabel("Edit Unit Price")} - {getItemTypeLabel(selectedUnitPrice?.item_type)}
                             </h3>
                             <button
                                 onClick={() => {
@@ -500,7 +500,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                 className="modal-btn save-btn"
                                 disabled={isSubmitting}
                             >
-                                {isSubmitting ? getLabel("Updating...") : getLabel('Update Price')}
+                                {isSubmitting ? getLabel("Updating...") : getLabel("Update Price")}
                             </button>
                         </div>
                     </div>
@@ -513,7 +513,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                     <div className="admin-modal">
                         <div className="admin-modal-header">
                             <h3 className="modal-title">
-                                {showEditValidityModal ? getLabel('Edit Validity Period') : getLabel('Add Validity Period')}
+                                {showEditValidityModal ? getLabel("Edit Validity Period") : getLabel("Add Validity Period")}
                             </h3>
                             <button
                                 onClick={() => {
@@ -588,7 +588,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                             >
                                 {isSubmitting
                                     ? getLabel("Saving...")
-                                    : (showEditValidityModal ? getLabel('Update') : getLabel('Create'))
+                                    : (showEditValidityModal ? getLabel("Update") : getLabel("Create"))
                                 }
                             </button>
                         </div>

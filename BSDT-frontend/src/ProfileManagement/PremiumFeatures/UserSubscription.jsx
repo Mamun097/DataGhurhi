@@ -2,11 +2,98 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './UserSubscription.css';
 
-const UserSubscriptions = ({ getLabel, userType }) => {
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
+const UserSubscriptions = ({ userType, language = "English" }) => {
     const [subscriptions, setSubscriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showExpired, setShowExpired] = useState(false);
     const [error, setError] = useState(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+
+    // Load translations when language changes
+    const loadTranslations = async () => {
+        if (language === "English") {
+            setTranslatedLabels({});
+            return;
+        }
+
+        const labelsToTranslate = [
+            // Status labels
+            "Active",
+            "Expired", 
+            "Expiring Soon",
+            
+            // Main section labels
+            "My Subscription Packages",
+            "Manage and view your premium subscription packages",
+            "Loading subscription packages...",
+            "Failed to load subscription packages",
+            "Retry",
+            
+            // Package section labels
+            "Active Packages",
+            "Package History",
+            "No Active Packages",
+            "You don't have any active subscription packages at the moment.",
+            "Hide Package History",
+            "View Package History",
+            
+            // Feature labels
+            "Auto Survey Generation",
+            "Auto Question Generation", 
+            "Auto Tag Generation",
+            "Tags",
+            "Questions",
+            "Surveys",
+            
+            // Timeline labels
+            "Started",
+            "Expires",
+            "Expired",
+            "Days Remaining",
+            // "days",
+            
+            // Cost labels
+            "Package Cost"
+        ];
+
+        try {
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        } catch (error) {
+            console.error("Failed to load translations:", error);
+            setTranslatedLabels({});
+        }
+    };
+
+    useEffect(() => {
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => 
+        language === "English" ? text : translatedLabels[text] || text;
 
     useEffect(() => {
         if (userType !== 'admin') {
@@ -184,7 +271,7 @@ const UserSubscriptions = ({ getLabel, userType }) => {
                 <div className="no-packages">
                     <div className="no-packages-icon">📦</div>
                     <h4>{getLabel("No Active Packages")}</h4>
-                    <p>{getLabel("You don\'t have any active subscription packages at the moment.")}</p>
+                    <p>{getLabel("You don't have any active subscription packages at the moment.")}</p>
                 </div>
             )}
 
