@@ -17,24 +17,13 @@ import {
   FaSearch,
 } from "react-icons/fa";
 
-// Your Google Translate API key (from your Google Cloud Console)
-const GOOGLE_API_KEY =  import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
-const NavbarHome = (props) => {
+const NavbarHome = ({ language, setLanguage }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English"); // Use localStorage if available
   const [translations, setTranslations] = useState({});
   const navigate = useNavigate();
-  const labelsToTranslate = [
-    "Go to Profile",
-    "Logout",
-    "Home",
-    "About",
-    "FAQ",
-    "Search for projects, surveys, accounts...",
-  ];
 
-  // Function to fetch translations from Google Translate API
   const translateText = async (textArray, targetLang) => {
     try {
       const response = await axios.post(
@@ -48,18 +37,16 @@ const NavbarHome = (props) => {
       return response.data.data.translations.map((t) => t.translatedText);
     } catch (error) {
       console.error("Translation error:", error);
-      return textArray; // If there's an error, fallback to original text
+      return textArray;
     }
   };
 
-  // Toggle language between English and Bengali
   const toggleLanguage = () => {
-    const newLang = language === "English" ? "bn" : "en"; // 'bn' for Bengali, 'en' for English
-    setLanguage(newLang === "bn" ? "বাংলা" : "English");
-    localStorage.setItem("language", newLang === "bn" ? "বাংলা" : "English");
+    const newLang = language === "English" ? "বাংলা" : "English";
+    setLanguage(newLang);
+    localStorage.setItem("language", newLang);
   };
 
-  // Fetch translations when language changes
   useEffect(() => {
     const loadTranslations = async () => {
       const labels = [
@@ -70,13 +57,12 @@ const NavbarHome = (props) => {
         "Search for projects, surveys, accounts...",
       ];
 
-      // If language is English, don't translate
       if (language === "English") {
         setTranslations({});
         return;
       }
 
-      const translated = await translateText(labels, language === "বাংলা" ? "bn" : "en");
+      const translated = await translateText(labels, "bn");
 
       const translatedMap = {};
       labels.forEach((label, idx) => {
@@ -89,17 +75,14 @@ const NavbarHome = (props) => {
     loadTranslations();
   }, [language]);
 
-  // Function to get the translated text based on selected language
   const getLabel = (text) => translations[text] || text;
 
-  // Handle the search query
   const handleSearch = () => {
     if (searchQuery.trim()) {
       console.log("Searching for:", searchQuery);
     }
   };
 
-  // Handle the login action
   const handleLoginClick = () => {
     const token = localStorage.getItem("token");
     navigate(token ? "/dashboard" : "/login");
@@ -107,7 +90,6 @@ const NavbarHome = (props) => {
 
   return (
     <motion.nav className="navbar">
-      {/* Logo Section */}
       <div className="logo-container">
         <img src={logo_buet} alt="BUET Logo" className="logo1" />
         <img src={logo_ric} alt="RIC Logo" className="logo2" />
@@ -115,7 +97,6 @@ const NavbarHome = (props) => {
         <img src={logo_edge} alt="EDGE Logo" className="logo4" />
       </div>
 
-      {/* Search Bar */}
       <div className="search-container">
         <input
           type="text"
@@ -128,7 +109,6 @@ const NavbarHome = (props) => {
         <FaSearch className="search-icon" onClick={handleSearch} />
       </div>
 
-      {/* Navigation Links */}
       <ul className="nav-links">
         <li>
           <a href="/home">
@@ -151,11 +131,9 @@ const NavbarHome = (props) => {
         <li>
           <a href="/faq">
             <FaQuestionCircle className="nav-icon" />
-            <span>{getLabel("FAQ")}</span>
+            <span>FAQ</span>
           </a>
         </li>
-
-        {/* Language Toggle */}
         <li>
           <div className="language-toggle">
             <label className="switch">
