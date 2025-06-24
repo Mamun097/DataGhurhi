@@ -113,7 +113,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
   const handleTranslation = useCallback(async () => {
     const response = await translateText(question.text);
     handleQuestionChange(response.data.data.translations[0].translatedText);
-  }, [question.id, setQuestions, handleQuestionChange]);
+  }, [handleQuestionChange, question.text]);
 
   return (
     <div className="mb-3">

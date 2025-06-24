@@ -11,7 +11,6 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [required, setRequired] = useState(question.required || false);
-  // const [image, setImage] = useState(question.image || null); // This state seems unused for display; question.imageUrls is used.
   const [minValue, setMinValue] = useState(question.min || 1);
   const [maxValue, setMaxValue] = useState(question.max || 5);
   const [leftLabel, setLeftLabel] = useState(question.leftLabel || "");
