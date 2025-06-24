@@ -104,7 +104,7 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
     const response = await translateText(question.text);
     handleQuestionChange(response.data.data.translations[0].translatedText);
 
-  }, [question.id, setQuestions, handleQuestionChange]);
+  }, [handleQuestionChange, question.text]);
 
   return (
     <div className="mb-3">
