@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import statTestDetails from './stat_tests_details';
+import statTestDetails  from './stat_tests_details';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
 import MannWhitneyOptions from './MannWhitneyOptions';
@@ -13,6 +13,14 @@ import AnovaOptions from './AnovaOptions';
 import AncovaOptions from './AncovaOptions';
 import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
 import AndersonDarlingOptions from './AndersonDarlingOptions';
+import FZTOptions from './FZTOptions';
+import CrossTabulationOptions from './CrossTabulationOptions';
+import EDADistributionsOptions from './EDADistributionsOptions';
+import EDASwarmOptions from './EDASwarmOptions';
+import EDAPieChartOptions from './EDAPieChartOptions';
+import EDABasicsOptions from './EDABasicsOptions';
+import SimilarityOptions from './SimilarityOptions';
+import 'katex/dist/katex.min.css';
 
 const translations = {
     English: {
@@ -24,6 +32,7 @@ const translations = {
         processing: "Processing file, please wait...",
         testType: "Test Type",
         testGroups: {
+            eda: "Exploratory Data Analysis",
             correlation: "Correlation Tests",
             parametric: "Parametric Tests",
             nonParametric: "Non-parametric Tests",
@@ -32,6 +41,11 @@ const translations = {
             other: "Other Tests"
         },
         tests: {
+            eda_basics: "Basic EDA Summary – Descriptive Stats & Entropy",
+            eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
+            eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
+            eda_pie: "Pie Chart – For Categorical Column",
+            similarity: "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
             pearson: "Pearson Correlation",
             spearman: "Spearman Rank Correlation",
             ttest_ind: "Independent Samples t-test",
@@ -46,11 +60,21 @@ const translations = {
             anova: "ANOVA",
             ancova: "ANCOVA",
             shapiro: "Shapiro-Wilk Normality Test",
+            kolmogorov: "Kolmogorov–Smirnov Test",
+            anderson: "Anderson–Darling Test",
             chi_square: "Chi-Square Test",
             cramers_heatmap: "Cramér's V Heatmap",
-            network_graph: "Network Graph"
+            network_graph: "Network Graph",
+            fzt: "F / Z / T Test",
+            cross_tabulation: "Cross Tabulation",
+            
         },
         descriptions: {
+            eda_basics: "Provides key statistics like mean, median, std, outliers, and entropy to understand dataset structure and spread.",
+            eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
+            eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
+            eda_pie: "Pie Chart – For Categorical Column",
+            similarity: "Measures how similar or different two numeric columns are using statistical and geometric metrics.",
             pearson: "Measures the strength and direction of the linear relationship between two continuous variables.",
             spearman: "A non-parametric test that assesses how well the relationship between two variables can be described using a monotonic function.",
             ttest_ind: "Compares the means of two independent groups to determine if they are statistically different.",
@@ -65,6 +89,10 @@ const translations = {
             anova: "Analyzes the differences among group means in a sample.",
             ancova: "Combines ANOVA and regression to evaluate whether population means differ while controlling for covariates.",
             shapiro: "Tests whether a sample comes from a normally distributed population.",
+            kolmogorov: "A non-parametric test used to compare a sample distribution to a reference normal distribution.",
+            anderson: "A statistical test that evaluates whether a sample comes from a specific distribution, most commonly the normal distribution.",
+            fzt: "Performs three statistical tests: F-test for variance comparison, Z-test for mean difference using normal distribution, and Welch’s t-test for unequal variances.",
+            cross_tabulation: "Summarizes the relationship between two or more categorical variables using frequency tables and heatmaps.",
             chi_square: "Tests the association between categorical variables using observed and expected frequencies.",
             cramers_heatmap: "Visual representation of Cramér's V association strength between categorical variables.",
             network_graph: "Displays statistical relationships between variables using a graphical network."
@@ -118,6 +146,7 @@ const translations = {
         processing: "ফাইল প্রক্রিয়া করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
         testType: "পরীক্ষার ধরন",
         testGroups: {
+            eda: "অন্বেষণাত্মক ডেটা বিশ্লেষণ",
             correlation: "করেলেশন পরীক্ষা",
             parametric: "প্যারামেট্রিক পরীক্ষা",
             nonParametric: "নন-প্যারামেট্রিক পরীক্ষা",
@@ -126,6 +155,11 @@ const translations = {
             other: "অন্যান্য পরীক্ষা"
         },
         tests: {
+            eda_basics: "মৌলিক EDA – বর্ণনামূলক পরিসংখ্যান ও এনট্রপি",
+            eda_distribution: "বিতরণ প্লট – হিস্টোগ্রাম + KDE (সংখ্যাগত)",
+            eda_swarm: "স্বর্ম প্লট – শ্রেণিবিন্যাস বনাম সংখ্যাগত কলাম",
+            eda_pie: "পাই চার্ট – শ্রেণিবিন্যাস কলামের জন্য",
+            similarity: "সাদৃশ্য ও দূরত্ব – কসাইন, ইউক্লিডীয়, পিয়ার্সন ইত্যাদি",
             pearson: "পিয়ারসন করেলেশন",
             spearman: "স্পিয়ারম্যান র‍্যাঙ্ক করেলেশন",
             ttest_ind: "ইনডিপেনডেন্ট স্যাম্পলস টি-টেস্ট",
@@ -140,11 +174,20 @@ const translations = {
             anova: "ANOVA",
             ancova: "ANCOVA",
             shapiro: "শাপিরো-উইলক নর্মালিটি পরীক্ষা",
+            kolmogorov: "কলমোগোরভ–স্মিরনভ পরীক্ষা",
+            anderson: "আন্ডারসন–ডার্লিং টেস্ট",
+            fzt: "F / Z / T পরীক্ষা",
+            cross_tabulation: "ক্রস ট্যাবুলেশন",
             chi_square: "কাই-স্কয়ার টেস্ট",
             cramers_heatmap: "ক্র্যামের ভি হিটম্যাপ",
             network_graph: "নেটওয়ার্ক গ্রাফ"
         },
         descriptions: {
+            eda_basics: "গড়, মধ্যক, মানক বিচ্যুতি, আউটলাইয়ার ও এনট্রপি দিয়ে ডেটাসেটের মূল বৈশিষ্ট্য উপস্থাপন করে।",
+            eda_distribution: "বিতরণ প্লট – হিস্টোগ্রাম + KDE (সংখ্যাগত)",
+            eda_swarm: "স্বর্ম প্লট – শ্রেণিবিন্যাস বনাম সংখ্যাগত কলাম",
+            eda_pie: "পাই চার্ট – শ্রেণিবিন্যাস কলামের জন্য",
+            similarity: "দুইটি সংখ্যাগত কলামের মধ্যে সাদৃশ্য বা পার্থক্য পরিমাপ করে পরিসংখ্যানিক ও জ্যামিতিক পদ্ধতিতে।",
             pearson: "দুইটি ধারাবাহিক ভেরিয়েবলের মধ্যে রৈখিক সম্পর্কের শক্তি ও দিক পরিমাপ করে।",
             spearman: "দুইটি ভেরিয়েবলের মধ্যে একঘাত সম্পর্ক আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
             ttest_ind: "দুটি স্বাধীন গ্রুপের গড় মানে উল্লেখযোগ্য পার্থক্য আছে কিনা তা নির্ধারণ করে।",
@@ -159,6 +202,10 @@ const translations = {
             anova: "একাধিক গোষ্ঠীর গড় মানে পার্থক্য আছে কিনা তা বিশ্লেষণ করে।",
             ancova: "ANOVA এবং রিগ্রেশনের সমন্বয়ে গঠিত, যেখানে কভেরিয়েট নিয়ন্ত্রণ করে গোষ্ঠীর গড় মানে পার্থক্য নির্ধারণ করা হয়।",
             shapiro: "একটি নমুনা সাধারণ বন্টন থেকে এসেছে কিনা তা নির্ধারণ করে।",
+            kolmogorov: "একটি নন-প্যারামেট্রিক পরীক্ষা যা একটি নমুনার বন্টনকে একটি আদর্শ স্বাভাবিক বন্টনের সাথে তুলনা করে।",
+            anderson: "একটি পরিসংখ্যানগত পরীক্ষা যা একটি নমুনা নির্দিষ্ট বণ্টন থেকে এসেছে কিনা তা যাচাই করে, সাধারণত স্বাভাবিক বণ্টনের জন্য ব্যবহৃত হয়।",
+            fzt: "তিনটি পরিসংখ্যানিক পরীক্ষা পরিচালনা করে: ভ্যারিয়েন্স তুলনার জন্য F-টেস্ট, গড়ের পার্থক্যের জন্য Z-টেস্ট এবং অসম ভ্যারিয়েন্সের জন্য Welch’s t-টেস্ট।",
+            cross_tabulation: "দুই বা ততোধিক শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক সারাংশ আকারে প্রদর্শন করে, ফ্রিকোয়েন্সি টেবিল ও হিটম্যাপ ব্যবহার করে।",
             chi_square: "বিভিন্ন শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক নির্ধারণ করে।",
             cramers_heatmap: "Cramér's V ব্যবহার করে শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যকার সম্পর্কের দৃঢ়তা চিত্রায়িত করে।",
             network_graph: "ভেরিয়েবলের মধ্যকার পরিসংখ্যানগত সম্পর্ক একটি গ্রাফ নেটওয়ার্কের মাধ্যমে উপস্থাপন করে।"
@@ -273,6 +320,27 @@ const StatisticalAnalysisTool = () => {
     const [dotWidth, setDotWidth] = useState(5);
     const [boxColor, setBoxColor] = useState('steelblue');
     const [medianColor, setMedianColor] = useState('red');
+
+    //
+    
+    const [fCurveColor, setFCurveColor] = useState('blue');
+    const [fLineColor, setFLineColor] = useState('red');
+    const [zCurveColor, setZCurveColor] = useState('gray');
+    const [zLineColor, setZLineColor] = useState('green');
+    const [tCurveColor, setTCurveColor] = useState('gray');
+    const [tLineColor, setTLineColor] = useState('purple');
+    const [hist1Color, setHist1Color] = useState('red');
+    const [hist2Color, setHist2Color] = useState('orange');
+
+    
+    const [heatmapColorTheme, setHeatmapColorTheme] = useState('Blues');
+    const [barColors, setBarColors] = useState('');
+    const [selectedColumns, setSelectedColumns] = useState([]);
+    const [extraColumns, setExtraColumns] = useState([]); 
+    const [swarmColor, setSwarmColor] = useState('orange');
+    const [histColor, setHistColor] = useState('blue');
+    const [kdeColor, setKdeColor] = useState('green');
+    const [distColor, setDistColor] = useState('purple');
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -353,7 +421,19 @@ const StatisticalAnalysisTool = () => {
             formData.append('dependent_col', column3);  
         } else if (testType === 'kolmogorov' || testType === 'anderson') {
             formData.append('column', column1); 
-        } else {
+        } else if (testType === 'fzt') {
+            formData.append('primary_col', column1);
+            formData.append('secondary_col', column2);
+        } else if (testType === 'eda_distribution' || testType === 'eda_pie') {
+            formData.append('column', column1); 
+        } else if (testType === 'eda_swarm') {
+            formData.append('cat_column', column1);
+            formData.append('num_column', column2);
+        } else if (testType === 'similarity') {
+            formData.append('column1', column1);
+            formData.append('column2', column2);
+        } else if (testType === 'eda_basics') {
+        }else {
             formData.append('column1', column1);
             formData.append('column2', column2);
         }
@@ -369,6 +449,112 @@ const StatisticalAnalysisTool = () => {
         }
     }
     //
+
+    if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'eda_pie', 'eda_basics'].includes(testType)) {
+            formData.append('format', imageFormat);
+            formData.append('use_default', useDefaultSettings ? 'true' : 'false');
+
+            if (!useDefaultSettings) {
+                formData.append('label_font_size', labelFontSize.toString());
+                formData.append('tick_font_size', tickFontSize.toString());
+                formData.append('image_quality', imageQuality.toString());
+                formData.append('image_size', imageSize);
+                formData.append('palette', colorPalette);
+                formData.append('bar_width', barWidth.toString());
+
+                if (['kruskal', 'mannwhitney'].includes(testType)) {
+                    formData.append('box_width', boxWidth.toString());
+                    formData.append('violin_width', violinWidth.toString());
+                }
+
+                if (testType === 'shapiro') {
+                    formData.append('bins', histogramBins.toString()); 
+                    formData.append('bar_color', barColor);            
+                    formData.append('line_color', lineColor);          
+                    formData.append('line_style', lineStyle);          
+                }
+
+                if (testType === 'linear_regression') {
+                    formData.append('legend_font_size', legendFontSize.toString());
+                    formData.append('line_color', lineColor);
+                    formData.append('line_style', lineStyle);
+                    formData.append('dot_width', dotWidth.toString());
+                    formData.append('line_width', lineWidth.toString());
+                    formData.append('dot_color', dotColor);
+                }
+
+                if (testType === 'anova') {
+                    formData.append('box_color', boxColor);
+                    formData.append('median_color', medianColor);
+                }
+
+                if (testType === 'ancova') {
+                    formData.append('box_color', boxColor);
+                    formData.append('line_color', lineColor);
+                    formData.append('line_style', lineStyle);
+                    formData.append('dot_color', dotColor);
+                    formData.append('dot_width', dotWidth.toString());
+                    formData.append('line_width', lineWidth.toString());
+                }
+
+                if (testType === 'kolmogorov') {
+                    formData.append('label_font_size', labelFontSize.toString());
+                    formData.append('tick_font_size', tickFontSize.toString());
+                    formData.append('image_quality', imageQuality.toString());
+                    formData.append('image_width', imageSize.split('x')[0]);
+                    formData.append('image_height', imageSize.split('x')[1]);
+                    formData.append('ecdf_color', dotColor);
+                    formData.append('cdf_color', lineColor);
+                    formData.append('line_style', lineStyle);
+                }
+
+                if (testType === 'anderson') {
+                    formData.append('scatter_color', dotColor);
+                    formData.append('line_color', lineColor);
+                    formData.append('line_style', lineStyle);
+                }
+
+                if (testType === 'fzt') {
+                    formData.append('line_width', lineWidth.toString());
+                    formData.append('line_style', lineStyle);
+                    formData.append('f_curve_color', fCurveColor);
+                    formData.append('f_line_color', fLineColor);
+                    formData.append('z_curve_color', zCurveColor);
+                    formData.append('z_line_color', zLineColor);
+                    formData.append('t_curve_color', tCurveColor);
+                    formData.append('t_line_color', tLineColor);
+                    formData.append('hist1_color', hist1Color);
+                    formData.append('hist2_color', hist2Color);
+                }
+
+                if (testType === 'cross_tabulation') {
+                    formData.append('column1', column1);
+                    formData.append('column2', column2);
+                    extraColumns.forEach((col, idx) => {
+                        formData.append(`column${idx + 3}`, col);
+                    });
+                }
+
+                if (testType === 'eda_distribution') {
+                    formData.append('hist_color', histColor);
+                    formData.append('kde_color', kdeColor);
+                    formData.append('dist_color', distColor);
+                }
+
+                if (testType === 'eda_swarm') {
+                    formData.append('swarm_color', swarmColor);
+                }
+
+            }
+
+            if (testType === 'pearson' || testType === 'spearman') {
+                if (heatmapSize === '4x4') {
+                    formData.append('column3', column3);
+                    formData.append('column4', column4);
+                }
+                formData.append('heatmapSize', heatmapSize);
+            }
+        }
 
     // Debug output
     for (let pair of formData.entries()) {
@@ -441,6 +627,18 @@ const StatisticalAnalysisTool = () => {
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'kruskal':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
+            case 'fzt':
+                return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
+            case 'eda_distribution':
+                return { col2: false, col3: false, refValue: false, heatmapSize: false };
+            case 'eda_swarm':
+                return { col2: true, col3: false, refValue: false, heatmapSize: false };
+            case 'eda_pie':
+                return { col2: false, col3: false, refValue: false, heatmapSize: false };
+            case 'eda_basics':
+                return { col2: false, col3: false, refValue: false, heatmapSize: false };
+            case 'similarity':
+                return { col2: true, col3: false, refValue: false, heatmapSize: false, multiColumn: false };
             default:
                 return { col2: true, col3: false, refValue: false, heatmapSize: false };
         }
@@ -540,22 +738,25 @@ const StatisticalAnalysisTool = () => {
                                                         onChange={(e) => setTestType(e.target.value)}
                                                     >
                                                         <option value="" disabled>{t.selectPrompt}</option>
+                                                           <optgroup label={t.testGroups.eda}>
+                                                            <option value="eda_basics">{t.tests.eda_basics}</option>
+                                                            <option value="eda_distribution">{t.tests.eda_distribution}</option>
+                                                            <option value="eda_swarm">{t.tests.eda_swarm}</option>
+                                                            <option value="eda_pie">{t.tests.eda_pie}</option>
+                                                            <option value="similarity">{t.tests.similarity}</option>
+                                                        </optgroup>
+                                                        <optgroup label={t.testGroups.nonParametric}>
+                                                            <option value="kruskal">{t.tests.kruskal}</option>  
+                                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>      
+                                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>                                                                                                                        
+                                                        </optgroup>
                                                         <optgroup label={t.testGroups.correlation}>
                                                             <option value="pearson">{t.tests.pearson}</option>
                                                             <option value="spearman">{t.tests.spearman}</option>
                                                         </optgroup>
                                                         <optgroup label={t.testGroups.parametric}>
-                                                            <option value="ttest_ind">{t.tests.ttest_ind}</option>
-                                                            <option value="ttest_paired">{t.tests.ttest_paired}</option>
-                                                            <option value="ttest_onesample">{t.tests.ttest_onesample}</option>
-                                                            <option value="ztest">{t.tests.ztest}</option>
-                                                            <option value="ftest">{t.tests.ftest}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.nonParametric}>
-                                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>
-                                                            <option value="kruskal">{t.tests.kruskal}</option>
-                                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>
-                                                        </optgroup>
+                                                            <option value="fzt">{t.tests.fzt}</option>
+                                                        </optgroup>                        
                                                         <optgroup label={t.testGroups.regression}>
                                                             <option value="linear_regression">{t.tests.linear_regression}</option>
                                                         </optgroup>
@@ -565,11 +766,14 @@ const StatisticalAnalysisTool = () => {
                                                         </optgroup>
                                                         <optgroup label={t.testGroups.other}>
                                                             <option value="shapiro">{t.tests.shapiro}</option>
+                                                            <option value="kolmogorov">{t.tests.kolmogorov}</option>
+                                                            <option value="anderson">{t.tests.anderson}</option>
+                                                            <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
                                                             <option value="chi_square">{t.tests.chi_square}</option>
                                                             <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
                                                             <option value="network_graph">{t.tests.network_graph}</option>
                                                         </optgroup>
-                                                    </select>
+                                              </select>
 
                                                     <div className="text-sm text-gray-600 mt-2">{t.selectPrompt}</div>
 
@@ -601,7 +805,7 @@ const StatisticalAnalysisTool = () => {
 
                                                 </div>
                                             </div>
-
+                                            {testType !== 'eda_basics' && (
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectVariables}</h5>
 
@@ -610,7 +814,11 @@ const StatisticalAnalysisTool = () => {
                                                         <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
                                                         </svg>
-                                                        {t.column1}
+                                                        {(testType === 'kolmogorov' || testType === 'anderson' || testType === 'shapiro')
+                                                            ? (language === 'bn'
+                                                                ? 'একটি সংখ্যাগত কলাম নির্বাচন করুন'
+                                                                : 'Pick a Numerical Column')
+                                                            : t.column1}
                                                     </label>
                                                     <select
                                                         className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
@@ -647,6 +855,39 @@ const StatisticalAnalysisTool = () => {
                                                                 <option key={idx} value={col}>{col}</option>
                                                             ))}
                                                         </select>
+                                                    </div>
+                                                )}
+                                                    {testType === 'cross_tabulation' && extraColumns.map((col, idx) => (
+                                                    <div key={idx} className="mb-4">
+                                                        <label className="block text-gray-700 font-medium mb-2">
+                                                            {t[`column${idx + 3}`] || `Column ${idx + 3}`}
+                                                        </label>
+                                                        <select
+                                                            value={extraColumns[idx]}
+                                                            onChange={(e) => {
+                                                                const updated = [...extraColumns];
+                                                                updated[idx] = e.target.value;
+                                                                setExtraColumns(updated);
+                                                            }}
+                                                            className="border border-gray-300 rounded-lg p-3 w-full"
+                                                        >
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, cidx) => (
+                                                                <option key={cidx} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
+                                                ))}
+                                                {testType === 'cross_tabulation' && (
+                                                    <div className="mb-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setExtraColumns([...extraColumns, ''])}
+                                                            className="bg-white text-black border border-gray-400 hover:bg-gray-100 py-2 px-4 rounded mt-2"
+
+                                                        >
+                                                            + {language === 'bn' ? 'আরও কলাম যোগ করুন' : 'Add Column'}
+                                                        </button>
                                                     </div>
                                                 )}
 
@@ -959,6 +1200,181 @@ const StatisticalAnalysisTool = () => {
                                                         t={t}
                                                     />
                                                 )}
+                                                {testType === 'fzt' && (
+                                                    <FZTOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        lineWidth={lineWidth}
+                                                        setLineWidth={setLineWidth}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        fCurveColor={fCurveColor}
+                                                        setFCurveColor={setFCurveColor}
+                                                        fLineColor={fLineColor}
+                                                        setFLineColor={setFLineColor}
+                                                        zCurveColor={zCurveColor}
+                                                        setZCurveColor={setZCurveColor}
+                                                        zLineColor={zLineColor}
+                                                        setZLineColor={setZLineColor}
+                                                        tCurveColor={tCurveColor}
+                                                        setTCurveColor={setTCurveColor}
+                                                        tLineColor={tLineColor}
+                                                        setTLineColor={setTLineColor}
+                                                        hist1Color={hist1Color}
+                                                        setHist1Color={setHist1Color}
+                                                        hist2Color={hist2Color}
+                                                        setHist2Color={setHist2Color}
+                                                        t={t}
+                                                    />
+                                                )}
+
+
+                                                {testType === 'cross_tabulation' && (
+                                                    <CrossTabulationOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
+
+                                                {testType === 'eda_distribution' && (
+                                                    <EDADistributionsOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        histColor={histColor}
+                                                        setHistColor={setHistColor}
+                                                        kdeColor={kdeColor}
+                                                        setKdeColor={setKdeColor}
+                                                        distColor={distColor}
+                                                        setDistColor={setDistColor}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'eda_swarm' && (
+                                                    <EDASwarmOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        swarmColor={swarmColor}
+                                                        setSwarmColor={setSwarmColor}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'eda_pie' && (
+                                                    <EDAPieChartOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'eda_basics' && (
+                                                    <EDABasicsOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'similarity' && (
+                                                    <SimilarityOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )}
+
+
 
 
                                                 {requiredFields.col3 && (
@@ -1027,6 +1443,7 @@ const StatisticalAnalysisTool = () => {
                                                     </div>
                                                 )}
                                             </div>
+                                            )}
 
                                             {requiredFields.refValue && (
                                                 <div className="mb-6">
@@ -1101,6 +1518,8 @@ const StatisticalAnalysisTool = () => {
                                                     <h2>{t.tests[testType]}</h2>
                                                     <pre className="modal-body">
                                                         {statTestDetails[language]?.[testType] || (
+
+                                                            console.log(statTestDetails),
                                                             language === 'bn' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
                                                         )}
                                                     </pre>
@@ -1148,6 +1567,20 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
         return renderKolmogorovResults();
         } else if (testType === 'anderson') {
         return renderAndersonDarlingResults();
+        }else if (testType === 'fzt') {
+        return renderFZTResults();
+        } else if (testType === 'cross_tabulation') {
+        return renderCrossTabulationResults();
+        } else if (testType === 'eda_distribution') {
+        return renderEDADistributionResults();
+        } else if (testType === 'eda_swarm') {
+        return renderEDASwarmResults();
+        } else if (testType === 'eda_pie') {
+        return renderEDAPieResults();
+        } else if (testType === 'eda_basics') {
+        return renderEDABasicsResults();
+        } else if (testType === 'similarity') {
+        return renderSimilarityResults();
         }
 
         switch (testType) {
@@ -2002,10 +2435,47 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={results.image_paths[0]}
+                                src={`http://127.0.1:8000${results.image_paths[0]}`}
                                 alt="ANCOVA Plot"
                                 className="w-full h-auto object-contain"
                             />
+                            <button
+                                        onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${results.image_paths[0]}`);
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = results.image_paths[0].split('/').pop() || 'ancova_plot.png';
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                            </button>
                         </div>
                     </div>
                 )}
@@ -2055,10 +2525,48 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={results.image_paths[0]}
+                                src={`http://127.0.1:8000${results.image_paths[0]}`}
                                 alt="K–S Plot"
                                 className="w-full h-auto object-contain"
                             />
+                            <button 
+                             onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${results.image_paths[0]}`);
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = results.image_paths[0].split('/').pop() || 'ancova_plot.png';
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                            </button>
+
                         </div>
                     </div>
                 )}
@@ -2108,10 +2616,47 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={results.image_paths[0]}
+                                src={`http://127.0.1:8000${results.image_paths[0]}`}
                                 alt="Anderson–Darling Plot"
                                 className="w-full h-auto object-contain"
                             />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const response = await fetch(`http://127.0.1:8000${results.image_paths[0]}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        const filename = results.image_paths[0].split('/').pop() || 'anderson_darling_plot.png';
+                                        link.href = url;
+                                        link.download = filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                }}
+                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                            >
+                                <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                            </button>
                         </div>
                     </div>
                 )}
@@ -2119,13 +2664,763 @@ const renderLinearRegressionResults = () => {
         );
     };
 
+    
+
+
+////
+
+const renderFZTResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'F / Z / T পরীক্ষার ফলাফল' : 'F / Z / T Test Results'}
+                </h2>
+
+                {columns && columns.length === 2 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
+                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
+                    </p>
+                )}
+
+
+                {results?.statistic && (
+                    <>
+                        {results.statistic.F !== undefined && (
+                            <p className="mb-2">
+                                <strong>F:</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.F.toFixed(4))}{" "}
+                                &nbsp;&nbsp;&nbsp;
+                                <strong>p(F):</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.F_p?.toFixed(6))}
+                            </p>
+                        )}
+
+                        {results.statistic.Z !== undefined && (
+                            <p className="mb-2">
+                                <strong>Z:</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.Z.toFixed(4))}{" "}
+                                &nbsp;&nbsp;&nbsp;
+                                <strong>p(Z):</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.Z_p?.toFixed(6))}
+                            </p>
+                        )}
+
+                        {results.statistic.T !== undefined && (
+                            <p className="mb-2">
+                                <strong>T:</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.T.toFixed(4))}{" "}
+                                &nbsp;&nbsp;&nbsp;
+                                <strong>p(T):</strong>{" "}
+                                {mapDigitIfBengali(results.statistic.T_p?.toFixed(6))}
+                                {results.statistic.T_df !== undefined && (
+                                    <>
+                                        {" "}
+                                        &nbsp;&nbsp;&nbsp;
+                                        <strong>df:</strong>{" "}
+                                        {mapDigitIfBengali(results.statistic.T_df?.toFixed(1))}
+                                    </>
+                                )}
+                            </p>
+                        )}
+                    </>
+                )}
+
+
+                {results?.p_value !== undefined && (
+                    <p className="mb-4">
+                        <strong>{language === 'bn' ? 'সিদ্ধান্ত:' : 'Conclusion'}:</strong>
+                        {results.p_value < 0.05 ? (
+                            <span className="text-green-600 font-medium ml-2">
+                                {language === 'bn' ? 'গুরুত্বপূর্ণ পার্থক্য পাওয়া গেছে' : 'Significant difference found'}
+                            </span>
+                        ) : (
+                            <span className="text-red-600 font-medium ml-2">
+                                {language === 'bn' ? 'গুরুত্বপূর্ণ পার্থক্য পাওয়া যায়নি' : 'No significant difference found'}
+                            </span>
+                        )}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.1:8000${path}`}
+                                        alt={`FZT visualization ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${path}`);
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = path.split('/').pop() || `fzt_visualization_${index + 1}.png`;
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                    >
+                                        <svg
+                                            className="w-4 h-4 mr-1"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+        
+    const renderCrossTabulationResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'ক্রস ট্যাবুলেশন বিশ্লেষণ' : 'Cross Tabulation Analysis'}
+                </h2>
+
+                {columns && columns.length >= 2 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{' '}
+                        {columns.map((col, idx) => (
+                            <span key={idx}>
+                                {col}
+                                {idx < columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
+                            </span>
+                        ))}
+                    </p>
+                )}
+
+                {/* Translated Table */}
+                {results.translated_table && (
+                    <div className="mt-8">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'অনুবাদিত টেবিল' : 'Translated Table'}
+                        </h3>
+                        <div className="overflow-auto">
+                            <table className="min-w-max border-collapse border border-gray-300">
+                                <thead>
+                                    <tr>
+                                        <th className="border border-gray-300 px-3 py-2 bg-gray-100">
+                                            {language === 'bn' ? 'ইন্ডেক্স' : 'Index'}
+                                        </th>
+                                        {Object.keys(results.translated_table[Object.keys(results.translated_table)[0]]).map((col, idx) => (
+                                            <th key={idx} className="border border-gray-300 px-3 py-2 bg-gray-100">
+                                                {col}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {Object.entries(results.translated_table).map(([rowLabel, rowData], idx) => (
+                                        <tr key={idx}>
+                                            <td className="border border-gray-300 px-3 py-2 bg-gray-50 font-semibold">
+                                                {rowLabel}
+                                            </td>
+                                            {Object.values(rowData).map((val, i) => (
+                                                <td key={i} className="border border-gray-300 px-3 py-2 text-center">
+                                                    {val}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Visualizations */}
+                <div className="mt-6">
+                    <h3 className="text-xl font-semibold mb-3">
+                        {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-6">
+                        {results.heatmap_path && (
+                            <div className="bg-white rounded-lg shadow-md p-4">
+                                <img
+                                    src={'http://127.0.1:8000' + results.heatmap_path}
+                                    alt="Heatmap"
+                                    className="w-full h-auto object-contain"
+                                />
+                                <button
+                                    onClick={async () => {
+                                        try {
+                                            const response = await fetch(`http://127.0.1:8000${results.heatmap_path}`);
+                                            const blob = await response.blob();
+                                            const url = window.URL.createObjectURL(blob);
+                                            const link = document.createElement('a');
+                                            const filename = results.heatmap_path.split('/').pop() || 'heatmap.png';
+                                            link.href = url;
+                                            link.download = filename;
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                            window.URL.revokeObjectURL(url);
+                                        } catch (error) {
+                                            console.error('Download failed:', error);
+                                            alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                        }
+                                    }}
+                                    className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                    title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                >
+                                    <svg
+                                        className="w-4 h-4 mr-1"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                        />
+                                    </svg>
+                                    {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                </button>
+                            </div>
+                        )}
+                        {results.barplot_path && (
+                            <div className="bg-white rounded-lg shadow-md p-4">
+                                <img
+                                    src={results.barplot_path}
+                                    alt="Barplot"
+                                    className="w-full h-auto object-contain"
+                                />
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {results.summary && (
+                    <>
+                        <p className="mb-2">
+                            <strong>{language === 'bn' ? 'মোট পর্যবেক্ষণ:' : 'Total Observations:'}</strong>{' '}
+                            {results.summary.total_observations}
+                        </p>
+                        <p className="mb-2">
+                            <strong>{language === 'bn' ? 'সর্বাধিক সাধারণ সমন্বয়:' : 'Most Frequent Combination:'}</strong>{' '}
+                            {results.summary.most_frequent}
+                        </p>
+                        <p className="mb-4">
+                            <strong>{language === 'bn' ? 'সর্বনিম্ন সাধারণ সমন্বয়:' : 'Least Frequent Combination:'}</strong>{' '}
+                            {results.summary.least_frequent}
+                        </p>
+                    </>
+                )}
+
+            </>
+        );
+    };
+
+    const renderEDADistributionResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn'
+                        ? 'ডিস্ট্রিবিউশন প্লট – হিস্টোগ্রাম + KDE'
+                        : 'Distribution Plot – Histogram + KDE'}
+                </h2>
+
+                {columns && columns[0] && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Analyzed column:'}</strong>{' '}
+                        {columns[0]}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.1:8000${path}`}
+                                        alt={`EDA Distribution plot ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${path}`);
+                                                if (!response.ok) throw new Error('Network response was not ok');
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = path.split('/').pop() || `eda_distribution_plot_${index + 1}.png`;
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                    >
+                                        <svg
+                                            className="w-4 h-4 mr-1"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    
+    const renderEDASwarmResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'স্বর্ম প্লট বিশ্লেষণ' : 'Swarm Plot Analysis'}
+                </h2>
+
+                {columns && columns.length >= 2 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
+                        {columns.map((col, i) =>
+                            `${mapDigitIfBengali(col)}${i < columns.length - 1 ? ', ' : ''}`
+                        )}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.1:8000${path}`}
+                                        alt={`Swarm Plot ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                const response = await fetch(`http://127.0.1:8000${path}`);
+                                                if (!response.ok) throw new Error('Network response was not ok');
+                                                const blob = await response.blob();
+                                                const url = window.URL.createObjectURL(blob);
+                                                const link = document.createElement('a');
+                                                const filename = path.split('/').pop() || `swarm_plot_${index + 1}.png`;
+                                                link.href = url;
+                                                link.download = filename;
+                                                document.body.appendChild(link);
+                                                link.click();
+                                                document.body.removeChild(link);
+                                                window.URL.revokeObjectURL(url);
+                                            } catch (error) {
+                                                console.error('Download failed:', error);
+                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                            }
+                                        }}
+                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                    >
+                                        <svg
+                                            className="w-4 h-4 mr-1"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                            />
+                                        </svg>
+                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderEDAPieResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'পাই চার্ট ফলাফল' : 'Pie Chart Results'}
+                </h2>
+
+                {/* Selected column info */}
+                {results.columns && results.columns.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Analyzed Column:'}</strong>{" "}
+                        {results.columns.map((col, i) => (
+                            <span key={i}>
+                                {col}
+                                {i < results.columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
+                            </span>
+                        ))}
+                    </p>
+                )}
+
+                {/* Image output */}
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                                {results.image_paths.map((path, index) => (
+                                    <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                        <img
+                                            src={`http://127.0.1:8000${path}`}
+                                            alt={`Pie Chart ${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const response = await fetch(`http://127.0.1:8000${path}`);
+                                                    if (!response.ok) throw new Error('Network response was not ok');
+                                                    const blob = await response.blob();
+                                                    const url = window.URL.createObjectURL(blob);
+                                                    const link = document.createElement('a');
+                                                    const filename = path.split('/').pop() || `pie_chart_${index + 1}.png`;
+                                                    link.href = url;
+                                                    link.download = filename;
+                                                    document.body.appendChild(link);
+                                                    link.click();
+                                                    document.body.removeChild(link);
+                                                    window.URL.revokeObjectURL(url);
+                                                } catch (error) {
+                                                    console.error('Download failed:', error);
+                                                    alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                                }
+                                            }}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                            title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                                        >
+                                            <svg
+                                                className="w-4 h-4 mr-1"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    strokeWidth="2"
+                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                />
+                                            </svg>
+                                            {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderEDABasicsResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        const renderSimpleTable = (title, data) => (
+            <div className="mb-6">
+                <h4 className="text-xl font-semibold mb-2">{title}</h4>
+                <table className="min-w-full table-auto border border-collapse border-gray-300 text-sm">
+                    <thead>
+                        <tr>
+                            <th className="border px-2 py-1 bg-gray-100">{language === 'bn' ? 'কলাম' : 'Column'}</th>
+                            <th className="border px-2 py-1 bg-gray-100">{language === 'bn' ? 'মান (%)' : 'Value (%)'}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {Object.entries(data).map(([key, value], i) => (
+                            <tr key={i}>
+                                <td className="border px-2 py-1">{key}</td>
+                                <td className="border px-2 py-1">{value}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+
+        const renderWideTable = (title, statKeys) => {
+            const columns = Object.keys(results[statKeys[0]] || {});
+            if (columns.length === 0) return null;
+
+            return (
+                <div className="mb-6 overflow-x-auto">
+                    <h4 className="text-xl font-semibold mb-2">{title}</h4>
+                    <table className="min-w-full table-auto border border-collapse border-gray-300 text-sm">
+                        <thead>
+                            <tr>
+                                <th className="border px-2 py-1 bg-gray-100">
+                                    {language === 'bn' ? 'কলাম' : 'Column'}
+                                </th>
+                                {statKeys.map((statKey, idx) => (
+                                    <th key={idx} className="border px-2 py-1 bg-gray-100">
+                                        {renderTitle(statKey)}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {columns.map((col, i) => (
+                                <tr key={i}>
+                                    <td className="border px-2 py-1">{col}</td>
+                                    {statKeys.map((statKey, idx) => (
+                                        <td key={idx} className="border px-2 py-1">
+                                            {results[statKey]?.[col] || "-"}
+                                        </td>
+                                    ))}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            );
+        };
+
+        const renderTitle = (key) => {
+            const titles = {
+                count: language === 'bn' ? 'গণনা' : 'Count',
+                min: language === 'bn' ? 'সর্বনিম্ন' : 'Min',
+                max: language === 'bn' ? 'সর্বোচ্চ' : 'Max',
+                range: language === 'bn' ? 'পরিসর' : 'Range',
+                iqr: language === 'bn' ? 'IQR' : 'IQR',
+                outliers: language === 'bn' ? 'আউটলাইয়ার সংখ্যা' : 'Outliers',
+                mean: language === 'bn' ? 'গড়' : 'Mean',
+                median: language === 'bn' ? 'মিডিয়ান' : 'Median',
+                mode: language === 'bn' ? 'মোড' : 'Mode',
+                variance: language === 'bn' ? 'চর বৈচিত্র্য' : 'Variance',
+                std: language === 'bn' ? 'স্ট্যান্ডার্ড ডেভিয়েশন' : 'Std Dev',
+                mad: language === 'bn' ? 'ম্যাড' : 'MAD',
+                skew: language === 'bn' ? 'স্কিউনেস' : 'Skewness',
+                kurt: language === 'bn' ? 'কার্টোসিস' : 'Kurtosis',
+                cv: language === 'bn' ? 'CV' : 'Coeff. of Variation',
+            };
+            return titles[key] || key;
+        };
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'মৌলিক EDA বিশ্লেষণ' : 'Basic EDA Summary'}
+                </h2>
+
+                {/* Dataset Info */}
+                {results.info && (
+                    <div className="mb-6">
+                        <h3 className="text-lg font-semibold mb-2">{language === 'bn' ? 'ডেটাসেট তথ্য' : 'Dataset Info'}</h3>
+                        <ul className="list-disc ml-6 space-y-1">
+                            <li>{language === 'bn' ? `মোট সারি: ${mapDigitIfBengali(results.info.rows)}` : `Total Rows: ${results.info.rows}`}</li>
+                            <li>{language === 'bn' ? `মোট কলাম: ${mapDigitIfBengali(results.info.columns)}` : `Total Columns: ${results.info.columns}`}</li>
+                            <li>{language === 'bn' ? `পুনরাবৃত্ত সারি: ${mapDigitIfBengali(results.info.duplicates)}` : `Duplicate Rows: ${results.info.duplicates}`}</li>
+                            <li>{language === 'bn' ? `মেমোরি ব্যবহার: ${mapDigitIfBengali(results.info.memory)} কিলোবাইট` : `Memory Usage: ${results.info.memory} KB`}</li>
+                        </ul>
+                    </div>
+                )}
+
+                {/* Table 1 */}
+                {renderWideTable(language === 'bn' ? 'টেবিল ১: পরিসংখ্যান এবং বিস্তার' : 'Table 1: Count, Min, Max, Range, IQR, Outliers', [
+                    'count', 'min', 'max', 'range', 'iqr', 'outliers'
+                ])}
+
+                {/* Table 2 */}
+                {renderWideTable(language === 'bn' ? 'টেবিল ২: কেন্দ্রীয় প্রবণতা এবং বিক্ষিপ্ততা' : 'Table 2: Central Tendency & Dispersion', [
+                    'mean', 'median', 'mode', 'variance', 'std'
+                ])}
+
+                {/* Table 3 */}
+                {renderWideTable(language === 'bn' ? 'টেবিল ৩: ম্যাড, স্কিউনেস, কার্টোসিস, সিভি' : 'Table 3: MAD, Skewness, Kurtosis, CV', [
+                    'mad', 'skew', 'kurt', 'cv'
+                ])}
+
+            </>
+        );
+    };
+
+    const renderSimilarityResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'সাদৃশ্য এবং দূরত্ব বিশ্লেষণ' : 'Similarity and Distance Analysis'}
+                </h2>
+
+                {results.heading && (
+                    <p className="mb-3 font-medium text-gray-700 dark:text-gray-300">
+                        {results.heading}
+                    </p>
+                )}
+
+                {results.columns && results.columns.length > 0 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
+                        {results.columns.map((col, i) => (
+                            <span key={i}>
+                                {col}{i < results.columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
+                            </span>
+                        ))}
+                    </p>
+                )}
+
+                {results.results && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <StatRow label={language === 'bn' ? 'কসাইন সাদৃশ্য' : 'Cosine Similarity'} value={results.results.cosine_similarity} />
+                        <StatRow label={language === 'bn' ? 'ইউক্লিডীয় দূরত্ব' : 'Euclidean Distance'} value={results.results.euclidean_distance} />
+                        <StatRow label={language === 'bn' ? 'ম্যানহাটন (L1) দূরত্ব' : 'Manhattan (L1) Distance'} value={results.results.manhattan_distance} />
+                        <StatRow label={language === 'bn' ? 'চেবিশেভ (L∞) দূরত্ব' : 'Chebyshev (L∞) Distance'} value={results.results.chebyshev_distance} />
+                        <StatRow label={
+                            language === 'bn'
+                                ? `মিনকোর্সকি (p=${results.results.p}) দূরত্ব`
+                                : `Minkowski (p=${results.results.p}) Distance`
+                        } value={results.results.minkowski_distance} />
+                        <StatRow label={language === 'bn' ? 'পিয়ারসন সহগ' : 'Pearson Correlation'} value={results.results.pearson_correlation} />
+                        <StatRow label={language === 'bn' ? 'স্পিয়ারম্যান সহগ' : 'Spearman Correlation'} value={results.results.spearman_correlation} />
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    // Helper component for consistent layout
+    const StatRow = ({ label, value }) => (
+        <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
+            <p className="font-medium text-gray-800 dark:text-gray-100">{label}</p>
+            <p className="text-blue-700 dark:text-blue-300 text-xl mt-1">{value}</p>
+        </div>
+    );
+
+
     return (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-            <div className="bg-gray-200 text-black p-4 font-semibold">
+            <div className="bg-gray-700 text-white p-4 font-semibold">
                 <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-                {language === 'বাংলা' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
+                {language === 'bn' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
             </div>
             <div className="p-6">
                 {renderResults()}
@@ -2135,13 +3430,18 @@ const renderLinearRegressionResults = () => {
                         onClick={onReset}
                         className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
                     >
-                        {language === 'বাংলা' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
+                        {language === 'bn' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
                     </button>
                 </div>
             </div>
         </div>
     );
-};
+
+
+
+
+
+
 
 // Other visualization components
 const CorrelationHeatmap = ({ data }) => {
@@ -2214,5 +3514,5 @@ const CorrelationHeatmap = ({ data }) => {
         </div>
     );
 };
-
+};
 export default StatisticalAnalysisTool;

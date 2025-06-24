@@ -128,6 +128,38 @@ def analyze_data_api(request):
             elif test_type == 'anderson':
                 column = request.POST.get('column')
                 return process_anderson_darling_test(request, df, column)  
+##
+            elif test_type == 'fzt':
+                col_group = request.POST.get('column1')
+                col_value = request.POST.get('column2')
+                return process_fzt_test(request, df, col_group, col_value)
+
+            elif test_type == 'cross_tabulation':                
+                columns = []
+                for key in request.POST:
+                    if key.startswith("column") and request.POST[key] in df.columns:
+                        columns.append(request.POST[key])
+                if len(columns) < 2:
+                    raise ValueError("Cross-tabulation requires at least 2 columns.")
+                return process_cross_tabulation(request, df, columns)
+
+            elif test_type == 'eda_distribution':
+                column = request.POST.get('column1')
+                return process_eda_distribution(request, df, column)
+
+            elif test_type == 'eda_swarm':
+                column1 = request.POST.get('column1')  
+                column2 = request.POST.get('column2')  
+                return process_eda_swarm_plot(request, df, column1, column2)
+
+            elif test_type == 'eda_pie':
+                return process_eda_pie_chart(request, df)
+            
+            elif test_type == 'eda_basics':
+                return process_eda_basics(request, df)
+
+            elif test_type == 'similarity':
+                return process_similarity(request, df)
             
             elif test_type == 'ttest_ind':
                 stat, p_value = stats.ttest_ind(df[col1], df[col2], equal_var=False, nan_policy='omit')
@@ -2031,6 +2063,8 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
         image_quality = int(request.POST.get('image_quality', 90))
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
 
+        # print(f"Using language: {language}, file format: {file_format}, image quality: {image_quality}")
+
         translator = Translator()
         digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
 
@@ -2060,8 +2094,22 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
 
         # Corrected ANCOVA model: outcome ~ covariate + group
         formula = f"{col_outcome} ~ {col_covariate} + C({col_group})"
+        # print(f"ANCOVA formula: {formula}")
+        # print(df[[col_group, col_covariate, col_outcome]].dtypes)
+        # print(df[[col_group, col_covariate, col_outcome]].isnull().sum())
+        # print(df[[col_group, col_covariate, col_outcome]].head())
+
         ancova_model = smf.ols(formula, data=df).fit()
+        # print(ancova_model.summary())
+        # if ancova_model is None: 
+        #     raise ValueError("ANCOVA model fitting failed. Please check your data and formula.")
+        
+        # print(f"ANCOVA model fitted successfully.")
         ancova_table = sm.stats.anova_lm(ancova_model, typ=2)
+        # print(ancova_table)
+
+        # print(f"ANCOVA model summary:\n{ancova_model.summary()}")
+
 
         ancova_table = ancova_table.copy()
         ancova_table['PR(>F)'] = ancova_table['PR(>F)'].apply(
@@ -2074,13 +2122,13 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
             ancova_table.index = [translate(str(idx)) for idx in ancova_table.index]
             ancova_table.columns = [translate(str(col)) for col in ancova_table.columns]
             ancova_table = ancova_table.applymap(lambda x: map_digits(str(x)))
+        # print(f"ANCOVA table:\n{ancova_table}")
 
         table_html = f"""
             <div style='display: flex; justify-content: center; margin-top: 10px;'>
                 {ancova_table.to_html(classes='table table-striped', border=1)}
             </div>
         """
-
         groups = list(df[col_group].unique())
         palette = sns.color_palette('Set2', n_colors=len(groups))
         dot_colors = [tuple(int(255 * c) for c in color) for color in palette]
@@ -2251,7 +2299,10 @@ def process_ks_test(request, df, col):
         plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f'ks_base.{file_format}')
-        final_path = os.path.join(plots_dir, f'ks_{col.replace(" ", "_")}.{file_format}')
+        import re
+        safe_col = re.sub(r'[^\w\-_.]', '_', col)  # replaces anything not A-Z, 0-9, -, _, . with _
+        final_path = os.path.join(plots_dir, f'ks_{safe_col}.{file_format}')
+
         fig.savefig(base_path, dpi=fig.dpi, format=file_format.upper())
         plt.close(fig)
 
@@ -2285,8 +2336,19 @@ def process_ks_test(request, df, col):
         Ydraw.text((0, 0), ylabel, font=label_font, fill='black')
         Yrot = Yimg.rotate(90, expand=True)
         canvas.paste(Yrot, ((left - Yrot.width) // 2, top + (bh - Yrot.height) // 2), Yrot)
+        print(f"Saving final plot to {final_path}")
 
-        canvas.save(final_path, format=file_format.upper(), quality=image_quality)
+
+
+        # canvas.save(final_path, format=file_format.upper(), quality=image_quality)
+        try:
+            canvas.save(final_path, format=file_format, quality=image_quality)
+
+        except Exception as e:
+            print("Error saving canvas:", e)
+            return JsonResponse({'success': False, 'error': f"Failed to save image: {e}"})
+
+        print(f"Final plot saved to {final_path}")
 
         return JsonResponse({
             'success': True,
@@ -2298,7 +2360,9 @@ def process_ks_test(request, df, col):
         })
 
     except Exception as e:
+        print("Error saving KS plot:", e)
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 def process_anderson_darling_test(request, df, col):
     import os
@@ -2392,7 +2456,9 @@ def process_anderson_darling_test(request, df, col):
         plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f'ad_base.{file_format}')
-        final_path = os.path.join(plots_dir, f'ad_{col.replace(" ", "_")}.{file_format}')
+        import re
+        safe_col = re.sub(r'[^\w\-_.]', '_', col)  # replaces anything not A-Z, 0-9, -, _, . with _
+        final_path = os.path.join(plots_dir, f'ad_{safe_col}.{file_format}')
         fig.savefig(base_path, format=file_format.upper(), dpi=fig.dpi)
         plt.close(fig)
 
@@ -2401,7 +2467,7 @@ def process_anderson_darling_test(request, df, col):
         bw, bh = canvas_img.size
         pad = label_font_size // 2
 
-        xlabel = translate('Theoretical Quantiles')
+        xlabel = translate(col)
         ylabel = translate('Sample Quantiles')
         x_w, x_h = label_font.getbbox(xlabel)[2:4]
         y_w, y_h = label_font.getbbox(ylabel)[2:4]
@@ -2443,7 +2509,899 @@ def process_anderson_darling_test(request, df, col):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+##
+def process_fzt_test(request, df, col_group, col_value):
+    import os
+    import numpy as np
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    from scipy import stats
+    from scipy.stats import f as f_dist, t as t_dist, norm as norm_dist
+    from statsmodels.stats.weightstats import ztest
+    from sklearn.preprocessing import OrdinalEncoder
+    from django.conf import settings
+    from django.http import JsonResponse
+    from googletrans import Translator
 
+    try:
+        # === Language and Formatting ===
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf') else file_format
+
+        # === Font setup ===
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        digit_map_bn = str.maketrans('0123456789','০১২৩৪৫৬৭৮৯')
+        translator = Translator()
+
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+
+        def map_digits(s):
+            return s.translate(digit_map_bn) if language == 'bn' else s
+
+        # === Custom Style Settings ===
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if not use_default:
+            bins = int(request.POST.get('bins', 30))
+            dist_lw = int(request.POST.get('line_width', 2))
+            dist_ls = request.POST.get('line_style', 'solid')
+            f_curve_color = request.POST.get('f_curve_color', 'blue')
+            f_line_color = request.POST.get('f_line_color', 'red')
+            z_curve_color = request.POST.get('z_curve_color', 'green')
+            z_line_color = request.POST.get('z_line_color', 'orange')
+            t_curve_color = request.POST.get('t_curve_color', 'purple')
+            t_line_color = request.POST.get('t_line_color', 'brown')
+            hist1_color = request.POST.get('hist1_color', 'red')
+            hist2_color = request.POST.get('hist2_color', 'orange')
+            image_dpi = int(request.POST.get('image_quality', 100))
+            tick_font_size = int(request.POST.get('tick_font_size', 14))
+            label_font_size = int(request.POST.get('label_font_size', 24))
+            fig_w, fig_h = 6, 4
+        else:
+            bins, dist_lw, dist_ls = 30, 2, 'solid'
+            f_curve_color, f_line_color = 'blue', 'red'
+            z_curve_color, z_line_color = 'gray', 'green'
+            t_curve_color, t_line_color = 'gray', 'purple'
+            hist1_color, hist2_color = 'red', 'orange'
+            image_dpi, tick_font_size, label_font_size = 100, 14, 24
+            fig_w, fig_h = 6, 4
+
+        # === Font configuration ===
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            pil_font = ImageFont.truetype(font_path, label_font_size)
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+        else:
+            pil_font = ImageFont.load_default()
+            tick_prop = fm.FontProperties(size=tick_font_size)
+
+        # === Preprocessing ===
+        cats = df.select_dtypes(include=['object']).columns
+        if len(cats) > 0:
+            df[cats] = OrdinalEncoder().fit_transform(df[cats])
+
+        groups = df[col_group].dropna().unique().tolist()
+        data = {g: df[df[col_group] == g][col_value].dropna().values for g in groups}
+        if len(groups) != 2:
+            return JsonResponse({'success': False, 'error': translate("You must select exactly 2 groups.")})
+
+        a1, a2 = data[groups[0]], data[groups[1]]
+        n1, n2 = len(a1), len(a2)
+        v1, v2 = a1.var(ddof=1), a2.var(ddof=1)
+
+        # === Statistics ===
+        F = v1/v2
+        dfn, dfd = n1-1, n2-1
+        pF = 2 * min(stats.f.cdf(F, dfn, dfd), 1 - stats.f.cdf(F, dfn, dfd))
+        z_stat, pZ = ztest(a1, a2)
+        t_stat, pT = stats.ttest_ind(a1, a2, equal_var=False)
+        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+
+        stats_table = f"""
+        <table class='table table-bordered'>
+            <thead><tr><th>Test</th><th>Stat</th><th>p-value</th><th>df</th></tr></thead>
+            <tbody>
+                <tr><td>F-test</td><td>{F:.4f}</td><td>{pF:.4g}</td><td>{dfn}, {dfd}</td></tr>
+                <tr><td>Z-test</td><td>{z_stat:.4f}</td><td>{pZ:.4g}</td><td>-</td></tr>
+                <tr><td>Welch T-test</td><td>{t_stat:.4f}</td><td>{pT:.4g}</td><td>{welch_df:.1f}</td></tr>
+            </tbody>
+        </table>"""
+
+        def prep_ax():
+            ax = plt.gca()
+            ax.set_xlabel(ax.get_xlabel(), fontsize=label_font_size)
+            ax.set_ylabel(ax.get_ylabel(), fontsize=label_font_size)
+            ax.set_xticklabels([map_digits(f"{x:.2f}") for x in ax.get_xticks()], fontproperties=tick_prop)
+            ax.set_yticklabels([map_digits(f"{y:.2f}") for y in ax.get_yticks()], fontproperties=tick_prop)
+            ax.grid(True)
+
+        plots = []
+        plot_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plot_dir, exist_ok=True)
+
+        def save_plot(filename, title, xlabel, ylabel):
+            plt.title(translate(title), fontsize=label_font_size)
+            plt.xlabel(translate(xlabel), fontsize=label_font_size)
+            plt.ylabel(translate(ylabel), fontsize=label_font_size)
+            prep_ax()
+            full = os.path.join(plot_dir, filename + '.' + file_format)
+            plt.savefig(full, dpi=image_dpi, bbox_inches='tight')
+            plt.close()
+            plots.append(os.path.join(settings.MEDIA_URL, 'plots', filename + '.' + file_format))
+
+        plt.figure(figsize=(fig_w, fig_h))
+        x = np.linspace(0, max(f_dist.ppf(0.99, dfn, dfd), F*2), 300)
+        plt.plot(x, f_dist.pdf(x, dfn, dfd), linewidth=dist_lw, linestyle=dist_ls, color=f_curve_color)
+        plt.axvline(F, color=f_line_color, linestyle='--', linewidth=dist_lw)
+        save_plot("f_dist", "F-Distribution vs Observed F", "F value", "Density")
+
+        plt.figure(figsize=(fig_w, fig_h))
+        x_z = np.linspace(norm_dist.ppf(0.001), norm_dist.ppf(0.999), 300)
+        plt.plot(x_z, norm_dist.pdf(x_z), linewidth=dist_lw, linestyle=dist_ls, color=z_curve_color)
+        plt.axvline(z_stat, color=z_line_color, linestyle='--', linewidth=dist_lw)
+        save_plot("z_dist", "Standard Normal vs Observed Z", "Z value", "Density")
+
+        plt.figure(figsize=(fig_w, fig_h))
+        x_t = np.linspace(t_dist.ppf(0.001, welch_df), t_dist.ppf(0.999, welch_df), 300)
+        plt.plot(x_t, t_dist.pdf(x_t, welch_df), linewidth=dist_lw, linestyle=dist_ls, color=t_curve_color)
+        plt.axvline(t_stat, color=t_line_color, linestyle='--', linewidth=dist_lw)
+        save_plot("t_dist", "T-Distribution vs Observed T", "T value", "Density")
+
+        plt.figure(figsize=(fig_w, fig_h))
+        lbl1 = map_digits(translate(str(groups[0])))
+        lbl2 = map_digits(translate(str(groups[1])))
+        sns.histplot(a1, bins=bins, kde=True, stat='density', label=lbl1, color=hist1_color, alpha=0.5)
+        sns.histplot(a2, bins=bins, kde=True, stat='density', label=lbl2, color=hist2_color, alpha=0.5)
+        plt.legend(prop=tick_prop)
+        save_plot("hist_kde", "Histogram + KDE", col_value, "Density")
+
+        return JsonResponse({
+            'success': True,
+            'test': translate("F/Z/T Tests"),
+            'table_html': stats_table,
+            'image_paths': plots,
+            'columns': [col_group, col_value],
+            'statistic': {
+                'F': round(F, 6),
+                'F_p': round(pF, 6),
+                'Z': round(z_stat, 6),
+                'Z_p': round(pZ, 6),
+                'T': round(t_stat, 6),
+                'T_p': round(pT, 6),
+                'T_df': round(welch_df, 1),
+            },
+            'p_value': min(pF, pZ, pT),
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+def process_cross_tabulation(request, df, selected_columns):
+
+    import os
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    from functools import lru_cache
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        if len(selected_columns) < 2:
+            raise ValueError("At least two columns are required for cross tabulation.")
+
+        lang = request.POST.get('language', 'en').lower()
+        if lang not in ('bn', 'en'): lang = 'en'
+        fmt = request.POST.get('format', 'png').lower()
+        if fmt not in ('png','jpg','jpeg','pdf','tiff'): fmt = 'png'
+        pil_fmt = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[fmt]
+
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        heatmap_color_theme = request.POST.get('heatmap_color_theme', 'Blues') if not use_default else 'Blues'
+        bar_width = float(request.POST.get('bar_width', 0.8))
+        label_font_size = int(request.POST.get('label_font_size', 36))
+        tick_font_size = int(request.POST.get('tick_font_size', 16))
+        image_quality = int(request.POST.get('image_quality', 90))
+        width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        fm.fontManager.addfont(font_path)
+        bengali_font = fm.FontProperties(fname=font_path).get_name()
+        mpl.rcParams['font.family'] = bengali_font
+        label_font = ImageFont.truetype(font_path, label_font_size)
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
+
+        translator = Translator()
+        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        @lru_cache(None)
+        def translate(txt):
+            return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
+
+        def map_digits(txt):
+            return txt.translate(digit_map) if lang == 'bn' else txt
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+
+        def create_labeled_plot(fig, ax, title, xlabel, ylabel, base, final):
+            ax.set(title='', xlabel='', ylabel='')
+            plt.tight_layout(pad=0)
+            fig.savefig(base, dpi=300, format='PNG', bbox_inches='tight')
+            plt.close(fig)
+            T, X, Y = map_digits(translate(title)), map_digits(translate(xlabel)), map_digits(translate(ylabel))
+            t0,t1,t2,t3 = label_font.getbbox(T); th = t3 - t1
+            x0,x1,x2,x3 = label_font.getbbox(X); xh = x3 - x1
+            y0,y1,y2,y3 = label_font.getbbox(Y); yw = y2 - y0; yh = y3 - y1
+            pad = label_font_size // 2; lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
+            img = Image.open(base).convert('RGB'); bw, bh = img.size; W, H = bw + lm + rm, bh + tm + bm
+            canvas = Image.new('RGB', (W, H), 'white'); canvas.paste(img, (lm, tm))
+            d = ImageDraw.Draw(canvas)
+            def cent(txt, fn, w): return (w - int(d.textlength(txt, font=fn))) // 2
+            d.text((cent(T, label_font, W), (tm - th) // 2), T, font=label_font, fill='black')
+            d.text((cent(X, label_font, W), tm + bh + (bm - xh) // 2), X, font=label_font, fill='black')
+            Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0)); d2 = ImageDraw.Draw(Yimg); d2.text((0, 0), Y, font=label_font, fill='black')
+            Yrot = Yimg.rotate(90, expand=True); canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
+            canvas.save(final, format=pil_fmt, quality=image_quality)
+
+        pd.set_option('display.max_rows', None)
+        colors = [mpl.colors.rgb2hex(c) for c in sns.color_palette(heatmap_color_theme, len(selected_columns))]
+        cross_tab = pd.crosstab(index=[df[v] for v in selected_columns[:-1]], columns=df[selected_columns[-1]])
+
+        dtab = cross_tab.copy().astype(str)
+        dtab = dtab.applymap(lambda x: map_digits(translate(x)))
+        dtab.index = [map_digits(translate("|".join(map(str, ix)) if isinstance(ix, tuple) else str(ix))) for ix in cross_tab.index]
+        dtab.columns = [map_digits(translate(str(c))) for c in cross_tab.columns]
+
+        annot = cross_tab.copy().astype(str)
+        for r in annot.index:
+            for c in annot.columns:
+                annot.at[r, c] = map_digits(translate(annot.at[r, c]))
+        fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        sns.heatmap(cross_tab, annot=annot, fmt='', cmap=heatmap_color_theme, cbar=True, ax=ax1)
+        ax1.set_xticklabels([map_digits(translate(str(c))) for c in cross_tab.columns], fontproperties=tick_prop, rotation=45)
+        ax1.set_yticklabels([map_digits(translate("|".join(map(str, ix)) if isinstance(ix, tuple) else str(ix))) for ix in cross_tab.index], fontproperties=tick_prop, rotation=0)
+        cb = ax1.collections[0].colorbar
+        cb.set_ticklabels([map_digits(translate(str(int(t)))) for t in cb.get_ticks()])
+        cb.ax.tick_params(labelsize=tick_font_size)
+        for lbl in cb.ax.get_yticklabels():
+            lbl.set_fontproperties(tick_prop)
+        base_heat = os.path.join(plots_dir, 'heatmap_base.png')
+        final_heatmap = os.path.join(plots_dir, f'crosstab_heatmap.{fmt}')
+        create_labeled_plot(fig1, ax1, title=f"Heatmap of {' vs '.join(selected_columns)}", xlabel=selected_columns[-1], ylabel=" × ".join(selected_columns[:-1]), base=base_heat, final=final_heatmap)
+
+        # Corrected Barplot rendering (no PIL post-processing)
+        freq_list = []
+        for v in selected_columns:
+            f = df[v].value_counts().sort_index()
+            freq_list.append(pd.DataFrame({'Value': f.index.astype(str), 'Frequency': f.values, 'Variable': v}))
+        fdf = pd.concat(freq_list, ignore_index=True)
+        if lang == 'bn':
+            fdf['Value'] = fdf['Value'].apply(lambda x: map_digits(translate(x)))
+            fdf['Variable'] = fdf['Variable'].apply(lambda x: map_digits(translate(x)))
+        fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+        sns.barplot(data=fdf, x='Value', y='Frequency', hue='Variable', palette=colors, ax=ax2, width=bar_width, dodge=True)
+        ax2.set_xlabel(map_digits(translate('Value')))
+        ax2.set_ylabel(map_digits(translate('Frequency')))
+        ax2.set_xticklabels(ax2.get_xticklabels(), fontproperties=tick_prop, rotation=45)
+        ax2.set_yticklabels([map_digits(str(int(y))) for y in ax2.get_yticks()], fontproperties=tick_prop)
+        final_bar = os.path.join(plots_dir, f'frequency_both.{fmt}')
+        fig2.savefig(final_bar, dpi=300, format=pil_fmt, bbox_inches='tight')
+        plt.close(fig2)
+
+        total = int(cross_tab.values.sum())
+        stk = cross_tab.stack()
+        mi, ma = stk.idxmin(), stk.idxmax()
+        cnt_min, cnt_max = stk.min(), stk.max()
+        min_lbl = " vs ".join(map(str, mi)) if isinstance(mi, tuple) else str(mi)
+        max_lbl = " vs ".join(map(str, ma)) if isinstance(ma, tuple) else str(ma)
+        summary = {
+            'total_observations': map_digits(translate(f"Total observations: {total}")),
+            'most_frequent': map_digits(translate(f"Most frequent combination ({max_lbl}): {cnt_max} observations.")),
+            'least_frequent': map_digits(translate(f"Least frequent combination ({min_lbl}): {cnt_min} observations."))
+        }
+
+        return JsonResponse({
+            'success': True,
+            'translated_table': dtab.to_dict(),
+            'heatmap_path': os.path.join(settings.MEDIA_URL, 'plots', f'crosstab_heatmap.{fmt}'),
+            'barplot_path': os.path.join(settings.MEDIA_URL, 'plots', f'frequency_both.{fmt}'),
+            'summary': summary,
+            'columns': selected_columns
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_eda_distribution(request, df, col):
+    import os
+    import numpy as np
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf','tiff') else file_format
+        pil_format = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[file_format]
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        digit_map = str.maketrans('0123456789','০১২৩৪৫৬৭৮৯')
+        translator = Translator()
+
+        def translate(text):
+            return translator.translate(text, dest='bn').text if language == 'bn' else text
+
+        def map_digits(txt):
+            return txt.translate(digit_map) if language == 'bn' else txt
+
+        def format_tick(x):
+            s = f"{x:.4f}".rstrip('0').rstrip('.')
+            return map_digits(translate(s))
+
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if not use_default:
+            dpi = int(request.POST.get('image_quality', 300))
+            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
+            label_font_size = int(request.POST.get('label_font_size', 50))
+            caption_font_size = int(request.POST.get('caption_font_size', 50))
+            tick_font_size = int(request.POST.get('tick_font_size', 12))
+            hist_color = request.POST.get('hist_color', 'blue')
+            kde_color = request.POST.get('kde_color', 'green')
+            dist_color = request.POST.get('dist_color', 'purple')
+        else:
+            dpi = 300
+            width, height = 800, 600
+            label_font_size = 50
+            caption_font_size = 50
+            tick_font_size = 12
+            hist_color, kde_color, dist_color = 'blue', 'green', 'purple'
+
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            label_font = ImageFont.truetype(font_path, size=label_font_size)
+            caption_font = ImageFont.truetype(font_path, size=caption_font_size)
+            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+            if language == 'bn':
+                plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+        else:
+            label_font = caption_font = ImageFont.load_default()
+            tick_prop = fm.FontProperties(size=tick_font_size)
+
+        if col not in df.columns or not np.issubdtype(df[col].dtype, np.number):
+            return JsonResponse({'success': False, 'error': translate('Selected column is not numeric.')})
+
+        def create_plot(fig, ax, title, xlabel, ylabel, base, final):
+            T = map_digits(translate(title))
+            X = map_digits(translate(xlabel))
+            Y = map_digits(translate(ylabel))
+
+            xt = [format_tick(x) for x in ax.get_xticks()]
+            yt = [format_tick(y) for y in ax.get_yticks()]
+            ax.set_xticklabels(xt, fontproperties=tick_prop, rotation=45)
+            ax.set_yticklabels(yt, fontproperties=tick_prop)
+            ax.set_title(''); ax.set_xlabel(''); ax.set_ylabel('')
+            plt.tight_layout()
+            fig.savefig(base, dpi=dpi)
+            plt.close(fig)
+
+            img = Image.open(base).convert('RGB')
+            bw, bh = img.size
+
+            bbox_Y = label_font.getbbox(Y)
+            text_w = bbox_Y[2] - bbox_Y[0]
+            text_h = bbox_Y[3] - bbox_Y[1]
+            pad = 20
+            Yimg = Image.new('RGBA', (text_w+pad*2, text_h+pad*2), (255,255,255,0))
+            d2 = ImageDraw.Draw(Yimg)
+            d2.text((pad, pad), Y, font=label_font, fill='black')
+            Yrot = Yimg.rotate(90, expand=True)
+
+            extra_left = Yrot.width + 20
+            extra_top = caption_font_size + 20
+            extra_bottom = label_font_size + 50
+            new_bw = bw + extra_left
+            new_bh = bh + extra_top + extra_bottom
+            canvas = Image.new('RGB', (new_bw, new_bh), 'white')
+            canvas.paste(img, (extra_left, extra_top))
+            draw = ImageDraw.Draw(canvas)
+
+            bbox_T = caption_font.getbbox(T)
+            wT = bbox_T[2] - bbox_T[0]
+            draw.text((extra_left+(bw-wT)//2, 10), T, font=caption_font, fill='black')
+
+            bbox_X = label_font.getbbox(X)
+            wX = bbox_X[2] - bbox_X[0]
+            draw.text((extra_left+(bw-wX)//2, extra_top+bh+(extra_bottom-20)//2), X, font=label_font, fill='black')
+
+            y_x = (extra_left - Yrot.width)//2
+            y_y = extra_top + (bh - Yrot.height)//2
+            canvas.paste(Yrot, (y_x, y_y), Yrot)
+
+            canvas.save(final, format=pil_format)
+            return final
+
+        plot_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plot_dir, exist_ok=True)
+        image_paths = []
+
+        # Histogram
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.histplot(df[col], ax=ax, color=hist_color)
+        hist_path = os.path.join(plot_dir, f'histogram_{col}.{file_format}')
+        create_plot(fig, ax, f'Histogram of {col}', col, 'Count', 'hist_base.png', hist_path)
+        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'histogram_{col}.{file_format}'))
+
+        # KDE
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.kdeplot(df[col], ax=ax, fill=True, color=kde_color)
+        kde_path = os.path.join(plot_dir, f'kde_{col}.{file_format}')
+        create_plot(fig, ax, f'KDE Plot of {col}', col, 'Density', 'kde_base.png', kde_path)
+        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'kde_{col}.{file_format}'))
+
+        # Distribution
+        g = sns.displot(df[col], kde=True, color=dist_color)
+        fig = g.fig; ax = fig.axes[0]
+        dist_path = os.path.join(plot_dir, f'distribution_{col}.{file_format}')
+        create_plot(fig, ax, f'Distribution of {col}', col, 'Frequency', 'dist_base.png', dist_path)
+        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'distribution_{col}.{file_format}'))
+
+        return JsonResponse({
+            'success': True,
+            'test': translate("EDA: Distribution Plots"),
+            'columns': [col],
+            'image_paths': image_paths
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_eda_swarm_plot(request, df, col_cat, col_num):
+    import os
+    import numpy as np
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    from django.conf import settings
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en')
+        file_format = request.POST.get('format', 'png')
+        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf','tiff') else file_format
+        pil_fmt = file_format.upper() if file_format != 'jpg' else 'JPEG'
+
+        # === Translator & Font Setup ===
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        translator = Translator()
+        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        def translate(txt):
+            return translator.translate(txt, dest='bn').text if language == 'bn' else txt
+
+        def map_digits(txt):
+            return txt.translate(digit_map) if language == 'bn' else txt
+
+        def format_tick(x):
+            s = f"{x:.4f}".rstrip('0').rstrip('.')
+            return map_digits(translate(s))
+
+        # === Custom Settings ===
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if not use_default:
+            dpi = int(request.POST.get('image_quality', 300))
+            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
+            default_label_size = int(request.POST.get('label_font_size', 50))
+            default_caption_size = default_label_size
+            default_tick_size = int(request.POST.get('tick_font_size', 12))
+            swarm_color = request.POST.get('swarm_color', 'orange')
+        else:
+            dpi, width, height = 300, 800, 600
+            default_label_size = default_caption_size = 50
+            default_tick_size = 12
+            swarm_color = 'orange'
+
+        if os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            pil_font = ImageFont.truetype(font_path, default_label_size)
+            caption_font = ImageFont.truetype(font_path, default_caption_size)
+            tick_prop = fm.FontProperties(fname=font_path, size=default_tick_size)
+            if language == 'bn':
+                plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+        else:
+            pil_font = caption_font = ImageFont.load_default()
+            tick_prop = fm.FontProperties(size=default_tick_size)
+
+        # === Plot ===
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.swarmplot(x=col_cat, y=col_num, data=df, color=swarm_color, ax=ax)
+
+        xt = [format_tick(x) for x in ax.get_xticks()]
+        yt = [format_tick(y) for y in ax.get_yticks()]
+        ax.set_xticklabels(xt, fontproperties=tick_prop, rotation=45)
+        ax.set_yticklabels(yt, fontproperties=tick_prop)
+        ax.set_title(''); ax.set_xlabel(''); ax.set_ylabel('')
+
+        title = f"Swarm Plot of {col_num} by {col_cat}"
+        xlabel = col_cat
+        ylabel = col_num
+
+        # Save base image
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, 'swarm_base.' + file_format)
+        final_path = os.path.join(plots_dir, 'swarm_final.' + file_format)
+
+        plt.tight_layout()
+        fig.savefig(base_path, dpi=dpi)
+        plt.close(fig)
+
+        # === Draw Labels ===
+        T = map_digits(translate(title))
+        X = map_digits(translate(xlabel))
+        Y = map_digits(translate(ylabel))
+
+        img = Image.open(base_path).convert('RGB')
+        bw0, bh0 = img.size
+
+        bbox_Y = pil_font.getbbox(Y)
+        text_w = bbox_Y[2] - bbox_Y[0]
+        text_h = bbox_Y[3] - bbox_Y[1]
+        pad = 20
+        Yimg = Image.new('RGBA', (text_w+pad*2, text_h+pad*2), (255,255,255,0))
+        d2 = ImageDraw.Draw(Yimg)
+        d2.text((pad, pad), Y, font=pil_font, fill='black')
+        Yrot = Yimg.rotate(90, expand=True)
+
+        extra_left = Yrot.width + 20
+        extra_top = default_caption_size + 20
+        extra_bottom = default_label_size + 20
+        new_bw = bw0 + extra_left
+        new_bh = bh0 + extra_top + extra_bottom
+
+        canvas = Image.new('RGB', (new_bw, new_bh), 'white')
+        canvas.paste(img, (extra_left, extra_top))
+        draw = ImageDraw.Draw(canvas)
+
+        # Title
+        bbox_T = caption_font.getbbox(T)
+        wT = bbox_T[2] - bbox_T[0]
+        draw.text((extra_left+(bw0-wT)//2, 10), T, font=caption_font, fill='black')
+
+        # X-label
+        bbox_X = pil_font.getbbox(X)
+        wX = bbox_X[2] - bbox_X[0]
+        draw.text((extra_left+(bw0-wX)//2, extra_top+bh0+10), X, font=pil_font, fill='black')
+
+        # Y-label
+        y_x = (extra_left - Yrot.width)//2
+        y_y = extra_top + (bh0 - Yrot.height)//2
+        canvas.paste(Yrot, (y_x, y_y), Yrot)
+
+        canvas.save(final_path, format=pil_fmt)
+
+        return JsonResponse({
+            'success': True,
+            'test': translate("Swarm Plot"),
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', 'swarm_final.' + file_format)],
+            'columns': [col_cat, col_num],
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+
+
+def process_eda_pie_chart(request, df):
+
+    import os
+    import math
+    import pandas as pd
+    import numpy as np
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib as mpl
+    import matplotlib.font_manager as fm
+    from googletrans import Translator
+    from PIL import Image, ImageDraw, ImageFont
+    from django.conf import settings
+    from django.http import JsonResponse
+    from functools import lru_cache
+
+    try:
+        # --- 1. Input values ---
+        col = request.POST.get("column")
+        language = request.POST.get("language", "en")
+        img_format = request.POST.get("format", "png").lower()
+        if img_format not in ('png','jpg','jpeg','pdf','tiff'):
+            img_format = 'png'
+        pil_fmt = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[img_format]
+
+        if col not in df.columns:
+            return JsonResponse({'success': False, 'error': f"Column '{col}' not found."})
+
+        # --- 2. Fonts and theme ---
+        width, height = 800, 600
+        dpi = 300
+        default_label_size = 50
+        default_caption_size = 50
+        default_tick_size = 12
+
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        fm.fontManager.addfont(font_path)
+        bengali_font = fm.FontProperties(fname=font_path).get_name()
+        if language == 'bn':
+            mpl.rcParams['font.family'] = bengali_font
+
+        translator = Translator()
+        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        @lru_cache(None)
+        def translate(txt): return translator.translate(txt, dest='bn').text if language == 'bn' else txt
+
+        def map_digits(txt): return txt.translate(digit_map) if language == 'bn' else txt
+
+        label_font = ImageFont.truetype(font_path, size=default_label_size)
+        caption_font = ImageFont.truetype(font_path, size=default_caption_size)
+
+        # --- 3. Plot directory ---
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_img_path = os.path.join(plots_dir, 'pie_base.png')
+        final_img_path = os.path.join(plots_dir, f'pie_{col}.{img_format}')
+
+        # --- 4. Create pie chart with PIL overlay ---
+        counts = df[col].astype(str).value_counts()
+        labels_data = counts.index.tolist()
+        sizes = counts.values
+
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        ax.pie(sizes, startangle=90)
+        ax.axis('equal')
+        plt.tight_layout()
+        fig.savefig(base_img_path, dpi=dpi, bbox_inches='tight')
+        plt.close(fig)
+
+        img = Image.open(base_img_path).convert('RGB')
+        bw0, bh0 = img.size
+        draw = ImageDraw.Draw(img)
+
+        cx, cy = bw0 / 2, bh0 / 2
+        radius = min(cx, cy) * 0.8
+        total = sizes.sum()
+        cum_angle = 0
+        for label, size in zip(labels_data, sizes):
+            angle = (size / total) * 360
+            mid_angle = cum_angle + angle / 2
+            rad = math.radians(mid_angle + 90)
+            x = cx + radius * 0.7 * math.cos(rad)
+            y = cy - radius * 0.7 * math.sin(rad)
+            translated_label = map_digits(translate(label))
+            translated_percent = map_digits(f"{(size / total) * 100:.1f}%")
+            txt = f"{translated_label} {translated_percent}"
+            bbox_txt = draw.textbbox((0, 0), txt, font=label_font)
+            w, h = bbox_txt[2] - bbox_txt[0], bbox_txt[3] - bbox_txt[1]
+            draw.text((x - w / 2, y - h / 2), txt, font=label_font, fill='black')
+            cum_angle += angle
+
+        title = map_digits(translate(f'Pie Chart of {col}'))
+        bbox_p = caption_font.getbbox(title)
+        wT = bbox_p[2] - bbox_p[0]
+        draw.text(((bw0 - wT) // 2, 10), title, font=caption_font, fill='black')
+
+        img.save(final_img_path, format=pil_fmt)
+
+        return JsonResponse({
+            'success': True,
+            'test': 'Pie Chart' if language == 'en' else 'পাই চার্ট',
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', f'pie_{col}.{img_format}')],
+            'columns': [col]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_eda_basics(request, df):
+    import numpy as np
+    import pandas as pd
+    from functools import lru_cache
+    from googletrans import Translator
+    from django.http import JsonResponse
+
+    try:
+        lang = request.POST.get('language', 'en')
+        if lang not in ['en', 'bn']:
+            lang = 'en'
+
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        def to_bn_digits(s):
+            return s.translate(digit_map_bn) if lang == 'bn' else s
+
+        @lru_cache(None)
+        def translate(text):
+            return Translator().translate(text, dest='bn').text if lang == 'bn' else text
+
+        def format_series(series):
+            return {col: to_bn_digits(f"{val:.4f}") if isinstance(val, (int, float)) else to_bn_digits(str(val))
+                    for col, val in series.items()}
+
+        def format_df(df_obj):
+            return {
+                "columns": list(df_obj.columns),
+                "index": list(df_obj.index),
+                "data": [[to_bn_digits(f"{val:.4f}") if isinstance(val, (int, float)) else to_bn_digits(str(val)) for val in row]
+                         for row in df_obj.values]
+            }
+
+        results = {}
+
+        
+
+        # Dataset structure
+        results['missing'] = format_series(df.isnull().sum())
+        results['info'] = {
+            'rows': to_bn_digits(str(df.shape[0])),
+            'columns': to_bn_digits(str(df.shape[1])),
+            'duplicates': to_bn_digits(str(df.duplicated().sum())),
+            'memory': to_bn_digits(f"{df.memory_usage(deep=True).sum() / 1024:.2f}")
+        }
+
+        # Select numerical and categorical
+        numerical_df = df.select_dtypes(include=['int64', 'float64'])
+        categorical_df = df.select_dtypes(include=['object', 'category'])
+
+        # Descriptive statistics
+        results['summary'] = format_df(numerical_df.describe().T)
+        results['count'] = format_series(numerical_df.count())
+        results['mean'] = format_series(numerical_df.mean())
+        results['min'] = format_series(numerical_df.min())
+        results['max'] = format_series(numerical_df.max())
+        results['median'] = format_series(numerical_df.median())
+        results['mode'] = format_series(numerical_df.mode().iloc[0])
+        results['variance'] = format_series(numerical_df.var())
+        results['std'] = format_series(numerical_df.std())
+
+        # MAD
+        mad = numerical_df.apply(lambda x: np.median(np.abs(x - np.median(x))))
+        results['mad'] = format_series(mad)
+
+        results['skew'] = format_series(numerical_df.skew())
+        results['kurt'] = format_series(numerical_df.kurt())
+        results['range'] = format_series(numerical_df.max() - numerical_df.min())
+        iqr = numerical_df.quantile(0.75) - numerical_df.quantile(0.25)
+        results['iqr'] = format_series(iqr)
+        cv = numerical_df.std() / numerical_df.mean()
+        results['cv'] = format_series(cv)
+
+        outliers = ((numerical_df < (numerical_df.quantile(0.25) - 1.5 * iqr)) |
+                    (numerical_df > (numerical_df.quantile(0.75) + 1.5 * iqr)))
+        results['outliers'] = format_series(outliers.sum())
+
+        # Entropy
+        def compute_entropy(series):
+            p = series.value_counts(normalize=True)
+            return -np.sum(p * np.log2(p + 1e-9))
+
+        entropy = {}
+        for col in categorical_df.columns:
+            e_val = compute_entropy(categorical_df[col])
+            entropy[col] = to_bn_digits(f"{e_val:.4f}") if lang == 'bn' else f"{e_val:.4f}"
+        results['entropy'] = entropy
+
+        return JsonResponse({'success': True, **results})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_similarity(request, df):
+    import os
+    import numpy as np
+    import pandas as pd
+    from numpy.linalg import norm
+    from scipy.stats import spearmanr
+    from googletrans import Translator
+    from django.http import JsonResponse
+    from functools import lru_cache
+    from django.conf import settings
+
+    try:
+        # 1. Read parameters
+        col1 = request.POST.get('column1')
+        col2 = request.POST.get('column2')
+        language = request.POST.get('language', 'en')
+        if language not in ('en', 'bn'):
+            language = 'en'
+
+        # 2. Translator & digit mapping
+        translator = Translator()
+        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+        @lru_cache(None)
+        def translate(txt): return translator.translate(txt, dest='bn').text if language == 'bn' else txt
+
+        def map_digits(s): return s.translate(digit_map) if language == 'bn' else s
+
+        def fmt(val, spec=".4f"):
+            s = format(val, spec)
+            return map_digits(s) if language == 'bn' else s
+
+        # 3. Validate columns
+        if not col1 or not col2:
+            return JsonResponse({'success': False, 'error': 'Missing column names'})
+
+        if col1 not in df.columns or col2 not in df.columns:
+            return JsonResponse({'success': False, 'error': translate("One or both columns not found in the dataset.")})
+
+        # 4. Filter numeric columns only
+        numeric_df = df.select_dtypes(include=[np.number])
+        if col1 not in numeric_df.columns or col2 not in numeric_df.columns:
+            return JsonResponse({'success': False, 'error': translate("Please select numeric columns only.")})
+
+        # 5. Prepare data vectors
+        A = numeric_df[col1].dropna().to_numpy()
+        B = numeric_df[col2].dropna().to_numpy()
+        min_len = min(len(A), len(B))
+        A, B = A[:min_len], B[:min_len]
+
+        # 6. Compute metrics
+        cos_sim         = float(np.dot(A, B) / (norm(A) * norm(B)))
+        euclid_dist     = float(norm(A - B))
+        manhattan_dist  = float(np.sum(np.abs(A - B)))
+        chebyshev_dist  = float(np.max(np.abs(A - B)))
+        p               = 3
+        minkowski_dist  = float(np.sum(np.abs(A - B)**p)**(1/p))
+        pearson_corr    = float(np.corrcoef(A, B)[0, 1])
+        spearman_corr, _= spearmanr(A, B)
+
+        result = {
+            'cosine_similarity': fmt(cos_sim),
+            'euclidean_distance': fmt(euclid_dist),
+            'manhattan_distance': fmt(manhattan_dist),
+            'chebyshev_distance': fmt(chebyshev_dist),
+            'minkowski_distance': fmt(minkowski_dist),
+            'pearson_correlation': fmt(pearson_corr),
+            'spearman_correlation': fmt(spearman_corr),
+            'p': map_digits(str(p)) if language == 'bn' else str(p),
+        }
+
+        heading = (
+            f"Similarity / Distance between '{col1}' and '{col2}'"
+            if language == 'en'
+            else f"'{col1}' এবং '{col2}' এর মধ্যে সাদৃশ্য/দূরত্ব"
+        )
+
+        return JsonResponse({
+            'success': True,
+            'test': 'Similarity' if language == 'en' else 'সাদৃশ্য',
+            'heading': heading,
+            'results': result,
+            'columns': [col1, col2]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 def save_plot(plt, filename):
     import os
 
