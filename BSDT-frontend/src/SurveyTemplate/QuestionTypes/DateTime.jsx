@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
+import axios from "axios";
 
 const DateTimeQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
@@ -107,6 +109,11 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
 
     setQuestions(updatedQuestions);
   };
+
+  const handleTranslation = useCallback(async () => {
+    const response = await translateText(question.text);
+    handleQuestionChange(response.data.data.translations[0].translatedText);
+  }, [handleQuestionChange, question.text]);
 
   return (
     <div className="mb-3">
@@ -219,6 +226,13 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
             onChange={handleQuestionImageUpload}
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Copy Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
         <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
           <div className="form-check form-switch">
             <input

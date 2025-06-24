@@ -58,28 +58,30 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
       text: "Enter your question here",
       type,
       image: null,
-      meta_data: {},
+      meta: {},
       privacy: "private",
       new: true,
     };
 
     switch (type) {
       case "radio":
-        baseQuestion.meta_data.options = [
+        baseQuestion.meta.options = [
           new Option("Option 1", 0),
           new Option("Option 2", 0),
         ];
         break;
       case "checkbox":
+        baseQuestion.meta.options = ["Option 1", "Option 2"];
+        break;
       case "dropdown":
-        baseQuestion.meta_data.options = ["Option 1", "Option 2"];
+        baseQuestion.meta.options = ["Option 1", "Option 2"];
         break;
       case "tickboxGrid":
-        baseQuestion.meta_data.rows = ["Row 1", "Row 2"];
-        baseQuestion.meta_data.columns = ["Column 1", "Column 2"];
+        baseQuestion.meta.rows = ["Row 1", "Row 2"];
+        baseQuestion.meta.columns = ["Column 1", "Column 2"];
         break;
       case "linearScale":
-        baseQuestion.meta_data = {
+        baseQuestion.meta = {
           min: 1,
           max: 5,
           leftLabel: "Poor",
@@ -87,14 +89,14 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
         };
         break;
       case "rating":
-        baseQuestion.meta_data.scale = 5;
+        baseQuestion.meta.scale = 5;
         break;
       case "datetime":
-        baseQuestion.meta_data.dateType = "date";
+        baseQuestion.meta.dateType = "date";
         break;
       case "likert":
-        baseQuestion.meta_data.rows = ["Subtext 1", "Subtext 2", "Subtext 3"];
-        baseQuestion.meta_data.columns = [
+        baseQuestion.meta.rows = ["Subtext 1", "Subtext 2", "Subtext 3"];
+        baseQuestion.meta.columns = [
           "Strongly Disagree",
           "Disagree",
           "Neutral",
@@ -103,7 +105,7 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
         ];
         break;
       case "text":
-        baseQuestion.meta_data.options = [];
+        baseQuestion.meta.options = [];
         break;
       default:
         break;
@@ -158,7 +160,7 @@ const filteredQuestions = questions
         q.type,
         typeAliasText,
         q.privacy,
-        JSON.stringify(q.meta_data),
+        JSON.stringify(q.meta),
       ].join(" ").toLowerCase(),
       project: (q.project_name || "").toLowerCase(),
       type: typeAliasText.toLowerCase(),

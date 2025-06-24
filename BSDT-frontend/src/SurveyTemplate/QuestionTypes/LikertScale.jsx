@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const MAX_COLUMNS = 7; 
 
@@ -22,15 +23,12 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
   useEffect(() => {
     setRequired(question.required || false);
   }, [question.required]);
-
   useEffect(() => {
     setRequireEachRowResponse(question.meta?.requireEachRowResponse || false);
   }, [question.meta?.requireEachRowResponse]);
-
   useEffect(() => {
     setEnableRowShuffle(question.meta?.enableRowShuffle || false);
   }, [question.meta?.enableRowShuffle]);
-
   const rows = useMemo(
     () => (question.meta?.rows?.length ? question.meta.rows : ["Row 1"]),
     [question.meta?.rows]
@@ -42,7 +40,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
         : ["Column 1"],
     [question.meta?.columns]
   );
-
   const updateMeta = useCallback(
     (metaUpdate) => {
       setQuestions((prev) =>
@@ -53,7 +50,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [question.id, setQuestions]
   );
-
   const handleRequired = useCallback(() => {
     const newRequiredState = !required;
     setQuestions((prev) =>
@@ -63,19 +59,16 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     );
     setRequired(newRequiredState);
   }, [question.id, setQuestions, required]);
-
   const handleRequireEachRowResponseToggle = useCallback(() => {
     const newValue = !requireEachRowResponse;
     updateMeta({ requireEachRowResponse: newValue });
     setRequireEachRowResponse(newValue);
   }, [requireEachRowResponse, updateMeta]);
-
   const handleEnableRowShuffleToggle = useCallback(() => {
     const newValue = !enableRowShuffle;
     updateMeta({ enableRowShuffle: newValue });
     setEnableRowShuffle(newValue);
   }, [enableRowShuffle, updateMeta]);
-
   const handleQuestionChange = useCallback(
     (newText) => {
       setQuestions((prev) =>
@@ -84,7 +77,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [question.id, setQuestions]
   );
-
   const handleRowChange = useCallback(
     (index, newValue) => {
       const updated = [...rows];
@@ -93,7 +85,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [rows, updateMeta]
   );
-
   const handleColumnChange = useCallback(
     (index, newValue) => {
       const updated = [...columns];
@@ -102,17 +93,14 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [columns, updateMeta]
   );
-
   const handleAddRow = useCallback(() => {
     updateMeta({ rows: [...rows, `Row ${rows.length + 1}`] });
   }, [rows, updateMeta]);
-
   const handleAddColumn = useCallback(() => {
     if (columns.length < MAX_COLUMNS) {
       updateMeta({ columns: [...columns, `Column ${columns.length + 1}`] });
     }
   }, [columns, updateMeta]);
-
   const handleDeleteRow = useCallback(
     (index) => {
       const updated = rows.filter((_, i) => i !== index);
@@ -120,7 +108,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [rows, updateMeta]
   );
-
   const handleDeleteColumn = useCallback(
     (index) => {
       const updated = columns.filter((_, i) => i !== index);
@@ -128,7 +115,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [columns, updateMeta]
   );
-
   const handleQuestionImageUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -136,7 +122,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     setShowCropper(true);
     if(event.target) event.target.value = null;
   };
-
   const removeImage = useCallback(
     (index) => {
       setQuestions((prev) =>
@@ -149,7 +134,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [question.id, setQuestions]
   );
-
   const updateAlignment = useCallback(
     (index, alignment) => {
       setQuestions((prev) =>
@@ -167,14 +151,12 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [question.id, setQuestions]
   );
-
   const handleDelete = useCallback(() => {
     setQuestions((prev) => {
       const filtered = prev.filter((q) => q.id !== question.id);
       return filtered.map((q, i) => ({ ...q, id: i + 1 }));
     });
   }, [question.id, setQuestions]);
-
   const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
@@ -195,7 +177,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
 
     setQuestions(updatedQuestions);
   }, [question, questions, rows, columns, setQuestions, requireEachRowResponse, enableRowShuffle]);
-
   const handleRowDragEnd = useCallback(
     (result) => {
       if (!result.destination) return;
@@ -208,7 +189,6 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [rows, updateMeta]
   );
-
   const handleColumnDragEnd = useCallback(
     (result) => {
       if (!result.destination) return;
@@ -221,6 +201,37 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [columns, updateMeta]
   );
+  const handleTranslation = useCallback(async () => {
+    try {
+      const questionResponse = await translateText(question.text);
+      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+        throw new Error("No translation returned for question");
+      }
+      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      //translate the array of meta.rows
+      console.log("Meta rows before translation:", question.meta.rows);
+      const rowResponse = (question.meta.rows || []).map((opt) => opt.trim()).filter(opt => opt);
+      const colResponse = (question.meta.columns || []).map((opt) => opt.trim()).filter(opt => opt);
+      if (rowResponse.length > 0) {
+        const rowTranslations = await translateText(rowResponse, "bn");
+        const translatedRows = rowTranslations.data.data.translations.map((t) => t.translatedText);
+        console.log("Translated rows:", translatedRows);
+        updateMeta({ rows: translatedRows });
+      }
+      //translate the array of meta.columns
+      if (colResponse.length > 0) {
+        const colTranslations = await translateText(colResponse, "bn");
+        const translatedColumns = colTranslations.data.data.translations.map((t) => t.translatedText);
+        console.log("Translated columns:", translatedColumns);
+        updateMeta({ columns: translatedColumns });
+      }
+      // Update the language state
+      
+    } catch (error) {
+      console.error("Error in handleTranslation:", error.message);
+    }
+  }, [handleQuestionChange, question.text, question.meta.rows, question.meta.columns, updateMeta]);
+  
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -453,6 +464,13 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleQuestionImageUpload}
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
       </div>
       {/* Additional Toggles Separated for Clarity */}
       <div className="mt-3 border-top pt-3">

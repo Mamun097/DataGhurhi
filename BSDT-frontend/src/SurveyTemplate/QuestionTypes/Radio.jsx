@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -6,20 +6,7 @@ import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is co
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import axios from "axios";
-
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
-
-const translateText = async (textArray, targetLang = "bn") => {
-  const response = await axios.post(
-    `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
-    {
-      q: textArray,
-      target: targetLang,
-      format: "text",
-    }
-  );
-  return response;
-};
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const Radio = ({
   question,
@@ -29,6 +16,11 @@ const Radio = ({
   setLanguage,
   getLabel,
 }) => {
+
+  // useEffect(() => {
+  // console.log("Updated questions:", questions);
+  // }, [questions]);
+
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -277,16 +269,15 @@ const Radio = ({
   const handleTranslation = useCallback(async () => {
     const response = await translateText(question.text);
     const optionTexts = (question.meta.options || []).map((opt) => opt.text);
-
     const translatedOptions = await translateText(optionTexts, "bn");
+    handleQuestionChange(response.data.data.translations[0].translatedText);
     const translatedTexts = translatedOptions.data.data.translations.map(
       (t) => t.translatedText
     );
-    handleQuestionChange(response.data.data.translations[0].translatedText);
     translatedTexts.forEach((translatedText, idx) => {
       updateOption(idx, translatedText);
     });
-  }, [question.id, setQuestions, updateOption, handleQuestionChange]);
+  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -476,7 +467,7 @@ const Radio = ({
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleTranslation}
-          title="Copy Question"
+          title="Translate Question"
         >
           <i className="bi bi-translate"></i>
         </button>
