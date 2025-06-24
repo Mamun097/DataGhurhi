@@ -55,7 +55,7 @@ exports.saveSurveyForm = async (req, res) => {
 
 exports.createSurveyForm = async (req, res) => {
   try {
-    const { survey_id, project_id, survey_template, title } = req.body;
+    const { survey_id, project_id, survey_template, title, response_user_logged_in_status } = req.body;
     const user_id = req.jwt.id;
     console.log(survey_template.questions);
     // Validate input
@@ -64,6 +64,8 @@ exports.createSurveyForm = async (req, res) => {
         error: "project_id, survey_template, and user_id are required",
       });
     }
+    
+    console.log("response_user_logged_in_status:", response_user_logged_in_status);
 
     const { data: survey_link, error: survey_link_error } = await supabase
       .from("survey")
@@ -89,6 +91,7 @@ exports.createSurveyForm = async (req, res) => {
         starting_date: new Date(),
         title: title || "Untitled Survey",
         survey_status: "published",
+        response_user_logged_in_status: response_user_logged_in_status || false,
       })
       .eq("survey_id", survey_id)
       .select("*");
