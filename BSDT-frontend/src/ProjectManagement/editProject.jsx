@@ -130,6 +130,7 @@ const EditProject = () => {
     "Created At",
     "Ended At",
     "Published At",
+    "Generate Survey with LLM"
   ];
 
   const loadTranslations = async () => {

@@ -11,7 +11,7 @@ const slidesEnglish = [
   {
     title: "🚀 Build and Share Surveys",
     description: [
-      "Create, design and analyze digital surveys powered by Jorip.AI.",
+      "Create, design and analyze digital surveys powered by our tool.",
       "Supports question types: multiple-choice, checkboxes, Likert scale, ranking, matrix grids, and open-ended.",
       "Choose from ready-made templates or create custom ones.",
       "Craft questionnaires in both English and Bangla.",
@@ -44,37 +44,49 @@ const slidesEnglish = [
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
-  const response = await axios.post(
-    `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
-    {
-      q: textArray,
-      target: targetLang,
-      format: "text",
-    }
-  );
-  return response.data.data.translations.map((t) => t.translatedText);
+  if (!Array.isArray(textArray) || textArray.length === 0) return textArray;
+
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation API error:", error.response?.data || error.message);
+    return textArray; // fallback to original text if API fails
+  }
 };
+
 
 const LandingPage = () => {
   const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
-  const [translatedSlides, setTranslatedSlides] = useState([]);
+  const [translatedSlide, settranslatedSlide] = useState([]);
+  const [translatedHero, setTranslatedHero] = useState({
+
+    joinText: "",
+    loginText: "",
+  });
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loadingTranslation, setLoadingTranslation] = useState(false);
   const token = localStorage.getItem("token");
 
-  const slidesToUse =
-    language === "English" || loadingTranslation ? slidesEnglish : translatedSlides;
+  const slidesToUse = language === "English" || loadingTranslation ? slidesEnglish : translatedSlide;
 
   useEffect(() => {
     const fetchTranslations = async () => {
       if (language === "English") {
-        setTranslatedSlides([]);
+        settranslatedSlide([]);
         return;
       }
 
-      const cached = localStorage.getItem("translatedSlides");
+      const cached = localStorage.getItem("translatedSlide");
       if (cached) {
-        setTranslatedSlides(JSON.parse(cached));
+        settranslatedSlide(JSON.parse(cached));
         return;
       }
 
@@ -91,8 +103,8 @@ const LandingPage = () => {
             };
           })
         );
-        setTranslatedSlides(translated);
-        localStorage.setItem("translatedSlides", JSON.stringify(translated));
+        settranslatedSlide(translated);
+        localStorage.setItem("translatedSlide", JSON.stringify(translated));
       } catch (error) {
         console.error("Translation failed:", error);
       }
@@ -100,6 +112,32 @@ const LandingPage = () => {
     };
 
     fetchTranslations();
+  }, [language]);
+
+  useEffect(() => {
+    const translateHeroTexts = async () => {
+      if (language === "English") {
+        setTranslatedHero({
+        
+          joinText: "",
+          loginText: "",
+        });
+        return;
+      }
+
+      try {
+        const result = await translateText([ "Join Today", "Log In"], "bn");
+        setTranslatedHero({
+        
+          joinText: result[0],
+          loginText: result[1],
+        });
+      } catch (e) {
+        console.error("Hero translation failed", e);
+      }
+    };
+
+    translateHeroTexts();
   }, [language]);
 
   const toggleLanguage = () => {
@@ -121,15 +159,26 @@ const LandingPage = () => {
   return (
     <div className="landing-container">
       <div className="hero-section">
-        <motion.h1 className="title" initial={{ opacity: 0, y: -30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
+        <motion.h1
+          className="title"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
           {language === "English" ? (
-            <>Welcome to <span className="highlight">Jorip.AI</span></>
+            <>Welcome to <span className="highlight">DataGhurhi</span></>
           ) : (
-            <><span className="highlight">জরিপ.এআই</span> এ স্বাগতম</>
-          )}
-        </motion.h1>
+            <>
+              <span className="highlight">ডাটাঘুড়ি</span>তে স্বাগতম
+            </>
+          )} 
+        </motion.h1> 
 
-        <motion.div className="animated-circle" animate={{ scale: [1, 1.3, 1] }} transition={{ repeat: Infinity, duration: 2 }} />
+        <motion.div
+          className="animated-circle"
+          animate={{ scale: [1, 1.3, 1] }}
+          transition={{ repeat: Infinity, duration: 2 }}
+        />
 
         <div className="language-toggle-landing">
           <label className="switch">
@@ -149,9 +198,20 @@ const LandingPage = () => {
           {loadingTranslation ? (
             <div className="loading-message">Translating content...</div>
           ) : (
-            <motion.div key={currentSlide} className="slide" initial={{ opacity: 0, x: 100 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -100 }} transition={{ duration: 0.5 }}>
+            <motion.div
+              key={currentSlide}
+              className="slide"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.5 }}
+            >
               <div className="slide-wrapper">
-                <img src={slidesToUse[currentSlide]?.image} alt="Slide visual" className="slide-image" />
+                <img
+                  src={slidesToUse[currentSlide]?.image}
+                  alt="Slide visual"
+                  className="slide-image"
+                />
                 <div className="slide-content">
                   <h2>{slidesToUse[currentSlide]?.title}</h2>
                   <ul className="slide-list">
@@ -161,10 +221,10 @@ const LandingPage = () => {
                   </ul>
                   <div className="cta-buttons">
                     <button className="primary-btn" onClick={() => (window.location.href = "/signup")}>
-                      {language === "English" ? "Join Today" : "আজই জয়েন করুন"}
+                      {language === "English" ? "Join Today" : translatedHero.joinText}
                     </button>
                     <button className="secondary-btn" onClick={() => token ? (window.location.href = "/dashboard") : (window.location.href = "/login")}>
-                      {language === "English" ? "Log In" : "লগ ইন"}
+                      {language === "English" ? "Log In" : translatedHero.loginText}
                     </button>
                   </div>
                 </div>

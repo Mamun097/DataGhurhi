@@ -15,10 +15,9 @@ import "./PremiumFeatures/TokenDisplay.css";
 import "./AdminComponents/AdminDashboard.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
-import UserSubscriptions from './PremiumFeatures/UserSubscription';
+import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
-
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -62,9 +61,7 @@ const Dashboard = () => {
   // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
 
-
   const handleAccept = async (projectId) => {
-
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
     try {
@@ -107,7 +104,7 @@ const Dashboard = () => {
   // Premium feature states
   const [showAdBanner, setShowAdBanner] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [userType, setUserType] = useState('normal');
+  const [userType, setUserType] = useState("normal");
   const [availableTokens, setAvailableTokens] = useState(0);
 
   // Admin states
@@ -117,7 +114,7 @@ const Dashboard = () => {
     activeSurveys: 0,
     totalResponses: 0,
     premiumUsers: 0,
-    recentActivities: []
+    recentActivities: [],
   });
 
   const loadTranslations = async () => {
@@ -128,7 +125,7 @@ const Dashboard = () => {
 
     const labelsToTranslate = [
       "Dashboard",
-      "Profile",
+      "My Profile",
       "Projects",
       "Collaborated Projects",
       "Premium Packages",
@@ -180,7 +177,8 @@ const Dashboard = () => {
       "Last Updated",
 
       // Admin Dashboard Labels
-      "System Overview", "Welcome to the administrative dashboard. Monitor your platform\'s performance and manage system settings.",
+      "System Overview",
+      "Welcome to the administrative dashboard. Monitor your platform's performance and manage system settings.",
       "Total Users",
       "Active Surveys",
       "Total Responses",
@@ -277,7 +275,6 @@ const Dashboard = () => {
       // "View Package History",
       // "Package History",
 
-
       // Custom Package Labels
       //"Valid price is required",
       //"Valid days is required",
@@ -301,6 +298,7 @@ const Dashboard = () => {
       "Price Multiplier",
       "Edit Unit Price",
       "Base Price Per Unit",
+      "No collaborated projects found.",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -377,9 +375,13 @@ const Dashboard = () => {
           { id: 1, activity: "New user registration", time: "2 minutes ago" },
           { id: 2, activity: "Survey created", time: "5 minutes ago" },
           { id: 3, activity: "Premium subscription", time: "15 minutes ago" },
-          { id: 4, activity: "Survey response submitted", time: "20 minutes ago" },
-          { id: 5, activity: "User profile updated", time: "25 minutes ago" }
-        ]
+          {
+            id: 4,
+            activity: "Survey response submitted",
+            time: "20 minutes ago",
+          },
+          { id: 5, activity: "User profile updated", time: "25 minutes ago" },
+        ],
       });
     }
   }, []);
@@ -402,7 +404,7 @@ const Dashboard = () => {
         setAvailableTokens(response.data.user.available_token || 0);
 
         // Check if user is admin
-        if (currentUserType === 'admin') {
+        if (currentUserType === "admin") {
           setIsAdmin(true);
           setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
           fetchAdminStats(); // Fetch admin statistics
@@ -411,7 +413,7 @@ const Dashboard = () => {
           setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
 
           // Show ad banner for normal users only once per session
-          if (currentUserType === 'normal') {
+          if (currentUserType === "normal") {
             // Check if the banner has already been shown in this session
             const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
             const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
@@ -419,7 +421,7 @@ const Dashboard = () => {
             if (!bannerAlreadyShown) {
               setShowAdBanner(true);
               // Mark banner as shown in this session
-              sessionStorage.setItem(bannerShownKey, 'true');
+              sessionStorage.setItem(bannerShownKey, "true");
             }
           }
         }
@@ -481,9 +483,9 @@ const Dashboard = () => {
   const handleAddProjectClick = () => navigate("/addproject");
   const handleProjectClick = (projectId, role) => {
     console.log("Project clicked:", projectId, "Role:", role);
-     navigate(`/view-project/${projectId}`, {
-                    state: { role: role },
-                    });
+    navigate(`/view-project/${projectId}`, {
+      state: { role: role },
+    });
   };
   // Premium feature handlers
   const handleCloseAdBanner = () => {
@@ -514,9 +516,12 @@ const Dashboard = () => {
   const fetchCollaboratedProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/collaborator/all-projects", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://localhost:2000/api/collaborator/all-projects",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
         console.log("Collaborated Projects:", response.data.projects);
@@ -535,9 +540,12 @@ const Dashboard = () => {
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/collaborator/all-invitations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await axios.get(
+        "http://localhost:2000/api/collaborator/all-invitations",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
         console.log("Collaboration Requests:", response.data.invitations);
@@ -564,11 +572,11 @@ const Dashboard = () => {
       return [
         { label: "Dashboard", key: "dashboard" },
         { label: "Customize Packages", key: "customizepackages" },
-        { label: "Profile", key: "editprofile" }
+        { label: "My Profile", key: "editprofile" },
       ];
     } else {
       return [
-        { label: "Profile", key: "editprofile" },
+        { label: "My Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
         { label: "Question Bank", key: "questionbank" },
@@ -579,8 +587,15 @@ const Dashboard = () => {
 
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} isAdmin={isAdmin} userType={userType} />
-      <div className={`dashboard-container ${isAdmin ? 'admin-dashboard' : ''}`}>
+      <NavbarAcholder
+        language={language}
+        setLanguage={setLanguage}
+        isAdmin={isAdmin}
+        userType={userType}
+      />
+      <div
+        className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
+      >
         <div className="dashboard-layout">
           <div className="profile-section">
             <div className="profile-pic-wrapper">
@@ -619,7 +634,6 @@ const Dashboard = () => {
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
-
                           const url = new URL(window.location);
                           url.searchParams.set("tab", tab.key);
                           window.history.replaceState({}, "", url);
@@ -646,9 +660,7 @@ const Dashboard = () => {
 
             {/* Admin Package Customizer */}
             {isAdmin && activeTab === "customizepackages" && (
-              <AdminPackageCustomizer
-                getLabel={getLabel}
-              />
+              <AdminPackageCustomizer getLabel={getLabel} />
             )}
 
             {/* Profile - Common for both admin and normal users */}
@@ -687,7 +699,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -709,7 +721,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -735,10 +747,7 @@ const Dashboard = () => {
             )}
 
             {activeTab === "editprofile" && !isAdmin && (
-              <UserSubscriptions
-                userType={userType}
-                language= {language}
-              />
+              <UserSubscriptions userType={userType} language={language} />
             )}
 
             {/* Normal User Tabs */}
@@ -780,7 +789,7 @@ const Dashboard = () => {
       </div>
 
       {/* Premium Ad Banner - Only show for normal users */}
-      {!isAdmin && userType === 'normal' && showAdBanner && (
+      {!isAdmin && userType === "normal" && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
           onCheckoutClick={handleCheckoutClick}

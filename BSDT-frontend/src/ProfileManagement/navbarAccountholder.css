@@ -18,12 +18,12 @@
   gap: 12px;
   flex-wrap: wrap;
 }
-
+/* 
 .logo-container img {
   height: 40px;
   max-width: 100px;
   object-fit: contain;
-}
+} */
 
 /* Search section */
 .search-container {
@@ -48,32 +48,6 @@
   color: #444;
 }
 
-/* Nav links */
-.nav-links {
-  display: flex;
-  align-items: center;
-  list-style: none;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
-.nav-links li {
-  display: flex;
-  align-items: center;
-}
-
-.nav-links a {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #333;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.nav-icon {
-  font-size: 18px;
-}
 
 /* Language toggle */
 .language-toggle {
@@ -145,8 +119,9 @@ input:checked + .slider:before {
 
 .avatar-container {
   display: flex;
+  flex-direction: column; /* stack vertically */
   align-items: center;
-  gap: 6px;
+  gap: 4px; /* small space between image and name */
 }
 
 .profile-name {
