@@ -29,7 +29,6 @@ const translateText = async (textArray, targetLang) => {
     return textArray; // Return original text array on error
   }
 };
-
 const SurveyForm = ({
   title,
   setTitle,
@@ -106,9 +105,38 @@ const SurveyForm = ({
     setLocalDescriptionText(description || "");
   }, [description]);
 
-  useEffect(() => {
+ useEffect(() => {
     const loadTranslations = async () => {
-      // ... (translation logic remains unchanged)
+      if (!GOOGLE_API_KEY) {
+        console.warn(
+          "Google Translate API key is missing. Translations will not be loaded."
+        );
+        const englishMap = {};
+        labelsToTranslate.forEach((label) => (englishMap[label] = label));
+        setTranslatedLabels(englishMap);
+        return;
+      }
+      const langCode = language === "বাংলা" || language === "bn" ? "bn" : "en";
+      if (langCode === "en") {
+        const englishMap = {};
+        labelsToTranslate.forEach((label) => (englishMap[label] = label));
+        setTranslatedLabels(englishMap);
+      } else {
+        try {
+          const translated = await translateText(labelsToTranslate, langCode);
+          const translatedMap = {};
+          labelsToTranslate.forEach((label, idx) => {
+            translatedMap[label] = translated[idx];
+          });
+          setTranslatedLabels(translatedMap);
+        } catch (e) {
+          console.error("Error during translation effect:", e);
+          // Fallback to English if translation fails
+          const englishMap = {};
+          labelsToTranslate.forEach((label) => (englishMap[label] = label));
+          setTranslatedLabels(englishMap);
+        }
+      }
     };
     loadTranslations();
   }, [language, labelsToTranslate]);
