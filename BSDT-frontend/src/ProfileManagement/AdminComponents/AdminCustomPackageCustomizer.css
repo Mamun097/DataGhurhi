@@ -1,0 +1,764 @@
+/* Custom Package Customizer Styles */
+.admin-custom-package-customizer {
+    padding: 2rem 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    min-height: 100vh;
+    margin-top: 3rem;
+}
+
+/* Loading */
+.custom-package-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    color: #64748b;
+}
+
+.admin-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e2e8f0;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Header */
+.custom-package-header {
+    background: linear-gradient(135deg, #4bb77d, #046060);
+    color: white;
+    padding: 2rem;
+    margin: -2rem 0 2rem;
+    border-radius: 0 0 1rem 1rem;
+    box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
+}
+
+.custom-package-header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.custom-package-title {
+    font-size: 2em;
+    font-weight: 700;
+    margin: 0 0 0.5rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: white;
+}
+
+.custom-package-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin: 0;
+    font-weight: 400;
+    color: white;
+}
+
+/* Section Styles */
+.custom-package-section {
+    max-width: 1200px;
+    margin: 0 auto 1.5rem;
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.custom-package-section:last-child {
+    margin-bottom: 0.7rem;
+}
+
+.section-header {
+    padding: 2rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border-bottom: 1px solid #e2e8f0;
+    /* display: flex;
+    justify-content: space-between;
+    align-items: flex-start; */
+    gap: 1rem;
+}
+
+/* For sections that need the button on the right, use a different approach */
+.section-header.with-button {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.section-header-left {
+    flex: 1;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.7rem !important;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.5rem;
+}
+
+.section-icon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.section-subtitle {
+    color: #64748b;
+    font-size: 1rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Add Validity Button */
+.add-validity-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.add-validity-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+.add-validity-btn:active {
+    transform: translateY(0);
+}
+
+.add-validity-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-icon {
+    font-size: 1rem;
+}
+
+/* Unit Prices Grid */
+.unit-prices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 2rem;
+}
+
+.unit-price-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.unit-price-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.unit-price-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-color: #10b981;
+}
+
+.unit-price-header {
+    margin-bottom: 1.5rem;
+}
+
+.item-type-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.item-type-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.item-type-badge {
+    background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+    color: #0277bd;
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.unit-price-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.price-display {
+    flex: 1;
+}
+
+.price-amount {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #10b981;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.edit-price-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.edit-price-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.edit-price-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Validity Periods Grid */
+.validity-periods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+    padding: 2rem;
+}
+
+.validity-card {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.validity-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+}
+
+.validity-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    border-color: #8b5cf6;
+}
+
+.validity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.validity-info {
+    flex: 1;
+}
+
+.validity-days {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 0.25rem;
+    line-height: 1.2;
+}
+
+.validity-raw-days {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-style: italic;
+}
+
+.validity-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.validity-action-btn {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+}
+
+.validity-action-btn.edit-btn {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+}
+
+.validity-action-btn.edit-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+}
+
+.validity-action-btn.delete-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.validity-action-btn.delete-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.validity-action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.validity-content {
+    padding-top: 1rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.multiplier-display {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.multiplier-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.multiplier-value {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #8b5cf6;
+    background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    padding: 0.25rem 0.75rem;
+    border-radius: 2rem;
+}
+
+/* Modal Styles */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1rem;
+    backdrop-filter: blur(4px);
+}
+
+.admin-modal {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.modal-title {
+    font-size: 1.25rem!important;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0;
+}
+
+.modal-close-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    font-size: 1.25rem;
+    transition: all 0.3s ease;
+}
+
+.modal-close-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.modal-close-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.admin-modal-body {
+    padding: 2rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.admin-modal-footer {
+    padding: 1.5rem 2rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-label.required {
+    position: relative;
+}
+
+.required-star {
+    color: #ef4444;
+    margin-left: 0.25rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-input.error {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-input:disabled {
+    background: #f8fafc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.875rem;
+    margin: 0.5rem 0 0;
+    font-weight: 500;
+}
+
+.validity-preview {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #bae6fd;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.preview-text {
+    color: #0369a1;
+    font-weight: 600;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+/* Modal Buttons */
+.modal-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.modal-btn.save-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.modal-btn.save-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.modal-btn.cancel-btn {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.modal-btn.cancel-btn:hover:not(:disabled) {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+.modal-btn.delete-btn {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.modal-btn.delete-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+}
+
+.modal-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Delete Modal Specific Styles */
+.admin-modal.delete-modal {
+    max-width: 400px;
+}
+
+.delete-modal-content {
+    padding: 2rem;
+    text-align: center;
+}
+
+.delete-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.delete-title {
+    font-size: 1.25rem !important;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 1rem;
+}
+
+.delete-message {
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0 0 2rem;
+}
+
+.delete-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-custom-package-customizer {
+        padding: 1rem 0;
+    }
+
+    .custom-package-header {
+        padding: 1.5rem 1rem;
+        margin: -1rem 0 1.5rem;
+    }
+
+    .custom-package-title {
+        font-size: 1.5rem;
+    }
+
+    .custom-package-subtitle {
+        font-size: 1rem;
+    }
+
+    .section-header {
+        padding: 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .add-validity-btn {
+        align-self: stretch;
+        justify-content: center;
+    }
+
+    .unit-prices-grid,
+    .validity-periods-grid {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1rem;
+    }
+
+    .admin-modal {
+        margin: 1rem;
+        max-width: none;
+    }
+
+    .admin-modal-header,
+    .admin-modal-body,
+    .admin-modal-footer {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .delete-actions {
+        flex-direction: column;
+    }
+
+    .validity-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .validity-actions {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .custom-package-header {
+        padding: 1rem;
+    }
+
+    .section-header {
+        padding: 1rem;
+    }
+
+    .unit-prices-grid,
+    .validity-periods-grid {
+        padding: 1rem;
+    }
+
+    .unit-price-card,
+    .validity-card {
+        padding: 1rem;
+    }
+
+    .item-type-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .unit-price-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .edit-price-btn {
+        align-self: stretch;
+        justify-content: center;
+    }
+}
