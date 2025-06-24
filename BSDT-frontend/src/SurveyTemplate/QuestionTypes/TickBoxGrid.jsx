@@ -7,6 +7,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const MAX_COLUMNS = 7; // Define maximum number of columns
 
@@ -212,6 +213,36 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
     },
     [columns, updateMeta]
   );
+  const handleTranslation = useCallback(async () => {
+    try {
+      const questionResponse = await translateText(question.text);
+      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+        throw new Error("No translation returned for question");
+      }
+      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      //translate the array of meta.rows
+      console.log("Meta rows before translation:", question.meta.rows);
+      const rowResponse = (question.meta.rows || []).map((opt) => opt.trim()).filter(opt => opt);
+      const colResponse = (question.meta.columns || []).map((opt) => opt.trim()).filter(opt => opt);
+      if (rowResponse.length > 0) {
+        const rowTranslations = await translateText(rowResponse, "bn");
+        const translatedRows = rowTranslations.data.data.translations.map((t) => t.translatedText);
+        console.log("Translated rows:", translatedRows);
+        updateMeta({ rows: translatedRows });
+      }
+      //translate the array of meta.columns
+      if (colResponse.length > 0) {
+        const colTranslations = await translateText(colResponse, "bn");
+        const translatedColumns = colTranslations.data.data.translations.map((t) => t.translatedText);
+        console.log("Translated columns:", translatedColumns);
+        updateMeta({ columns: translatedColumns });
+      }
+      
+    } catch (error) {
+      console.error("Error in handleTranslation:", error.message);
+    }
+  }, [handleQuestionChange, question.text, question.meta.rows, question.meta.columns, updateMeta]);
+  
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -455,6 +486,13 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleQuestionImageUpload}
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
       </div>
 
       {/* Additional Toggles Separated for Clarity */}

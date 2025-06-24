@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const Text = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
@@ -232,6 +233,12 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
     setResponseType(question.meta?.responseType || "short");
   }, [question, conditions]);
 
+  const handleTranslation = useCallback(async () => {
+    const response = await translateText(question.text);
+    handleQuestionChange(response.data.data.translations[0].translatedText);
+
+  }, [handleQuestionChange, question.text]);
+
 
   return (
     <div className="mb-3">
@@ -390,6 +397,13 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
           <i className="bi bi-image"></i>
           <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto me-2 mt-3"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
         <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleSettings} title="Response Validation Settings">
           <i className={`bi ${inputValidation ? "bi-gear-fill text-primary" : "bi-gear"}`}></i>
         </button>

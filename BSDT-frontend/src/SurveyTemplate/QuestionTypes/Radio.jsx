@@ -270,10 +270,10 @@ const Radio = ({
     const response = await translateText(question.text);
     const optionTexts = (question.meta.options || []).map((opt) => opt.text);
     const translatedOptions = await translateText(optionTexts, "bn");
+    handleQuestionChange(response.data.data.translations[0].translatedText);
     const translatedTexts = translatedOptions.data.data.translations.map(
       (t) => t.translatedText
     );
-    handleQuestionChange(response.data.data.translations[0].translatedText);
     translatedTexts.forEach((translatedText, idx) => {
       updateOption(idx, translatedText);
     });
