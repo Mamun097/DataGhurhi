@@ -198,7 +198,7 @@ const Dashboard = () => {
       "Last Month",
 
       // Admin Package Customizer Labels
-      "Package Management",
+      "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
       "Total Packages",
@@ -217,11 +217,11 @@ const Dashboard = () => {
       "Generate relevant questions based on your research goals",
       "Automatic Tagging",
       "Organize questions with intelligent tagging system",
-      "Loading packages...",
-      "Failed to load packages. Please try again.",
+      //"Loading packages...",
+      //"Failed to load packages. Please try again.",
       "Most Popular",
-      "No packages available at the moment.",
-      "Loading customization options...",
+      //"No packages available at the moment.",
+      //"Loading customization options...",
       "Build Your Custom Package",
       "Select the items you need and choose validity period",
       "Question Tags",
@@ -247,17 +247,17 @@ const Dashboard = () => {
       "AI Survey Template Generation",
       "Smart Question Generation",
       "Automatic Question Tagging",
-      "Continue as Free User",
-      "Checkout Premium Packages",
-      "Add New Package",
-      "Original Price",
-      "Discount Price",
-      "Edit Package",
-      "Total validity",
-      "Delete Package",
-      "Are you sure you want to delete the",
-      "package? This action cannot be undone.",
-      "Delete",
+      // "Continue as Free User",
+      // "Checkout Premium Packages",
+      // "Add New Package",
+      // "Original Price",
+      // "Discount Price",
+      // "Edit Package",
+      // "Total validity",
+      // "Delete Package",
+      // "Are you sure you want to delete the",
+      // "package? This action cannot be undone.",
+      // "Delete",
 
       // User Subscription Labels
       // "Active",
@@ -277,6 +277,30 @@ const Dashboard = () => {
       // "View Package History",
       // "Package History",
 
+
+      // Custom Package Labels
+      //"Valid price is required",
+      //"Valid days is required",
+      //"Valid price multiplier is required",
+      //"This validity period already exists",
+      //"Loading custom package settings...",
+      "Survey",
+      "Question",
+      "Tag",
+      "Custom Package Management",
+      "Configure unit prices and validity periods for custom packages",
+      "Unit Prices",
+      "Set base price per unit for each package item",
+      "per unit",
+      "Edit Price",
+      "Validity Periods",
+      "Configure validity periods and their price multipliers",
+      "Add Validity",
+      "Delete Validity",
+      "Edit Validity",
+      "Price Multiplier",
+      "Edit Unit Price",
+      "Base Price Per Unit",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -712,8 +736,8 @@ const Dashboard = () => {
 
             {activeTab === "editprofile" && !isAdmin && (
               <UserSubscriptions
-                getLabel={getLabel}
                 userType={userType}
+                language= {language}
               />
             )}
 
