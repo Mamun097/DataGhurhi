@@ -4,11 +4,16 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
+import translateText from "./QuestionSpecificUtils/Translation";
 
 const Checkbox = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+  
+  useEffect(() => {
+    console.log("Question component rendered with question:", question);
+  }, [question]);
+  
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-
   const [required, setRequired] = useState(question.required || false);
   const [enableOptionShuffle, setEnableOptionShuffle] = useState(
     question.meta?.enableOptionShuffle || false
@@ -226,6 +231,38 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     );
   }, [question.id, setQuestions]);
 
+  const handleTranslation = useCallback(async () => {
+    try {
+      const questionResponse = await translateText(question.text);
+      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+        throw new Error("No translation returned for question");
+      }
+      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+
+      const optionTexts = (question.meta.options || []).map((opt) => opt.trim()).filter((opt) => opt);
+
+      if (!optionTexts.length) {
+        console.warn("No options to translate");
+        return; // Exit if no options
+      }
+
+      const translatedOptions = await translateText(optionTexts, "bn");
+      if (!translatedOptions?.data?.data?.translations) {
+        throw new Error("No translations returned for options");
+      }
+
+      const translatedTexts = translatedOptions.data.data.translations.map(
+        (t) => t.translatedText
+      );
+
+      translatedTexts.forEach((translatedText, idx) => {
+        updateOption(idx, translatedText);
+      });
+    } catch (error) {
+      console.error("Error in handleTranslation:", error.message);
+    }
+  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
+  
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
@@ -373,6 +410,13 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
             onChange={handleQuestionImageUpload} 
           />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
       </div>
 
       <div className="mt-3 border-top pt-3">
