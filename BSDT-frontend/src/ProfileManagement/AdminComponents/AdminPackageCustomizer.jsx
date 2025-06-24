@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import "./AdminDashboard.css";
+import "./AdminPackageCustomizer.css";
+import AdminCustomPackageCustomizer from "./AdminCustomPackageCustomizer";
 
 const AdminPackageCustomizer = ({ getLabel }) => {
     const [packages, setPackages] = useState([]);
@@ -329,7 +330,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                 <div className="admin-package-header-content">
                     <div className="admin-package-header-info">
                         <h2 className="admin-package-title">
-                            {getLabel("Package Management")}
+                            {getLabel("Fixed Package Management")}
                         </h2>
                         <p className="admin-package-subtitle">
                             {getLabel("Manage and customize premium packages for your users")}
@@ -604,7 +605,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                     </p>
                                 </div>
                             )}
-                            
+
                         </div>
 
                         <div className="admin-modal-footer">
@@ -656,6 +657,11 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     </div>
                 </div>
             )}
+
+            {/* Custom Package Customizer Component */}
+            <AdminCustomPackageCustomizer
+                getLabel={getLabel}
+            />
         </div>
     );
 };

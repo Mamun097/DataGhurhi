@@ -1,12 +1,26 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is correctly imported and used
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
+import axios from "axios";
+import translateText from "./QuestionSpecificUtils/Translation";
 
-const Radio = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const Radio = ({
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
+
+  // useEffect(() => {
+  // console.log("Updated questions:", questions);
+  // }, [questions]);
+
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -29,7 +43,7 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
     setSelectedFile(file);
     setShowCropper(true);
     if (event.target) {
-        event.target.value = null;
+      event.target.value = null;
     }
   }, []);
 
@@ -61,8 +75,8 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
       prev.map((q) => {
         if (q.id === question.id) {
           const updatedOptions = !newValue
-            ? (q.meta?.options || []).map(opt => ({ ...opt, value: 0 }))
-            : (q.meta?.options || []);
+            ? (q.meta?.options || []).map((opt) => ({ ...opt, value: 0 }))
+            : q.meta?.options || [];
           return {
             ...q,
             meta: {
@@ -77,7 +91,6 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
     );
     setEnableMarks(newValue);
   }, [enableMarks, question.id, setQuestions]);
-
 
   const handleQuestionChange = useCallback(
     (newText) => {
@@ -147,7 +160,9 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
                 meta: {
                   ...q.meta,
                   options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? { ...opt, value: parseFloat(newValue) || 0 } : opt
+                    i === idx
+                      ? { ...opt, value: parseFloat(newValue) || 0 }
+                      : opt
                   ),
                 },
               }
@@ -202,7 +217,11 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
       id: questions.length + 1,
       meta: {
         ...question.meta,
-        options: [...(question.meta?.options || []).map(opt => new Option(opt.text, opt.value ?? 0))],
+        options: [
+          ...(question.meta?.options || []).map(
+            (opt) => new Option(opt.text, opt.value ?? 0)
+          ),
+        ],
         enableOptionShuffle: enableOptionShuffle,
         enableMarks: enableMarks,
       },
@@ -211,39 +230,62 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
     setQuestions(updatedQuestions);
-  }, [
-    question,
-    questions,
-    setQuestions,
-    enableOptionShuffle,
-    enableMarks,
-  ]);
+  }, [question, questions, setQuestions, enableOptionShuffle, enableMarks]);
 
-  const removeImageCb = useCallback((index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const removeImageCb = useCallback(
+    (index) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const updateAlignmentCb = useCallback((index, alignment) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).map((img, i) => i === index ? { ...img, alignment } : img) }
-          : q
-      )
+  const updateAlignmentCb = useCallback(
+    (index, alignment) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).map((img, i) =>
+                  i === index ? { ...img, alignment } : img
+                ),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
+
+  const handleTranslation = useCallback(async () => {
+    const response = await translateText(question.text);
+    const optionTexts = (question.meta.options || []).map((opt) => opt.text);
+    const translatedOptions = await translateText(optionTexts, "bn");
+    handleQuestionChange(response.data.data.translations[0].translatedText);
+    const translatedTexts = translatedOptions.data.data.translations.map(
+      (t) => t.translatedText
     );
-  }, [question.id, setQuestions]);
+    translatedTexts.forEach((translatedText, idx) => {
+      updateOption(idx, translatedText);
+    });
+  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
 
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em><strong>{getLabel("Multiple Choice Question")}</strong></em>
+          <em>
+            <strong>{getLabel("Multiple Choice Question")}</strong>
+          </em>
         </label>
         <TagManager
           questionId={question.id}
@@ -270,8 +312,15 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-light p-3 rounded shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
-                <img src={img.url} alt={`Question visual aid ${idx + 1}`} className="img-fluid rounded" style={{ maxHeight: '300px', maxWidth: '100%' }} />
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
+                <img
+                  src={img.url}
+                  alt={`Question visual aid ${idx + 1}`}
+                  className="img-fluid rounded"
+                  style={{ maxHeight: "300px", maxWidth: "100%" }}
+                />
               </div>
               <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
                 <select
@@ -283,7 +332,10 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
                   <option value="center">{getLabel("Center")}</option>
                   <option value="end">{getLabel("Right")}</option>
                 </select>
-                <button className="btn btn-sm btn-outline-danger" onClick={() => removeImageCb(idx)}>
+                <button
+                  className="btn btn-sm btn-outline-danger"
+                  onClick={() => removeImageCb(idx)}
+                >
                   <i className="bi bi-trash"></i>
                 </button>
               </div>
@@ -306,8 +358,12 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {options.map((option, idx) => {
                 // Ensure key and draggableId are stable and unique strings
-                const keyForOption = `option-${question.id}-${option.id || idx}`; 
-                const draggableIdForOption = `draggable-option-${question.id}-${option.id || idx}`;
+                const keyForOption = `option-${question.id}-${
+                  option.id || idx
+                }`;
+                const draggableIdForOption = `draggable-option-${question.id}-${
+                  option.id || idx
+                }`;
 
                 return (
                   <Draggable
@@ -317,9 +373,16 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
                     isDragDisabled={showCropper}
                   >
                     {(prov) => (
-                      <div ref={prov.innerRef} {...prov.draggableProps} className="row g-2 mb-2 align-items-center">
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className="row g-2 mb-2 align-items-center"
+                      >
                         <div className="col-auto" {...prov.dragHandleProps}>
-                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", cursor: "grab" }}></i>
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem", cursor: "grab" }}
+                          ></i>
                         </div>
                         <div className="col">
                           <input
@@ -331,14 +394,20 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
                           />
                         </div>
                         {enableMarks && (
-                          <div className="col-auto" style={{ minWidth: "75px", maxWidth: "100px" }}>
+                          <div
+                            className="col-auto"
+                            style={{ minWidth: "75px", maxWidth: "100px" }}
+                          >
                             <input
                               type="number"
                               className="form-control form-control-sm"
                               value={option.value ?? ""}
                               onChange={(e) => {
                                 const val = e.target.value;
-                                updateOptionValue(idx, val === "" ? 0 : parseFloat(val) || 0);
+                                updateOptionValue(
+                                  idx,
+                                  val === "" ? 0 : parseFloat(val) || 0
+                                );
                               }}
                               placeholder="Pts"
                             />
@@ -364,21 +433,44 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
         </Droppable>
       </DragDropContext>
 
-      <button className="btn btn-sm btn-outline-secondary w-auto" onClick={addOption}>
+      <button
+        className="btn btn-sm btn-outline-secondary w-auto"
+        onClick={addOption}
+      >
         ➕ {getLabel("Add Option")}
       </button>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary w-auto" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto" onClick={handleDelete} title="Delete Question">
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
           <i className="bi bi-trash"></i>
         </button>
         <label className="btn btn-outline-secondary w-auto" title="Add Image">
           <i className="bi bi-image"></i>
-          <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleQuestionImageUpload}
+          />
         </label>
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleTranslation}
+          title="Translate Question"
+        >
+          <i className="bi bi-translate"></i>
+        </button>
       </div>
 
       <div className="mt-3 border-top pt-3">
@@ -390,7 +482,10 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
             onChange={handleEnableMarksToggle}
             checked={enableMarks}
           />
-          <label className="form-check-label" htmlFor={`enableMarksRadio-${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableMarksRadio-${question.id}`}
+          >
             {getLabel("Enable Marking System")}
           </label>
         </div>
@@ -402,7 +497,10 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
             onChange={handleEnableOptionShuffleToggle}
             checked={enableOptionShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableOptionShuffleRadio-${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableOptionShuffleRadio-${question.id}`}
+          >
             {getLabel("Shuffle option order")}
           </label>
         </div>
@@ -414,7 +512,10 @@ const Radio = ({ question, questions, setQuestions, language, setLanguage, getLa
             checked={required}
             onChange={handleRequired}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchRadio-${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requiredSwitchRadio-${question.id}`}
+          >
             {getLabel("Required")}
           </label>
         </div>

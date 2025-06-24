@@ -14,7 +14,10 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import SendIcon from "@mui/icons-material/Send";
+import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
+
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
 
 const translateText = async (textArray, targetLang) => {
   try {
@@ -52,6 +55,10 @@ const EditProject = () => {
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
+
+  const [showSurveyChatbot, setShowSurveyChatbot] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState("initial");
 
   const [sortOrder, setSortOrder] = useState("asc");
   const [sortField, setSortField] = useState("title");
@@ -221,6 +228,130 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
+
+  const handleGenerateSurvey = async (surveyMeta) => {
+    setShowSurveyChatbot(false);
+    setIsLoading(true);
+    setLoadingPhase("initial");
+
+    const token = localStorage.getItem("token");
+
+    try {
+      // 1. creating a new survey
+      const resSurvey = await axios.post(
+        `http://localhost:2000/api/project/${projectId}/create-survey`,
+        { title: surveyMeta.topic || "Untitled Survey" },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const survey_id = resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
+      if (!survey_id) throw new Error("Survey not created");
+
+      // 2. calling LLM to generate questions
+      const resLLM = await axios.post(
+        `http://localhost:2000/api/generate-multiple-questions-with-llm`,
+        {
+          questionData: {
+            type: surveyMeta.questionTypes,
+            metadata: {
+              numQuestions: surveyMeta.numQuestions,
+              audience: surveyMeta.audience,
+            },
+            additionalInfo: surveyMeta.topic,
+          },
+          questionInfo: { survey_id },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // 3. parsing questions from rawResponse
+      let questions = resLLM.data;
+      if (questions.rawResponse) {
+        try {
+          const cleanedRaw = questions.rawResponse.replace(/undefined/g, "null");
+          const parsed = JSON.parse(cleanedRaw);
+          questions = Array.isArray(parsed) ? parsed : [parsed];
+        } catch (err) {
+          console.error("Failed to parse cleaned LLM response:", err.message);
+          throw new Error("Invalid LLM response format");
+        }
+      } else {
+        questions = Array.isArray(questions) ? questions : [questions];
+      }
+
+      console.log("LLM Questions:", questions);
+
+      // 4. preparing survey_template object
+      const surveyTemplatePayload = {
+        survey_id: survey_id,
+        project_id: Number(projectId),
+        title: surveyMeta.topic,
+        user_id: null,
+        survey_template: {
+          title: surveyMeta.topic,
+          description: null,
+          backgroundImage:
+            "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.pixelstalk.net%2Fwp-content%2Fuploads%2F2016%2F10%2FBlank-Wallpaper-HD.jpg&f=1&nofb=1",
+          sections: [{ id: 1, title: "Section 1" }],
+          questions: questions.map((q, i) => ({
+            id: i + 1,
+            text: q.question || q.text || "Untitled Question",
+            type: (q.type || "text").toLowerCase() === "mixed" ? "text" : (q.type || "text").toLowerCase(),
+
+            required: q.required ?? false,
+            section: 1,
+            meta: {
+              options: q.options || q.meta?.options || [],
+            },
+          })),
+        },
+      };
+
+      // 5. saving the generated survey template
+      const resSave = await axios.put(
+        `http://localhost:2000/api/surveytemplate/save`,
+        surveyTemplatePayload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (resSave.status !== 201) throw new Error("Failed to save survey template");
+
+      toast.success(getLabel("Survey created successfully!"));
+      await fetchSurveys();
+
+      // 6. redirecting to the survey
+      setTimeout(() => {
+        navigate(`/view-survey/${survey_id}`, {
+          state: {
+            project_id: projectId,
+            input_title: surveyMeta.topic,
+            survey_details: resSave.data.data,
+          },
+        });
+      }, 3000);
+    } catch (error) {
+      console.error("Survey creation error:", error);
+      toast.error(getLabel("Failed to generate survey."));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddSurveyClick = async () => {
     const result = await Swal.fire({
       title: getLabel("Enter Survey Title"),
@@ -264,7 +395,7 @@ const EditProject = () => {
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-      toast.error(getLabel("❌ Failed to create survey."));
+      toast.error(getLabel("Failed to create survey."));
     }
   }
 };
@@ -290,12 +421,13 @@ const handleDeleteSurvey = async (surveyId) => {
     toast.error(getLabel("Failed to delete survey."));
   }
 };
-  const handleSurveyClick = (survey_id, survey, survey_title) => {
+  const handleSurveyClick = (survey_id, survey, survey_title, response_user_logged_in_status) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
         input_title: survey_title || "Untitled Survey",
+        response_user_logged_in_status: response_user_logged_in_status
       },
     });
   };
@@ -316,11 +448,11 @@ const handleDeleteSurvey = async (surveyId) => {
         }
       );
 
-      toast.success(getLabel("✅ Project updated successfully!"));
+      toast.success(getLabel("Project updated successfully!"));
       setIsEditing(false);
     } catch (error) {
       console.error("Error updating project:", error);
-      toast.error(getLabel("❌ Failed to update project."));
+      toast.error(getLabel("Failed to update project."));
     }
   };
   const handleAddCollaborator = async () => {
@@ -581,6 +713,18 @@ const handleDeleteSurvey = async (surveyId) => {
               </div>
             </div>
 
+
+            {canEdit && (
+              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+                <button
+                  className="btn btn-outline-success"
+                  onClick={() => setShowSurveyChatbot(true)}
+                >
+                  <i className="bi bi-robot me-2" /> {getLabel("Generate Survey with LLM")}
+                </button>
+              </div>
+            )}
+
           <hr className="section-divider" />
           <h3 className="survey-section-heading">
             {getLabel("Existing Surveys")}
@@ -666,7 +810,7 @@ const handleDeleteSurvey = async (surveyId) => {
                   className="survey-card"
                   style={{ cursor: "pointer" }}
                   onClick={() =>
-                    handleSurveyClick(survey.survey_id, survey, survey.title)
+                    handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
                   }
                 >
                   <img
@@ -769,7 +913,7 @@ const handleDeleteSurvey = async (surveyId) => {
                         fontSize="inherit"
                         onClick={
                           canEdit
-                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title)
+                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
                             : undefined
                         }
                         style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
@@ -810,6 +954,13 @@ const handleDeleteSurvey = async (surveyId) => {
         </div>
         <ToastContainer position="top-center" autoClose={3000} />
       </div>
+
+      {showSurveyChatbot && (
+        <AISurveyChatbot
+          onClose={() => setShowSurveyChatbot(false)}
+          onGenerateSurvey={handleGenerateSurvey}
+        />
+      )}
     </>
   );
 };
