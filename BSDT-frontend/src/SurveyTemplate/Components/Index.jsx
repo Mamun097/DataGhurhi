@@ -109,7 +109,7 @@ const Index = () => {
         setBackgroundImage(survey_details.template.backgroundImage || null);
         setSurveyStatus(survey_details.survey_status || null);
         setSurveyLink(survey_details.survey_link || null);
-        setDescription(survey_details.description || null);
+        setDescription(survey_details.template.description || null);
         setIsLoggedInRequired(survey_details.response_user_logged_in_status || false);
         console.log("user logged in status", survey_details.response_user_logged_in_status);
       } else {
