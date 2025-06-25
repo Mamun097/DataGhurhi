@@ -10,6 +10,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PublicationSettingsModal from "../utils/publication_modal_settings"; // Import the modal component
+import ShareSurveyModal from "../utils/ShareSurveyModal";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -64,6 +65,7 @@ const SurveyForm = ({
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -320,8 +322,6 @@ const SurveyForm = ({
     navigate(`/survey-responses/${survey_id}`);
   };
   const handlePreview = () => {
-      // Pass all data in the router state. 
-      // We remove getLabel because functions cannot be passed this way.
       navigate("/preview", { 
         state: {
           title: title,
@@ -393,14 +393,20 @@ const SurveyForm = ({
         )}
         {surveyLink && (
           <>
-            <a
-              href={`http://localhost:5173/v/${surveyLink}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline-info btn-sm me-2"
-            >
-              <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
-            </a>
+            <button
+                onClick={() => setShowShareModal(true)} // This opens the modal
+                className="btn btn-outline-info btn-sm me-2"
+                title="Share survey link"
+              >
+                <i className="bi bi-share"></i> {getLabel("Share Survey")}
+              </button>
+
+              <ShareSurveyModal
+                show={showShareModal}
+                handleClose={() => setShowShareModal(false)}
+                surveyLink={surveyLink}
+                surveyTitle={title}
+              />
             <button
               onClick={handleSurveyResponses}
               className="btn btn-outline-info btn-sm me-2"
