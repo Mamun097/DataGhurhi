@@ -10,6 +10,7 @@ import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PublicationSettingsModal from "../utils/publication_modal_settings"; // Import the modal component
+import ShareSurveyModal from "../utils/ShareSurveyModal";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -59,10 +60,12 @@ const SurveyForm = ({
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
+  console.log("Description in SurveyForm:", description);
   
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -90,7 +93,7 @@ const SurveyForm = ({
       "Matches", "Doesn't Match", "Custom Error Message (Optional)", "Number", "Text",
       "Regex", "Length", "Levels:", "Linear Scale", "Min", "Max", "Show Labels",
       "Likert Scale", "Add Row", "Add Column", "Rows", "Columns", "Require a response in each row",
-      "Shuffle row order", "Require at least one selection", "Date", "Time", "Select Date/Time",
+      "Shuffle row order", "Require at least one selection", "Date", "Time", "Select Date/Time","Preview"
     ],
     []
   );
@@ -318,6 +321,18 @@ const SurveyForm = ({
   const handleSurveyResponses = () => {
     navigate(`/survey-responses/${survey_id}`);
   };
+  const handlePreview = () => {
+      navigate("/preview", { 
+        state: {
+          title: title,
+          sections: sections,
+          questions: questions,
+          image: currentBackgroundImage,
+          description: description,
+          language: language,
+        } 
+      });
+  };
 
   return (
     <div className="px-2 px-md-3">
@@ -378,19 +393,31 @@ const SurveyForm = ({
         )}
         {surveyLink && (
           <>
-            <a
-              href={`http://localhost:5173/v/${surveyLink}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-outline-info btn-sm me-2"
-            >
-              <i className="bi bi-link-45deg"></i> {getLabel("View Survey Link")}
-            </a>
+            <button
+                onClick={() => setShowShareModal(true)} // This opens the modal
+                className="btn btn-outline-info btn-sm me-2"
+                title="Share survey link"
+              >
+                <i className="bi bi-share"></i> {getLabel("Share Survey")}
+              </button>
+
+              <ShareSurveyModal
+                show={showShareModal}
+                handleClose={() => setShowShareModal(false)}
+                surveyLink={surveyLink}
+                surveyTitle={title}
+              />
             <button
               onClick={handleSurveyResponses}
-              className="btn btn-outline-info btn-sm"
+              className="btn btn-outline-info btn-sm me-2"
             >
               <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
+            </button>
+            <button
+              className="btn btn-outline-secondary btn-sm me-2"
+              onClick={() => handlePreview()}
+            >
+              <i className="bi bi-eye"></i> {getLabel("Preview")}
             </button>
           </>
         )}
