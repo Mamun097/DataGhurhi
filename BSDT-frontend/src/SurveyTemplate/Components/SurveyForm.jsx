@@ -59,6 +59,7 @@ const SurveyForm = ({
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
+  console.log("Description in SurveyForm:", description);
   
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
@@ -90,7 +91,7 @@ const SurveyForm = ({
       "Matches", "Doesn't Match", "Custom Error Message (Optional)", "Number", "Text",
       "Regex", "Length", "Levels:", "Linear Scale", "Min", "Max", "Show Labels",
       "Likert Scale", "Add Row", "Add Column", "Rows", "Columns", "Require a response in each row",
-      "Shuffle row order", "Require at least one selection", "Date", "Time", "Select Date/Time",
+      "Shuffle row order", "Require at least one selection", "Date", "Time", "Select Date/Time","Preview"
     ],
     []
   );
@@ -318,6 +319,20 @@ const SurveyForm = ({
   const handleSurveyResponses = () => {
     navigate(`/survey-responses/${survey_id}`);
   };
+  const handlePreview = () => {
+      // Pass all data in the router state. 
+      // We remove getLabel because functions cannot be passed this way.
+      navigate("/preview", { 
+        state: {
+          title: title,
+          sections: sections,
+          questions: questions,
+          image: currentBackgroundImage,
+          description: description,
+          language: language,
+        } 
+      });
+  };
 
   return (
     <div className="px-2 px-md-3">
@@ -388,9 +403,15 @@ const SurveyForm = ({
             </a>
             <button
               onClick={handleSurveyResponses}
-              className="btn btn-outline-info btn-sm"
+              className="btn btn-outline-info btn-sm me-2"
             >
               <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
+            </button>
+            <button
+              className="btn btn-outline-secondary btn-sm me-2"
+              onClick={() => handlePreview()}
+            >
+              <i className="bi bi-eye"></i> {getLabel("Preview")}
             </button>
           </>
         )}

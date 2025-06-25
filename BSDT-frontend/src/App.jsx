@@ -8,6 +8,7 @@ import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
 import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 import SurveyResponses from "./SurveyTemplate/Components/SurveyResponses"
+import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import QB from "./QBmanagement/QuestionBankUser";
 
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
@@ -37,6 +38,7 @@ function App() {
             <Route path="/view-project/:projectId/:role" element={<EditProject />} />
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
+            <Route path="/preview" element={<PreviewPage />} />
             {/* <Route path="/question-bank" element={<QB />} /> */}
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
