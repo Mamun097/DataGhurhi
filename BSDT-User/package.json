@@ -26,5 +26,8 @@
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0"
   },
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.0.0"
+  }
 }
