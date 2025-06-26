@@ -10,7 +10,7 @@ const swaggerDocument = yaml.load('./docs/api-docs.yml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
 
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = ['https://localhost:5173'];
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
