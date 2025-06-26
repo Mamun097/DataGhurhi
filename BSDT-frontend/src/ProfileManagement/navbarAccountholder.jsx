@@ -205,7 +205,7 @@ const NavbarAcholder = (props) => {
             <a href="/analysis">
               <FaChartBar className="nav-icon" />
               <span>
-                {language === "English" ? "Analysis" : "পরিসংখ্যান বিশ্লেষণ"}
+                {language === "English" ? "Analysis" : "বিশ্লেষণ"}
               </span>
             </a>
           </li>
