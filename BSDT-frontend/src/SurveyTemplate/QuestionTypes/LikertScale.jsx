@@ -246,6 +246,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 

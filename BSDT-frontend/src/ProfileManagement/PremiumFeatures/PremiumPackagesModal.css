@@ -75,9 +75,9 @@
     top: 50%;
     right: 25px;
     transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.9);
+    background: #e74c3c;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    color: #4a5568;
+    color: white;
     font-size: 20px;
     font-weight: bold;
     cursor: pointer;
