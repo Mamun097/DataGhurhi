@@ -292,6 +292,7 @@ const Radio = ({
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 

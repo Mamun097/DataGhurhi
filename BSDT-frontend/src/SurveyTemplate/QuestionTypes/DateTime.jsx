@@ -129,6 +129,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 

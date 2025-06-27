@@ -223,6 +223,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 
