@@ -14,6 +14,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 import SendIcon from "@mui/icons-material/Send";
+import AutoSurveyGeneration from "./AutoSurveyGeneration";
 import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -717,12 +718,17 @@ const handleDeleteSurvey = async (surveyId) => {
 
             {canEdit && (
               <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
-                <button
+                {/* <button
                   className="btn btn-outline-success"
                   onClick={() => setShowSurveyChatbot(true)}
                 >
                   <i className="bi bi-robot me-2" /> {getLabel("Generate Survey with LLM")}
-                </button>
+                </button> */}
+
+              <AutoSurveyGeneration
+                onGenerateSurvey={handleGenerateSurvey}
+                getLabel={getLabel}
+              />
               </div>
             )}
 
