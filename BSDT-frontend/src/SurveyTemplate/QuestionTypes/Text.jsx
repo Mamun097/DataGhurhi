@@ -251,6 +251,7 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 

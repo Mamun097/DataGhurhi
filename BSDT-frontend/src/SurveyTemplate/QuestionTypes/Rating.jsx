@@ -120,6 +120,7 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 

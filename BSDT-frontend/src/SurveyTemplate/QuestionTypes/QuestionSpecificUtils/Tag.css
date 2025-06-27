@@ -1,0 +1,758 @@
+/* @keyframes tagFadeIn {
+    0% {
+      opacity: 0;
+      transform: translateX(-10px) translateY(5px) scale(0.9);
+    }
+    70% {
+      opacity: 1;
+      transform: translateX(2px) translateY(0) scale(1.03);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0) translateY(0) scale(1);
+    }
+  }
+  
+  @keyframes tagFadeOut {
+    0% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: scale(0.9);
+    }
+  }
+  
+  .tag-container {
+    display: flex;
+    flex-direction: row-reverse;
+    flex-wrap: wrap;
+  }
+  
+  .tag-badge {
+    background-color: #f0f4f8 !important;
+    color: #4a5568 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px !important;
+    padding: 4px 12px !important;
+    font-size: 0.75rem !important;
+    font-weight: normal !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+  }
+  
+  .tag-badge:not(.tag-badge-editing) {
+    display: flex;
+    align-items: center;
+    margin-right: 0.25rem;
+  }
+  
+  .tag-animated {
+    opacity: 0;
+    animation: tagFadeIn 0.4s ease-out forwards;
+  }
+  
+  .tag-badge-editing {
+    display: flex;
+    align-items: center;
+    margin-right: 0.25rem;
+    position: relative;
+    visibility: hidden;
+  }
+  
+  .tag-close-hidden {
+    font-size: 0.5rem;
+    opacity: 0;
+    padding: 2px;
+  }
+  
+  .tag-close {
+    font-size: 0.5rem !important;
+    opacity: 0.6 !important;
+    padding: 2px !important;
+    transition: opacity 0.2s ease !important;
+    margin-left: 0.5rem !important;
+  }
+  
+  .tag-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    border-radius: 16px;
+    background-color: #f0f4f8;
+    padding: 0;
+    visibility: visible;
+  }
+  
+  .tag-edit-content {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 0 12px;
+  }
+  
+  .tag-edit-input {
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 0.75rem !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    outline: none !important;
+  }
+  
+  .tag-edit-confirm-btn {
+    margin-left: 0.25rem !important;
+    flex-shrink: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .tag-edit-confirm-icon {
+    color: #28a745 !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .tag-add-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 28px;
+  }
+  
+  .tag-cancel-btn {
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  .tag-generate-btn {
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
+    height: 28px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin-right: 0.25rem !important;
+  }
+  
+  .tag-input-container {
+    height: 28px;
+    position: relative;
+  }
+  
+  .tag-input-group {
+    height: 100% !important;
+  }
+  
+  .tag-input {
+    width: 120px !important;
+    height: 100% !important;
+    font-size: 0.75rem !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    box-shadow: 0 0 2px rgba(0, 0, 255, 0.50) !important;
+    outline: none !important;
+  }
+  
+  .tag-dropdown {
+    position: absolute;
+    margin-top: 0.25rem;
+    width: 100%;
+    min-width: 120px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1050;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
+    background-color: white;
+  }
+  
+  .tag-suggestion {
+    font-size: 0.75rem !important;
+    transition: background-color 0.15s ease !important;
+    text-align: left !important;
+    width: 100% !important;
+    border: 0 !important;
+    padding: 0.25rem 0.5rem !important;
+    border-radius: 0 !important;
+  }
+  
+  .tag-suggestion:hover,
+  .tag-suggestion:focus {
+    background-color: #e9ecef !important;
+  }
+  
+  .tag-add-button {
+    font-size: 0.75rem !important;
+    padding: 2px 8px !important;
+    height: 28px !important;
+    box-shadow: none !important;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s !important;
+  }
+  
+  .tag-add-icon {
+    font-size: 0.75rem !important;
+    box-shadow: none !important;
+    color: #007bff !important;
+    transition: color 0.2s !important;
+  } */
+
+  /* Tag.css */
+
+/* Tag animations */
+@keyframes tagFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px) translateY(5px) scale(0.9);
+  }
+  70% {
+    opacity: 1;
+    transform: translateX(2px) translateY(0) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) translateY(0) scale(1);
+  }
+}
+
+@keyframes tagFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Tag container styling */
+.tag-container {
+  display: flex;
+  flex-direction: row-reverse;
+  flex-wrap: wrap;
+}
+
+/* Tag badge styling */
+.tag-badge {
+  background-color: #f0f4f8 !important;
+  color: #4a5568 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 16px !important;
+  padding: 4px 12px !important;
+  font-size: 0.75rem !important;
+  font-weight: normal !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1) !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+/* Tag badge in regular state */
+.tag-badge:not(.tag-badge-editing) {
+  display: flex;
+  align-items: center;
+  margin-right: 0.25rem;
+}
+
+/* Animated tag styling */
+.tag-animated {
+  opacity: 0;
+  animation: tagFadeIn 0.4s ease-out forwards;
+}
+
+/* Tag badge in editing state */
+.tag-badge-editing {
+  display: flex;
+  align-items: center;
+  margin-right: 0.25rem;
+  position: relative;
+  visibility: hidden; /* Hide but keep space */
+}
+
+/* Hidden close button during edit */
+.tag-close-hidden {
+  font-size: 0.5rem;
+  opacity: 0;
+  padding: 2px;
+}
+
+/* Tag close button */
+.tag-close {
+  font-size: 0.5rem !important;
+  opacity: 0.6 !important;
+  padding: 2px !important;
+  transition: opacity 0.2s ease !important;
+  margin-left: 0.5rem !important;
+}
+
+/* Tag edit overlay */
+.tag-edit-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  background-color: #f0f4f8;
+  padding: 0;
+  visibility: visible;
+}
+
+/* Tag edit content */
+.tag-edit-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 12px;
+}
+
+/* Tag edit input */
+.tag-edit-input {
+  width: 100% !important;
+  height: 100% !important;
+  font-size: 0.75rem !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  outline: none !important;
+}
+
+/* Tag edit confirm button */
+.tag-edit-confirm-btn {
+  margin-left: 0.25rem !important;
+  flex-shrink: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Tag edit confirm icon */
+.tag-edit-confirm-icon {
+  color: #28a745 !important;
+  font-size: 0.75rem !important;
+}
+
+/* Tag add container */
+.tag-add-container {
+  display: flex;
+  align-items: center;
+  position: relative;
+  height: 28px;
+}
+
+/* Tag cancel button */
+.tag-cancel-btn {
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 0.25rem !important;
+}
+
+/* Tag generate button - Updated for premium functionality */
+.tag-generate-btn {
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-right: 0.25rem !important;
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.tag-generate-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tag-generate-btn.eligible {
+  border-color: #007bff;
+  background-color: #007bff;
+  color: white;
+}
+
+.tag-generate-btn.eligible:hover:not(:disabled) {
+  background-color: #1d8b37;
+  border-color: #007bff;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.tag-generate-btn.not-eligible {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+}
+
+.tag-generate-btn.not-eligible:hover:not(:disabled) {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+/* Lock icon for premium feature */
+.tag-lock-icon {
+  margin-left: 2px;
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+}
+
+/* Tag input container */
+.tag-input-container {
+  height: 28px;
+  position: relative;
+}
+
+/* Tag input group */
+.tag-input-group {
+  height: 100% !important;
+}
+
+/* Tag input field */
+.tag-input {
+  width: 120px !important;
+  height: 100% !important;
+  font-size: 0.75rem !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+  box-shadow: 0 0 2px rgba(0, 0, 255, 0.50) !important;
+  outline: none !important;
+}
+
+/* Tag dropdown */
+.tag-dropdown {
+  position: absolute;
+  margin-top: 0.25rem;
+  width: 100%;
+  min-width: 120px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1050;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 0.25rem;
+  background-color: white;
+}
+
+/* Tag suggestion button */
+.tag-suggestion {
+  font-size: 0.75rem !important;
+  transition: background-color 0.15s ease !important;
+  text-align: left !important;
+  width: 100% !important;
+  border: 0 !important;
+  padding: 0.25rem 0.5rem !important;
+  border-radius: 0 !important;
+}
+
+.tag-suggestion:hover,
+.tag-suggestion:focus {
+  background-color: #e9ecef !important;
+}
+
+/* Tag add button */
+.tag-add-button {
+  font-size: 0.75rem !important;
+  padding: 2px 8px !important;
+  height: 28px !important;
+  box-shadow: none !important;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s !important;
+}
+
+/* Tag add icon */
+.tag-add-icon {
+  font-size: 0.75rem !important;
+  box-shadow: none !important;
+  color: #007bff !important;
+  transition: color 0.2s !important;
+}
+
+/* Premium Modal Styles for Tags */
+.tag-upgrade-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+}
+
+.tag-modal-backdrop-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+}
+
+.tag-modal-content-custom {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  max-width: 500px;
+  width: 90%;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1060;
+  overflow: hidden;
+}
+
+.tag-modal-header-custom {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #e9ecef;
+  position: relative;
+}
+
+.tag-modal-title-container {
+  text-align: center;
+  width: 100%;
+}
+
+.tag-premium-icon {
+  margin-bottom: 12px;
+}
+
+.tag-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+}
+
+.tag-close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.tag-close-button:hover {
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.tag-modal-body-custom {
+  padding: 16px 24px 24px;
+  text-align: center;
+}
+
+.tag-modal-description {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+
+.tag-feature-highlight {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.tag-feature-highlight strong {
+  color: #333;
+  font-size: 16px;
+}
+
+.tag-feature-description {
+  color: #6c757d;
+  font-size: 14px;
+  margin-top: 4px;
+  display: block;
+}
+
+.tag-modal-footer-custom {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  border-top: 1px solid #e9ecef;
+}
+
+.tag-btn-secondary-custom,
+.tag-btn-primary-custom {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.tag-btn-secondary-custom {
+  background-color: #6c757d;
+  color: white;
+}
+
+.tag-btn-secondary-custom:hover {
+  background-color: #5a6268;
+  transform: translateY(-1px);
+}
+
+.tag-btn-primary-custom {
+  background-color: #007bff;
+  color: white;
+}
+
+.tag-btn-primary-custom:hover {
+  background-color: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+}
+
+/* Enhanced Professional Tooltip Styles for Tags */
+.tag-generate-btn[title]:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  color: white;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  white-space: pre-line;
+  z-index: 1000;
+  margin-bottom: 8px;
+  min-width: 200px;
+  max-width: 300px;
+  text-align: left;
+  line-height: 1.4;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.tag-generate-btn[title]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #2c3e50;
+  margin-bottom: 2px;
+  z-index: 1000;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Enhanced tooltip for eligible tags */
+.tag-generate-btn.eligible[title]:hover::after {
+  background: linear-gradient(135deg, #0056b3 0%, #007bff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tag-generate-btn.eligible[title]:hover::before {
+  border-top-color: #0056b3;
+}
+
+/* Tooltip animation for tags */
+.tag-generate-btn[title]:hover::after,
+.tag-generate-btn[title]:hover::before {
+  animation: tagTooltipFadeIn 0.3s ease-out;
+}
+
+@keyframes tagTooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Responsive Design for Tags */
+@media (max-width: 768px) {
+  .tag-modal-content-custom {
+    width: 95%;
+    margin: 20px auto;
+  }
+  
+  .tag-generate-btn {
+    font-size: 0.7rem !important;
+    padding: 2px 6px !important;
+  }
+  
+  .tag-modal-footer-custom {
+    flex-direction: column;
+  }
+  
+  .tag-btn-secondary-custom,
+  .tag-btn-primary-custom {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  /* Mobile tooltip adjustments for tags */
+  .tag-generate-btn[title]:hover::after {
+    min-width: 180px;
+    max-width: 250px;
+    font-size: 10px;
+    padding: 8px 12px;
+  }
+  
+  .tag-generate-btn[title]:hover::before {
+    border-width: 4px;
+  }
+}

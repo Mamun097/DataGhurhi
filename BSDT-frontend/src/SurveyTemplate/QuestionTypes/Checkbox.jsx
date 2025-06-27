@@ -276,6 +276,7 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
           questionText={question.text}
           questions={questions}
           setQuestions={setQuestions}
+          getLabel={getLabel}
         />
       </div>
 
