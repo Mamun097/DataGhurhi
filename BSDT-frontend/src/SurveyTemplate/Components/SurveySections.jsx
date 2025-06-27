@@ -8,6 +8,9 @@ import "react-toastify/dist/ReactToastify.css";
 import "../CSS/SurveySections.css";
 
 const SurveySections = ({
+  title,
+  image,
+  description,
   section,
   setSections,
   sections,
