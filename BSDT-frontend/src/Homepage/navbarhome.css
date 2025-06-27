@@ -102,7 +102,7 @@
   font-size: 18px;
 }
 .nav-icon {
-   font-size: 60px;
+  font-size: 60px;
 }
 
 .nav-links a,
@@ -118,9 +118,6 @@
   border: none;
   cursor: pointer;
 }
-
-
-
 
 .language-toggle {
   display: flex;
@@ -198,8 +195,6 @@ input:checked + .slider:before {
   display: flex;
   flex-direction: column;
   align-items: center;
-  
- 
 }
 
 .navbar-profile-pic,
@@ -215,11 +210,10 @@ input:checked + .slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  
 }
 
 .navbar-profile-name {
- font-size: 25px;
+  font-size: 25px;
   margin-top: 4px;
   color: #333;
   font-weight: 500;
@@ -227,9 +221,13 @@ input:checked + .slider:before {
   white-space: nowrap;
 }
 
-
-
-
+.search-filter {
+  padding: 6px;
+  margin-right: 8px;
+  border-radius: 5px;
+  border: 1px solid #12906a;
+  background-color: rgba(36, 235, 202, 0.5);
+}
 
 /* Responsive Fixes */
 @media (max-width: 1024px) {

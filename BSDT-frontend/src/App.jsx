@@ -17,6 +17,7 @@ import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import QB from "./QBmanagement/QuestionBankUser";
 import FaqTopics from "./FAQ/FaqTopics";
 import FaqByTopic from "./FAQ/FaqByTopic";
+import SearchResults from "./Homepage/searchResults";
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
 function App() {
   const token = localStorage.getItem("token");
@@ -34,6 +35,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/faq" element={<FaqTopics />} />
         <Route path="/faq/:topic" element={<FaqByTopic />} />
+        <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
         {/* <Route path="/v/:slug" element={<IndexUser />} /> */}
 

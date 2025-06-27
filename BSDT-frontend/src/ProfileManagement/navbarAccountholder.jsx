@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { Avatar, Menu, MenuItem, IconButton } from "@mui/material";
 import { IoPersonCircle } from "react-icons/io5";
-
+import { useNavigate } from "react-router-dom";
 import logo_buet from "../assets/logos/cse_buet.png";
 import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
@@ -17,6 +17,7 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import "./navbarAccountholder.css";
+import { use } from "react";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -55,10 +56,10 @@ const NavbarAcholder = (props) => {
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [name, setName] = useState("");
   const [translatedLabels, setTranslatedLabels] = useState({});
-  
+  const navigate =useNavigate();
   // Updated: Get admin status from both props and local check
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userType, setUserType] = useState('normal');
+  const [userType, setUserType] = useState("normal");
 
   const labelsToTranslate = [
     "Go to Profile",
@@ -66,7 +67,11 @@ const NavbarAcholder = (props) => {
     "Home",
     "About",
     "FAQ",
-    "Search for projects, surveys, accounts...",
+    "Write your search query...",
+    "All",
+    "Project",
+    "Survey",
+    "Account",
   ];
 
   useEffect(() => {
@@ -81,11 +86,11 @@ const NavbarAcholder = (props) => {
           const user = response.data.user;
           setName(user.name);
           setProfilePicUrl(user.image);
-          
+
           // Update local admin state
           const currentUserType = user.user_type;
           setUserType(currentUserType);
-          setIsAdmin(currentUserType === 'admin');
+          setIsAdmin(currentUserType === "admin");
         }
       } catch (error) {
         console.error("Failed to load profile info:", error);
@@ -128,13 +133,38 @@ const NavbarAcholder = (props) => {
     language === "English" ? text : translatedLabels[text] || text;
 
   const toggleLanguage = () => {
-    localStorage.setItem("language", language === "English" ? "বাংলা" : "English");
+    localStorage.setItem(
+      "language",
+      language === "English" ? "বাংলা" : "English"
+    );
     setLanguage(localStorage.getItem("language"));
   };
-
-  const handleSearch = () => {
+  const [searchFilter, setSearchFilter] = useState("all"); // or "project" as default
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
-      console.log("Searching for:", searchQuery);
+      try {
+        const response = await axios.get("http://localhost:2000/api/search", {
+          params: {
+            query: searchQuery,
+            filter: searchFilter === "all" ? "" : searchFilter,
+          },
+        });
+
+        const results = response.data.results;
+        console.log("Search results:", results);
+
+        navigate("/search-results", {
+          state: {
+            results,
+            query: searchQuery,
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Search request failed:",
+          error.response?.data || error.message
+        );
+      }
     }
   };
 
@@ -148,11 +178,21 @@ const NavbarAcholder = (props) => {
       </div>
 
       {/* Only show search bar for non-admin users */}
-      {!isAdmin && userType !== 'admin' && (
+      {!isAdmin && userType !== "admin" && (
         <div className="search-container">
+          <select
+            className="search-filter"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+          >
+            <option value="all">{getLabel("All")}</option>
+            <option value="project">{getLabel("Project")}</option>
+            <option value="survey">{getLabel("Survey")}</option>
+            <option value="account">{getLabel("Account")}</option>
+          </select>
           <input
             type="text"
-            placeholder={getLabel("Search for projects, surveys, accounts...")}
+            placeholder={getLabel("Write your search query...")}
             className="search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -200,7 +240,7 @@ const NavbarAcholder = (props) => {
         </li>
 
         {/* Only show Analysis link for non-admin users */}
-        {!isAdmin && userType !== 'admin' && (
+        {!isAdmin && userType !== "admin" && (
           <li>
             <a href="/analysis">
               <FaChartBar className="nav-icon" />

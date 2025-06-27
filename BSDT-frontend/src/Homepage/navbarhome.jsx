@@ -23,6 +23,7 @@ const NavbarHome = ({ language, setLanguage }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [translations, setTranslations] = useState({});
   const navigate = useNavigate();
+  const [searchFilter, setSearchFilter] = useState("all"); // or "project" as default
 
   const translateText = async (textArray, targetLang) => {
     try {
@@ -54,7 +55,11 @@ const NavbarHome = ({ language, setLanguage }) => {
         "Login",
         "About",
         "FAQ",
-        "Search for projects, surveys, accounts...",
+        "Write your search query here...",
+        "All",
+        "Project",
+        "Survey",
+        "Account",
       ];
 
       if (language === "English") {
@@ -76,10 +81,31 @@ const NavbarHome = ({ language, setLanguage }) => {
   }, [language]);
 
   const getLabel = (text) => translations[text] || text;
-
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
-      console.log("Searching for:", searchQuery);
+      try {
+        const response = await axios.get("http://localhost:2000/api/search", {
+          params: {
+            query: searchQuery,
+            filter: searchFilter === "all" ? "" : searchFilter,
+          },
+        });
+
+        const results = response.data.results;
+        console.log("Search results:", results);
+
+        navigate("/search-results", {
+          state: {
+            results,
+            query: searchQuery,
+          },
+        });
+      } catch (error) {
+        console.error(
+          "Search request failed:",
+          error.response?.data || error.message
+        );
+      }
     }
   };
 
@@ -98,9 +124,20 @@ const NavbarHome = ({ language, setLanguage }) => {
       </div>
 
       <div className="search-container">
+        <select
+          className="search-filter"
+          value={searchFilter}
+          onChange={(e) => setSearchFilter(e.target.value)}
+        >
+          <option value="all">{getLabel("All")}</option>
+          <option value="project">{getLabel("Project")}</option>
+          <option value="survey">{getLabel("Survey")}</option>
+          <option value="account">{getLabel("Account")}</option>
+        </select>
+
         <input
           type="text"
-          placeholder={getLabel("Search for projects, surveys, accounts...")}
+          placeholder={getLabel("Write your search query here...")}
           className="search-input"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}

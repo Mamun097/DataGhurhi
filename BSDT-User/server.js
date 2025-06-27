@@ -61,6 +61,7 @@ const adminRouter = require('./route/adminroute');
 //survey collab routes
 const surveyCollabRouter = require('./route/surveyCollaborator');
 const faqRoutes = require('./route/faqRouter');
+const searchRouter = require('./route/searchRouter');
 
 //connect db
 const supabase = require('./db');
@@ -135,3 +136,4 @@ app.use('/api', generateMultipleQuestionsWithLLMRouter);
 // Other routes and middleware...
 
 app.use('/api/faq', faqRoutes);
+app.use('/api/search', searchRouter);
