@@ -67,9 +67,9 @@ const EditProject = () => {
     localStorage.getItem("language") || "English"
   );
   const location = useLocation();
-  const userRroleProject=location.state?.role || " ";
+  const userRroleProject = location.state?.role || " ";
   console.log("User Role in Project:", userRroleProject);
-  const canEdit = userRroleProject === "owner" || userRroleProject=== "editor";
+  const canEdit = userRroleProject === "owner" || userRroleProject === "editor";
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const labelsToTranslate = [
@@ -346,6 +346,33 @@ const EditProject = () => {
           },
         });
       }, 3000);
+
+      //reducing survey count
+      fetch("http://localhost:2000/api/reduce-survey-count", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success) {
+            console.log("Survey count reduced successfully:", data);
+          } else {
+            console.error("Failed to reduce survey count:", data.message);
+            alert(data.message || "Failed to reduce survey count.");
+          }
+        })
+        .catch(error => {
+          console.error("Error calling API:", error);
+          alert("An error occurred while reducing survey count.");
+        });
     } catch (error) {
       console.error("Survey creation error:", error);
       toast.error(getLabel("Failed to generate survey."));
@@ -385,44 +412,43 @@ const EditProject = () => {
 
           setTimeout(() => {
             navigate(
-              `/view-survey/${
-                response.data.data?.survey_id || response.data.survey_id
+              `/view-survey/${response.data.data?.survey_id || response.data.survey_id
               }`,
               {
-                state: { project_id: projectId, survey_details: response.data, input_title: result.value},
-                
-          }
+                state: { project_id: projectId, survey_details: response.data, input_title: result.value },
+
+              }
             );
           }, 3000); // 3 seconds delay
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-      toast.error(getLabel("Failed to create survey."));
+        toast.error(getLabel("Failed to create survey."));
+      }
     }
-  }
-};
+  };
 
-const handleDeleteSurvey = async (surveyId) => {
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.delete(
-      `http://localhost:2000/api/surveytemplate/${surveyId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 200) {
-      toast.success(getLabel("Survey deleted successfully!"));
-      fetchSurveys();
-      // reload
-      // setTimeout(() => window.location.reload(), 4000);
-    } else {
-      console.error("Error deleting survey:", response.statusText);
+  const handleDeleteSurvey = async (surveyId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.delete(
+        `http://localhost:2000/api/surveytemplate/${surveyId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 200) {
+        toast.success(getLabel("Survey deleted successfully!"));
+        fetchSurveys();
+        // reload
+        // setTimeout(() => window.location.reload(), 4000);
+      } else {
+        console.error("Error deleting survey:", response.statusText);
+        toast.error(getLabel("Failed to delete survey."));
+      }
+    } catch (error) {
+      console.error("Error deleting survey:", error);
       toast.error(getLabel("Failed to delete survey."));
     }
-  } catch (error) {
-    console.error("Error deleting survey:", error);
-    toast.error(getLabel("Failed to delete survey."));
-  }
-};
+  };
   const handleSurveyClick = (survey_id, survey, survey_title, response_user_logged_in_status) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
@@ -494,11 +520,11 @@ const handleDeleteSurvey = async (surveyId) => {
         const errorMessage = error.response.data.error || getLabel("Failed to add collaborator.");
         toast.error(errorMessage);
       }
-      else{
-      console.error("Error adding collaborator:", error);
-      toast.error(getLabel("Failed to add collaborator."));
+      else {
+        console.error("Error adding collaborator:", error);
+        toast.error(getLabel("Failed to add collaborator."));
+      }
     }
-  }
   };
 
 
@@ -536,7 +562,7 @@ const handleDeleteSurvey = async (surveyId) => {
             <div className="project-form">
               <div className="header-with-button">
                 {/* <h2>{getLabel("Project Details")}</h2> */}
-              
+
                 <button
                   className={`edit-toggle-btn ${!canEdit ? "disabled-btn" : ""}`}
                   onClick={() => setIsEditing(!isEditing)}
@@ -666,7 +692,7 @@ const handleDeleteSurvey = async (surveyId) => {
                   )}
                 </tbody>
               </table>
-              {showModal && canEdit &&(
+              {showModal && canEdit && (
                 <div className="modal-overlay">
                   <div className="modal-content">
                     <h3>{getLabel("Add Collaborator")}</h3>
@@ -705,20 +731,20 @@ const handleDeleteSurvey = async (surveyId) => {
           <h3 className="survey-section-heading">
             {getLabel("Create a New Survey")}
           </h3>
-            <div className="survey-grid-center">
-              <div
-                className={`add-survey-card ${!canEdit ? "disabled-btn" : ""}`}
-                onClick={canEdit ? handleAddSurveyClick : null}
-                style={{ pointerEvents: canEdit ? "auto" : "none" }}
-              >
-                <div className="plus-icon">+</div>
-              </div>
+          <div className="survey-grid-center">
+            <div
+              className={`add-survey-card ${!canEdit ? "disabled-btn" : ""}`}
+              onClick={canEdit ? handleAddSurveyClick : null}
+              style={{ pointerEvents: canEdit ? "auto" : "none" }}
+            >
+              <div className="plus-icon">+</div>
             </div>
+          </div>
 
 
-            {canEdit && (
-              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
-                {/* <button
+          {canEdit && (
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+              {/* <button
                   className="btn btn-outline-success"
                   onClick={() => setShowSurveyChatbot(true)}
                 >
@@ -729,8 +755,8 @@ const handleDeleteSurvey = async (surveyId) => {
                 onGenerateSurvey={handleGenerateSurvey}
                 getLabel={getLabel}
               />
-              </div>
-            )}
+            </div>
+          )}
 
           <hr className="section-divider" />
           <h3 className="survey-section-heading">
@@ -795,8 +821,8 @@ const handleDeleteSurvey = async (surveyId) => {
                     .toLowerCase()
                     .includes(
                       "last_updated" ||
-                        sortField.toLowerCase().includes("published_date") ||
-                        sortField.toLowerCase().includes("ending_date")
+                      sortField.toLowerCase().includes("published_date") ||
+                      sortField.toLowerCase().includes("ending_date")
                     );
 
                 if (isDateField) {
@@ -888,7 +914,7 @@ const handleDeleteSurvey = async (surveyId) => {
                           hour12: true,
                         }
                       )}{" "}
-                  
+
                     </p>
                   )}
 
@@ -904,28 +930,28 @@ const handleDeleteSurvey = async (surveyId) => {
                   >
                     <SendIcon fontSize="inherit" />
                   </IconButton>
-                    <IconButton
-                      aria-label="edit"
-                      size="large"
-                      disabled={!canEdit}
-                      sx={{
-                        "&:hover": {
-                          color: canEdit ? "blue" : "inherit",
-                          backgroundColor: canEdit ? "#e6f0ff" : "transparent",
-                        },
-                        color: !canEdit ? "#ccc" : "inherit",
-                      }}
-                    >
-                      <EditIcon
-                        fontSize="inherit"
-                        onClick={
-                          canEdit
-                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
-                            : undefined
-                        }
-                        style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
-                      />
-                    </IconButton>
+                  <IconButton
+                    aria-label="edit"
+                    size="large"
+                    disabled={!canEdit}
+                    sx={{
+                      "&:hover": {
+                        color: canEdit ? "blue" : "inherit",
+                        backgroundColor: canEdit ? "#e6f0ff" : "transparent",
+                      },
+                      color: !canEdit ? "#ccc" : "inherit",
+                    }}
+                  >
+                    <EditIcon
+                      fontSize="inherit"
+                      onClick={
+                        canEdit
+                          ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
+                          : undefined
+                      }
+                      style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
+                    />
+                  </IconButton>
 
                   <IconButton
                     aria-label="delete"
