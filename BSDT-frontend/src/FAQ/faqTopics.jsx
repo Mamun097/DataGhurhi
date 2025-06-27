@@ -86,6 +86,34 @@ export default function FaqTopics() {
   );
   const [translatedTopics, setTranslatedTopics] = useState([]);
   const [loadingTranslation, setLoadingTranslation] = useState(false);
+  // Add this inside FaqTopics component (top level state)
+  const baseLabels = {
+    heading: "Browse FAQ Topics",
+    empty: "No FAQs under this topic.",
+    loading: "Loading translations...",
+  };
+
+  const [uiLabels, setUiLabels] = useState(baseLabels);
+
+  // Fetch translated UI labels when language changes
+  useEffect(() => {
+    const translateUiLabels = async () => {
+      if (language === "English") {
+        setUiLabels(baseLabels);
+      } else {
+        const keys = Object.keys(baseLabels);
+        const values = Object.values(baseLabels);
+        const translated = await translateText(values, "bn");
+        const mapped = {};
+        keys.forEach((k, i) => {
+          mapped[k] = translated[i];
+        });
+        setUiLabels(mapped);
+      }
+    };
+
+    translateUiLabels();
+  }, [language]);
 
   const isLoggedIn = !!localStorage.getItem("token");
 
@@ -107,14 +135,8 @@ export default function FaqTopics() {
 
         if (language !== "English") {
           setLoadingTranslation(true);
-          const languageMap = {
-            English: "en",
-            Bengali: "bn",
-          };
-          const translatedNames = await translateText(
-            uniqueTopics,
-            languageMap[language]
-          );
+
+          const translatedNames = await translateText(uniqueTopics, "bn");
           setTranslatedTopics(translatedNames);
           setLoadingTranslation(false);
           console.log("Translated topics:", translatedNames);
@@ -147,17 +169,13 @@ export default function FaqTopics() {
       )}
 
       <div className="faq-container">
-        <h1 className="faq-heading">
-          {language === "English"
-            ? "Browse FAQ Topics"
-            : "এফএ কিউ বিষয়গুলি দেখুন"}
-        </h1>
+        <h1 className="faq-heading">{uiLabels.heading}</h1>
 
         {error && <p className="faq-error">{error}</p>}
         {loadingTranslation ? (
-          <p>Loading translations...</p>
+          <p>{uiLabels.loading}</p>
         ) : topicsWithIcons.length === 0 && !error ? (
-          <p className="faq-empty">No FAQs under this topic.</p>
+          <p className="faq-empty">{uiLabels.empty}</p>
         ) : (
           <div className="faq-grid">
             {topicsWithIcons.map(({ topic, Icon }, idx) => (
