@@ -547,8 +547,42 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
           }
         }
 
-        // Refresh subscription data after successful generation
-        checkUserSubscription();
+        // Wait for tag count reduction to complete before refreshing subscription
+        try {
+          const tagCountResponse = await fetch("http://localhost:2000/api/reduce-tag-count", {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`
+            }
+          });
+
+          if (!tagCountResponse.ok) {
+            throw new Error(`HTTP error! status: ${tagCountResponse.status}`);
+          }
+
+          const tagCountData = await tagCountResponse.json();
+          
+          if (tagCountData.success) {
+            console.log("Tag count reduced successfully:", tagCountData);
+            
+            // Now refresh subscription data after successful tag count reduction
+            await checkUserSubscription();
+            
+          } else {
+            console.error("Failed to reduce tag count:", tagCountData.message);
+            alert(tagCountData.message || "Failed to reduce tag count.");
+          }
+        } catch (error) {
+          console.error("Error calling tag count reduction API:", error);
+          alert("An error occurred while reducing tag count.");
+        }
+
+        // Add a timeout to simulate delay
+        setTimeout(() => {
+          console.log("Tags generated successfully:", data.tags);
+        }, 1000);
+
       }
     } catch (error) {
       console.error("Error generating tags:", error);
@@ -881,7 +915,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
 
         {/* Display tags from right to left */}
         <div className="tag-container d-flex flex-row-reverse">
-        
+
           {tags.map((tag) => (
             <TagBadge
               key={tag}
@@ -1141,8 +1175,8 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
           </button>
         )}
       </div>
-    
-  </>
+
+    </>
   );
 }
 

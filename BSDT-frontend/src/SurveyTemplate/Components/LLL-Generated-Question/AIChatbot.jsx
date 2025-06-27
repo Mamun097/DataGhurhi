@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./ChatbotLoading.css";
 
-const AIChatbot = ({ onClose, onGenerate , getLabel}) => {
+const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [currentStep, setCurrentStep] = useState("greeting");
@@ -211,6 +211,34 @@ const AIChatbot = ({ onClose, onGenerate , getLabel}) => {
   };
 
   const handleGenerate = () => {
+    fetch("http://localhost:2000/api/reduce-question-count", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      }
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        if (data.success) {
+          console.log("Question count reduced successfully:", data);
+          // You might want to update UI state here with the new question count
+          // e.g., setQuestionCount(data.updated_question_count);
+        } else {
+          console.error("Failed to reduce question count:", data.message);
+          alert(data.message || "Failed to reduce question count.");
+        }
+      })
+      .catch(error => {
+        console.error("Error calling API:", error);
+        alert("An error occurred while reducing question count.");
+      });
+
     const questionData = {
       type: questionType,
       metadata: metadata,
@@ -218,7 +246,7 @@ const AIChatbot = ({ onClose, onGenerate , getLabel}) => {
     };
 
     onGenerate(questionData);
-  };
+};
 
   const handleSkip = () => {
     if (currentStep === "additionalInfo") {
@@ -293,7 +321,7 @@ const AIChatbot = ({ onClose, onGenerate , getLabel}) => {
               </svg> */}
 
               Send
-              
+
             </button>
           </>
         ) : (
