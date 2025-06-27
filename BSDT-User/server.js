@@ -10,7 +10,7 @@ const swaggerDocument = yaml.load('./docs/api-docs.yml');
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
 
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = ['https://localhost:5173'];
 app.use(cors({
   origin: allowedOrigins,
   credentials: true,
@@ -60,7 +60,7 @@ const questionBankRouter = require('./route/questionBankView');
 const adminRouter = require('./route/adminroute');
 //survey collab routes
 const surveyCollabRouter = require('./route/surveyCollaborator');
-
+const faqRoutes = require('./route/faqRouter');
 
 //connect db
 const supabase = require('./db');
@@ -133,3 +133,5 @@ app.use('/api', generateMultipleQuestionsWithLLMRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
+
+app.use('/api/faq', faqRoutes);
