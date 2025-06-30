@@ -12,6 +12,7 @@ import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import QB from "./QBmanagement/QuestionBankUser";
 
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
+import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -41,6 +42,7 @@ function App() {
             <Route path="/preview" element={<PreviewPage />} />
             {/* <Route path="/question-bank" element={<QB />} /> */}
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
+            <Route path="/preprocess" element={<PreprocessDataPage />} />
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
 
           </>

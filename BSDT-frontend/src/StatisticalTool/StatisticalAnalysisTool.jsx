@@ -28,6 +28,7 @@ const translations = {
         subtitle: "Upload your Excel file and run various statistical tests on your data",
         formTitle: "Data Analysis Form",
         uploadLabel: "Upload Your Data",
+        preprocessedLabel : "Preprocessed File",
         dropFile: "Drag & drop your Excel file or click to browse",
         processing: "Processing file, please wait...",
         testType: "Test Type",
@@ -142,6 +143,7 @@ const translations = {
         subtitle: "আপনার এক্সেল ফাইল আপলোড করুন এবং আপনার ডেটাতে বিভিন্ন পরিসংখ্যান পরীক্ষা চালান",
         formTitle: "ডেটা বিশ্লেষণ ফর্ম",
         uploadLabel: "আপনার ডেটা আপলোড করুন",
+        preprocessedLabel : "পূর্বপ্রক্রিয়াকৃত ফাইল",
         dropFile: "আপনার এক্সেল ফাইল টেনে আনুন অথবা ব্রাউজ করতে ক্লিক করুন",
         processing: "ফাইল প্রক্রিয়া করা হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...",
         testType: "পরীক্ষার ধরন",
@@ -289,6 +291,10 @@ const StatisticalAnalysisTool = () => {
     useEffect(() => {
         if (!file) setFileName(translations[language].dropFile);
     }, [language, file]);
+    // preprocessed data state
+    const [isPreprocessed, setIsPreprocessed] = useState(false);
+    // survey data state
+    const [isSurveyData, setIsSurveyData] = useState(false);
 
     // Form state
     const [testType, setTestType] = useState(''); // Default to Kruskal-Wallis
@@ -349,6 +355,72 @@ const StatisticalAnalysisTool = () => {
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
 
+    useEffect(() => {
+    const isPreprocessed = sessionStorage.getItem("preprocessed") === "true";
+    const isSurveyData = sessionStorage.getItem("surveyfile") === "true";
+    if(isPreprocessed){
+        setIsPreprocessed(true);
+    }
+    if(isSurveyData){
+        setIsSurveyData(true);
+    }
+
+    let fileUrl = "";
+    let fileName = "";
+
+    if (isPreprocessed) {
+        fileUrl = "http://127.0.0.1:8000/media/preprocessed/preprocessed.xlsx";
+        fileName = "preprocessed.xlsx";
+        sessionStorage.removeItem("preprocessed");
+    } else if (isSurveyData) {
+        fileUrl = "http://127.0.0.1:8000/media/survey/survey_responses.xlsx";
+        fileName = "survey_responses.xlsx";
+        sessionStorage.removeItem("surveyfile");
+    }
+
+    if (fileUrl) {
+        fetch(fileUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
+                return res.blob();
+            })
+            .then(blob => {
+                const newFile = new File([blob], fileName, { type: blob.type });
+                setFile(newFile);
+                setFileName(newFile.name);
+                setUploadStatus("success");
+
+                // Send file to backend to extract columns
+                const formData = new FormData();
+                formData.append('file', newFile);
+
+                return fetch('http://127.0.0.1:8000/api/get-columns/', {
+                    method: 'POST',
+                    body: formData,
+                });
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setColumns(data.columns);
+                    setColumn1(data.columns[0]);
+                    setColumn2(data.columns.length > 1 ? data.columns[1] : '');
+                    setUploadStatus('success');
+                } else {
+                    setErrorMessage(data.error || "Failed to process columns");
+                    setUploadStatus('error');
+                }
+            })
+            .catch(err => {
+                console.error("Could not load and process file:", err);
+                setErrorMessage("File loading failed.");
+                setUploadStatus("error");
+            });
+    }
+}, []);
+
+
+
     // Handle file selection
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -383,6 +455,7 @@ const StatisticalAnalysisTool = () => {
                 });
         }
     };
+    
 
 
     const handleSubmit = (e) => {
@@ -593,6 +666,8 @@ const StatisticalAnalysisTool = () => {
         setTestType('');
         setReferenceValue(0);
         setHeatmapSize('');
+        setIsPreprocessed(false);
+        setIsSurveyData(false);
     };
 
     // Get required fields based on test type
@@ -680,28 +755,54 @@ const StatisticalAnalysisTool = () => {
                                         <span className="text-black">{t.formTitle}</span>
                                     </div>
 
-                                    <div className="p-6">
+                                     <div className="p-6">
                                         <form onSubmit={handleSubmit}>
+
+                                            
                                             <div className="mb-6">
-                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.uploadLabel}</h5>
-                                                <div
+                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
+                                                    {(isPreprocessed || isSurveyData) ? t.preprocessedLabel : t.uploadLabel}
+                                                </h5>
+
+                                                {(isPreprocessed || isSurveyData) ? (
+                                                    <div className="bg-green-100 text-green-700 p-4 rounded text-center shadow">
+                                                    {(isPreprocessed ? "Preprocessed file" : "Survey file")}{" "}
+                                                    <strong>{fileName}</strong> loaded automatically.
+                                                    </div>
+                                                ) : (
+                                                    <div
                                                     ref={uploadContainerRef}
-                                                    className={`bg-gray-200 rounded-lg p-6 text-center border-2 border-dashed ${uploadStatus === 'loading' ? 'border-blue-400' :
-                                                        uploadStatus === 'success' ? 'border-green-400' : 'border-gray-400'
-                                                        } transition-all duration-300 cursor-pointer hover:bg-gray-300`}
+                                                    className={`bg-gray-200 rounded-lg p-6 text-center border-2 border-dashed ${
+                                                        uploadStatus === "loading"
+                                                        ? "border-blue-400"
+                                                        : uploadStatus === "success"
+                                                        ? "border-green-400"
+                                                        : "border-gray-400"
+                                                    } transition-all duration-300 cursor-pointer hover:bg-gray-300`}
                                                     onClick={() => fileInputRef.current.click()}
-                                                >
+                                                    >
                                                     <svg
-                                                        className={`mx-auto h-12 w-12 mb-3 ${uploadStatus === 'success' ? 'text-green-500' : 'text-gray-600'
-                                                            }`}
+                                                        className={`mx-auto h-12 w-12 mb-3 ${
+                                                        uploadStatus === "success" ? "text-green-500" : "text-gray-600"
+                                                        }`}
                                                         fill="none"
                                                         stroke="currentColor"
                                                         viewBox="0 0 24 24"
                                                     >
-                                                        {uploadStatus === 'success' ? (
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                        {uploadStatus === "success" ? (
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                        />
                                                         ) : (
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                        />
                                                         )}
                                                     </svg>
                                                     <p id="fileName" className="mb-2">
@@ -712,16 +813,32 @@ const StatisticalAnalysisTool = () => {
                                                         type="file"
                                                         className="hidden"
                                                         accept=".xls,.xlsx"
+                                                        onClick={(e) => (e.target.value = null)}
                                                         onChange={handleFileChange}
                                                     />
-                                                </div>
-                                                {uploadStatus === 'loading' && (
-                                                    <div className="text-center mt-4 text-blue-600">
-                                                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                                                        {t.processing}
                                                     </div>
                                                 )}
+
+                                                {uploadStatus === "loading" && (
+                                                    <div className="text-center mt-4 text-blue-600">
+                                                    <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                                                    {t.processing}
+                                                    </div>
+                                                )}
+                                                </div>
+
+
+                                            <div className="text-center mt-4 mb-4">
+                                                <button
+                                                    type="button"
+                                                    className="bg-green-600 hover:bg-green-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                    onClick={() => window.location.href = "/preprocess"}
+                                                >
+                                                    Preprocess Data
+                                                </button>
                                             </div>
+
+
 
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectTest}</h5>
