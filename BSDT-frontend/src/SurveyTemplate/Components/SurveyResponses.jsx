@@ -220,17 +220,55 @@ const SurveyResponses = () => {
     link.download = `survey_${survey_id}_responses.csv`;
     link.click();
   };
+  const handleAnalyzeClick = async () => {
+    if (!rawCsv || rawCsv.trim() === "") {
+      alert("No responses available to analyze.");
+      return;
+    }
+
+    try {
+      const blob = new Blob([rawCsv], { type: "text/csv" });
+      const file = new File([blob], "survey_responses.csv", { type: "text/csv" });
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("file_type", "survey");
+
+      const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        sessionStorage.setItem("surveyfile", "true");
+        window.location.href = "/analysis";
+      } else {
+        alert(result.error || "Failed to prepare file for analysis.");
+      }
+    } catch (err) {
+      console.error("Error sending file:", err);
+      alert("Something went wrong while preparing analysis.");
+    }
+  };
+
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="container my-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h3>{getLabel("Survey Responses")}</h3>
-          <button className="btn btn-primary" onClick={downloadCSV}>
-            {getLabel("Download CSV")}
-          </button>
-        </div>
+            <h3>{getLabel("Survey Responses")}</h3>
+            <div className="d-flex gap-2">
+              <button className="btn btn-primary" onClick={downloadCSV}>
+                {getLabel("Download CSV")}
+              </button>
+              <button className="btn btn-success" onClick={handleAnalyzeClick}>
+                {getLabel("Analyze the Result")}
+              </button>
+            </div>
+          </div>
 
         <ul className="nav nav-tabs mb-3">
           {["summary", "questions", "individual"].map((tab) => (
