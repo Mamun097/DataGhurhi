@@ -22,7 +22,12 @@ const SearchResults = () => {
     survey: "Surveys",
     other: "Others",
   });
-
+  const handleProjectClick = (projectId, role) => {
+    console.log("Project clicked:", projectId, "Role:", role);
+    navigate(`/view-project/${projectId}`, {
+      state: { role: role },
+    });
+  };
   const translateText = async (textArray, targetLang) => {
     try {
       const response = await axios.post(
@@ -127,6 +132,7 @@ const SearchResults = () => {
                         key={project.project_id}
                         className="project-card"
                         style={{ cursor: "pointer" }}
+                        onClick={() => handleProjectClick(project.project_id, "viewer")}
                       >
                         <h4>{project.title}</h4>
                         <p>

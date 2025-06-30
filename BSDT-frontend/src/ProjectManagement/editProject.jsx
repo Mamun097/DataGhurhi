@@ -18,7 +18,6 @@ import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
-
 const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
@@ -66,9 +65,9 @@ const EditProject = () => {
     localStorage.getItem("language") || "English"
   );
   const location = useLocation();
-  const userRroleProject=location.state?.role || " ";
+  const userRroleProject = location.state?.role || " ";
   console.log("User Role in Project:", userRroleProject);
-  const canEdit = userRroleProject === "owner" || userRroleProject=== "editor";
+  const canEdit = userRroleProject === "owner" || userRroleProject === "editor";
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const labelsToTranslate = [
@@ -130,7 +129,7 @@ const EditProject = () => {
     "Created At",
     "Ended At",
     "Published At",
-    "Generate Survey with LLM"
+    "Generate Survey with LLM",
   ];
 
   const loadTranslations = async () => {
@@ -229,7 +228,6 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-
   const handleGenerateSurvey = async (surveyMeta) => {
     setShowSurveyChatbot(false);
     setIsLoading(true);
@@ -250,7 +248,8 @@ const EditProject = () => {
         }
       );
 
-      const survey_id = resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
+      const survey_id =
+        resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
       if (!survey_id) throw new Error("Survey not created");
 
       // 2. calling LLM to generate questions
@@ -279,7 +278,10 @@ const EditProject = () => {
       let questions = resLLM.data;
       if (questions.rawResponse) {
         try {
-          const cleanedRaw = questions.rawResponse.replace(/undefined/g, "null");
+          const cleanedRaw = questions.rawResponse.replace(
+            /undefined/g,
+            "null"
+          );
           const parsed = JSON.parse(cleanedRaw);
           questions = Array.isArray(parsed) ? parsed : [parsed];
         } catch (err) {
@@ -307,7 +309,10 @@ const EditProject = () => {
           questions: questions.map((q, i) => ({
             id: i + 1,
             text: q.question || q.text || "Untitled Question",
-            type: (q.type || "text").toLowerCase() === "mixed" ? "text" : (q.type || "text").toLowerCase(),
+            type:
+              (q.type || "text").toLowerCase() === "mixed"
+                ? "text"
+                : (q.type || "text").toLowerCase(),
 
             required: q.required ?? false,
             section: 1,
@@ -330,7 +335,8 @@ const EditProject = () => {
         }
       );
 
-      if (resSave.status !== 201) throw new Error("Failed to save survey template");
+      if (resSave.status !== 201)
+        throw new Error("Failed to save survey template");
 
       toast.success(getLabel("Survey created successfully!"));
       await fetchSurveys();
@@ -388,47 +394,55 @@ const EditProject = () => {
                 response.data.data?.survey_id || response.data.survey_id
               }`,
               {
-                state: { project_id: projectId, survey_details: response.data, input_title: result.value},
-                
-          }
+                state: {
+                  project_id: projectId,
+                  survey_details: response.data,
+                  input_title: result.value,
+                },
+              }
             );
           }, 3000); // 3 seconds delay
         }
       } catch (error) {
         console.error("Error creating survey:", error);
-      toast.error(getLabel("Failed to create survey."));
+        toast.error(getLabel("Failed to create survey."));
+      }
     }
-  }
-};
+  };
 
-const handleDeleteSurvey = async (surveyId) => {
-  const token = localStorage.getItem("token");
-  try {
-    const response = await axios.delete(
-      `http://localhost:2000/api/surveytemplate/${surveyId}`,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    if (response.status === 200) {
-      toast.success(getLabel("Survey deleted successfully!"));
-      fetchSurveys();
-      // reload
-      // setTimeout(() => window.location.reload(), 4000);
-    } else {
-      console.error("Error deleting survey:", response.statusText);
+  const handleDeleteSurvey = async (surveyId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await axios.delete(
+        `http://localhost:2000/api/surveytemplate/${surveyId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 200) {
+        toast.success(getLabel("Survey deleted successfully!"));
+        fetchSurveys();
+        // reload
+        // setTimeout(() => window.location.reload(), 4000);
+      } else {
+        console.error("Error deleting survey:", response.statusText);
+        toast.error(getLabel("Failed to delete survey."));
+      }
+    } catch (error) {
+      console.error("Error deleting survey:", error);
       toast.error(getLabel("Failed to delete survey."));
     }
-  } catch (error) {
-    console.error("Error deleting survey:", error);
-    toast.error(getLabel("Failed to delete survey."));
-  }
-};
-  const handleSurveyClick = (survey_id, survey, survey_title, response_user_logged_in_status) => {
+  };
+  const handleSurveyClick = (
+    survey_id,
+    survey,
+    survey_title,
+    response_user_logged_in_status
+  ) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
         input_title: survey_title || "Untitled Survey",
-        response_user_logged_in_status: response_user_logged_in_status
+        response_user_logged_in_status: response_user_logged_in_status,
       },
     });
   };
@@ -490,16 +504,15 @@ const handleDeleteSurvey = async (surveyId) => {
     } catch (error) {
       if (error.response && error.response.data) {
         // Handle specific error messages from the server
-        const errorMessage = error.response.data.error || getLabel("Failed to add collaborator.");
+        const errorMessage =
+          error.response.data.error || getLabel("Failed to add collaborator.");
         toast.error(errorMessage);
+      } else {
+        console.error("Error adding collaborator:", error);
+        toast.error(getLabel("Failed to add collaborator."));
       }
-      else{
-      console.error("Error adding collaborator:", error);
-      toast.error(getLabel("Failed to add collaborator."));
     }
-  }
   };
-
 
   // if (loading) return <p>Loading...</p>;
 
@@ -535,15 +548,25 @@ const handleDeleteSurvey = async (surveyId) => {
             <div className="project-form">
               <div className="header-with-button">
                 {/* <h2>{getLabel("Project Details")}</h2> */}
-              
-                <button
-                  className={`edit-toggle-btn ${!canEdit ? "disabled-btn" : ""}`}
+
+                {/* <button
+                  className={`edit-toggle-btn ${
+                    !canEdit ? "disabled-btn" : ""
+                  }`}
                   onClick={() => setIsEditing(!isEditing)}
                   disabled={!canEdit}
                 >
                   {isEditing ? getLabel("Cancel") : getLabel("Edit")}
-                </button>
+                </button> */}
 
+                {canEdit && (
+                  <button
+                    className="edit-toggle-btn"
+                    onClick={() => setIsEditing(!isEditing)}
+                  >
+                    {isEditing ? getLabel("Cancel") : getLabel("Edit")}
+                  </button>
+                )}
               </div>
               <div className="project-form-2">
                 {isEditing ? (
@@ -614,7 +637,8 @@ const handleDeleteSurvey = async (surveyId) => {
                       {formData.title}
                     </p>
                     <p>
-                      <strong>{getLabel("Research Field")}:</strong> {formData.field}
+                      <strong>{getLabel("Research Field")}:</strong>{" "}
+                      {formData.field}
                     </p>
                     <p>
                       <strong>{getLabel("Description")}:</strong>{" "}
@@ -665,7 +689,7 @@ const handleDeleteSurvey = async (surveyId) => {
                   )}
                 </tbody>
               </table>
-              {showModal && canEdit &&(
+              {showModal && canEdit && (
                 <div className="modal-overlay">
                   <div className="modal-content">
                     <h3>{getLabel("Add Collaborator")}</h3>
@@ -701,7 +725,7 @@ const handleDeleteSurvey = async (surveyId) => {
           {/* Reuse form / details section */}
         </div>
         <div className="edit-right">
-          <h3 className="survey-section-heading">
+          {/* <h3 className="survey-section-heading">
             {getLabel("Create a New Survey")}
           </h3>
             <div className="survey-grid-center">
@@ -712,19 +736,39 @@ const handleDeleteSurvey = async (surveyId) => {
               >
                 <div className="plus-icon">+</div>
               </div>
-            </div>
+            </div> */}
 
-
-            {canEdit && (
-              <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
-                <button
-                  className="btn btn-outline-success"
-                  onClick={() => setShowSurveyChatbot(true)}
-                >
-                  <i className="bi bi-robot me-2" /> {getLabel("Generate Survey with LLM")}
-                </button>
+          {canEdit && (
+            <>
+              <h3 className="survey-section-heading">
+                {getLabel("Create a New Survey")}
+              </h3>
+              <div className="survey-grid-center">
+                <div className="add-survey-card" onClick={handleAddSurveyClick}>
+                  <div className="plus-icon">+</div>
+                  <p className="create-text">{getLabel("Create")}</p>
+                </div>
               </div>
-            )}
+            </>
+          )}
+
+          {canEdit && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "10px",
+              }}
+            >
+              <button
+                className="btn btn-outline-success"
+                onClick={() => setShowSurveyChatbot(true)}
+              >
+                <i className="bi bi-robot me-2" />{" "}
+                {getLabel("Generate Survey with LLM")}
+              </button>
+            </div>
+          )}
 
           <hr className="section-divider" />
           <h3 className="survey-section-heading">
@@ -811,7 +855,12 @@ const handleDeleteSurvey = async (surveyId) => {
                   className="survey-card"
                   style={{ cursor: "pointer" }}
                   onClick={() =>
-                    handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
+                    handleSurveyClick(
+                      survey.survey_id,
+                      survey,
+                      survey.title,
+                      survey.response_user_logged_in_status
+                    )
                   }
                 >
                   <img
@@ -825,15 +874,18 @@ const handleDeleteSurvey = async (surveyId) => {
                   <h4>{survey.title}</h4>
                   <p>
                     <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(survey.last_updated + "Z").toLocaleString("en-US", {
-                      timeZone: "Asia/Dhaka",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {new Date(survey.last_updated + "Z").toLocaleString(
+                      "en-US",
+                      {
+                        timeZone: "Asia/Dhaka",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      }
+                    )}
                   </p>
 
                   <p>
@@ -882,7 +934,6 @@ const handleDeleteSurvey = async (surveyId) => {
                           hour12: true,
                         }
                       )}{" "}
-                  
                     </p>
                   )}
 
@@ -898,28 +949,34 @@ const handleDeleteSurvey = async (surveyId) => {
                   >
                     <SendIcon fontSize="inherit" />
                   </IconButton>
-                    <IconButton
-                      aria-label="edit"
-                      size="large"
-                      disabled={!canEdit}
-                      sx={{
-                        "&:hover": {
-                          color: canEdit ? "blue" : "inherit",
-                          backgroundColor: canEdit ? "#e6f0ff" : "transparent",
-                        },
-                        color: !canEdit ? "#ccc" : "inherit",
-                      }}
-                    >
-                      <EditIcon
-                        fontSize="inherit"
-                        onClick={
-                          canEdit
-                            ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
-                            : undefined
-                        }
-                        style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
-                      />
-                    </IconButton>
+                  {/* <IconButton
+                    aria-label="edit"
+                    size="large"
+                    disabled={!canEdit}
+                    sx={{
+                      "&:hover": {
+                        color: canEdit ? "blue" : "inherit",
+                        backgroundColor: canEdit ? "#e6f0ff" : "transparent",
+                      },
+                      color: !canEdit ? "#ccc" : "inherit",
+                    }}
+                  >
+                    <EditIcon
+                      fontSize="inherit"
+                      onClick={
+                        canEdit
+                          ? () =>
+                              handleSurveyClick(
+                                survey.survey_id,
+                                survey,
+                                survey.title,
+                                survey.response_user_logged_in_status
+                              )
+                          : undefined
+                      }
+                      style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
+                    />
+                  </IconButton> */}
 
                   <IconButton
                     aria-label="delete"
