@@ -174,7 +174,10 @@ const SearchResults = () => {
                         className="result-card"
                         key={index}
                         style={{ cursor: "pointer" }}
-                        onClick={() => window.open(survey.survey_link, "_blank")}
+                        onClick={() => {
+                          const fullUrl = `https://localhost:5173/v/${survey.survey_link}`;
+                          window.open(fullUrl, "_blank");
+                        }}
                       >
                         <h4>{survey.title}</h4>
                         <p>
