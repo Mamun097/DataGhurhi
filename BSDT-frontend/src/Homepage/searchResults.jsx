@@ -52,7 +52,7 @@ const SearchResults = () => {
       const labels = [
         "Showing Results:",
         "Projects",
-        "Accounts",
+        "Users",
         "Surveys",
         "Others",
         "No results found.",
@@ -61,14 +61,14 @@ const SearchResults = () => {
         "Created At:",
         "Research Description:",
         "Back",
-        "Published At:"
+        "Published At:",
       ];
 
       if (language === "English") {
         setTranslations({});
         setSectionTitle({
           project: "Projects",
-          account: "Accounts",
+          account: "Users",
           survey: "Surveys",
           other: "Others",
         });
@@ -83,7 +83,7 @@ const SearchResults = () => {
       setTranslations(map);
       setSectionTitle({
         project: map["Projects"],
-        account: map["Accounts"],
+        account: map["Users"],
         survey: map["Surveys"],
         other: map["Others"],
       });
@@ -128,84 +128,111 @@ const SearchResults = () => {
               <div className="card-container">
                 {type === "project"
                   ? groupedResults[type].map((project) => (
+                      // Project Card
                       <div
+                        className="result-card"
                         key={project.project_id}
-                        className="project-card"
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleProjectClick(project.project_id, "viewer")}
+                        onClick={() =>
+                          handleProjectClick(project.project_id, "viewer")
+                        }
                       >
-                        <h4>{project.title}</h4>
-                        <p>
-                          <strong>{getLabel("Research Field:")}</strong>{" "}
-                          {project.field}
-                        </p>
-                        {project.description && (
-                          <p>
-                            <strong>
-                              {getLabel("Research Description:")}
-                            </strong>{" "}
-                            {project.description}
-                          </p>
-                        )}
-                        <p>
-                          <strong>{getLabel("Visibility Setting:")}</strong>{" "}
-                          {project.privacy_mode}
-                        </p>
-                        <p>
-                          <strong>{getLabel("Created At:")}</strong>{" "}
-                          {new Date(project.created_at + "Z").toLocaleString(
-                            "en-US",
-                            {
-                              timeZone: "Asia/Dhaka",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                              hour12: true,
-                            }
-                          )}
-                        </p>
+                        <div className="profile-row">
+                          <div className="profile-info">
+                            <h4>{project.title}</h4>
+                            <p>
+                              <strong>{getLabel("Research Field:")}</strong>{" "}
+                              {project.field}
+                            </p>
+                            {project.description && (
+                              <p>
+                                <strong>
+                                  {getLabel("Research Description:")}
+                                </strong>{" "}
+                                {project.description}
+                              </p>
+                            )}
+                            <p>
+                              <strong>{getLabel("Visibility Setting:")}</strong>{" "}
+                              {project.privacy_mode}
+                            </p>
+                            <p>
+                              <strong>{getLabel("Created At:")}</strong>{" "}
+                              {new Date(
+                                project.created_at + "Z"
+                              ).toLocaleString("en-US", {
+                                timeZone: "Asia/Dhaka",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="tag">Project</span>
                       </div>
                     ))
                   : type === "survey"
                   ? groupedResults[type].map((survey, index) => (
+                      // Survey Card
                       <div
                         className="result-card"
                         key={index}
-                        style={{ cursor: "pointer" }}
                         onClick={() => {
                           const fullUrl = `https://localhost:5173/v/${survey.survey_link}`;
                           window.open(fullUrl, "_blank");
                         }}
                       >
-                        <h4>{survey.title}</h4>
-                        <p>
-                          <strong>{getLabel("Published At:")}</strong>{" "}
-                          {new Date(
-                            survey.published_date + "Z"
-                          ).toLocaleString("en-US", {
-                            timeZone: "Asia/Dhaka",
-                            year: "numeric",
-                            month: "long",
-                            day: "numeric",
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true,
-                          })}
-                        </p>
+                        <div className="profile-row">
+                          <div className="profile-info">
+                            <h4>{survey.title}</h4>
+                            <p>
+                              <strong>{getLabel("Published At:")}</strong>{" "}
+                              {new Date(
+                                survey.published_date + "Z"
+                              ).toLocaleString("en-US", {
+                                timeZone: "Asia/Dhaka",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                                hour: "numeric",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}
+                            </p>
+                          </div>
+                        </div>
                         <span className="tag">Survey</span>
                       </div>
                     ))
                   : groupedResults[type].map((item, index) => (
                       <div className="result-card" key={index}>
-                        <h4>{item.title || item.username || item.name}</h4>
-                        <p>
-                          {item.description ||
-                            item.topic ||
-                            item.email ||
-                            "—"}
-                        </p>
+                        <div className="profile-row">
+                          {item.image ? (
+                            <img
+                              src={item.image}
+                              alt="Profile"
+                              className="profile-image"
+                            />
+                          ) : (
+                            <div className="avatar-fallback">
+                              {(item.title || item.username || item.name || "?")
+                                .charAt(0)
+                                .toUpperCase()}
+                            </div>
+                          )}
+                          <div className="profile-info">
+                            <h4>{item.title || item.username || item.name}</h4>
+                            <p>
+                              {item.description ||
+                                item.topic ||
+                                item.email ||
+                                "—"}
+                            </p>
+                          </div>
+                        </div>
                         <span className="tag">{item.type}</span>
                       </div>
                     ))}
