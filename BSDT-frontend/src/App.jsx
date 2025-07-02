@@ -19,6 +19,8 @@ import FaqTopics from "./FAQ/FaqTopics";
 import FaqByTopic from "./FAQ/FaqByTopic";
 import SearchResults from "./Homepage/searchResults";
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
+import AboutPage from "./About/aboutpage";
+
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -34,6 +36,7 @@ function App() {
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/faq" element={<FaqTopics />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/faq/:topic" element={<FaqByTopic />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
