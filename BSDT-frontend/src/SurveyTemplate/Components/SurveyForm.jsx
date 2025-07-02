@@ -9,8 +9,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PublicationSettingsModal from "../utils/publication_modal_settings"; // Import the modal component
+import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
+import CollaborationModal from "../utils/CollaborationModal";
+
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -57,10 +59,12 @@ const SurveyForm = ({
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
   console.log("Description in SurveyForm:", description);
+  console.log("survey id in SurveyForm:", survey_id);
   
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
@@ -400,6 +404,13 @@ const SurveyForm = ({
               >
                 <i className="bi bi-share"></i> {getLabel("Share Survey")}
               </button>
+              <button
+              onClick={() => setShowCollaborationModal(true)}
+              className="btn btn-outline-warning btn-sm me-2"
+              title="Manage collaborators"
+              >
+                <i className="bi bi-people"></i> {getLabel("Collaborate")}
+              </button>
 
               <ShareSurveyModal
                 show={showShareModal}
@@ -601,6 +612,12 @@ const SurveyForm = ({
         isLoggedInRequired={isLoggedInRequired}
         // setIsLoggedInRequired={setIsLoggedInRequired}
         action={actionType}
+      />
+      <CollaborationModal
+        show={showCollaborationModal}
+        handleClose={() => setShowCollaborationModal(false)}
+        surveyId={Number(survey_id)}
+        surveyTitle={title}
       />
       <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
     </div>
