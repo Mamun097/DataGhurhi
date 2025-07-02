@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './StatisticalAnalysisTool.css';
+import PreviewTable from './previewTable';
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
@@ -19,6 +20,15 @@ const PreprocessDataPage = () => {
 
   const [rankColumn, setRankColumn] = useState('');
   const [rankMapping, setRankMapping] = useState({}); // { "High": 1, "Medium": 2, ... }
+
+  const [splitTargetColumn, setSplitTargetColumn] = useState('');
+  const [splitMethod, setSplitMethod] = useState('');
+  const [customPhrases, setCustomPhrases] = useState([]);
+  const [customPhraseInput, setCustomPhraseInput] = useState('');
+
+  const [groupCategoricalCol, setGroupCategoricalCol] = useState('');
+  const [groupNumericalCol, setGroupNumericalCol] = useState('');
+  const [groupingPairs, setGroupingPairs] = useState([]);
 
 
 
@@ -90,6 +100,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             <option value="handle_missing">3. Handle missing values</option>
             <option value="handle_outliers">4. Handle outliers</option>
             <option value="rank_column">5. Map or rank a categorical column</option>
+            <option value="split_column">6. Column Split</option>
+            <option value="grouping">7. Grouping</option>
           </select>
 
           <button
@@ -221,6 +233,68 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   });
               }
 
+              else if (selectedOption === 'split_column') {
+                if (!splitTargetColumn) {
+                  alert("Please select a target column for splitting.");
+                  return;
+                }
+                if (!splitMethod) {
+                  alert("Please select a split method.");
+                  return;
+                }
+                if (splitMethod === '4' && customPhrases.length === 0) {
+                  alert("Please add at least one custom phrase.");
+                  return;
+                }
+
+                fetch('/api/split-column/', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    column: splitTargetColumn,
+                    method: splitMethod,
+                    phrases: customPhrases
+                  })
+                })
+                  .then(res => res.json())
+                  .then(result => {
+                    if (result.success) {
+                      setColumns(result.columns);
+                      setData(result.rows);
+                      alert(result.message || "Column split successful.");
+                      setSplitTargetColumn('');
+                      setSplitMethod('');
+                      setCustomPhrases([]);
+                      setCustomPhraseInput('');
+                    } else {
+                      alert(result.error || "Something went wrong.");
+                    }
+                  });
+              }
+
+              else if (selectedOption === 'grouping') {
+                if (groupingPairs.length === 0) {
+                  alert("Please add at least one grouping pair.");
+                  return;
+                }
+
+                fetch('/api/group-data/', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ groupingPairs }),
+                })
+                  .then((res) => res.json())
+                  .then((result) => {
+                    if (result.success) {
+                      alert("Grouped data saved successfully!");
+                      window.open(result.download_url, '_blank'); // Auto-download
+                    } else {
+                      alert(result.error || "Something went wrong.");
+                    }
+                  });
+              }
 
               
             }}
@@ -435,25 +509,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
 
-      
-        <table className="table-auto text-sm text-left border-collapse min-w-full">
-            <thead className="bg-gray-200 sticky top-0">
-                <tr>
-                    {columns.map((col, idx) => (
-                        <th key={idx} className="p-3 border text-gray-800 font-semibold">{col}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {data.map((row, ridx) => (
-                    <tr key={ridx}>
-                        {columns.map((col, cidx) => (
-                            <td key={cidx} className="p-3 border text-gray-700 whitespace-nowrap">{row[col]}</td>
-                        ))}
-                    </tr>
-                ))}
-            </tbody>
-        </table>
+      {/* Data Preview Table */}
+      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} />
       
 
 
