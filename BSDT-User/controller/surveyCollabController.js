@@ -85,3 +85,26 @@ exports.sendSurveyCollaborationRequest = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.getSurveyCollaborators = async (req, res) => {
+    try {
+        const surveyId = req.params.surveyId;
+        console.log('Survey ID:', surveyId);
+        const userId = req.jwt.id;
+
+        if (!surveyId || isNaN(surveyId)) {
+            return res.status(400).json({ error: 'Invalid survey ID' });
+        }
+
+        const { data, error } = await Collaborator.getSurveyCollaborators(surveyId, userId);
+        if (error) {
+            console.error(error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        return res.status(200).json({ collaborators: data });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
