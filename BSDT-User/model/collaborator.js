@@ -195,6 +195,42 @@ async function sendSurveyCollaborationRequest(survey_id, request_email, access_r
     }
 };
 
+async function getSurveyCollaborators(surveyID, userId) {
+    // 1. Check if the user is the owner of the survey for authorization
+    const { data: survey, error: surveyError } = await supabase
+        .from('survey')
+        .select('user_id')
+        .eq('survey_id', surveyID)
+        .single();
+
+    if (surveyError || !survey) {
+        const errorMessage = surveyError ? surveyError.message : 'Survey not found';
+        console.error('Error checking survey ownership:', errorMessage);
+        return { data: null, error: { message: 'Survey not found', status: 404 } };
+    }
+
+    // 2. Compare the survey's owner ID with the ID of the user making the request.
+    if (survey.user_id !== userId) {
+        console.error('Authorization failed: User is not the owner of the survey.');
+        return { data: null, error: { message: 'You are not authorized to view these collaborators.', status: 403 } };
+    }
+
+    // 3. If authorized, fetch the collaborators and their associated user data.
+    const { data, error } = await supabase
+        .from('survey_shared_with_collaborators')
+        .select('invitation, access_role, user(*)')
+        .eq('survey_id', surveyID)
+        .in('invitation', ['accepted', 'pending']); // Fetch both accepted and pending collaborators
+
+    if (error) {
+        console.error('Error fetching survey collaborators:', error.message);
+        return { data: null, error };
+    }
+
+    // 4. Return the list of collaborators.
+    return { data, error: null };
+}
+
 module.exports = {
     acceptInvitation,
     rejectInvitation,
@@ -204,5 +240,6 @@ module.exports = {
     acceptSurveyCollaborator,
     rejectSurveyCollaborator,
     getAllSurveyInvitations,
-    sendSurveyCollaborationRequest
+    sendSurveyCollaborationRequest,
+    getSurveyCollaborators
 };

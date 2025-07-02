@@ -16,4 +16,6 @@ router.get('/all-invitations', jwtAuthMiddlewareSurvey, collaboratorController.g
 router.get('/all-survey-collaborators', jwtAuthMiddlewareSurvey, collaboratorController.allSurveyCollaborator);
 // send collaboration request
 router.post('/send-survey-collaboration-request', jwtAuthMiddleware, collaboratorController.sendSurveyCollaborationRequest);
+// get all survey collaborators
+router.get('/get-survey-collaborators/:surveyId', jwtAuthMiddleware, collaboratorController.getSurveyCollaborators);
 module.exports = router;
