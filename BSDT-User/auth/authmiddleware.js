@@ -47,6 +47,29 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                 const projectID = req.params.projectID || req.body.projectID;
                 if (projectID) {
                     console.log('Project ID:', projectID);
+                    // check if project is public
+                    const { data: projectData, error: projectError } = await supabase
+                        .from('survey_project')
+                        .select('privacy_mode')
+                        .eq('project_id', projectID)
+                        .single();
+                    // project is publisc no need to check user role
+                    if (projectError) {
+                        console.error('Error fetching project data:', projectError.message);
+                        return res.status(500).send({ error: 'Internal server error' });
+                    }
+                    if (projectData && projectData.privacy_mode === 'public') {
+                        console.log('Project is public, no need to check user role.');
+                        req.body.role = 'viewer'; // Set role to viewer for public projects
+                        console.log('User role set to viewer for public project:', projectID);
+                        // Proceed to the next middleware or route handler
+                        return next();
+                    }
+                    else if (projectData && projectData.privacy_mode === 'private') {
+                    console.log('Project is private, checking user role...');
+                    // If project ID is provided, check if the user has the required role for the project
+                    
+                    
                     // Fetch project data from the database using the project ID
                     const { data, error } = await supabase.rpc('get_user_project_role', {
                         u_id: req.body.userId,
@@ -59,6 +82,7 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                     if (data.length === 0) {
                         return res.status(403).send({ error: 'You do not have permission to access this project.' });
                     }
+                    
                     // Check if the user has the required role for the project
                     const userRole = data;
                     if (userRole !== 'owner' && userRole !== 'editor' && userRole !== 'viewer') {
@@ -81,6 +105,7 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                     
                         next();
                     }
+                }
                 } catch (err) {
                     return res.status(403).send();
                 }
