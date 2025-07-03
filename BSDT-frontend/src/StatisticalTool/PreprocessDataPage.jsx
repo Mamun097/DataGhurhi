@@ -105,7 +105,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
           </select>
 
           <button
-            className="bg-green-500 hover:bg-green-600 text-black font-medium py-2 px-4 rounded-lg shadow"
+            className="bg-green-500 hover:bg-green-600 text-white  font-medium py-2 px-4 rounded-lg shadow"
             onClick={() => {
               if (!selectedOption) {
                 alert("Please select a preprocessing option first.");
@@ -305,9 +305,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
         </div>
 
         {/* Download Button on the Right */}
-        <div className="ml-auto">
+        <div className="ml-auto gap-4 flex flex-wrap items-center">
           <button
-            className="bg-green-500 hover:bg-green-600 text-black font-medium py-2 px-4 rounded-lg shadow"
+            className="bg-green-500 hover:bg-green-600 text-white  font-medium py-2 px-4 rounded-lg shadow"
             onClick={() => {
               if (data.length === 0) {
                 alert("No data available to download.");
@@ -324,7 +324,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             Download Data as EXcel
           </button>
           <button
-            className="bg-green-500 hover:bg-green-600 text-black font-medium py-2 px-4 rounded-lg shadow"
+            className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
             onClick={async () => {
               if (data.length === 0) {
                 alert("No preprocessed data available to analyze.");

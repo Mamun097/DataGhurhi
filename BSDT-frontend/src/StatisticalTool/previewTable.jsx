@@ -86,30 +86,30 @@ const PreviewTable = ({ columns, initialData, setData,data }) => {
         <button
         onClick={handleFindReplace}
         style={{
-            backgroundColor: "#3b82f6",
+            backgroundColor: "#7481e4",
             color: "white",
             padding: "0.5rem 1rem",
             borderRadius: "0.375rem",
             cursor: "pointer",
             transition: "background-color 0.2s ease",
         }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#2563eb"}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#3b82f6"}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#3d4263"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#7481e4"}
         >
         Replace
         </button>
         <button
         onClick={deleteSelectedRow}
         style={{
-            backgroundColor: "#ef4444",
+            backgroundColor: "#82020b",
             color: "white",
             padding: "0.5rem 1rem",
             borderRadius: "0.375rem",
             cursor: "pointer",
             transition: "background-color 0.2s ease",
         }}
-        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#dc2626"}
-        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#ef4444"}
+        onMouseEnter={e => e.currentTarget.style.backgroundColor = "#5a0208"}
+        onMouseLeave={e => e.currentTarget.style.backgroundColor = "#82020b"}
         >
         Delete Selected Row
         </button>
