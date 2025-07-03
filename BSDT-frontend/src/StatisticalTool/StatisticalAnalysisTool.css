@@ -372,13 +372,24 @@ div[ref="uploadContainerRef"]:hover {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
 }
+.gap-4{
+  gap: 1rem;
+}
 
 .rounded {
   border-radius: 0.375rem;
 }
+.bg-green-500 {
+  background-color: #295033; /* Tailwind green-500 */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.bg-green-500:hover {
+  background-color: #5a7063; /* Tailwind green-600 */
+}
 
 .bg-red-100.border-l-4.border-red-500.text-red-700.p-4.mb-6.rounded svg {
-  color: #b91c1c;
+  color: #82020b;
   margin-right: 0.5rem;
   flex-shrink: 0;
   margin-top: 0.125rem;
