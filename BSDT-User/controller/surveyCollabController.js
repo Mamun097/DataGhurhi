@@ -29,8 +29,8 @@ exports.rejectInvitation = async (req, res) => {
 
 exports.getallInvitations = async (req, res) => {
     const userId = req.jwt.id;
-
-    const { data, error } = await Collaborator.getAllSurveyInvitation(userId);
+    
+    const { data, error } = await Collaborator.getAllSurveyInvitations(userId);
     if (error) {
         console.error(error);
         return res.status(500).json({ error: 'Internal server error' });
@@ -40,7 +40,6 @@ exports.getallInvitations = async (req, res) => {
 
 exports.allSurveyCollaborator = async (req, res) => {
     const userId = req.jwt.id;
-
     const { data, error } = await Collaborator.allSurveyCollaborator(userId);
     if (error) {
         console.error(error);

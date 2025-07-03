@@ -18,6 +18,7 @@ import QB from "../QBmanagement/QuestionBankUser";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
+import CollabSurveyTab from "./components/collabSurveyComponent";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -579,6 +580,7 @@ const Dashboard = () => {
         { label: "My Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
+        { label: "Collaborated Surveys", key: "collaboratedsurveys"},
         { label: "Question Bank", key: "questionbank" },
         { label: "Premium Packages", key: "premiumpackages" },
       ];
@@ -776,6 +778,19 @@ const Dashboard = () => {
                 fetchCollaborationRequests={fetchCollaborationRequests}
                 handleAccept={handleAccept}
                 handleReject={handleReject}
+                navigate={navigate}
+              />
+            )}
+            {!isAdmin && activeTab === "collaboratedsurveys" && (
+              <CollabSurveyTab
+                getLabel={getLabel}
+                //collaboratedProjects={collaboratedProjects}
+                showCollabModal={showCollabModal}
+                // collabRequests={collabRequests}
+                setShowCollabModal={setShowCollabModal}
+                // fetchCollaborationRequests={fetchCollaborationRequests}
+                //handleAccept={handleAccept}
+                //handleReject={handleReject}
                 navigate={navigate}
               />
             )}
