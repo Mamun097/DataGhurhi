@@ -364,3 +364,60 @@ function generateSlug(survey_title, survey_id, survey_status) {
 
   return `${final_hash}`;
 }
+
+exports.getSurvey = async (req, res) => {
+  try {
+    const { survey_id } = req.params;
+    const user_id = req.jwt.id;
+
+    // Fetch the survey data
+    const { data: surveyData, error: surveyError } = await supabase
+      .from("survey")
+      .select("*")
+      .eq("survey_id", survey_id)
+      .single();
+
+    if (surveyError) {
+      console.error("Supabase select error for survey:", surveyError);
+      return res.status(500).json({ error: "Failed to fetch survey" });
+    }
+
+    if (!surveyData) {
+      return res.status(404).json({ error: "Survey not found" });
+    }
+
+    // // Fetch sections associated with the survey
+    // const { data: sectionsData, error: sectionsError } = await supabase
+    //   .from("section")
+    //   .select("*")
+    //   .eq("survey_id", survey_id);
+
+    // if (sectionsError) {
+    //   console.error("Supabase select error for sections:", sectionsError);
+    //   return res.status(500).json({ error: "Failed to fetch sections" });
+    // }
+
+    // // Fetch questions associated with the survey
+    // const { data: questionsData, error: questionsError } = await supabase
+    //   .from("question")
+    //   .select("*")
+    //   .eq("survey_id", survey_id);
+
+    // if (questionsError) {
+    //   console.error("Supabase select error for questions:", questionsError);
+    //   return res.status(500).json({ error: "Failed to fetch questions" });
+    // }
+
+    // // Combine the data into a single response object
+    // const responseData = {
+    //   ...surveyData,
+    //   sections: sectionsData,
+    //   questions: questionsData,
+    // };
+
+    return res.status(200).json(surveyData);
+  } catch (err) {
+    console.error("Error in getSurvey:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+};
