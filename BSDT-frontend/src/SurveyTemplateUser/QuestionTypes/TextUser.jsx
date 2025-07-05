@@ -6,7 +6,6 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
   const userAnswer = userResponse.find(response => response.questionText === question.text)?.userResponse || '';
   const [error, setError] = useState('');
 
-  console.log("TextUser component rendered with question:", question);
   const handleChange = (e) => {
     const newValue = e.target.value;
     setUserResponse(prev => {

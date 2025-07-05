@@ -75,13 +75,23 @@ const SurveyForm = ({
         {/* Survey Description */}
         {description && (
           <div className="container rounded">
-            <p className="text-muted" style={{ fontSize: "1.2rem" }}>
+            <p
+              style={{
+                fontSize: "1.1em",
+                color: "#555",
+                marginTop: "15px",
+                whiteSpace: "pre-wrap",
+              }}
+            >
               {description}
             </p>
           </div>
         )}
 
-        <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.2rem" }}>
+        <p
+          className="text-danger ms-3 mt-2 mb-4"
+          style={{ fontSize: "1.2rem" }}
+        >
           * Required fields are marked with an asterisk.
         </p>
       </div>
