@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -7,19 +7,19 @@ const Dropdown = ({ question, userResponse, setUserResponse }) => {
     (response) => response.questionText === question.text
   )?.userResponse;
 
-  // Modified handleAnswerChange to update existing response or add new one
+  // This handler updates the user's response state
   const handleAnswerChange = (e) => {
     const selectedValue = e.target.value;
     const existingResponseIndex = userResponse.findIndex(
       (response) => response.questionText === question.text
     );
     if (existingResponseIndex !== -1) {
-      // Update existing response
+      // Update existing response if found
       const updatedResponse = [...userResponse];
       updatedResponse[existingResponseIndex].userResponse = selectedValue;
       setUserResponse(updatedResponse);
     } else {
-      // Add new response
+      // Add a new response if not found
       const newResponse = {
         questionText: question.text,
         userResponse: selectedValue,
@@ -27,6 +27,21 @@ const Dropdown = ({ question, userResponse, setUserResponse }) => {
       setUserResponse([...userResponse, newResponse]);
     }
   };
+
+  const shuffledOptions = useMemo(() => {
+    const options = question.meta?.options || [];
+    // Shuffle only if the flag is explicitly true
+    if (question.meta?.enableOptionShuffle === true) {
+      // Create a copy and shuffle it using the Fisher-Yates algorithm
+      const shuffled = [...options];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+      }
+      return shuffled;
+    }
+    return options;
+  }, [question]); // Dependency: re-calculate only if the question object changes
 
   return (
     <div className="mt-2 ms-2">
@@ -69,11 +84,16 @@ const Dropdown = ({ question, userResponse, setUserResponse }) => {
           <option value="" disabled>
             Select an option
           </option>
-          {question.meta?.options?.map((option, idx) => (
-            <option key={idx} value={option} className="max-md-2">
-              {option || `Option ${idx + 1}`}
-            </option>
-          ))}
+          
+          {shuffledOptions.map((option, idx) => {
+            const optionValue =
+              typeof option === "object" && option?.text ? option.text : option;
+            return (
+              <option key={idx} value={optionValue} className="max-md-2">
+                {optionValue || `Option ${idx + 1}`}
+              </option>
+            );
+          })}
         </select>
       </div>
     </div>

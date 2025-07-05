@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
-  // Default rows and columns with fallbacks
-  const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
+  // Define the canonical (original order) rows and columns with fallbacks
+  const rows = useMemo(
+    () => (question.meta?.rows?.length ? question.meta.rows : ["Row 1"]),
+    [question.meta?.rows]
+  );
   const columns = question.meta?.columns?.length
     ? question.meta.columns
     : ["Column 1"];
@@ -17,7 +20,7 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
   // Check if a specific checkbox is checked
   const isChecked = (row, col) => {
     return userAnswer.some(
-      (ans) => ans.row === row && ans.column.includes(col)
+      (ans) => ans.row === row && ans.column && ans.column.includes(col)
     );
   };
 
@@ -32,13 +35,12 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
         const existingQuestionResponse = prevUserResponse[existingQuestionIndex];
         let updatedUserResponse = [...existingQuestionResponse.userResponse];
 
+        const existingRowIndex = updatedUserResponse.findIndex(
+          (ans) => ans.row === row
+        );
+
         if (checked) {
-          // Add the selection if not already present
-          const existingRowIndex = updatedUserResponse.findIndex(
-            (ans) => ans.row === row
-          );
           if (existingRowIndex !== -1) {
-            // Update the existing row with the new column
             const existingRow = updatedUserResponse[existingRowIndex];
             if (!existingRow.column.includes(col)) {
               updatedUserResponse[existingRowIndex] = {
@@ -47,24 +49,17 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
               };
             }
           } else {
-            // Add a new selection for the row and column
             updatedUserResponse.push({ row, column: [col] });
           }
         } else {
-          // Remove the selection
-          const existingRowIndex = updatedUserResponse.findIndex(
-            (ans) => ans.row === row
-          );
           if (existingRowIndex !== -1) {
             const existingRow = updatedUserResponse[existingRowIndex];
             const updatedColumns = existingRow.column.filter((c) => c !== col);
             if (updatedColumns.length === 0) {
-              // If no columns left for the row, remove the row
               updatedUserResponse = updatedUserResponse.filter(
                 (ans) => ans.row !== row
               );
             } else {
-              // Update the row with remaining columns
               updatedUserResponse[existingRowIndex] = {
                 ...existingRow,
                 column: updatedColumns,
@@ -74,21 +69,18 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
         }
 
         if (updatedUserResponse.length === 0) {
-          // If no selections left, remove the question response
           return prevUserResponse.filter(
             (response) => response.questionText !== question.text
           );
         } else {
-          // Update the question response
-          return [
-            ...prevUserResponse.slice(0, existingQuestionIndex),
-            { ...existingQuestionResponse, userResponse: updatedUserResponse },
-            ...prevUserResponse.slice(existingQuestionIndex + 1),
-          ];
+          return prevUserResponse.map((resp, index) =>
+            index === existingQuestionIndex
+              ? { ...resp, userResponse: updatedUserResponse }
+              : resp
+          );
         }
       } else {
         if (checked) {
-          // Add new question response with the selection
           return [
             ...prevUserResponse,
             {
@@ -97,17 +89,30 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
             },
           ];
         }
-        // If unchecking and no existing response, do nothing
         return prevUserResponse;
       }
     });
   };
+  
+  const shuffledRows = useMemo(() => {
+    if (question.meta?.enableRowShuffle) {
+      const newRows = [...rows];
+      for (let i = newRows.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newRows[i], newRows[j]] = [newRows[j], newRows[i]];
+      }
+      return newRows;
+    }
+    return rows;
+  }, [rows, question.meta?.enableRowShuffle]);
 
 
-  // Check if all required rows have at least one selection
   const isRequiredValid = () => {
     if (!question.required) return true;
-    return rows.every((row) => userAnswer.some((ans) => ans.row === row));
+    return rows.every((row) => {
+      const rowValue = typeof row === 'object' && row?.text ? row.text : row;
+      return userAnswer.some((ans) => ans.row === rowValue && ans.column?.length > 0);
+    });
   };
 
   return (
@@ -152,28 +157,31 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
+            {shuffledRows.map((row, rowIndex) => {
+              const rowValue = typeof row === 'object' && row?.text ? row.text : row;
+              return (
               <tr key={rowIndex}>
-                <td>{row || `Row ${rowIndex + 1}`}</td>
-                {columns.map((col, colIndex) => (
+                <td>{rowValue || `Row ${rowIndex + 1}`}</td>
+                {columns.map((col, colIndex) => {
+                  const colValue = typeof col === 'object' && col?.text ? col.text : col;
+                  return (
                   <td key={colIndex} className="text-center">
                     <input
                       type="checkbox"
                       className="form-check-input me-2"
-                      checked={isChecked(row, col)}
-                      onChange={(e) => handleChange(row, col, e.target.checked)}
+                      checked={isChecked(rowValue, colValue)}
+                      onChange={(e) => handleChange(rowValue, colValue, e.target.checked)}
                       disabled={question.disabled}
-                      aria-label={`Select ${col} for ${row}`}
+                      aria-label={`Select ${colValue} for ${rowValue}`}
                     />
                   </td>
-                ))}
+                )})}
               </tr>
-            ))}
+            )})}
           </tbody>
         </table>
       </div>
 
-      {/* Required Question Indicator */}
       {question.required && !isRequiredValid() && (
         <small className="text-danger">
           At least one box per row is required.

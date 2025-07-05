@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
   const [copyButtonText, setCopyButtonText] = useState('Copy');
 
-  const fullUrl = `http://localhost:5173/v/${surveyLink}`;
+  const fullUrl = `https://localhost:5173/v/${surveyLink}`;
   const shareText = `Check out this survey: ${surveyTitle}`;
 
 
