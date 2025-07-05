@@ -55,7 +55,7 @@ exports.saveSurveyForm = async (req, res) => {
 
 exports.createSurveyForm = async (req, res) => {
   try {
-    const { survey_id, project_id, survey_template, title, response_user_logged_in_status } = req.body;
+    const { survey_id, project_id, survey_template, title, response_user_logged_in_status , shuffle_questions} = req.body;
     const user_id = req.jwt.id;
     console.log(survey_template.questions);
     // Validate input
@@ -92,6 +92,7 @@ exports.createSurveyForm = async (req, res) => {
         title: title || "Untitled Survey",
         survey_status: "published",
         response_user_logged_in_status: response_user_logged_in_status || false,
+        shuffle_questions: shuffle_questions || false,
       })
       .eq("survey_id", survey_id)
       .select("*");

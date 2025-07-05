@@ -9,7 +9,7 @@ try {
         // 1. Fetch the survey's rules (ID and login requirement) in one call.
         const { data: survey, error: surveyError } = await supabase
             .from('survey')
-            .select('survey_id, response_user_logged_in_status') // aranna--> table name change
+            .select('survey_id, response_user_logged_in_status') 
             .eq('survey_link', slug)
             .single();
 
@@ -19,7 +19,7 @@ try {
 
         const surveyId = survey.survey_id;
 
-        if (survey.response_user_logged_in_status === true) {   // aranna--> table name change
+        if (survey.response_user_logged_in_status === true) {
             // --- PROTECTED SURVEY SUBMISSION ---
             // If login is required, a user ID must be present.
             if (!userId) {
@@ -42,7 +42,7 @@ try {
             // If all checks pass, insert the response with the user's ID.
             const { data, error } = await supabase
                 .from('response')
-                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse }]) //aranna--> Marks: caluclatedMarks save in the database
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse , marks:calculatedMarks }])
                 .select()
                 .single();
                 
