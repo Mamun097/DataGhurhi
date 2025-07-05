@@ -22,6 +22,7 @@ const Index = () => {
   const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
   const [questions, setQuestions] = useState([]);
   const [backgroundImage, setBackgroundImage] = useState(null);
+  const [shuffle, setShuffle] = useState(false);
 
   // User Response state
   const [userResponse, setUserResponse] = useState([]);
@@ -43,12 +44,12 @@ const Index = () => {
               },
             }
           );
-          console.log("Template data:", response.data);
           setTemplate(response.data.data);
           setTitle(response.data.data.title);
           setSections(response.data.data.template.sections);
           setQuestions(response.data.data.template.questions);
           setBackgroundImage(response.data.data.template.backgroundImage);
+          setShuffle(response.data.data.shuffle_questions);
         } catch (err) {
           console.error("Failed to load template:", err);
         }
@@ -117,6 +118,7 @@ const Index = () => {
                 userResponse={userResponse}
                 setUserResponse={setUserResponse}
                 template={template}
+                shuffle={shuffle}
               />
               <div style={{ minHeight: "100vh" }}>
                 <button
