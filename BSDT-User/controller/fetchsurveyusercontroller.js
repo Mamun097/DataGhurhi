@@ -9,7 +9,7 @@ exports.fetchSurveyUser = async (req, res) =>{
 
         const { data: survey, error: surveyError } = await supabase
             .from('survey')
-            .select('survey_id, title, template, banner, response_user_logged_in_status')
+            .select('survey_id, title, template, banner, response_user_logged_in_status, shuffle_questions')
             .eq('survey_link', slug)
             .single();
 
