@@ -1,4 +1,3 @@
-// src/Components/SurveyForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -29,7 +28,7 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; // Return original text array on error
+    return textArray; 
   }
 };
 const SurveyForm = ({
@@ -49,7 +48,7 @@ const SurveyForm = ({
   setDescription,
   language,
   setLanguage,
-  isLoggedInRequired = false, // Default to false if not provided
+  isLoggedInRequired = false,
   setIsLoggedInRequired,
 }) => {
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
@@ -63,17 +62,15 @@ const SurveyForm = ({
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
-  console.log("Description in SurveyForm:", description);
-  console.log("survey id in SurveyForm:", survey_id);
   
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
 
   const labelsToTranslate = useMemo(
     () => [
-      // ... (your extensive list of labels remains unchanged)
       "Updating", "Saving", "Publishing", "Add Description", "Remove Banner",
       "Save Description", "Edit Description", "Add New Description", "Survey Description",
       "Enter your survey description here", "Cancel", "Edit", "Delete", "Save",
@@ -199,8 +196,11 @@ const SurveyForm = ({
     setShowPublicationModal(false);
   };
 
-  const handleConfirmPublication = (isLoggedIn) => {
+  const handleConfirmPublication = (isLoggedIn, isShuffled) => {
+
     setShowPublicationModal(false);
+    setIsLoggedInRequired(isLoggedIn);
+    setShuffleQuestions(isShuffled);
     let url;
     if (actionType === 'publish' || actionType === 'update') {
       url = "http://localhost:2000/api/surveytemplate";
@@ -208,10 +208,10 @@ const SurveyForm = ({
       console.error("Invalid action type for publication.");
       return;
     }
-    sendSurveyData(url, isLoggedIn);
+    sendSurveyData(url, isLoggedIn, isShuffled);
   };
 
-  const sendSurveyData = async (url, isLoggedInStatus) => {
+  const sendSurveyData = async (url, isLoggedInStatus, isShuffled) => {
     setIsLoading(true);
     const bearerTokenString = localStorage.getItem("token");
     let userIdInPayload = null;
@@ -256,6 +256,7 @@ const SurveyForm = ({
         title: title,
         user_id: userIdInPayload,
         response_user_logged_in_status: isLoggedInStatus,
+        shuffle_questions: isShuffled,
       };
 
       const response = await axios.put(url, payload, {
@@ -319,7 +320,7 @@ const SurveyForm = ({
     }
   };
 
-  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save", isLoggedInRequired);
+  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save", isLoggedInRequired, shuffleQuestions);
   const handlePublish = () => handleOpenPublicationModal("publish");
   const handleUpdate = () => handleOpenPublicationModal("update");
   const handleSurveyResponses = () => {
@@ -398,7 +399,7 @@ const SurveyForm = ({
         {surveyLink && (
           <>
             <button
-                onClick={() => setShowShareModal(true)} // This opens the modal
+                onClick={() => setShowShareModal(true)}
                 className="btn btn-outline-info btn-sm me-2"
                 title="Share survey link"
               >
@@ -610,7 +611,8 @@ const SurveyForm = ({
         handleClose={handleClosePublicationModal}
         handleConfirm={handleConfirmPublication}
         isLoggedInRequired={isLoggedInRequired}
-        // setIsLoggedInRequired={setIsLoggedInRequired}
+        shuffleQuestions={shuffleQuestions}
+        setShuffleQuestions={setShuffleQuestions}
         action={actionType}
       />
       <CollaborationModal
