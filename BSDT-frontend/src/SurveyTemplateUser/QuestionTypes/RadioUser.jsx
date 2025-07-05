@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -7,19 +7,16 @@ const Radio = ({ question, userResponse, setUserResponse }) => {
     (response) => response.questionText === question.text
   )?.userResponse;
 
-  // Modified handleAnswerChange to update existing response or add new one
   const handleAnswerChange = (e) => {
     const selectedValue = e.target.value;
     const existingResponseIndex = userResponse.findIndex(
       (response) => response.questionText === question.text
     );
     if (existingResponseIndex !== -1) {
-      // Update existing response
       const updatedResponse = [...userResponse];
       updatedResponse[existingResponseIndex].userResponse = selectedValue;
       setUserResponse(updatedResponse);
     } else {
-      // Add new response
       const newResponse = {
         questionText: question.text,
         userResponse: selectedValue,
@@ -27,6 +24,19 @@ const Radio = ({ question, userResponse, setUserResponse }) => {
       setUserResponse([...userResponse, newResponse]);
     }
   };
+
+  const shuffledOptions = useMemo(() => {
+    const options = question.meta?.options || [];
+    if (question.meta?.enableOptionShuffle === true) {
+      const shuffled = [...options];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+      }
+      return shuffled;
+    }
+    return options;
+  }, [question]); // Dependency: re-shuffle only if the question object changes
 
   return (
     <div className="mt-2 ms-2">
@@ -58,7 +68,7 @@ const Radio = ({ question, userResponse, setUserResponse }) => {
 
       {/* Radio Options */}
       <div>
-        {question.meta?.options?.map((option, idx) => (
+        {shuffledOptions.map((option, idx) => (
           <div key={idx} className="form-check mb-3 ps-2 ms-3">
             <input
               type="radio"
@@ -66,7 +76,6 @@ const Radio = ({ question, userResponse, setUserResponse }) => {
               name={`radio-${question.id}`}
               id={`radio-opt-${question.id}-${idx}`}
               value={option.text}
-              // Changed checked to be based on userAnswer, ensuring it reflects user response
               checked={userAnswer === option.text}
               onChange={handleAnswerChange}
               required={question.required}
