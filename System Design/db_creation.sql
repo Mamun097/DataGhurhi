@@ -430,3 +430,35 @@ CREATE TABLE minimum_requirements (
     CONSTRAINT fk_validity_period FOREIGN KEY (validity_period_id) REFERENCES validity_periods(id),
     CONSTRAINT unique_requirement UNIQUE (validity_period_id, item_type)
 );
+
+
+-- Create payment_transactions table for Supabase/PostgreSQL
+CREATE TABLE IF NOT EXISTS payment_transactions (
+    id SERIAL PRIMARY KEY,
+    transaction_id VARCHAR(100) UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL,
+    package_id INTEGER NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    currency VARCHAR(3) DEFAULT 'BDT',
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'cancelled', 'refunded')),
+    val_id VARCHAR(100),
+    bank_tran_id VARCHAR(100),
+    card_type VARCHAR(50),
+    store_amount DECIMAL(10, 2),
+    card_issuer VARCHAR(100),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    completed_at TIMESTAMP WITH TIME ZONE,
+    failed_at TIMESTAMP WITH TIME ZONE,
+    cancelled_at TIMESTAMP WITH TIME ZONE,
+    refunded_at TIMESTAMP WITH TIME ZONE,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_payment_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_payment_package FOREIGN KEY (package_id) REFERENCES packages(package_id) ON DELETE CASCADE
+);
+
+-- Create indexes for better performance
+CREATE INDEX IF NOT EXISTS idx_payment_user_id ON payment_transactions(user_id);
+CREATE INDEX IF NOT EXISTS idx_payment_transaction_id ON payment_transactions(transaction_id);
+CREATE INDEX IF NOT EXISTS idx_payment_status ON payment_transactions(status);
+CREATE INDEX IF NOT EXISTS idx_payment_created_at ON payment_transactions(created_at);
