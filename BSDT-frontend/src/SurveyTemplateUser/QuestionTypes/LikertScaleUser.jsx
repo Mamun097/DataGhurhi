@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
 const LikertScale = ({ question, userResponse, setUserResponse }) => {
-  // Default rows and columns with fallbacks
-  const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
+  // Columns remain as they are, with a fallback
   const columns = question.meta?.columns?.length
     ? question.meta.columns
     : ["Column 1"];
@@ -15,7 +14,7 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
       (response) => response.questionText === question.text
     )?.userResponse || [];
 
-  // Modified handleClick to handle both selecting and deselecting
+  // This handler for selecting/deselecting an answer remains unchanged
   const handleClick = (row, columnValue) => {
     setUserResponse((prevUserResponse) => {
       const existingQuestionIndex = prevUserResponse.findIndex(
@@ -30,49 +29,44 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
 
         if (existingRowAnswer) {
           if (existingRowAnswer.column === columnValue) {
-            // Deselect: remove the answer for this row
             const updatedUserResponse = existingQuestionResponse.userResponse.filter(
               (ans) => ans.row !== row
             );
-            if( updatedUserResponse.length === 0) {
-              // If no answers left for this question, remove it from userResponse
+            if (updatedUserResponse.length === 0) {
+              // If no answers left for this question, remove the entire question response
               return prevUserResponse.filter(
                 (response) => response.questionText !== question.text
               );
-            }
-            else {
-              // Update existing question response with empty row
-              return [
-                ...prevUserResponse.slice(0, existingQuestionIndex),
-                { ...existingQuestionResponse, userResponse: updatedUserResponse },
-                ...prevUserResponse.slice(existingQuestionIndex + 1),
-              ];
+            } else {
+              // Update existing question response
+              return prevUserResponse.map((resp, index) =>
+                index === existingQuestionIndex
+                  ? { ...resp, userResponse: updatedUserResponse }
+                  : resp
+              );
             }
           } else {
-            // Update to new selection
             const updatedUserResponse = existingQuestionResponse.userResponse.map(
               (ans) => (ans.row === row ? { ...ans, column: columnValue } : ans)
             );
-            return [
-              ...prevUserResponse.slice(0, existingQuestionIndex),
-              { ...existingQuestionResponse, userResponse: updatedUserResponse },
-              ...prevUserResponse.slice(existingQuestionIndex + 1),
-            ];
+            return prevUserResponse.map((resp, index) =>
+              index === existingQuestionIndex
+                ? { ...resp, userResponse: updatedUserResponse }
+                : resp
+            );
           }
         } else {
-          // Add new selection
           const updatedUserResponse = [
             ...existingQuestionResponse.userResponse,
             { row, column: columnValue },
           ];
-          return [
-            ...prevUserResponse.slice(0, existingQuestionIndex),
-            { ...existingQuestionResponse, userResponse: updatedUserResponse },
-            ...prevUserResponse.slice(existingQuestionIndex + 1),
-          ];
+          return prevUserResponse.map((resp, index) =>
+            index === existingQuestionIndex
+              ? { ...resp, userResponse: updatedUserResponse }
+              : resp
+          );
         }
       } else {
-        // Add new question response
         return [
           ...prevUserResponse,
           {
@@ -83,6 +77,19 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
       }
     });
   };
+
+  const shuffledRows = useMemo(() => {
+    const rows = question.meta?.rows?.length ? question.meta.rows : ["Row 1"];
+    if (question.meta?.enableRowShuffle) {
+      const newRows = [...rows];
+      for (let i = newRows.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [newRows[i], newRows[j]] = [newRows[j], newRows[i]];
+      }
+      return newRows;
+    }
+    return rows;
+  }, [question]); // Dependency: re-calculate only if the question object changes
 
   return (
     <div className="mt-2 ms-2 me-2">
@@ -126,28 +133,31 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex}>
-                <td>{row || `Row ${rowIndex + 1}`}</td>
-                {columns.map((col, colIndex) => (
-                  <td key={colIndex} className="text-center">
-                    <input
-                      type="radio"
-                      className="form-check-input me-2"
-                      name={`row-${question.id}-${rowIndex}`}
-                      value={col}
-                      checked={userAnswer.some(
-                        (ans) => ans.row === row && ans.column === col
-                      )}
-                      onClick={() => handleClick(row, col)}
-                      required={question.required}
-                      disabled={question.disabled}
-                      aria-label={`Select ${col} for ${row}`}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {shuffledRows.map((row, rowIndex) => {
+              const rowValue = typeof row === 'object' && row?.text ? row.text : row;
+              return (
+                <tr key={rowIndex}>
+                  <td>{rowValue || `Row ${rowIndex + 1}`}</td>
+                  {columns.map((col, colIndex) => (
+                    <td key={colIndex} className="text-center">
+                      <input
+                        type="radio"
+                        className="form-check-input me-2"
+                        name={`row-${question.id}-${rowIndex}`} 
+                        value={col}
+                        checked={userAnswer.some(
+                          (ans) => ans.row === rowValue && ans.column === col
+                        )}
+                        onChange={() => handleClick(rowValue, col)}
+                        required={question.required}
+                        disabled={question.disabled}
+                        aria-label={`Select ${col} for ${rowValue}`}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

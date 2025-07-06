@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react"; // Import useRef
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import SurveySections from "./SurveySectionsUser";
 
-// SurveyForm Component to manage the survey title, background, sections, and questions.
 const SurveyForm = ({
   title,
   sections,
@@ -13,22 +12,50 @@ const SurveyForm = ({
   userResponse,
   setUserResponse,
   template,
+  shuffle = false,
 }) => {
-  // Initialize backgroundImage state from prop and update on prop change
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [description, setDescription] = useState(
     template?.template?.description || ""
   );
-  // console.log("Description:", description);
-  console.log("SurveyForm Sections:", sections);
-  console.log("SurveyForm Questions:", questions);
+  const hasShuffled = useRef(false);
 
-  // Sync backgroundImage with prop
   useEffect(() => {
     if (image) {
       setBackgroundImage(image);
     }
   }, [image]);
+
+  useEffect(() => {
+    if (shuffle && !hasShuffled.current) {
+      // 1. Group all questions by their section ID.
+      const questionsBySection = questions.reduce((acc, question) => {
+        const sectionId = question.section;
+        if (!acc[sectionId]) {
+          acc[sectionId] = [];
+        }
+        acc[sectionId].push(question);
+        return acc;
+      }, {});
+
+      for (const sectionId in questionsBySection) {
+        const questionArray = questionsBySection[sectionId];
+        for (let i = questionArray.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [questionArray[i], questionArray[j]] = [
+            questionArray[j],
+            questionArray[i],
+          ];
+        }
+      }
+
+      const finalShuffledQuestions = Object.values(questionsBySection).flat();
+
+      setQuestions(finalShuffledQuestions);
+
+      hasShuffled.current = true;
+    }
+  }, [shuffle, questions, setQuestions]);
 
   return (
     <div>
@@ -75,13 +102,23 @@ const SurveyForm = ({
         {/* Survey Description */}
         {description && (
           <div className="container rounded">
-            <p className="text-muted" style={{ fontSize: "1.2rem" }}>
+            <p
+              style={{
+                fontSize: "1.1em",
+                color: "#555",
+                marginTop: "15px",
+                whiteSpace: "pre-wrap",
+              }}
+            >
               {description}
             </p>
           </div>
         )}
 
-        <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.2rem" }}>
+        <p
+          className="text-danger ms-3 mt-2 mb-4"
+          style={{ fontSize: "1.2rem" }}
+        >
           * Required fields are marked with an asterisk.
         </p>
       </div>
