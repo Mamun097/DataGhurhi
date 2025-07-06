@@ -131,5 +131,8 @@ app.use('/api/survey-collaborator', surveyCollabRouter);
 
 app.use('/api', generateMultipleQuestionsWithLLMRouter);
 
+const paymentRoutes = require('./route/payment');
+app.use('/api/payment', paymentRoutes);
+
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
