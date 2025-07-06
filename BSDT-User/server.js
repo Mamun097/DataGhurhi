@@ -134,6 +134,9 @@ app.use('/api/survey-collaborator', surveyCollabRouter);
 
 app.use('/api', generateMultipleQuestionsWithLLMRouter);
 
+const paymentRoutes = require('./route/payment');
+app.use('/api/payment', paymentRoutes);
+
 // file upload for analysis
 app.use('/api', analysisFileUploadRouter);
 
