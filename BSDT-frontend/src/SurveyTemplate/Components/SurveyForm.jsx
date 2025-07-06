@@ -1,4 +1,3 @@
-// src/Components/SurveyForm.jsx
 import React, { useState, useEffect, useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -9,8 +8,10 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PublicationSettingsModal from "../utils/publication_modal_settings"; // Import the modal component
+import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
+import CollaborationModal from "../utils/CollaborationModal";
+
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -27,7 +28,7 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; // Return original text array on error
+    return textArray; 
   }
 };
 const SurveyForm = ({
@@ -47,7 +48,7 @@ const SurveyForm = ({
   setDescription,
   language,
   setLanguage,
-  isLoggedInRequired = false, // Default to false if not provided
+  isLoggedInRequired = false,
   setIsLoggedInRequired,
 }) => {
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
@@ -57,19 +58,19 @@ const SurveyForm = ({
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [showCollaborationModal, setShowCollaborationModal] = useState(false);
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
-  console.log("Description in SurveyForm:", description);
   
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
+  const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
 
   const labelsToTranslate = useMemo(
     () => [
-      // ... (your extensive list of labels remains unchanged)
       "Updating", "Saving", "Publishing", "Add Description", "Remove Banner",
       "Save Description", "Edit Description", "Add New Description", "Survey Description",
       "Enter your survey description here", "Cancel", "Edit", "Delete", "Save",
@@ -195,8 +196,11 @@ const SurveyForm = ({
     setShowPublicationModal(false);
   };
 
-  const handleConfirmPublication = (isLoggedIn) => {
+  const handleConfirmPublication = (isLoggedIn, isShuffled) => {
+
     setShowPublicationModal(false);
+    setIsLoggedInRequired(isLoggedIn);
+    setShuffleQuestions(isShuffled);
     let url;
     if (actionType === 'publish' || actionType === 'update') {
       url = "http://localhost:2000/api/surveytemplate";
@@ -204,10 +208,10 @@ const SurveyForm = ({
       console.error("Invalid action type for publication.");
       return;
     }
-    sendSurveyData(url, isLoggedIn);
+    sendSurveyData(url, isLoggedIn, isShuffled);
   };
 
-  const sendSurveyData = async (url, isLoggedInStatus) => {
+  const sendSurveyData = async (url, isLoggedInStatus, isShuffled) => {
     setIsLoading(true);
     const bearerTokenString = localStorage.getItem("token");
     let userIdInPayload = null;
@@ -252,6 +256,7 @@ const SurveyForm = ({
         title: title,
         user_id: userIdInPayload,
         response_user_logged_in_status: isLoggedInStatus,
+        shuffle_questions: isShuffled,
       };
 
       const response = await axios.put(url, payload, {
@@ -315,7 +320,7 @@ const SurveyForm = ({
     }
   };
 
-  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save", isLoggedInRequired);
+  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save", isLoggedInRequired, shuffleQuestions);
   const handlePublish = () => handleOpenPublicationModal("publish");
   const handleUpdate = () => handleOpenPublicationModal("update");
   const handleSurveyResponses = () => {
@@ -394,11 +399,18 @@ const SurveyForm = ({
         {surveyLink && (
           <>
             <button
-                onClick={() => setShowShareModal(true)} // This opens the modal
+                onClick={() => setShowShareModal(true)}
                 className="btn btn-outline-info btn-sm me-2"
                 title="Share survey link"
               >
                 <i className="bi bi-share"></i> {getLabel("Share Survey")}
+              </button>
+              <button
+              onClick={() => setShowCollaborationModal(true)}
+              className="btn btn-outline-warning btn-sm me-2"
+              title="Manage collaborators"
+              >
+                <i className="bi bi-people"></i> {getLabel("Collaborate")}
               </button>
 
               <ShareSurveyModal
@@ -599,8 +611,15 @@ const SurveyForm = ({
         handleClose={handleClosePublicationModal}
         handleConfirm={handleConfirmPublication}
         isLoggedInRequired={isLoggedInRequired}
-        // setIsLoggedInRequired={setIsLoggedInRequired}
+        shuffleQuestions={shuffleQuestions}
+        setShuffleQuestions={setShuffleQuestions}
         action={actionType}
+      />
+      <CollaborationModal
+        show={showCollaborationModal}
+        handleClose={() => setShowCollaborationModal(false)}
+        surveyId={Number(survey_id)}
+        surveyTitle={title}
       />
       <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
     </div>

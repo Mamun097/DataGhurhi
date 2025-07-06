@@ -13,5 +13,7 @@ urlpatterns = [
     path('api/handle-missing/', views.handle_missing_api, name='handle_missing_api'),
     path('api/handle-outliers/', views.handle_outliers_api, name='handle_outliers_api'),
     path('api/rank-column/', views.rank_categorical_column_api, name='rank_categorical_column_api'),
+    path('api/split-column/', views.split_column_api, name='split_column_api'),
+    path('api/group-data/', views.group_data_api, name='group_data_api'),
     path('api/upload-preprocessed/', views.save_preprocessed_file_api, name='save_preprocessed_file_api'),
 ]
