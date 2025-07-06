@@ -21,6 +21,8 @@ import EDAPieChartOptions from './EDAPieChartOptions';
 import EDABasicsOptions from './EDABasicsOptions';
 import SimilarityOptions from './SimilarityOptions';
 import 'katex/dist/katex.min.css';
+import {useNavigate} from 'react-router-dom';
+
 
 const translations = {
     English: {
@@ -254,6 +256,8 @@ const translations = {
     }
 };
 
+
+
 // Digit mapping for Bengali
 const digitMapBn = {
     '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
@@ -269,6 +273,7 @@ const mapDigits = (text, lang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
+    const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
         return localStorage.getItem("language") || "English";
@@ -350,7 +355,7 @@ const StatisticalAnalysisTool = () => {
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-
+    const [userId, setUserId] = useState('');
     // Refs
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
@@ -394,8 +399,11 @@ const StatisticalAnalysisTool = () => {
                 const formData = new FormData();
                 formData.append('file', newFile);
 
-                return fetch('http://127.0.0.1:8000/api/get-columns/', {
+                return fetch('http://localhost:2000/api/upload/', {
                     method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    },
                     body: formData,
                 });
             })
@@ -431,11 +439,17 @@ const StatisticalAnalysisTool = () => {
 
             const formData = new FormData();
             formData.append('file', selectedFile);
+            console.log("File selected:", selectedFile);
 
             // Call the API to get columns
-            fetch('http://127.0.0.1:8000/api/get-columns/', {
+            // attach token
+            const token = localStorage.getItem("token");
+            fetch('http://localhost:2000/api/upload/', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             })
                 .then(response => response.json())
                 .then(data => {
@@ -443,6 +457,11 @@ const StatisticalAnalysisTool = () => {
                         setColumns(data.columns);
                         setColumn1(data.columns[0]);
                         setColumn2(data.columns.length > 1 ? data.columns[1] : '');
+                        setUserId(data?.user_id || null); // Set user ID if available
+                        const userIdFromData = data?.user_id;
+                        console.log("User ID from data:", userIdFromData);
+                        setUserId(userIdFromData);
+                        console.log("User ID set in state:", userId);
                         setUploadStatus('success');
                     } else {
                         setErrorMessage(data.error);
@@ -482,6 +501,7 @@ const StatisticalAnalysisTool = () => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('userID', userId); // Attach user ID if available
     formData.append('test_type', testType);
     formData.append('column1', column1);
     formData.append('column2', column2);
@@ -637,6 +657,7 @@ const StatisticalAnalysisTool = () => {
     fetch('http://127.0.0.1:8000/api/analyze/', {
         method: 'POST',
         body: formData
+
     })
         .then(res => res.json())
         .then(data => {
@@ -832,7 +853,12 @@ const StatisticalAnalysisTool = () => {
                                                 <button
                                                     type="button"
                                                     className="bg-green-600 hover:bg-green-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                    onClick={() => window.location.href = "/preprocess"}
+                                                    onClick={() => {
+                                                        console.log("User ID:", userId);
+                                                       const path = "/preprocess";
+                                                        navigate(path, { state: { userId: userId } });
+                                                    }}
+                                                    
                                                 >
                                                     Preprocess Data
                                                 </button>
@@ -1033,6 +1059,7 @@ const StatisticalAnalysisTool = () => {
                                                         violinWidth={violinWidth}
                                                         setViolinWidth={setViolinWidth}
                                                         t={t}
+                                                        
                                                     />
                                                 )}
 
