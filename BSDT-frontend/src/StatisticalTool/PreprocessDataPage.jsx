@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
+import { useLocation } from 'react-router-dom'; // Import useLocation to access state
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
@@ -29,12 +30,21 @@ const PreprocessDataPage = () => {
   const [groupCategoricalCol, setGroupCategoricalCol] = useState('');
   const [groupNumericalCol, setGroupNumericalCol] = useState('');
   const [groupingPairs, setGroupingPairs] = useState([]);
+  const [userId, setUserId] = useState(null);
 
-
+  
+const location = useLocation();
 
 
 useEffect(() => {
-  fetch('http://127.0.0.1:8000/api/preview-data/')
+  setUserId(location.state?.userId || null); // Get user ID from state if available
+  console.log("User ID from location state:", userId);
+  fetch('http://127.0.0.1:8000/api/preview-data/', {
+    method: 'GET',
+    headers: {
+      'userID': userId 
+    }
+  })
     .then(res => {
       if (!res.ok) {
         // Manually throw an error so it goes to catch block
@@ -52,7 +62,7 @@ useEffect(() => {
       console.error("Failed to load preview data:", err.message);
       // Optionally show user feedback here
     });
-}, []);
+}, [userId, location.state]);
 
 
 function downloadAsExcel(data, filename = 'data.xlsx') {

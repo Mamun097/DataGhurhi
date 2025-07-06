@@ -27,74 +27,63 @@ from .forms import AnalysisForm
 
 
 def get_columns(request):
-    if request.method == 'POST' and request.FILES.get('file'):
-        try:
-            excel_file = request.FILES['file']
-            df = pd.read_excel(excel_file)
-
-            import os
-            from django.conf import settings
-            save_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            df.to_excel(save_path, index=False)
-
-            return JsonResponse({
-                'success': True,
-                'columns': df.columns.tolist()
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': str(e)
-            })
-        
-    return JsonResponse({'success': False, 'error': 'No file uploaded'})
-
-from django.http import HttpResponse, JsonResponse
-def preview_data(request):
     
-    if request.method == 'GET':
-        file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-        if os.path.exists(file_path):
-            df = pd.read_excel(file_path)
+        if request.method == 'POST' and request.FILES.get('file'):
+            user_id = request.POST.get('userID') 
+            print(f"Received user_id: {user_id}")
 
-            # Replace NaN with None
-            df_clean = df.where(pd.notnull(df), None)
-
-            # Prepare data
-            data = {
-                'columns': df_clean.columns.tolist(),
-                'rows': df_clean.to_dict(orient='records')
-            }
+            if not user_id:
+                return JsonResponse({'success': False, 'error': 'User ID not provided'})
 
             try:
-                # Safely dump to JSON (forbids NaN)
-                json_data = json.dumps(data, allow_nan=False)
-                print(df_clean[df_clean.isna().any(axis=1)])
-
-                return HttpResponse(json_data, content_type='application/json')
-            except ValueError as e:
-                return JsonResponse({'error': f'Invalid data: {e}'}, status=500)
-        else:
-            
-            return JsonResponse({'error': 'No uploaded file found'}, status=404)
-        
-def analyze_data_api(request):
-    if request.method == 'POST':
-        try:
-            if 'file' in request.FILES:
                 excel_file = request.FILES['file']
                 df = pd.read_excel(excel_file)
 
-                # Save uploaded file to be reused later
-                save_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
+                # Create the user's uploads folder: media/ID_<user_id>_uploads/uploads
+                user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
+                os.makedirs(user_folder, exist_ok=True)
+
+                # Save the file in that uploads folder
+                save_path = os.path.join(user_folder, 'latest_uploaded.xlsx')
                 df.to_excel(save_path, index=False)
-            else:
-                # Fallback: use the last uploaded Excel file
-                file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-                if not os.path.exists(file_path):
-                    raise ValueError("No file uploaded and no previous file found")
-                df = pd.read_excel(file_path)
+
+                return JsonResponse({
+                    'success': True,
+                    'user_id': user_id,
+                    'columns': df.columns.tolist()
+                })
+
+            except Exception as e:
+                return JsonResponse({
+                    'success': False,
+                    'error': str(e),
+                    'user_id': user_id
+                })
+        return JsonResponse({'success': False, 'error': 'Invalid request method or no file uploaded'})
+
+from django.http import HttpResponse, JsonResponse
+import os
+import json
+import pandas as pd
+from django.http import JsonResponse, HttpResponse
+from django.conf import settings
+
+
+
+def analyze_data_api(request):
+    if request.method == 'POST':
+        try:
+            user_id = request.POST.get('userID')
+            # print(f"Received user_id: {user_id}")
+            if not user_id:
+                return JsonResponse({'success': False, 'error': 'User ID not provided'})
+
+            # Load the latest uploaded DataFrame
+            file_path = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", 'latest_uploaded.xlsx')
+            if not os.path.exists(file_path):
+                return JsonResponse({'success': False, 'error': 'No uploaded file found for this user'}, status=404)
+
+            df = pd.read_excel(file_path)
 
             if request.content_type == 'application/json':
                 body = json.loads(request.body)
@@ -142,10 +131,10 @@ def analyze_data_api(request):
             
 
             if test_type == 'kruskal':
-                return process_kruskal_test(request, df, col1, col2)
+                return process_kruskal_test(request, df, col1, col2, user_id)
             
             elif test_type == 'mannwhitney':
-                return process_mannwhitney_test(request, df, col1, col2)
+                return process_mannwhitney_test(request, df, col1, col2,user_id)
  
             elif test_type == 'pearson':
                 # Step 1: Get all dynamic column keys sent by frontend
@@ -160,7 +149,7 @@ def analyze_data_api(request):
                 if len(selected_columns) < 2:
                     raise ValueError("Pearson correlation requires at least 2 columns")
 
-                return process_pearson_test(request, df, selected_columns)
+                return process_pearson_test(request, df, selected_columns, user_id)
 
             elif test_type == 'spearman':
                 # Step 1: Collect dynamic columns from form
@@ -175,69 +164,69 @@ def analyze_data_api(request):
                 if len(selected_columns) < 2:
                     raise ValueError("Spearman correlation requires at least 2 columns")
 
-                return process_spearman_test(request, df, selected_columns)
+                return process_spearman_test(request, df, selected_columns, user_id)
           
             elif test_type == 'wilcoxon':
-                return process_wilcoxon_test(request, df, col1, col2)
+                return process_wilcoxon_test(request, df, col1, col2,user_id)
       
             elif test_type == 'shapiro':
-                return process_shapiro_test(request, df, col1)
+                return process_shapiro_test(request, df, col1, user_id)
             
             elif test_type == 'linear_regression':
-                return process_linear_regression_test(request, df, col1, col2)
+                return process_linear_regression_test(request, df, col1, col2,user_id)
             
             elif test_type == 'anova':
-                return process_anova_test(request, df, col1, col2)
+                return process_anova_test(request, df, col1, col2, user_id)
             
             elif test_type == 'ancova':
                 col_group = request.POST.get('primary_col')
                 col_covariate = request.POST.get('secondary_col')
                 col_outcome = request.POST.get('dependent_col')
-                return process_ancova_test(request, df, col_group, col_covariate, col_outcome)
+                return process_ancova_test(request, df, col_group, col_covariate, col_outcome, user_id)
 
             elif test_type == 'kolmogorov':
                 column = request.POST.get('column')
-                return process_ks_test(request, df, column)
+                return process_ks_test(request, df, column, user_id)
 
             elif test_type == 'anderson':
                 column = request.POST.get('column')
-                return process_anderson_darling_test(request, df, column)            
+                return process_anderson_darling_test(request, df, column, user_id)            
 
             elif test_type == 'fzt':
                 col_group = request.POST.get('column1')
                 col_value = request.POST.get('column2')
-                return process_fzt_test(request, df, col_group, col_value)
+                return process_fzt_test(request, df, col_group, col_value, user_id)
 
             elif test_type == 'cross_tabulation':
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column") and request.POST[key] in df.columns:
                         selected_columns.append(request.POST[key])
-                return process_cross_tabulation(request, df, selected_columns)
+                return process_cross_tabulation(request, df, selected_columns, user_id)
 
             elif test_type == 'eda_distribution':
                 column = request.POST.get('column1')
-                return process_eda_distribution(request, df, column)
+                return process_eda_distribution(request, df, column, user_id)
 
             elif test_type == 'eda_swarm':
                 column1 = request.POST.get('column1')  
                 column2 = request.POST.get('column2')  
-                return process_eda_swarm_plot(request, df, column1, column2)
+                return process_eda_swarm_plot(request, df, column1, column2, user_id)
 
             elif test_type == 'eda_pie':
-                return process_eda_pie_chart(request, df)
-            
+                return process_eda_pie_chart(request, df, user_id)
+
             elif test_type == 'eda_basics':
-                return process_eda_basics(request, df)
+                return process_eda_basics(request, df, user_id)
 
             elif test_type == 'similarity':
-                return process_similarity(request, df)
+                return process_similarity(request, df, user_id)
 
             elif test_type == 'chi_square':
-                return process_chi_square(request, df)
+                return process_chi_square(request, df, user_id)
 
             elif test_type == 'cramers_heatmap':
-                return process_cramers_heatmap(request, df)
+                return process_cramers_heatmap(request, df, user_id)
 
 
             return render(request, 'analysis/results.html', {
@@ -257,7 +246,8 @@ def analyze_data_api(request):
     return render(request, 'analysis/upload.html', {'form': form})
 
 
-def process_kruskal_test(request, df, col1, col2):
+def process_kruskal_test(request, df, col1, col2, user_id):
+    print(f"Processing Kruskal-Wallis test for columns: {col1} and {col2}")
     print(f"Column {col1} type: {df[col1].dtype}, contains NaN: {df[col1].isna().any()}")
     print(f"Column {col2} type: {df[col2].dtype}, contains NaN: {df[col2].isna().any()}")
     print(f"First few values of {col1}: {df[col1].head()}")
@@ -286,7 +276,9 @@ def process_kruskal_test(request, df, col1, col2):
         # Set up file paths
         media_root = settings.MEDIA_ROOT
         media_url = settings.MEDIA_URL
-        plots_dir = os.path.join(media_root, 'plots')
+        #plots dir in user folder
+        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
+
         os.makedirs(plots_dir, exist_ok=True)
         
         # Initialize translator
@@ -424,9 +416,10 @@ def process_kruskal_test(request, df, col1, col2):
                 # Save directly to final path
                 fig.savefig(final_path, bbox_inches='tight', dpi=300, format=img_format.upper())
                 plt.close(fig)
-            
-            return f"{media_url}plots/{final_filename}"
-        
+            print(f"Saved plot to {final_path}")
+
+            return f"{media_url}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
+
         # Prepare category labels
         categories = sorted(df[col1].unique())
         if language == 'bn':
@@ -521,7 +514,7 @@ def process_kruskal_test(request, df, col1, col2):
             'error': str(e)
         })
 
-def process_mannwhitney_test(request, df, col1, col2):
+def process_mannwhitney_test(request, df, col1, col2, user_id):
     from django.http import JsonResponse
     import os
     import matplotlib.pyplot as plt
@@ -574,7 +567,7 @@ def process_mannwhitney_test(request, df, col1, col2):
         # --- 3. Create image output folder ---
         media_root = settings.MEDIA_ROOT
         media_url = settings.MEDIA_URL
-        plots_dir = os.path.join(media_root, 'plots')
+        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
 
         # --- 4. Mann–Whitney U test ---
@@ -636,7 +629,7 @@ def process_mannwhitney_test(request, df, col1, col2):
         tmp = os.path.join(plots_dir, 'mann_box_tmp.png')
         out = os.path.join(plots_dir, f'mannwhitney_boxplot.{img_format}')
         create_labeled_plot(fig, ax, f"Boxplot of {col2} by {col1}", col1, col2, tmp, out)
-        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_boxplot.{img_format}'))
+        image_paths.append(os.path.join(media_url, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'mannwhitney_boxplot.{img_format}'))
 
         # --- 7b. Violinplot ---
         fig, ax = plt.subplots(figsize=(fig_width, fig_height))
@@ -647,7 +640,7 @@ def process_mannwhitney_test(request, df, col1, col2):
         tmp = os.path.join(plots_dir, 'mann_violin_tmp.png')
         out = os.path.join(plots_dir, f'mannwhitney_violinplot.{img_format}')
         create_labeled_plot(fig, ax, f"Violin plot of {col2} by {col1}", col1, col2, tmp, out)
-        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_violinplot.{img_format}'))
+        image_paths.append(os.path.join(media_url, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'mannwhitney_violinplot.{img_format}'))
 
         # --- 7c. Rank plot ---
         ranks = rankdata(df[col2].values)
@@ -661,7 +654,7 @@ def process_mannwhitney_test(request, df, col1, col2):
         tmp = os.path.join(plots_dir, 'mann_rank_tmp.png')
         out = os.path.join(plots_dir, f'mannwhitney_rankplot.{img_format}')
         create_labeled_plot(fig, ax, f"Average rank of {col2} by {col1}", col1, translate("Average Rank"), tmp, out)
-        image_paths.append(os.path.join(media_url, 'plots', f'mannwhitney_rankplot.{img_format}'))
+        image_paths.append(os.path.join(media_url, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'mannwhitney_rankplot.{img_format}'))
 
         result['image_paths'] = image_paths
         return JsonResponse(result)
@@ -669,7 +662,7 @@ def process_mannwhitney_test(request, df, col1, col2):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_pearson_test(request, df, selected_columns):
+def process_pearson_test(request, df, selected_columns, user_id):
     import os
     from itertools import combinations
 
@@ -723,7 +716,7 @@ def process_pearson_test(request, df, selected_columns):
         label_font = ImageFont.truetype(font_path, size=label_font_size)
         tick_font = ImageFont.truetype(font_path, size=tick_font_size)
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
 
         # Ensure numeric
@@ -835,9 +828,10 @@ def process_pearson_test(request, df, selected_columns):
 
             final_path = os.path.join(plots_dir, base_name + '.' + img_format)
             canvas.save(final_path, format=img_format.upper(), quality=img_quality)
-            return os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+            return os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
 
         img_url = create_labeled_plot(fig, ax, title=translate("Pearson Correlation Heatmap"), base_name="pearson_heatmap")
+        print(img_url)
 
         return JsonResponse({
             'success': True,
@@ -849,7 +843,7 @@ def process_pearson_test(request, df, selected_columns):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_spearman_test(request, df, selected_columns):
+def process_spearman_test(request, df, selected_columns, user_id):
     import os
     from itertools import combinations
 
@@ -895,7 +889,7 @@ def process_spearman_test(request, df, selected_columns):
         label_font = ImageFont.truetype(font_path, size=label_font_size)
         tick_font = ImageFont.truetype(font_path, size=tick_font_size)
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
 
         for col in selected_columns:
@@ -997,10 +991,10 @@ def process_spearman_test(request, df, selected_columns):
 
             final_path = os.path.join(plots_dir, base_name + '.' + img_format)
             canvas.save(final_path, format=img_format.upper(), quality=img_quality)
-            return os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+            return os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
 
         image_url = create_labeled_plot(fig, ax, translate("Spearman Rank Correlation Heatmap"), "spearman_heatmap")
-
+ 
         return JsonResponse({
             'success': True,
             'image_paths': [image_url],
@@ -1011,7 +1005,7 @@ def process_spearman_test(request, df, selected_columns):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_shapiro_test(request, df, col1):
+def process_shapiro_test(request, df, col1, user_id):
     import os
     from scipy.stats import shapiro, norm
     from django.conf import settings
@@ -1047,7 +1041,7 @@ def process_shapiro_test(request, df, col1):
 
         # --- Font and Paths ---
         media_root = settings.MEDIA_ROOT
-        plots_dir = os.path.join(media_root, 'plots')
+        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
 
@@ -1142,13 +1136,13 @@ def process_shapiro_test(request, df, col1):
             'statistic': float(stat),
             'p_value': float(p_value),
             'interpretation': interpretation,
-            'image_path': os.path.join(settings.MEDIA_URL, 'plots', base_name + '.' + img_format)
+            'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_wilcoxon_test(request, df, col1, col2):
+def process_wilcoxon_test(request, df, col1, col2, user_id):
     try:
         # --- Setup ---
         language = request.POST.get('language', 'en')
@@ -1158,7 +1152,7 @@ def process_wilcoxon_test(request, df, col1, col2):
 
         # Paths
         media_root = settings.MEDIA_ROOT
-        plots_dir = os.path.join(media_root, 'plots')
+        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
 
@@ -1218,7 +1212,7 @@ def process_wilcoxon_test(request, df, col1, col2):
         def create_plot(fig, ax, title, xlabel, ylabel, base_name, legend_items=None):
             base_path = os.path.join(plots_dir, base_name + "_base.png")
             final_path = os.path.join(plots_dir, base_name + f".{fmt}")
-            full_url = os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))
+            full_url = os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))
 
             ax.set_title('')
             ax.set_xlabel('')
@@ -1304,7 +1298,7 @@ def process_wilcoxon_test(request, df, col1, col2):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_linear_regression_test(request, df, col1, col2):
+def process_linear_regression_test(request, df, col1, col2, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1402,7 +1396,7 @@ def process_linear_regression_test(request, df, col1, col2):
         ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
         plt.tight_layout(pad=0)
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f'regression_base.{file_format}')
         fig.savefig(base_path, format=file_format.upper())
@@ -1463,14 +1457,14 @@ def process_linear_regression_test(request, df, col1, col2):
 
         final_path = os.path.join(plots_dir, f'regression_plot.{file_format}')
         new_canvas.save(final_path, format=file_format.upper(), quality=image_quality)
-        result['image_paths'] = [os.path.join(settings.MEDIA_URL, 'plots', f'regression_plot.{file_format}')]
+        result['image_paths'] = [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'regression_plot.{file_format}')]
 
         return JsonResponse(result)
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_anova_test(request, df, col1, col2):
+def process_anova_test(request, df, col1, col2, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1564,7 +1558,7 @@ def process_anova_test(request, df, col1, col2):
         ax.set_yticklabels([])
         plt.tight_layout(pad=0.5)
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f"anova_base.{img_format}")
         fig.savefig(base_path, format=img_format.upper(), bbox_inches='tight')
@@ -1620,14 +1614,14 @@ def process_anova_test(request, df, col1, col2):
 
         final_path = os.path.join(plots_dir, f"anova_plot.{img_format}")
         final_canvas.save(final_path, format=img_format.upper(), quality=image_quality)
-        result['image_paths'] = [os.path.join(settings.MEDIA_URL, 'plots', f"anova_plot.{img_format}")]
+        result['image_paths'] = [os.path.join(settings.MEDIA_URL, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots', f"anova_plot.{img_format}")]
 
         return JsonResponse(result)
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
+def process_ancova_test(request, df, col_group, col_covariate, col_outcome, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1717,7 +1711,7 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
         ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
         plt.tight_layout(pad=0)
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f'ancova_base.{file_format}')
         final_path = os.path.join(plots_dir, f'ancova_plot.{file_format}')
@@ -1785,14 +1779,14 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome):
             'success': True,
             'test': translate('ANCOVA'),
             'table_html': table_html,
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', f'ancova_plot.{file_format}')],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'ancova_plot.{file_format}')],
             'columns': [col_group, col_covariate, col_outcome]
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_ks_test(request, df, col):
+def process_ks_test(request, df, col, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1804,6 +1798,7 @@ def process_ks_test(request, df, col):
     from googletrans import Translator
     from django.conf import settings
     from django.http import JsonResponse
+    import re
 
     try:
         language = request.POST.get('language', 'en')
@@ -1868,10 +1863,11 @@ def process_ks_test(request, df, col):
         ] if language == 'bn' else [f"{val:.2f}" for val in ax.get_yticks()], fontproperties=tick_prop)
 
         plt.tight_layout(pad=0)
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, f'ks_base.{file_format}')
-        final_path = os.path.join(plots_dir, f'ks_{col.replace(" ", "_")}.{file_format}')
+        safe_col_name = re.sub(r'[\\/*?:"<>|]', "_", col)
+        final_path = os.path.join(plots_dir, f'ks_{safe_col_name.replace(" ", "_")}.{file_format}')
         fig.savefig(base_path, dpi=fig.dpi, format=file_format.upper())
         plt.close(fig)
 
@@ -1913,14 +1909,14 @@ def process_ks_test(request, df, col):
             'test': translate('Kolmogorov–Smirnov Test'),
             'p_value': p_str,
             'interpretation': interpretation,
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
             'columns': [col]
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_anderson_darling_test(request, df, col):
+def process_anderson_darling_test(request, df, col, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -1932,6 +1928,7 @@ def process_anderson_darling_test(request, df, col):
     from googletrans import Translator
     from django.conf import settings
     from django.http import JsonResponse
+    import re
 
     try:
         # Get settings
@@ -2009,9 +2006,11 @@ def process_anderson_darling_test(request, df, col):
         ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_yticks()], fontproperties=tick_prop)
 
         plt.tight_layout(pad=0)
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
+
         base_path = os.path.join(plots_dir, f'ad_base.{file_format}')
+        col = re.sub(r'[\\/*?:"<>|]', "_", col)
         final_path = os.path.join(plots_dir, f'ad_{col.replace(" ", "_")}.{file_format}')
         fig.savefig(base_path, format=file_format.upper(), dpi=fig.dpi)
         plt.close(fig)
@@ -2056,14 +2055,14 @@ def process_anderson_darling_test(request, df, col):
             'test': translate('Anderson–Darling Test'),
             'a_stat': stat_str,
             'interpretation': interpretation,
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
             'columns': [col]
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_fzt_test(request, df, col_group, col_value):
+def process_fzt_test(request, df, col_group, col_value, user_id):
     import os
     import numpy as np
     import matplotlib.pyplot as plt
@@ -2172,7 +2171,7 @@ def process_fzt_test(request, df, col_group, col_value):
             ax.grid(True)
 
         plots = []
-        plot_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plot_dir, exist_ok=True)
 
         def save_plot(filename, title, xlabel, ylabel):
@@ -2183,9 +2182,9 @@ def process_fzt_test(request, df, col_group, col_value):
             full = os.path.join(plot_dir, filename + '.' + file_format)
             plt.savefig(full, dpi=image_dpi, bbox_inches='tight')
             plt.close()
-            plots.append(os.path.join(settings.MEDIA_URL, 'plots', filename + '.' + file_format))
+            plots.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', filename + '.' + file_format))
 
-        plt.figure(figsize=(fig_w, fig_h))
+        plt.figure(figsize=(fig_w, fig_h)) 
         x = np.linspace(0, max(f_dist.ppf(0.99, dfn, dfd), F*2), 300)
         plt.plot(x, f_dist.pdf(x, dfn, dfd), linewidth=dist_lw, linestyle=dist_ls, color=f_curve_color)
         plt.axvline(F, color=f_line_color, linestyle='--', linewidth=dist_lw)
@@ -2232,7 +2231,7 @@ def process_fzt_test(request, df, col_group, col_value):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_cross_tabulation(request, df, selected_columns):
+def process_cross_tabulation(request, df, selected_columns, user_id):
     from django.http import JsonResponse
     from django.conf import settings
     import pandas as pd
@@ -2285,7 +2284,7 @@ def process_cross_tabulation(request, df, selected_columns):
 
         # --- 3. File paths ---
         uid = str(uuid.uuid4())[:8]
-        plots_dir = os.path.join(settings.MEDIA_ROOT, "plots")
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
 
         def create_labeled_plot(fig, ax, title, xlabel, ylabel, base, final):
@@ -2397,8 +2396,8 @@ def process_cross_tabulation(request, df, selected_columns):
         return JsonResponse({
             'success': True,
             'translated_table': dtab.to_dict(),
-            'heatmap_path': os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_heatmap)),
-            'barplot_path': os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_bar)),
+            'heatmap_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_heatmap)),
+            'barplot_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_bar)),
             'summary': summary,
             'columns': selected_columns
         })
@@ -2406,7 +2405,7 @@ def process_cross_tabulation(request, df, selected_columns):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_distribution(request, df, col):
+def process_eda_distribution(request, df, col, user_id):
     import os
     import numpy as np
     import seaborn as sns
@@ -2519,7 +2518,7 @@ def process_eda_distribution(request, df, col):
             canvas.save(final, format=pil_format)
             return final
 
-        plot_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plot_dir, exist_ok=True)
         image_paths = []
 
@@ -2528,23 +2527,23 @@ def process_eda_distribution(request, df, col):
         sns.histplot(df[col], ax=ax, color=hist_color)
         hist_path = os.path.join(plot_dir, f'histogram_{col}.{file_format}')
         create_plot(fig, ax, f'Histogram of {col}', col, 'Count', 'hist_base.png', hist_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'histogram_{col}.{file_format}'))
+        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'histogram_{col}.{file_format}'))
 
         # KDE
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
         sns.kdeplot(df[col], ax=ax, fill=True, color=kde_color)
         kde_path = os.path.join(plot_dir, f'kde_{col}.{file_format}')
         create_plot(fig, ax, f'KDE Plot of {col}', col, 'Density', 'kde_base.png', kde_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'kde_{col}.{file_format}'))
+        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'kde_{col}.{file_format}'))
 
         # Distribution
         g = sns.displot(df[col], kde=True, color=dist_color)
         fig = g.fig; ax = fig.axes[0]
         dist_path = os.path.join(plot_dir, f'distribution_{col}.{file_format}')
         create_plot(fig, ax, f'Distribution of {col}', col, 'Frequency', 'dist_base.png', dist_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, 'plots', f'distribution_{col}.{file_format}'))
+        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'distribution_{col}.{file_format}'))
 
-        return JsonResponse({
+        return JsonResponse({ 
             'success': True,
             'test': translate("EDA: Distribution Plots"),
             'columns': [col],
@@ -2554,7 +2553,7 @@ def process_eda_distribution(request, df, col):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_swarm_plot(request, df, col_cat, col_num):
+def process_eda_swarm_plot(request, df, col_cat, col_num, user_id):
     import os
     import numpy as np
     import seaborn as sns
@@ -2627,7 +2626,7 @@ def process_eda_swarm_plot(request, df, col_cat, col_num):
         ylabel = col_num
 
         # Save base image
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, 'swarm_base.' + file_format)
         final_path = os.path.join(plots_dir, 'swarm_final.' + file_format)
@@ -2683,14 +2682,14 @@ def process_eda_swarm_plot(request, df, col_cat, col_num):
         return JsonResponse({
             'success': True,
             'test': translate("Swarm Plot"),
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', 'swarm_final.' + file_format)],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads',  'plots', 'swarm_final.' + file_format)],
             'columns': [col_cat, col_num],
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_pie_chart(request, df):
+def process_eda_pie_chart(request, df, user_id):
 
     import os
     import math
@@ -2743,7 +2742,7 @@ def process_eda_pie_chart(request, df):
         caption_font = ImageFont.truetype(font_path, size=default_caption_size)
 
         # --- 3. Plot directory ---
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_img_path = os.path.join(plots_dir, 'pie_base.png')
         final_img_path = os.path.join(plots_dir, f'pie_{col}.{img_format}')
@@ -2792,14 +2791,14 @@ def process_eda_pie_chart(request, df):
         return JsonResponse({
             'success': True,
             'test': 'Pie Chart' if language == 'en' else 'পাই চার্ট',
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', f'pie_{col}.{img_format}')],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'pie_{col}.{img_format}')],
             'columns': [col]
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_basics(request, df):
+def process_eda_basics(request, df, user_id):
     import numpy as np
     import pandas as pd
     from functools import lru_cache
@@ -2892,7 +2891,7 @@ def process_eda_basics(request, df):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_similarity(request, df):
+def process_similarity(request, df, user_id):
     import os
     import numpy as np
     import pandas as pd
@@ -2980,7 +2979,7 @@ def process_similarity(request, df):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_chi_square(request, df):
+def process_chi_square(request, df, user_id):
     from django.http import JsonResponse
     from django.conf import settings
     import pandas as pd
@@ -3027,7 +3026,7 @@ def process_chi_square(request, df):
         def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
         def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, "plots")
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         uid = str(uuid.uuid4())[:8]
 
@@ -3096,9 +3095,9 @@ def process_chi_square(request, df):
             },
             'interpretation': scenario_text,
             'image_paths': [
-                os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(count_path)),
-                os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(observed_path)),
-                os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(expected_path))
+                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(count_path)),
+                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(observed_path)),
+                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(expected_path))
             ],
             'columns': [x_col, y_col]
         })
@@ -3106,7 +3105,7 @@ def process_chi_square(request, df):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
-def process_cramers_heatmap(request, df):
+def process_cramers_heatmap(request, df, user_id):
     from django.http import JsonResponse
     from django.conf import settings
     import pandas as pd
@@ -3150,7 +3149,7 @@ def process_cramers_heatmap(request, df):
         def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
         def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, "plots")
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         uid = str(uuid.uuid4())[:8]
 
@@ -3208,7 +3207,7 @@ def process_cramers_heatmap(request, df):
 
         return JsonResponse({
             'success': True,
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', os.path.basename(final_path))],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
             'columns': [x_col, y_col],
         })
 
@@ -3216,11 +3215,11 @@ def process_cramers_heatmap(request, df):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def save_plot(plt, filename):
+def save_plot(plt, filename, user_id):
     import os
 
     from django.conf import settings
-    plot_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+    plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
     os.makedirs(plot_dir, exist_ok=True)
     full_path = os.path.join(plot_dir, filename)
     plot_path = os.path.join('plots', filename)
@@ -3239,23 +3238,41 @@ def preview_data(request):
     import pandas as pd
     import os
     from django.conf import settings
+    import json
 
     if request.method == 'GET':
-        try:
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            if os.path.exists(file_path):
-                df = pd.read_excel(file_path)
-                rows = df.to_dict(orient='records')
-                return JsonResponse({
-                    'columns': df.columns.tolist(),
-                    'rows': rows
-                })
-            else:
-                return JsonResponse({'error': 'No uploaded file found'}, status=404)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-    else:
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
+        user_id = request.headers.get('userID')
+        print(f"Received User ID: {user_id}")
+
+        if not user_id:
+            return JsonResponse({'error': 'User ID not provided'}, status=400)
+
+        # Build file path based on user-specific folder
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        print(f"Looking for folder: {folder_name}")
+
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+
+        if os.path.exists(file_path):
+            df = pd.read_excel(file_path)
+
+            # Replace NaN with None
+            df_clean = df.where(pd.notnull(df), '')
+
+            data = {
+                'columns': df_clean.columns.tolist(),
+                'rows': df_clean.to_dict(orient='records')
+            }
+
+            try:
+                json_data = json.dumps(data, allow_nan=False)
+                print("Rows with NaN:\n", df_clean[df_clean.isna().any(axis=1)])
+
+                return HttpResponse(json_data, content_type='application/json')
+            except ValueError as e:
+                return JsonResponse({'error': f'Invalid data: {e}'}, status=500)
+        else:
+            return JsonResponse({'error': 'No uploaded file found for this user'}, status=404)
 
 
 

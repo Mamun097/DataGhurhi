@@ -61,6 +61,9 @@ const adminRouter = require('./route/adminroute');
 //survey collab routes
 const surveyCollabRouter = require('./route/surveyCollaborator');
 
+//file upload for analysis
+const analysisFileUploadRouter = require('./route/analysisFileUpload');
+
 
 //connect db
 const supabase = require('./db');
@@ -130,6 +133,9 @@ app.use('/api', userSubscriptionRouter);
 app.use('/api/survey-collaborator', surveyCollabRouter);
 
 app.use('/api', generateMultipleQuestionsWithLLMRouter);
+
+// file upload for analysis
+app.use('/api', analysisFileUploadRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
