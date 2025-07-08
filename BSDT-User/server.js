@@ -60,6 +60,8 @@ const questionBankRouter = require('./route/questionBankView');
 const adminRouter = require('./route/adminroute');
 //survey collab routes
 const surveyCollabRouter = require('./route/surveyCollaborator');
+const faqRoutes = require('./route/faqRouter');
+const searchRouter = require('./route/searchRouter');
 
 //file upload for analysis
 const analysisFileUploadRouter = require('./route/analysisFileUpload');
@@ -142,3 +144,7 @@ app.use('/api', analysisFileUploadRouter);
 
 // app.use('/api/signin', signinRouter);
 // Other routes and middleware...
+
+
+app.use('/api/faq', faqRoutes);
+app.use('/api/search', searchRouter);
