@@ -330,6 +330,14 @@ div[ref="uploadContainerRef"]:hover {
 .bg-yellow-selected {
   background-color: #fef3c7; /* similar to Tailwind's bg-yellow-100 */
 }
+.bg-purple-500 {
+  background-color: #622f91; /* Tailwind purple-500 */
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+.bg-purple-500:hover {
+  background-color: #8d71be; /* Tailwind purple-600 */
+}
 
 .hover-bg-gray {
   transition: background-color 0.2s ease;
@@ -340,13 +348,13 @@ div[ref="uploadContainerRef"]:hover {
   cursor: pointer;
 }
 .bg-blue-500 {
-  background-color: #3b82f6; /* Tailwind blue-500 */
+  background-color: #264981; /* Tailwind blue-500 */
   cursor: pointer;
   transition: background-color 0.2s ease;
 }
 
 .bg-blue-500:hover {
-  background-color: #2563eb; /* Tailwind blue-600 */
+  background-color: #6891ea; /* Tailwind blue-600 */
 }
 
 .bg-red-500 {

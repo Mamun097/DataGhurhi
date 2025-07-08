@@ -3232,7 +3232,7 @@ def save_plot(plt, filename, user_id):
         print(f"Failed to save plot: {filename}. Error: {e}")
         return None
 
-
+@csrf_exempt
 def preview_data(request):
     from django.http import JsonResponse
     import pandas as pd
@@ -3257,7 +3257,7 @@ def preview_data(request):
             df = pd.read_excel(file_path)
 
             # Replace NaN with None
-            df_clean = df.where(pd.notnull(df), '')
+            df_clean = df.where(pd.notnull(df), ' ')
 
             data = {
                 'columns': df_clean.columns.tolist(),
@@ -3278,234 +3278,248 @@ def preview_data(request):
 
 @csrf_exempt
 def delete_columns_api(request):
-    from django.views.decorators.csrf import csrf_exempt
-    import json
-    if request.method == 'POST':
+    try:
+        ##post_method
+        ## extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        # Load file safely
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+
         try:
-            data = json.loads(request.body)
-            columns_to_delete = data.get('columns', [])
-
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            if not os.path.exists(file_path):
-                return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
-
             df = pd.read_excel(file_path)
-
-            missing = [col for col in columns_to_delete if col not in df.columns]
-            if missing:
-                return JsonResponse({'success': False, 'error': f"Column(s) not found: {', '.join(missing)}"})
-
-            df.drop(columns=columns_to_delete, inplace=True)
-            df.to_excel(file_path, index=False)
-
-            return JsonResponse({
-                'success': True,
-                'columns': df.columns.tolist(),
-                'rows': df.to_dict(orient='records')
-            })
-
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
 
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+        body = json.loads(request.body)
+        columns = body.get('columns', [])
 
+        if not columns:
+            return JsonResponse({'success': False, 'error': 'No columns specified.'})
+
+        df.drop(columns=columns, inplace=True, errors='ignore')
+
+        # Save updated sheet
+        df.to_excel(file_path, index=False)
+
+        return JsonResponse({
+            'success': True,
+            'message': f'Deleted columns: {columns}',
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def remove_duplicates_api(request):
-    from django.views.decorators.csrf import csrf_exempt
-    import os
-    import pandas as pd
-    from django.conf import settings
-    from django.http import JsonResponse
+    try:
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-    if request.method == 'POST':
-        try:
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            if not os.path.exists(file_path):
-                return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+        df = pd.read_excel(file_path)
+        before = len(df)
+        df.drop_duplicates(inplace=True)
+        removed = before - len(df)
 
-            df = pd.read_excel(file_path)
-            before = len(df)
-            df.drop_duplicates(inplace=True)
-            after = len(df)
-            removed = before - after
+        df.to_excel(file_path, index=False)
 
-            df.to_excel(file_path, index=False)
+        return JsonResponse({
+            'success': True,
+            'message': f'Removed {removed} duplicate rows.',
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
 
-            return JsonResponse({
-                'success': True,
-                'removed': removed,
-                'columns': df.columns.tolist(),
-                'rows': df.to_dict(orient='records')
-            })
-
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-
-    return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def handle_missing_api(request):
-    if request.method == 'POST':
-        try:
-            body = json.loads(request.body)
-            column = body.get('column')
-            method = body.get('method')
+    try:
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
+        body = json.loads(request.body)
+        col = body.get('column')
+        method = body.get('method', '')
 
-            targets = df.columns.tolist() if column.lower() == 'all' else [column]
+        if method not in ['drop', 'fill_mean', 'fill_median']:
+            return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
-            if method == 'drop':
-                df.dropna(subset=targets, inplace=True)
-                message = "Dropped rows with missing values."
-            elif method == 'fill_mean':
-                for c in targets:
-                    if pd.api.types.is_numeric_dtype(df[c]):
-                        df[c] = df[c].fillna(df[c].mean())
-                message = "Filled missing values with mean."
-            elif method == 'fill_median':
-                for c in targets:
-                    if pd.api.types.is_numeric_dtype(df[c]):
-                        df[c] = df[c].fillna(df[c].median())
-                message = "Filled missing values with median."
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid method'})
+        targets = df.columns.tolist() if col == 'all' else [col]
 
-            df.to_excel(file_path, index=False)
+        if method == 'drop':
+            df.dropna(subset=targets, inplace=True)
+        elif method == 'fill_mean':
+            for c in targets:
+                if pd.api.types.is_numeric_dtype(df[c]):
+                    df[c] = df[c].fillna(df[c].mean())
+        elif method == 'fill_median':
+            for c in targets:
+                if pd.api.types.is_numeric_dtype(df[c]):
+                    df[c] = df[c].fillna(df[c].median())
 
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'columns': df.columns.tolist(),
-                'rows': df.to_dict(orient='records')
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+        df.to_excel(file_path, index=False)
 
+        return JsonResponse({
+            'success': True,
+            'message': f'Missing values handled using method: {method}',
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def handle_outliers_api(request):
-    if request.method == 'POST':
-        try:
-            body = json.loads(request.body)
-            column = body.get('column')
-            method = body.get('method')
+    try:
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
+        body = json.loads(request.body)
+        col = body.get('column', '')
+        method = body.get('method', '')
 
-            if column not in df.columns or not pd.api.types.is_numeric_dtype(df[column]):
-                return JsonResponse({'success': False, 'error': 'Invalid or non-numeric column'})
+        if col not in df.columns or not pd.api.types.is_numeric_dtype(df[col]):
+            return JsonResponse({'success': False, 'error': 'Column is missing or not numeric.'})
 
-            Q1, Q3 = df[column].quantile([0.25, 0.75])
-            IQR = Q3 - Q1
-            lower = Q1 - 1.5 * IQR
-            upper = Q3 + 1.5 * IQR
+        Q1, Q3 = df[col].quantile([0.25, 0.75])
+        IQR = Q3 - Q1
+        lower, upper = Q1 - 1.5 * IQR, Q3 + 1.5 * IQR
 
-            if method == 'remove':
-                before = len(df)
-                df = df[(df[column] >= lower) & (df[column] <= upper)]
-                removed = before - len(df)
-                message = f"Removed {removed} outliers."
-            elif method == 'cap':
-                df[column] = np.where(df[column] < lower, lower,
-                                      np.where(df[column] > upper, upper, df[column]))
-                message = "Outliers capped to bounds."
-            else:
-                return JsonResponse({'success': False, 'error': 'Invalid method'})
+        if method == 'remove':
+            before = len(df)
+            df = df[(df[col] >= lower) & (df[col] <= upper)]
+            removed = before - len(df)
+            message = f"Removed {removed} outliers."
+        elif method == 'cap':
+            df[col] = np.where(df[col] < lower, lower, np.where(df[col] > upper, upper, df[col]))
+            message = "Outliers capped to bounds."
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
-            df.to_excel(file_path, index=False)
+        df.to_excel(file_path, index=False)
 
-            return JsonResponse({
-                'success': True,
-                'message': message,
-                'columns': df.columns.tolist(),
-                'rows': df.to_dict(orient='records')
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
 
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def rank_categorical_column_api(request):
-    if request.method == 'POST':
-        try:
-            body = json.loads(request.body)
-            column = body.get('column')
-            mapping = body.get('mapping')  # dict: value -> rank
+    try:
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            df = pd.read_excel(file_path)
+        df = pd.read_excel(file_path)
+        body = json.loads(request.body)
 
-            if column not in df.columns:
-                return JsonResponse({'success': False, 'error': 'Column not found'})
+        col = body.get('column', '')
+        mapping = body.get('mapping', {})  # {'Yes': 1, 'No': 2, ...}
 
-            df[column + '_ranked'] = df[column].map(lambda x: mapping.get(str(x), np.nan))
+        if col not in df.columns or not mapping:
+            return JsonResponse({'success': False, 'error': 'Invalid column or mapping.'})
 
-            df.to_excel(file_path, index=False)
+        new_col = col + '_ranked'
+        df[new_col] = df[col].map(mapping)
 
-            return JsonResponse({
-                'success': True,
-                'message': f"Ranked values added as '{column}_ranked'.",
-                'columns': df.columns.tolist(),
-                'rows': df.to_dict(orient='records')
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
-    return JsonResponse({'success': False, 'error': 'Invalid request'})
+        df.to_excel(file_path, index=False)
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Column '{col}' ranked into '{new_col}'",
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def split_column_api(request):
     try:
-        file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
         if not os.path.exists(file_path):
-            return JsonResponse({'success': False, 'error': 'No uploaded Excel file found'})
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
         df = pd.read_excel(file_path)
-        data = json.loads(request.body)
-        column = data.get("column")
-        method = data.get("method")
-        custom_phrases = data.get("phrases", [])
+        body = json.loads(request.body)
+        column = body.get('column')
+        method = body.get('method')
+        custom_phrases = body.get('phrases', [])
 
         if column not in df.columns:
-            return JsonResponse({'success': False, 'error': f"Column '{column}' not found in dataset."})
+            return JsonResponse({'success': False, 'error': 'Column not found.'})
 
-        new_cols = []
-
-        if method == '1':  # comma
-            df_split = df[column].astype(str).str.split(",", expand=True)
+        if method == 'comma':
+            df_split = df[column].str.split(',', expand=True)
             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
-            new_cols = df_split.columns.tolist()
-            df = pd.concat([df, df_split], axis=1)
-
-        elif method == '2':  # semicolon
-            df_split = df[column].astype(str).str.split(";", expand=True)
+        elif method == 'semicolon':
+            df_split = df[column].str.split(';', expand=True)
             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
-            new_cols = df_split.columns.tolist()
-            df = pd.concat([df, df_split], axis=1)
-
-        elif method == '3':  # <> tag
-            df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
+        elif method == 'tags':
+            df_split = df[column].str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
             df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
-            new_cols = df_split.columns.tolist()
-            df = pd.concat([df, df_split], axis=1)
-
-        elif method == '4':  # custom phrases
+        elif method == 'custom' and custom_phrases:
             from collections import Counter
 
-            def count_phrases(input_str, phrases):
-                tokens = str(input_str).split(", ")
+            def count_phrases(text):
+                tokens = str(text).split(", ")
                 result = []
                 i = 0
                 while i < len(tokens):
                     if i + 1 < len(tokens):
                         combined = tokens[i] + ", " + tokens[i + 1]
-                        if combined in phrases:
+                        if combined in custom_phrases:
                             result.append(combined)
                             i += 2
                             continue
@@ -3514,19 +3528,19 @@ def split_column_api(request):
                 return Counter(result)
 
             for phrase in custom_phrases:
-                df[phrase] = df[column].apply(lambda x: count_phrases(x, custom_phrases).get(phrase, 0))
-            new_cols = custom_phrases
-
+                df[phrase] = df[column].apply(lambda x: count_phrases(x).get(phrase, 0))
+            df_split = df[custom_phrases]
         else:
-            return JsonResponse({'success': False, 'error': 'Invalid method selected'})
+            return JsonResponse({'success': False, 'error': 'Invalid method or input.'})
 
+        df = pd.concat([df, df_split], axis=1)
         df.to_excel(file_path, index=False)
 
         return JsonResponse({
             'success': True,
+            'message': 'Column split successful.',
             'columns': df.columns.tolist(),
-            'rows': df.head(20).to_dict(orient='records'),
-            'message': f"Split completed. Added columns: {new_cols}"
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
         })
 
     except Exception as e:
@@ -3534,54 +3548,119 @@ def split_column_api(request):
 
 @csrf_exempt
 def group_data_api(request):
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Invalid request method.'})
+
+    try:
+        import os
+        import json
+        import pandas as pd
+        from django.conf import settings
+
+
+
+        # Extract user ID from request headers        
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        
+
+        body = json.loads(request.body)
+        grouping_pairs = body.get('groupingPairs', [])
+
+        if not grouping_pairs:
+            return JsonResponse({'success': False, 'error': 'No grouping pairs provided.'})
+
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
+
         try:
-            data = json.loads(request.body)
-            pairs = data.get('groupingPairs', [])
-
-            if not pairs:
-                return JsonResponse({'success': False, 'error': 'No grouping information provided.'})
-
-            file_path = os.path.join(settings.MEDIA_ROOT, 'latest_uploaded.xlsx')
-            if not os.path.exists(file_path):
-                return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
-
             df = pd.read_excel(file_path)
-            grouped_dfs = []
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
 
-            for pair in pairs:
-                group_col = pair.get('group_col')
-                value_col = pair.get('value_col')
+        grouped_dfs = []
+        for pair in grouping_pairs:
+            group_col = pair.get('group_col')
+            value_col = pair.get('value_col')
 
-                if group_col not in df.columns or value_col not in df.columns:
-                    return JsonResponse({'success': False, 'error': f"Invalid columns: {group_col}, {value_col}"})
-                if not pd.api.types.is_numeric_dtype(df[value_col]):
-                    return JsonResponse({'success': False, 'error': f"{value_col} must be numeric."})
+            if group_col not in df.columns or value_col not in df.columns:
+                return JsonResponse({'success': False, 'error': f"Invalid columns: {group_col}, {value_col}"})
 
-                groups = df[group_col].dropna().unique().tolist()
+            if not pd.api.types.is_numeric_dtype(df[value_col]):
+                return JsonResponse({'success': False, 'error': f"'{value_col}' must be numeric."})
 
-                grouped_df = pd.concat([
-                    df.loc[df[group_col] == g, [group_col, value_col]].assign(Group=g)
-                    for g in groups
-                ])
-                grouped_dfs.append(grouped_df)
+            # Safely handle null groups
+            groups = df[group_col].dropna().unique().tolist()
 
-            # Save grouped splits to separate Excel sheets
-            output_path = os.path.join(settings.MEDIA_ROOT, 'grouped_splits.xlsx')
+            grouped_df = pd.concat([
+                df.loc[df[group_col] == g, [group_col, value_col]].assign(Group=g)
+                for g in groups
+            ])
+
+            grouped_dfs.append(grouped_df)
+
+        # === Save grouped splits to separate Excel sheets ===
+        output_path = os.path.join(settings.MEDIA_ROOT, 'grouped_splits.xlsx')
+        try:
             with pd.ExcelWriter(output_path) as writer:
                 for i, gdf in enumerate(grouped_dfs):
-                    gdf.to_excel(writer, sheet_name=f"group_{i+1}", index=False)
-
-            return JsonResponse({'success': True, 'message': 'Grouped data saved.', 'download_url': '/media/grouped_splits.xlsx'})
-
-
+                    sheet_name = f"group_{i+1}"
+                    gdf.to_excel(writer, sheet_name=sheet_name, index=False)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': str(e)})
+            return JsonResponse({'success': False, 'error': f'Failed to save grouped file: {str(e)}'})
 
+        return JsonResponse({
+            'success': True,
+            'message': 'Grouped splits saved to Excel file.',
+            'download_url': f"media/ID_{user_id}_uploads/temporary_uploads/grouped_splits.xlsx"
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def generate_unique_id_column_api(request):
+    try:
+        # Extract user ID from request headers
+        user_id = request.headers.get('userID')
+        if not user_id:
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        print(f"Received User ID: {user_id}")
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
+
+        df = pd.read_excel(file_path)
+
+        col_name = 'row_id'
+        df[col_name] = np.arange(1, len(df) + 1)
+
+        df.to_excel(file_path, index=False)
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Column '{col_name}' added with unique IDs.",
+            'columns': df.columns.tolist(),
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
 @csrf_exempt
 def save_preprocessed_file_api(request):
     if request.method == 'POST':
         try:
+            user_id = request.headers.get('userID')
+            if not user_id:
+                return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+            print(f"Received User ID: {user_id}")
+
             uploaded_file = request.FILES.get('file')
             file_type = request.POST.get('file_type')  # 'survey' or 'preprocessed'
 
@@ -3592,7 +3671,7 @@ def save_preprocessed_file_api(request):
 
             # Define folder path
             folder_name = 'survey' if file_type == 'survey' else 'preprocessed'
-            folder_path = os.path.join(settings.MEDIA_ROOT, folder_name)
+            folder_path = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads/temporary_uploads/', folder_name)
             os.makedirs(folder_path, exist_ok=True)
 
             # Handle CSV for survey type
@@ -3613,7 +3692,7 @@ def save_preprocessed_file_api(request):
             return JsonResponse({
                 'success': True,
                 'message': f"File saved as {file_name}",
-                'file_url': os.path.join(settings.MEDIA_URL, folder_name, file_name),
+                'file_url': os.path.join(settings.MEDIA_URL,f'ID_{user_id}_uploads/temporary_uploads/', folder_name, file_name),
             })
 
         except Exception as e:
