@@ -3243,12 +3243,16 @@ def preview_data(request):
     if request.method == 'GET':
         user_id = request.headers.get('userID')
         print(f"Received User ID: {user_id}")
-
+        filetype = request.headers.get('filetype', 'default') 
+    
         if not user_id:
             return JsonResponse({'error': 'User ID not provided'}, status=400)
-
-        # Build file path based on user-specific folder
-        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        if(filetype=='preprocessing'): 
+            folder_name = f"ID_{user_id}_uploads/temporary_uploads/preprocessing/"
+        elif(filetype=='survey'):
+            folder_name = f"ID_{user_id}_uploads/temporary_uploads/survey/"
+        else:
+            folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         print(f"Looking for folder: {folder_name}")
 
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')

@@ -415,6 +415,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
                   method: "POST",
                   body: formData,
+                  headers: {
+                    'userID': userId // Include user ID in headers
+                  }
                 });
 
                 const result = await response.json();
@@ -422,6 +425,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 if (result.success) {
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
+                  sessionStorage.setItem("userId", userId);
                   window.location.href = "/analysis";
                 } else {
                   alert("Failed to upload Excel: " + result.error);
