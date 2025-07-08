@@ -31,6 +31,32 @@
   flex-shrink: 0;
 }
 
+.logo-list-item {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.logo-list-item:hover {
+  background-color: #f0f0f0;
+}
+
+.logo-list-item img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  margin-right: 12px;
+}
+
+.logo-list-item span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #333;
+}
+
+
 .logo1 {
   height: 5rem;
   object-fit: contain;
