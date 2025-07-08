@@ -1,12 +1,21 @@
 import React, { useState, useEffect } from "react";
 
-const PreviewTable = ({ columns, initialData, setData,data }) => {
+const PreviewTable = ({ columns, initialData, setData,data, setIsPreviewModalOpen, isPreviewModalOpen }) => {
 
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [findText, setFindText] = useState("");
   const [replaceText, setReplaceText] = useState("");
   const [highlightMatches, setHighlightMatches] = useState({});
 
+
+    useEffect(() => {
+    if (!isPreviewModalOpen) return;
+    const handleEsc = (e) => {
+      if (e.key === "Escape") setIsPreviewModalOpen(false);
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
+  }, [isPreviewModalOpen]);
   useEffect(() => {
     if (Array.isArray(initialData)) {
       setData(initialData);
@@ -66,8 +75,20 @@ const PreviewTable = ({ columns, initialData, setData,data }) => {
   };
 
   return (
-    <div className="overflow-auto max-w-full p-4">
+    <div className={isPreviewModalOpen ? "fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50" : ""}>
+      <div className={`bg-white p-4 rounded-lg shadow-lg w-full ${isPreviewModalOpen ? "max-w-6xl max-h-[90vh] overflow-auto relative" : ""}`}>
+
+        {/* ❌ Close Button (only in preview modal) */}
+        {isPreviewModalOpen && (
+          <button
+            onClick={() => setIsPreviewModalOpen(false)}
+            className="absolute top-3 right-3 text-gray-500 hover:text-black text-xl font-bold"
+          >
+            ✖
+          </button>
+        )}
       {/* Controls */}
+      {!isPreviewModalOpen && (
       <div className="flex flex-wrap items-center gap-3 mb-4">
         <input
           type="text"
@@ -115,8 +136,10 @@ const PreviewTable = ({ columns, initialData, setData,data }) => {
         </button>
 
       </div>
+      )}
 
       {/* Table */}
+      
       <div className="overflow-auto max-h-[75vh] border rounded">
         <table className="table-auto text-sm text-left border-collapse min-w-full">
           <thead className="bg-gray-200 sticky top-0 z-10">
@@ -166,6 +189,7 @@ const PreviewTable = ({ columns, initialData, setData,data }) => {
             )}
           </tbody>
         </table>
+      </div>
       </div>
     </div>
   );

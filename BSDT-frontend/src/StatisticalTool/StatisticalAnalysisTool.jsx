@@ -20,8 +20,14 @@ import EDASwarmOptions from './EDASwarmOptions';
 import EDAPieChartOptions from './EDAPieChartOptions';
 import EDABasicsOptions from './EDABasicsOptions';
 import SimilarityOptions from './SimilarityOptions';
+import ChiSquareOptions from './ChiSquareOptions';
+import CramerVOptions from './CramerVOptions';
+import NetworkGraphOptions from './NetworkGraphOptions';
 import 'katex/dist/katex.min.css';
 import {useNavigate} from 'react-router-dom';
+
+import PreviewTable from './previewTable';
+import TestSuggestionsModal from './testSuggestionsModal';
 
 
 const translations = {
@@ -352,6 +358,19 @@ const StatisticalAnalysisTool = () => {
     const [histColor, setHistColor] = useState('blue');
     const [kdeColor, setKdeColor] = useState('green');
     const [distColor, setDistColor] = useState('purple');
+
+    // Network graph options
+    const [nodeColor, setNodeColor] = useState('#AED6F1');
+    const [nodeSize, setNodeSize] = useState(800);
+    const [textSize, setTextSize] = useState(25);
+    const [textColor, setTextColor] = useState('black');
+    const [edgeWidthFactor, setEdgeWidthFactor] = useState(0.5);
+    const [showEdgeWeights, setShowEdgeWeights] = useState(false);
+    const [weightFontSize, setWeightFontSize] = useState(3);
+    const [weightColor, setWeightColor] = useState('red');
+    const [useMatrix, setUseMatrix] = useState(false);
+    const [matrixFile, setMatrixFile] = useState(null);
+
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -360,6 +379,17 @@ const StatisticalAnalysisTool = () => {
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
 
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+    const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+
+
+    const testsWithoutDetails = [
+    'eda_basics',
+    'eda_distribution',
+    'eda_swarm',
+    'eda_pie',
+    'similarity',
+    ];
     useEffect(() => {
     const isPreprocessed = sessionStorage.getItem("preprocessed") === "true";
     const isSurveyData = sessionStorage.getItem("surveyfile") === "true";
@@ -484,6 +514,10 @@ const StatisticalAnalysisTool = () => {
         setErrorMessage(t.uploadError);
         return;
     }
+        if (!column1 && testType !== 'network_graph') {
+            setErrorMessage(t.columnError || t.columnError);
+            return;
+        }
 
      if (testType === 'linear_regression' && !column2) {
             setErrorMessage(t.column2Error || "Please select a second column for regression.");
@@ -526,7 +560,10 @@ const StatisticalAnalysisTool = () => {
             formData.append('column1', column1);
             formData.append('column2', column2);
         } else if (testType === 'eda_basics') {
-        }else {
+        }else if (testType === 'network_graph') {
+     
+        }
+        else {
             formData.append('column1', column1);
             formData.append('column2', column2);
         }
@@ -543,7 +580,7 @@ const StatisticalAnalysisTool = () => {
     }
     //
 
-    if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'eda_pie', 'eda_basics'].includes(testType)) {
+    if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'eda_pie', 'eda_basics', 'chi_square', 'cramers_heatmap', 'cross_tabulation','network_graph'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -640,12 +677,11 @@ const StatisticalAnalysisTool = () => {
 
             }
 
-            if (testType === 'pearson' || testType === 'spearman') {
-                if (heatmapSize === '4x4') {
-                    formData.append('column3', column3);
-                    formData.append('column4', column4);
-                }
+            if (['pearson', 'spearman', 'cross_tabulation'].includes(testType)) {
                 formData.append('heatmapSize', heatmapSize);
+                selectedColumns.forEach((col, idx) => {
+                    formData.append(`column${idx + 1}`, col);
+                });
             }
         }
 
@@ -687,8 +723,12 @@ const StatisticalAnalysisTool = () => {
         setTestType('');
         setReferenceValue(0);
         setHeatmapSize('');
+        setSelectedColumns([]);
         setIsPreprocessed(false);
         setIsSurveyData(false);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     // Get required fields based on test type
@@ -698,29 +738,16 @@ const StatisticalAnalysisTool = () => {
                 return { col2: false, col3: false, refValue: true, heatmapSize: false };
             case 'ancova':
                 return { col2: true, col3: true, refValue: false, heatmapSize: false };
+            case 'cross_tabulation':    
             case 'spearman':
-                return {
-                    col2: true,
-                    col3: heatmapSize === '4x4',
-                    col4: heatmapSize === '4x4',
-                    refValue: false,
-                    heatmapSize: true
-                };
             case 'pearson':
-                return {
-                    col2: true,
-                    col3: heatmapSize === '4x4',
-                    col4: heatmapSize === '4x4',
-                    refValue: false,
-                    heatmapSize: true
-                };
+                return { col2: false, col3: false, col4: false, refValue: false, heatmapSize: true };
             case 'shapiro':
             case 'kolmogorov':
             case 'anderson':
             case 'chi_square':
             case 'cramers_heatmap':
-            case 'network_graph':
-                return { col2: false, col3: false, refValue: false, heatmapSize: false };
+
             case 'kruskal':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'fzt':
@@ -731,6 +758,8 @@ const StatisticalAnalysisTool = () => {
                 return { col2: true, col3: false, refValue: false, heatmapSize: false };
             case 'eda_pie':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
+            case 'network_graph':
+                return { col1: false, col2: false, col3: false, refValue: false, heatmapSize: false }; 
             case 'eda_basics':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'similarity':
@@ -742,6 +771,46 @@ const StatisticalAnalysisTool = () => {
 
     // Required fields for current test type
     const requiredFields = getRequiredFields();
+    
+    const [data, setData] = useState([]);
+    const [availableColumns, setAvailableColumns] = useState([]);
+    const handlePreviewClick = () => {
+    setIsPreviewModalOpen(true);
+    console.log("Preview button clicked");
+    fetch('http://127.0.0.1:8000/api/preview-data/', {
+    method: 'GET',
+    headers: {
+      'userID': userId 
+    }
+  })
+    .then(res => {
+      if (!res.ok) {
+        // Manually throw an error so it goes to catch block
+        throw new Error(`HTTP error ${res.status}`);
+      }
+      return res.json(); // now safe to parse JSON
+    })
+    .then(result => {
+      console.log("entered");
+      setColumns(result.columns);
+      setData(result.rows);
+      setAvailableColumns(result.columns);
+    })
+    .catch(err => {
+      console.error("Failed to load preview data:", err.message);
+      // Optionally show user feedback here
+    });
+};
+
+const handleSuggestionClick = () => {
+
+ 
+  setIsSuggestionModalOpen(true);
+    console.log("Suggestion button clicked");
+
+  // Optional: scroll to the suggestion panel or show modal
+};
+
 
     return (
         <div className="bg-gray-100 font-sans min-h-screen">
@@ -766,8 +835,7 @@ const StatisticalAnalysisTool = () => {
                                     </div>
                                 </div>
                             )}
-
-                            {!results ? (
+                    {!results ? (
                                 <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
                                     <div className="bg-gray-700 text-white p-4 font-semibold">
                                         <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -846,23 +914,52 @@ const StatisticalAnalysisTool = () => {
                                                     {t.processing}
                                                     </div>
                                                 )}
+
                                                 </div>
+                                                {/* Preview & Suggestion Buttons */}
+                                                    <div className="flex justify-end gap-4 mt-6">
+                                                    <button
+                                                        type="button"
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                        onClick={handlePreviewClick}
+                                                    >
+                                                        {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
+                                                    </button>
 
+                                                    <button
+                                                        type="button"
+                                                        className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                        onClick={handleSuggestionClick}
+                                                    >
+                                                        {language === 'bn' ? 'পরীক্ষার পরামর্শ' : 'Test Suggestion'}
+                                                    </button>
+                                                    </div>
+                                            {isPreviewModalOpen && (
+                                                <>
+                                                  <PreviewTable columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+                                                 </>
 
-                                            <div className="text-center mt-4 mb-4">
+                                                                                        )}
+                                            {isSuggestionModalOpen && (
+                                                <div >
+                                                    <TestSuggestionsModal setIsSuggestionModalOpen={setIsSuggestionModalOpen} language={language} />
+                                                </div>
+                                            )}
+
+                                                <div className="flex justify-end mt-4 mb-4">
                                                 <button
                                                     type="button"
                                                     className="bg-green-600 hover:bg-green-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                                     onClick={() => {
-                                                        console.log("User ID:", userId);
-                                                       const path = "/preprocess";
-                                                        navigate(path, { state: { userId: userId } });
+                                                    console.log("User ID:", userId);
+                                                    const path = "/preprocess";
+                                                    navigate(path, { state: { userId: userId } });
                                                     }}
-                                                    
                                                 >
-                                                    Preprocess Data
+                                                    {language === 'bn' ? 'ডেটা প্রিপ্রসেস করুন' : 'Preprocess Data'}
                                                 </button>
-                                            </div>
+                                                </div>
+
 
 
 
@@ -933,21 +1030,84 @@ const StatisticalAnalysisTool = () => {
                                                             </div>
 
                                                             {/* Button on new line */}
-                                                            <div>
-                                                                <button
+                                                            {!testsWithoutDetails.includes(testType) && (
+                                                                <div>
+                                                                    <button
                                                                     type="button"
                                                                     onClick={() => setDetailsModalVisible(true)}
                                                                     className="text-blue-600 text-xs underline hover:text-blue-800"
-                                                                >
+                                                                    >
                                                                     {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
-                                                                </button>
-                                                            </div>
+                                                                    </button>
+                                                                </div>
+                                                            )}      
                                                             
                                                         </div>
                                                     )}
 
                                                 </div>
                                             </div>
+                                            {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation') && (
+                                                <div className="mb-6">
+                                                    <label className="block text-gray-700 font-medium mb-2">
+                                                        {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
+                                                        value={heatmapSize}
+                                                        onChange={(e) => {
+                                                            const val = e.target.value;
+                                                            setHeatmapSize(val);
+                                                            setSelectedColumns([]); // Reset columns on size change
+                                                            if (val === '' || /^\d+$/.test(val)) {
+                                                                setErrorMessage('');
+                                                            } else {
+                                                                setErrorMessage('Please enter a valid integer for Heatmap Size');
+                                                            }
+                                                        }}
+                                                        placeholder="Enter number of columns (e.g., 5)"
+                                                    />
+
+                                                    {/* Column(s) Big Box Display */}
+                                                    <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
+                                                    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px]">
+                                                        {selectedColumns.length > 0 ? (
+                                                            <p className="text-gray-800">{selectedColumns.join(', ')}</p>
+                                                        ) : (
+                                                            <p className="text-gray-400">No columns selected yet</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Dropdown Below Box */}
+                                                    <select
+                                                        className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
+                                                        onChange={(e) => {
+                                                            const selected = e.target.value;
+                                                            if (
+                                                                selected &&
+                                                                !selectedColumns.includes(selected) &&
+                                                                selectedColumns.length < parseInt(heatmapSize || 0)
+                                                            ) {
+                                                                setSelectedColumns(prev => [...prev, selected]);
+                                                            }
+                                                            e.target.selectedIndex = 0;
+                                                        }}
+                                                        disabled={selectedColumns.length >= parseInt(heatmapSize || 0)}
+                                                    >
+                                                        <option value="">Select column...</option>
+                                                        {columns
+                                                            .filter(col => !selectedColumns.includes(col))
+                                                            .map((col, idx) => (
+                                                                <option key={idx} value={col}>{col}</option>
+                                                            ))}
+                                                    </select>
+
+                                                    <p className="text-sm text-gray-500 mt-2">
+                                                        {selectedColumns.length} of {heatmapSize || 0} column(s) selected
+                                                    </p>
+                                                </div>
+                                            )}
                                             {testType !== 'eda_basics' && (
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectVariables}</h5>
@@ -1195,7 +1355,7 @@ const StatisticalAnalysisTool = () => {
                                                         t={t}
                                                     />
                                                 )}
-{testType === 'linear_regression' && (
+                                            {testType === 'linear_regression' && (
                                                     <LinearRegressionOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -1517,6 +1677,76 @@ const StatisticalAnalysisTool = () => {
                                                         t={t}
                                                     />
                                                 )}
+                                                {testType === 'chi_square' && (
+                                                    <ChiSquareOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        t={t}
+                                                    />
+                                                )}
+                                                
+                                                {testType === 'cramers_heatmap' && (
+                                                    <CramerVOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        t={t}
+                                                    />
+                                                )}
+                                                {testType === 'network_graph' && (
+                                                    <NetworkGraphOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        nodeColor={nodeColor}
+                                                        setNodeColor={setNodeColor}
+                                                        nodeSize={nodeSize}
+                                                        setNodeSize={setNodeSize}
+                                                        textSize={textSize}
+                                                        setTextSize={setTextSize}
+                                                        textColor={textColor}
+                                                        setTextColor={setTextColor}
+                                                        edgeWidthFactor={edgeWidthFactor}
+                                                        setEdgeWidthFactor={setEdgeWidthFactor}
+                                                        showEdgeWeights={showEdgeWeights}
+                                                        setShowEdgeWeights={setShowEdgeWeights}
+                                                        weightFontSize={weightFontSize}
+                                                        setWeightFontSize={setWeightFontSize}
+                                                        weightColor={weightColor}
+                                                        setWeightColor={setWeightColor}
+                                                        useMatrix={useMatrix}
+                                                        setUseMatrix={setUseMatrix}
+                                                        t={t}
+                                                    />
+                                                )}
 
 
 
@@ -1676,6 +1906,7 @@ const StatisticalAnalysisTool = () => {
                                 <AnalysisResults results={results} testType={testType} columns={[column1, column2, column3]} language={language}
                                     t={t} onReset={resetForm} />
                             )}
+                            
                         </div>
                     </div>
                 </div>
@@ -1725,6 +1956,12 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
         return renderEDABasicsResults();
         } else if (testType === 'similarity') {
         return renderSimilarityResults();
+        }else if (testType === 'chi_square') {
+        return renderChiSquareResults();
+        } else if (testType === 'cramers_heatmap') {
+        return renderCramerVResults();
+        }else if (testType === 'network_graph') {
+        return renderNetworkGraphResults();
         }
 
         switch (testType) {
@@ -2971,141 +3208,105 @@ const renderFZTResults = () => {
                     {language === 'bn' ? 'ক্রস ট্যাবুলেশন বিশ্লেষণ' : 'Cross Tabulation Analysis'}
                 </h2>
 
+                {/* Columns Analyzed */}
                 {columns && columns.length >= 2 && (
-                    <p className="mb-3">
+                    <p className="mb-4">
                         <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{' '}
                         {columns.map((col, idx) => (
                             <span key={idx}>
-                                {col}
-                                {idx < columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
+                                {col}{idx < columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
                             </span>
                         ))}
                     </p>
                 )}
 
+
                 {/* Translated Table */}
                 {results.translated_table && (
                     <div className="mt-8">
-                        <h3 className="text-xl font-semibold mb-3">
+                        <h3 className="text-xl font-semibold mb-3 text-center">
                             {language === 'bn' ? 'অনুবাদিত টেবিল' : 'Translated Table'}
                         </h3>
-                        <div className="overflow-auto">
-                            <table className="min-w-max border-collapse border border-gray-300">
-                                <thead>
-                                    <tr>
-                                        <th className="border border-gray-300 px-3 py-2 bg-gray-100">
-                                            {language === 'bn' ? 'ইন্ডেক্স' : 'Index'}
-                                        </th>
-                                        {Object.keys(results.translated_table[Object.keys(results.translated_table)[0]]).map((col, idx) => (
-                                            <th key={idx} className="border border-gray-300 px-3 py-2 bg-gray-100">
-                                                {col}
+                        <div className="flex justify-center">
+                            <div className="overflow-auto">
+                                <table className="min-w-max border-collapse border border-gray-300">
+                                    <thead>
+                                        <tr>
+                                            <th className="border border-gray-300 px-3 py-2 bg-gray-100">
+                                                {language === 'bn' ? 'ইন্ডেক্স' : 'Index'}
                                             </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {Object.entries(results.translated_table).map(([rowLabel, rowData], idx) => (
-                                        <tr key={idx}>
-                                            <td className="border border-gray-300 px-3 py-2 bg-gray-50 font-semibold">
-                                                {rowLabel}
-                                            </td>
-                                            {Object.values(rowData).map((val, i) => (
-                                                <td key={i} className="border border-gray-300 px-3 py-2 text-center">
-                                                    {val}
-                                                </td>
+                                            {Object.keys(results.translated_table[Object.keys(results.translated_table)[0]]).map((col, idx) => (
+                                                <th key={idx} className="border border-gray-300 px-3 py-2 bg-gray-100">
+                                                    {col}
+                                                </th>
                                             ))}
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {Object.entries(results.translated_table).map(([rowLabel, rowData], idx) => (
+                                            <tr key={idx}>
+                                                <td className="border border-gray-300 px-3 py-2 bg-gray-50 font-semibold">
+                                                    {rowLabel}
+                                                </td>
+                                                {Object.values(rowData).map((val, i) => (
+                                                    <td key={i} className="border border-gray-300 px-3 py-2 text-center">
+                                                        {val}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Visualizations */}
-                <div className="mt-6">
-                    <h3 className="text-xl font-semibold mb-3">
-                        {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-6">
-                        {results.heatmap_path && (
-                            <div className="bg-white rounded-lg shadow-md p-4">
-                                <img
-                                    src={'http://127.0.1:8000' + results.heatmap_path}
-                                    alt="Heatmap"
-                                    className="w-full h-auto object-contain"
-                                />
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            const response = await fetch(`http://127.0.1:8000${results.heatmap_path}`);
-                                            const blob = await response.blob();
-                                            const url = window.URL.createObjectURL(blob);
-                                            const link = document.createElement('a');
-                                            const filename = results.heatmap_path.split('/').pop() || 'heatmap.png';
-                                            link.href = url;
-                                            link.download = filename;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                            window.URL.revokeObjectURL(url);
-                                        } catch (error) {
-                                            console.error('Download failed:', error);
-                                            alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                        }
-                                    }}
-                                    className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                    title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                >
-                                    <svg
-                                        className="w-4 h-4 mr-1"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                    {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                </button>
-                            </div>
-                        )}
-                        {results.barplot_path && (
-                            <div className="bg-white rounded-lg shadow-md p-4">
-                                <img
-                                    src={results.barplot_path}
-                                    alt="Barplot"
-                                    className="w-full h-auto object-contain"
-                                />
-                            </div>
-                        )}
-                    </div>
+                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {results.heatmap_path && (
+                        <div className="text-center">
+                            <h4 className="text-lg font-semibold mb-2">
+                                {language === 'bn' ? 'হিটম্যাপ' : 'Heatmap'}
+                            </h4>
+                            <img
+                                src={`http://127.0.0.1:8000${results.heatmap_path}`}
+                                alt="Heatmap"
+                                className="w-full h-auto object-contain border rounded shadow"
+                            />
+                        </div>
+                    )}
+
+                    {results.barplot_path && (
+                        <div className="text-center">
+                            <h4 className="text-lg font-semibold mb-2">
+                                {language === 'bn' ? 'বারপ্লট' : 'Bar Plot'}
+                            </h4>
+                            <img
+                                src={`http://127.0.0.1:8000${results.barplot_path}`}
+                                alt="Bar Plot"
+                                className="w-full h-auto object-contain border rounded shadow"
+                            />
+                        </div>
+                    )}
                 </div>
 
+                {/* Summary */}
                 {results.summary && (
-                    <>
-                        <p className="mb-2">
-                            <strong>{language === 'bn' ? 'মোট পর্যবেক্ষণ:' : 'Total Observations:'}</strong>{' '}
-                            {results.summary.total_observations}
-                        </p>
-                        <p className="mb-2">
-                            <strong>{language === 'bn' ? 'সর্বাধিক সাধারণ সমন্বয়:' : 'Most Frequent Combination:'}</strong>{' '}
-                            {results.summary.most_frequent}
-                        </p>
-                        <p className="mb-4">
-                            <strong>{language === 'bn' ? 'সর্বনিম্ন সাধারণ সমন্বয়:' : 'Least Frequent Combination:'}</strong>{' '}
-                            {results.summary.least_frequent}
-                        </p>
-                    </>
+                    <div className="mb-6 bg-gray-100 p-4 rounded shadow">
+                        <h3 className="text-lg font-semibold mb-2">{language === 'bn' ? 'সারাংশ' : 'Summary'}</h3>
+                        <ul className="list-disc list-inside text-gray-800">
+                            <li>{results.summary.total_observations}</li>
+                            <li>{results.summary.most_frequent}</li>
+                            <li>{results.summary.least_frequent}</li>
+                        </ul>
+                    </div>
                 )}
 
             </>
         );
     };
+
 
     const renderEDADistributionResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -3543,6 +3744,255 @@ const renderFZTResults = () => {
                         } value={results.results.minkowski_distance} />
                         <StatRow label={language === 'bn' ? 'পিয়ারসন সহগ' : 'Pearson Correlation'} value={results.results.pearson_correlation} />
                         <StatRow label={language === 'bn' ? 'স্পিয়ারম্যান সহগ' : 'Spearman Correlation'} value={results.results.spearman_correlation} />
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderChiSquareResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'কাই-স্কয়ার টেস্টের ফলাফল' : 'Chi-Square Test Results'}
+                </h2>
+
+                {columns && columns.length >= 2 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong> 
+                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
+                    </p>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-white shadow p-4 rounded border">
+                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'Chi² পরিসংখ্যান' : 'Chi² Statistic'}</h4>
+                        <p>{mapDigitIfBengali(results.statistic?.chi2 || '-')}</p>
+                    </div>
+                    <div className="bg-white shadow p-4 rounded border">
+                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'P-মান' : 'P-value'}</h4>
+                        <p>{mapDigitIfBengali(results.statistic?.p_value || '-')}</p>
+                    </div>
+                    <div className="bg-white shadow p-4 rounded border">
+                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'স্বাধীনতার মাত্রা (df)' : 'Degrees of Freedom'}</h4>
+                        <p>{mapDigitIfBengali(results.statistic?.dof || '-')}</p>
+                    </div>
+                </div>
+
+                {results.interpretation && (
+                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-900 p-4 mb-6 rounded">
+                        <p className="font-medium">
+                            {language === 'bn' ? 'ব্যাখ্যা:' : 'Interpretation:'}
+                        </p>
+                        <p>{results.interpretation}</p>
+                    </div>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {results.image_paths.map((path, index) => {
+                                const handleDownload = async () => {
+                                    try {
+                                        const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        const filename = path.split('/').pop() || `chi_square_plot_${index + 1}.png`;
+                                        link.href = url;
+                                        link.download = filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                };
+
+                                return (
+                                    <div key={index} className="bg-white rounded shadow p-2 relative">
+                                        <img
+                                            src={`http://127.0.0.1:8000${path}`}
+                                            alt={`chi-square-plot-${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={handleDownload}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
+                                            title={language === 'bn' ? 'ডাউনলোড করুন' : 'Download'}
+                                        >
+                                            ⬇ {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+
+    const renderCramerVResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? "ক্র্যামের ভি হিটম্যাপ" : "Cramér's V Heatmap"}
+                </h2>
+
+                {columns && columns.length >= 2 && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
+                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
+                    </p>
+                )}
+
+                {results.statistic !== undefined && (
+                    <p className="mb-2">
+                        <strong>{language === 'bn' ? 'Cramér\'s V মান:' : "Cramér's V value:"}</strong>{" "}
+                        {mapDigitIfBengali(parseFloat(results.statistic).toFixed(4))}
+                    </p>
+                )}
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {results.image_paths.map((path, index) => {
+                                const handleDownload = async () => {
+                                    try {
+                                        const response = await fetch(`http://127.0.0.1:8000${path}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        const filename = path.split('/').pop() || `cramer_v_plot_${index + 1}.png`;
+                                        link.href = url;
+                                        link.download = filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                };
+
+                                return (
+                                    <div key={index} className="bg-white rounded shadow p-2 relative">
+                                        <img
+                                            src={`http://127.0.0.1:8000${path}`}
+                                            alt={`cramer-v-plot-${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={handleDownload}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
+                                            title={language === 'bn' ? 'ডাউনলোড করুন' : 'Download'}
+                                        >
+                                            ⬇ {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+    const renderNetworkGraphResults = () => {
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'নেটওয়ার্ক গ্রাফ বিশ্লেষণ' : 'Network Graph Analysis'}
+                </h2>
+
+                <p className="mb-3">
+                    <strong>{language === 'bn' ? 'ভিজ্যুয়ালাইজেশন:' : 'Visualization:'}</strong>
+                </p>
+
+                {results.image_path && (
+                    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
+                        <div className="relative">
+                            <img
+                                src={`http://127.0.0.1:8000${results.image_path}`}
+                                alt={language === 'bn' ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
+                                className="w-full h-auto object-contain"
+                            />
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const response = await fetch(`http://127.0.0.1:8000${results.image_path}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        link.href = url;
+                                        link.download = results.image_path.split('/').pop() || 'network_graph.png';
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                }}
+                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
+                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
+                            >
+                                <svg 
+                                    className="w-4 h-4 mr-1" 
+                                    fill="none" 
+                                    stroke="currentColor" 
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        strokeWidth="2" 
+                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                    />
+                                </svg>
+                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                            </button>
+                        </div>
                     </div>
                 )}
             </>
