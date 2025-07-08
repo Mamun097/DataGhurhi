@@ -8,6 +8,7 @@ import logo_buet from "../assets/logos/cse_buet.png";
 import logo_ric from "../assets/logos/ric.png";
 import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
+import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 
 import {
   FaHome,
@@ -153,6 +154,14 @@ const NavbarHome = ({ language, setLanguage }) => {
               </span>
             </div>
           </div>
+        </li>
+        <li class="logo-list-item">
+          <img
+            src={logo_dataghurhi}
+            
+            alt="DataGhurhi Logo"
+          />
+          <span>DataGhurhi</span>
         </li>
       </ul>
     </motion.nav>
