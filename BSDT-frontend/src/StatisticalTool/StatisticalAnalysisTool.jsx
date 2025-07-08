@@ -374,7 +374,7 @@ const StatisticalAnalysisTool = () => {
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [userId, setUserId] = useState('');
+    const [userId, setUserId] = useState(null);
     // Refs
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
@@ -398,6 +398,10 @@ const StatisticalAnalysisTool = () => {
     }
     if(isSurveyData){
         setIsSurveyData(true);
+    }
+    if (!isPreprocessed && !isSurveyData) {
+        // If no preprocessed or survey data, return early
+        return;
     }
 
     let fileUrl = "";
@@ -487,7 +491,7 @@ const StatisticalAnalysisTool = () => {
                         setColumns(data.columns);
                         setColumn1(data.columns[0]);
                         setColumn2(data.columns.length > 1 ? data.columns[1] : '');
-                        setUserId(data?.user_id || null); // Set user ID if available
+                        
                         const userIdFromData = data?.user_id;
                         console.log("User ID from data:", userIdFromData);
                         setUserId(userIdFromData);
@@ -505,7 +509,11 @@ const StatisticalAnalysisTool = () => {
         }
     };
     
-
+useEffect(() => {
+  if (userId) {
+    console.log(" React state updated: userId =", userId);
+  }
+}, [userId]);
 
     const handleSubmit = (e) => {
     e.preventDefault();

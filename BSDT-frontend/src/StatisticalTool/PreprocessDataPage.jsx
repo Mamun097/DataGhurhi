@@ -32,14 +32,27 @@ const PreprocessDataPage = () => {
   const [groupingPairs, setGroupingPairs] = useState([]);
   const [userId, setUserId] = useState(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [missingValues, setMissingValues] = useState({});
+  const [numericColumns, setNumericColumns] = useState([]);
+
 
   
 const location = useLocation();
 
 
+
 useEffect(() => {
-  setUserId(location.state?.userId || null); // Get user ID from state if available
-  console.log("User ID from location state:", userId);
+
+  if (location.state?.userId) {
+    setUserId(location.state.userId);
+    console.log("User ID from location.state:", location.state.userId);
+  }
+}, [location.state]);
+
+useEffect(() => {
+  if (!userId) return;
+
+  // Now fetch only when userId is set
   fetch('http://127.0.0.1:8000/api/preview-data/', {
     method: 'GET',
     headers: {
@@ -48,22 +61,27 @@ useEffect(() => {
   })
     .then(res => {
       if (!res.ok) {
-        // Manually throw an error so it goes to catch block
         throw new Error(`HTTP error ${res.status}`);
       }
-      return res.json(); // now safe to parse JSON
+      return res.json();
     })
     .then(result => {
-      console.log("entered");
+      console.log("Data fetched successfully");
       setColumns(result.columns);
       setData(result.rows);
       setAvailableColumns(result.columns);
+      setMissingValues(result.missing_values || {});
+      setNumericColumns(result.num_columns || []);
     })
     .catch(err => {
-      console.error("Failed to load preview data:", err.message);
-      // Optionally show user feedback here
+      console.error(" Failed to load preview data:", err.message);
     });
-}, [userId, location.state]);
+}, [userId]);
+
+useEffect(() => {
+  console.log("Columns updated:", columns);
+}, [columns]);
+
 
 
 function downloadAsExcel(data, filename = 'data.xlsx') {
@@ -459,36 +477,40 @@ function downloadAsPDF(data, filename = 'data.pdf') {
         </div>
       )}
 
-      {selectedOption === 'handle_missing' && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select column (or 'all'):</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
-            value={missingColumn}
-            onChange={(e) => setMissingColumn(e.target.value)}
-          >
-            <option value="">Select column...</option>
-            <option value="all">All Columns</option>
-            {availableColumns.map((col, idx) => (
-              <option key={idx} value={col}>{col}</option>
-            ))}
-          </select>
+    {selectedOption === 'handle_missing' && (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Select column (or 'all'):</label>
+        <select
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
+          value={missingColumn}
+          onChange={(e) => setMissingColumn(e.target.value)}
+        >
+          <option value="">Select column...</option>
+          <option value="all">All Columns</option>
+          {Object.entries(missingValues).map(([col, count], idx) => (
+            <option key={idx} value={col}>
+              {col} ({count} missing)
+            </option>
+          ))}
+        </select>
 
-          <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full"
-            value={missingMethod}
-            onChange={(e) => setMissingMethod(e.target.value)}
-          >
-            <option value="">Choose method</option>
-            <option value="drop">Drop missing rows</option>
-            <option value="fill_mean">Fill with mean</option>
-            <option value="fill_median">Fill with median</option>
-          </select>
-        </div>
-      )}
+        <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
+        <select
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+          value={missingMethod}
+          onChange={(e) => setMissingMethod(e.target.value)}
+        >
+          <option value="">Choose method</option>
+          <option value="drop">Drop missing rows</option>
+          <option value="fill_mean">Fill with mean</option>
+          <option value="fill_median">Fill with median</option>
+        </select>
+      </div>
+    )}
 
-      {selectedOption === 'handle_outliers' && (
+
+      
+       {selectedOption === 'handle_outliers' && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Select numeric column:</label>
           <select
@@ -497,7 +519,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             onChange={(e) => setOutlierColumn(e.target.value)}
           >
             <option value="">Select column...</option>
-            {availableColumns.map((col, idx) => (
+            {numericColumns.map((col, idx) => (
               <option key={idx} value={col}>{col}</option>
             ))}
           </select>
@@ -513,7 +535,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             <option value="cap">Cap outliers to bounds</option>
           </select>
         </div>
-      )}
+        )}
 
       {selectedOption === 'rank_column' && (
         <div className="mb-4">

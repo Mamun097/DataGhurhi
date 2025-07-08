@@ -3253,26 +3253,32 @@ def preview_data(request):
 
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
 
-        if os.path.exists(file_path):
+       
+
+        try:
             df = pd.read_excel(file_path)
 
-            # Replace NaN with None
-            df_clean = df.where(pd.notnull(df), ' ')
+            # Limit to first N rows for preview
+            preview_limit = 100
+            preview_df = df.head(preview_limit).copy()
 
-            data = {
-                'columns': df_clean.columns.tolist(),
-                'rows': df_clean.to_dict(orient='records')
-            }
+            # Convert complex data types to string for safe JSON serialization
+            preview_df = preview_df.applymap(lambda x: str(x) if pd.notnull(x) else "")
+            ##show missing valuse and num columns for outliers
+            missing_values = df.isnull().sum().to_dict()
+            num_columns = df.select_dtypes(include=[np.number]).columns.tolist()
 
-            try:
-                json_data = json.dumps(data, allow_nan=False)
-                print("Rows with NaN:\n", df_clean[df_clean.isna().any(axis=1)])
-
-                return HttpResponse(json_data, content_type='application/json')
-            except ValueError as e:
-                return JsonResponse({'error': f'Invalid data: {e}'}, status=500)
-        else:
-            return JsonResponse({'error': 'No uploaded file found for this user'}, status=404)
+            return JsonResponse({
+                'success': True,
+                'columns': preview_df.columns.tolist(),
+                'rows': preview_df.to_dict(orient='records'),
+                'total_rows': len(df),
+                'preview_rows': preview_limit,
+                'missing_values': missing_values,
+                'num_columns': num_columns
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'})
 
 
 
