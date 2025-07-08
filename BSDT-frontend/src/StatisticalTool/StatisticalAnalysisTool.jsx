@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { use, useEffect, useRef, useState } from 'react';
 import statTestDetails  from './stat_tests_details';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import KruskalOptions from './KruskalOptions';
@@ -374,7 +374,7 @@ const StatisticalAnalysisTool = () => {
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [userId, setUserId] = useState(null);
+    const [userId, setUserId] = useState(sessionStorage.getItem("userId") || ''); // Initialize from sessionStorage
     // Refs
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
@@ -393,6 +393,7 @@ const StatisticalAnalysisTool = () => {
     useEffect(() => {
     const isPreprocessed = sessionStorage.getItem("preprocessed") === "true";
     const isSurveyData = sessionStorage.getItem("surveyfile") === "true";
+    const userIdFromSession = sessionStorage.getItem("userId");
     if(isPreprocessed){
         setIsPreprocessed(true);
     }
@@ -408,11 +409,11 @@ const StatisticalAnalysisTool = () => {
     let fileName = "";
 
     if (isPreprocessed) {
-        fileUrl = "http://127.0.0.1:8000/media/preprocessed/preprocessed.xlsx";
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userIdFromSession}_uploads/temporary_uploads/preprocessed/preprocessed.xlsx`;
         fileName = "preprocessed.xlsx";
         sessionStorage.removeItem("preprocessed");
     } else if (isSurveyData) {
-        fileUrl = "http://127.0.0.1:8000/media/survey/survey_responses.xlsx";
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userIdFromSession}_uploads/temporary_uploads/survey/survey_responses.xlsx`;
         fileName = "survey_responses.xlsx";
         sessionStorage.removeItem("surveyfile");
     }
@@ -445,6 +446,7 @@ const StatisticalAnalysisTool = () => {
             .then(data => {
                 if (data.success) {
                     setColumns(data.columns);
+                    console.log("Columns extracted:", columns);
                     setColumn1(data.columns[0]);
                     setColumn2(data.columns.length > 1 ? data.columns[1] : '');
                     setUploadStatus('success');
@@ -460,8 +462,12 @@ const StatisticalAnalysisTool = () => {
             });
     }
 }, []);
-
-
+useEffect(() => {
+    //check columns state
+    if (columns.length > 0) {
+        console.log("Columns loaded:", columns);
+    }
+}, [columns]);
 
     // Handle file selection
     const handleFileChange = (e) => {
@@ -782,33 +788,44 @@ useEffect(() => {
     
     const [data, setData] = useState([]);
     const [availableColumns, setAvailableColumns] = useState([]);
-    const handlePreviewClick = () => {
-    setIsPreviewModalOpen(true);
-    console.log("Preview button clicked");
-    fetch('http://127.0.0.1:8000/api/preview-data/', {
-    method: 'GET',
-    headers: {
-      'userID': userId 
-    }
-  })
-    .then(res => {
-      if (!res.ok) {
-        // Manually throw an error so it goes to catch block
-        throw new Error(`HTTP error ${res.status}`);
-      }
-      return res.json(); // now safe to parse JSON
-    })
-    .then(result => {
-      console.log("entered");
-      setColumns(result.columns);
-      setData(result.rows);
-      setAvailableColumns(result.columns);
-    })
-    .catch(err => {
-      console.error("Failed to load preview data:", err.message);
-      // Optionally show user feedback here
-    });
-};
+
+    const handlePreviewClick = async () => {
+        setIsPreviewModalOpen(true);
+        console.log("Preview button clicked");
+        //send is preprocessed and isSurveyData to backend
+        let filetype = '';
+
+        if(isPreprocessed){
+            filetype = 'preprocessed';
+        } else if(isSurveyData){
+            filetype = 'survey';
+        }
+            fetch('http://127.0.0.1:8000/api/preview-data/', {
+                method: 'GET',
+                headers: {
+                    'userID': userId,
+                    'filetype': filetype
+                },
+                
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(result => {
+                console.log("Preview data loaded successfully:", result);
+                setColumns(result.columns);
+                setData(result.rows);
+                setAvailableColumns(result.columns);
+            })
+            .catch(error => {
+                console.error("Failed to load preview data:", error.message);
+                // Optionally show user feedback here
+            });
+        }; 
+    
 
 const handleSuggestionClick = () => {
 

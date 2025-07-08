@@ -25,6 +25,7 @@ exports.uploadFile = async (req, res) => {
             headers: formData.getHeaders(),
         });
          fs.unlinkSync(req.file.path); // Delete the file after processing
+         console.log(response.data);
         return res.status(200).json(response.data);
     }
     catch (error) {
