@@ -19,11 +19,15 @@
   height: 5.5rem;
   object-fit: contain;
 }
+.footer-logo3 {
+  height: 5.5rem;
+  object-fit: contain;
+}
+
 
 .footer-logo2,
-.footer-logo3,
 .footer-logo4 {
-  height: 4rem;
+  height: 3rem;
   object-fit: contain;
 }
 

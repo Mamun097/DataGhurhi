@@ -171,12 +171,12 @@ const NavbarAcholder = (props) => {
 
   return (
     <motion.nav className="navbar">
-      <div className="logo-container">
-        <img src={logo_buet} alt="BUET Logo" className="logo1" />
-        <img src={logo_ric} alt="RIC Logo" className="logo2" />
-        <img src={logo_ict} alt="ICT Logo" className="logo3" />
-        <img src={logo_edge} alt="EDGE Logo" className="logo4" />
-      </div>
+      <div className="navbar-left">
+            <div className="logo-list-item">
+              <img src={logo_dataghurhi} alt="DataGhurhi logo" />
+              <span>DataGhurhi</span>
+            </div>
+          </div>
 
       {/* Only show search bar for non-admin users */}
 
@@ -293,10 +293,7 @@ const NavbarAcholder = (props) => {
             </Menu>
           </div>
         </li>
-        <li class="logo-list-item">
-          <img src={logo_dataghurhi} alt="DataGhurhi Logo" />
-          <span>DataGhurhi</span>
-        </li>
+       
       </ul>
     </motion.nav>
   );
