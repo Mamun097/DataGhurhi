@@ -16,6 +16,10 @@ import SearchResults from "./Homepage/searchResults";
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
 import AboutPage from "./About/aboutpage";
 import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
+import Layout from "./Layout";
+
+
+
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -24,8 +28,10 @@ function App() {
 
   return (
     <Router>
+    <Layout>
       <Routes>
         {/* Public Routes */}
+   
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
@@ -62,6 +68,7 @@ function App() {
 
        
       </Routes>
+      </Layout>
     </Router>
   );
 }
