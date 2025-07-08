@@ -180,7 +180,7 @@ const PreviewTable = ({ columns, initialData, setData,data, setIsPreviewModalOpe
                             isHighlighted ? "bg-yellow-highlight" : ""
                         }`}
                         >
-                        {value ?? "-"}
+                        {value}
                         </td>
                     );
                   })}
