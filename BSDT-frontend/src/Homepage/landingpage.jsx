@@ -275,7 +275,7 @@ const LandingPage = () => {
           ›
         </button>
       </div>
-
+{/* 
       <footer className="footer">
         <div className="footer-logo-container">
           <img src={logo_buet} alt="BUET Logo" className="footer-logo1" />
@@ -283,7 +283,7 @@ const LandingPage = () => {
           <img src={logo_ict} alt="ICT Logo" className="footer-logo3" />
           <img src={logo_edge} alt="EDGE Logo" className="footer-logo4" />
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 };

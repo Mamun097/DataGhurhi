@@ -117,13 +117,12 @@ const NavbarHome = ({ language, setLanguage }) => {
 
   return (
     <motion.nav className="navbar">
-      <div className="logo-container">
-        <img src={logo_buet} alt="BUET Logo" className="logo1" />
-        <img src={logo_ric} alt="RIC Logo" className="logo2" />
-        <img src={logo_ict} alt="ICT Logo" className="logo3" />
-        <img src={logo_edge} alt="EDGE Logo" className="logo4" />
+      <div className="navbar-left">
+        <div className="logo-list-item">
+          <img src={logo_dataghurhi} alt="DataGhurhi logo" />
+          <span>DataGhurhi</span>
+        </div>
       </div>
-
       <div className="search-container">
         <select
           className="search-filter"
@@ -136,15 +135,17 @@ const NavbarHome = ({ language, setLanguage }) => {
           <option value="account">{getLabel("Account")}</option>
         </select>
 
-        <input
-          type="text"
-          placeholder={getLabel("Write your search query here...")}
-          className="search-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <FaSearch className="search-icon" onClick={handleSearch} />
+        <div className="search-box-wrapper">
+          <input
+            type="text"
+            placeholder={getLabel("Write your search query here...")}
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <FaSearch className="search-icon-inside" onClick={handleSearch} />
+        </div>
       </div>
 
       <ul className="nav-links">
@@ -191,10 +192,6 @@ const NavbarHome = ({ language, setLanguage }) => {
               </span>
             </div>
           </div>
-        </li>
-        <li className="logo-list-item">
-          <img src={logo_dataghurhi} alt="DataGhurhi Logo" />
-          <span>DataGhurhi</span>
         </li>
       </ul>
     </motion.nav>
