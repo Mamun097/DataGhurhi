@@ -35,7 +35,7 @@ function App() {
         <Route path="/faq/:topic" element={<FaqByTopic />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
-        {/* <Route path="/v/:slug" element={<IndexUser />} /> */}
+        <Route path="/v/:slug" element={<IndexUser />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (

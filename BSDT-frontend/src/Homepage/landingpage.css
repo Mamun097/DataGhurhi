@@ -71,7 +71,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #c2e9fb;
+  background-color: #0a3e29;
   border-radius: 30px;
   transition: 0.4s;
 }
@@ -83,13 +83,13 @@
   width: 20px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: rgb(12, 239, 190);
   border-radius: 50%;
   transition: 0.4s;
 }
 
 input:checked + .slider {
-  background-color: #fcb0b3;
+  background-color: #01633c;
 }
 
 input:checked + .slider:before {
@@ -98,8 +98,7 @@ input:checked + .slider:before {
 
 .language-labels {
   display: flex;
-  gap: 1rem;
-  margin-top: 0.5rem;
+
 }
 
 .language-labels span {
@@ -111,7 +110,7 @@ input:checked + .slider:before {
 .language-labels span.active {
   opacity: 1;
   font-weight: bold;
-  color: #e75480;
+  color: #ff004c;
 }
 
 /* Slider */
