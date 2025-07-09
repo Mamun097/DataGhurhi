@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 100vh;
+  min-height: 60vh;
   background: linear-gradient(135deg, #6b6f7d, #cdc4d7);
   font-family: "Poppins", sans-serif;
   padding-top: 80px; /* space for navbar */
@@ -12,7 +12,7 @@
 /* Wrapper to hold both left feature and right login box */
 .register-wrapper {
   display: flex;
-  max-width: 1000px;
+  max-width: 800px;
   width: 90%;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 15px;

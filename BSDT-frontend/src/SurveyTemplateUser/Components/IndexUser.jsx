@@ -33,17 +33,20 @@ const Index = () => {
 
   useEffect(() => {
     const load = async () => {
-      // fetch templates from the server
       if (slug) {
         try {
+          const token = localStorage.getItem("token");
+          const config = {};
+          if (token) {
+            config.headers = {
+              Authorization: `Bearer ${token}`,
+            };
+          }
           const response = await axios.get(
             `http://localhost:2000/api/fetch-survey-user/${slug}`,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
+            config
           );
+
           setTemplate(response.data.data);
           setTitle(response.data.data.title);
           setSections(response.data.data.template.sections);
@@ -57,43 +60,44 @@ const Index = () => {
     };
 
     load();
-  }, [slug]);
+}, [slug]);
 
   //handle submission
-  const handleSubmit = async (e) => {
+ const handleSubmit = async (e) => {
     e.preventDefault();
     const calculatedMarks = handleMarking(userResponse, questions);
-    // console.log("Marks: ", calculatedMarks);
+    
     try {
+      const token = localStorage.getItem("token");
+      const config = {};
+      if (token) {
+        config.headers = {
+          Authorization: `Bearer ${token}`,
+        };
+      }
       const response = await axios.post(
         `http://localhost:2000/api/submit-survey/${slug}`,
         {
           userResponse: userResponse,
           calculatedMarks: calculatedMarks,
         },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        config
       );
+
       console.log("Submission response:", response.data);
 
       // Handle success
-      // First Clear all data
       setTemplate(null);
       setTitle(null);
       setSections(null);
       setQuestions(null);
       setBackgroundImage(null);
-
-      // set submitted to true
       setSubmitted(true);
+
     } catch (error) {
       console.error("Error submitting survey:", error);
-      // Handle error (e.g., show an error message)
     }
-  };
+};
 
   // Show a loading placeholder until templates arrive (if needed)
   if (template === undefined || template === null) {
