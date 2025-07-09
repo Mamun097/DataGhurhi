@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is correctly imported and used
+import Option from "./QuestionSpecificUtils/OptionClass";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import axios from "axios";
@@ -31,6 +31,16 @@ const Radio = ({
     () => question.meta?.options || [],
     [question.meta?.options]
   );
+
+  const normalOptions = useMemo(
+    () => options.filter((opt) => opt.text !== "Other"),
+    [options]
+  );
+  const hasOtherOption = useMemo(
+    () => options.some((opt) => opt.text === "Other"),
+    [options]
+  );
+
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -108,38 +118,49 @@ const Radio = ({
       prev.map((q) => {
         if (q.id === question.id) {
           const currentOptions = q.meta?.options || [];
-          return {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: [
-                ...currentOptions,
-                new Option(`Option ${currentOptions.length + 1}`, 0),
-              ],
-            },
-          };
+          const newOption = new Option(`Option ${currentOptions.length + 1}`, 0);
+          
+          if (hasOtherOption) {
+            const otherIndex = currentOptions.findIndex(opt => opt.text === "Other");
+            const newOpts = [...currentOptions];
+            newOpts.splice(otherIndex, 0, newOption);
+            return { ...q, meta: { ...q.meta, options: newOpts }};
+          } else {
+            return { ...q, meta: { ...q.meta, options: [...currentOptions, newOption] }};
+          }
         }
         return q;
       })
     );
+  }, [question.id, setQuestions, hasOtherOption]);
+  
+  const handleAddOtherOption = useCallback(() => {
+    setQuestions(prev => prev.map(q => {
+      if (q.id === question.id && !q.meta.options.some(opt => opt.text === 'Other')) {
+        return {
+          ...q,
+          meta: {
+            ...q.meta,
+            options: [...q.meta.options, new Option('Other', 0)]
+          }
+        };
+      }
+      return q;
+    }));
   }, [question.id, setQuestions]);
 
   const updateOption = useCallback(
     (idx, newText) => {
       setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? { ...opt, text: newText } : opt
-                  ),
-                },
-              }
-            : q
-        )
+        prev.map((q) => {
+            if (q.id === question.id) {
+                const targetOption = q.meta.options[idx];
+                const newOptions = [...q.meta.options];
+                newOptions[idx] = { ...targetOption, text: newText };
+                return { ...q, meta: { ...q.meta, options: newOptions }};
+            }
+            return q;
+        })
       );
     },
     [question.id, setQuestions]
@@ -195,14 +216,21 @@ const Radio = ({
       setQuestions((prev) =>
         prev.map((q) => {
           if (q.id !== question.id) return q;
-          const opts = Array.from(q.meta?.options || []);
-          const [moved] = opts.splice(src, 1);
-          opts.splice(dest, 0, moved);
-          return { ...q, meta: { ...q.meta, options: opts } };
+          // Important: We operate on a copy of the normal (draggable) options
+          const reorderedNormalOpts = Array.from(normalOptions);
+          const [moved] = reorderedNormalOpts.splice(src, 1);
+          reorderedNormalOpts.splice(dest, 0, moved);
+          
+          // Recombine with the "Other" option if it exists
+          const finalOpts = hasOtherOption 
+            ? [...reorderedNormalOpts, options.find(o => o.text === "Other")] 
+            : reorderedNormalOpts;
+
+          return { ...q, meta: { ...q.meta, options: finalOpts } };
         })
       );
     },
-    [question.id, setQuestions]
+    [question.id, setQuestions, normalOptions, hasOtherOption, options]
   );
 
   const handleCopy = useCallback(() => {
@@ -275,8 +303,8 @@ const Radio = ({
   }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
 
   return (
-    <div className="mb-3 dnd-isolate">
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+    <div className="mb-3 p-3 border rounded shadow-sm bg-white">
+       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
             <strong>{getLabel("Multiple Choice Question")}</strong>
@@ -352,18 +380,12 @@ const Radio = ({
         <Droppable droppableId={`options-radio-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {options.map((option, idx) => {
-                const keyForOption = `option-${question.id}-${
-                  option.id || idx
-                }`;
-                const draggableIdForOption = `draggable-option-${question.id}-${
-                  option.id || idx
-                }`;
-
-                return (
+              {normalOptions.map((option, idx) => {
+                 const originalIndex = options.findIndex(o => o.text === option.text);
+                 return (
                   <Draggable
-                    key={keyForOption}
-                    draggableId={draggableIdForOption}
+                    key={`option-${question.id}-${originalIndex}`}
+                    draggableId={`draggable-option-${question.id}-${originalIndex}`}
                     index={idx}
                     isDragDisabled={showCropper}
                   >
@@ -392,7 +414,7 @@ const Radio = ({
                             type="text"
                             className="form-control form-control-sm"
                             value={option.text || ""}
-                            onChange={(e) => updateOption(idx, e.target.value)}
+                            onChange={(e) => updateOption(originalIndex, e.target.value)}
                             placeholder={`Option ${idx + 1}`}
                           />
                         </div>
@@ -408,7 +430,7 @@ const Radio = ({
                               onChange={(e) => {
                                 const val = e.target.value;
                                 updateOptionValue(
-                                  idx,
+                                  originalIndex,
                                   val === "" ? 0 : parseFloat(val) || 0
                                 );
                               }}
@@ -419,7 +441,7 @@ const Radio = ({
                         <div className="col-auto">
                           <button
                             className="btn btn-sm btn-outline-secondary w-auto"
-                            onClick={() => removeOption(idx)}
+                            onClick={() => removeOption(originalIndex)}
                             disabled={options.length <= 1}
                           >
                             <i className="bi bi-trash"></i>
@@ -436,14 +458,43 @@ const Radio = ({
         </Droppable>
       </DragDropContext>
 
-      <button
-        className="btn btn-sm btn-outline-secondary w-auto"
-        onClick={addOption}
-      >
-        ➕ {getLabel("Add Option")}
-      </button>
+      {hasOtherOption && (
+        <div className="row g-2 mb-2 align-items-center">
+            <div className="col-auto">
+                <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", color: 'transparent' }}></i>
+            </div>
+            <div className="col-auto">
+              <input className="form-check-input" type="radio" disabled />
+            </div>
+            <div className="col">
+              <input type="text" readOnly className="form-control-plaintext form-control-sm" value="Other" />
+            </div>
+            <div className="col-auto">
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => removeOption(options.findIndex(o => o.text === "Other"))}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+        </div>
+      )}
 
-      <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
+      <div className="d-flex align-items-center">
+        <button
+          className="btn btn-sm btn-outline-secondary w-auto"
+          onClick={addOption}
+        >
+          ➕ {getLabel("Add Option")}
+        </button>
+        {!hasOtherOption && (
+          <div className="ms-2">
+            or <button className="btn btn-link btn-sm" onClick={handleAddOtherOption}>Add "Other"</button>
+          </div>
+        )}
+      </div>
+
+       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleCopy}
