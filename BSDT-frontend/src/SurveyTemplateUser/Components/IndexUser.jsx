@@ -127,22 +127,8 @@ const handleSubmit = async (e) => {
                 setUserResponse={setUserResponse}
                 template={template}
                 shuffle={shuffle}
+                onSubmit={handleSubmit} // Add this prop
               />
-              <div style={{ minHeight: "100vh" }}>
-                <button
-                  className="btn btn-outline-success"
-                  style={{
-                    bottom: "20px",
-                    right: "20px",
-                    alignContent: "center",
-                    elvation: "5",
-                    position: "right",
-                  }}
-                  onClick={handleSubmit}
-                >
-                  Submit
-                </button>
-              </div>
             </div>
           )}
           {submitted && <div className="col-8"></div>}
