@@ -61,7 +61,7 @@ const Dashboard = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-
+//  console.log(localStorage.getItem("user_id"));
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
@@ -299,7 +299,8 @@ const Dashboard = () => {
       "Price Multiplier",
       "Edit Unit Price",
       "Base Price Per Unit",
-      "No collaborated projects found.",
+      
+      "Collaborated Surveys",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -783,7 +784,7 @@ const Dashboard = () => {
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (
               <CollabSurveyTab
-                getLabel={getLabel}
+                language={language}
                 //collaboratedProjects={collaboratedProjects}
                 showCollabModal={showCollabModal}
                 // collabRequests={collabRequests}

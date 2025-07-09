@@ -101,7 +101,9 @@ const Login = () => {
         toast.success(`✅ ${t("loginSuccess")} ${formData.email}`);
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("role", "user");
-        localStorage.setItem("user", JSON.stringify(response.data.user));
+        localStorage.setItem("user_id", response.data.user_id);
+        
+
         setTimeout(() => window.location.href = "/dashboard", 2500);
       } else {
         setErrorMessage(response.data.error);
