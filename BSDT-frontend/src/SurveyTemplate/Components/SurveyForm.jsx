@@ -12,7 +12,6 @@ import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
 import CollaborationModal from "../utils/CollaborationModal";
 
-
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 const translateText = async (textArray, targetLang) => {
@@ -28,7 +27,7 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; 
+    return textArray;
   }
 };
 const SurveyForm = ({
@@ -38,8 +37,10 @@ const SurveyForm = ({
   setSections,
   questions,
   setQuestions,
+  logo: logoFromParent,
+  logoAlignment: logoAlignmentFromParent,
+  logoText: logoTextFromParent,
   image: imageFromParent,
-  setImage: setImageInParent,
   project_id,
   survey_id,
   surveyStatus,
@@ -51,18 +52,31 @@ const SurveyForm = ({
   isLoggedInRequired = false,
   setIsLoggedInRequired,
 }) => {
+  // State for the logo
+  const [logo, setLogo] = useState(logoFromParent || null);
+  const [logoAlignment, setLogoAlignment] = useState(
+    logoAlignmentFromParent || "left"
+  );
+  const [logoText, setLogoText] = useState(logoTextFromParent || "");
+
+  // State for the background image
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
     imageFromParent || ""
   );
+
+  // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
+
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+
+  // State for the description editing
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [localDescriptionText, setLocalDescriptionText] = useState(
     description || ""
   );
-  
+
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
@@ -71,30 +85,117 @@ const SurveyForm = ({
 
   const labelsToTranslate = useMemo(
     () => [
-      "Updating", "Saving", "Publishing", "Add Description", "Remove Banner",
-      "Save Description", "Edit Description", "Add New Description", "Survey Description",
-      "Enter your survey description here", "Cancel", "Edit", "Delete", "Save",
-      "Publish", "Update", "View Survey Link", "View Response", "Upload Banner Image",
-      "Enter Survey Title", "Add Section", "Survey updated successfully!", "Survey Saved successfully!",
-      "Section", "Enter Section Title", "Delete Section", "Merge with above",
-      "Select the type of question you want to add", "Multiple Choice Question",
-      "Text", "Rating", "Linear Scale", "Checkbox", "Dropdown", "Date/Time",
-      "Likert Scale", "Tick Box Grid", "Multiple Choice", "Multiple Choice Grid",
-      "Survey Templates", "This survey has already been published.", "Loading templates…",
-      "Untitled Survey", "Survey Template", "Add Question", "Generate Question using LLM",
-      "Error saving survey!", "Survey Published successfully!", "Error publishing survey!",
-      "Error updating survey!", "No banner image selected", "Left", "Right", "Center",
-      "Enter your question here", "Add Option", "Shuffle option order", "Required",
-      "Enable Marking System", "Short answer text", "Long answer text (paragraph)",
-      "Add tag", "Long Answer", "Crop Your Image", "Crop", "Cancel", "Upload", "Aspect Ratio:",
-      "Response Validation", "Greater Than", "Greater Than or Equal To", "Less Than",
-      "Less Than or Equal To", "Equal To", "Not Equal To", "Between", "Not Between",
-      "Is Number", "Is Not Number", "Contains", "Does Not Contain", "Email", "URL",
-      "Maximum character Count", "Minimum character Count", "Contains", "Doesn't Contain",
-      "Matches", "Doesn't Match", "Custom Error Message (Optional)", "Number", "Text",
-      "Regex", "Length", "Levels:", "Linear Scale", "Min", "Max", "Show Labels",
-      "Likert Scale", "Add Row", "Add Column", "Rows", "Columns", "Require a response in each row",
-      "Shuffle row order", "Require at least one selection", "Date", "Time", "Select Date/Time","Preview"
+      "Updating",
+      "Saving",
+      "Publishing",
+      "Add Description",
+      "Remove Banner",
+      "Save Description",
+      "Edit Description",
+      "Add New Description",
+      "Survey Description",
+      "Enter your survey description here",
+      "Cancel",
+      "Edit",
+      "Delete",
+      "Save",
+      "Publish",
+      "Update",
+      "View Survey Link",
+      "View Response",
+      "Upload Banner Image",
+      "Enter Survey Title",
+      "Add Section",
+      "Survey updated successfully!",
+      "Survey Saved successfully!",
+      "Section",
+      "Enter Section Title",
+      "Delete Section",
+      "Merge with above",
+      "Select the type of question you want to add",
+      "Multiple Choice Question",
+      "Text",
+      "Rating",
+      "Linear Scale",
+      "Checkbox",
+      "Dropdown",
+      "Date/Time",
+      "Likert Scale",
+      "Tick Box Grid",
+      "Multiple Choice",
+      "Multiple Choice Grid",
+      "Survey Templates",
+      "This survey has already been published.",
+      "Loading templates…",
+      "Untitled Survey",
+      "Survey Template",
+      "Add Question",
+      "Generate Question using LLM",
+      "Error saving survey!",
+      "Survey Published successfully!",
+      "Error publishing survey!",
+      "Error updating survey!",
+      "No banner image selected",
+      "Left",
+      "Right",
+      "Center",
+      "Enter your question here",
+      "Add Option",
+      "Shuffle option order",
+      "Required",
+      "Enable Marking System",
+      "Short answer text",
+      "Long answer text (paragraph)",
+      "Add tag",
+      "Long Answer",
+      "Crop Your Image",
+      "Crop",
+      "Cancel",
+      "Upload",
+      "Aspect Ratio:",
+      "Response Validation",
+      "Greater Than",
+      "Greater Than or Equal To",
+      "Less Than",
+      "Less Than or Equal To",
+      "Equal To",
+      "Not Equal To",
+      "Between",
+      "Not Between",
+      "Is Number",
+      "Is Not Number",
+      "Contains",
+      "Does Not Contain",
+      "Email",
+      "URL",
+      "Maximum character Count",
+      "Minimum character Count",
+      "Contains",
+      "Doesn't Contain",
+      "Matches",
+      "Doesn't Match",
+      "Custom Error Message (Optional)",
+      "Number",
+      "Text",
+      "Regex",
+      "Length",
+      "Levels:",
+      "Linear Scale",
+      "Min",
+      "Max",
+      "Show Labels",
+      "Likert Scale",
+      "Add Row",
+      "Add Column",
+      "Rows",
+      "Columns",
+      "Require a response in each row",
+      "Shuffle row order",
+      "Require at least one selection",
+      "Date",
+      "Time",
+      "Select Date/Time",
+      "Preview",
     ],
     []
   );
@@ -102,14 +203,15 @@ const SurveyForm = ({
   const getLabel = (text) => translatedLabels[text] || text;
 
   useEffect(() => {
+    setLogo(logoFromParent || null);
     setCurrentBackgroundImage(imageFromParent || "");
-  }, [imageFromParent]);
+  }, [logoFromParent, imageFromParent]);
 
   useEffect(() => {
     setLocalDescriptionText(description || "");
   }, [description]);
 
- useEffect(() => {
+  useEffect(() => {
     const loadTranslations = async () => {
       if (!GOOGLE_API_KEY) {
         console.warn(
@@ -145,6 +247,22 @@ const SurveyForm = ({
     loadTranslations();
   }, [language, labelsToTranslate]);
 
+  // Function to update the logo and relay it to the parent component
+  const updateAndRelayLogo = (newLogo) => {
+    setLogo(newLogo);
+    if (setLogoInParent) {
+      setLogoInParent(newLogo);
+    }
+  };
+
+  // Function to handle Logo alignment changes
+  const handleLogoAlignmentChange = (alignment) => {
+    if (["left", "center", "right"].includes(alignment)) {
+      setLogoAlignment(alignment);
+    }
+  };
+
+  // Function to update the background image and relay it to the parent component
   const updateAndRelayBackgroundImage = (newImageSrc) => {
     setCurrentBackgroundImage(newImageSrc);
     if (setImageInParent) {
@@ -159,6 +277,16 @@ const SurveyForm = ({
     setSections([...sections, newSection]);
   };
 
+  // Function to remove the current logo
+  const handleRemoveLogo = () => {
+    updateAndRelayLogo(null);
+    const fileInput = document.getElementById("bannerLogoInput");
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
+  // Function to remove the current background image
   const handleRemoveImage = () => {
     updateAndRelayBackgroundImage("");
     const fileInput = document.getElementById("bannerImageInput");
@@ -197,12 +325,11 @@ const SurveyForm = ({
   };
 
   const handleConfirmPublication = (isLoggedIn, isShuffled) => {
-
     setShowPublicationModal(false);
     setIsLoggedInRequired(isLoggedIn);
     setShuffleQuestions(isShuffled);
     let url;
-    if (actionType === 'publish' || actionType === 'update') {
+    if (actionType === "publish" || actionType === "update") {
       url = "http://localhost:2000/api/surveytemplate";
     } else {
       console.error("Invalid action type for publication.");
@@ -248,6 +375,9 @@ const SurveyForm = ({
         project_id: project_id,
         survey_template: {
           sections,
+          logo: logo,
+          logoAlignment: logoAlignment,
+          logoText: logoText,
           backgroundImage: currentBackgroundImage,
           title,
           description: description,
@@ -295,7 +425,11 @@ const SurveyForm = ({
           }
         );
       } else {
-        const action = url.includes("save") ? "saving" : surveyStatus !== "published" ? "publishing" : "updating";
+        const action = url.includes("save")
+          ? "saving"
+          : surveyStatus !== "published"
+          ? "publishing"
+          : "updating";
         console.error(`Error ${action} survey:`, response.statusText);
         toast.error(
           getLabel(`Error ${action} survey!`) ||
@@ -303,7 +437,11 @@ const SurveyForm = ({
         );
       }
     } catch (error) {
-      const action = url.includes("save") ? "saving" : surveyStatus !== "published" ? "publishing" : "updating";
+      const action = url.includes("save")
+        ? "saving"
+        : surveyStatus !== "published"
+        ? "publishing"
+        : "updating";
       const errorMsg = error.response?.data?.message || error.message;
       const errorKey = `Error ${action} survey!`;
       console.error(
@@ -320,23 +458,35 @@ const SurveyForm = ({
     }
   };
 
-  const handleSave = () => sendSurveyData("http://localhost:2000/api/surveytemplate/save", isLoggedInRequired, shuffleQuestions);
+  const handleSave = () =>
+    sendSurveyData(
+      "http://localhost:2000/api/surveytemplate/save",
+      isLoggedInRequired,
+      shuffleQuestions
+    );
+
   const handlePublish = () => handleOpenPublicationModal("publish");
+
   const handleUpdate = () => handleOpenPublicationModal("update");
+
   const handleSurveyResponses = () => {
     navigate(`/survey-responses/${survey_id}`);
   };
+
   const handlePreview = () => {
-      navigate("/preview", { 
-        state: {
-          title: title,
-          sections: sections,
-          questions: questions,
-          image: currentBackgroundImage,
-          description: description,
-          language: language,
-        } 
-      });
+    navigate("/preview", {
+      state: {
+        title: title,
+        sections: sections,
+        questions: questions,
+        logo: logo,
+        logoAlignment: logoAlignment,
+        logoText: logoText,
+        image: currentBackgroundImage,
+        description: description,
+        language: language,
+      },
+    });
   };
 
   return (
@@ -349,9 +499,13 @@ const SurveyForm = ({
             disabled={isLoading}
             className="btn btn-outline-primary btn-sm me-2"
           >
-            {isLoading && actionType === 'update' ? (
+            {isLoading && actionType === "update" ? (
               <>
-                <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                <span
+                  className="spinner-border spinner-border-sm me-1"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
                 {getLabel("Updating")}
               </>
             ) : (
@@ -369,7 +523,11 @@ const SurveyForm = ({
             >
               {isLoading ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm me-1"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   {getLabel("Saving")}
                 </>
               ) : (
@@ -383,9 +541,13 @@ const SurveyForm = ({
               disabled={isLoading}
               className="btn btn-outline-success btn-sm me-2"
             >
-              {isLoading && actionType === 'publish' ? (
+              {isLoading && actionType === "publish" ? (
                 <>
-                  <span className="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                  <span
+                    className="spinner-border spinner-border-sm me-1"
+                    role="status"
+                    aria-hidden="true"
+                  ></span>
                   {getLabel("Publishing")}
                 </>
               ) : (
@@ -399,26 +561,26 @@ const SurveyForm = ({
         {surveyLink && (
           <>
             <button
-                onClick={() => setShowShareModal(true)}
-                className="btn btn-outline-info btn-sm me-2"
-                title="Share survey link"
-              >
-                <i className="bi bi-share"></i> {getLabel("Share Survey")}
-              </button>
-              <button
+              onClick={() => setShowShareModal(true)}
+              className="btn btn-outline-info btn-sm me-2"
+              title="Share survey link"
+            >
+              <i className="bi bi-share"></i> {getLabel("Share Survey")}
+            </button>
+            <button
               onClick={() => setShowCollaborationModal(true)}
               className="btn btn-outline-warning btn-sm me-2"
               title="Manage collaborators"
-              >
-                <i className="bi bi-people"></i> {getLabel("Collaborate")}
-              </button>
+            >
+              <i className="bi bi-people"></i> {getLabel("Collaborate")}
+            </button>
 
-              <ShareSurveyModal
-                show={showShareModal}
-                handleClose={() => setShowShareModal(false)}
-                surveyLink={surveyLink}
-                surveyTitle={title}
-              />
+            <ShareSurveyModal
+              show={showShareModal}
+              handleClose={() => setShowShareModal(false)}
+              surveyLink={surveyLink}
+              surveyTitle={title}
+            />
             <button
               onClick={handleSurveyResponses}
               className="btn btn-outline-info btn-sm me-2"
@@ -435,9 +597,141 @@ const SurveyForm = ({
         )}
       </div>
 
+      {/* Survey Logo */}
       <div
         style={{ backgroundColor: "white", paddingBottom: "20px" }}
         className="shadow-sm rounded"
+      >
+        <div
+          style={{
+            position: "relative",
+            width: "100%",
+            textAlign:
+              logoAlignment === "left"
+                ? "left"
+                : logoAlignment === "center"
+                ? "center"
+                : "right",
+          }}
+        >
+          {logo ? (
+            <img
+              src={logo}
+              alt={getLabel("Survey Logo") || "Survey Logo"}
+              className="img-fluid"
+              style={{
+                maxHeight: "200px",
+                objectFit: "cover",
+                display: "inline-block",
+              }}
+            />
+          ) : (
+            <div
+              className="d-flex align-items-center justify-content-center"
+              style={{
+                width: "100%",
+                minHeight: "400px",
+                backgroundColor: "#e9ecef",
+                border: "2px dashed #ced4da",
+                color: "#6c757d",
+              }}
+            >
+              <span className="text-muted">{getLabel("No Logo Uploaded")}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Logo Controls */}
+        <div className="mt-3 d-flex flex-column align-items-center">
+          {/* Upload & Remove Buttons */}
+          <div className="mt-3 button-group-mobile-compact justify-content-center">
+            <label className="btn btn-outline-secondary btn-sm me-1">
+              <i className="bi bi-image me-2"></i> {getLabel("Upload Logo")}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  handleImageUpload(e, updateAndRelayLogo);
+                }}
+                id="bannerLogoInput"
+              />
+            </label>
+            {logo && (
+              <button
+                className="btn btn-outline-danger btn-sm me-1"
+                onClick={handleRemoveLogo}
+                title={getLabel("Remove current Logo")}
+              >
+                <i className="bi bi-trash"></i> {getLabel("Remove Logo")}
+              </button>
+            )}
+          </div>
+
+          {/* Alignment Buttons */}
+          {logo && (
+            <div className="mt-2 button-group-mobile-compact justify-content-center">
+              {["left", "center", "right"].map((align) => (
+                <button
+                  key={align}
+                  className={`btn btn-sm me-1 ${
+                    logoAlignment === align
+                      ? "btn-primary"
+                      : "btn-outline-primary"
+                  }`}
+                  onClick={() => handleLogoAlignmentChange(align)}
+                >
+                  {align.charAt(0).toUpperCase() + align.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Logo Text Input */}
+          {logo && (logoAlignment === "left" || logoAlignment === "right") && (
+            <div className="mt-3 w-100">
+              <textarea
+                rows="4"
+                className="form-control text-center"
+                placeholder={getLabel(
+                  "Enter Logo Text - aligned left or right automatically"
+                )}
+                value={logoText}
+                onChange={(e) => setLogoText(e.target.value)}
+                style={{
+                  color: "#333",
+                  fontWeight: "bold",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+          )}
+
+          {logo && logoAlignment === "center" && (
+            <div className="mt-3 w-100">
+              <input
+                type="text"
+                className="form-control text-center"
+                placeholder={getLabel(
+                  "Enter Logo Text - optional - aligned below automatically"
+                )}
+                value={logoText}
+                onChange={(e) => setLogoText(e.target.value)}
+                style={{
+                  color: "#333",
+                  fontWeight: "bold",
+                  borderRadius: "4px",
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Survey Banner */}
+      <div
+        style={{ backgroundColor: "white", paddingBottom: "20px" }}
+        className="shadow-sm rounded mt-4"
       >
         <div style={{ position: "relative", width: "100%" }}>
           {currentBackgroundImage ? (
@@ -457,7 +751,8 @@ const SurveyForm = ({
               className="img-fluid d-flex align-items-center justify-content-center"
               style={{
                 width: "100%",
-                minHeight: "150px",
+                height: "auto",
+                minHeight: "400px",
                 backgroundColor: "#e9ecef",
                 border: "2px dashed #ced4da",
                 color: "#6c757d",
@@ -466,7 +761,7 @@ const SurveyForm = ({
               {/* <span>{getLabel("No banner image selected")}</span> */}
             </div>
           )}
-          <input
+          {/* <input
             type="text"
             className="form-control text-center survey-title-overlay"
             placeholder={getLabel("Enter Survey Title")}
@@ -483,13 +778,14 @@ const SurveyForm = ({
               border: "none",
               borderRadius: "4px",
             }}
-          />
+          /> */}
         </div>
 
         {/* Banner and Description Controls */}
-        <div className="mt-3 mb-3 button-group-mobile-compact justify-content-center">
+        <div className="mt-3 button-group-mobile-compact justify-content-center">
           <label className="btn btn-outline-secondary btn-sm me-1">
-            <i className="bi bi-image"></i> {getLabel("Upload Banner Image")}
+            <i className="bi bi-image me-2"></i>{" "}
+            {getLabel("Upload Banner Image")}
             <input
               type="file"
               accept="image/*"
@@ -509,102 +805,122 @@ const SurveyForm = ({
               <i className="bi bi-trash"></i> {getLabel("Remove Banner")}
             </button>
           )}
-          {!description && !isEditingDescription && (
-            <button
-              className="btn btn-outline-info btn-sm"
-              onClick={handleAddOrEditDescriptionClick}
-            >
-              <i className="bi bi-plus-circle"></i>{" "}
-              {getLabel("Add Description")}
-            </button>
-          )}
-        </div>
-        <div className="mt-3">
-          {isEditingDescription ? (
-            <div className="card p-3 shadow-sm">
-              <h5 className="card-title">
-                {description
-                  ? getLabel("Edit Description")
-                  : getLabel("Add New Description")}
-              </h5>
-              <textarea
-                className="form-control"
-                rows="4"
-                value={localDescriptionText}
-                onChange={(e) => setLocalDescriptionText(e.target.value)}
-                placeholder={getLabel("Enter your survey description here")}
-              />
-              <div className="text-end mt-3">
-                <button
-                  className="btn btn-secondary btn-sm me-2"
-                  onClick={handleCancelEditDescription}
-                >
-                  {getLabel("Cancel")}
-                </button>
-                <button
-                  className="btn btn-primary btn-sm"
-                  onClick={handleSaveDescription}
-                >
-                  <i className="bi bi-save me-1"></i>{" "}
-                  {getLabel("Save Description")}
-                </button>
-              </div>
-            </div>
-          ) : (
-            description && (
-              <div className="card p-3 shadow-sm">
-                <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
-                  <div className="mb-2 mb-md-0">
-                    <h5 className="card-title">
-                      {getLabel("Survey Description")}
-                    </h5>
-                    <p className="card-text" style={{ whiteSpace: "pre-wrap" }}>
-                      {description}
-                    </p>
-                  </div>
-                  <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mt-2 mt-md-0">
-                    <button
-                      className="btn btn-sm btn-outline-primary mb-2 mb-sm-0 me-sm-2"
-                      onClick={handleAddOrEditDescriptionClick}
-                    >
-                      <i className="bi bi-pencil"></i> {getLabel("Edit")}
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={handleDeleteDescription}
-                    >
-                      <i className="bi bi-trash"></i> {getLabel("Delete")}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )
-          )}
-        </div>
-
-        <div className="mt-4">
-          {sections.map((section, index) => (
-            <SurveySections
-              key={section.id || `section-${index}`}
-              section={section}
-              sections={sections}
-              setSections={setSections}
-              questions={questions}
-              setQuestions={setQuestions}
-              language={language}
-              setLanguage={setLanguage}
-              getLabel={getLabel}
-            />
-          ))}
-          <button
-            className="btn btn-outline-primary mt-3 d-block mx-auto"
-            onClick={handleAddSection}
-          >
-            ➕ {getLabel("Add Section")}
-          </button>
         </div>
       </div>
-      
+
+      {/* Title Input */}
+      <div className="mt-4 text-center">
+        <div className="mb-3">
+          <input
+            type="text"
+            className="form-control text-center"
+            placeholder={getLabel("Enter Survey Title")}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            style={{
+              color: "#333",
+              fontWeight: "bold",
+              borderRadius: "4px",
+            }}
+          />
+        </div>
+
+        {!description && !isEditingDescription && (
+          <button
+            className="btn btn-outline-info btn-sm"
+            onClick={handleAddOrEditDescriptionClick}
+          >
+            <i className="bi bi-plus-circle me-2"></i>{" "}
+            {getLabel("Add Description")}
+          </button>
+        )}
+      </div>
+
+      <div className="">
+        {isEditingDescription ? (
+          <div className="card p-3 shadow-sm">
+            <h5 className="card-title">
+              {description
+                ? getLabel("Edit Description")
+                : getLabel("Add New Description")}
+            </h5>
+            <textarea
+              className="form-control"
+              rows="4"
+              value={localDescriptionText}
+              onChange={(e) => setLocalDescriptionText(e.target.value)}
+              placeholder={getLabel("Enter your survey description here")}
+            />
+            <div className="text-end mt-3">
+              <button
+                className="btn btn-secondary btn-sm me-2"
+                onClick={handleCancelEditDescription}
+              >
+                {getLabel("Cancel")}
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={handleSaveDescription}
+              >
+                <i className="bi bi-save me-1"></i>{" "}
+                {getLabel("Save Description")}
+              </button>
+            </div>
+          </div>
+        ) : (
+          description && (
+            <div className="card p-3 shadow-sm">
+              <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
+                <div className="mb-2 mb-md-0">
+                  <h5 className="card-title">
+                    {getLabel("Survey Description")}
+                  </h5>
+                  <p className="card-text" style={{ whiteSpace: "pre-wrap" }}>
+                    {description}
+                  </p>
+                </div>
+                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mt-2 mt-md-0">
+                  <button
+                    className="btn btn-sm btn-outline-primary mb-2 mb-sm-0 me-sm-2"
+                    onClick={handleAddOrEditDescriptionClick}
+                  >
+                    <i className="bi bi-pencil"></i> {getLabel("Edit")}
+                  </button>
+                  <button
+                    className="btn btn-sm btn-outline-danger"
+                    onClick={handleDeleteDescription}
+                  >
+                    <i className="bi bi-trash"></i> {getLabel("Delete")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        )}
+      </div>
+
+      <div className="mt-4">
+        {sections.map((section, index) => (
+          <SurveySections
+            key={section.id || `section-${index}`}
+            section={section}
+            sections={sections}
+            setSections={setSections}
+            questions={questions}
+            setQuestions={setQuestions}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
+          />
+        ))}
+        <button
+          className="btn btn-outline-primary mt-3 d-block mx-auto"
+          onClick={handleAddSection}
+        >
+          ➕ {getLabel("Add Section")}
+        </button>
+      </div>
+
       {/* Render the modal */}
       <PublicationSettingsModal
         show={showPublicationModal}
