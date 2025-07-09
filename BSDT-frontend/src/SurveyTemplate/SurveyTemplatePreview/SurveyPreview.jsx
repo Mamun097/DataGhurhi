@@ -29,8 +29,7 @@ const SurveyPreview = ({
       userResponse: [],
       setUserResponse: () => {},
     };
-    console.log("Description in SurveyPreview:", description);
-
+    
     switch (question.type) {
       case "checkbox": return <Checkbox {...interactiveProps} />;
       case "datetime": return <DateTime {...interactiveProps} />;
@@ -45,15 +44,47 @@ const SurveyPreview = ({
     }
   };
 
+  const handleGoBack = () => {
+    window.history.back();
+  };
+
   return (
     <div 
       className="survey-preview-container"
       style={{ pointerEvents: 'none', fontFamily: 'Arial, sans-serif', padding: '20px', border: '1px solid #ccc', borderRadius: '8px', backgroundColor: '#f9f9f9' }}
     >
       
+      <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          paddingBottom: '15px',
+          marginBottom: '15px',
+          borderBottom: '2px solid #eee'
+      }}>
+        <h2 style={{ margin: 0, color: '#6c757d' }}>
+          Preview Mode
+        </h2>
+        <button
+          onClick={handleGoBack}
+          style={{
+              padding: '8px 20px',
+              fontSize: '1rem',
+              color: '#fff',
+              backgroundColor: '#007bff',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer',
+              pointerEvents: 'auto'
+          }}
+        >
+          Go Back
+        </button>
+      </div>
+      
       {image && <img src={image} alt="Survey Banner" style={{ width: '100%', height: 'auto', marginBottom: '20px', borderRadius: '8px' }} />}
       
-      <h1 style={{ borderBottom: '2px solid #eee', paddingBottom: '10px' }}>{title || (getLabel ? getLabel("Untitled Survey") : "Untitled Survey")}</h1>
+      <h1>{title || (getLabel ? getLabel("Untitled Survey") : "Untitled Survey")}</h1>
       
       {description && (
         <p style={{ fontSize: '1.1em', color: '#555', marginTop: '15px', whiteSpace: 'pre-wrap' }}>
@@ -62,7 +93,7 @@ const SurveyPreview = ({
       )}
 
       {(sections || []).map((section) => (
-        <div key={section.id} style={{ marginTop: '25px', padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
+        <div key={section.id} style={{ marginTop: '25px' }}>
           <h2 style={{ fontSize: '1.4em', color: '#333' }}>{section.title || (getLabel ? `${getLabel("Section")} ${section.id}`: `Section ${section.id}`)}</h2>
           
           <div style={{ marginTop: '15px' }}>
@@ -70,7 +101,16 @@ const SurveyPreview = ({
               .filter((q) => q.section === section.id)
               .sort((a, b) => a.id - b.id)
               .map((question) => (
-                <div key={question.id} style={{ marginBottom: '20px' }}>
+                <div 
+                  key={question.id} 
+                  style={{ 
+                    marginBottom: '20px',
+                    padding: '1.25rem',
+                    border: '1px solid #dee2e6',
+                    borderRadius: '0.375rem',
+                    backgroundColor: '#fff'
+                  }}
+                >
                   {renderPreviewQuestion(question)}
                 </div>
               ))}

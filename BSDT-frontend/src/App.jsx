@@ -10,12 +10,16 @@ import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 import SurveyResponses from "./SurveyTemplate/Components/SurveyResponses"
 import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import QB from "./QBmanagement/QuestionBankUser";
-import FaqTopics from "./FAQ/FaqTopics";
-import FaqByTopic from "./FAQ/FaqByTopic";
+import FaqTopics from "./FAQ/faqTopics";
+import FaqByTopic from "./FAQ/faqByTopic";
 import SearchResults from "./Homepage/searchResults";
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
-import AboutPage from "./About/aboutpage";
+import AboutPage from "./About/AboutPage";
 import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
+import Layout from "./Layout";
+
+
+
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -24,8 +28,10 @@ function App() {
 
   return (
     <Router>
+    <Layout>
       <Routes>
         {/* Public Routes */}
+   
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
@@ -35,7 +41,7 @@ function App() {
         <Route path="/faq/:topic" element={<FaqByTopic />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
-        {/* <Route path="/v/:slug" element={<IndexUser />} /> */}
+        <Route path="/v/:slug" element={<IndexUser />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (
@@ -62,6 +68,7 @@ function App() {
 
        
       </Routes>
+      </Layout>
     </Router>
   );
 }

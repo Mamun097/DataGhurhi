@@ -16,11 +16,6 @@ const Radio = ({
   setLanguage,
   getLabel,
 }) => {
-
-  // useEffect(() => {
-  // console.log("Updated questions:", questions);
-  // }, [questions]);
-
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -358,7 +353,6 @@ const Radio = ({
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {options.map((option, idx) => {
-                // Ensure key and draggableId are stable and unique strings
                 const keyForOption = `option-${question.id}-${
                   option.id || idx
                 }`;
@@ -384,6 +378,14 @@ const Radio = ({
                             className="bi bi-grip-vertical"
                             style={{ fontSize: "1.5rem", cursor: "grab" }}
                           ></i>
+                        </div>
+                        <div className="col-auto">
+                          <input
+                            className="form-check-input"
+                            type="radio"
+                            name={`display-radio-${question.id}`}
+                            disabled
+                          />
                         </div>
                         <div className="col">
                           <input

@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import "./AboutPage.css";
 import TeamImage from "../assets/images/about1.jpeg";
 import NavbarHome from "../Homepage/navbarhome";
-import NavbarAcholder from "../ProfileManagement/NavbarAccountHolder";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { FaPhone } from "react-icons/fa";
 import { FaEnvelope } from "react-icons/fa";
 
@@ -105,8 +105,8 @@ const baseLabels = {
         role: "Research Assistant-6",
         affiliation:
           "Undergraduate Student (Level 3, Term 1), Department of CSE, BUET",
-        phone: "+880 1785392941",
-        email: "hasanaranna3@gmail.com",
+        // phone: "+880 1785392941",
+        // email: "hasanaranna3@gmail.com",
       },
       {
         name: "Mirza Tawhid Umar",
@@ -221,8 +221,8 @@ const baseLabels = {
         name: "মোঃ মাহমুদ হাসান",
         role: "রিসার্চ এসিস্ট্যান্ট-৬",
         affiliation: "স্নাতক ছাত্র (লেভেল ৩, টার্ম ১), সিএসই বিভাগ, বুয়েট",
-        phone: "+880 1785392941",
-        email: "hasanaranna3@gmail.com",
+        // phone: "+880 1785392941",
+        // email: "hasanaranna3@gmail.com",
       },
       {
         name: "মির্জা তাওহিদ উমর",
