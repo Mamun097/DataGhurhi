@@ -24,6 +24,11 @@ const Index = () => {
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [shuffle, setShuffle] = useState(false);
 
+  // State for logo
+  const [logo, setLogo] = useState(null);
+  const [logoAlignment, setLogoAlignment] = useState("left");
+  const [logoText, setLogoText] = useState("");
+
   // User Response state
   const [userResponse, setUserResponse] = useState([]);
   console.log("User Response:", userResponse);
@@ -46,11 +51,14 @@ const Index = () => {
             `http://localhost:2000/api/fetch-survey-user/${slug}`,
             config
           );
-
+          console.log("Template response:", response.data);
           setTemplate(response.data.data);
           setTitle(response.data.data.title);
           setSections(response.data.data.template.sections);
           setQuestions(response.data.data.template.questions);
+          setLogo(response.data.data.template.logo);
+          setLogoAlignment(response.data.data.template.logoAlignment || "left");
+          setLogoText(response.data.data.template.logoText || "");
           setBackgroundImage(response.data.data.template.backgroundImage);
           setShuffle(response.data.data.shuffle_questions);
         } catch (err) {
@@ -60,13 +68,13 @@ const Index = () => {
     };
 
     load();
-}, [slug]);
+  }, [slug]);
 
   //handle submission
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const calculatedMarks = handleMarking(userResponse, questions);
-    
+
     try {
       const token = localStorage.getItem("token");
       const config = {};
@@ -91,18 +99,21 @@ const Index = () => {
       setTitle(null);
       setSections(null);
       setQuestions(null);
+      setLogo(null);
+      setLogoAlignment("left");
+      setLogoText("");
       setBackgroundImage(null);
       setSubmitted(true);
-
     } catch (error) {
       console.error("Error submitting survey:", error);
     }
-};
+  };
 
   // Show a loading placeholder until templates arrive (if needed)
   if (template === undefined || template === null) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
+  
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
@@ -118,6 +129,9 @@ const Index = () => {
                 sections={sections}
                 questions={questions}
                 setQuestions={setQuestions}
+                logo={logo}
+                logoAlignment={logoAlignment}
+                logoText={logoText}
                 image={backgroundImage}
                 userResponse={userResponse}
                 setUserResponse={setUserResponse}
