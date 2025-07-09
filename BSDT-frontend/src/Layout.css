@@ -1,0 +1,10 @@
+/* Make layout full height with sticky footer */
+.page-layout {
+  display: flex;
+  flex-direction: column;
+ 
+}
+
+.main-content {
+  flex: 1;
+}

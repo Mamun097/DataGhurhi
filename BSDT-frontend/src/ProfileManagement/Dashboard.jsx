@@ -299,7 +299,8 @@ const Dashboard = () => {
       "Price Multiplier",
       "Edit Unit Price",
       "Base Price Per Unit",
-      "No collaborated projects found.",
+      
+      "Collaborated Surveys",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
@@ -783,7 +784,7 @@ const Dashboard = () => {
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (
               <CollabSurveyTab
-                getLabel={getLabel}
+                language={language}
                 //collaboratedProjects={collaboratedProjects}
                 showCollabModal={showCollabModal}
                 // collabRequests={collabRequests}

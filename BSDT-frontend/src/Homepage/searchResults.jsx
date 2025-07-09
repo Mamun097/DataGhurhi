@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./searchResults.css";
 import NavbarHome from "./navbarhome";
-import NavbarAcholder from "../ProfileManagement/NavbarAccountHolder";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import axios from "axios";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
