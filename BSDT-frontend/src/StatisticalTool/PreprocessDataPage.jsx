@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
+import { useLocation } from 'react-router-dom'; // Import useLocation to access state
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
@@ -29,30 +30,58 @@ const PreprocessDataPage = () => {
   const [groupCategoricalCol, setGroupCategoricalCol] = useState('');
   const [groupNumericalCol, setGroupNumericalCol] = useState('');
   const [groupingPairs, setGroupingPairs] = useState([]);
+  const [userId, setUserId] = useState(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [missingValues, setMissingValues] = useState({});
+  const [numericColumns, setNumericColumns] = useState([]);
 
+
+  
+const location = useLocation();
 
 
 
 useEffect(() => {
-  fetch('http://127.0.0.1:8000/api/preview-data/')
+
+  if (location.state?.userId) {
+    setUserId(location.state.userId);
+    console.log("User ID from location.state:", location.state.userId);
+  }
+}, [location.state]);
+
+useEffect(() => {
+  if (!userId) return;
+
+  // Now fetch only when userId is set
+  fetch('http://127.0.0.1:8000/api/preview-data/', {
+    method: 'GET',
+    headers: {
+      'userID': userId 
+    }
+  })
     .then(res => {
       if (!res.ok) {
-        // Manually throw an error so it goes to catch block
         throw new Error(`HTTP error ${res.status}`);
       }
-      return res.json(); // now safe to parse JSON
+      return res.json();
     })
     .then(result => {
-      console.log("entered");
+      console.log("Data fetched successfully");
       setColumns(result.columns);
       setData(result.rows);
       setAvailableColumns(result.columns);
+      setMissingValues(result.missing_values || {});
+      setNumericColumns(result.num_columns || []);
     })
     .catch(err => {
-      console.error("Failed to load preview data:", err.message);
-      // Optionally show user feedback here
+      console.error(" Failed to load preview data:", err.message);
     });
-}, []);
+}, [userId]);
+
+useEffect(() => {
+  console.log("Columns updated:", columns);
+}, [columns]);
+
 
 
 function downloadAsExcel(data, filename = 'data.xlsx') {
@@ -102,10 +131,11 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             <option value="rank_column">5. Map or rank a categorical column</option>
             <option value="split_column">6. Column Split</option>
             <option value="grouping">7. Grouping</option>
+            <option value="generate_id">8. Generate Unique ID column</option>
           </select>
 
           <button
-            className="bg-green-500 hover:bg-green-600 text-white  font-medium py-2 px-4 rounded-lg shadow"
+            className="bg-green-500 hover:bg-green-600 text-black font-medium py-2 px-4 rounded-lg shadow"
             onClick={() => {
               if (!selectedOption) {
                 alert("Please select a preprocessing option first.");
@@ -122,6 +152,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 fetch('http://127.0.0.1:8000/api/delete-columns/', {
                   method: 'POST',
                   headers: {
+                    'userID': userId, // Include user ID in headers
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ columns: columnsToDelete }),
@@ -144,6 +175,10 @@ function downloadAsPDF(data, filename = 'data.pdf') {
               else if (selectedOption === 'remove_duplicates') {
                 fetch('http://127.0.0.1:8000/api/remove-duplicates/', {
                   method: 'POST',
+                  headers: {
+                    'userID': userId, // Include user ID in headers
+                    'Content-Type': 'application/json',
+                  },
                 })
                   .then((res) => res.json())
                   .then((result) => {
@@ -167,7 +202,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
                 fetch('http://127.0.0.1:8000/api/handle-missing/', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 'Content-Type': 'application/json'
+                    , 'userID': userId // Include user ID in headers
+                   },
                   body: JSON.stringify({ column: missingColumn, method: missingMethod })
                 })
                   .then(res => res.json())
@@ -192,7 +229,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
                 fetch('http://127.0.0.1:8000/api/handle-outliers/', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 'Content-Type': 'application/json'
+                    , 'userID': userId // Include user ID in headers
+                   },
                   body: JSON.stringify({ column: outlierColumn, method: outlierMethod })
                 })
                   .then(res => res.json())
@@ -217,7 +256,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
                 fetch('http://127.0.0.1:8000/api/rank-column/', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 'Content-Type': 'application/json'
+                    , 'userID': userId // Include user ID in headers
+                   },
                   body: JSON.stringify({ column: rankColumn, mapping: rankMapping })
                 })
                   .then(res => res.json())
@@ -247,9 +288,11 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   return;
                 }
 
-                fetch('/api/split-column/', {
+                fetch('http://127.0.0.1:8000/api/split-column/', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: { 'Content-Type': 'application/json'
+                    , 'userID': userId // Include user ID in headers
+                   },
                   body: JSON.stringify({
                     column: splitTargetColumn,
                     method: splitMethod,
@@ -278,9 +321,10 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   return;
                 }
 
-                fetch('/api/group-data/', {
+                fetch('http://127.0.0.1:8000/api/group-data/', {
                   method: 'POST',
                   headers: {
+                    'userID': userId, // Include user ID in headers
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ groupingPairs }),
@@ -294,9 +338,30 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                       alert(result.error || "Something went wrong.");
                     }
                   });
+              }              
+
+              else if (selectedOption === 'generate_id') {
+                fetch('http://127.0.0.1:8000/api/generate-unique-id/', {
+                  method: 'POST',
+                  headers: { 
+                    'Content-Type': 'application/json',
+                    'userID': userId // Include user ID in headers
+                  },
+                })
+                  .then((res) => res.json())
+                  .then((result) => {
+                    if (result.success) {
+                      setColumns(result.columns);
+                      setData(result.rows);
+                      setAvailableColumns(result.columns);
+                      alert(result.message || "Unique ID column added.");
+                    } else {
+                      alert(result.error || "Something went wrong.");
+                    }
+                  });
               }
 
-              
+
             }}
 
           >
@@ -350,6 +415,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
                   method: "POST",
                   body: formData,
+                  headers: {
+                    'userID': userId // Include user ID in headers
+                  }
                 });
 
                 const result = await response.json();
@@ -357,6 +425,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 if (result.success) {
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
+                  sessionStorage.setItem("userId", userId);
                   window.location.href = "/analysis";
                 } else {
                   alert("Failed to upload Excel: " + result.error);
@@ -412,36 +481,40 @@ function downloadAsPDF(data, filename = 'data.pdf') {
         </div>
       )}
 
-      {selectedOption === 'handle_missing' && (
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Select column (or 'all'):</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
-            value={missingColumn}
-            onChange={(e) => setMissingColumn(e.target.value)}
-          >
-            <option value="">Select column...</option>
-            <option value="all">All Columns</option>
-            {availableColumns.map((col, idx) => (
-              <option key={idx} value={col}>{col}</option>
-            ))}
-          </select>
+    {selectedOption === 'handle_missing' && (
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700 mb-1">Select column (or 'all'):</label>
+        <select
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
+          value={missingColumn}
+          onChange={(e) => setMissingColumn(e.target.value)}
+        >
+          <option value="">Select column...</option>
+          <option value="all">All Columns</option>
+          {Object.entries(missingValues).map(([col, count], idx) => (
+            <option key={idx} value={col}>
+              {col} ({count} missing)
+            </option>
+          ))}
+        </select>
 
-          <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full"
-            value={missingMethod}
-            onChange={(e) => setMissingMethod(e.target.value)}
-          >
-            <option value="">Choose method</option>
-            <option value="drop">Drop missing rows</option>
-            <option value="fill_mean">Fill with mean</option>
-            <option value="fill_median">Fill with median</option>
-          </select>
-        </div>
-      )}
+        <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
+        <select
+          className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+          value={missingMethod}
+          onChange={(e) => setMissingMethod(e.target.value)}
+        >
+          <option value="">Choose method</option>
+          <option value="drop">Drop missing rows</option>
+          <option value="fill_mean">Fill with mean</option>
+          <option value="fill_median">Fill with median</option>
+        </select>
+      </div>
+    )}
 
-      {selectedOption === 'handle_outliers' && (
+
+      
+       {selectedOption === 'handle_outliers' && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">Select numeric column:</label>
           <select
@@ -450,7 +523,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             onChange={(e) => setOutlierColumn(e.target.value)}
           >
             <option value="">Select column...</option>
-            {availableColumns.map((col, idx) => (
+            {numericColumns.map((col, idx) => (
               <option key={idx} value={col}>{col}</option>
             ))}
           </select>
@@ -466,7 +539,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
             <option value="cap">Cap outliers to bounds</option>
           </select>
         </div>
-      )}
+        )}
 
       {selectedOption === 'rank_column' && (
         <div className="mb-4">
@@ -507,12 +580,171 @@ function downloadAsPDF(data, filename = 'data.pdf') {
         </div>
       )}
 
+      {selectedOption === 'split_column' && (
+        <div className="flex flex-col gap-4 border p-4 rounded-lg bg-white shadow-md mt-4">
+
+          {/* Column Selector */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Target Column to Split:</label>
+            <select
+              className="border border-gray-300 rounded-lg p-2 w-full"
+              value={splitTargetColumn}
+              onChange={(e) => setSplitTargetColumn(e.target.value)}
+            >
+              <option value="">-- Select Column --</option>
+              {availableColumns.map((col, idx) => (
+                <option key={idx} value={col}>{col}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Split Method */}
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Select Split Method:</label>
+            <select
+              className="border border-gray-300 rounded-lg p-2 w-full"
+              value={splitMethod}
+              onChange={(e) => setSplitMethod(e.target.value)}
+            >
+              <option value="">-- Choose Method --</option>
+              <option value="1">1. Comma Separated</option>
+              <option value="2">2. Semicolon Separated</option>
+              <option value="3">3. &lt;&gt; Tag Separated</option>
+              <option value="4">4. Custom Phrase Matching</option>
+            </select>
+          </div>
+
+          {/* Custom Phrase Input */}
+          {splitMethod === '4' && (
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Enter Custom Phrase:</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="border border-gray-300 rounded-lg p-2 w-full"
+                  value={customPhraseInput}
+                  onChange={(e) => setCustomPhraseInput(e.target.value)}
+                />
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                  onClick={() => {
+                    if (customPhraseInput && !customPhrases.includes(customPhraseInput)) {
+                      setCustomPhrases(prev => [...prev, customPhraseInput]);
+                      setCustomPhraseInput('');
+                    }
+                  }}
+                >
+                  Add
+                </button>
+              </div>
+              {/* Display added phrases */}
+              <div className="mt-2 text-sm text-gray-600">
+                {customPhrases.length > 0 ? (
+                  <p>Added: {customPhrases.join(', ')}</p>
+                ) : (
+                  <p>No custom phrases added yet.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedOption === 'grouping' && (
+        <div className="mb-6 w-full">
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            {/* Categorical Column */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Categorical Column (Group by)</label>
+              <select
+                className="border border-gray-300 rounded-lg px-3 py-2 w-full shadow-sm"
+                value={groupCategoricalCol}
+                onChange={(e) => setGroupCategoricalCol(e.target.value)}
+              >
+                <option value="">-- Select categorical column --</option>
+                {availableColumns.map((col, idx) => (
+                  <option key={idx} value={col}>{col}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Numeric Column */}
+            <div>
+              <label className="block text-gray-700 font-medium mb-1">Numeric Column (Analyze)</label>
+              <select
+                className="border border-gray-300 rounded-lg px-3 py-2 w-full shadow-sm"
+                value={groupNumericalCol}
+                onChange={(e) => setGroupNumericalCol(e.target.value)}
+              >
+                <option value="">-- Select numeric column --</option>
+                {availableColumns.map((col, idx) => (
+                  <option key={idx} value={col}>{col}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mb-4">
+            <button
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded"
+              onClick={() => {
+                if (!groupCategoricalCol || !groupNumericalCol) {
+                  alert("Please select both columns.");
+                  return;
+                }
+                setGroupingPairs((prev) => [...prev, {
+                  group_col: groupCategoricalCol,
+                  value_col: groupNumericalCol
+                }]);
+                setGroupCategoricalCol('');
+                setGroupNumericalCol('');
+              }}
+            >
+              Add Pair
+            </button>
+
+            <button
+              type="button"
+              className="bg-red-500 hover:bg-red-600 text-black font-semibold px-4 py-2 rounded"
+              onClick={() => setGroupingPairs([])}
+            >
+              Clear All
+            </button>
+          </div>
+
+          {/* Grouping Preview */}
+          {groupingPairs.length > 0 && (
+            <div className="bg-gray-100 rounded p-4 border border-gray-300 mb-4">
+              <h4 className="text-md font-semibold mb-2 text-gray-700">Grouping Pairs:</h4>
+              <ul className="list-disc pl-6 text-gray-800">
+                {groupingPairs.map((pair, idx) => (
+                  <li key={idx}>
+                    Group by <strong>{pair.group_col}</strong> — Analyze <strong>{pair.value_col}</strong>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedOption === 'generate_id' && (
+        <div className="flex flex-col gap-4 border p-4 rounded-lg bg-white shadow-md mt-4">
+          <p className="text-gray-800">
+            This option will add a new column called <strong>row_id</strong> with unique sequential numbers (1 to N) for each row in your dataset.
+          </p>
+          <p className="text-sm text-gray-600 italic">
+            No additional configuration is required. Click "Preprocess" to apply.
+          </p>
+        </div>
+      )}
+
+
 
 
       {/* Data Preview Table */}
-      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} />
-      
-
+      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
 
       <div className="text-center mt-6">
         <a href="/analysis" className="text-blue-600 hover:underline">← Back to Main Page</a>

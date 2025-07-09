@@ -6,10 +6,11 @@ import logo_ict from "../assets/logos/ict.png";
 import logo_edge from "../assets/logos/edge.png";
 import logo_ric from "../assets/logos/ric.png";
 import "./landingpage.css";
+import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 
 const slidesEnglish = [
   {
-    title: "🚀 Build and Share Surveys",
+    title: "🚀 Build and Spread Surveys",
     description: [
       "Create, design and analyze digital surveys powered by our tool.",
       "Supports question types: multiple-choice, checkboxes, Likert scale, ranking, matrix grids, and open-ended.",
@@ -57,17 +58,20 @@ const translateText = async (textArray, targetLang) => {
     );
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
-    console.error("Translation API error:", error.response?.data || error.message);
+    console.error(
+      "Translation API error:",
+      error.response?.data || error.message
+    );
     return textArray; // fallback to original text if API fails
   }
 };
 
-
 const LandingPage = () => {
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
   const [translatedSlide, settranslatedSlide] = useState([]);
   const [translatedHero, setTranslatedHero] = useState({
-
     joinText: "",
     loginText: "",
   });
@@ -75,7 +79,10 @@ const LandingPage = () => {
   const [loadingTranslation, setLoadingTranslation] = useState(false);
   const token = localStorage.getItem("token");
 
-  const slidesToUse = language === "English" || loadingTranslation ? slidesEnglish : translatedSlide;
+  const slidesToUse =
+    language === "English" || loadingTranslation
+      ? slidesEnglish
+      : translatedSlide;
 
   useEffect(() => {
     const fetchTranslations = async () => {
@@ -118,7 +125,6 @@ const LandingPage = () => {
     const translateHeroTexts = async () => {
       if (language === "English") {
         setTranslatedHero({
-        
           joinText: "",
           loginText: "",
         });
@@ -126,9 +132,8 @@ const LandingPage = () => {
       }
 
       try {
-        const result = await translateText([ "Join Today", "Log In"], "bn");
+        const result = await translateText(["Join Today", "Log In"], "bn");
         setTranslatedHero({
-        
           joinText: result[0],
           loginText: result[1],
         });
@@ -153,47 +158,65 @@ const LandingPage = () => {
     return () => clearInterval(interval);
   }, [slidesToUse]);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % slidesToUse.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + slidesToUse.length) % slidesToUse.length);
+  const nextSlide = () =>
+    setCurrentSlide((prev) => (prev + 1) % slidesToUse.length);
+  const prevSlide = () =>
+    setCurrentSlide(
+      (prev) => (prev - 1 + slidesToUse.length) % slidesToUse.length
+    );
 
   return (
     <div className="landing-container">
       <div className="hero-section">
-        <motion.h1
-          className="title"
+        <motion.div
+          className="hero-title-row"
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-          {language === "English" ? (
-            <>Welcome to <span className="highlight">DataGhurhi</span></>
-          ) : (
-            <>
-              <span className="highlight">ডাটাঘুড়ি</span>তে স্বাগতম
-            </>
-          )} 
-        </motion.h1> 
-
-        <motion.div
-          className="animated-circle"
-          animate={{ scale: [1, 1.3, 1] }}
-          transition={{ repeat: Infinity, duration: 2 }}
-        />
+          {" "}
+          <motion.img
+            src={logo_dataghurhi}
+            alt="DataGhurhi Logo"
+            className="inline-logo"
+            animate={{ x: [-8, 8, -8] }}
+            transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+          />
+          <h1 className="title">
+            {language === "English" ? (
+              <>
+                Welcome to <span className="highlight">DataGhurhi</span>
+              </>
+            ) : (
+              <>
+                <span className="highlight">ডাটাঘুড়ি</span>তে স্বাগতম
+              </>
+            )}
+          </h1>
+        </motion.div>
 
         <div className="language-toggle-landing">
           <label className="switch">
-            <input type="checkbox" onChange={toggleLanguage} checked={language === "বাংলা"} />
+            <input
+              type="checkbox"
+              onChange={toggleLanguage}
+              checked={language === "বাংলা"}
+            />
             <span className="slider"></span>
           </label>
           <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>English</span>
+            <span className={language === "English" ? "active" : ""}>
+              English
+            </span>
             <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
           </div>
         </div>
       </div>
 
       <div className="slider-container">
-        <button className="nav-btn left" onClick={prevSlide}>‹</button>
+        <button className="nav-btn left" onClick={prevSlide}>
+          ‹
+        </button>
         <AnimatePresence mode="wait">
           {loadingTranslation ? (
             <div className="loading-message">Translating content...</div>
@@ -215,16 +238,32 @@ const LandingPage = () => {
                 <div className="slide-content">
                   <h2>{slidesToUse[currentSlide]?.title}</h2>
                   <ul className="slide-list">
-                    {slidesToUse[currentSlide]?.description.map((point, idx) => (
-                      <li key={idx}>{point}</li>
-                    ))}
+                    {slidesToUse[currentSlide]?.description.map(
+                      (point, idx) => (
+                        <li key={idx}>{point}</li>
+                      )
+                    )}
                   </ul>
                   <div className="cta-buttons">
-                    <button className="primary-btn" onClick={() => (window.location.href = "/signup")}>
-                      {language === "English" ? "Join Today" : translatedHero.joinText}
+                    <button
+                      className="primary-btn"
+                      onClick={() => (window.location.href = "/signup")}
+                    >
+                      {language === "English"
+                        ? "Join Today"
+                        : translatedHero.joinText}
                     </button>
-                    <button className="secondary-btn" onClick={() => token ? (window.location.href = "/dashboard") : (window.location.href = "/login")}>
-                      {language === "English" ? "Log In" : translatedHero.loginText}
+                    <button
+                      className="secondary-btn"
+                      onClick={() =>
+                        token
+                          ? (window.location.href = "/dashboard")
+                          : (window.location.href = "/login")
+                      }
+                    >
+                      {language === "English"
+                        ? "Log In"
+                        : translatedHero.loginText}
                     </button>
                   </div>
                 </div>
@@ -232,9 +271,11 @@ const LandingPage = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        <button className="nav-btn right" onClick={nextSlide}>›</button>
+        <button className="nav-btn right" onClick={nextSlide}>
+          ›
+        </button>
       </div>
-
+{/* 
       <footer className="footer">
         <div className="footer-logo-container">
           <img src={logo_buet} alt="BUET Logo" className="footer-logo1" />
@@ -242,7 +283,7 @@ const LandingPage = () => {
           <img src={logo_ict} alt="ICT Logo" className="footer-logo3" />
           <img src={logo_edge} alt="EDGE Logo" className="footer-logo4" />
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 };
