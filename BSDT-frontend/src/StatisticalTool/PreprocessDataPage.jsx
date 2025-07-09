@@ -8,6 +8,8 @@ import { useLocation } from 'react-router-dom'; // Import useLocation to access 
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
+  const filename= useLocation().state?.filename || 'latest_uploaded.xlsx'; // Get filename from location state or default to 'latest_uploaded.xlsx'
+ console.log("Filename:", filename); // Log the filename for debugging
   const [columns, setColumns] = useState([]);
   const [selectedOption, setSelectedOption] = useState('');
   const [availableColumns, setAvailableColumns] = useState([]);
@@ -56,7 +58,8 @@ useEffect(() => {
   fetch('http://127.0.0.1:8000/api/preview-data/', {
     method: 'GET',
     headers: {
-      'userID': userId 
+      'userID': userId,
+      'filename': filename, // Include filename in headers
     }
   })
     .then(res => {
@@ -135,7 +138,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
           </select>
 
           <button
-            className="bg-green-500 hover:bg-green-600 text-black font-medium py-2 px-4 rounded-lg shadow"
+            className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg shadow"
             onClick={() => {
               if (!selectedOption) {
                 alert("Please select a preprocessing option first.");

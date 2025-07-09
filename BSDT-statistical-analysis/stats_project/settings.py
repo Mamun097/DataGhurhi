@@ -147,6 +147,6 @@ CORS_ALLOW_HEADERS = [
     'authorization',
     'content-type',
     'userid',
-    'filetype',
+    'filename',
 ]
 

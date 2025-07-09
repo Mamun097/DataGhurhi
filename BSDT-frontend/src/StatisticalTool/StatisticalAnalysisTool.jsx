@@ -294,7 +294,30 @@ const StatisticalAnalysisTool = () => {
 
     // State for file upload and form
     const [file, setFile] = useState(null);
-    const [fileName, setFileName] = useState('');
+    useEffect(() => {
+        const fileUrl = sessionStorage.getItem("fileURL");
+            if (fileUrl) {
+                 
+        fetch(fileUrl)
+            .then(res => {
+                if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
+                return res.blob();
+            })
+            .then(blob => {
+                const newFile = new File([blob], fileName, { type: blob.type });
+                setFile(newFile);
+                setFileName(newFile.name);
+                setUploadStatus("success");
+            })
+            .catch(error => {
+                console.error("Error fetching file:", error);
+                setUploadStatus("error");
+            });
+    }
+    }, []);
+    console.log("File URL from sessionStorage:", file);
+    const [fileName, setFileName] = useState(sessionStorage.getItem("file_name"));
+    console.log("File name from sessionStorage:", fileName);
     const [uploadStatus, setUploadStatus] = useState('initial'); // 'initial', 'loading', 'success', 'error'
     const [columns, setColumns] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
@@ -374,7 +397,8 @@ const StatisticalAnalysisTool = () => {
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const [userId, setUserId] = useState(sessionStorage.getItem("userId") || ''); // Initialize from sessionStorage
+    const userId =localStorage.getItem("user_id");
+
     // Refs
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
@@ -393,7 +417,7 @@ const StatisticalAnalysisTool = () => {
     useEffect(() => {
     const isPreprocessed = sessionStorage.getItem("preprocessed") === "true";
     const isSurveyData = sessionStorage.getItem("surveyfile") === "true";
-    const userIdFromSession = sessionStorage.getItem("userId");
+  
     if(isPreprocessed){
         setIsPreprocessed(true);
     }
@@ -409,11 +433,11 @@ const StatisticalAnalysisTool = () => {
     let fileName = "";
 
     if (isPreprocessed) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userIdFromSession}_uploads/temporary_uploads/preprocessed/preprocessed.xlsx`;
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/preprocessed.xlsx`;
         fileName = "preprocessed.xlsx";
         sessionStorage.removeItem("preprocessed");
     } else if (isSurveyData) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userIdFromSession}_uploads/temporary_uploads/survey/survey_responses.xlsx`;
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/survey/survey_responses.xlsx`;
         fileName = "survey_responses.xlsx";
         sessionStorage.removeItem("surveyfile");
     }
@@ -433,6 +457,7 @@ const StatisticalAnalysisTool = () => {
                 // Send file to backend to extract columns
                 const formData = new FormData();
                 formData.append('file', newFile);
+                
 
                 return fetch('http://localhost:2000/api/upload/', {
                     method: 'POST',
@@ -469,11 +494,12 @@ useEffect(() => {
     }
 }, [columns]);
 
-    // Handle file selection
-    const handleFileChange = (e) => {
+    // Handle file selection async
+    const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             setFile(selectedFile);
+            sessionStorage.setItem("file_name", selectedFile.name);
             setFileName(selectedFile.name);
             setUploadStatus('loading');
 
@@ -496,13 +522,10 @@ useEffect(() => {
                     if (data.success) {
                         setColumns(data.columns);
                         setColumn1(data.columns[0]);
-                        setColumn2(data.columns.length > 1 ? data.columns[1] : '');
-                        
-                        const userIdFromData = data?.user_id;
-                        console.log("User ID from data:", userIdFromData);
-                        setUserId(userIdFromData);
-                        console.log("User ID set in state:", userId);
+                        setColumn2(data.columns.length > 1 ? data.columns[1] : '');                     
                         setUploadStatus('success');
+                        const fixedUrl = data.fileURL.replace(/\\/g, '/');
+                        sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000' + fixedUrl);
                     } else {
                         setErrorMessage(data.error);
                         setUploadStatus('error');
@@ -549,6 +572,7 @@ useEffect(() => {
 
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('file_name', fileName);
     formData.append('userID', userId); // Attach user ID if available
     formData.append('test_type', testType);
     formData.append('column1', column1);
@@ -800,11 +824,14 @@ useEffect(() => {
         } else if(isSurveyData){
             filetype = 'survey';
         }
+        console.log(fileName)
             fetch('http://127.0.0.1:8000/api/preview-data/', {
                 method: 'GET',
                 headers: {
                     'userID': userId,
-                    'filetype': filetype
+                   
+                    'filename': fileName,
+
                 },
                 
             })
@@ -978,7 +1005,7 @@ const handleSuggestionClick = () => {
                                                     onClick={() => {
                                                     console.log("User ID:", userId);
                                                     const path = "/preprocess";
-                                                    navigate(path, { state: { userId: userId } });
+                                                    navigate(path, { state: { userId: userId , filename: fileName} });
                                                     }}
                                                 >
                                                     {language === 'bn' ? 'ডেটা প্রিপ্রসেস করুন' : 'Preprocess Data'}

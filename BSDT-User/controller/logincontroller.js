@@ -36,6 +36,6 @@ exports.login = async (req, res) => {
     }
    let token = jwt.sign({ email: user.email, id: user.user_id }, process.env.JWT_SECRET_USER);
 //    res.setHeader('Authorization', `Bearer ${token}`);
-    return res.status(200).json({ message: 'Login successful', token });
+    return res.status(200).json({ message: 'Login successful', token , user_id: user.user_id });
 }
     
