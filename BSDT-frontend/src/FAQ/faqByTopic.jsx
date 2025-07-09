@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useParams, Link } from "react-router-dom";
-import NavbarHome from "../Homepage/NavbarHome";
-import NavbarAcholder from "../ProfileManagement/NavbarAccountHolder";
+import NavbarHome from "../Homepage/navbarhome";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import "./faqByTopic.css";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;

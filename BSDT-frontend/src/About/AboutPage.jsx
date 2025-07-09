@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import "./AboutPage.css";
 import TeamImage from "../assets/images/about1.jpeg";
 import NavbarHome from "../Homepage/navbarhome";
-import NavbarAcholder from "../ProfileManagement/NavbarAccountHolder";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { FaPhone } from "react-icons/fa";
 import { FaEnvelope } from "react-icons/fa";
 
