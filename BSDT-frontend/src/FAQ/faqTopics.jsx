@@ -1,9 +1,9 @@
-import "./FaqTopics.css";
+import "./faqTopics.css";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
-import NavbarHome from "../Homepage/NavbarHome";
-import NavbarAcholder from "../ProfileManagement/NavbarAccountHolder";
+import NavbarHome from "../Homepage/navbarhome";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 
 // MUI Icons
 import SchoolIcon from "@mui/icons-material/School";

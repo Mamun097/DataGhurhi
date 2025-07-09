@@ -10,11 +10,11 @@ import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 import SurveyResponses from "./SurveyTemplate/Components/SurveyResponses"
 import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import QB from "./QBmanagement/QuestionBankUser";
-import FaqTopics from "./FAQ/FaqTopics";
-import FaqByTopic from "./FAQ/FaqByTopic";
+import FaqTopics from "./FAQ/faqTopics";
+import FaqByTopic from "./FAQ/faqByTopic";
 import SearchResults from "./Homepage/searchResults";
 import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
-import AboutPage from "./About/aboutpage";
+import AboutPage from "./About/AboutPage";
 import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 import Layout from "./Layout";
 
