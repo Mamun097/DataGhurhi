@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { use, useEffect, useState } from "react";
+import { useLocation, useParams } from "react-router-dom";
 import axios from "axios";
 import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
@@ -36,6 +36,9 @@ const parseCSV = (csvText) => {
 
 const SurveyResponses = () => {
   const { survey_id } = useParams();
+  const surveyTitle= useLocation().state?.title || "Survey Responses";
+  console.log("Survey ID:", survey_id);
+  console.log("Survey Title:", surveyTitle);
   const [responses, setResponses] = useState({ headers: [], rows: [] });
   const [rawCsv, setRawCsv] = useState("");
   const [activeTab, setActiveTab] = useState("summary");
@@ -66,6 +69,7 @@ const SurveyResponses = () => {
     localStorage.setItem("language", language);
   }, [language]);
 
+  
   useEffect(() => {
     const englishMap = {};
     labelsToTranslate.forEach((label) => (englishMap[label] = label));
@@ -233,10 +237,14 @@ const SurveyResponses = () => {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("file_type", "survey");
+      
 
       const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
         method: "POST",
         body: formData,
+        headers: {
+          userID: sessionStorage.getItem("user_id") || "",
+        },
       });
 
       const result = await response.json();

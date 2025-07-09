@@ -324,7 +324,12 @@ const SurveyForm = ({
   const handlePublish = () => handleOpenPublicationModal("publish");
   const handleUpdate = () => handleOpenPublicationModal("update");
   const handleSurveyResponses = () => {
-    navigate(`/survey-responses/${survey_id}`);
+    // send survey title
+    navigate(`/survey-responses/${survey_id}`
+      , {
+        state: { title: title }
+      }
+    );
   };
   const handlePreview = () => {
       navigate("/preview", { 
