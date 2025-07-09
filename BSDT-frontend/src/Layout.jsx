@@ -1,6 +1,6 @@
 // src/Layout.js
 import React from "react";
-import Footer from "./Footer";
+import Footer from "./footer";
 import "./Layout.css"; // Ensure you have a CSS file for layout styles
 
 
