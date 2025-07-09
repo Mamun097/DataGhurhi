@@ -5,7 +5,6 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import Option from "./QuestionSpecificUtils/OptionClass";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
-import axios from "axios";
 import translateText from "./QuestionSpecificUtils/Translation";
 
 const Radio = ({
@@ -13,13 +12,11 @@ const Radio = ({
   questions,
   setQuestions,
   language,
-  setLanguage,
   getLabel,
 }) => {
   const [required, setRequired] = useState(question.required || false);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-
   const [enableOptionShuffle, setEnableOptionShuffle] = useState(
     question.meta?.enableOptionShuffle || false
   );
@@ -31,71 +28,27 @@ const Radio = ({
     () => question.meta?.options || [],
     [question.meta?.options]
   );
+  
+  const [normalOptions, otherOption] = useMemo(() => {
+    const others = options.filter((opt) => opt.text === "Other");
+    const normal = options.filter((opt) => opt.text !== "Other");
+    return [normal, others.length > 0 ? others[0] : null];
+  }, [options]);
 
-  const normalOptions = useMemo(
-    () => options.filter((opt) => opt.text !== "Other"),
-    [options]
-  );
-  const hasOtherOption = useMemo(
-    () => options.some((opt) => opt.text === "Other"),
-    [options]
-  );
+  const hasOtherOption = useMemo(() => !!otherOption, [otherOption]);
 
-
-  const handleQuestionImageUpload = useCallback((event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    setSelectedFile(file);
-    setShowCropper(true);
-    if (event.target) {
-      event.target.value = null;
-    }
-  }, []);
-
-  const handleRequired = useCallback(() => {
-    const newRequiredState = !required;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, required: newRequiredState } : q
-      )
-    );
-    setRequired(newRequiredState);
-  }, [question.id, setQuestions, required]);
-
-  const handleEnableOptionShuffleToggle = useCallback(() => {
-    const newValue = !enableOptionShuffle;
+  const updateQuestionMeta = useCallback((newMeta) => {
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { ...q, meta: { ...q.meta, enableOptionShuffle: newValue } }
+          ? {
+              ...q,
+              meta: { ...q.meta, ...newMeta },
+            }
           : q
       )
     );
-    setEnableOptionShuffle(newValue);
-  }, [enableOptionShuffle, question.id, setQuestions]);
-
-  const handleEnableMarksToggle = useCallback(() => {
-    const newValue = !enableMarks;
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id === question.id) {
-          const updatedOptions = !newValue
-            ? (q.meta?.options || []).map((opt) => ({ ...opt, value: 0 }))
-            : q.meta?.options || [];
-          return {
-            ...q,
-            meta: {
-              ...q.meta,
-              enableMarks: newValue,
-              options: updatedOptions,
-            },
-          };
-        }
-        return q;
-      })
-    );
-    setEnableMarks(newValue);
-  }, [enableMarks, question.id, setQuestions]);
+  }, [question.id, setQuestions]);
 
   const handleQuestionChange = useCallback(
     (newText) => {
@@ -105,156 +58,165 @@ const Radio = ({
     },
     [question.id, setQuestions]
   );
-
-  const handleDelete = useCallback(() => {
-    setQuestions((prev) => {
-      const filtered = prev.filter((q) => q.id !== question.id);
-      return filtered.map((q, i) => ({ ...q, id: i + 1 }));
-    });
-  }, [question.id, setQuestions]);
-
-  const addOption = useCallback(() => {
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id === question.id) {
-          const currentOptions = q.meta?.options || [];
-          const newOption = new Option(`Option ${currentOptions.length + 1}`, 0);
-          
-          if (hasOtherOption) {
-            const otherIndex = currentOptions.findIndex(opt => opt.text === "Other");
-            const newOpts = [...currentOptions];
-            newOpts.splice(otherIndex, 0, newOption);
-            return { ...q, meta: { ...q.meta, options: newOpts }};
-          } else {
-            return { ...q, meta: { ...q.meta, options: [...currentOptions, newOption] }};
-          }
-        }
-        return q;
-      })
-    );
-  }, [question.id, setQuestions, hasOtherOption]);
   
-  const handleAddOtherOption = useCallback(() => {
-    setQuestions(prev => prev.map(q => {
-      if (q.id === question.id && !q.meta.options.some(opt => opt.text === 'Other')) {
-        return {
-          ...q,
-          meta: {
-            ...q.meta,
-            options: [...q.meta.options, new Option('Other', 0)]
-          }
-        };
+  const handleTranslation = useCallback(async () => {
+    try {
+      if (question.text && question.text.trim()) {
+        const questionResponse = await translateText(question.text);
+        const translatedQuestion = questionResponse?.data?.data?.translations?.[0]?.translatedText;
+        if (translatedQuestion) {
+          handleQuestionChange(translatedQuestion);
+        }
       }
-      return q;
-    }));
-  }, [question.id, setQuestions]);
+
+      const optionsToTranslate = normalOptions.map(opt => opt.text);
+      if (optionsToTranslate.length === 0) return;
+
+      const translationResponse = await translateText(optionsToTranslate, "bn");
+      const translatedTexts = translationResponse?.data?.data?.translations.map(t => t.translatedText);
+      if (!translatedTexts || translatedTexts.length !== optionsToTranslate.length) {
+        throw new Error("Mismatch in returned translations for options");
+      }
+      
+      const newNormalOptions = normalOptions.map((option, index) => {
+        return new Option(translatedTexts[index], option.value);
+      });
+      
+      const finalOptions = otherOption 
+        ? [...newNormalOptions, otherOption] 
+        : newNormalOptions;
+
+      updateQuestionMeta({ options: finalOptions });
+
+    } catch (error) {
+      console.error("Error in handleTranslation:", error);
+    }
+  }, [question.text, normalOptions, otherOption, handleQuestionChange, updateQuestionMeta]);
 
   const updateOption = useCallback(
     (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) => {
-            if (q.id === question.id) {
-                const targetOption = q.meta.options[idx];
-                const newOptions = [...q.meta.options];
-                newOptions[idx] = { ...targetOption, text: newText };
-                return { ...q, meta: { ...q.meta, options: newOptions }};
-            }
-            return q;
-        })
-      );
+      const newOptions = [...options];
+      newOptions[idx] = { ...newOptions[idx], text: newText };
+      updateQuestionMeta({ options: newOptions });
     },
-    [question.id, setQuestions]
+    [options, updateQuestionMeta]
   );
 
   const updateOptionValue = useCallback(
     (idx, newValue) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx
-                      ? { ...opt, value: parseFloat(newValue) || 0 }
-                      : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
+      const newOptions = [...options];
+      newOptions[idx] = { ...newOptions[idx], value: parseFloat(newValue) || 0 };
+      updateQuestionMeta({ options: newOptions });
     },
-    [question.id, setQuestions]
+    [options, updateQuestionMeta]
   );
 
   const removeOption = useCallback(
     (idx) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).filter((_, i) => i !== idx),
-                },
-              }
-            : q
-        )
-      );
+        const newOptions = options.filter((_, i) => i !== idx);
+        updateQuestionMeta({ options: newOptions });
     },
-    [question.id, setQuestions]
+    [options, updateQuestionMeta]
   );
+  
+  const addOption = useCallback(() => {
+    const newOption = new Option(`Option ${normalOptions.length + 1}`, 0);
+    const newOptions = [...normalOptions, newOption];
+    if (otherOption) {
+      newOptions.push(otherOption);
+    }
+    updateQuestionMeta({ options: newOptions });
+  }, [normalOptions, otherOption, updateQuestionMeta]);
+
+
+  const handleAddOtherOption = useCallback(() => {
+    if (!hasOtherOption) {
+        const newOptions = [...options, new Option('Other', 0)];
+        updateQuestionMeta({ options: newOptions });
+    }
+  }, [options, hasOtherOption, updateQuestionMeta]);
+
 
   const handleDragEnd = useCallback(
     (result) => {
       if (!result.destination) return;
-      const src = result.source.index;
-      const dest = result.destination.index;
-      setQuestions((prev) =>
-        prev.map((q) => {
-          if (q.id !== question.id) return q;
-          // Important: We operate on a copy of the normal (draggable) options
-          const reorderedNormalOpts = Array.from(normalOptions);
-          const [moved] = reorderedNormalOpts.splice(src, 1);
-          reorderedNormalOpts.splice(dest, 0, moved);
-          
-          // Recombine with the "Other" option if it exists
-          const finalOpts = hasOtherOption 
-            ? [...reorderedNormalOpts, options.find(o => o.text === "Other")] 
-            : reorderedNormalOpts;
+      
+      const reorderedNormalOpts = Array.from(normalOptions);
+      const [movedItem] = reorderedNormalOpts.splice(result.source.index, 1);
+      reorderedNormalOpts.splice(result.destination.index, 0, movedItem);
+      
+      const finalOptions = otherOption 
+        ? [...reorderedNormalOpts, otherOption]
+        : reorderedNormalOpts;
 
-          return { ...q, meta: { ...q.meta, options: finalOpts } };
-        })
-      );
+      updateQuestionMeta({ options: finalOptions });
     },
-    [question.id, setQuestions, normalOptions, hasOtherOption, options]
+    [normalOptions, otherOption, updateQuestionMeta]
   );
 
   const handleCopy = useCallback(() => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: questions.length + 1,
+      id: -1,
       meta: {
         ...question.meta,
-        options: [
-          ...(question.meta?.options || []).map(
-            (opt) => new Option(opt.text, opt.value ?? 0)
-          ),
-        ],
-        enableOptionShuffle: enableOptionShuffle,
-        enableMarks: enableMarks,
+        options: (question.meta?.options || []).map(
+          (opt) => new Option(opt.text, opt.value ?? 0)
+        ),
       },
     };
-    let updatedQuestions = [...questions];
+    
+    const updatedQuestions = [...questions];
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
-    updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
-    setQuestions(updatedQuestions);
-  }, [question, questions, setQuestions, enableOptionShuffle, enableMarks]);
+    
+    const finalQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
+    setQuestions(finalQuestions);
+  }, [question, questions, setQuestions]);
 
+
+  const handleEnableMarksToggle = useCallback(() => {
+    const newValue = !enableMarks;
+    setEnableMarks(newValue);
+    const updatedOptions = !newValue
+        ? options.map((opt) => ({ ...opt, value: 0 }))
+        : options;
+    updateQuestionMeta({ enableMarks: newValue, options: updatedOptions });
+  }, [enableMarks, options, updateQuestionMeta]);
+  
+  const handleRequired = useCallback(() => {
+    const newRequiredState = !required;
+    setRequired(newRequiredState);
+     setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id ? { ...q, required: newRequiredState } : q
+      )
+    );
+  }, [question.id, setQuestions, required]);
+  
+  const handleEnableOptionShuffleToggle = useCallback(() => {
+    const newValue = !enableOptionShuffle;
+    setEnableOptionShuffle(newValue);
+    updateQuestionMeta({ enableOptionShuffle: newValue });
+  }, [enableOptionShuffle, updateQuestionMeta]);
+  
+   const handleDelete = useCallback(() => {
+    setQuestions((prev) => {
+      const filtered = prev.filter((q) => q.id !== question.id);
+      return filtered.map((q, i) => ({ ...q, id: i + 1 }));
+    });
+  }, [question.id, setQuestions]);
+  
+   const handleQuestionImageUpload = useCallback((event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setShowCropper(true);
+    if (event.target) {
+      event.target.value = null;
+    }
+  }, []);
+  
   const removeImageCb = useCallback(
     (index) => {
       setQuestions((prev) =>
@@ -288,20 +250,7 @@ const Radio = ({
     },
     [question.id, setQuestions]
   );
-
-  const handleTranslation = useCallback(async () => {
-    const response = await translateText(question.text);
-    const optionTexts = (question.meta.options || []).map((opt) => opt.text);
-    const translatedOptions = await translateText(optionTexts, "bn");
-    handleQuestionChange(response.data.data.translations[0].translatedText);
-    const translatedTexts = translatedOptions.data.data.translations.map(
-      (t) => t.translatedText
-    );
-    translatedTexts.forEach((translatedText, idx) => {
-      updateOption(idx, translatedText);
-    });
-  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
-
+  
   return (
     <div className="mb-3 p-3 border rounded shadow-sm bg-white">
        <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
@@ -331,8 +280,8 @@ const Radio = ({
           }}
         />
       )}
-
-      {question.imageUrls && question.imageUrls.length > 0 && (
+      
+       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-light p-3 rounded shadow-sm">
@@ -381,11 +330,13 @@ const Radio = ({
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {normalOptions.map((option, idx) => {
-                 const originalIndex = options.findIndex(o => o.text === option.text);
+                 const originalIndex = options.findIndex(o => o === option);
+                 const draggableId = `draggable-option-${question.id}-${originalIndex}`;
+                 
                  return (
                   <Draggable
-                    key={`option-${question.id}-${originalIndex}`}
-                    draggableId={`draggable-option-${question.id}-${originalIndex}`}
+                    key={draggableId}
+                    draggableId={draggableId}
                     index={idx}
                     isDragDisabled={showCropper}
                   >
@@ -427,13 +378,7 @@ const Radio = ({
                               type="number"
                               className="form-control form-control-sm"
                               value={option.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                updateOptionValue(
-                                  originalIndex,
-                                  val === "" ? 0 : parseFloat(val) || 0
-                                );
-                              }}
+                              onChange={(e) => updateOptionValue(originalIndex, e.target.value)}
                               placeholder="Pts"
                             />
                           </div>
@@ -442,7 +387,7 @@ const Radio = ({
                           <button
                             className="btn btn-sm btn-outline-secondary w-auto"
                             onClick={() => removeOption(originalIndex)}
-                            disabled={options.length <= 1}
+                            disabled={normalOptions.length <= 1}
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -470,6 +415,9 @@ const Radio = ({
               <input type="text" readOnly className="form-control-plaintext form-control-sm" value="Other" />
             </div>
             <div className="col-auto">
+                {enableMarks && <div style={{ minWidth: "75px", maxWidth: "100px" }}></div>}
+            </div>
+            <div className="col-auto">
               <button
                 className="btn btn-sm btn-outline-secondary"
                 onClick={() => removeOption(options.findIndex(o => o.text === "Other"))}
@@ -480,16 +428,25 @@ const Radio = ({
         </div>
       )}
 
-      <div className="d-flex align-items-center">
+       <div className="d-flex align-items-center mt-2">
         <button
           className="btn btn-sm btn-outline-secondary w-auto"
           onClick={addOption}
         >
-          ➕ {getLabel("Add Option")}
+          {getLabel("Add Option")}
         </button>
         {!hasOtherOption && (
-          <div className="ms-2">
-            or <button className="btn btn-link btn-sm" onClick={handleAddOtherOption}>Add "Other"</button>
+          <div className="ms-3">
+            or{' '}
+            <span
+              onClick={handleAddOtherOption}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => { if (e.key === 'Enter') handleAddOtherOption(); }}
+              style={{ color: '#0d6efd', cursor: 'pointer' }}
+            >
+              Add "Other"
+            </span>
           </div>
         )}
       </div>
@@ -498,18 +455,18 @@ const Radio = ({
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleCopy}
-          title="Copy Question"
+          title={getLabel("Copy Question")}
         >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleDelete}
-          title="Delete Question"
+          title={getLabel("Delete Question")}
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto" title="Add Image">
+        <label className="btn btn-outline-secondary w-auto" title={getLabel("Add Image")}>
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -521,7 +478,7 @@ const Radio = ({
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleTranslation}
-          title="Translate Question"
+          title={getLabel("Translate Question")}
         >
           <i className="bi bi-translate"></i>
         </button>

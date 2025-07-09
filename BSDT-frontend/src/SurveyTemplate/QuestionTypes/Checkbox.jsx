@@ -6,81 +6,106 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 
-const Checkbox = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
-  
-  useEffect(() => {
-    console.log("Question component rendered with question:", question);
-  }, [question]);
-  
+const Checkbox = ({ question, questions, setQuestions, language, getLabel }) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [required, setRequired] = useState(question.required || false);
-  const [enableOptionShuffle, setEnableOptionShuffle] = useState(
-    question.meta?.enableOptionShuffle || false
+
+  const { 
+    required = false, 
+    meta: { 
+      enableOptionShuffle = false, 
+      requireAtLeastOneSelection = false,
+      options = [] 
+    } = {} 
+  } = question;
+
+
+  const [normalOptions, hasOtherOption] = useMemo(() => {
+    const otherExists = options.includes("Other");
+    const normal = options.filter(opt => opt !== "Other");
+    return [normal, otherExists];
+  }, [options]);
+
+  const updateQuestionMeta = useCallback((newMeta) => {
+    setQuestions((prev) =>
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              meta: { ...q.meta, ...newMeta },
+            }
+          : q
+      )
+    );
+  }, [question.id, setQuestions]);
+
+  const addOption = useCallback(() => {
+    const newOptionText = `Option ${normalOptions.length + 1}`;
+    const newOptions = [...normalOptions, newOptionText];
+    if (hasOtherOption) {
+      newOptions.push("Other");
+    }
+    updateQuestionMeta({ options: newOptions });
+  }, [normalOptions, hasOtherOption, updateQuestionMeta]);
+
+  const handleAddOtherOption = useCallback(() => {
+    if (!hasOtherOption) {
+      updateQuestionMeta({ options: [...options, "Other"] });
+    }
+  }, [options, hasOtherOption, updateQuestionMeta]);
+  
+  const removeOption = useCallback((indexToRemove) => {
+      const newOptions = options.filter((_, i) => i !== indexToRemove);
+      updateQuestionMeta({ options: newOptions });
+    },
+    [options, updateQuestionMeta]
   );
-  const [requireAtLeastOneSelection, setRequireAtLeastOneSelection] = useState(
-    question.meta?.requireAtLeastOneSelection || false
+
+  const updateOption = useCallback((indexToUpdate, newText) => {
+      const newOptions = options.map((opt, i) => i === indexToUpdate ? newText : opt);
+      updateQuestionMeta({ options: newOptions });
+    },
+    [options, updateQuestionMeta]
   );
 
-  useEffect(() => {
-    setRequired(question.required || false);
-  }, [question.required]);
+  const handleDragEnd = useCallback((result) => {
+      if (!result.destination) return;
+      
+      const reorderedNormalOpts = Array.from(normalOptions);
+      const [movedItem] = reorderedNormalOpts.splice(result.source.index, 1);
+      reorderedNormalOpts.splice(result.destination.index, 0, movedItem);
 
-  useEffect(() => {
-    setEnableOptionShuffle(question.meta?.enableOptionShuffle || false);
-  }, [question.meta?.enableOptionShuffle]);
+      const finalOptions = hasOtherOption 
+        ? [...reorderedNormalOpts, "Other"] 
+        : reorderedNormalOpts;
 
-  useEffect(() => {
-    setRequireAtLeastOneSelection(question.meta?.requireAtLeastOneSelection || false);
-  }, [question.meta?.requireAtLeastOneSelection]);
-
-  const options = useMemo(
-    () => question.meta?.options || [],
-    [question.meta?.options]
+      updateQuestionMeta({ options: finalOptions });
+    },
+    [normalOptions, hasOtherOption, updateQuestionMeta]
   );
+  
+  
+  const updateQuestion = useCallback((key, value) => {
+     setQuestions((prev) =>
+      prev.map((q) => (q.id === question.id ? { ...q, [key]: value } : q))
+    );
+  }, [question.id, setQuestions]);
 
   const handleRequired = useCallback(() => {
-    const newRequiredState = !required;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id ? { ...q, required: newRequiredState } : q
-      )
-    );
-    setRequired(newRequiredState);
-  }, [question.id, setQuestions, required]);
+    updateQuestion('required', !required);
+  }, [required, updateQuestion]);
 
   const handleEnableOptionShuffleToggle = useCallback(() => {
-    const newValue = !enableOptionShuffle;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, meta: { ...q.meta, enableOptionShuffle: newValue } }
-          : q
-      )
-    );
-    setEnableOptionShuffle(newValue);
-  }, [enableOptionShuffle, question.id, setQuestions]);
+    updateQuestionMeta({ enableOptionShuffle: !enableOptionShuffle });
+  }, [enableOptionShuffle, updateQuestionMeta]);
 
   const handleRequireAtLeastOneSelectionToggle = useCallback(() => {
-    const newValue = !requireAtLeastOneSelection;
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, meta: { ...q.meta, requireAtLeastOneSelection: newValue } }
-          : q
-      )
-    );
-    setRequireAtLeastOneSelection(newValue);
-  }, [requireAtLeastOneSelection, question.id, setQuestions]);
+    updateQuestionMeta({ requireAtLeastOneSelection: !requireAtLeastOneSelection });
+  }, [requireAtLeastOneSelection, updateQuestionMeta]);
 
-  const handleQuestionChange = useCallback(
-    (newText) => {
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === question.id ? { ...q, text: newText } : q))
-      );
-    },
-    [question.id, setQuestions]
-  );
+  const handleQuestionChange = useCallback((newText) => {
+      updateQuestion('text', newText);
+    }, [updateQuestion]);
 
   const handleDelete = useCallback(() => {
     setQuestions((prev) => {
@@ -96,26 +121,15 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
       id: -1, 
       meta: {
         ...question.meta,
-        options: [...(options || [])], 
-        enableOptionShuffle: enableOptionShuffle,
-        requireAtLeastOneSelection: requireAtLeastOneSelection,
+        options: [...options], 
       },
     };
 
-    let updatedQuestions = [...questions];
+    const updatedQuestions = [...questions];
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
-    updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
-
-    setQuestions(updatedQuestions);
-  }, [
-    question,
-    questions,
-    setQuestions,
-    options, 
-    enableOptionShuffle,
-    requireAtLeastOneSelection,
-  ]);
-
+    setQuestions(updatedQuestions.map((q, i) => ({ ...q, id: i + 1 })));
+  }, [question, questions, setQuestions, options]);
+  
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -124,150 +138,62 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     if (event.target) event.target.value = null;
   }, []);
 
-  const addOption = useCallback(() => {
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id === question.id) {
-          const currentOptions = q.meta?.options || [];
-          return {
-            ...q,
-            meta: {
-              ...q.meta,
-              options: [
-                ...currentOptions,
-                `Option ${currentOptions.length + 1}`,
-              ],
-            },
-          };
-        }
-        return q;
-      })
-    );
-  }, [question.id, setQuestions]);
-
-  const updateOption = useCallback(
-    (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? newText : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
-
-  const removeOption = useCallback(
-    (idx) => {
-      setQuestions((prev) =>
-        prev.map((q) => {
-          if (q.id === question.id) {
-            const currentOptions = q.meta?.options || [];
-            const updatedOptions = currentOptions.filter((_, i) => i !== idx);
-            return {
-              ...q,
-              meta: {
-                ...q.meta,
-                options: updatedOptions, 
-              },
-            };
-          }
-          return q;
-        })
-      );
-    },
-    [question.id, setQuestions]
-  );
-
-  const handleDragEnd = useCallback(
-    (result) => {
-      if (!result.destination) return;
-      const src = result.source.index;
-      const dest = result.destination.index;
-      setQuestions((prev) =>
-        prev.map((q) => {
-          if (q.id === question.id) {
-            const opts = Array.from(q.meta?.options || []);
-            const [moved] = opts.splice(src, 1);
-            opts.splice(dest, 0, moved);
-            return { ...q, meta: { ...q.meta, options: opts } };
-          }
-          return q;
-        })
-      );
-    },
-    [question.id, setQuestions]
-  );
-
-
   const removeImageCb = useCallback((index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+    const newImageUrls = (question.imageUrls || []).filter((_, i) => i !== index);
+    updateQuestion('imageUrls', newImageUrls);
+  }, [question.imageUrls, updateQuestion]);
 
   const updateAlignmentCb = useCallback((index, alignment) => { 
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              imageUrls: (q.imageUrls || []).map((img, i) =>
-                i === index ? { ...img, alignment } : img
-              ),
-            }
-          : q
-      )
+    const newImageUrls = (question.imageUrls || []).map((img, i) =>
+        i === index ? { ...img, alignment } : img
     );
-  }, [question.id, setQuestions]);
-
+    updateQuestion('imageUrls', newImageUrls);
+  }, [question.imageUrls, updateQuestion]);
+  
   const handleTranslation = useCallback(async () => {
     try {
-      const questionResponse = await translateText(question.text);
-      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
-        throw new Error("No translation returned for question");
+      if (question.text) {
+        const questionResponse = await translateText(question.text);
+        const translatedQuestion = questionResponse?.data?.data?.translations?.[0]?.translatedText;
+        if (translatedQuestion) {
+          handleQuestionChange(translatedQuestion);
+        }
       }
-      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
 
-      const optionTexts = (question.meta.options || []).map((opt) => opt.trim()).filter((opt) => opt);
+      const optionsToTranslate = (question.meta.options || [])
+        .filter(opt => opt && opt.trim() && opt !== "Other");
 
-      if (!optionTexts.length) {
-        console.warn("No options to translate");
+      if (optionsToTranslate.length === 0) {
+        console.warn("No options to translate.");
         return;
       }
 
-      const translatedOptions = await translateText(optionTexts, "bn");
-      if (!translatedOptions?.data?.data?.translations) {
-        throw new Error("No translations returned for options");
+      const translationResponse = await translateText(optionsToTranslate, "bn");
+      const translatedTexts = translationResponse?.data?.data?.translations.map(t => t.translatedText);
+
+      if (!translatedTexts || translatedTexts.length !== optionsToTranslate.length) {
+        throw new Error("Mismatch in returned translations for options");
+      }
+      
+      const newOptions = [...translatedTexts];
+      if (question.meta.options.includes("Other")) {
+        newOptions.push("Other");
       }
 
-      const translatedTexts = translatedOptions.data.data.translations.map(
-        (t) => t.translatedText
-      );
+      updateQuestionMeta({ options: newOptions });
 
-      translatedTexts.forEach((translatedText, idx) => {
-        updateOption(idx, translatedText);
-      });
     } catch (error) {
-      console.error("Error in handleTranslation:", error.message);
+      console.error("Error in handleTranslation:", error);
     }
-  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
-  
+  }, [
+    question.text, 
+    question.meta.options, 
+    handleQuestionChange, 
+    updateQuestionMeta
+  ]);
+
   return (
-    <div className="mb-3 dnd-isolate">
+    <div className="mb-3 p-3 border rounded shadow-sm bg-white">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
@@ -296,40 +222,6 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
         />
       )}
 
-      {question.imageUrls && question.imageUrls.length > 0 && (
-        <div className="mb-2">
-          {question.imageUrls.map((img, idx) => (
-            <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
-                <img
-                  src={img.url}
-                  alt={`Question ${idx}`}
-                  className="img-fluid rounded"
-                  style={{ maxHeight: 400 }}
-                />
-              </div>
-              <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
-                <select
-                  className="form-select w-auto text-sm border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  value={img.alignment || "start"}
-                  onChange={(e) => updateAlignmentCb(idx, e.target.value)}
-                >
-                  <option value="start">{getLabel("Left")}</option>
-                  <option value="center">{getLabel("Center")}</option>
-                  <option value="end">{getLabel("Right")}</option>
-                </select>
-                <button
-                  className="btn btn-sm btn-outline-danger hover:bg-red-700 transition-colors"
-                  onClick={() => removeImageCb(idx)}
-                >
-                  <i className="bi bi-trash"></i>
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       <input
         type="text"
         className="form-control mb-3"
@@ -342,66 +234,110 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
         <Droppable droppableId={`checkbox-options-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {(options || []).map((option, idx) => (
-                <Draggable
-                  key={`opt-checkbox-${question.id}-${idx}`} 
-                  draggableId={`checkbox-opt-${question.id}-${idx}`}
-                  index={idx}
-                >
-                  {(prov) => (
-                    <div
-                      ref={prov.innerRef}
-                      {...prov.draggableProps}
-                      className="row g-2 mb-2 align-items-center"
-                    >
-                      <div className="col-auto" {...prov.dragHandleProps}>
-                        <i
-                          className="bi bi-grip-vertical"
-                          style={{ fontSize: "1.5rem", cursor: "grab" }}
-                        ></i>
+              {normalOptions.map((option, idx) => {
+                 const originalIndex = options.findIndex(o => o === option);
+                 const draggableId = `checkbox-opt-${question.id}-${originalIndex}`;
+
+                 return (
+                  <Draggable
+                    key={draggableId}
+                    draggableId={draggableId}
+                    index={idx}
+                  >
+                    {(prov) => (
+                      <div
+                        ref={prov.innerRef}
+                        {...prov.draggableProps}
+                        className="row g-2 mb-2 align-items-center"
+                      >
+                        <div className="col-auto" {...prov.dragHandleProps}>
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem", cursor: "grab" }}
+                          ></i>
+                        </div>
+                        <div className="col-auto">
+                          <input
+                            type="checkbox"
+                            className="form-check-input"
+                            disabled
+                          />
+                        </div>
+                        <div className="col">
+                          <input
+                            type="text"
+                            className="form-control form-control-sm"
+                            value={option}
+                            onChange={(e) => updateOption(originalIndex, e.target.value)}
+                            placeholder={`Option ${idx + 1}`}
+                          />
+                        </div>
+                        <div className="col-auto">
+                          <button
+                            className="btn btn-sm btn-outline-secondary w-auto"
+                            onClick={() => removeOption(originalIndex)}
+                            disabled={normalOptions.length <= 1}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </div>
-                      <div className="col-auto">
-                        <input
-                          type="checkbox"
-                          className="form-check-input"
-                          disabled
-                        />
-                      </div>
-                      <div className="col">
-                        <input
-                          type="text"
-                          className="form-control form-control-sm"
-                          value={option}
-                          onChange={(e) => updateOption(idx, e.target.value)}
-                          placeholder={`Option ${idx + 1}`}
-                        />
-                      </div>
-                      <div className="col-auto">
-                        <button
-                          className="btn btn-sm btn-outline-secondary w-auto"
-                          onClick={() => removeOption(idx)}
-                          disabled={(options || []).length <= 1 && (options || [])[0] !== "Other"} 
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
+                    )}
+                  </Draggable>
+                )
+              })}
               {provided.placeholder}
             </div>
           )}
         </Droppable>
       </DragDropContext>
+      
+      {hasOtherOption && (
+        <div className="row g-2 mb-2 align-items-center">
+            <div className="col-auto">
+                <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem", color: 'transparent' }}></i>
+            </div>
+            <div className="col-auto">
+              <input className="form-check-input" type="checkbox" disabled />
+            </div>
+            <div className="col">
+              <input type="text" readOnly className="form-control-plaintext form-control-sm" value="Other" />
+            </div>
+            <div className="col-auto">
+              <button
+                className="btn btn-sm btn-outline-secondary"
+                onClick={() => removeOption(options.indexOf("Other"))}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
+            </div>
+        </div>
+      )}
 
-      <button
-        className="btn btn-sm btn-outline-secondary w-auto" 
-        onClick={addOption}
-      >
-        ➕ {getLabel("Add Option")}
-      </button>
+      <div className="d-flex align-items-center mt-2">
+        <button
+          className="btn btn-sm btn-outline-secondary w-auto"
+          onClick={addOption}
+        >
+          {getLabel("Add Option")}
+        </button>
+        {!hasOtherOption && (
+          <div className="ms-3">
+            or{' '}
+            <span
+              onClick={handleAddOtherOption}
+              role="button"
+              tabIndex="0"
+              onKeyPress={(e) => { if (e.key === 'Enter') handleAddOtherOption(); }}
+              style={{ color: '#0d6efd', cursor: 'pointer' }}
+            >
+              Add "Other"
+            </span>
+          </div>
+        )}
+      </div>
 
+      {/* Action buttons and Settings switches are fine */}
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button className="btn btn-outline-secondary w-auto" onClick={handleCopy} title="Copy Question">
           <i className="bi bi-clipboard"></i>
