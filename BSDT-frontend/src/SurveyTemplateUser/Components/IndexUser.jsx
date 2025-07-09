@@ -1,6 +1,7 @@
 // src/Pages/Index.jsx
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyFormUser";
@@ -9,6 +10,7 @@ import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import { handleMarking } from "../Utils/handleMarking";
 
 const Index = () => {
+  const navigate = useNavigate();
   const { slug } = useParams();
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
@@ -71,45 +73,33 @@ const Index = () => {
   }, [slug]);
 
   //handle submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const calculatedMarks = handleMarking(userResponse, questions);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  const calculatedMarks = handleMarking(userResponse, questions);
 
-    try {
-      const token = localStorage.getItem("token");
-      const config = {};
-      if (token) {
-        config.headers = {
-          Authorization: `Bearer ${token}`,
-        };
-      }
-      const response = await axios.post(
-        `http://localhost:2000/api/submit-survey/${slug}`,
-        {
-          userResponse: userResponse,
-          calculatedMarks: calculatedMarks,
-        },
-        config
-      );
-
-      console.log("Submission response:", response.data);
-
-      // Handle success
-      setTemplate(null);
-      setTitle(null);
-      setSections(null);
-      setQuestions(null);
-      setLogo(null);
-      setLogoAlignment("left");
-      setLogoText("");
-      setBackgroundImage(null);
-      setSubmitted(true);
-    } catch (error) {
-      console.error("Error submitting survey:", error);
+  try {
+    const token = localStorage.getItem("token");
+    const config = {};
+    if (token) {
+      config.headers = {
+        Authorization: `Bearer ${token}`,
+      };
     }
-  };
+    await axios.post(
+      `http://localhost:2000/api/submit-survey/${slug}`,
+      {
+        userResponse: userResponse,
+        calculatedMarks: calculatedMarks,
+      },
+      config
+    );
+    navigate('/survey-success');
+  } catch (error) {
+    console.error("Error submitting survey:", error);
+    alert("There was an error submitting your survey. Please try again.");
+  }
+};
 
-  // Show a loading placeholder until templates arrive (if needed)
   if (template === undefined || template === null) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
