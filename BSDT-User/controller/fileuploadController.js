@@ -7,6 +7,8 @@ exports.uploadFile = async (req, res) => {
     try {
         console.log("File upload request received");
         const file = req.file;
+        const filename = req.file ? req.file.originalname: '';
+        console.log("File name:", filename);
         if (!file) {
             console.error("No file uploaded");
             return res.status(400).json({ error: 'No file uploaded' });

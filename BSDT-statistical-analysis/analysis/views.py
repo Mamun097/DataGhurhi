@@ -38,19 +38,23 @@ def get_columns(request):
             try:
                 excel_file = request.FILES['file']
                 df = pd.read_excel(excel_file)
+                filename = request.FILES['file'].name                
+                print(f"Received file: {filename}")
 
                 # Create the user's uploads folder: media/ID_<user_id>_uploads/uploads
                 user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
                 os.makedirs(user_folder, exist_ok=True)
 
                 # Save the file in that uploads folder
-                save_path = os.path.join(user_folder, 'latest_uploaded.xlsx')
+                save_path = os.path.join(user_folder, filename)
                 df.to_excel(save_path, index=False)
 
                 return JsonResponse({
                     'success': True,
                     'user_id': user_id,
-                    'columns': df.columns.tolist()
+                    'columns': df.columns.tolist(),
+                    'fileURL': os.path.join(settings.MEDIA_URL, f"ID_{user_id}_uploads", "temporary_uploads", filename)
+
                 })
 
             except Exception as e:
@@ -74,19 +78,31 @@ def analyze_data_api(request):
     if request.method == 'POST':
         try:
             user_id = request.POST.get('userID')
+            filename = request.POST.get('file_name')
+            # print(f"Received filename: {filename}")
+
+                      
             # print(f"Received user_id: {user_id}")
             if not user_id:
                 return JsonResponse({'success': False, 'error': 'User ID not provided'})
 
-            # Load the latest uploaded DataFrame
-            file_path = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", 'latest_uploaded.xlsx')
+            # Load the  DataFrame of file name
+
+
+            file_path = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", filename)
             if not os.path.exists(file_path):
                 return JsonResponse({'success': False, 'error': 'No uploaded file found for this user'}, status=404)
 
             df = pd.read_excel(file_path)
+            # if df.empty:
+            #     return JsonResponse({'success': False, 'error': 'The uploaded file is empty'}, status=400)
+            # print(f"DataFrame loaded with {len(df)} rows and {len(df.columns)} columns")
+
+            
 
             if request.content_type == 'application/json':
                 body = json.loads(request.body)
+                
                 test_type = body.get('test_type', '')
                 col1 = body.get('column1', '')
                 col2 = body.get('column2', '')
@@ -3243,19 +3259,26 @@ def preview_data(request):
     if request.method == 'GET':
         user_id = request.headers.get('userID')
         print(f"Received User ID: {user_id}")
-        filetype = request.headers.get('filetype', 'default') 
+        filename = request.headers.get('filename')
+
+        print(f"Received filename: {filename}")
+
+
+
     
         if not user_id:
             return JsonResponse({'error': 'User ID not provided'}, status=400)
-        if(filetype=='preprocessing'): 
-            folder_name = f"ID_{user_id}_uploads/temporary_uploads/preprocessing/"
-        elif(filetype=='survey'):
-            folder_name = f"ID_{user_id}_uploads/temporary_uploads/survey/"
-        else:
-            folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        # if(filetype=='preprocessing'): 
+        #     folder_name = f"ID_{user_id}_uploads/temporary_uploads/preprocessing/"
+        # elif(filetype=='survey'):
+        #     folder_name = f"ID_{user_id}_uploads/temporary_uploads/survey/"
+        # else:
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         print(f"Looking for folder: {folder_name}")
 
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        print(f"Full file path: {file_path}") 
+
 
        
 

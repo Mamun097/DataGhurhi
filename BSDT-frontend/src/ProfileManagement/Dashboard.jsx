@@ -61,7 +61,7 @@ const Dashboard = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-
+//  console.log(localStorage.getItem("user_id"));
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");

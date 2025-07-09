@@ -20,7 +20,7 @@ function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  console.log("Token:", token, "Role:", role);
+  // console.log("Token:", token, "Role:", role);
 
   return (
     <Router>
