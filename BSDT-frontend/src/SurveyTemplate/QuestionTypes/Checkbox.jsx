@@ -195,16 +195,19 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
       const dest = result.destination.index;
       setQuestions((prev) =>
         prev.map((q) => {
-          if (q.id !== question.id) return q;
-          const opts = Array.from(options); 
-          const [moved] = opts.splice(src, 1);
-          opts.splice(dest, 0, moved);
-          return { ...q, meta: { ...q.meta, options: opts } };
+          if (q.id === question.id) {
+            const opts = Array.from(q.meta?.options || []);
+            const [moved] = opts.splice(src, 1);
+            opts.splice(dest, 0, moved);
+            return { ...q, meta: { ...q.meta, options: opts } };
+          }
+          return q;
         })
       );
     },
-    [question.id, setQuestions, options] 
+    [question.id, setQuestions]
   );
+
 
   const removeImageCb = useCallback((index) => {
     setQuestions((prev) =>
@@ -243,7 +246,7 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
 
       if (!optionTexts.length) {
         console.warn("No options to translate");
-        return; // Exit if no options
+        return;
       }
 
       const translatedOptions = await translateText(optionTexts, "bn");
@@ -349,15 +352,22 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      {...prov.dragHandleProps}
-                      className="d-flex align-items-center mb-2 p-1 rounded"
-                      style={{ cursor: "grab" }}
+                      className="row g-2 mb-2 align-items-center"
                     >
-                      <i
-                        className="bi bi-grip-vertical me-2"
-                        style={{ fontSize: "1.5rem" }}
-                      ></i>
-                      <div className="flex-grow-1 me-2">
+                      <div className="col-auto" {...prov.dragHandleProps}>
+                        <i
+                          className="bi bi-grip-vertical"
+                          style={{ fontSize: "1.5rem", cursor: "grab" }}
+                        ></i>
+                      </div>
+                      <div className="col-auto">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          disabled
+                        />
+                      </div>
+                      <div className="col">
                         <input
                           type="text"
                           className="form-control form-control-sm"
@@ -366,13 +376,15 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>
-                      <button
-                        className="btn btn-sm btn-outline-secondary w-auto"
-                        onClick={() => removeOption(idx)}
-                        disabled={(options || []).length <= 1 && (options || [])[0] !== "Other"} 
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
+                      <div className="col-auto">
+                        <button
+                          className="btn btn-sm btn-outline-secondary w-auto"
+                          onClick={() => removeOption(idx)}
+                          disabled={(options || []).length <= 1 && (options || [])[0] !== "Other"} 
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </Draggable>
@@ -383,7 +395,6 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
         </Droppable>
       </DragDropContext>
 
-      {/* Add Option Button - Reverted to default width */}
       <button
         className="btn btn-sm btn-outline-secondary w-auto" 
         onClick={addOption}
