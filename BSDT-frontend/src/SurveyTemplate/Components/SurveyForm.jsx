@@ -471,11 +471,9 @@ const SurveyForm = ({
 
   const handleSurveyResponses = () => {
     // send survey title
-    navigate(`/survey-responses/${survey_id}`
-      , {
-        state: { title: title }
-      }
-    );
+    navigate(`/survey-responses/${survey_id}`, {
+      state: { title: title },
+    });
   };
 
   const handlePreview = () => {
@@ -604,8 +602,11 @@ const SurveyForm = ({
 
       {/* Survey Logo */}
       <div
-        style={{ backgroundColor: "white", paddingBottom: "20px" }}
-        className="shadow-sm rounded"
+        style={{
+          backgroundColor: "#f8f9fa",
+          paddingTop: "20px",
+        }}
+        className="shadow border-0 rounded-lg"
       >
         <div
           style={{
@@ -697,7 +698,7 @@ const SurveyForm = ({
             <div className="mt-3 w-100">
               <textarea
                 rows="4"
-                className="form-control text-center"
+                className="form-control text-center shadow-sm"
                 placeholder={getLabel(
                   "Enter Logo Text - aligned left or right automatically"
                 )}
@@ -706,7 +707,9 @@ const SurveyForm = ({
                 style={{
                   color: "#333",
                   fontWeight: "bold",
-                  borderRadius: "4px",
+                  borderRadius: "8px",
+                  border: "2px solid #e9ecef",
+                  padding: "12px 16px",
                 }}
               />
             </div>
@@ -814,7 +817,7 @@ const SurveyForm = ({
       </div>
 
       {/* Title Input */}
-      <div className="mt-4 text-center">
+      <div className="mt-4 text-center shadow border-0 rounded-lg">
         <div className="mb-3">
           <input
             type="text"
@@ -841,7 +844,10 @@ const SurveyForm = ({
         )}
       </div>
 
-      <div className="">
+      <div
+        style={{ backgroundColor: "#f8f9fa" }}
+        className="shadow border-0 rounded-lg"
+      >
         {isEditingDescription ? (
           <div className="card p-3 shadow-sm">
             <h5 className="card-title">
