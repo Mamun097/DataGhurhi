@@ -102,6 +102,7 @@ const CollabSurveyTab = ({
       if (response.status === 200) {
         console.log("Invitation accepted successfully");
         fetchCollaborationRequests(); // Refresh requests
+        fetchCollaboratedSurveys(); // Refresh collaborated surveys
       }
     } catch (error) {
       console.error("Failed to accept invitation:", error);
