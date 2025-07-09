@@ -17,6 +17,7 @@ import StatisticalAnalysisTool from "./StatisticalTool/StatisticalAnalysisTool";
 import AboutPage from "./About/AboutPage";
 import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 import Layout from "./Layout";
+import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 
 
 
@@ -24,7 +25,6 @@ function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // console.log("Token:", token, "Role:", role);
 
   return (
     <Router>
@@ -42,6 +42,7 @@ function App() {
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
         <Route path="/v/:slug" element={<IndexUser />} />
+        <Route path="/survey-success" element={<SurveySuccess />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (
