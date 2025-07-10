@@ -22,9 +22,9 @@ const SearchResults = () => {
     survey: "Surveys",
     other: "Others",
   });
-  const handleProjectClick = (projectId, role) => {
+  const handleProjectClick = (projectId, role,privacy) => {
     console.log("Project clicked:", projectId, "Role:", role);
-    navigate(`/view-project/${projectId}`, {
+    navigate(`/view-project/${projectId}/${privacy}`, {
       state: { role: role },
     });
   };
@@ -133,7 +133,7 @@ const SearchResults = () => {
                         className="result-card"
                         key={project.project_id}
                         onClick={() =>
-                          handleProjectClick(project.project_id, "viewer")
+                          handleProjectClick(project.project_id, "viewer", project.privacy_mode)
                         }
                       >
                         <div className="profile-row">

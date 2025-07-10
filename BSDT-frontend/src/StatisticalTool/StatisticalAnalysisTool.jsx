@@ -291,44 +291,105 @@ const StatisticalAnalysisTool = () => {
     }, [language]);
 
     const t = translations[language];
-
+    const [isPreprocessed, setIsPreprocessed] = useState(sessionStorage.getItem("preprocessed") === "true");
+    // survey data state
+    const [isSurveyData, setIsSurveyData] = useState(sessionStorage.getItem("surveyfile") === "true");
     // State for file upload and form
     const [file, setFile] = useState(null);
+    const [fileName, setFileName] = useState('');
+    const [uploadStatus, setUploadStatus] = useState('initial'); // 'initial', 'loading', 'success', 'error'
+    const [columns, setColumns] = useState([]);
+    const [errorMessage, setErrorMessage] = useState('');
+
+
     useEffect(() => {
-        const fileUrl = sessionStorage.getItem("fileURL");
-            if (fileUrl) {
-                 
+  
+    let filename =  '';
+    if(isPreprocessed ) {
+        filename = "preprocessed_"+sessionStorage.getItem("file_name") || '';
+    } else {
+        filename = sessionStorage.getItem("file_name") || '';
+    }
+
+    let fileUrl = "";
+
+
+    if (isPreprocessed) {
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+       
+        sessionStorage.removeItem("preprocessed");
+    } else if (isSurveyData) {
+        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/survey/${filename}`;
+
+        sessionStorage.removeItem("surveyfile");
+    }
+    else {
+        fileUrl = sessionStorage.getItem("fileURL");
+    }
+
+
+    if (fileUrl) {
         fetch(fileUrl)
             .then(res => {
                 if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
                 return res.blob();
             })
             .then(blob => {
-                const newFile = new File([blob], fileName, { type: blob.type });
+                const newFile = new File([blob], filename, { type: blob.type });
                 setFile(newFile);
-                setFileName(newFile.name);
+                setFileName(filename || newFile.name);
                 setUploadStatus("success");
+                console.log("File loaded successfully:", newFile.name);
+
+                // Send file to backend to extract columns
+                const formData = new FormData();
+                formData.append('file', newFile);
+                
+
+                return fetch('http://localhost:2000/api/upload/', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    },
+                    body: formData,
+                });
             })
-            .catch(error => {
-                console.error("Error fetching file:", error);
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    setColumns(data.columns);
+                    console.log("Columns extracted:", columns);
+                    setColumn1(data.columns[0]);
+                    setColumn2(data.columns.length > 1 ? data.columns[1] : '');
+                    setUploadStatus('success');
+                } else {
+                    setErrorMessage(data.error || "Failed to process columns");
+                    setUploadStatus('error');
+                }
+            })
+            .catch(err => {
+                console.error("Could not load and process file:", err);
+                setErrorMessage("File loading failed.");
                 setUploadStatus("error");
             });
     }
-    }, []);
+}, []);
+useEffect(() => {
+    //check columns state
+    if (columns.length > 0) {
+        console.log("Columns loaded:", columns);
+    }
+}, [columns]);
+
     console.log("File URL from sessionStorage:", file);
-    const [fileName, setFileName] = useState(sessionStorage.getItem("file_name"));
+    
     console.log("File name from sessionStorage:", fileName);
-    const [uploadStatus, setUploadStatus] = useState('initial'); // 'initial', 'loading', 'success', 'error'
-    const [columns, setColumns] = useState([]);
-    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         if (!file) setFileName(translations[language].dropFile);
     }, [language, file]);
     // preprocessed data state
-    const [isPreprocessed, setIsPreprocessed] = useState(false);
-    // survey data state
-    const [isSurveyData, setIsSurveyData] = useState(false);
+
 
     // Form state
     const [testType, setTestType] = useState(''); // Default to Kruskal-Wallis
@@ -414,85 +475,7 @@ const StatisticalAnalysisTool = () => {
     'eda_pie',
     'similarity',
     ];
-    useEffect(() => {
-    const isPreprocessed = sessionStorage.getItem("preprocessed") === "true";
-    const isSurveyData = sessionStorage.getItem("surveyfile") === "true";
-  
-    if(isPreprocessed){
-        setIsPreprocessed(true);
-    }
-    if(isSurveyData){
-        setIsSurveyData(true);
-    }
-    if (!isPreprocessed && !isSurveyData) {
-        // If no preprocessed or survey data, return early
-        return;
-    }
-
-    let fileUrl = "";
-    let fileName = "";
-
-    if (isPreprocessed) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/preprocessed.xlsx`;
-        fileName = "preprocessed.xlsx";
-        sessionStorage.removeItem("preprocessed");
-    } else if (isSurveyData) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/survey/survey_responses.xlsx`;
-        fileName = "survey_responses.xlsx";
-        sessionStorage.removeItem("surveyfile");
-    }
-
-    if (fileUrl) {
-        fetch(fileUrl)
-            .then(res => {
-                if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
-                return res.blob();
-            })
-            .then(blob => {
-                const newFile = new File([blob], fileName, { type: blob.type });
-                setFile(newFile);
-                setFileName(newFile.name);
-                setUploadStatus("success");
-
-                // Send file to backend to extract columns
-                const formData = new FormData();
-                formData.append('file', newFile);
-                
-
-                return fetch('http://localhost:2000/api/upload/', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem("token")}`
-                    },
-                    body: formData,
-                });
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    setColumns(data.columns);
-                    console.log("Columns extracted:", columns);
-                    setColumn1(data.columns[0]);
-                    setColumn2(data.columns.length > 1 ? data.columns[1] : '');
-                    setUploadStatus('success');
-                } else {
-                    setErrorMessage(data.error || "Failed to process columns");
-                    setUploadStatus('error');
-                }
-            })
-            .catch(err => {
-                console.error("Could not load and process file:", err);
-                setErrorMessage("File loading failed.");
-                setUploadStatus("error");
-            });
-    }
-}, []);
-useEffect(() => {
-    //check columns state
-    if (columns.length > 0) {
-        console.log("Columns loaded:", columns);
-    }
-}, [columns]);
+    
 
     // Handle file selection async
     const handleFileChange = async (e) => {
@@ -868,6 +851,8 @@ const handleSuggestionClick = () => {
         <div className="bg-gray-100 font-sans min-h-screen">
             <div className="container mx-auto py-8 px-4">
                 <NavbarAcholder language={language} setLanguage={setLanguage} />
+
+
                 <div className="container mx-auto py-8 px-4 relative">
                     <header className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-blue-600 mb-3">{t.title}</h1>
@@ -895,6 +880,14 @@ const handleSuggestionClick = () => {
                                         </svg>
                                         <span className="text-black">{t.formTitle}</span>
                                     </div>
+                                    <div className="flex justify-end px-4 pt-4">
+                                        <button
+                                            onClick={resetForm}
+                                            className="bg-green-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200"
+                                        >
+                                            Reset File
+                                        </button>
+                                        </div>
 
                                      <div className="p-6">
                                         <form onSubmit={handleSubmit}>
@@ -1955,8 +1948,8 @@ const handleSuggestionClick = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <AnalysisResults results={results} testType={testType} columns={[column1, column2, column3]} language={language}
-                                    t={t} onReset={resetForm} />
+                                <AnalysisResults user_id={userId} results={results} testType={testType} columns={[column1, column2, column3]} language={language}
+                                    t={t} filename={fileName}  />
                             )}
                             
                         </div>
@@ -1968,7 +1961,7 @@ const handleSuggestionClick = () => {
 };
 
 // Component for rendering analysis results
-const AnalysisResults = ({ results, testType, columns, language = 'English', t, onReset }) => {
+const AnalysisResults = ({ user_id,results, testType, columns, language = 'English', t, filename }) => {
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2051,10 +2044,46 @@ const AnalysisResults = ({ results, testType, columns, language = 'English', t, 
         if (!results) {
             return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
+        const handleSaveResult = async () => {
+            console.log('Saving result...');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image_paths: results.image_paths,
+                        user_id: user_id,
+                        test_name: testType,
+                        filename: filename,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Result saved successfully:', data);
+                } else {
+                    console.error('Error saving result:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error saving result:', error);
+            }
+        }
 
         return (
             <>
-                <h2 className="text-2xl font-bold mb-4">{t.kruskalTitle}</h2>
+                    <div className="relative mb-4">
+                        <h2 className="text-2xl font-bold">{t.kruskalTitle}</h2>
+                        <button
+                            onClick={handleSaveResult}
+                            className="absolute top-0 right-0 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md shadow-md transition duration-200"
+                        >
+                            {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                        </button>
+                    </div>
+
+
 
                 {columns && columns[0] && (
                     <p className="mb-3">
@@ -4073,7 +4102,10 @@ const renderFZTResults = () => {
 
                 <div className="text-center mt-8">
                     <button
-                        onClick={onReset}
+                        onClick={() => {
+                            //reload analysis
+                            window.location.reload();
+                        }}
                         className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
                     >
                         {language === 'bn' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}

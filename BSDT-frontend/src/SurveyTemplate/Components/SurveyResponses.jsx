@@ -221,7 +221,7 @@ const SurveyResponses = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `survey_${survey_id}_responses.csv`;
+    link.download = `survey_${surveyTitle}_responses.csv`;
     link.click();
   };
   const handleAnalyzeClick = async () => {
@@ -232,7 +232,7 @@ const SurveyResponses = () => {
 
     try {
       const blob = new Blob([rawCsv], { type: "text/csv" });
-      const file = new File([blob], "survey_responses.csv", { type: "text/csv" });
+      const file = new File([blob], `survey_${surveyTitle}_responses.csv`, { type: "text/csv" });
 
       const formData = new FormData();
       formData.append("file", file);
@@ -243,7 +243,7 @@ const SurveyResponses = () => {
         method: "POST",
         body: formData,
         headers: {
-          userID: sessionStorage.getItem("user_id") || "",
+          userID: localStorage.getItem("user_id") || "",
         },
       });
 
@@ -251,6 +251,7 @@ const SurveyResponses = () => {
 
       if (result.success) {
         sessionStorage.setItem("surveyfile", "true");
+        sessionStorage.setItem("file_name", `survey_${surveyTitle}_responses.xlsx`);
         window.location.href = "/analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");

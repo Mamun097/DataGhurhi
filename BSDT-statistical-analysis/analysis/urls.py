@@ -16,5 +16,7 @@ urlpatterns = [
     path('api/split-column/', views.split_column_api, name='split_column_api'),
     path('api/group-data/', views.group_data_api, name='group_data_api'),
     path('api/upload-preprocessed/', views.save_preprocessed_file_api, name='save_preprocessed_file_api'),
-    path('api/generate-unique-id/', views.generate_unique_id_column_api, name='generate_unique_id_column_api')
+    path('api/generate-unique-id/', views.generate_unique_id_column_api, name='generate_unique_id_column_api'),
+    path('api/save-results/', views.save_results_api, name='save_results_api')
+
 ]

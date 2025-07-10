@@ -110,6 +110,29 @@ module.exports.jwtAuthMiddleware = async(req, res, next) => {
                     return res.status(403).send();
                 }
             } else {
+                const projectID = req.params.projectID || req.body.projectID;
+                if (projectID) {
+                    console.log('Project ID:', projectID);
+                    // check if project is public
+                    const { data: projectData, error: projectError } = await supabase
+                        .from('survey_project')
+                        .select('privacy_mode')
+                        .eq('project_id', projectID)
+                        .single();
+                    // project is publisc no need to check user role
+                    if (projectError) {
+                        console.error('Error fetching project data:', projectError.message);
+                        return res.status(500).send({ error: 'Internal server error' });
+                    }
+                    if (projectData && projectData.privacy_mode === 'public') {
+                        console.log('Project is public, no need to check user role.');
+                        req.body.role = 'viewer'; // Set role to viewer for public projects
+                        console.log('User role set to viewer for public project:', projectID);
+                        // Proceed to the next middleware or route handler
+                        return next();
+                    }
+                }
+
                 return res.status(401).send({ error: "Please attach access token in headers." });
         }
     }

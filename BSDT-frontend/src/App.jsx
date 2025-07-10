@@ -39,6 +39,7 @@ function App() {
         <Route path="/faq" element={<FaqTopics />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/faq/:topic" element={<FaqByTopic />} />
+        <Route path="/view-project/:projectId/:privacy" element={<EditProject />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
         <Route path="/v/:slug" element={<IndexUser />} />
@@ -49,7 +50,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
             <Route path="/view-project/:projectId" element={<EditProject />} />
-            <Route path="/view-project/:projectId/:role" element={<EditProject />} />
+            
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
             <Route path="/preview" element={<PreviewPage />} />

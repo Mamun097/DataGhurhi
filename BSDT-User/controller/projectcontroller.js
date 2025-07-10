@@ -38,10 +38,12 @@ exports.getAllSurveys = async (req, res) => {
     if (!data.length) {
         return res.status(404).json({ error: 'No surveys found for this project' });
     }
+    console.log(data)
     return res.status(200).json({ surveys: data });
 }
 // create survey
 exports.createSurvey = async (req, res) => {
+    
     const projectId = req.params.projectID;
     const { title } = req.body;
     const userId = req.jwt.id;
