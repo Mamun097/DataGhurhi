@@ -295,28 +295,36 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   return;
                 }
 
-                fetch('http://127.0.0.1:8000/api/split-column/', {
+                 fetch('http://127.0.0.1:8000/api/split-column/', {
                   method: 'POST',
-                  headers: { 'Content-Type': 'application/json'
-                    , 'userID': userId ,// Include user ID in headers
-                    'filename': filename // Include filename in headers
-                   },
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'userID': userId,
+                    'filename': filename 
+                  },
                   body: JSON.stringify({
                     column: splitTargetColumn,
                     method: splitMethod,
-                    phrases: customPhrases
-                  })
+                    phrases: splitMethod === 'custom' ? customPhrases : [],  
+                  }),
                 })
-                  .then(res => res.json())
-                  .then(result => {
+                  .then((res) => res.json())
+                  .then((result) => {
                     if (result.success) {
-                      setColumns(result.columns);
-                      setData(result.rows);
-                      alert(result.message || "Column split successful.");
+                      alert("Column split successful!");
+                      // fetch(`/preview-data/?_t=${Date.now()}`)
+                      //   .then((res) => res.json())
+                      //   .then((data) => {
+                      //     if (data.success) {
+                      //       setAvailableColumns(data.columns);
+                      //       setPreviewData(data.rows);
+                      //     }
+                      //   });
+
                       setSplitTargetColumn('');
                       setSplitMethod('');
-                      setCustomPhrases([]);
                       setCustomPhraseInput('');
+                      setCustomPhrases([]);
                     } else {
                       alert(result.error || "Something went wrong.");
                     }
@@ -342,7 +350,12 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((result) => {
                     if (result.success) {
                       alert("Grouped data saved successfully!");
-                      window.open(result.download_url, '_blank'); // Auto-download
+                      const link = document.createElement('a');
+                      link.href = `http://127.0.0.1:8000${result.download_url}`;
+                      link.setAttribute('download', '');
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
                     } else {
                       alert(result.error || "Something went wrong.");
                     }
@@ -396,7 +409,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
               
             }}
           >
-            Download Data as EXcel
+            Download Data as Excel
           </button>
           <button
             className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
@@ -610,22 +623,26 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
           {/* Split Method */}
           <div>
-            <label className="block text-gray-700 font-medium mb-1">Select Split Method:</label>
+            <label className="block text-gray-700 font-medium mb-1">Split Method:</label>
             <select
               className="border border-gray-300 rounded-lg p-2 w-full"
               value={splitMethod}
-              onChange={(e) => setSplitMethod(e.target.value)}
+              onChange={(e) => {
+                setSplitMethod(e.target.value);
+                setCustomPhrases([]);       // Reset when method changes
+                setCustomPhraseInput('');
+              }}
             >
               <option value="">-- Choose Method --</option>
-              <option value="1">1. Comma Separated</option>
-              <option value="2">2. Semicolon Separated</option>
-              <option value="3">3. &lt;&gt; Tag Separated</option>
-              <option value="4">4. Custom Phrase Matching</option>
+              <option value="comma">1. Comma Separated</option>
+              <option value="semicolon">2. Semicolon Separated</option>
+              <option value="tags">3. &lt;&gt; Tag Separated</option>
+              <option value="custom">4. Custom Phrase Matching</option>
             </select>
           </div>
 
           {/* Custom Phrase Input */}
-          {splitMethod === '4' && (
+          {splitMethod === 'custom' && (
             <div>
               <label className="block text-gray-700 font-medium mb-1">Enter Custom Phrase:</label>
               <div className="flex gap-2">
@@ -634,23 +651,27 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   className="border border-gray-300 rounded-lg p-2 w-full"
                   value={customPhraseInput}
                   onChange={(e) => setCustomPhraseInput(e.target.value)}
+                  placeholder="e.g., Absolutely Yes"
                 />
                 <button
+                  type="button"
                   className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
                   onClick={() => {
-                    if (customPhraseInput && !customPhrases.includes(customPhraseInput)) {
-                      setCustomPhrases(prev => [...prev, customPhraseInput]);
+                    const trimmed = customPhraseInput.trim();
+                    if (trimmed && !customPhrases.includes(trimmed)) {
+                      setCustomPhrases(prev => [...prev, trimmed]);
                       setCustomPhraseInput('');
                     }
                   }}
+
+                  
                 >
                   Add
                 </button>
               </div>
-              {/* Display added phrases */}
               <div className="mt-2 text-sm text-gray-600">
                 {customPhrases.length > 0 ? (
-                  <p>Added: {customPhrases.join(', ')}</p>
+                  <p><strong>Added:</strong> {customPhrases.join(', ')}</p>
                 ) : (
                   <p>No custom phrases added yet.</p>
                 )}

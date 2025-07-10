@@ -18,6 +18,7 @@ import AboutPage from "./About/AboutPage";
 import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 import Layout from "./Layout";
 import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
+import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 
 
 
@@ -59,6 +60,8 @@ function App() {
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
             <Route path="/preprocess" element={<PreprocessDataPage />} />
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
+            
+            <Route path="/group-preview" element={<GroupPreviewPage />} />
 
           </>
         ) : (

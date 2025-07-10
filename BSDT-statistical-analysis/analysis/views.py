@@ -3519,48 +3519,65 @@ def rank_categorical_column_api(request):
 
 @csrf_exempt
 def split_column_api(request):
+    from collections import Counter
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
+        filename = request.headers.get('filename') 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         print(f"Received Filename: {filename}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-        df = pd.read_excel(file_path)
+        try:
+            df = pd.read_excel(file_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+
         body = json.loads(request.body)
-        column = body.get('column')
-        method = body.get('method')
-        custom_phrases = body.get('phrases', [])
+        column = body.get('column', '')
+        method = body.get('method', '')
+        phrases = body.get('phrases', [])
 
         if column not in df.columns:
-            return JsonResponse({'success': False, 'error': 'Column not found.'})
+            return JsonResponse({'success': False, 'error': f"Column '{column}' not found."})
 
+        new_cols = []
+        df_split = None
+
+        # --- Method 1: Comma
         if method == 'comma':
-            df_split = df[column].str.split(',', expand=True)
+            df_split = df[column].astype(str).str.split(',', expand=True)
             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
-        elif method == 'semicolon':
-            df_split = df[column].str.split(';', expand=True)
-            df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
-        elif method == 'tags':
-            df_split = df[column].str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
-            df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
-        elif method == 'custom' and custom_phrases:
-            from collections import Counter
+            new_cols = df_split.columns.tolist()
 
-            def count_phrases(text):
+        # --- Method 2: Semicolon
+        elif method == 'semicolon':
+            df_split = df[column].astype(str).str.split(';', expand=True)
+            df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
+            new_cols = df_split.columns.tolist()
+
+        # --- Method 3: Tags
+        elif method == 'tags':
+            df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
+            df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
+            new_cols = df_split.columns.tolist()
+
+        # --- Method 4: Custom phrases
+        elif method == 'custom' and phrases:
+            def count_phrases(text, known_phrases):
                 tokens = str(text).split(", ")
                 result = []
                 i = 0
                 while i < len(tokens):
                     if i + 1 < len(tokens):
                         combined = tokens[i] + ", " + tokens[i + 1]
-                        if combined in custom_phrases:
+                        if combined in known_phrases:
                             result.append(combined)
                             i += 2
                             continue
@@ -3568,24 +3585,36 @@ def split_column_api(request):
                     i += 1
                 return Counter(result)
 
-            for phrase in custom_phrases:
-                df[phrase] = df[column].apply(lambda x: count_phrases(x).get(phrase, 0))
-            df_split = df[custom_phrases]
+            new_data = {}
+            for phrase in phrases:
+                new_data[phrase] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
+            df_split = pd.DataFrame(new_data)
+            new_cols = df_split.columns.tolist()
+
         else:
-            return JsonResponse({'success': False, 'error': 'Invalid method or input.'})
+            return JsonResponse({'success': False, 'error': 'Invalid method or missing input.'})
+
+        # --- Remove duplicate columns if already present
+        for col in new_cols:
+            if col in df.columns:
+                df.drop(columns=[col], inplace=True)
 
         df = pd.concat([df, df_split], axis=1)
         df.to_excel(file_path, index=False)
+
+        df = df.fillna("").astype(str) 
 
         return JsonResponse({
             'success': True,
             'message': 'Column split successful.',
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.to_dict(orient='records'),
+            'new_columns': new_cols
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def group_data_api(request):
@@ -3598,16 +3627,16 @@ def group_data_api(request):
         import pandas as pd
         from django.conf import settings
 
-
-
-        # Extract user ID from request headers        
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
-        print(f"Received User ID: {user_id}")
+
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'Uploaded Excel file not found.'})
 
         body = json.loads(request.body)
         grouping_pairs = body.get('groupingPairs', [])
@@ -3615,12 +3644,8 @@ def group_data_api(request):
         if not grouping_pairs:
             return JsonResponse({'success': False, 'error': 'No grouping pairs provided.'})
 
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
-        if not os.path.exists(file_path):
-            return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
-
         try:
-            df = pd.read_excel(file_path)
+            df = pd.read_excel(file_path, engine='openpyxl')
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
 
@@ -3635,34 +3660,38 @@ def group_data_api(request):
             if not pd.api.types.is_numeric_dtype(df[value_col]):
                 return JsonResponse({'success': False, 'error': f"'{value_col}' must be numeric."})
 
-            # Safely handle null groups
             groups = df[group_col].dropna().unique().tolist()
 
             grouped_df = pd.concat([
                 df.loc[df[group_col] == g, [group_col, value_col]].assign(Group=g)
                 for g in groups
             ])
-
             grouped_dfs.append(grouped_df)
 
-        # === Save grouped splits to separate Excel sheets ===
-        output_path = os.path.join(settings.MEDIA_ROOT, 'grouped_splits.xlsx')
+        base_filename = os.path.splitext(filename)[0]
+        grouped_filename = f"{base_filename}_grouped_splits.xlsx"
+        output_path = os.path.join(settings.MEDIA_ROOT, folder_name, grouped_filename)
+
         try:
-            with pd.ExcelWriter(output_path) as writer:
+            with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
                 for i, gdf in enumerate(grouped_dfs):
                     sheet_name = f"group_{i+1}"
                     gdf.to_excel(writer, sheet_name=sheet_name, index=False)
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to save grouped file: {str(e)}'})
+        preview_data = grouped_dfs[0].to_dict(orient='records') if grouped_dfs else []
 
         return JsonResponse({
             'success': True,
             'message': 'Grouped splits saved to Excel file.',
-            'download_url': f"media/ID_{user_id}_uploads/temporary_uploads/grouped_splits.xlsx"
+            'download_url': f"/media/{folder_name}{grouped_filename}",
+            'preview_data': preview_data
+            
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def generate_unique_id_column_api(request):
