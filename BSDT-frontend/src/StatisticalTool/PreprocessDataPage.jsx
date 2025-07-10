@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom'; // Import useLocation to access 
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
-  const filename= useLocation().state?.filename || 'latest_uploaded.xlsx'; // Get filename from location state or default to 'latest_uploaded.xlsx'
+  const filename= sessionStorage.getItem('file_name') || 'latest_uploaded.xlsx'; // Get filename from sessionStorage or default to 'latest_uploaded.xlsx'
  console.log("Filename:", filename); // Log the filename for debugging
   const [columns, setColumns] = useState([]);
   const [selectedOption, setSelectedOption] = useState('');
@@ -87,7 +87,7 @@ useEffect(() => {
 
 
 
-function downloadAsExcel(data, filename = 'data.xlsx') {
+function downloadAsExcel(data, filename = `preprocessed_${filename}.xlsx`) {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
@@ -156,6 +156,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: {
                     'userID': userId, // Include user ID in headers
+                    'filename': filename, // Include filename in headers
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ columns: columnsToDelete }),
@@ -180,6 +181,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: {
                     'userID': userId, // Include user ID in headers
+                    'filename': filename, // Include filename in headers
                     'Content-Type': 'application/json',
                   },
                 })
@@ -207,6 +209,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json'
                     , 'userID': userId // Include user ID in headers
+                    , 'filename': filename // Include filename in headers
                    },
                   body: JSON.stringify({ column: missingColumn, method: missingMethod })
                 })
@@ -260,7 +263,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 fetch('http://127.0.0.1:8000/api/rank-column/', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json'
-                    , 'userID': userId // Include user ID in headers
+                    , 'userID': userId ,// Include user ID in headers
+                    'filename': filename // Include filename in headers
                    },
                   body: JSON.stringify({ column: rankColumn, mapping: rankMapping })
                 })
@@ -294,7 +298,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 fetch('http://127.0.0.1:8000/api/split-column/', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json'
-                    , 'userID': userId // Include user ID in headers
+                    , 'userID': userId ,// Include user ID in headers
+                    'filename': filename // Include filename in headers
                    },
                   body: JSON.stringify({
                     column: splitTargetColumn,
@@ -328,6 +333,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: {
                     'userID': userId, // Include user ID in headers
+                    'filename': filename, // Include filename in headers
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ groupingPairs }),
@@ -348,7 +354,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: { 
                     'Content-Type': 'application/json',
-                    'userID': userId // Include user ID in headers
+                    'userID': userId, // Include user ID in headers
+                    'filename': filename // Include filename in headers
                   },
                 })
                   .then((res) => res.json())
@@ -411,7 +418,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
               // 2. Upload to backend as FormData
               const formData = new FormData();
-              formData.append("file", file, "preprocessed.xlsx");
+              formData.append("file", file, `preprocessed_${filename}`);
               formData.append("file_type", "preprocessed");
 
               try {
@@ -420,6 +427,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   body: formData,
                   headers: {
                     'userID': userId // Include user ID in headers
+                    
                   }
                 });
 
@@ -428,7 +436,6 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 if (result.success) {
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
-                  sessionStorage.setItem("userId", userId);
                   window.location.href = "/analysis";
                 } else {
                   alert("Failed to upload Excel: " + result.error);

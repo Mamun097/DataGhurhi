@@ -3315,12 +3315,14 @@ def delete_columns_api(request):
         ##post_method
         ## extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
+
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         # Load file safely
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3355,11 +3357,12 @@ def remove_duplicates_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3385,11 +3388,12 @@ def handle_missing_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3431,11 +3435,12 @@ def handle_outliers_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3479,11 +3484,12 @@ def rank_categorical_column_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3516,11 +3522,13 @@ def split_column_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+        print(f"Received Filename: {filename}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -3594,6 +3602,7 @@ def group_data_api(request):
 
         # Extract user ID from request headers        
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -3606,7 +3615,7 @@ def group_data_api(request):
         if not grouping_pairs:
             return JsonResponse({'success': False, 'error': 'No grouping pairs provided.'})
 
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
 
@@ -3660,11 +3669,12 @@ def generate_unique_id_column_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, 'latest_uploaded.xlsx')
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
 
@@ -3690,6 +3700,7 @@ def save_preprocessed_file_api(request):
     if request.method == 'POST':
         try:
             user_id = request.headers.get('userID')
+  
             if not user_id:
                 return JsonResponse({'success': False, 'error': 'User ID not provided.'})
             print(f"Received User ID: {user_id}")
@@ -3730,3 +3741,61 @@ def save_preprocessed_file_api(request):
 
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
+import os
+import shutil
+import json
+from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+
+# @csrf_exempt
+# def save_results_api(request):
+#     from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+def save_results_api(request): 
+    if request.method == 'POST':
+        print("✅ Save Results API hit")
+
+        try:
+            data = json.loads(request.body)
+            image_paths = data.get('image_paths', [])
+            test_name = data.get('test_name', 'general_test')
+            user_id = data.get('user_id', 'anonymous')  # optional
+            Excel_filename = os.path.splitext(os.path.basename(data.get('filename', '')))[0]
+
+
+            # print(image_paths)
+            # print(test_name)
+            # print(user_id)
+            # print(Excel_filename) 
+
+
+            save_dir=os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads/saved_files/', Excel_filename, test_name)
+            os.makedirs(save_dir, exist_ok=True)
+           
+
+            saved_files = []
+            for path in image_paths:
+                print(path) 
+                full_path = os.path.join(settings.BASE_DIR, path.lstrip('/'))  # Ensure path is absolute
+                if os.path.exists(full_path):
+                    filename = os.path.basename(full_path)
+                    dest_path = os.path.join(save_dir, filename)
+                    shutil.copy(full_path, dest_path)
+                    saved_files.append(dest_path)
+                else:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': f'File not found: {path}'
+                    }, status=404)
+
+            return JsonResponse({
+                'status': 'success',
+                'saved_to': save_dir,
+                'saved_files': saved_files
+            })
+
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

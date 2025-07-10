@@ -68,6 +68,7 @@ const EditProject = () => {
   );
   const location = useLocation();
   const userRroleProject = location.state?.role || " ";
+  const privacyMode = useParams().privacy || "public";
   console.log("User Role in Project:", userRroleProject);
   const canEdit = userRroleProject === "owner" || userRroleProject === "editor";
   const [translatedLabels, setTranslatedLabels] = useState({});
@@ -156,13 +157,21 @@ const EditProject = () => {
 
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
+    let response;
     try {
-      const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      if (!token && privacyMode === "public") {
+        //header will have no token and fetch
+         response = await axios.get(
+          `http://localhost:2000/api/project/${projectId}`
+        );
+      } else {
+        response = await axios.get(
+          `http://localhost:2000/api/project/${projectId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      }
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } =
           response.data.project;
@@ -197,13 +206,21 @@ const EditProject = () => {
   // };
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
+    let response;
     try {
-      const response = await axios.get(
+      if(token){
+      response = await axios.get(
         `http://localhost:2000/api/project/${projectId}/surveys`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+    }
+    if(!token){
+      response=await axios.get(
+        `http://localhost:2000/api/project/${projectId}/public/surveys`
+      );
+    }
       if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
       console.error("Error fetching surveys:", error);
