@@ -213,9 +213,9 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
 
   const getFeatureLabel = (featureType) => {
     const labels = {
-      survey: 'Automatic Survey Generation',
-      question: 'Automatic Question Generation',
-      tag: 'Automatic Question Tag Generation',
+      survey: 'Survey',
+      question: 'Question',
+      tag: 'Question Tag',
       participant: 'Survey Participants',
       advanced_analysis: 'Advanced Statistical Analyses'
     };
