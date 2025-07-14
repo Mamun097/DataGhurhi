@@ -25,14 +25,14 @@ const PackageTabNavigation = ({ activeTab, onTabChange, getLabel }) => {
 };
 
 // Enhanced Package Card Component
-const PackageCard = ({ 
-  pkg, 
-  isPopular, 
-  getLabel, 
-  onBuyClick, 
-  processingPayment, 
+const PackageCard = ({
+  pkg,
+  isPopular,
+  getLabel,
+  onBuyClick,
+  processingPayment,
   loading,
-  mostPopularPackageId 
+  mostPopularPackageId
 }) => {
   const calculateDiscount = (originalPrice, discountPrice) => {
     if (originalPrice <= discountPrice) return 0;
@@ -67,7 +67,7 @@ const PackageCard = ({
     if (pkg.tag > 0) {
       features.push(`${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`);
     }
-    
+
     if (pkg.title && pkg.title.toLowerCase().includes('starter')) {
       features.push(getLabel("Basic Survey Templates"));
     } else if (pkg.title && (pkg.title.toLowerCase().includes('professional') || pkg.title.toLowerCase().includes('yearly'))) {

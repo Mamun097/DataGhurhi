@@ -15,6 +15,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         tag: '',
         question: '',
         survey: '',
+        participant_count: '',
+        advanced_analysis: false,
         original_price: '',
         discount_price: '',
         validity_years: '0',
@@ -59,6 +61,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     tag: 10,
                     question: 50,
                     survey: 5,
+                    participant_count: 100,
+                    advanced_analysis: false,
                     original_price: 999,
                     discount_price: 799,
                     validity: 30
@@ -69,6 +73,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     tag: 25,
                     question: 150,
                     survey: 15,
+                    participant_count: 500,
+                    advanced_analysis: true,
                     original_price: 2499,
                     discount_price: 1999,
                     validity: 90
@@ -79,6 +85,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                     tag: 100,
                     question: 500,
                     survey: 50,
+                    participant_count: 2000,
+                    advanced_analysis: true,
                     original_price: 9999,
                     discount_price: 7999,
                     validity: 365
@@ -114,6 +122,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
             tag: '',
             question: '',
             survey: '',
+            participant_count: '',
+            advanced_analysis: false,
             original_price: '',
             discount_price: '',
             validity_years: '0',
@@ -140,6 +150,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         if (formData.tag && formData.tag < 1) newErrors.tag = getLabel('Valid tag count is required');
         if (formData.question && formData.question < 1) newErrors.question = getLabel('Valid question count is required');
         if (formData.survey && formData.survey < 1) newErrors.survey = getLabel('Valid survey count is required');
+        if (formData.participant_count && formData.participant_count < 1) newErrors.participant_count = getLabel('Valid participant count is required');
         if (formData.discount_price && formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
 
         if (parseFloat(formData.discount_price) > parseFloat(formData.original_price)) {
@@ -163,6 +174,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
             tag: pkg.tag ? pkg.tag.toString() : '',
             question: pkg.question ? pkg.question.toString() : '',
             survey: pkg.survey ? pkg.survey.toString() : '',
+            participant_count: pkg.participant_count ? pkg.participant_count.toString() : '',
+            advanced_analysis: pkg.advanced_analysis || false,
             original_price: pkg.original_price.toString(),
             discount_price: pkg.discount_price.toString(),
             validity_years: validityYMD.years,
@@ -223,6 +236,8 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                 tag: formData.tag ? parseInt(formData.tag) : null,
                 question: formData.question ? parseInt(formData.question) : null,
                 survey: formData.survey ? parseInt(formData.survey) : null,
+                participant_count: formData.participant_count ? parseInt(formData.participant_count) : null,
+                advanced_analysis: formData.advanced_analysis,
                 original_price: parseFloat(formData.original_price),
                 discount_price: parseFloat(formData.discount_price),
                 validity: convertYMDToDays(formData.validity_years, formData.validity_months, formData.validity_days)
@@ -312,6 +327,12 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         if (parseInt(remainingDays) > 0) parts.push(`${remainingDays} ${getLabel(parseInt(remainingDays) === 1 ? 'day' : 'days')}`);
 
         return parts.length > 0 ? parts.join(', ') : `${days} ${getLabel('days')}`;
+    };
+
+    // Helper function to determine if feature is available
+    const isFeatureAvailable = (value) => {
+        if (typeof value === 'boolean') return value;
+        return value && value > 0;
     };
 
     if (loading) {
@@ -410,21 +431,54 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                         <div className="package-features">
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    <span>{getLabel("Tags")}</span>
+                                    <span className={`feature-status-icon ${isFeatureAvailable(pkg.advanced_analysis) ? 'available' : 'unavailable'}`}>
+                                        {isFeatureAvailable(pkg.advanced_analysis) ? '✓' : '✕'}
+                                    </span>
+                                    <span>{getLabel("Advanced Analysis")}</span>
                                 </div>
-                                <span className="feature-value">{pkg.tag || 0}</span>
+                                <span className="feature-value">
+                                    {pkg.advanced_analysis ? getLabel("Yes") : getLabel("No")}
+                                </span>
                             </div>
+
                             <div className="feature-item">
                                 <div className="feature-label">
+                                    <span className={`feature-status-icon ${isFeatureAvailable(pkg.participant_count) ? 'available' : 'unavailable'}`}>
+                                        {isFeatureAvailable(pkg.participant_count) ? '✓' : '✕'}
+                                    </span>
+                                    <span>{getLabel("Extra Participants")}</span>
+                                </div>
+                                <span className="feature-value">{pkg.participant_count || 0}</span>
+                            </div>
+
+                            <div className="feature-item">
+                                <div className="feature-label">
+                                    <span className={`feature-status-icon ${isFeatureAvailable(pkg.survey) ? 'available' : 'unavailable'}`}>
+                                        {isFeatureAvailable(pkg.survey) ? '✓' : '✕'}
+                                    </span>
+                                    <span>{getLabel("Surveys")}</span>
+                                </div>
+                                <span className="feature-value">{pkg.survey || 0}</span>
+                            </div>
+
+                            <div className="feature-item">
+                                <div className="feature-label">
+                                    <span className={`feature-status-icon ${isFeatureAvailable(pkg.question) ? 'available' : 'unavailable'}`}>
+                                        {isFeatureAvailable(pkg.question) ? '✓' : '✕'}
+                                    </span>
                                     <span>{getLabel("Questions")}</span>
                                 </div>
                                 <span className="feature-value">{pkg.question || 0}</span>
                             </div>
+
                             <div className="feature-item">
                                 <div className="feature-label">
-                                    <span>{getLabel("Surveys")}</span>
+                                    <span className={`feature-status-icon ${isFeatureAvailable(pkg.tag) ? 'available' : 'unavailable'}`}>
+                                        {isFeatureAvailable(pkg.tag) ? '✓' : '✕'}
+                                    </span>
+                                    <span>{getLabel("Tags")}</span>
                                 </div>
-                                <span className="feature-value">{pkg.survey || 0}</span>
+                                <span className="feature-value">{pkg.tag || 0}</span>
                             </div>
                         </div>
 
@@ -519,6 +573,45 @@ const AdminPackageCustomizer = ({ getLabel }) => {
                                         disabled={isSubmitting}
                                     />
                                     {errors.survey && <p className="error-message">{errors.survey}</p>}
+                                </div>
+                            </div>
+
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label className="form-label">{getLabel("Extra Participants")}</label>
+                                    <input
+                                        type="number"
+                                        value={formData.participant_count}
+                                        onChange={(e) => setFormData({ ...formData, participant_count: e.target.value })}
+                                        className={`form-input ${errors.participant_count ? 'error' : ''}`}
+                                        min="0"
+                                        placeholder="0"
+                                        disabled={isSubmitting}
+                                    />
+                                    {errors.participant_count && <p className="error-message">{errors.participant_count}</p>}
+                                    <small className="form-help-text">
+                                        {getLabel("Additional participants beyond the free limit")}
+                                    </small>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">{getLabel("Advanced Analysis")}</label>
+                                    <div className="checkbox-wrapper">
+                                        <label className="checkbox-container">
+                                            <input
+                                                type="checkbox"
+                                                checked={formData.advanced_analysis}
+                                                onChange={(e) => setFormData({ ...formData, advanced_analysis: e.target.checked })}
+                                                disabled={isSubmitting}
+                                            />
+                                            <span className="checkbox-checkmark"></span>
+                                            <span className="checkbox-label">
+                                                {getLabel("Include Advanced Analysis")}
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <small className="form-help-text">
+                                        {getLabel("Enable advanced analytics and insights")}
+                                    </small>
                                 </div>
                             </div>
 
