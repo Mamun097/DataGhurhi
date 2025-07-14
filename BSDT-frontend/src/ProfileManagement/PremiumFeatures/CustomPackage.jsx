@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 
-// Fixed Custom Package Builder Component
+// Updated Custom Package Builder Component with Premium Features
 const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage }) => {
   const [packageItems, setPackageItems] = useState([]);
   const [validityPeriods, setValidityPeriods] = useState([]);
   const [selectedItems, setSelectedItems] = useState({
     tag: 0,
     question: 0,
-    survey: 0
+    survey: 0,
+    participant: 0
+  });
+  const [featureStates, setFeatureStates] = useState({
+    tag: false,
+    question: false,
+    survey: false,
+    participant: false,
+    advanced_analysis: false
   });
   const [selectedValidity, setSelectedValidity] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,16 +29,22 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     // Only call onPackageChange if it exists and packageItems are loaded
     if (onPackageChange && packageItems.length > 0) {
       const totalPrice = calculateCustomPackagePrice();
-      const isValid = selectedValidity && totalPrice > 0 && (selectedItems.tag > 0 || selectedItems.question > 0 || selectedItems.survey > 0);
+      const hasAnyFeature = Object.values(featureStates).some(state => state);
+      const hasValidItems = (featureStates.tag && selectedItems.tag > 0) ||
+        (featureStates.question && selectedItems.question > 0) ||
+        (featureStates.survey && selectedItems.survey > 0) ||
+        (featureStates.participant && selectedItems.participant > 0) ||
+        featureStates.advanced_analysis;
 
       onPackageChange({
         items: selectedItems,
+        features: featureStates,
         validity: selectedValidity,
         totalPrice: totalPrice,
-        isValid: isValid
+        isValid: selectedValidity && hasAnyFeature && hasValidItems
       });
     }
-  }, [selectedItems, selectedValidity, packageItems.length]);
+  }, [selectedItems, featureStates, selectedValidity, packageItems.length]);
 
   const fetchCustomPackageData = async () => {
     setLoading(true);
@@ -67,12 +81,6 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
         }
       } catch (itemsError) {
         console.error('Error fetching package items:', itemsError);
-        // Use default items if API fails
-        itemsData = [
-          { item_type: 'tag', base_price_per_unit: 5 },
-          { item_type: 'question', base_price_per_unit: 10 },
-          { item_type: 'survey', base_price_per_unit: 20 }
-        ];
       }
 
       // Fetch validity periods with error handling
@@ -95,12 +103,6 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
         }
       } catch (validityError) {
         console.error('Error fetching validity periods:', validityError);
-        // Use default validity periods if API fails
-        validityData = [
-          { id: 1, days: 30, price_multiplier: 1.0 },
-          { id: 2, days: 90, price_multiplier: 0.9 },
-          { id: 3, days: 365, price_multiplier: 0.8 }
-        ];
       }
 
       console.log('Package Items:', itemsData);
@@ -119,19 +121,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     } catch (err) {
       console.error('Error in fetchCustomPackageData:', err);
       setError(err.message);
-
-      // Set fallback data even on error
-      setPackageItems([
-        { item_type: 'tag', base_price_per_unit: 5 },
-        { item_type: 'question', base_price_per_unit: 10 },
-        { item_type: 'survey', base_price_per_unit: 20 }
-      ]);
-      setValidityPeriods([
-        { id: 1, days: 30, price_multiplier: 1.0 },
-        { id: 2, days: 90, price_multiplier: 0.9 },
-        { id: 3, days: 365, price_multiplier: 0.8 }
-      ]);
-      setSelectedValidity({ id: 1, days: 30, price_multiplier: 1.0 });
+      
     } finally {
       setLoading(false);
     }
@@ -151,11 +141,27 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
       return 0;
     }
 
-    const tagsPrice = selectedItems.tag * getItemPrice('tag');
-    const questionsPrice = selectedItems.question * getItemPrice('question');
-    const surveysPrice = selectedItems.survey * getItemPrice('survey');
+    let basePrice = 0;
 
-    const basePrice = tagsPrice + questionsPrice + surveysPrice;
+    // Calculate price for quantity-based features
+    if (featureStates.tag) {
+      basePrice += selectedItems.tag * getItemPrice('tag');
+    }
+    if (featureStates.question) {
+      basePrice += selectedItems.question * getItemPrice('question');
+    }
+    if (featureStates.survey) {
+      basePrice += selectedItems.survey * getItemPrice('survey');
+    }
+    if (featureStates.participant) {
+      basePrice += selectedItems.participant * getItemPrice('participant');
+    }
+
+    // Add advanced analysis if enabled
+    if (featureStates.advanced_analysis) {
+      basePrice += getItemPrice('advanced_analysis');
+    }
+
     return Math.round(basePrice * selectedValidity.price_multiplier);
   };
 
@@ -165,6 +171,21 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
       ...prev,
       [itemType]: numValue
     }));
+  };
+
+  const handleFeatureToggle = (featureType) => {
+    setFeatureStates(prev => ({
+      ...prev,
+      [featureType]: !prev[featureType]
+    }));
+
+    // Reset quantity to 0 when feature is disabled
+    if (featureStates[featureType] && ['tag', 'question', 'survey', 'participant'].includes(featureType)) {
+      setSelectedItems(prev => ({
+        ...prev,
+        [featureType]: 0
+      }));
+    }
   };
 
   const formatValidityDisplay = (days) => {
@@ -178,6 +199,79 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
       return `${days} ${days === 1 ? 'Day' : 'Days'}`;
     }
   };
+
+  const getFeatureIcon = (featureType) => {
+    const icons = {
+      survey: '📋',
+      question: '❓',
+      tag: '🏷️',
+      participant: '👥',
+      advanced_analysis: '📊'
+    };
+    return icons[featureType] || '📦';
+  };
+
+  const getFeatureLabel = (featureType) => {
+    const labels = {
+      survey: 'Automatic Survey Generation',
+      question: 'Automatic Question Generation',
+      tag: 'Automatic Question Tag Generation',
+      participant: 'Survey Participants',
+      advanced_analysis: 'Advanced Statistical Analyses'
+    };
+    return getLabel ? getLabel(labels[featureType]) : labels[featureType];
+  };
+
+  const renderQuantityFeature = (featureType) => (
+    <label className="feature-option">
+      <input
+        type="checkbox"
+        checked={featureStates[featureType]}
+        onChange={() => handleFeatureToggle(featureType)}
+      />
+      <div className="feature-card">
+        <div className="feature-header">
+          <div className="feature-icon">{getFeatureIcon(featureType)}</div>
+          <h4>{getFeatureLabel(featureType)}</h4>
+          <span className="feature-price">৳{getItemPrice(featureType)}/unit</span>
+        </div>
+        {/* <div className="feature-description">
+          <p>Add {getFeatureLabel(featureType).toLowerCase()} to your package</p>
+        </div> */}
+        <div className={`quantity-controls ${!featureStates[featureType] ? 'disabled' : ''}`}>
+          <span className="quantity-label">Quantity:</span>
+          <input
+            type="number"
+            min="0"
+            value={featureStates[featureType] ? selectedItems[featureType] : 0}
+            onChange={(e) => handleItemChange(featureType, e.target.value)}
+            disabled={!featureStates[featureType]}
+            placeholder="0"
+          />
+        </div>
+      </div>
+    </label>
+  );
+
+  const renderToggleFeature = (featureType) => (
+    <label className="feature-option">
+      <input
+        type="checkbox"
+        checked={featureStates[featureType]}
+        onChange={() => handleFeatureToggle(featureType)}
+      />
+      <div className="feature-card toggle-only">
+        <div className="feature-header">
+          <div className="feature-icon">{getFeatureIcon(featureType)}</div>
+          <h4>{getFeatureLabel(featureType)}</h4>
+          <span className="feature-price">৳{getItemPrice(featureType)}</span>
+        </div>
+        <div className="feature-description">
+          <p>{getLabel ? getLabel("Unlock advanced statistical analyses and insights along with basic ones") : "Unlock advanced statistical analyses and insights along with basic ones"}</p>
+        </div>
+      </div>
+    </label>
+  );
 
   // Always render something, even during loading
   return (
@@ -199,100 +293,19 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
         <>
           <div className="builder-header">
             <h3>{getLabel ? getLabel("Build Your Custom Package") : "Build Your Custom Package"}</h3>
-            <p>{getLabel ? getLabel("Select the items you need and choose validity period") : "Select the items you need and choose validity period"}</p>
+            <p>{getLabel ? getLabel("Select the features you need and choose validity period") : "Select the features you need and choose validity period"}</p>
           </div>
 
-          <div className="items-selector">
-          <div className="item-selector">
-              <div className="item-header">
-                <span className="item-icon">📋</span>
-                <h4>{getLabel ? getLabel("Surveys") : "Surveys"}</h4>
-                <span className="item-price">৳{getItemPrice('survey')}/{getLabel ? getLabel("unit") : "unit"}</span>
-              </div>
-              <div className="quantity-controls">
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('survey', selectedItems.survey - 1)}
-                  disabled={selectedItems.survey <= 0}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedItems.survey}
-                  onChange={(e) => handleItemChange('survey', e.target.value)}
-                  placeholder="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('survey', selectedItems.survey + 1)}
-                >
-                  +
-                </button>
-              </div>
+          <div className="features-selector">
+            <div className="features-grid">
+              {renderQuantityFeature('survey')}
+              {renderQuantityFeature('question')}
+              {renderQuantityFeature('tag')}
             </div>
-
-            <div className="item-selector">
-              <div className="item-header">
-                <span className="item-icon">❓</span>
-                <h4>{getLabel ? getLabel("Questions") : "Questions"}</h4>
-                <span className="item-price">৳{getItemPrice('question')}/{getLabel ? getLabel("unit") : "unit"}</span>
-              </div>
-              <div className="quantity-controls">
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('question', selectedItems.question - 1)}
-                  disabled={selectedItems.question <= 0}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedItems.question}
-                  onChange={(e) => handleItemChange('question', e.target.value)}
-                  placeholder="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('question', selectedItems.question + 1)}
-                >
-                  +
-                </button>
-              </div>
+            <div className="features-grid-row-2">
+              {renderQuantityFeature('participant')}
+              {renderToggleFeature('advanced_analysis')}
             </div>
-
-            <div className="item-selector">
-              <div className="item-header">
-                <span className="item-icon">🏷️</span>
-                <h4>{getLabel ? getLabel("Question Tags") : "Question Tags"}</h4>
-                <span className="item-price">৳{getItemPrice('tag')}/{getLabel ? getLabel("unit") : "unit"}</span>
-              </div>
-              <div className="quantity-controls">
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('tag', selectedItems.tag - 1)}
-                  disabled={selectedItems.tag <= 0}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  min="0"
-                  value={selectedItems.tag}
-                  onChange={(e) => handleItemChange('tag', e.target.value)}
-                  placeholder="0"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleItemChange('tag', selectedItems.tag + 1)}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
           </div>
 
           {validityPeriods.length > 0 && (
@@ -328,22 +341,34 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
           <div className="package-summary">
             <h4>{getLabel ? getLabel("Package Summary") : "Package Summary"}</h4>
             <div className="summary-items">
-              {selectedItems.tag > 0 && (
+              {featureStates.tag && selectedItems.tag > 0 && (
                 <div className="summary-item">
                   <span>{selectedItems.tag} {getLabel ? getLabel("Question Tags") : "Question Tags"}</span>
                   <span>৳{selectedItems.tag * getItemPrice('tag')}</span>
                 </div>
               )}
-              {selectedItems.question > 0 && (
+              {featureStates.question && selectedItems.question > 0 && (
                 <div className="summary-item">
                   <span>{selectedItems.question} {getLabel ? getLabel("Questions") : "Questions"}</span>
                   <span>৳{selectedItems.question * getItemPrice('question')}</span>
                 </div>
               )}
-              {selectedItems.survey > 0 && (
+              {featureStates.survey && selectedItems.survey > 0 && (
                 <div className="summary-item">
                   <span>{selectedItems.survey} {getLabel ? getLabel("Surveys") : "Surveys"}</span>
                   <span>৳{selectedItems.survey * getItemPrice('survey')}</span>
+                </div>
+              )}
+              {featureStates.participant && selectedItems.participant > 0 && (
+                <div className="summary-item">
+                  <span>{selectedItems.participant} {getLabel ? getLabel("Survey Participants") : "Survey Participants"}</span>
+                  <span>৳{selectedItems.participant * getItemPrice('participant')}</span>
+                </div>
+              )}
+              {featureStates.advanced_analysis && (
+                <div className="summary-item">
+                  <span>{getLabel ? getLabel("Advanced Analysis") : "Advanced Analysis"}</span>
+                  <span>৳{getItemPrice('advanced_analysis')}</span>
                 </div>
               )}
               {selectedValidity && (
@@ -366,8 +391,9 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
             <button
               className="buy-custom-btn"
               onClick={handleBuyCustomPackage}
+              disabled={!Object.values(featureStates).some(state => state)}
             >
-              {getLabel("Buy Now")}
+              {getLabel ? getLabel("Buy Now") : "Buy Now"}
             </button>
           </div>
         </>
