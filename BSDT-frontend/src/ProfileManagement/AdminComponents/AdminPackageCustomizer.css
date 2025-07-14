@@ -35,7 +35,7 @@
 }
 
 .package-title {
-    font-size: 24px!important;
+    font-size: 24px !important;
     font-weight: 700;
     color: #111827;
     display: flex;
@@ -454,8 +454,13 @@
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Header Section */
@@ -464,7 +469,7 @@
     border-radius: 16px;
     padding: 32px;
     margin-bottom: 24px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     color: white;
 }
 
@@ -492,7 +497,7 @@
 
 .admin-package-icon {
     font-size: 32px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .admin-package-subtitle {
@@ -504,8 +509,8 @@
 }
 
 .admin-add-package-btn {
-    background: rgba(255,255,255,0.2);
-    border: 2px solid rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
     color: white;
     padding: 12px 24px;
     border-radius: 12px;
@@ -520,10 +525,10 @@
 }
 
 .admin-add-package-btn:hover {
-    background: rgba(255,255,255,0.3);
-    border-color: rgba(255,255,255,0.5);
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
 }
 
 .btn-icon {
@@ -542,7 +547,7 @@
     background: white;
     padding: 24px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
     display: flex;
     align-items: center;
@@ -552,7 +557,7 @@
 
 .package-stat-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
 .stat-icon {
@@ -593,7 +598,7 @@
     background: white;
     border-radius: 16px;
     overflow: hidden;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     border: 1px solid #e2e8f0;
     transition: all 0.3s ease;
     position: relative;
@@ -601,7 +606,7 @@
 
 .admin-package-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
 }
 
 /* Package Card Header */
@@ -632,7 +637,7 @@
 }
 
 .validity-badge {
-    background: rgba(0,0,0,0.3);
+    background: rgba(0, 0, 0, 0.3);
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -647,7 +652,7 @@
 }
 
 .package-action-btn {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
     padding: 8px;
@@ -663,7 +668,7 @@
 }
 
 .package-action-btn:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     transform: scale(1.03);
 }
 
@@ -769,7 +774,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -786,7 +791,7 @@
     width: 100%;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
     animation: slideUp 0.3s ease;
 }
 
@@ -806,7 +811,7 @@
 }
 
 .modal-close-btn {
-    background: rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     color: white;
     padding: 8px;
@@ -822,7 +827,7 @@
 }
 
 .modal-close-btn:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     /* transform: rotate(90deg); */
 }
 
@@ -984,6 +989,7 @@
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -994,9 +1000,312 @@
         opacity: 0;
         transform: translateY(30px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
+    }
+}
+
+
+/* Package Features Styling */
+.package-features {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 16px 0;
+    border: 1px solid #e9ecef;
+}
+
+.feature-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.feature-item:last-child {
+    border-bottom: none;
+}
+
+
+
+.feature-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 500;
+    color: #495057;
+    font-size: 14px;
+}
+
+.feature-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+.feature-status-icon.available {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    color: white;
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+}
+
+.feature-status-icon.unavailable {
+    background: linear-gradient(135deg, #dc3545, #e74c3c);
+    color: white;
+    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.feature-value {
+    font-weight: 600;
+    color: #212529;
+    font-size: 14px;
+    min-width: 40px;
+    text-align: right;
+}
+
+
+
+/* Form styling for participant count and advanced analysis */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #495057;
+    font-size: 14px;
+}
+
+.form-label.required {
+    position: relative;
+}
+
+.required-star {
+    color: #dc3545;
+    margin-left: 4px;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.form-input.error {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+}
+
+.form-help-text {
+    display: block;
+    margin-top: 6px;
+    font-size: 12px;
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Checkbox styling for advanced analysis */
+.checkbox-wrapper {
+    margin-top: 8px;
+}
+
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    user-select: none;
+}
+
+.checkbox-container input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkbox-checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 20px;
+    width: 20px;
+    background-color: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.checkbox-container:hover input~.checkbox-checkmark {
+    border-color: #007bff;
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.checkbox-container input:checked~.checkbox-checkmark {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border-color: #28a745;
+}
+
+.checkbox-checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked~.checkbox-checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkbox-checkmark:after {
+    left: 6px;
+    top: 2px;
+    width: 6px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-label {
+    margin-left: 8px;
+    font-weight: 500;
+    color: #495057;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .package-features {
+        padding: 16px;
+        margin: 12px 0;
+    }
+
+    .feature-item {
+        padding: 10px 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .feature-label {
+        font-size: 13px;
+        gap: 8px;
+    }
+
+    .feature-status-icon {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+    }
+
+    .feature-value {
+        font-size: 13px;
+        min-width: 35px;
+        align-self: flex-end;
+    }
+
+
+    .form-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .checkbox-container {
+        padding-left: 26px;
+        font-size: 13px;
+    }
+
+    .checkbox-checkmark {
+        height: 18px;
+        width: 18px;
+    }
+
+    .checkbox-container .checkbox-checkmark:after {
+        left: 5px;
+        top: 1px;
+        width: 5px;
+        height: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .package-features {
+        padding: 12px;
+        margin: 10px 0;
+    }
+
+    .feature-item {
+        padding: 8px 0;
+        gap: 6px;
+    }
+
+    .feature-label {
+        font-size: 12px;
+        gap: 6px;
+    }
+
+    .feature-status-icon {
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+    }
+
+    .feature-value {
+        font-size: 12px;
+        min-width: 30px;
+    }
+
+
+    .form-input {
+        padding: 8px 10px;
+        font-size: 13px;
+    }
+
+    .form-help-text {
+        font-size: 11px;
+    }
+
+    .checkbox-container {
+        padding-left: 24px;
+        font-size: 12px;
+    }
+
+    .checkbox-checkmark {
+        height: 16px;
+        width: 16px;
+    }
+
+    .checkbox-container .checkbox-checkmark:after {
+        left: 4px;
+        top: 1px;
+        width: 4px;
+        height: 8px;
     }
 }
 
@@ -1005,68 +1314,68 @@
     .admin-package-customizer {
         padding: 16px;
     }
-    
+
     .admin-package-header {
         padding: 24px;
         margin-bottom: 16px;
     }
-    
+
     .admin-package-header-content {
         flex-direction: column;
         align-items: stretch;
         text-align: center;
     }
-    
+
     .admin-package-title {
         font-size: 24px;
         justify-content: center;
     }
-    
+
     .admin-add-package-btn {
         justify-content: center;
         margin-top: 8px;
     }
-    
+
     .admin-package-stats {
         grid-template-columns: 1fr;
         gap: 16px;
         margin-bottom: 24px;
     }
-    
+
     .admin-packages-grid {
         grid-template-columns: 1fr;
         gap: 16px;
     }
-    
+
     .package-card-header {
         padding: 20px;
         flex-direction: column;
         gap: 16px;
     }
-    
+
     .package-actions {
         align-self: flex-end;
     }
-    
+
     .form-row {
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    
+
     .admin-modal {
         margin: 16px;
         max-height: calc(100vh - 32px);
     }
-    
+
     .admin-modal-footer {
         flex-direction: column-reverse;
     }
-    
+
     .modal-btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .delete-actions {
         flex-direction: column-reverse;
     }
@@ -1076,38 +1385,71 @@
     .admin-package-customizer {
         padding: 12px;
     }
-    
+
     .package-features {
         padding: 16px;
     }
-    
+
     .package-pricing {
         padding: 16px;
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
-    
+
     .current-price {
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
     }
-    
+
     .price-amount {
         font-size: 20px;
     }
-    
+
     .admin-modal-body {
         padding: 16px;
     }
-    
+
     .admin-modal-footer {
         padding: 16px;
     }
-    
+
     .delete-modal-content {
         padding: 24px;
+    }
+
+    .package-features {
+        align-items: flex-start;
+    }
+
+    .feature-item {
+        display: flex;
+        /* Make sure this is explicitly set */
+        flex-direction: row;
+        justify-content: space-between;
+        width: 100%;
+        align-items: center;
+        /* Optional: vertically center content */
+    }
+
+    .feature-label {
+        text-align: left;
+        flex: 1;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        /* Optional: vertically center text */
+    }
+
+    .feature-value {
+        text-align: right;
+        flex: 0 0 auto;
+        min-width: 40px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        /* Optional: vertically center text */
     }
 }
 
@@ -1148,13 +1490,13 @@
         background: white;
         padding: 0;
     }
-    
+
     .admin-add-package-btn,
     .package-actions,
     .admin-modal-overlay {
         display: none !important;
     }
-    
+
     .admin-package-card {
         break-inside: avoid;
         box-shadow: none;
@@ -1213,18 +1555,18 @@
     .validity-inputs {
         flex-direction: column;
     }
-    
+
     .validity-input-group {
         flex-direction: row;
         align-items: center;
         gap: 8px;
     }
-    
+
     .validity-input {
         margin-bottom: 0 !important;
         flex: 1;
     }
-    
+
     .validity-label {
         flex-shrink: 0;
         min-width: 60px;
