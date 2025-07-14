@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
 import "./LLL-Generated-Question/ChatbotLoading.css";
@@ -25,6 +25,13 @@ const ThreeDotsIcon = () => (
   </svg>
 );
 
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+    <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+  </svg>
+);
+
 const SurveySections = ({
   section,
   setSections,
@@ -40,6 +47,7 @@ const SurveySections = ({
   const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] = useState(
     section.triggerQuestionText || ""
   );
+  const logicRef = useRef(null);
 
   const updateSectionLogic = useCallback(
     (questionText, option) => {
@@ -74,7 +82,6 @@ const SurveySections = ({
     });
   }, [selectedTriggerQuestionText, questions]);
 
-
   useEffect(() => {
     setSelectedTriggerQuestionText(section.triggerQuestionText || "");
   }, [section.triggerQuestionText]);
@@ -100,6 +107,17 @@ const SurveySections = ({
     updateSectionLogic
   ]);
 
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (logicRef.current && !logicRef.current.contains(event.target)) {
+        setShowLogicDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [logicRef]);
 
   const handleLogicToggle = () => {
     setShowLogicDropdown(!showLogicDropdown);
@@ -332,9 +350,7 @@ const SurveySections = ({
               </h4>
               <textarea
                 className="survey-section__title-input form-control mt-2 mb-4"
-                placeholder={
-                  getLabel("Enter Section Title") || "Enter Section Title"
-                }
+                placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
                 value={section.title || ""}
                 onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
               />
@@ -343,65 +359,64 @@ const SurveySections = ({
         </div>
 
         {section.id > 1 && (
-          <div className="position-relative">
+          <div className="logic-container position-relative" ref={logicRef}>
             <button
               className="btn btn-light btn-sm ms-2"
               onClick={handleLogicToggle}
+              aria-label="Open conditional logic settings"
             >
               <ThreeDotsIcon />
             </button>
+
             {showLogicDropdown && (
-              <div className="logic-dropdown p-2 rounded shadow-sm border bg-light">
-                <h6>{getLabel("Conditional Logic")}</h6>
-                <p className="text-muted small">
-                  {getLabel("Show this section only if...")}
-                </p>
-                <div className="mb-2">
-                  <label className="form-label small">
-                    {getLabel("Question")}
-                  </label>
-                  <select
-                    className="form-select form-select-sm"
-                    value={selectedTriggerQuestionText}
-                    onChange={handleTriggerQuestionChange}
-                  >
-                    <option value="">
-                      {getLabel("Select a question...")}
-                    </option>
-                    {eligibleTriggerQuestions.map((q) => (
-                      <option key={q.id} value={q.text}>
-                        {q.text}
-                      </option>
-                    ))}
-                  </select>
+              <div className="logic-modal shadow-lg rounded border-0 p-3">
+                <div className="logic-modal__header mb-3">
+                  <h6 className="fw-bold mb-1">{getLabel("Conditional Logic")}</h6>
+                  <p className="text-muted small mb-0">{getLabel("Show this section only if...")}</p>
                 </div>
-                {selectedTriggerQuestionText && (
-                  <div className="mb-2">
-                    <label className="form-label small">
-                      {getLabel("Is equal to")}
-                    </label>
+
+                <div className="logic-modal__body">
+                  <div className="mb-3">
+                    <label className="form-label small fw-medium">{getLabel("Question")}</label>
                     <select
                       className="form-select form-select-sm"
-                      value={section.triggerOption || ""}
-                      onChange={handleTriggerOptionChange}
+                      value={selectedTriggerQuestionText}
+                      onChange={handleTriggerQuestionChange}
                     >
-                      <option value="">
-                        {getLabel("Select an option...")}
-                      </option>
-                      {optionsForSelectedQuestion.map((opt, index) => (
-                        <option key={index} value={opt.value}>
-                          {opt.text}
+                      <option value="">{getLabel("Select a question...")}</option>
+                      {eligibleTriggerQuestions.map((q) => (
+                        <option key={q.id} value={q.text}>
+                          {q.text}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
-                <button
-                  className="btn btn-outline-danger btn-sm w-100 mt-2"
-                  onClick={removeSectionLogic}
-                >
-                  {getLabel("Remove Logic")}
-                </button>
+
+                  {selectedTriggerQuestionText && (
+                    <div className="mb-3">
+                      <label className="form-label small fw-medium">{getLabel("Is equal to")}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={section.triggerOption || ""}
+                        onChange={handleTriggerOptionChange}
+                      >
+                        <option value="">{getLabel("Select an option...")}</option>
+                        {optionsForSelectedQuestion.map((opt, index) => (
+                          <option key={index} value={opt.value}>
+                            {opt.text}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn-outline-danger btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
+                    onClick={removeSectionLogic}
+                  >
+                    <TrashIcon /> 
+                  </button>
+                </div>
               </div>
             )}
           </div>
