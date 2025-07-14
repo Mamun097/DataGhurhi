@@ -180,9 +180,9 @@ const SurveySections = ({
         break;
       case "likert":
         newQ.meta.rows = [
-          getLabel("Subtext 1"),
-          getLabel("Subtext 2"),
-          getLabel("Subtext 3"),
+          getLabel("Row 1"),
+          getLabel("Row 2"),
+          getLabel("Row 3"),
         ];
         newQ.meta.columns = [
           getLabel("Strongly Disagree"),
