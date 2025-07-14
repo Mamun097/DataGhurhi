@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
 import "./LLL-Generated-Question/ChatbotLoading.css";
@@ -7,10 +7,32 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../CSS/SurveySections.css";
 
+const ThreeDotsIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="1"></circle>
+    <circle cx="12" cy="5" r="1"></circle>
+    <circle cx="12" cy="19" r="1"></circle>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+    <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+  </svg>
+);
+
 const SurveySections = ({
-  title,
-  image,
-  description,
   section,
   setSections,
   sections,
@@ -21,9 +43,110 @@ const SurveySections = ({
   getLabel,
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
+  const [showLogicDropdown, setShowLogicDropdown] = useState(false);
+  const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] = useState(
+    section.triggerQuestionText || ""
+  );
+  const logicRef = useRef(null);
+
+  const updateSectionLogic = useCallback(
+    (questionText, option) => {
+      setSections((prevSections) =>
+        prevSections.map((sec) => {
+          if (sec.id === section.id) {
+            return {
+              ...sec,
+              triggerQuestionText: questionText,
+              triggerOption: option,
+            };
+          }
+          return sec;
+        })
+      );
+    },
+    [section.id, setSections]
+  );
+
+  const getOptionsForSelectedQuestion = useCallback(() => {
+    if (!selectedTriggerQuestionText) return [];
+    const question = questions.find(
+      (q) => q.text === selectedTriggerQuestionText
+    );
+    if (!question || !question.meta || !question.meta.options) return [];
+
+    return question.meta.options.map((opt) => {
+      if (typeof opt === "string") return { text: opt, value: opt };
+      if (typeof opt === "object" && opt !== null)
+        return { text: opt.text || opt.label, value: opt.text || opt.label };
+      return { text: "", value: "" };
+    });
+  }, [selectedTriggerQuestionText, questions]);
 
   useEffect(() => {
-  }, [sections]);
+    setSelectedTriggerQuestionText(section.triggerQuestionText || "");
+  }, [section.triggerQuestionText]);
+
+  useEffect(() => {
+    if (section.triggerQuestionText && section.triggerOption) {
+      const options = getOptionsForSelectedQuestion();
+      const isOptionStillValid = options.some(
+        (opt) => opt.value === section.triggerOption
+      );
+      if (!isOptionStillValid) {
+        updateSectionLogic(section.triggerQuestionText, "");
+        toast.warn(
+          "A conditional logic option became invalid and was reset. Please re-select it."
+        );
+      }
+    }
+  }, [
+    questions, 
+    section.triggerQuestionText, 
+    section.triggerOption, 
+    getOptionsForSelectedQuestion, 
+    updateSectionLogic
+  ]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (logicRef.current && !logicRef.current.contains(event.target)) {
+        setShowLogicDropdown(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [logicRef]);
+
+  const handleLogicToggle = () => {
+    setShowLogicDropdown(!showLogicDropdown);
+  };
+
+  const handleTriggerQuestionChange = (e) => {
+    const questionText = e.target.value;
+    setSelectedTriggerQuestionText(questionText);
+    updateSectionLogic(questionText, "");
+  };
+  
+  const handleTriggerOptionChange = (e) => {
+    const optionValue = e.target.value;
+    updateSectionLogic(selectedTriggerQuestionText, optionValue);
+  };
+
+  const removeSectionLogic = () => {
+    setSelectedTriggerQuestionText("");
+    updateSectionLogic("", "");
+    setShowLogicDropdown(false);
+  };
+
+  const getEligibleTriggerQuestions = () => {
+    return questions.filter(
+      (q) =>
+        q.section < section.id &&
+        (q.type === "mcq" || q.type === "radio" || q.type === "dropdown")
+    );
+  };
 
   const questionInfo = {
     id: questions.length + 1,
@@ -74,7 +197,11 @@ const SurveySections = ({
         newQ.meta.dateType = "date";
         break;
       case "likert":
-        newQ.meta.rows = [getLabel("Subtext 1"), getLabel("Subtext 2"), getLabel("Subtext 3")];
+        newQ.meta.rows = [
+          getLabel("Row 1"),
+          getLabel("Row 2"),
+          getLabel("Row 3"),
+        ];
         newQ.meta.columns = [
           getLabel("Strongly Disagree"),
           getLabel("Disagree"),
@@ -84,7 +211,7 @@ const SurveySections = ({
         ];
         break;
       case "text":
-        newQ.meta.options = []; 
+        newQ.meta.options = [];
         break;
       default:
         break;
@@ -95,71 +222,55 @@ const SurveySections = ({
   };
 
   const addGeneratedQuestion = (generatedQuestion) => {
-    // Process the generated question to ensure proper structure
     let processedQuestion = { ...generatedQuestion };
-    
-    // Ensure the question has proper ID and section
     processedQuestion.id = questions.length + 1;
     processedQuestion.section = section.id;
-    
-    // Process options based on question type
-    if (processedQuestion.type === "radio" || processedQuestion.type === "checkbox") {
+    if (
+      processedQuestion.type === "radio" ||
+      processedQuestion.type === "checkbox"
+    ) {
       if (processedQuestion.meta && processedQuestion.meta.options) {
-        // Convert backend options to Option class instances
-        processedQuestion.meta.options = processedQuestion.meta.options.map(option => {
-          // Handle different backend option formats
-          if (typeof option === 'string') {
+        processedQuestion.meta.options = processedQuestion.meta.options.map(
+          (option) => {
+            if (typeof option === "string") {
+              return new Option(option, 0);
+            } else if (option && typeof option === "object") {
+              return new Option(
+                option.text || option.label || option,
+                option.value || 0
+              );
+            }
             return new Option(option, 0);
-          } else if (option && typeof option === 'object') {
-            return new Option(option.text || option.label || option, option.value || 0);
           }
-          return new Option(option, 0);
-        });
+        );
       } else {
-        // Fallback: create default options if none provided
         processedQuestion.meta = {
           ...processedQuestion.meta,
           options: [
             new Option(getLabel("Option 1"), 0),
             new Option(getLabel("Option 2"), 0),
-          ]
+          ],
         };
       }
     }
-    
-    // Handle other question types with options
     if (processedQuestion.type === "dropdown") {
       if (processedQuestion.meta && processedQuestion.meta.options) {
-        // For dropdown, options might be simple strings
-        if (processedQuestion.meta.options[0] && typeof processedQuestion.meta.options[0] === 'object') {
-          processedQuestion.meta.options = processedQuestion.meta.options.map(opt => 
-            opt.text || opt.label || opt
+        if (
+          processedQuestion.meta.options[0] &&
+          typeof processedQuestion.meta.options[0] === "object"
+        ) {
+          processedQuestion.meta.options = processedQuestion.meta.options.map(
+            (opt) => opt.text || opt.label || opt
           );
         }
       }
     }
-    
-    // Add the processed question
-    setQuestions(prevQuestions => [...prevQuestions, processedQuestion]);
-    
-    console.log("Processed generated question:", processedQuestion);
+    setQuestions((prevQuestions) => [...prevQuestions, processedQuestion]);
   };
 
-
-    // function to add imported question
- const addImportedQuestion = (importedQuestions) => {
-  console.log("Imported Questions:", importedQuestions);
-
-  setQuestions(prevQuestions => [
-    ...prevQuestions,
-    ...importedQuestions, 
-  ]);
-  console.log("Updated Questions after import:", questions);
-};
-
-  const questionCount = questions.filter(
-    (question) => question.section === section.id
-  ).length;
+  const addImportedQuestion = (importedQuestions) => {
+    setQuestions((prevQuestions) => [...prevQuestions, ...importedQuestions]);
+  };
 
   const onPressDeleteSection = () => {
     const updatedSections = sections.filter((sec) => sec.id !== section.id);
@@ -194,52 +305,123 @@ const SurveySections = ({
 
   const handleMergeWithAbove = () => {
     if (section.id === 1) {
-        toast.warn("Cannot merge the first section.");
-        return;
+      toast.warn("Cannot merge the first section.");
+      return;
     }
     const targetSectionId = section.id - 1;
     const currentSectionId = section.id;
 
     const updatedQuestions = questions.map((question) => {
-        if (question.section === currentSectionId) {
-            return { ...question, section: targetSectionId };
-        }
-        if (question.section > currentSectionId) {
-            return { ...question, section: question.section - 1 };
-        }
-        return question;
+      if (question.section === currentSectionId) {
+        return { ...question, section: targetSectionId };
+      }
+      if (question.section > currentSectionId) {
+        return { ...question, section: question.section - 1 };
+      }
+      return question;
     });
-    
-    let updatedSections = sections.filter((sec) => sec.id !== currentSectionId);
+
+    let updatedSections = sections.filter(
+      (sec) => sec.id !== currentSectionId
+    );
     updatedSections = updatedSections.map((sec) => {
-        if (sec.id > currentSectionId) {
-            return { ...sec, id: sec.id - 1 };
-        }
-        return sec;
+      if (sec.id > currentSectionId) {
+        return { ...sec, id: sec.id - 1 };
+      }
+      return sec;
     });
 
     setQuestions(updatedQuestions);
     setSections(updatedSections);
   };
 
+  const eligibleTriggerQuestions = getEligibleTriggerQuestions();
+  const optionsForSelectedQuestion = getOptionsForSelectedQuestion();
+
   return (
     <div className="survey-section__container container-fluid shadow border bg-white rounded p-3 mt-3 mb-3">
-      {sections.length !== 1 && (
-        <div className="survey-section__header">
-          <h4 className="survey-section__id-display text-left">
-            <i>{getLabel("Section") || "Section"} </i> 
-            {section.id}
-          </h4>
-          <textarea
-            className="survey-section__title-input form-control mt-2 mb-4"
-            placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
-            value={section.title || ""}
-            onChange={(e) => {
-              handleUpdatingSectionTitle(e.target.value);
-            }}
-          />
+      <div className="survey-section__header d-flex justify-content-between align-items-start">
+        <div className="flex-grow-1">
+          {sections.length !== 1 && (
+            <>
+              <h4 className="survey-section__id-display text-left">
+                <i>{getLabel("Section") || "Section"} </i>
+                {section.id}
+              </h4>
+              <textarea
+                className="survey-section__title-input form-control mt-2 mb-4"
+                placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
+                value={section.title || ""}
+                onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
+              />
+            </>
+          )}
         </div>
-      )}
+
+        {section.id > 1 && (
+          <div className="logic-container position-relative" ref={logicRef}>
+            <button
+              className="btn btn-light btn-sm ms-2"
+              onClick={handleLogicToggle}
+              aria-label="Open conditional logic settings"
+            >
+              <ThreeDotsIcon />
+            </button>
+
+            {showLogicDropdown && (
+              <div className="logic-modal shadow-lg rounded border-0 p-3">
+                <div className="logic-modal__header mb-3">
+                  <h6 className="fw-bold mb-1">{getLabel("Conditional Logic")}</h6>
+                  <p className="text-muted small mb-0">{getLabel("Show this section only if...")}</p>
+                </div>
+
+                <div className="logic-modal__body">
+                  <div className="mb-3">
+                    <label className="form-label small fw-medium">{getLabel("Question")}</label>
+                    <select
+                      className="form-select form-select-sm"
+                      value={selectedTriggerQuestionText}
+                      onChange={handleTriggerQuestionChange}
+                    >
+                      <option value="">{getLabel("Select a question...")}</option>
+                      {eligibleTriggerQuestions.map((q) => (
+                        <option key={q.id} value={q.text}>
+                          {q.text}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {selectedTriggerQuestionText && (
+                    <div className="mb-3">
+                      <label className="form-label small fw-medium">{getLabel("Is equal to")}</label>
+                      <select
+                        className="form-select form-select-sm"
+                        value={section.triggerOption || ""}
+                        onChange={handleTriggerOptionChange}
+                      >
+                        <option value="">{getLabel("Select an option...")}</option>
+                        {optionsForSelectedQuestion.map((opt, index) => (
+                          <option key={index} value={opt.value}>
+                            {opt.text}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <button
+                    className="btn btn-outline-danger btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
+                    onClick={removeSectionLogic}
+                  >
+                    <TrashIcon /> 
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div className="survey-section__questions-area">
         <SurveyQuestions
@@ -267,19 +449,19 @@ const SurveySections = ({
         <div className="survey-section__buttons d-flex justify-content-end mt-2">
           {sections.length > 1 && section.id !== 1 && (
             <button
-              className="btn btn-outline-primary btn-sm me-2" 
+              className="btn btn-outline-primary btn-sm me-2"
               onClick={handleMergeWithAbove}
             >
               {getLabel("Merge with above")}
             </button>
           )}
           {sections.length > 1 && (
-             <button
-                className="btn btn-outline-danger btn-sm" // Removed mt-2
-                onClick={onPressDeleteSection}
-             >
-                {getLabel("Delete Section")}
-             </button>
+            <button
+              className="btn btn-outline-danger btn-sm"
+              onClick={onPressDeleteSection}
+            >
+              {getLabel("Delete Section")}
+            </button>
           )}
         </div>
       </div>
