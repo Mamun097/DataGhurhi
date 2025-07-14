@@ -1,7 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import SurveySections from "./SurveySectionsUser";
+
+const isSectionVisible = (section, userResponse) => {
+  const triggerQuestion = section.triggerQuestionText;
+  const requiredOption = section.triggerOption;
+
+  if (!triggerQuestion) {
+    return true;
+  }
+  const responseForTriggerQuestion = userResponse.find(
+    (res) => res.questionText === triggerQuestion
+  );
+  if (!responseForTriggerQuestion) {
+    return false;
+  }
+
+  const userAnswer = responseForTriggerQuestion.userResponse;
+  if (Array.isArray(userAnswer)) {
+    return userAnswer.includes(requiredOption);
+  } else {
+    return userAnswer === requiredOption;
+  }
+};
+
 
 const SurveyForm = ({
   title,
@@ -16,14 +39,25 @@ const SurveyForm = ({
   setUserResponse,
   template,
   shuffle = false,
-  onSubmit, // Add this prop to handle form submission
+  onSubmit,
 }) => {
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [description, setDescription] = useState(
     template?.template?.description || ""
   );
   const hasShuffled = useRef(false);
-  const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+
+  const visibleSections = useMemo(() => {
+    return sections.filter(section => isSectionVisible(section, userResponse));
+  }, [sections, userResponse]);
+
+  const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentVisibleIndex >= visibleSections.length) {
+      setCurrentVisibleIndex(Math.max(0, visibleSections.length - 1));
+    }
+  }, [visibleSections, currentVisibleIndex]);
 
   useEffect(() => {
     if (image) {
@@ -33,7 +67,6 @@ const SurveyForm = ({
 
   useEffect(() => {
     if (shuffle && !hasShuffled.current) {
-      // Group all questions by their section ID
       const questionsBySection = questions.reduce((acc, question) => {
         const sectionId = question.section;
         if (!acc[sectionId]) {
@@ -43,7 +76,6 @@ const SurveyForm = ({
         return acc;
       }, {});
 
-      // Shuffle questions within each section
       for (const sectionId in questionsBySection) {
         const questionArray = questionsBySection[sectionId];
         for (let i = questionArray.length - 1; i > 0; i--) {
@@ -69,20 +101,19 @@ const SurveyForm = ({
   };
 
   const handleNext = () => {
-    if (currentSectionIndex < sections.length - 1) {
-      setCurrentSectionIndex((prev) => prev + 1);
+    if (currentVisibleIndex < visibleSections.length - 1) {
+      setCurrentVisibleIndex((prev) => prev + 1);
     }
   };
 
   const handlePrevious = () => {
-    if (currentSectionIndex > 0) {
-      setCurrentSectionIndex((prev) => prev - 1);
+    if (currentVisibleIndex > 0) {
+      setCurrentVisibleIndex((prev) => prev - 1);
     }
   };
 
   return (
     <div>
-      {/* Survey Logo */}
       {logo && (
         <>
           {logoAlignment === "center" ? (
@@ -149,11 +180,7 @@ const SurveyForm = ({
           )}
         </>
       )}
-
-      {/* Divider */}
       <hr className="my-4" />
-
-      {/* Banner + Title */}
       <div style={{ position: "relative", width: "100%" }}>
         {backgroundImage ? (
           <>
@@ -192,8 +219,6 @@ const SurveyForm = ({
           </h1>
         )}
       </div>
-
-      {/* Survey Description */}
       {description && (
         <div className="container rounded">
           <p
@@ -208,8 +233,6 @@ const SurveyForm = ({
           </p>
         </div>
       )}
-
-      {/* Required Field Notice */}
       <p
         className="text-danger ms-3 mt-2 mb-4"
         style={{ fontSize: "1.1rem" }}
@@ -217,13 +240,12 @@ const SurveyForm = ({
         * Required fields are marked with an asterisk.
       </p>
 
-      {/* Current Section */}
       <div>
-        {sections[currentSectionIndex] && (
+        {visibleSections[currentVisibleIndex] && (
           <SurveySections
-            key={sections[currentSectionIndex].id}
-            section={sections[currentSectionIndex]}
-            sections={sections}
+            key={visibleSections[currentVisibleIndex].id}
+            section={visibleSections[currentVisibleIndex]}
+            sections={visibleSections} 
             questions={questions}
             setQuestions={setQuestions}
             userResponse={userResponse}
@@ -232,22 +254,21 @@ const SurveyForm = ({
         )}
       </div>
 
-      {/* Navigation Controls */}
       <div className="container d-flex justify-content-between align-items-center my-5">
         <button
           type="button"
           className="btn btn-secondary"
-          disabled={currentSectionIndex === 0}
+          disabled={currentVisibleIndex === 0}
           onClick={handlePrevious}
         >
           Previous
         </button>
 
         <span>
-          Section {currentSectionIndex + 1} of {sections.length}
+          Page {currentVisibleIndex + 1} of {visibleSections.length}
         </span>
 
-        {currentSectionIndex < sections.length - 1 ? (
+        {currentVisibleIndex < visibleSections.length - 1 ? (
           <button
             type="button"
             className="btn btn-primary"

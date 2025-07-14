@@ -362,14 +362,12 @@ const SurveySections = ({
                   </label>
                   <select
                     className="form-select form-select-sm"
-                    // --- CHANGE: The select value is now the question text ---
                     value={selectedTriggerQuestionText}
                     onChange={handleTriggerQuestionChange}
                   >
                     <option value="">
                       {getLabel("Select a question...")}
                     </option>
-                    {/* --- CHANGE: The option value is now the question's text --- */}
                     {eligibleTriggerQuestions.map((q) => (
                       <option key={q.id} value={q.text}>
                         {q.text}
@@ -377,7 +375,6 @@ const SurveySections = ({
                     ))}
                   </select>
                 </div>
-                {/* --- CHANGE: Conditional render checks against the text state --- */}
                 {selectedTriggerQuestionText && (
                   <div className="mb-2">
                     <label className="form-label small">
