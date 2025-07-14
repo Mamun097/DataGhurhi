@@ -1045,16 +1045,16 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 500;
     transition: all 0.3s ease;
     flex-shrink: 0;
 }
 
-.feature-status-icon.available {
+/* .feature-status-icon.available {
     background: linear-gradient(135deg, #28a745, #20c997);
     color: white;
     box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
@@ -1064,7 +1064,7 @@
     background: linear-gradient(135deg, #dc3545, #e74c3c);
     color: white;
     box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
-}
+} */
 
 .feature-value {
     font-weight: 600;
