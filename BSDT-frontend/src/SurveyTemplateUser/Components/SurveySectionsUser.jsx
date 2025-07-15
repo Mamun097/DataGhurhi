@@ -5,18 +5,19 @@ const SurveySections = ({
   section,
   sections,
   questions,
-  setQuestions,
   userResponse,
   setUserResponse,
 }) => {
   return (
-    <div className="container mb-3">
+    <div className="container mb-3 survey-section-user-view">
       {sections.length !== 1 && (
         <div>
           <h4 className="text-left">
             <i>Section </i>
             {section.id}
-            <hr />
+          </h4>
+          <hr style={{ borderTop: "1px solid #ccc" }} />
+          {section.title && (
             <p
               style={{
                 fontSize: "1.1em",
@@ -27,15 +28,13 @@ const SurveySections = ({
             >
               {section.title}
             </p>
-          </h4>
+          )}
         </div>
       )}
 
-      {/* Survey Questions Component */}
       <SurveyQuestions
         section={section}
         questions={questions}
-        setQuestions={setQuestions}
         userResponse={userResponse}
         setUserResponse={setUserResponse}
       />

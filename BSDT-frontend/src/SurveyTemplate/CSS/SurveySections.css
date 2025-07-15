@@ -1,3 +1,47 @@
 .survey-section__header {
-  margin-bottom: 1rem; /* Example spacing */
+  margin-bottom: 1rem;
+}
+.logic-container {
+  z-index: 10;
+}
+.logic-modal {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 320px;
+  background-color: #ffffff;
+  z-index: 1050;
+  animation: fadeIn 0.2s ease-out;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.logic-modal__header h6 {
+  color: #212529;
+}
+
+.logic-modal__body .form-select-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.9rem;
+}
+@media (max-width: 576px) {
+  .logic-modal {
+    width: 90vw;
+    max-width: 400px;
+    right: 50%;
+    transform: translateX(50%);
+    left: auto;
+  }
 }
