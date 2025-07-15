@@ -126,7 +126,7 @@ const Register = () => {
     Onelowercaseletter: "At least one lowercase letter",
     Onenumber: "At least one number",
     specialCharacter: "At least one special alphabet",
-    passwordsMustMatch: "Passwords must match",
+    passwordsMustMatch: "Both passwords must match",
 
     emailalreadyregistered: "This email is already registered.",
   };
@@ -566,6 +566,14 @@ const Register = () => {
                     >
                       ✔️ {t("specialCharacter")}
                     </li>
+
+                    <li
+                      style={{
+                        color: passwordValidations.match ? "green" : "red",
+                      }}
+                    >
+                      ✔️ {t("passwordsMustMatch")}
+                    </li>
                   </ul>
                 </div>
 
@@ -584,13 +592,6 @@ const Register = () => {
                   >
                     {showPassword ? <FaEye /> : <FaEyeSlash />}
                   </span>
-                </div>
-                <div
-                  style={{
-                    color: passwordValidations.match ? "green" : "red",
-                  }}
-                >
-                  ✔️ {t("passwordsMustMatch")}
                 </div>
 
                 <div className="password-input-wrapper">
