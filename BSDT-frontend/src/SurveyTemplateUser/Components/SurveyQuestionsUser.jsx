@@ -12,12 +12,13 @@ import TickBoxGrid from "../QuestionTypes/TickBoxGridUser";
 const SurveyQuestions = ({
   section,
   questions,
-  setQuestions,
   userResponse,
   setUserResponse,
 }) => {
   // Filter questions for the current section
-  const sectionQuestions = questions.filter((q) => q.section === section.id);
+  const sectionQuestions = questions.filter(
+    (q) => String(q.section) === String(section.id)
+  );
 
   const renderQuestionComponent = (question) => {
     switch (question.type) {
