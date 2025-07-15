@@ -587,6 +587,54 @@ const Dashboard = () => {
       ];
     }
   };
+const [showPasswordFields, setShowPasswordFields] = useState(false);
+const [passwordValues, setPasswordValues] = useState({
+  old_password: "",
+  new_password: "",
+});
+const handlePasswordChange = (e) => {
+  setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
+};
+
+const togglePasswordFields = () => {
+  setShowPasswordFields((prev) => !prev);
+};
+const handleSavePassword = async () => {
+  const { old_password, new_password } = passwordValues;
+
+  if (!old_password || !new_password) {
+    alert("Please fill out both the old and new password fields.");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    // Example POST request to backend API
+    const response = await axios.put("http://localhost:2000/api/profile/update-password", {
+      
+      oldPassword:old_password,
+      newPassword:new_password,
+    },
+  {
+    
+      headers: { Authorization: `Bearer ${token}`,
+     
+  },
+  });
+
+    if (response.data.success) {
+      alert("Password updated successfully.");
+      setShowPasswordFields(false);
+      setPasswordValues({ old_password: "", new_password: "" });
+    } else {
+      alert(response.data.message || "Password update failed.");
+    }
+  } catch (error) {
+    console.error("Password change error:", error);
+    alert("An error occurred while changing the password.");
+  }
+};
+
 
   return (
     <>
@@ -741,11 +789,48 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
+
+                
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
                     {getLabel("Save Changes")}
                   </button>
                 )}
+
+                <div className="change-password-section">
+                  <button className="change-password-toggle-btn" onClick={togglePasswordFields}>
+                    {showPasswordFields ? getLabel("Cancel Password Change") : getLabel("Change Password")}
+                  </button>
+
+                  {showPasswordFields && (
+                    <div className="password-fields">
+                      <div>
+                        <label>{getLabel("Old Password")}:</label>
+                        <input
+                          type="password"
+                          name="old_password"
+                          value={passwordValues.old_password}
+                          onChange={handlePasswordChange}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label>{getLabel("New Password")}:</label>
+                        <input
+                          type="password"
+                          name="new_password"
+                          value={passwordValues.new_password}
+                          onChange={handlePasswordChange}
+                          required
+                        />
+                      </div>
+                      <button className="save-password-btn" onClick={handleSavePassword}>
+                        {getLabel("Save Password")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
               </div>
             )}
 

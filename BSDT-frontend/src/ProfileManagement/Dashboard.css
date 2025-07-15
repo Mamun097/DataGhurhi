@@ -278,6 +278,18 @@
   margin-bottom: 2rem;
 }
 
+.password-fields div {
+  margin-top: 10px;
+}
+.change-password-toggle-btn {
+  margin-top: 20px;
+  background-color: #3c6d4d;
+  padding: 8px 12px;
+  border-radius: 5px;
+  font-family:'Times New Roman', Times, serif;
+  color: #fff;
+  
+}
 
 
 /* Trending Section */
