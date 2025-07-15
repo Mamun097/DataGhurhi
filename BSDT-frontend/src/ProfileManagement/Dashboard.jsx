@@ -48,7 +48,7 @@ const Dashboard = () => {
     return urlParams.get("tab");
   };
 
-  const [activeTab, setActiveTab] = useState(getTabFromURL() || "editprofile");
+  const [activeTab, setActiveTab] = useState(getTabFromURL() || "projects");
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -158,8 +158,7 @@ const Dashboard = () => {
       "Profile Link",
       "Religion",
       "Working Place",
-      "Years of Experience",
-      "Create a New Project",
+     "Create a New Project",
       "Existing Projects",
       "Filter by: ",
       "All",
@@ -739,8 +738,8 @@ const handleSavePassword = async () => {
                     "Contact No",
                     "Profile Link",
                     "Religion",
-                    "Working Place",
-                    {/* "Years of Experience", */}
+                    "Working Place"
+              
                   ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
@@ -805,20 +804,22 @@ const handleSavePassword = async () => {
                   {showPasswordFields && (
                     <div className="password-fields">
                       <div>
-                        <label>{getLabel("Old Password")}:</label>
+                      
                         <input
                           type="password"
                           name="old_password"
+                          placeholder={getLabel("Enter old password")}
                           value={passwordValues.old_password}
                           onChange={handlePasswordChange}
                           required
                         />
                       </div>
                       <div>
-                        <label>{getLabel("New Password")}:</label>
+                       
                         <input
                           type="password"
                           name="new_password"
+                          placeholder={getLabel("Enter new password")}
                           value={passwordValues.new_password}
                           onChange={handlePasswordChange}
                           required
