@@ -740,7 +740,7 @@ const handleSavePassword = async () => {
                     "Profile Link",
                     "Religion",
                     "Working Place",
-                    "Years of Experience",
+                    {/* "Years of Experience", */}
                   ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>

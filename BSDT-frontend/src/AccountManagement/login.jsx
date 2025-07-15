@@ -187,6 +187,9 @@ const Login = () => {
           <p className="login-link">
             {t("noAccount")} <a href="/signup">{t("signUp")}</a>
           </p>
+          <p className="forgot-password-text">
+            <a href="/forgot-password">Forgot Password?</a>
+          </p>
         </motion.div>
       </div>
       <ToastContainer position="top-center" autoClose={4000} />

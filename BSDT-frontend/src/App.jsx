@@ -19,7 +19,7 @@ import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 import Layout from "./Layout";
 import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
-
+import ForgotPassword from "./AccountManagement/forgotPassword";
 
 
 function App() {
@@ -45,6 +45,7 @@ function App() {
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
         <Route path="/v/:slug" element={<IndexUser />} />
         <Route path="/survey-success" element={<SurveySuccess />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (
