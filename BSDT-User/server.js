@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const bodyParser = require("body-parser");
+const nodemailer = require("nodemailer");
 const app = express();
 const swaggerUi = require('swagger-ui-express');
 const yaml = require('yamljs');
@@ -9,6 +11,9 @@ const swaggerDocument = yaml.load('./docs/api-docs.yml');
 // serving Swagger UI
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 
 const allowedOrigins = ['https://localhost:5173', 'http://localhost:5173']
 app.use(cors({
@@ -65,6 +70,40 @@ const searchRouter = require('./route/searchRouter');
 
 //file upload for analysis
 const analysisFileUploadRouter = require('./route/analysisFileUpload');
+
+
+
+
+
+
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS, // App Password (not Gmail password)
+  },
+});
+
+app.post("/api/send-otp", async (req, res) => {
+  const { email, otp } = req.body;
+  if (!email || !otp) return res.status(400).json({ message: "Missing fields" });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your OTP Code",
+    text: `Your verification code is: ${otp}. Please write this code in the input box to verify your email.`,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    res.status(200).json({ message: "OTP sent to your email" });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({ message: "Failed to send email" });
+  }
+});
 
 
 //connect db

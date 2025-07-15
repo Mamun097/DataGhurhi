@@ -1,6 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Login from "./AccountManagement/login";
-import Register from "./AccountManagement/register";
+import Register from "./AccountManagement/registernew";
 import Home from "./Homepage/landingpage";
 import Dashboard from "./ProfileManagement/Dashboard";
 import AddProject from "./ProjectManagement/createProject";
