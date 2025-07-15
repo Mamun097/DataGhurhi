@@ -20,6 +20,28 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   backdrop-filter: blur(8px);
 }
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 10px; /* leave space on right */
+  font-size: 1rem;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 30%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 2rem;
+  color: #888;
+}
+
 
 /* Left Feature Card */
 .feature-card {
