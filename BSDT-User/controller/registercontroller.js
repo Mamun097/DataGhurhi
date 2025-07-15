@@ -1,5 +1,17 @@
 const User = require('../model/user');
 
+exports.checkEmail = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ exists: false });
+
+  try {
+    const { data: user } = await User.findUserByEmail(email);
+    res.json({ exists: user.length > 0 });
+  } catch (err) {
+    res.status(500).json({ exists: false });
+  }
+};
+
 
 exports.register = async (req, res) => {
     try {
