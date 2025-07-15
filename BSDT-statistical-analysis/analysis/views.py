@@ -244,6 +244,9 @@ def analyze_data_api(request):
             elif test_type == 'cramers_heatmap':
                 return process_cramers_heatmap(request, df, user_id)
 
+            elif test_type == 'network_graph':
+                return process_network_graph(request, df,user_id) 
+
 
             return render(request, 'analysis/results.html', {
                 'results': results,
@@ -3230,7 +3233,143 @@ def process_cramers_heatmap(request, df, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+def process_network_graph(request, df, user_id): 
+    import os
+    import random
+    from django.http import JsonResponse
+    from django.conf import settings
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from PIL import Image, ImageDraw, ImageFont
+    import networkx as nx
+    import numpy as np
+    import re
 
+    try:
+        language = request.POST.get("language", "en").strip().lower()
+        node_color = request.POST.get("node_color", "#AED6F1")
+        node_size = int(request.POST.get("node_size", 800))
+        text_size = int(request.POST.get("text_size", 25))
+        text_color = request.POST.get("text_color", "black")
+        edge_width_factor = float(request.POST.get("edge_width_factor", 0.5))
+        show_edge_weights = request.POST.get("show_edge_weights", "n").lower() == "y"
+        weight_font_size = int(request.POST.get("weight_font_size", 3)) if show_edge_weights else 0
+        weight_color = request.POST.get("weight_color", "red") if show_edge_weights else "red"
+        use_matrix = request.POST.get("use_matrix", "n").lower() == "y"
+
+        digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+        root_bn = "নোড"
+
+
+
+        def to_bn(lbl):
+            # Extract number part at the end of the label (e.g. Node12 → 12 → ১২)
+            match = re.search(r'(\d+)$', lbl)
+            if match:
+                number_part = match.group(1).translate(digit_map)
+                return root_bn + number_part
+            return lbl  # fallback: no change if no digits found
+
+
+
+        def to_label(lbl): return to_bn(lbl) if language == 'bengali' else lbl
+
+        # Create graph
+        if use_matrix:
+            if 'matrix_file' not in request.FILES:
+                raise ValueError("Matrix file not uploaded.")
+            matrix_file = request.FILES['matrix_file']
+            df_matrix = pd.read_csv(matrix_file, index_col=0)
+            if df_matrix.shape[0] != df_matrix.shape[1]:
+                raise ValueError("Adjacency matrix must be square.")
+            mat = df_matrix.values
+            nodes = list(df_matrix.index)
+            G = nx.Graph()
+            G.add_nodes_from(nodes)
+            for i in range(len(nodes)):
+                for j in range(i+1, len(nodes)):
+                    w = mat[i, j]
+                    if w != 0:
+                        G.add_edge(nodes[i], nodes[j], weight=w * edge_width_factor)
+        else:
+            num_nodes = 30
+            nbr_count = 3
+            nodes = [f"Node{i}" for i in range(1, num_nodes + 1)]
+            G = nx.Graph()
+            G.add_nodes_from(nodes)
+            for node in nodes:
+                nbrs = random.sample([n for n in nodes if n != node], k=nbr_count)
+                for nbr in nbrs:
+                    G.add_edge(node, nbr, weight=edge_width_factor)
+
+        edge_widths = [d['weight'] for _, _, d in G.edges(data=True)]
+        raw_edge_labels = {}
+        for u, v, d in G.edges(data=True):
+            raw = f"{d['weight']:.2f}"
+            if language == 'bengali':
+                raw = raw.translate(digit_map)
+            raw_edge_labels[(u, v)] = raw
+
+        # Layout and draw
+        dpi = 300
+        fig, ax = plt.subplots(figsize=(8, 8), dpi=dpi)
+        pos = nx.spring_layout(G, seed=42, k=0.8, iterations=200)
+        nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, ax=ax)
+        nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.6, edge_color="gray", ax=ax)
+        ax.margins(0.10)
+        ax.axis("off")
+        fig.canvas.draw()
+
+        renderer = fig.canvas.get_renderer()
+        bbox = fig.get_tightbbox(renderer)
+        crop_x0_px = int(bbox.x0 * dpi)
+        crop_y0_px = int(bbox.y0 * dpi)
+        final_W_px = int(bbox.width * dpi)
+        final_H_px = int(bbox.height * dpi)
+        data_to_px = ax.transData.transform
+        def data_to_image_px(xy):
+            px, py = data_to_px(xy)
+            return (int(px - crop_x0_px), int(final_H_px - (py - crop_y0_px)))
+
+        # Save base
+        plots_dir = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_path = os.path.join(plots_dir, 'network_base.png')
+        fig.savefig(base_path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
+        plt.close(fig)
+
+        # Overlay labels
+        img = Image.open(base_path).convert("RGBA")
+        draw = ImageDraw.Draw(img)
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        try:
+            font_label = ImageFont.truetype(font_path, size=text_size)
+        except:
+            font_label = ImageFont.load_default()
+
+        for node in G.nodes():
+            label = to_label(node)
+            px, py = data_to_image_px(pos[node])
+            w, h = draw.textbbox((0, 0), label, font=font_label)[2:]
+            draw.text((px - w/2, py - h/2), label, font=font_label, fill=text_color)
+
+        if show_edge_weights:
+            for (u, v), raw in raw_edge_labels.items():
+                midx = (pos[u][0] + pos[v][0]) / 2
+                midy = (pos[u][1] + pos[v][1]) / 2
+                px, py = data_to_image_px((midx, midy))
+                draw.text((px, py), raw, font=font_label, fill=weight_color, anchor="mm")
+
+        labeled_path = os.path.join(plots_dir, 'network_labeled.png')
+        img.save(labeled_path)
+
+        return JsonResponse({
+            'success': True,
+            'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads','plots', 'network_labeled.png'),
+            'message': "Network graph generated successfully"
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 def save_plot(plt, filename, user_id):
     import os
 
@@ -3284,7 +3423,9 @@ def preview_data(request):
 
         try:
             df = pd.read_excel(file_path)
-
+          
+            df = df.where(pd.notnull(df), "")
+ 
             # Limit to first N rows for preview
             preview_limit = 100
             preview_df = df.head(preview_limit).copy()

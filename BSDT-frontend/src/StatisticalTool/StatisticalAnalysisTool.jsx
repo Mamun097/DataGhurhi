@@ -1075,6 +1075,7 @@ const handleSuggestionClick = () => {
                                                             </div>
 
                                                             {/* Button on new line */}
+                                                            
                                                             {!testsWithoutDetails.includes(testType) && (
                                                                 <div>
                                                                     <button
@@ -1085,13 +1086,15 @@ const handleSuggestionClick = () => {
                                                                     {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
                                                                     </button>
                                                                 </div>
-                                                            )}      
+                                                            )}                                                            
                                                             
                                                         </div>
-                                                    )}
+                                                    )}                                                                                                        
 
                                                 </div>
                                             </div>
+
+
                                             {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation') && (
                                                 <div className="mb-6">
                                                     <label className="block text-gray-700 font-medium mb-2">
@@ -1153,37 +1156,46 @@ const handleSuggestionClick = () => {
                                                     </p>
                                                 </div>
                                             )}
-                                            {testType !== 'eda_basics' && (
+
+
+                                        {testType !== 'eda_basics' && (
                                             <div className="mb-6">
-                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectVariables}</h5>
+                                                {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
+                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+                                                    <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
+                                                        {t.selectVariables}
+                                                    </h5>
+                                                )}
 
-                                                <div className="mb-4">
-                                                    <label className="block text-gray-700 font-medium mb-2">
-                                                        <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                        </svg>
-                                                        {(testType === 'kolmogorov' || testType === 'anderson' || testType === 'shapiro')
-                                                            ? (language === 'bn'
-                                                                ? 'একটি সংখ্যাগত কলাম নির্বাচন করুন'
-                                                                : 'Pick a Numerical Column')
-                                                            : t.column1}
-                                                    </label>
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                        value={column1}
-                                                        onChange={(e) => setColumn1(e.target.value)}
-                                                        disabled={columns.length === 0}
-                                                    >
-                                                        {columns.length === 0 ? (
-                                                            <option value="">-- Upload a file first --</option>
-                                                        ) : (
-                                                            columns.map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))
-                                                        )}
-                                                    </select>
-                                                </div>
-
+                                                {/* Now the rest of the logic stays the same — dropdowns, requiredFields, etc. */}
+                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+                                                    <div className="mb-4">
+                                                        <label className="block text-gray-700 font-medium mb-2">
+                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                                            </svg>
+                                                            {(testType === 'kolmogorov' || testType === 'anderson' || testType === 'shapiro' || testType ===  'eda_distribution')
+                                                                ? (language === 'bn' ? 'একটি সংখ্যাগত কলাম নির্বাচন করুন' : 'Pick a Numerical Column')
+                                                                : t.column1}
+                                                        </label>
+                                                        <select
+                                                            className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                            value={column1}
+                                                            onChange={(e) => setColumn1(e.target.value)}
+                                                            disabled={columns.length === 0}
+                                                        >
+                                                            {columns.length === 0 ? (
+                                                                <option value="">-- Upload a file first --</option>
+                                                            ) : (
+                                                                columns.map((col, idx) => (
+                                                                    <option key={idx} value={col}>{col}</option>
+                                                                ))
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                )}
+                                            
+                                                                                
                                                 {requiredFields.col2 && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
@@ -1205,39 +1217,51 @@ const handleSuggestionClick = () => {
                                                         </select>
                                                     </div>
                                                 )}
-                                                    {testType === 'cross_tabulation' && extraColumns.map((col, idx) => (
-                                                    <div key={idx} className="mb-4">
+
+                                                {requiredFields.col3 && (
+                                                    <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
-                                                            {t[`column${idx + 3}`] || `Column ${idx + 3}`}
+                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                                            </svg>
+                                                            {t.column3}
                                                         </label>
                                                         <select
-                                                            value={extraColumns[idx]}
-                                                            onChange={(e) => {
-                                                                const updated = [...extraColumns];
-                                                                updated[idx] = e.target.value;
-                                                                setExtraColumns(updated);
-                                                            }}
-                                                            className="border border-gray-300 rounded-lg p-3 w-full"
+                                                            className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                            value={column3}
+                                                            onChange={(e) => setColumn3(e.target.value)}
+                                                            disabled={columns.length === 0}
                                                         >
                                                             <option value="">-- Select a column --</option>
-                                                            {columns.map((col, cidx) => (
-                                                                <option key={cidx} value={col}>{col}</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>{col}</option>
                                                             ))}
                                                         </select>
                                                     </div>
-                                                ))}
-                                                {testType === 'cross_tabulation' && (
-                                                    <div className="mb-4">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setExtraColumns([...extraColumns, ''])}
-                                                            className="bg-white text-black border border-gray-400 hover:bg-gray-100 py-2 px-4 rounded mt-2"
+                                                )}
 
+                                                {requiredFields.col4 && (
+                                                    <div className="mb-4">
+                                                        <label className="block text-gray-700 font-medium mb-2">
+                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+                                                            </svg>
+                                                            {t.column4}
+                                                        </label>
+                                                        <select
+                                                            className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                            value={column4}
+                                                            onChange={(e) => setColumn4(e.target.value)}
+                                                            disabled={columns.length === 0}
                                                         >
-                                                            + {language === 'bn' ? 'আরও কলাম যোগ করুন' : 'Add Column'}
-                                                        </button>
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
                                                     </div>
                                                 )}
+
 
                                                 {testType === 'kruskal' && (
                                                     <KruskalOptions
@@ -1264,12 +1288,11 @@ const handleSuggestionClick = () => {
                                                         violinWidth={violinWidth}
                                                         setViolinWidth={setViolinWidth}
                                                         t={t}
-                                                        
                                                     />
                                                 )}
 
-                                                {testType === 'wilcoxon' && (
-                                                    <WilcoxonOptions
+                                                {testType === 'mannwhitney' && (
+                                                    <MannWhitneyOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
                                                         imageFormat={imageFormat}
@@ -1296,9 +1319,8 @@ const handleSuggestionClick = () => {
                                                     />
                                                 )}
 
-
-                                                {testType === 'mannwhitney' && (
-                                                    <MannWhitneyOptions
+                                                {testType === 'pearson' && (
+                                                    <PearsonOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
                                                         imageFormat={imageFormat}
@@ -1317,10 +1339,30 @@ const handleSuggestionClick = () => {
                                                         setColorPalette={setColorPalette}
                                                         barWidth={barWidth}
                                                         setBarWidth={setBarWidth}
-                                                        boxWidth={boxWidth}
-                                                        setBoxWidth={setBoxWidth}
-                                                        violinWidth={violinWidth}
-                                                        setViolinWidth={setViolinWidth}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'spearman' && (
+                                                    <SpearmanOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
                                                         t={t}
                                                     />
                                                 )}
@@ -1353,8 +1395,8 @@ const handleSuggestionClick = () => {
                                                     />
                                                 )}
 
-                                                {testType === 'spearman' && (
-                                                    <SpearmanOptions
+                                                {testType === 'wilcoxon' && (
+                                                    <WilcoxonOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
                                                         imageFormat={imageFormat}
@@ -1373,34 +1415,15 @@ const handleSuggestionClick = () => {
                                                         setColorPalette={setColorPalette}
                                                         barWidth={barWidth}
                                                         setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
                                                         t={t}
                                                     />
                                                 )}
 
-                                                {testType === 'pearson' && (
-                                                    <PearsonOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        colorPalette={colorPalette}
-                                                        setColorPalette={setColorPalette}
-                                                        barWidth={barWidth}
-                                                        setBarWidth={setBarWidth}
-                                                        t={t}
-                                                    />
-                                                )}
-                                            {testType === 'linear_regression' && (
+                                                {testType === 'linear_regression' && (
                                                     <LinearRegressionOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -1549,6 +1572,7 @@ const handleSuggestionClick = () => {
                                                         t={t}
                                                     />
                                                 )}
+
                                                 {testType === 'fzt' && (
                                                     <FZTOptions
                                                         language={language}
@@ -1589,7 +1613,6 @@ const handleSuggestionClick = () => {
                                                     />
                                                 )}
 
-
                                                 {testType === 'cross_tabulation' && (
                                                     <CrossTabulationOptions
                                                         language={language}
@@ -1613,7 +1636,6 @@ const handleSuggestionClick = () => {
                                                         t={t}
                                                     />
                                                 )}
-
 
                                                 {testType === 'eda_distribution' && (
                                                     <EDADistributionsOptions
@@ -1722,6 +1744,7 @@ const handleSuggestionClick = () => {
                                                         t={t}
                                                     />
                                                 )}
+
                                                 {testType === 'chi_square' && (
                                                     <ChiSquareOptions
                                                         language={language}
@@ -1765,6 +1788,7 @@ const handleSuggestionClick = () => {
                                                         t={t}
                                                     />
                                                 )}
+
                                                 {testType === 'network_graph' && (
                                                     <NetworkGraphOptions
                                                         language={language}
@@ -1794,52 +1818,6 @@ const handleSuggestionClick = () => {
                                                 )}
 
 
-
-
-                                                {requiredFields.col3 && (
-                                                    <div className="mb-4">
-                                                        <label className="block text-gray-700 font-medium mb-2">
-                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                            </svg>
-                                                            {t.column3}
-                                                        </label>
-                                                        <select
-                                                            className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                            value={column3}
-                                                            onChange={(e) => setColumn3(e.target.value)}
-                                                            disabled={columns.length === 0}
-                                                        >
-                                                            <option value="">-- Select a column --</option>
-                                                            {columns.map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
-
-                                                {requiredFields.col4 && (
-                                                    <div className="mb-4">
-                                                        <label className="block text-gray-700 font-medium mb-2">
-                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                            </svg>
-                                                            {t.column4}
-                                                        </label>
-                                                        <select
-                                                            className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                            value={column4}
-                                                            onChange={(e) => setColumn4(e.target.value)}
-                                                            disabled={columns.length === 0}
-                                                        >
-                                                            <option value="">-- Select a column --</option>
-                                                            {columns.map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))}
-                                                        </select>
-                                                    </div>
-                                                )}
-
                                                 {requiredFields.col5 && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
@@ -1862,7 +1840,7 @@ const handleSuggestionClick = () => {
                                                     </div>
                                                 )}
                                             </div>
-                                            )}
+                                        )}
 
                                             {requiredFields.refValue && (
                                                 <div className="mb-6">
@@ -1881,26 +1859,7 @@ const handleSuggestionClick = () => {
                                                     />
                                                 </div>
                                             )}
-
-                                            {requiredFields.heatmapSize && (
-                                                <div className="mb-6">
-                                                    <label className="block text-gray-700 font-medium mb-2">
-                                                        <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-                                                        </svg>
-                                                        {t.heatmapSize}
-                                                    </label>
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                        value={heatmapSize}
-                                                        onChange={(e) => setHeatmapSize(e.target.value)}
-                                                    >
-                                                        <option value="2x2">2x2 (Two Columns)</option>
-                                                        <option value="4x4">4x4 (Four Columns)</option>
-                                                    </select>
-                                                </div>
-                                            )}
-
+                                        
                                             <div className="text-center mt-6">
                                                 <button
                                                     type="submit"
@@ -1935,20 +1894,20 @@ const handleSuggestionClick = () => {
                                                         &times;
                                                     </button>
                                                     <h2>{t.tests[testType]}</h2>
-                                                    <pre className="modal-body">
+                                                    <pre className="modal-body text-left whitespace-pre-line leading-relaxed font-sans text-sm md:text-base">
                                                         {statTestDetails[language]?.[testType] || (
-
-                                                            console.log(statTestDetails),
                                                             language === 'bn' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
                                                         )}
                                                     </pre>
                                                 </div>
                                             </div>
                                         )}
+                                        
+                                                                                
                                     </div>
                                 </div>
-                            ) : (
-                                <AnalysisResults user_id={userId} results={results} testType={testType} columns={[column1, column2, column3]} language={language}
+                    ):(
+                     <AnalysisResults user_id={userId} results={results} testType={testType} columns={[column1, column2, column3]} language={language}
                                     t={t} filename={fileName}  />
                             )}
                             

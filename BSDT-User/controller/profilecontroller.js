@@ -56,6 +56,7 @@ exports.deleteProfile = async (req, res) => {
 
 exports.updatePassword = async (req, res) => {
     const { oldPassword, newPassword } = req.body;
+    
     const { data, error } = await User.findDesignerByid(req.jwt.id);
     if (error) {
         console.error(error);
