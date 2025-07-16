@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -6,6 +6,10 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
+
+  const [otherOption, setOtherOption] = useState("");
+  const [otherSelected, setOtherSelected] = useState(false);
+  console.log("Other Selected: ", otherSelected);
 
   // Handles adding/removing selections from the response array
   const handleAnswerChange = (e) => {
@@ -17,12 +21,18 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
     if (existingResponseIndex !== -1) {
       // Update existing response
       const updatedResponse = [...userResponse];
-      const currentAnswers = updatedResponse[existingResponseIndex].userResponse;
+      const currentAnswers =
+        updatedResponse[existingResponseIndex].userResponse;
 
       // If the value is already in the response, remove it; otherwise, add it
       if (currentAnswers.includes(selectedValue)) {
         updatedResponse[existingResponseIndex].userResponse =
           currentAnswers.filter((value) => value !== selectedValue);
+
+        // If no answers remain, remove the question response
+        if (updatedResponse[existingResponseIndex].userResponse.length === 0) {
+          updatedResponse.splice(existingResponseIndex, 1);
+        }
       } else {
         currentAnswers.push(selectedValue);
       }
@@ -34,6 +44,36 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
         userResponse: [selectedValue],
       };
       setUserResponse([...userResponse, newResponse]);
+    }
+  };
+
+  // Handles changes to the "Other" text box
+  const handleEditOtherOption = (e) => {
+    const newOtherOption = e.target.value;
+    setOtherOption(newOtherOption);
+
+    // If "Other" is currently selected, update userResponse with the new text
+    if (otherSelected) {
+      setUserResponse((prevUserResponse) => {
+        const existingQuestionIndex = prevUserResponse.findIndex(
+          (response) => response.questionText === question.text
+        );
+
+        if (existingQuestionIndex !== -1) {
+          const originalOptions = question.meta?.options || [];
+          // Find out the index of the user's "Other" response by filtering out the original options
+          const otherIndex = prevUserResponse[existingQuestionIndex].userResponse.findIndex(
+            (resp) => !originalOptions.includes(resp)
+          );
+          if (otherIndex !== -1) {
+            // Update the "Other" response with the new text
+            const updatedResponse = [...prevUserResponse];
+            updatedResponse[existingQuestionIndex].userResponse[otherIndex] = newOtherOption;
+            return updatedResponse;
+          }
+        }
+        return prevUserResponse;
+      });
     }
   };
 
@@ -97,9 +137,13 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
                 value={optionValue}
                 checked={userAnswer ? userAnswer.includes(optionValue) : false}
                 onChange={handleAnswerChange}
-                required={question.required && (!userAnswer || userAnswer.length === 0)}
+                required={
+                  question.required && (!userAnswer || userAnswer.length === 0)
+                }
                 disabled={question.disabled}
-                style={{ cursor: question.disabled ? "not-allowed" : "pointer" }}
+                style={{
+                  cursor: question.disabled ? "not-allowed" : "pointer",
+                }}
               />
               <label
                 className="form-check-label mb-0"
@@ -115,6 +159,42 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
           );
         })}
       </div>
+
+      {question.otherAsOption && (
+        <div className="form-check mb-3 ps-2 ms-3 d-flex align-items-center">
+          <input
+            type="checkbox"
+            value={otherOption}
+            checked={userAnswer ? userAnswer.includes(otherOption) : false}
+            onChange={(e) => {
+              setOtherSelected((prev) => !prev);
+              handleAnswerChange(e);
+            }}
+            required={
+              question.required && (!userAnswer || userAnswer.length === 0)
+            }
+            disabled={question.disabled}
+            className="form-check-input me-2"
+            name={`checkbox-${question.id}`}
+            id={`checkbox-other-${question.id}`}
+          />
+          <label
+            className="form-check-label pe-2"
+            htmlFor={`checkbox-other-${question.id}`}
+          >
+            Other
+          </label>
+          <input
+            type="text"
+            className="form-control ms-2"
+            style={{ maxWidth: "300px" }}
+            placeholder="Write your own option"
+            value={otherOption}
+            onChange={handleEditOtherOption}
+            required={otherSelected}
+          />
+        </div>
+      )}
     </div>
   );
 };
