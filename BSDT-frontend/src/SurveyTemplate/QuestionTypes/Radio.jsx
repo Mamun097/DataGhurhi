@@ -329,7 +329,8 @@ const Radio = ({
               </div>
               <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
                 <select
-                  className="form-select form-select-sm w-auto"
+                  className="form-select form-select-sm"
+                  style={{ width: "100px" }}
                   value={img.alignment || "start"}
                   onChange={(e) => updateAlignmentCb(idx, e.target.value)}
                 >
