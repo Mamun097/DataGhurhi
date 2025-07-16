@@ -25,14 +25,14 @@ const PackageTabNavigation = ({ activeTab, onTabChange, getLabel }) => {
 };
 
 // Enhanced Package Card Component
-const PackageCard = ({ 
-  pkg, 
-  isPopular, 
-  getLabel, 
-  onBuyClick, 
-  processingPayment, 
+const PackageCard = ({
+  pkg,
+  isPopular,
+  getLabel,
+  onBuyClick,
+  processingPayment,
   loading,
-  mostPopularPackageId 
+  mostPopularPackageId
 }) => {
   const calculateDiscount = (originalPrice, discountPrice) => {
     if (originalPrice <= discountPrice) return 0;
@@ -56,25 +56,88 @@ const PackageCard = ({
     return 'standard';
   };
 
+  const formatParticipantCount = (count) => {
+    if (count === -1) return getLabel("Unlimited");
+    if (count >= 1000) return `${(count / 1000).toFixed(0)}K`;
+    return count.toLocaleString();
+  };
+
   const getPackageFeatures = (pkg) => {
     const features = [];
+
+    // Order: Advanced analysis, participants, survey, question, tag
+
+    // Advanced analysis feature (1st)
+    if (pkg.advanced_analysis && pkg.advanced_analysis > 0) {
+      features.push({
+        text: `${getLabel("Advanced Statistical Analyses")}`,
+        type: 'analysis'
+      });
+    }
+
+    // Participant count feature (2nd)
+    if (pkg.participant_count !== undefined && pkg.participant_count !== null) {
+      features.push({
+        text: `${formatParticipantCount(pkg.participant_count)} ${getLabel("Survey Responses")}`,
+        type: 'participant',
+        highlight: pkg.participant_count === -1
+      });
+    }
+
+    // Survey generation feature (3rd)
     if (pkg.survey > 0) {
-      features.push(`${pkg.survey.toLocaleString()} ${getLabel("Automatic Survey Template Generation")}`);
+      features.push({
+        text: `${pkg.survey.toLocaleString()} ${getLabel("Automatic Smart Survey Generation with LLM")}`,
+        type: 'survey'
+      });
     }
+
+    // Question generation feature (4th)
     if (pkg.question > 0) {
-      features.push(`${pkg.question.toLocaleString()} ${getLabel("Automatic Question Generation")}`);
+      features.push({
+        text: `${pkg.question.toLocaleString()} ${getLabel("Automatic Smart Question Generation with LLM")}`,
+        type: 'question'
+      });
     }
+
+    // Tag generation feature (5th)
     if (pkg.tag > 0) {
-      features.push(`${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`);
+      features.push({
+        text: `${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`,
+        type: 'tag'
+      });
     }
-    
-    if (pkg.title && pkg.title.toLowerCase().includes('starter')) {
-      features.push(getLabel("Basic Survey Templates"));
-    } else if (pkg.title && (pkg.title.toLowerCase().includes('professional') || pkg.title.toLowerCase().includes('yearly'))) {
-      features.push(getLabel("Advanced Survey Templates"));
-    } else if (pkg.title && pkg.title.toLowerCase().includes('enterprise')) {
-      features.push(getLabel("Premium Survey Templates"));
-    }
+
+    // Additional template features based on package type
+    // if (pkg.title && pkg.title.toLowerCase().includes('starter')) {
+    //   features.push({
+    //     text: getLabel("Basic Survey Templates"),
+    //     type: 'template'
+    //   });
+    // } else if (pkg.title && (pkg.title.toLowerCase().includes('professional') || pkg.title.toLowerCase().includes('yearly'))) {
+    //   features.push({
+    //     text: getLabel("Advanced Survey Templates"),
+    //     type: 'template'
+    //   });
+    //   features.push({
+    //     text: getLabel("Priority Support"),
+    //     type: 'support'
+    //   });
+    // } else if (pkg.title && pkg.title.toLowerCase().includes('enterprise')) {
+    //   features.push({
+    //     text: getLabel("Premium Survey Templates"),
+    //     type: 'template'
+    //   });
+    //   features.push({
+    //     text: getLabel("Premium Support"),
+    //     type: 'support'
+    //   });
+    //   features.push({
+    //     text: getLabel("Custom Integrations"),
+    //     type: 'integration'
+    //   });
+    // }
+
     return features;
   };
 
@@ -111,9 +174,10 @@ const PackageCard = ({
 
       <div className="package-features">
         {getPackageFeatures(pkg).map((feature, index) => (
-          <div key={index} className="feature">
+          <div key={index} className={`feature ${feature.highlight ? 'highlight' : ''}`}>
             <span className="check-icon">✓</span>
-            {feature}
+            <span className="feature-text">{feature.text}</span>
+            {feature.highlight && <span className="unlimited-badge">{getLabel("Unlimited")}</span>}
           </div>
         ))}
       </div>
@@ -137,7 +201,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('fixed');
   const [customPackage, setCustomPackage] = useState({
-    items: { tag: 0, question: 0, survey: 0 },
+    items: { tag: 0, question: 0, survey: 0, participant_count: 0, advanced_analysis: 0 },
     validity: null,
     totalPrice: 0,
     isValid: false
@@ -238,6 +302,8 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                   <h4>{getLabel("Current Subscription")}</h4>
                   <p>{getLabel("Active until")}: {new Date(userSubscription.end_date).toLocaleDateString()}</p>
                   <div className="subscription-details">
+                    <span>Analysis: {userSubscription.advanced_analysis}</span>
+                    <span>Responses: {userSubscription.participant_count === -1 ? getLabel("Unlimited") : userSubscription.participant_count}</span>
                     <span>Survey: {userSubscription.survey}</span>
                     <span>Question: {userSubscription.question}</span>
                     <span>Tag: {userSubscription.tag}</span>
@@ -251,7 +317,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
             <h3>{getLabel("Unlock Powerful AI Features")}</h3>
             <div className="showcase-features">
               <div className="showcase-item">
-                <div className="showcase-icon">🤖</div>
+                <div className="showcase-icon">📋</div>
                 <div>
                   <h4>{getLabel("AI Survey Generation")}</h4>
                   <p>{getLabel("Create professional surveys in seconds with AI assistance")}</p>
@@ -269,6 +335,20 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                 <div>
                   <h4>{getLabel("Automatic Tagging")}</h4>
                   <p>{getLabel("Organize questions with intelligent tagging system")}</p>
+                </div>
+              </div>
+              <div className="showcase-item">
+                <div className="showcase-icon">👥</div>
+                <div>
+                  <h4>{getLabel("Greater Number of Responses")}</h4>
+                  <p>{getLabel("Collect greater number of survey responses without restrictions")}</p>
+                </div>
+              </div>
+              <div className="showcase-item">
+                <div className="showcase-icon">📈</div>
+                <div>
+                  <h4>{getLabel("Advanced Analytics")}</h4>
+                  <p>{getLabel("Access advanced statistical analyses along with regular ones")}</p>
                 </div>
               </div>
             </div>

@@ -25,7 +25,6 @@ const isSectionVisible = (section, userResponse) => {
   }
 };
 
-
 const SurveyForm = ({
   title,
   sections,
@@ -41,6 +40,13 @@ const SurveyForm = ({
   shuffle = false,
   onSubmit,
 }) => {
+  const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
+
+  // Scroll to top when section changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentVisibleIndex]);
+
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [description, setDescription] = useState(
     template?.template?.description || ""
@@ -48,10 +54,10 @@ const SurveyForm = ({
   const hasShuffled = useRef(false);
 
   const visibleSections = useMemo(() => {
-    return sections.filter(section => isSectionVisible(section, userResponse));
+    return sections.filter((section) =>
+      isSectionVisible(section, userResponse)
+    );
   }, [sections, userResponse]);
-
-  const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
 
   useEffect(() => {
     if (currentVisibleIndex >= visibleSections.length) {
@@ -145,9 +151,7 @@ const SurveyForm = ({
           ) : (
             <div
               className={`py-3 px-3 d-flex align-items-start justify-content-between flex-column flex-sm-row ${
-                logoAlignment === "left"
-                  ? "flex-sm-row"
-                  : "flex-sm-row-reverse"
+                logoAlignment === "left" ? "flex-sm-row" : "flex-sm-row-reverse"
               }`}
             >
               <img
@@ -233,10 +237,7 @@ const SurveyForm = ({
           </p>
         </div>
       )}
-      <p
-        className="text-danger ms-3 mt-2 mb-4"
-        style={{ fontSize: "1.1rem" }}
-      >
+      <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.1rem" }}>
         * Required fields are marked with an asterisk.
       </p>
 
@@ -245,7 +246,7 @@ const SurveyForm = ({
           <SurveySections
             key={visibleSections[currentVisibleIndex].id}
             section={visibleSections[currentVisibleIndex]}
-            sections={visibleSections} 
+            sections={visibleSections}
             questions={questions}
             setQuestions={setQuestions}
             userResponse={userResponse}

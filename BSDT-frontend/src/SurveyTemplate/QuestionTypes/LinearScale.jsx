@@ -5,8 +5,14 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 
-
-const LinearScaleQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const LinearScaleQuestion = ({
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -15,7 +21,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
   const [maxValue, setMaxValue] = useState(question.max || 5);
   const [leftLabel, setLeftLabel] = useState(question.leftLabel || "");
   const [rightLabel, setRightLabel] = useState(question.rightLabel || "");
-  
+
   // Initialize showLabels based on the initial question prop's labels
   const [showLabels, setShowLabels] = useState(
     !!(question.leftLabel || question.rightLabel)
@@ -60,14 +66,30 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
     [updateQuestion]
   );
 
+  const [validationError, setValidationError] = useState("");
+
   const handleMinChange = (e) => {
     const newMin = Number(e.target.value);
+
+    if (newMin >= maxValue) {
+      setValidationError(`Minimum value must be less than ${maxValue}`);
+      return;
+    }
+
+    setValidationError("");
     setMinValue(newMin);
     updateQuestion({ min: newMin });
   };
 
   const handleMaxChange = (e) => {
     const newMax = Number(e.target.value);
+
+    if (newMax <= minValue) {
+      setValidationError(`Maximum value must be greater than ${minValue}`);
+      return;
+    }
+
+    setValidationError("");
     setMaxValue(newMax);
     updateQuestion({ max: newMax });
   };
@@ -117,7 +139,10 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
+          ? {
+              ...q,
+              imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+            }
           : q
       )
     );
@@ -141,7 +166,9 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
   const handleCopy = () => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedMeta = question.meta ? { ...question.meta } : {};
-    const copiedImageUrls = question.imageUrls ? [...question.imageUrls.map(img => ({...img}))] : [];
+    const copiedImageUrls = question.imageUrls
+      ? [...question.imageUrls.map((img) => ({ ...img }))]
+      : [];
 
     const copiedQuestion = {
       // Copy all relevant properties from the original question
@@ -160,55 +187,61 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
 
     let updatedQuestions = [...questions];
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
-    
+
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
     setQuestions(updatedQuestions);
   };
   const handleTranslation = useCallback(async () => {
-  try {
-    const questionResponse = await translateText(question.text);
-    if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
-      throw new Error("No translation returned for question");
+    try {
+      const questionResponse = await translateText(question.text);
+      if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
+        throw new Error("No translation returned for question");
+      }
+      handleQuestionChange(
+        questionResponse.data.data.translations[0].translatedText
+      );
+
+      const metaResponse = await translateText([
+        question.meta?.min?.toString() || "",
+        question.meta?.max?.toString() || "",
+        question.leftLabel || "",
+        question.rightLabel || "",
+      ]);
+      if (!metaResponse?.data?.data?.translations) {
+        throw new Error("No translations returned for meta properties");
+      }
+      const [
+        minTranslation,
+        maxTranslation,
+        leftLabelTranslation,
+        rightLabelTranslation,
+      ] = metaResponse.data.data.translations.map(
+        (t) => t.translatedText || ""
+      );
+
+      setMinValue(minTranslation);
+      setMaxValue(maxTranslation);
+      setLeftLabel(leftLabelTranslation);
+      setRightLabel(rightLabelTranslation);
+      updateQuestion({
+        min: minTranslation,
+        max: maxTranslation,
+        leftLabel: leftLabelTranslation,
+        rightLabel: rightLabelTranslation,
+      });
+    } catch (error) {
+      console.error("Error in handleTranslation:", error.message);
     }
-    handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
-
-    const metaResponse = await translateText([
-      question.meta?.min?.toString() || "",
-      question.meta?.max?.toString() || "",
-      question.leftLabel || "",
-      question.rightLabel || ""
-    ]);
-    if (!metaResponse?.data?.data?.translations) {
-      throw new Error("No translations returned for meta properties");
-    }
-    const [minTranslation, maxTranslation, leftLabelTranslation, rightLabelTranslation] = 
-      metaResponse.data.data.translations.map(t => t.translatedText || "");
-
-    setMinValue(minTranslation);
-    setMaxValue(maxTranslation);
-    setLeftLabel(leftLabelTranslation);
-    setRightLabel(rightLabelTranslation);
-    updateQuestion({
-      min: minTranslation,
-      max: maxTranslation,
-      leftLabel: leftLabelTranslation,
-      rightLabel: rightLabelTranslation,
-    });
-
-  } catch (error) {
-    console.error("Error in handleTranslation:", error.message);
-  }
-}, [
-  question.text,
-  question.leftLabel,
-  question.rightLabel,
-  question.meta?.min,
-  question.meta?.max,
-  handleQuestionChange,
-  updateQuestion
-]);
-
+  }, [
+    question.text,
+    question.leftLabel,
+    question.rightLabel,
+    question.meta?.min,
+    question.meta?.max,
+    handleQuestionChange,
+    updateQuestion,
+  ]);
 
   return (
     <div className="mb-3">
@@ -244,7 +277,9 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
@@ -284,11 +319,22 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
         />
       </div>
 
+      {validationError && (
+        <div className="alert alert-danger mt-2" role="alert">
+          {validationError}
+        </div>
+      )}
+
       <div className="mb-3">
         <div className="row g-3 align-items-center mb-3">
           <div className="col-12 col-sm-auto">
             <div className="d-flex align-items-center">
-              <label htmlFor={`min-${question.id}`} className="form-label me-2 mb-0"><i>{getLabel("Min")}</i></label>
+              <label
+                htmlFor={`min-${question.id}`}
+                className="form-label me-2 mb-0"
+              >
+                <i>{getLabel("Min")}</i>
+              </label>
               <input
                 type="number"
                 id={`min-${question.id}`}
@@ -301,7 +347,12 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
           </div>
           <div className="col-12 col-sm-auto">
             <div className="d-flex align-items-center mt-2 mt-sm-0">
-              <label htmlFor={`max-${question.id}`} className="form-label me-2 mb-0"><i>{getLabel("Max")}</i></label>
+              <label
+                htmlFor={`max-${question.id}`}
+                className="form-label me-2 mb-0"
+              >
+                <i>{getLabel("Max")}</i>
+              </label>
               <input
                 type="number"
                 id={`max-${question.id}`}
@@ -314,12 +365,18 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
           </div>
         </div>
 
-
-
         {showLabels && (
           <div className="row g-3">
             <div className="col-12 col-sm-6">
-              <label htmlFor={`leftLabel-${question.id}`} className="form-label"><i>Left Label <span className="text-muted small">(Optional)</span></i></label>
+              <label
+                htmlFor={`leftLabel-${question.id}`}
+                className="form-label"
+              >
+                <i>
+                  Left Label{" "}
+                  <span className="text-muted small">(Optional)</span>
+                </i>
+              </label>
               <input
                 type="text"
                 id={`leftLabel-${question.id}`}
@@ -329,7 +386,15 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
               />
             </div>
             <div className="col-12 col-sm-6">
-              <label htmlFor={`rightLabel-${question.id}`} className="form-label"><i>Right Label <span className="text-muted small">(Optional)</span></i></label>
+              <label
+                htmlFor={`rightLabel-${question.id}`}
+                className="form-label"
+              >
+                <i>
+                  Right Label{" "}
+                  <span className="text-muted small">(Optional)</span>
+                </i>
+              </label>
               <input
                 type="text"
                 id={`rightLabel-${question.id}`}
@@ -343,13 +408,24 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
       </div>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleDelete} title="Delete Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto me-0 me-sm-2" title="Add Image">
+        <label
+          className="btn btn-outline-secondary w-auto me-0 me-sm-2"
+          title="Add Image"
+        >
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -358,7 +434,7 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
             onChange={handleQuestionImageUpload}
           />
         </label>
-                <button
+        <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleTranslation}
           title="Translate Question"
@@ -374,18 +450,28 @@ const LinearScaleQuestion = ({ question, questions, setQuestions, language, setL
               onChange={handleRequired}
               checked={required}
             />
-            <label className="form-check-label" htmlFor={`linearRequired-${question.id}`}>{getLabel("Required")}</label>
+            <label
+              className="form-check-label"
+              htmlFor={`linearRequired-${question.id}`}
+            >
+              {getLabel("Required")}
+            </label>
           </div>
           <div className="form-check form-switch mb-3">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            id={`showLabels-${question.id}`}
-            checked={showLabels}
-            onChange={toggleLabels}
-          />
-          <label className="form-check-label" htmlFor={`showLabels-${question.id}`}>{getLabel("Show Labels")}</label>
-        </div>
+            <input
+              className="form-check-input"
+              type="checkbox"
+              id={`showLabels-${question.id}`}
+              checked={showLabels}
+              onChange={toggleLabels}
+            />
+            <label
+              className="form-check-label"
+              htmlFor={`showLabels-${question.id}`}
+            >
+              {getLabel("Show Labels")}
+            </label>
+          </div>
         </div>
       </div>
     </div>

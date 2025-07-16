@@ -721,7 +721,7 @@ const SurveyForm = ({
                 type="text"
                 className="form-control text-center"
                 placeholder={getLabel(
-                  "Enter Logo Text - optional - aligned below automatically"
+                  "Enter Logo Text - aligned below automatically"
                 )}
                 value={logoText}
                 onChange={(e) => setLogoText(e.target.value)}
