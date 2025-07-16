@@ -201,7 +201,8 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
           readOnly 
         />
         <select
-          className="form-select form-select-sm w-auto"
+          className="form-select form-select-sm"
+          style={{ width: "80px" }}
           onChange={(e) => handleTypeChange(e.target.value)}
           value={question.dateType || "date"}
         >

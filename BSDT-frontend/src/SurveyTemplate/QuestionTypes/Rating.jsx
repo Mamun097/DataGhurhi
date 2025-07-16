@@ -189,7 +189,8 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
         <label htmlFor={`scale-select-${question.id}`} className="form-label mb-0">{getLabel("Levels:")}</label> {/* Removed me-2, gap-2 on parent handles spacing */}
         <select
           id={`scale-select-${question.id}`}
-          className="form-select form-select-sm w-auto"
+          className="form-select form-select-sm"
+          style={{ width: "60px" }}
           onChange={(e) => handleScaleChange(e.target.value)}
           value={scale}
         >
