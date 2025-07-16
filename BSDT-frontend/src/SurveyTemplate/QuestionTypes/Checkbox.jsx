@@ -5,13 +5,21 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
+import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 
-const Checkbox = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
-  
-  useEffect(() => {
-    console.log("Question component rendered with question:", question);
-  }, [question]);
-  
+const Checkbox = ({
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
+  console.log("Question: ", question);
+  const [otherOption, setOtherOption] = useState(
+    question.otherAsOption || false
+  );
+
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
@@ -31,7 +39,9 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
   }, [question.meta?.enableOptionShuffle]);
 
   useEffect(() => {
-    setRequireAtLeastOneSelection(question.meta?.requireAtLeastOneSelection || false);
+    setRequireAtLeastOneSelection(
+      question.meta?.requireAtLeastOneSelection || false
+    );
   }, [question.meta?.requireAtLeastOneSelection]);
 
   const options = useMemo(
@@ -93,10 +103,10 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: -1, 
+      id: -1,
       meta: {
         ...question.meta,
-        options: [...(options || [])], 
+        options: [...(options || [])],
         enableOptionShuffle: enableOptionShuffle,
         requireAtLeastOneSelection: requireAtLeastOneSelection,
       },
@@ -111,7 +121,7 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     question,
     questions,
     setQuestions,
-    options, 
+    options,
     enableOptionShuffle,
     requireAtLeastOneSelection,
   ]);
@@ -177,7 +187,7 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
               ...q,
               meta: {
                 ...q.meta,
-                options: updatedOptions, 
+                options: updatedOptions,
               },
             };
           }
@@ -208,31 +218,39 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     [question.id, setQuestions]
   );
 
+  const removeImageCb = useCallback(
+    (index) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const removeImageCb = useCallback((index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
-
-  const updateAlignmentCb = useCallback((index, alignment) => { 
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              imageUrls: (q.imageUrls || []).map((img, i) =>
-                i === index ? { ...img, alignment } : img
-              ),
-            }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateAlignmentCb = useCallback(
+    (index, alignment) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).map((img, i) =>
+                  i === index ? { ...img, alignment } : img
+                ),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleTranslation = useCallback(async () => {
     try {
@@ -240,9 +258,13 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
       if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
         throw new Error("No translation returned for question");
       }
-      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      handleQuestionChange(
+        questionResponse.data.data.translations[0].translatedText
+      );
 
-      const optionTexts = (question.meta.options || []).map((opt) => opt.trim()).filter((opt) => opt);
+      const optionTexts = (question.meta.options || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
 
       if (!optionTexts.length) {
         console.warn("No options to translate");
@@ -264,8 +286,13 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
     } catch (error) {
       console.error("Error in handleTranslation:", error.message);
     }
-  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
-  
+  }, [
+    handleQuestionChange,
+    question.meta.options,
+    question.text,
+    updateOption,
+  ]);
+
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
@@ -300,7 +327,9 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
@@ -344,7 +373,7 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {(options || []).map((option, idx) => (
                 <Draggable
-                  key={`opt-checkbox-${question.id}-${idx}`} 
+                  key={`opt-checkbox-${question.id}-${idx}`}
                   draggableId={`checkbox-opt-${question.id}-${idx}`}
                   index={idx}
                 >
@@ -380,7 +409,10 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
                         <button
                           className="btn btn-sm btn-outline-secondary w-auto"
                           onClick={() => removeOption(idx)}
-                          disabled={(options || []).length <= 1 && (options || [])[0] !== "Other"} 
+                          disabled={
+                            (options || []).length <= 1 &&
+                            (options || [])[0] !== "Other"
+                          }
                         >
                           <i className="bi bi-trash"></i>
                         </button>
@@ -396,14 +428,18 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
       </DragDropContext>
 
       <button
-        className="btn btn-sm btn-outline-secondary w-auto" 
+        className="btn btn-sm btn-outline-secondary w-auto"
         onClick={addOption}
       >
         ➕ {getLabel("Add Option")}
       </button>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary w-auto" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
@@ -417,9 +453,9 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
           <i className="bi bi-image"></i>
           <input
             type="file"
-            accept="image/*" 
+            accept="image/*"
             hidden
-            onChange={handleQuestionImageUpload} 
+            onChange={handleQuestionImageUpload}
           />
         </label>
         <button
@@ -432,6 +468,22 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
       </div>
 
       <div className="mt-3 border-top pt-3">
+        <div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              onChange={() => {
+                handleOtherOption(!otherOption, question.id, setQuestions);
+                setOtherOption((prev) => !prev);
+              }}
+              checked={otherOption}
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="ms-2 fw-bold">
+            {getLabel("Allow others as option")}
+          </span>
+        </div>
         <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
@@ -440,7 +492,10 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
             onChange={handleEnableOptionShuffleToggle}
             checked={enableOptionShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableOptionShuffleCheckbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableOptionShuffleCheckbox${question.id}`}
+          >
             {getLabel("Shuffle option order")}
           </label>
         </div>
@@ -452,7 +507,10 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
             onChange={handleRequireAtLeastOneSelectionToggle}
             checked={requireAtLeastOneSelection}
           />
-          <label className="form-check-label" htmlFor={`requireAtLeastOneSelectionCheckbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requireAtLeastOneSelectionCheckbox${question.id}`}
+          >
             {getLabel("Require at least one selection")}
           </label>
         </div>
@@ -462,9 +520,12 @@ const Checkbox = ({ question, questions, setQuestions, language, setLanguage, ge
             type="checkbox"
             id={`requiredSwitchCheckbox${question.id}`}
             checked={required}
-            onChange={handleRequired} 
+            onChange={handleRequired}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchCheckbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requiredSwitchCheckbox${question.id}`}
+          >
             {getLabel("Required")}
           </label>
         </div>

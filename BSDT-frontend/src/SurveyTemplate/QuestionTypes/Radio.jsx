@@ -2,11 +2,12 @@ import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import Option from "./QuestionSpecificUtils/OptionClass"; // Assuming this is correctly imported and used
+import Option from "./QuestionSpecificUtils/OptionClass";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import axios from "axios";
 import translateText from "./QuestionSpecificUtils/Translation";
+import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 
 const Radio = ({
   question,
@@ -17,6 +18,9 @@ const Radio = ({
   getLabel,
 }) => {
   const [required, setRequired] = useState(question.required || false);
+  const [otherOption, setOtherOption] = useState(
+    question.otherAsOption || false
+  );
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -272,7 +276,12 @@ const Radio = ({
     translatedTexts.forEach((translatedText, idx) => {
       updateOption(idx, translatedText);
     });
-  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
+  }, [
+    handleQuestionChange,
+    question.meta.options,
+    question.text,
+    updateOption,
+  ]);
 
   return (
     <div className="mb-3 dnd-isolate">
@@ -477,6 +486,22 @@ const Radio = ({
       </div>
 
       <div className="mt-3 border-top pt-3">
+        <div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              onChange={() => {
+                handleOtherOption(!otherOption, question.id, setQuestions);
+                setOtherOption((prev) => !prev);
+              }}
+              checked={otherOption}
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="ms-2 fw-bold">
+            {getLabel("Allow others as option")}
+          </span>
+        </div>
         <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
@@ -507,6 +532,19 @@ const Radio = ({
             {getLabel("Shuffle option order")}
           </label>
         </div>
+        {/* <div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              onChange={handleRequired}
+              checked={required}
+            />
+            <span className="slider"></span>
+          </label>
+          <span className="ms-2">
+            {getLabel("Required")}
+          </span>
+        </div> */}
         <div className="form-check form-switch">
           <input
             className="form-check-input"
