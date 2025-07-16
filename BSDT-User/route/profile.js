@@ -10,4 +10,5 @@ router.put('/update-profile-image', jwtAuthMiddleware, profileController.updateP
 router.put('/update-profile', jwtAuthMiddleware, profileController.updateProfile);
 router.delete('/delete-profile', jwtAuthMiddleware, profileController.deleteProfile);
 router.put('/update-password', jwtAuthMiddleware, profileController.updatePassword);
+
 module.exports = router;

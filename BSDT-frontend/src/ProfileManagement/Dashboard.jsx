@@ -176,7 +176,6 @@ const Dashboard = () => {
       "Last Updated:",
       "Last Updated",
 
-      // Admin Dashboard Labels
       "System Overview",
       "Welcome to the administrative dashboard. Monitor your platform's performance and manage system settings.",
       "Total Users",
@@ -195,7 +194,7 @@ const Dashboard = () => {
       "This Month",
       "Last Month",
 
-      // Admin Package Customizer Labels
+ 
       "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
@@ -206,7 +205,7 @@ const Dashboard = () => {
       "Questions",
       "Surveys",
 
-      // Premium Features Labels
+  
       "Choose Your Premium Package",
       "Unlock Powerful AI Features",
       "AI Survey Generation",
@@ -215,11 +214,9 @@ const Dashboard = () => {
       "Generate relevant questions based on your research goals",
       "Automatic Tagging",
       "Organize questions with intelligent tagging system",
-      //"Loading packages...",
-      //"Failed to load packages. Please try again.",
+   
       "Most Popular",
-      //"No packages available at the moment.",
-      //"Loading customization options...",
+   
       "Build Your Custom Package",
       "Select the items you need and choose validity period",
       "Question Tags",
@@ -245,42 +242,7 @@ const Dashboard = () => {
       "AI Survey Template Generation",
       "Smart Question Generation",
       "Automatic Question Tagging",
-      // "Continue as Free User",
-      // "Checkout Premium Packages",
-      // "Add New Package",
-      // "Original Price",
-      // "Discount Price",
-      // "Edit Package",
-      // "Total validity",
-      // "Delete Package",
-      // "Are you sure you want to delete the",
-      // "package? This action cannot be undone.",
-      // "Delete",
-
-      // User Subscription Labels
-      // "Active",
-      // "Expired",
-      // "Expiring Soon",
-      // "Loading subscription packages...","Retry","My Subscription Packages","Manage and view your premium subscription packages","Active Packages",
-      // "Auto Tag Generation",
-      // "Auto Question Generation",
-      // "Auto Survey Generation",
-      // "Days Remaining",
-      // "Started",
-      // "Expires",
-      // "Package Cost",
-      // "No Active Packages",
-      // "You don\'t have any active subscription packages at the moment.",
-      // "Hide Package History",
-      // "View Package History",
-      // "Package History",
-
-      // Custom Package Labels
-      //"Valid price is required",
-      //"Valid days is required",
-      //"Valid price multiplier is required",
-      //"This validity period already exists",
-      //"Loading custom package settings...",
+  
       "Survey",
       "Question",
       "Tag",

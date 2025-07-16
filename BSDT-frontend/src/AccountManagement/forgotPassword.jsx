@@ -177,7 +177,7 @@ const ForgotPassword = () => {
     if (password !== confirm) return toast.error(`❌ ${t("passwordMismatch")}`);
 
     try {
-      await axios.post("http://localhost:2000/api/reset-password", {
+      await axios.post("http://localhost:2000/api/login/reset-password", {
         email,
         newPassword: password,
       });
