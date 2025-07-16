@@ -147,11 +147,11 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         }
 
         // Optional fields validation (only if filled)
-        if (formData.tag && formData.tag < 1) newErrors.tag = getLabel('Valid tag count is required');
-        if (formData.question && formData.question < 1) newErrors.question = getLabel('Valid question count is required');
-        if (formData.survey && formData.survey < 1) newErrors.survey = getLabel('Valid survey count is required');
-        if (formData.participant_count && formData.participant_count < 1) newErrors.participant_count = getLabel('Valid participant count is required');
-        if (formData.discount_price && formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
+        // if (formData.tag && formData.tag < 1) newErrors.tag = getLabel('Valid tag count is required');
+        // if (formData.question && formData.question < 1) newErrors.question = getLabel('Valid question count is required');
+        // if (formData.survey && formData.survey < 1) newErrors.survey = getLabel('Valid survey count is required');
+        // if (formData.participant_count && formData.participant_count < 1) newErrors.participant_count = getLabel('Valid participant count is required');
+        // if (formData.discount_price && formData.discount_price < 0) newErrors.discount_price = getLabel('Valid discount price is required');
 
         if (parseFloat(formData.discount_price) > parseFloat(formData.original_price)) {
             newErrors.discount_price = getLabel('Discount price cannot be higher than original price');
