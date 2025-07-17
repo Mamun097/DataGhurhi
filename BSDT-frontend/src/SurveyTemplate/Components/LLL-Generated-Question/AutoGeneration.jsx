@@ -32,33 +32,33 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
   const checkUserSubscription = async () => {
     try {
       const token = localStorage.getItem("token"); // Adjust based on your token storage method
-      console.log("Fetching user packages..."); // Debug log
+      //console.log("Fetching user packages..."); // Debug log
       
       const response = await axios.get("http://localhost:2000/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const packages = response.data.packages;
-      console.log("All packages:", packages); // Debug log
+      // console.log("All packages:", packages); // Debug log
       
       // Find packages that have question generation capability
       // Filter packages that have the 'question' column > 0 (regardless of tag)
       const packagesWithQuestions = packages.filter(pkg => {
-        console.log(`Package: ${JSON.stringify(pkg)}`); // Debug each package
+        // console.log(`Package: ${JSON.stringify(pkg)}`); // Debug each package
         return pkg.question && pkg.question > 0; // Has remaining questions
       });
       
-      console.log("Packages with questions:", packagesWithQuestions); // Debug log
+      // console.log("Packages with questions:", packagesWithQuestions); // Debug log
       
       // Filter valid (non-expired) packages
       const validPackages = packagesWithQuestions.filter(pkg => {
         const endDate = new Date(pkg.end_date);
         const today = new Date();
-        console.log(`Package ID: ${pkg.subscription_id}, Question count: ${pkg.question}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`); // Debug log
+        //console.log(`Package ID: ${pkg.subscription_id}, Question count: ${pkg.question}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`); // Debug log
         return endDate > today;
       });
       
-      console.log("Valid packages with questions:", validPackages); // Debug log
+      //console.log("Valid packages with questions:", validPackages); // Debug log
       
       // Store all valid packages for tooltip display
       setAllValidPackages(validPackages);
@@ -72,26 +72,26 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
           return prev;
         }) : null;
       
-      console.log("Selected eligible package:", eligiblePackage); // Debug log
+      //console.log("Selected eligible package:", eligiblePackage); // Debug log
 
       if (eligiblePackage) {
         setSubscriptionData(eligiblePackage);
         setIsEligible(true);
-        console.log("User is eligible for question generation"); // Debug log
+        //console.log("User is eligible for question generation"); // Debug log
       } else {
         setIsEligible(false);
-        console.log("User is not eligible for question generation"); // Debug log
+        //console.log("User is not eligible for question generation"); // Debug log
         
         // Additional debugging
         if (packagesWithQuestions.length > 0) {
-          console.log("Packages with questions exist but all expired");
+          //console.log("Packages with questions exist but all expired");
         } else {
-          console.log("No packages with remaining questions found");
+          //console.log("No packages with remaining questions found");
         }
       }
     } catch (error) {
-      console.error("Error fetching user packages:", error);
-      console.error("Error details:", error.response?.data); // More detailed error logging
+      //console.error("Error fetching user packages:", error);
+      //console.error("Error details:", error.response?.data); // More detailed error logging
       setIsEligible(false);
     } finally {
       setSubscriptionLoading(false);
@@ -112,8 +112,8 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
     setLoadingPhase("initial");
     
     try {
-      console.log("Question Data:", questionData);
-      console.log("Question Info:", questionInfo);
+      //console.log("Question Data:", questionData);
+      //console.log("Question Info:", questionInfo);
 
       const response = await fetch('http://localhost:2000/api/generate-question-with-llm/', {
         method: 'POST',
@@ -128,7 +128,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       }
 
       const generatedQuestion = await response.json();
-      console.log(generatedQuestion);
+      //console.log(generatedQuestion);
       
       // Simulate processing delay
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -139,13 +139,13 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       
       // Add the generated question to the survey
       addGeneratedQuestion(generatedQuestion);
-      console.log("Generated question added:", generatedQuestion);
+      //console.log("Generated question added:", generatedQuestion);
       
       // Refresh subscription data after successful generation
       checkUserSubscription();
       
     } catch (error) {
-      console.error("Error generating question:", error);
+      //console.error("Error generating question:", error);
     } finally {
       setIsLoading(false);
     }
