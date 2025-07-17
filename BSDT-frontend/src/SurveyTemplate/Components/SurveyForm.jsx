@@ -53,16 +53,26 @@ const SurveyForm = ({
   setIsLoggedInRequired,
 }) => {
   // State for the logo
-  const [logo, setLogo] = useState(logoFromParent || null);
-  const [logoAlignment, setLogoAlignment] = useState(
-    logoAlignmentFromParent || "left"
-  );
+  const [logo, setLogo] = useState(logoFromParent);
+  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "left");
   const [logoText, setLogoText] = useState(logoTextFromParent || "");
 
   // State for the background image
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
     imageFromParent || ""
   );
+
+  useEffect(() => {
+    setLogo(logoFromParent || null);
+    setLogoAlignment(logoAlignmentFromParent || "left");
+    setLogoText(logoTextFromParent || "");
+    setCurrentBackgroundImage(imageFromParent || "");
+  }, [
+    logoFromParent,
+    logoAlignmentFromParent,
+    logoTextFromParent,
+    imageFromParent,
+  ]);
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
@@ -476,7 +486,10 @@ const SurveyForm = ({
     });
   };
 
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    // save all data and navigate to preview
+    await handleSave();
+    // After saving, navigate to preview with all necessary data
     navigate("/preview", {
       state: {
         title: title,

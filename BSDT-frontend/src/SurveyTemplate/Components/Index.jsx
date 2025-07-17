@@ -45,7 +45,6 @@ const Index = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
 
   const [templates, setTemplates] = useState([]);
-  console.log("Survey details:", survey_details);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
@@ -116,6 +115,7 @@ const Index = () => {
   useEffect(() => {
     const load = async () => {
       if (useCustom) {
+        console.log("Loading custom survey details:", survey_details);
         // ==== 1) Load from survey_details ====
         setTitle(input_title || survey_details.title || "Untitled Survey");
         setSections(survey_details.template.sections || []);
@@ -129,10 +129,6 @@ const Index = () => {
         setDescription(survey_details.template.description || null);
         setIsLoggedInRequired(
           survey_details.response_user_logged_in_status || false
-        );
-        console.log(
-          "user logged in status",
-          survey_details.response_user_logged_in_status
         );
       } else {
         try {
@@ -152,7 +148,7 @@ const Index = () => {
             );
             setQuestions(first.template);
             setLogo(null);
-            setLogoAlignment("");
+            setLogoAlignment("left");
             setLogoText("");
             setBackgroundImage(first.image_url);
             setIsLoggedInRequired(

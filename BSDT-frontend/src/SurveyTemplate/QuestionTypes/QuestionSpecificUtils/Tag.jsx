@@ -205,33 +205,33 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
   const checkUserSubscription = async () => {
     try {
       const token = localStorage.getItem("token");
-      console.log("Fetching user packages for tag generation..."); // Debug log
+      //console.log("Fetching user packages for tag generation..."); // Debug log
 
       const response = await axios.get("http://localhost:2000/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const packages = response.data.packages;
-      console.log("All packages:", packages); // Debug log
+      //console.log("All packages:", packages); // Debug log
 
       // Find packages that have tag generation capability
       // Filter packages that have the 'tag' column > 0 (regardless of question count)
       const packagesWithTags = packages.filter(pkg => {
-        console.log(`Package: ${JSON.stringify(pkg)}`); // Debug each package
+        //console.log(`Package: ${JSON.stringify(pkg)}`); // Debug each package
         return pkg.tag && pkg.tag > 0; // Has remaining tags
       });
 
-      console.log("Packages with tags:", packagesWithTags); // Debug log
+      //console.log("Packages with tags:", packagesWithTags); // Debug log
 
       // Filter valid (non-expired) packages
       const validPackages = packagesWithTags.filter(pkg => {
         const endDate = new Date(pkg.end_date);
         const today = new Date();
-        console.log(`Package ID: ${pkg.subscription_id}, Tag count: ${pkg.tag}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`); // Debug log
+        //console.log(`Package ID: ${pkg.subscription_id}, Tag count: ${pkg.tag}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`); // Debug log
         return endDate > today;
       });
 
-      console.log("Valid packages with tags:", validPackages); // Debug log
+      //console.log("Valid packages with tags:", validPackages); // Debug log
 
       // Store all valid packages for tooltip display
       setAllValidPackages(validPackages);
@@ -245,26 +245,26 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
           return prev;
         }) : null;
 
-      console.log("Selected eligible package for tags:", eligiblePackage); // Debug log
+      //console.log("Selected eligible package for tags:", eligiblePackage); // Debug log
 
       if (eligiblePackage) {
         setSubscriptionData(eligiblePackage);
         setIsEligible(true);
-        console.log("User is eligible for tag generation"); // Debug log
+        //console.log("User is eligible for tag generation"); // Debug log
       } else {
         setIsEligible(false);
-        console.log("User is not eligible for tag generation"); // Debug log
+        //console.log("User is not eligible for tag generation"); // Debug log
 
         // Additional debugging
         if (packagesWithTags.length > 0) {
-          console.log("Packages with tags exist but all expired");
+          //console.log("Packages with tags exist but all expired");
         } else {
-          console.log("No packages with remaining tags found");
+          //console.log("No packages with remaining tags found");
         }
       }
     } catch (error) {
-      console.error("Error fetching user packages for tags:", error);
-      console.error("Error details:", error.response?.data); // More detailed error logging
+      //console.error("Error fetching user packages for tags:", error);
+      //console.error("Error details:", error.response?.data); // More detailed error logging
       setIsEligible(false);
     } finally {
       setSubscriptionLoading(false);
@@ -282,7 +282,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
         setAllSystemTags(data.tags || []);
       }
     } catch (error) {
-      console.error("Error fetching system tags:", error);
+      //console.error("Error fetching system tags:", error);
     } finally {
       setIsFetchingTags(false);
     }
@@ -564,28 +564,28 @@ const TagManager = ({ questionId, questionText, questions, setQuestions, getLabe
           const tagCountData = await tagCountResponse.json();
           
           if (tagCountData.success) {
-            console.log("Tag count reduced successfully:", tagCountData);
+            //console.log("Tag count reduced successfully:", tagCountData);
             
             // Now refresh subscription data after successful tag count reduction
             await checkUserSubscription();
             
           } else {
-            console.error("Failed to reduce tag count:", tagCountData.message);
+            //console.error("Failed to reduce tag count:", tagCountData.message);
             alert(tagCountData.message || "Failed to reduce tag count.");
           }
         } catch (error) {
-          console.error("Error calling tag count reduction API:", error);
+          //console.error("Error calling tag count reduction API:", error);
           alert("An error occurred while reducing tag count.");
         }
 
         // Add a timeout to simulate delay
         setTimeout(() => {
-          console.log("Tags generated successfully:", data.tags);
+          //console.log("Tags generated successfully:", data.tags);
         }, 1000);
 
       }
     } catch (error) {
-      console.error("Error generating tags:", error);
+      //console.error("Error generating tags:", error);
     } finally {
       setIsGeneratingTags(false);
       setIsAddingTag(false); // Close the tag input after generating tags
