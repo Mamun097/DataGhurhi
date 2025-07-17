@@ -63,10 +63,10 @@ const PublicationSettingsModal = ({
         </Form>
       </Modal.Body>
       <Modal.Footer className="d-flex justify-content-end">
-        <Button variant="secondary" onClick={handleClose}>
+        <Button variant="outline-danger" onClick={handleClose}>
           Cancel
         </Button>
-        <Button variant="primary" onClick={handleConfirmClick} className="ms-2">
+        <Button variant="outline-primary" onClick={handleConfirmClick} className="ms-2">
           {buttonText}
         </Button>
       </Modal.Footer>
