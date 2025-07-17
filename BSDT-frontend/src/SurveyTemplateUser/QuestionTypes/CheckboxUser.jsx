@@ -9,7 +9,6 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
 
   const [otherOption, setOtherOption] = useState("");
   const [otherSelected, setOtherSelected] = useState(false);
-  console.log("Other Selected: ", otherSelected);
 
   // Handles adding/removing selections from the response array
   const handleAnswerChange = (e) => {
