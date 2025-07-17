@@ -1,11 +1,10 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import Option from "./QuestionSpecificUtils/OptionClass";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
-import axios from "axios";
 import translateText from "./QuestionSpecificUtils/Translation";
 import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 
@@ -31,10 +30,126 @@ const Radio = ({
     question.meta?.enableMarks || false
   );
 
-  const options = useMemo(
-    () => question.meta?.options || [],
-    [question.meta?.options]
-  );
+  const handleOptionChange = useCallback((index, value) => {
+    if (value.includes('\n')) {
+      const lines = value.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        setQuestions(prev =>
+          prev.map(q => {
+            if (q.id === question.id) {
+              const currentOptions = [...(q.meta?.options || [])];
+              currentOptions[index] = { ...currentOptions[index], text: lines[0].trim() };
+              const newOptions = lines.slice(1).map(line => new Option(line.trim(), 0));
+              currentOptions.splice(index + 1, 0, ...newOptions);
+              
+              return {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: currentOptions
+                }
+              };
+            }
+            return q;
+          })
+        );
+      } else if (lines.length === 1) {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? { ...opt, text: lines[0].trim() } : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    } else {
+      setQuestions(prev =>
+        prev.map(q =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: (q.meta?.options || []).map((opt, i) =>
+                    i === index ? { ...opt, text: value } : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    }
+  }, [question.id, setQuestions]);
+
+  const handleOptionPaste = useCallback((index, event) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    
+    if (pastedText.includes('\n')) {
+      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        setQuestions(prev =>
+          prev.map(q => {
+            if (q.id === question.id) {
+              const currentOptions = [...(q.meta?.options || [])];
+              currentOptions[index] = { ...currentOptions[index], text: lines[0].trim() };
+              const newOptions = lines.slice(1).map(line => new Option(line.trim(), 0));
+              currentOptions.splice(index + 1, 0, ...newOptions);
+              
+              return {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: currentOptions
+                }
+              };
+            }
+            return q;
+          })
+        );
+      } else if (lines.length === 1) {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? { ...opt, text: lines[0].trim() } : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    } else {
+      setQuestions(prev =>
+        prev.map(q =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: (q.meta?.options || []).map((opt, i) =>
+                    i === index ? { ...opt, text: pastedText } : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    }
+  }, [question.id, setQuestions]);
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -127,27 +242,6 @@ const Radio = ({
       })
     );
   }, [question.id, setQuestions]);
-
-  const updateOption = useCallback(
-    (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? { ...opt, text: newText } : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
 
   const updateOptionValue = useCallback(
     (idx, newValue) => {
@@ -274,13 +368,13 @@ const Radio = ({
       (t) => t.translatedText
     );
     translatedTexts.forEach((translatedText, idx) => {
-      updateOption(idx, translatedText);
+      handleOptionChange(idx, translatedText);
     });
   }, [
     handleQuestionChange,
     question.meta.options,
     question.text,
-    updateOption,
+    handleOptionChange,
   ]);
 
   return (
@@ -362,7 +456,7 @@ const Radio = ({
         <Droppable droppableId={`options-radio-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {options.map((option, idx) => {
+              {(question.meta?.options || []).map((option, idx) => {
                 const keyForOption = `option-${question.id}-${
                   option.id || idx
                 }`;
@@ -402,7 +496,8 @@ const Radio = ({
                             type="text"
                             className="form-control form-control-sm"
                             value={option.text || ""}
-                            onChange={(e) => updateOption(idx, e.target.value)}
+                            onChange={(e) => handleOptionChange(idx, e.target.value)}
+                            onPaste={(e) => handleOptionPaste(idx, e)}
                             placeholder={`Option ${idx + 1}`}
                           />
                         </div>
@@ -430,7 +525,7 @@ const Radio = ({
                           <button
                             className="btn btn-sm btn-outline-secondary w-auto"
                             onClick={() => removeOption(idx)}
-                            disabled={options.length <= 1}
+                            disabled={(question.meta?.options || []).length <= 1}
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -533,19 +628,6 @@ const Radio = ({
             {getLabel("Shuffle option order")}
           </label>
         </div>
-        {/* <div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={handleRequired}
-              checked={required}
-            />
-            <span className="slider"></span>
-          </label>
-          <span className="ms-2">
-            {getLabel("Required")}
-          </span>
-        </div> */}
         <div className="form-check form-switch">
           <input
             className="form-check-input"

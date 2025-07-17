@@ -15,7 +15,6 @@ const Checkbox = ({
   setLanguage,
   getLabel,
 }) => {
-  console.log("Question: ", question);
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
   );
@@ -30,6 +29,127 @@ const Checkbox = ({
     question.meta?.requireAtLeastOneSelection || false
   );
 
+  const handleOptionChange = useCallback((index, value) => {
+    if (value.includes('\n')) {
+      const lines = value.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        setQuestions(prev =>
+          prev.map(q => {
+            if (q.id === question.id) {
+              const currentOptions = [...(q.meta?.options || [])];
+              currentOptions[index] = lines[0].trim();
+              const newOptions = lines.slice(1).map(line => line.trim());
+              currentOptions.splice(index + 1, 0, ...newOptions);
+              
+              return {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: currentOptions
+                }
+              };
+            }
+            return q;
+          })
+        );
+      } else if (lines.length === 1) {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? lines[0].trim() : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    } else {
+      setQuestions(prev =>
+        prev.map(q =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: (q.meta?.options || []).map((opt, i) =>
+                    i === index ? value : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    }
+  }, [question.id, setQuestions]);
+
+  const handleOptionPaste = useCallback((index, event) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    
+    if (pastedText.includes('\n')) {
+      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        setQuestions(prev =>
+          prev.map(q => {
+            if (q.id === question.id) {
+              const currentOptions = [...(q.meta?.options || [])];
+              currentOptions[index] = lines[0].trim();
+              const newOptions = lines.slice(1).map(line => line.trim());
+              currentOptions.splice(index + 1, 0, ...newOptions);
+              
+              return {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: currentOptions
+                }
+              };
+            }
+            return q;
+          })
+        );
+      } else if (lines.length === 1) {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? lines[0].trim() : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    } else {
+      setQuestions(prev =>
+        prev.map(q =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: (q.meta?.options || []).map((opt, i) =>
+                    i === index ? pastedText : opt
+                  ),
+                },
+              }
+            : q
+        )
+      );
+    }
+  }, [question.id, setQuestions]);
+
   useEffect(() => {
     setRequired(question.required || false);
   }, [question.required]);
@@ -43,11 +163,6 @@ const Checkbox = ({
       question.meta?.requireAtLeastOneSelection || false
     );
   }, [question.meta?.requireAtLeastOneSelection]);
-
-  const options = useMemo(
-    () => question.meta?.options || [],
-    [question.meta?.options]
-  );
 
   const handleRequired = useCallback(() => {
     const newRequiredState = !required;
@@ -106,7 +221,7 @@ const Checkbox = ({
       id: -1,
       meta: {
         ...question.meta,
-        options: [...(options || [])],
+        options: [...(question.meta?.options || [])],
         enableOptionShuffle: enableOptionShuffle,
         requireAtLeastOneSelection: requireAtLeastOneSelection,
       },
@@ -121,7 +236,6 @@ const Checkbox = ({
     question,
     questions,
     setQuestions,
-    options,
     enableOptionShuffle,
     requireAtLeastOneSelection,
   ]);
@@ -154,27 +268,6 @@ const Checkbox = ({
       })
     );
   }, [question.id, setQuestions]);
-
-  const updateOption = useCallback(
-    (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? newText : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
 
   const removeOption = useCallback(
     (idx) => {
@@ -281,7 +374,7 @@ const Checkbox = ({
       );
 
       translatedTexts.forEach((translatedText, idx) => {
-        updateOption(idx, translatedText);
+        handleOptionChange(idx, translatedText);
       });
     } catch (error) {
       console.error("Error in handleTranslation:", error.message);
@@ -290,7 +383,7 @@ const Checkbox = ({
     handleQuestionChange,
     question.meta.options,
     question.text,
-    updateOption,
+    handleOptionChange,
   ]);
 
   return (
@@ -371,7 +464,7 @@ const Checkbox = ({
         <Droppable droppableId={`checkbox-options-${question.id}`}>
           {(provided) => (
             <div ref={provided.innerRef} {...provided.droppableProps}>
-              {(options || []).map((option, idx) => (
+              {(question.meta?.options || []).map((option, idx) => (
                 <Draggable
                   key={`opt-checkbox-${question.id}-${idx}`}
                   draggableId={`checkbox-opt-${question.id}-${idx}`}
@@ -401,7 +494,8 @@ const Checkbox = ({
                           type="text"
                           className="form-control form-control-sm"
                           value={option}
-                          onChange={(e) => updateOption(idx, e.target.value)}
+                          onChange={(e) => handleOptionChange(idx, e.target.value)}
+                          onPaste={(e) => handleOptionPaste(idx, e)}
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>
@@ -410,8 +504,8 @@ const Checkbox = ({
                           className="btn btn-sm btn-outline-secondary w-auto"
                           onClick={() => removeOption(idx)}
                           disabled={
-                            (options || []).length <= 1 &&
-                            (options || [])[0] !== "Other"
+                            (question.meta?.options || []).length <= 1 &&
+                            (question.meta?.options || [])[0] !== "Other"
                           }
                         >
                           <i className="bi bi-trash"></i>

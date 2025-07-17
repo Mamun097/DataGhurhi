@@ -123,24 +123,127 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
 
   const updateOption = useCallback(
     (idx, newText) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
+      if (newText.includes('\n')) {
+        const lines = newText.split('\n').filter(line => line.trim() !== '');
+        if (lines.length > 1) {
+          setQuestions(prev =>
+            prev.map(q => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[idx] = lines[0].trim();
+                const newOptions = lines.slice(1).map(line => line.trim());
+                currentOptions.splice(idx + 1, 0, ...newOptions);
+                
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions
+                  }
+                };
+              }
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions(prev =>
+            prev.map(q =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === idx ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === idx ? newText : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    },
+    [question.id, setQuestions]
+  );
+
+  const handleOptionPaste = useCallback((index, event) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    
+    if (pastedText.includes('\n')) {
+      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        setQuestions(prev =>
+          prev.map(q => {
+            if (q.id === question.id) {
+              const currentOptions = [...(q.meta?.options || [])];
+              currentOptions[index] = lines[0].trim();
+              const newOptions = lines.slice(1).map(line => line.trim());
+              currentOptions.splice(index + 1, 0, ...newOptions);
+              
+              return {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  options: currentOptions
+                }
+              };
+            }
+            return q;
+          })
+        );
+      } else if (lines.length === 1) {
+        setQuestions(prev =>
+          prev.map(q =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? lines[0].trim() : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    } else {
+      setQuestions(prev =>
+        prev.map(q =>
           q.id === question.id
             ? {
                 ...q,
                 meta: {
                   ...q.meta,
                   options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx ? newText : opt
+                    i === index ? pastedText : opt
                   ),
                 },
               }
             : q
         )
       );
-    },
-    [question.id, setQuestions]
-  );
+    }
+  }, [question.id, setQuestions]);
 
   const removeOption = useCallback(
     (idx) => {
@@ -339,6 +442,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
                           className="form-control form-control-sm"
                           value={option}
                           onChange={(e) => updateOption(idx, e.target.value)}
+                          onPaste={(e) => handleOptionPaste(idx, e)}
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>
@@ -359,9 +463,8 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
         </Droppable>
       </DragDropContext>
 
-      {/* Add Option Button - Reverted to default width */}
       <button
-        className="btn btn-sm btn-outline-secondary w-auto" // Removed w-100
+        className="btn btn-sm btn-outline-secondary w-auto"
         onClick={addOption}
       >
         ➕ {getLabel("Add Option")}
