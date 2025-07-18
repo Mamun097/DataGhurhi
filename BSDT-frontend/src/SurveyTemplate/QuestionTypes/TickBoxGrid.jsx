@@ -1,6 +1,3 @@
-// Desc: Tick Box Grid component for the form builder
-// Allows multiple selections per row.
-
 import React, { useState, useCallback, useMemo } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -15,7 +12,6 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
-  // State for toggles, mirroring LikertScale
   const [required, setRequired] = useState(question.required || false);
   const [requireEachRowResponse, setRequireEachRowResponse] = useState(
     question.meta?.requireEachRowResponse || false
@@ -79,21 +75,121 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
 
   const handleRowChange = useCallback(
     (index, newValue) => {
-      const updated = [...rows];
-      updated[index] = newValue;
-      updateMeta({ rows: updated });
+      if (newValue.includes('\n')) {
+        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+        if (lines.length > 1) {
+          const currentRows = [...rows];
+          currentRows[index] = lines[0].trim();
+          const newRows = lines.slice(1).map(line => line.trim());
+          currentRows.splice(index + 1, 0, ...newRows);
+          
+          updateMeta({ rows: currentRows });
+        } else if (lines.length === 1) {
+          const updated = [...rows];
+          updated[index] = lines[0].trim();
+          updateMeta({ rows: updated });
+        }
+      } else {
+        const updated = [...rows];
+        updated[index] = newValue;
+        updateMeta({ rows: updated });
+      }
     },
     [rows, updateMeta]
   );
 
   const handleColumnChange = useCallback(
     (index, newValue) => {
-      const updated = [...columns];
-      updated[index] = newValue;
-      updateMeta({ columns: updated });
+      if (newValue.includes('\n')) {
+        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+        if (lines.length > 1) {
+          const currentColumns = [...columns];
+          const totalNewColumns = currentColumns.length + lines.length - 1;
+          if (totalNewColumns > MAX_COLUMNS) {
+            const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
+            const truncatedLines = lines.slice(0, allowedNewColumns + 1);
+            currentColumns[index] = truncatedLines[0].trim();
+            const newColumns = truncatedLines.slice(1).map(line => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          } else {
+            currentColumns[index] = lines[0].trim();
+            const newColumns = lines.slice(1).map(line => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          }
+          
+          updateMeta({ columns: currentColumns });
+        } else if (lines.length === 1) {
+          const updated = [...columns];
+          updated[index] = lines[0].trim();
+          updateMeta({ columns: updated });
+        }
+      } else {
+        const updated = [...columns];
+        updated[index] = newValue;
+        updateMeta({ columns: updated });
+      }
     },
     [columns, updateMeta]
   );
+
+  const handleRowPaste = useCallback((index, event) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    
+    if (pastedText.includes('\n')) {
+      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        const currentRows = [...rows];
+        currentRows[index] = lines[0].trim();
+        const newRows = lines.slice(1).map(line => line.trim());
+        currentRows.splice(index + 1, 0, ...newRows);
+        
+        updateMeta({ rows: currentRows });
+      } else if (lines.length === 1) {
+        const updated = [...rows];
+        updated[index] = lines[0].trim();
+        updateMeta({ rows: updated });
+      }
+    } else {
+      const updated = [...rows];
+      updated[index] = pastedText;
+      updateMeta({ rows: updated });
+    }
+  }, [rows, updateMeta]);
+
+  const handleColumnPaste = useCallback((index, event) => {
+    event.preventDefault();
+    const pastedText = event.clipboardData.getData('text');
+    
+    if (pastedText.includes('\n')) {
+      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
+      if (lines.length > 1) {
+        const currentColumns = [...columns];
+        const totalNewColumns = currentColumns.length + lines.length - 1;
+        if (totalNewColumns > MAX_COLUMNS) {
+          const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
+          const truncatedLines = lines.slice(0, allowedNewColumns + 1);
+          currentColumns[index] = truncatedLines[0].trim();
+          const newColumns = truncatedLines.slice(1).map(line => line.trim());
+          currentColumns.splice(index + 1, 0, ...newColumns);
+        } else {
+          currentColumns[index] = lines[0].trim();
+          const newColumns = lines.slice(1).map(line => line.trim());
+          currentColumns.splice(index + 1, 0, ...newColumns);
+        }
+        
+        updateMeta({ columns: currentColumns });
+      } else if (lines.length === 1) {
+        const updated = [...columns];
+        updated[index] = lines[0].trim();
+        updateMeta({ columns: updated });
+      }
+    } else {
+      const updated = [...columns];
+      updated[index] = pastedText;
+      updateMeta({ columns: updated });
+    }
+  }, [columns, updateMeta]);
 
   const handleAddRow = useCallback(() => {
     updateMeta({ rows: [...rows, `Row ${rows.length + 1}`] });
@@ -220,7 +316,6 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
         throw new Error("No translation returned for question");
       }
       handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
-      //translate the array of meta.rows
       console.log("Meta rows before translation:", question.meta.rows);
       const rowResponse = (question.meta.rows || []).map((opt) => opt.trim()).filter(opt => opt);
       const colResponse = (question.meta.columns || []).map((opt) => opt.trim()).filter(opt => opt);
@@ -230,7 +325,6 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
         console.log("Translated rows:", translatedRows);
         updateMeta({ rows: translatedRows });
       }
-      //translate the array of meta.columns
       if (colResponse.length > 0) {
         const colTranslations = await translateText(colResponse, "bn");
         const translatedColumns = colTranslations.data.data.translations.map((t) => t.translatedText);
@@ -347,6 +441,7 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
                           className="form-control"
                           value={row}
                           onChange={(e) => handleRowChange(index, e.target.value)}
+                          onPaste={(e) => handleRowPaste(index, e)}
                           placeholder={`Row ${index + 1}`}
                         />
                         <button
@@ -402,6 +497,7 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
                           className="form-control"
                           value={col}
                           onChange={(e) => handleColumnChange(index, e.target.value)}
+                          onPaste={(e) => handleColumnPaste(index, e)}
                           placeholder={`Column ${index + 1}`}
                         />
                         <button
