@@ -1,6 +1,6 @@
 import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import Login from "./AccountManagement/login";
-import Register from "./AccountManagement/register";
+import Register from "./AccountManagement/registernew";
 import Home from "./Homepage/landingpage";
 import Dashboard from "./ProfileManagement/Dashboard";
 import AddProject from "./ProjectManagement/createProject";
@@ -19,7 +19,7 @@ import PreprocessDataPage from "./StatisticalTool/PreprocessDataPage";
 import Layout from "./Layout";
 import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
-
+import ForgotPassword from "./AccountManagement/forgotPassword";
 
 
 function App() {
@@ -32,7 +32,6 @@ function App() {
     <Layout>
       <Routes>
         {/* Public Routes */}
-   
         <Route path="/" element={<Home />} />
         <Route path="/home" element={<Home />} />
         <Route path="/signup" element={<Register />} />
@@ -43,8 +42,10 @@ function App() {
         <Route path="/view-project/:projectId/:privacy" element={<EditProject />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
-        <Route path="/v/:slug" element={<IndexUser />} />
+        
+        <Route path="/v/:slug" element={<Index/>} />
         <Route path="/survey-success" element={<SurveySuccess />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
         {token && role== "user"? (

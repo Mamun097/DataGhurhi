@@ -10,9 +10,16 @@ import DropdownQuestion from "../QuestionTypes/Dropdown";
 import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
-import "../CSS/SurveyQuestions.css"; 
+import "../CSS/SurveyQuestions.css";
 
-const SurveyQuestions = ({ section, questions, setQuestions, language, setLanguage, getLabel }) => {
+const SurveyQuestions = ({
+  section,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
   const handleDragEnd = (result) => {
@@ -155,42 +162,42 @@ const SurveyQuestions = ({ section, questions, setQuestions, language, setLangua
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="survey-questions-droppable-area mt-2"
+              className="survey-questions-droppable-area"
             >
               {sectionQuestions.map((question, index) => (
-                <Draggable
-                  key={question.id}
-                  draggableId={question.id.toString()}
-                  index={index}
-                >
-                  {(providedDraggable, snapshot) => (
-                    <div
-                      ref={providedDraggable.innerRef}
-                      {...providedDraggable.draggableProps}
-                      style={providedDraggable.draggableProps.style}
-                      className="survey-question-draggable-item"
-                    >
+                <div className="mb-3">
+                  <Draggable
+                    key={question.id}
+                    draggableId={question.id.toString()}
+                    index={index}
+                  >
+                    {(providedDraggable, snapshot) => (
                       <div
-                        className={`survey-question-inner-container ${
-                          snapshot.isDragging ? "is-dragging" : ""
-                        }`}
+                        ref={providedDraggable.innerRef}
+                        {...providedDraggable.draggableProps}
+                        style={providedDraggable.draggableProps.style}
+                        className="survey-question-draggable-item"
                       >
                         <div
-                          {...providedDraggable.dragHandleProps}
-                          className="survey-question-drag-handle"
-                          aria-label="Drag question"
+                          className={`survey-question-inner-container ${
+                            snapshot.isDragging ? "is-dragging" : ""
+                          }`}
                         >
-                          <i
-                            className="bi bi-grip-vertical survey-question-drag-icon"
-                          ></i>
-                        </div>
-                        <div className="survey-question-content-wrapper">
-                          {renderQuestionComponent(question)}
+                          <div
+                            {...providedDraggable.dragHandleProps}
+                            className="survey-question-drag-handle"
+                            aria-label="Drag question"
+                          >
+                            <i className="bi bi-grip-vertical survey-question-drag-icon"></i>
+                          </div>
+                          <div className="survey-question-content-wrapper">
+                            {renderQuestionComponent(question)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </Draggable>
+                    )}
+                  </Draggable>
+                </div>
               ))}
               {provided.placeholder}
             </div>

@@ -217,6 +217,18 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
 
                                 <div className="package-details">
                                     <div className="package-features">
+                                        {subscription.advanced_analysis && (
+                                            <div className="feature-item">
+                                                <span className="feature-icon">📈</span>
+                                                <span>{getLabel("Advanced Statistical Analyses")}</span>
+                                            </div>
+                                        )}
+                                        {subscription.participant_count>0 && (
+                                            <div className="feature-item">
+                                                <span className="feature-icon">👥</span>
+                                                <span>{subscription.participant_count} {getLabel("Survey Participants beyond Free Limit")}</span>
+                                            </div>
+                                        )}
                                         {subscription.survey > 0 && (
                                             <div className="feature-item">
                                                 <span className="feature-icon">📊</span>

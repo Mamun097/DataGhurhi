@@ -16,7 +16,7 @@ const PreviewPage = () => {
     );
   }
 
-  const { title, sections, questions, image, description, language } = location.state;
+  const { title, sections, questions,logo, logoAlignment, logoText, image, description, language } = location.state;
   
   const getLabel = (text) => text; 
 
@@ -28,6 +28,9 @@ const PreviewPage = () => {
           title={title}
           sections={sections}
           questions={questions}
+          logo={logo}
+          logoAlignment={logoAlignment}
+          logoText={logoText}
           image={image}
           description={description}
           language={language}

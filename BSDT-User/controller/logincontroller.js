@@ -8,6 +8,51 @@ const user = require('../model/user');
 
 
 
+exports.resetPassword = async (req, res) => {
+  const { email, newPassword } = req.body;
+
+  if (!email || !newPassword) {
+    return res.status(400).json({ error: 'Email and new password are required' });
+  }
+
+  try {
+    // Find user by email
+    const { data: users, error: fetchError } = await supabase
+      .from('user')
+      .select('*')
+      .eq('email', email);
+
+    if (fetchError) {
+      console.error('Supabase fetch error:', fetchError);
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+
+    if (!users || users.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const user = users[0];
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in database
+    const { error: updateError } = await supabase
+      .from('user')
+      .update({ password: hashedPassword })
+      .eq('user_id', user.user_id); // or .eq('email', email) if preferred
+
+    if (updateError) {
+      console.error('Supabase update error:', updateError);
+      return res.status(500).json({ error: 'Failed to update password' });
+    }
+
+    return res.status(200).json({ message: 'Password reset successfully' });
+  } catch (err) {
+    console.error('Unhandled error:', err);
+    return res.status(500).json({ error: 'Unexpected error occurred' });
+  }
+};
 
 
 exports.login = async (req, res) => {
