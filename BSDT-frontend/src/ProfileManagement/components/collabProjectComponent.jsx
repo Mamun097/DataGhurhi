@@ -2,8 +2,20 @@ import React, { useState, useEffect } from "react";
 import "../Dashboard.css";
 const CollabProjectTab= ({ getLabel,collaboratedProjects,showCollabModal,collabRequests,
                 setShowCollabModal,fetchCollaborationRequests,handleAccept, handleReject,
-                navigate 
+                navigate
 }) => {
+
+    const [expandedRows, setExpandedRows] = useState(new Set());
+    const [currentPage, setCurrentPage] = useState(1);
+    const rowsPerPage = 5;
+    const sortedRequests = [...collabRequests].sort(
+      (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
+    );
+  
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
+    const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
     const handleProjectClick = (projectId,access_role) => {
         console.log("Project ID:", projectId);
         console.log("Access Role:", access_role);

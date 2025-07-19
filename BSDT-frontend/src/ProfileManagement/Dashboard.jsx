@@ -557,17 +557,7 @@ const Dashboard = () => {
     }
   }, []);
 
-  const [expandedRows, setExpandedRows] = useState(new Set());
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 5;
-  const sortedRequests = [...collabRequests].sort(
-    (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
-  );
-
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
+  
   // Get tabs based on user type
   const getTabs = () => {
     if (isAdmin) {
@@ -865,6 +855,7 @@ const handleSavePassword = async () => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
+                
               />
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (

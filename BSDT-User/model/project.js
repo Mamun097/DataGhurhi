@@ -142,6 +142,7 @@ async function deleteProject(projectId) {
 // collaborators
 
 async function inviteCollaborator(projectId, user_data) {
+
   const { data, error } = await supabase.rpc("get_survey_designer_by_email", {
     u_email: user_data.email,
   });
@@ -149,7 +150,8 @@ async function inviteCollaborator(projectId, user_data) {
     console.error(error);
     return { error };
   }
-  if (data.length === 0) {
+
+  if (!data) {
     return { error: "user does not exist" };
   }
 
