@@ -219,7 +219,7 @@ select.border.border-gray-300.rounded-lg.p-3.w-full {
 }
 
 /* Buttons */
-.btn, button.bg-blue-600, button.bg-teal-600 {
+/* .btn, button.bg-blue-600, button.bg-teal-600 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -238,9 +238,9 @@ select.border.border-gray-300.rounded-lg.p-3.w-full {
   background-color: var(--primary-color);
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-}
+} */
 
-.btn:hover, button.bg-blue-600:hover, button.bg-teal-600:hover {
+/* .btn:hover, button.bg-blue-600:hover, button.bg-teal-600:hover {
   background-color: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
@@ -277,7 +277,7 @@ button.bg-teal-600 {
 
 button.bg-teal-600:hover {
   background-color: var(--secondary-hover);
-}
+} */
 
 
 svg {

@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import "./login.css";
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
-
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
 
@@ -23,10 +23,13 @@ const translateText = async (text, targetLanguage) => {
 };
 
 const Login = () => {
-  const [language, setLanguage] = useState(localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
+  const [showPassword, setShowPassword] = useState(false);
   const [translations, setTranslations] = useState({});
   const [loadingTranslations, setLoadingTranslations] = useState(false);
-
+  const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
   const toggleLanguage = () => {
     const newLang = language === "English" ? "বাংলা" : "English";
     setLanguage(newLang);
@@ -50,7 +53,7 @@ const Login = () => {
     invalidEmail: "Invalid email address",
     enterValidEmail: "Please enter a valid email before logging in.",
     loginSuccess: "Logged in successfully:",
-    loginFailed: "Login failed: Wrong email ID or Password"
+    loginFailed: "Login failed: Wrong email ID or Password",
   };
 
   useEffect(() => {
@@ -63,7 +66,9 @@ const Login = () => {
       const translated = {};
       for (const [key, value] of Object.entries(defaultTexts)) {
         if (Array.isArray(value)) {
-          translated[key] = await Promise.all(value.map(v => translateText(v, "bn")));
+          translated[key] = await Promise.all(
+            value.map((v) => translateText(v, "bn"))
+          );
         } else {
           translated[key] = await translateText(value, "bn");
         }
@@ -74,7 +79,10 @@ const Login = () => {
     fetchTranslations();
   }, [language]);
 
-  const t = (key) => (language === "English" || loadingTranslations ? defaultTexts[key] : translations[key] || defaultTexts[key]);
+  const t = (key) =>
+    language === "English" || loadingTranslations
+      ? defaultTexts[key]
+      : translations[key] || defaultTexts[key];
 
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [emailError, setEmailError] = useState("");
@@ -96,15 +104,17 @@ const Login = () => {
       return;
     }
     try {
-      const response = await axios.post("http://localhost:2000/api/login", formData);
+      const response = await axios.post(
+        "http://localhost:2000/api/login",
+        formData
+      );
       if (response.status === 200) {
         toast.success(`✅ ${t("loginSuccess")} ${formData.email}`);
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("role", "user");
         localStorage.setItem("user_id", response.data.user_id);
-        
 
-        setTimeout(() => window.location.href = "/dashboard", 2500);
+        setTimeout(() => (window.location.href = "/dashboard"), 2500);
       } else {
         setErrorMessage(response.data.error);
         toast.error(response.data.error);
@@ -118,23 +128,68 @@ const Login = () => {
     <div className="register-container">
       <Navbarhome language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
-        <motion.div className="feature-card" initial={{ x: -40 }} animate={{ x: 0 }} transition={{ duration: 0.8 }}>
-          <img src="/assets/images/login.png" alt="Login Info" className="feature-image" />
+        <motion.div
+          className="feature-card"
+          initial={{ x: -40 }}
+          animate={{ x: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <img
+            src="/assets/images/login.png"
+            alt="Login Info"
+            className="feature-image"
+          />
           <h3>{t("whyLogin")}</h3>
           <ul>
-            {t("features").map((feat, i) => <li key={i}>{feat}</li>)}
+            {t("features").map((feat, i) => (
+              <li key={i}>{feat}</li>
+            ))}
           </ul>
         </motion.div>
 
-        <motion.div className="register-box" initial={{ y: -50 }} animate={{ y: 0 }} transition={{ duration: 1 }}>
+        <motion.div
+          className="register-box"
+          initial={{ y: -50 }}
+          animate={{ y: 0 }}
+          transition={{ duration: 1 }}
+        >
           <h2 className="register-title">{t("title")}</h2>
           <form onSubmit={handleSubmit}>
-            <input type="email" name="email" placeholder={t("email")} value={formData.email} onChange={handleChange} required />
+            <input
+              type="email"
+              name="email"
+              placeholder={t("email")}
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
             {emailError && <p className="error-message">{emailError}</p>}
-            <input type="password" name="password" placeholder={t("password")} value={formData.password} onChange={handleChange} required />
-            <button type="submit" className="register-button">{t("login")}</button>
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder={t("password")}
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+              <span
+                className="password-toggle-icon"
+                onClick={togglePasswordVisibility}
+              >
+                {showPassword ? <FaEye /> : <FaEyeSlash />}
+              </span>
+            </div>
+            <button type="submit" className="register-button">
+              {t("login")}
+            </button>
           </form>
-          <p className="login-link">{t("noAccount")} <a href="/signup">{t("signUp")}</a></p>
+          <p className="login-link">
+            {t("noAccount")} <a href="/signup">{t("signUp")}</a>
+          </p>
+          <p className="forgot-password-text">
+            <a href="/forgot-password">Forgot Password?</a>
+          </p>
         </motion.div>
       </div>
       <ToastContainer position="top-center" autoClose={4000} />
