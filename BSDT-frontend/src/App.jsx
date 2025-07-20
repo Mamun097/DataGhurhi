@@ -42,8 +42,8 @@ function App() {
         <Route path="/view-project/:projectId/:privacy" element={<EditProject />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
-        
-        <Route path="/v/:slug" element={<Index/>} />
+
+        <Route path="/v/:slug" element={<IndexUser />} />
         <Route path="/survey-success" element={<SurveySuccess />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
