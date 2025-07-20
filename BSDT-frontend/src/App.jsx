@@ -21,11 +21,9 @@ import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 import ForgotPassword from "./AccountManagement/forgotPassword";
 
-
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
 
   return (
     <Router>
