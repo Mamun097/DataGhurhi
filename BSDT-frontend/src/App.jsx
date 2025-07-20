@@ -21,11 +21,9 @@ import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 import ForgotPassword from "./AccountManagement/forgotPassword";
 
-
 function App() {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
-
 
   return (
     <Router>
@@ -42,8 +40,8 @@ function App() {
         <Route path="/view-project/:projectId/:privacy" element={<EditProject />} />
         <Route path="/search-results" element={<SearchResults />} />
         {/* <Route path="/surveytemplate" element={<Index />} /> */}
-        
-        <Route path="/v/:slug" element={<Index/>} />
+
+        <Route path="/v/:slug" element={<IndexUser />} />
         <Route path="/survey-success" element={<SurveySuccess />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
