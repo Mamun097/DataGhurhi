@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 import Radio from "../QuestionTypes/Radio";
@@ -11,15 +11,32 @@ import LinearScaleQuestion from "../QuestionTypes/LinearScale";
 import Checkbox from "../QuestionTypes/Checkbox";
 import TickBoxGrid from "../QuestionTypes/TickBoxGrid";
 import "../CSS/SurveyQuestions.css";
+import AddQuestion from "../Components/AddNewQuestion";
 
 const SurveyQuestions = ({
   section,
   questions,
   setQuestions,
+  newQuestion,
+  setNewQuestion,
+  addNewQuestion,
+  addGeneratedQuestion,
+  addImportedQuestion,
   language,
   setLanguage,
   getLabel,
 }) => {
+  // Insert Question related state management here
+  const [insertQuestionIndex, setInsertQuestionIndex] = useState(null);
+  // Function to handle click on the "Insert Question" button
+  const handleInsertQuestionClick = (index) => {
+    if (insertQuestionIndex === index) {
+      setInsertQuestionIndex(null);
+    } else {
+      setInsertQuestionIndex(index);
+    }
+  };
+
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
   const handleDragEnd = (result) => {
@@ -164,41 +181,80 @@ const SurveyQuestions = ({
               {...provided.droppableProps}
               className="survey-questions-droppable-area"
             >
-              {sectionQuestions.map((question, index) => (
-                <div className="mb-3">
-                  <Draggable
-                    key={question.id}
-                    draggableId={question.id.toString()}
-                    index={index}
-                  >
-                    {(providedDraggable, snapshot) => (
-                      <div
-                        ref={providedDraggable.innerRef}
-                        {...providedDraggable.draggableProps}
-                        style={providedDraggable.draggableProps.style}
-                        className="survey-question-draggable-item"
-                      >
+              {sectionQuestions.map((question, index) => {
+                return (
+                  <div className="mb-3" key={question.id}>
+                    <Draggable
+                      key={question.id}
+                      draggableId={question.id.toString()}
+                      index={index}
+                    >
+                      {(providedDraggable, snapshot) => (
                         <div
-                          className={`survey-question-inner-container ${
-                            snapshot.isDragging ? "is-dragging" : ""
-                          }`}
+                          ref={providedDraggable.innerRef}
+                          {...providedDraggable.draggableProps}
+                          style={providedDraggable.draggableProps.style}
+                          className="survey-question-draggable-item"
                         >
                           <div
-                            {...providedDraggable.dragHandleProps}
-                            className="survey-question-drag-handle"
-                            aria-label="Drag question"
+                            className={`survey-question-inner-container ${
+                              snapshot.isDragging ? "is-dragging" : ""
+                            }`}
                           >
-                            <i className="bi bi-grip-vertical survey-question-drag-icon"></i>
-                          </div>
-                          <div className="survey-question-content-wrapper">
-                            {renderQuestionComponent(question)}
+                            <div
+                              {...providedDraggable.dragHandleProps}
+                              className="survey-question-drag-handle"
+                              aria-label="Drag question"
+                            >
+                              <i className="bi bi-grip-vertical survey-question-drag-icon"></i>
+                            </div>
+                            <div className="survey-question-content-wrapper">
+                              {renderQuestionComponent(question)}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      )}
+                    </Draggable>
+                    <button
+                      className="btn btn-outline-secondary btn-sm me-1"
+                      onClick={() => handleInsertQuestionClick(index)}
+                      title={
+                        insertQuestionIndex === index
+                          ? getLabel("Close")
+                          : getLabel("Insert Question")
+                      }
+                    >
+                      <i
+                        className={
+                          insertQuestionIndex === index
+                            ? "bi bi-x"
+                            : "bi bi-plus"
+                        }
+                      ></i>{" "}
+                      {insertQuestionIndex === index
+                        ? getLabel("Close")
+                        : getLabel("Insert Question")}
+                    </button>
+                    {insertQuestionIndex === index && (
+                      <AddQuestion
+                        newQuestion={newQuestion}
+                        setNewQuestion={setNewQuestion}
+                        addNewQuestion={addNewQuestion}
+                        addGeneratedQuestion={addGeneratedQuestion}
+                        addImportedQuestion={addImportedQuestion}
+                        questionInfo={{
+                          id: questions.length + 1,
+                          index: questions.findIndex(q => q.id === question.id) + 1,
+                          section: section.id,
+                        }}
+                        language={language}
+                        setLanguage={setLanguage}
+                        getLabel={getLabel}
+                      />
                     )}
-                  </Draggable>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
               {provided.placeholder}
             </div>
           )}
