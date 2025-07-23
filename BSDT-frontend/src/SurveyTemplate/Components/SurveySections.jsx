@@ -148,12 +148,7 @@ const SurveySections = ({
     );
   };
 
-  const questionInfo = {
-    id: questions.length + 1,
-    section: section.id,
-  };
-
-  const addNewQuestion = (type) => {
+  const addNewQuestion = (type, index) => {
     const baseQuestion = {
       id: questions.length + 1,
       type: type,
@@ -216,8 +211,23 @@ const SurveySections = ({
       default:
         break;
     }
+    
+    // Questions is the array holding all questions, 
+    // index is the array position where the new question should be added
+    // setQuestions is used to update the Questions
+    setQuestions((prevQuestions) => {
+      const updatedQuestions = [...prevQuestions];
 
-    setQuestions([...questions, newQ]);
+      if (index === questions.length) {
+        // If index is at the end, just push the new question
+        updatedQuestions.push(newQ);
+        return updatedQuestions;
+      }
+      // If index is in the middle, insert the new question at the specified index
+      updatedQuestions.splice(index, 0, newQ);
+      return updatedQuestions;
+    });
+
     setNewQuestion(false);
   };
 
@@ -339,15 +349,15 @@ const SurveySections = ({
   const optionsForSelectedQuestion = getOptionsForSelectedQuestion();
 
   return (
-    <div className="survey-section__container container-fluid shadow border bg-white rounded p-3 mt-3 mb-3">
+    <div className="survey-section__container container-fluid shadow border bg-white rounded p-3 mt-5 mb-3">
       <div className="survey-section__header d-flex justify-content-between align-items-start">
         <div className="flex-grow-1">
           {sections.length !== 1 && (
             <>
-              <h4 className="survey-section__id-display text-left">
+              <h1 className="survey-section__id-display text-left mb-3">
                 <i>{getLabel("Section") || "Section"} </i>
                 {section.id}
-              </h4>
+              </h1>
               <textarea
                 className="survey-section__title-input form-control mt-2 mb-4"
                 placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
@@ -428,6 +438,11 @@ const SurveySections = ({
           section={section}
           questions={questions}
           setQuestions={setQuestions}
+          newQuestion={newQuestion}
+          setNewQuestion={setNewQuestion}
+          addNewQuestion={addNewQuestion}
+          addGeneratedQuestion={addGeneratedQuestion}
+          addImportedQuestion={addImportedQuestion}
           language={language}
           setLanguage={setLanguage}
           getLabel={getLabel}
@@ -435,17 +450,6 @@ const SurveySections = ({
       </div>
 
       <div className="survey-section__actions-area mt-3">
-        <AddQuestion
-          newQuestion={newQuestion}
-          setNewQuestion={setNewQuestion}
-          addNewQuestion={addNewQuestion}
-          addGeneratedQuestion={addGeneratedQuestion}
-          addImportedQuestion={addImportedQuestion}
-          questionInfo={questionInfo}
-          language={language}
-          setLanguage={setLanguage}
-          getLabel={getLabel}
-        />
         <div className="survey-section__buttons d-flex justify-content-end mt-2">
           {sections.length > 1 && section.id !== 1 && (
             <button
