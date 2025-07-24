@@ -174,7 +174,7 @@ const LandingPage = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
         >
-          {" "}
+          {/* Logo */}
           <motion.img
             src={logo_dataghurhi}
             alt="DataGhurhi Logo"
@@ -182,6 +182,8 @@ const LandingPage = () => {
             animate={{ x: [-8, 8, -8] }}
             transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
           />
+
+          {/* Title */}
           <h1 className="title">
             {language === "English" ? (
               <>
@@ -193,24 +195,27 @@ const LandingPage = () => {
               </>
             )}
           </h1>
-        </motion.div>
 
-        <div className="language-toggle-landing">
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="slider"></span>
-          </label>
-          <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
+          {/* Language Toggle */}
+          <div className="language-toggle-landing">
+            <label className="switch">
+              <input
+                type="checkbox"
+                onChange={toggleLanguage}
+                checked={language === "বাংলা"}
+              />
+              <span className="slider"></span>
+            </label>
+            <div className="language-labels">
+              <span className={language === "English" ? "active" : ""}>
+                English
+              </span>
+              <span className={language === "বাংলা" ? "active" : ""}>
+                বাংলা
+              </span>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       <div className="slider-container">
@@ -275,7 +280,7 @@ const LandingPage = () => {
           ›
         </button>
       </div>
-{/* 
+      {/* 
       <footer className="footer">
         <div className="footer-logo-container">
           <img src={logo_buet} alt="BUET Logo" className="footer-logo1" />
