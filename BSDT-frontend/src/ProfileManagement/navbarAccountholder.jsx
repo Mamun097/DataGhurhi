@@ -4,20 +4,17 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Avatar, Menu, MenuItem, IconButton } from "@mui/material";
 import { IoPersonCircle } from "react-icons/io5";
-import logo_dataghurhi from "../assets/logos/dataghurhi.png";
-import logo_buet from "../assets/logos/cse_buet.png";
-import logo_ict from "../assets/logos/ict.png";
-import logo_edge from "../assets/logos/edge.png";
-import logo_ric from "../assets/logos/ric.png";
-import { FaChartBar } from "react-icons/fa";
 import {
   FaHome,
   FaSignOutAlt,
   FaInfoCircle,
   FaQuestionCircle,
   FaSearch,
+  FaChartBar,
 } from "react-icons/fa";
-import "../Homepage/navbarhome.css";
+
+import logo_dataghurhi from "../assets/logos/dataghurhi.png";
+import "./navbarAcholder.css";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -25,11 +22,7 @@ const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
       `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
-      {
-        q: textArray,
-        target: targetLang,
-        format: "text",
-      }
+      { q: textArray, target: targetLang, format: "text" }
     );
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
@@ -39,28 +32,29 @@ const translateText = async (textArray, targetLang) => {
 };
 
 const logOut = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("userType");
-  localStorage.removeItem("role");
-  localStorage.removeItem("userId");
+  localStorage.clear();
   localStorage.setItem("language", "English");
   window.location.href = "/";
 };
 
-const NavbarAcholder = (props) => {
-  const language = props.language || localStorage.getItem("language");
-  const setLanguage = props.setLanguage;
+const NavbarAcholder = ({
+  language,
+  setLanguage,
+  isAdmin: propIsAdmin,
+  userType: propUserType,
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
   const [profilePicUrl, setProfilePicUrl] = useState(null);
   const [name, setName] = useState("");
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [searchFilter, setSearchFilter] = useState("all");
- const navigate = useNavigate();
-  // Updated: Get admin status from both props and local check
   const [isAdmin, setIsAdmin] = useState(false);
   const [userType, setUserType] = useState("normal");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const navigate = useNavigate();
+  const open = Boolean(anchorEl);
 
   const labelsToTranslate = [
     "Go to Profile",
@@ -77,54 +71,43 @@ const NavbarAcholder = (props) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem("token");
       try {
-        const response = await axios.get("http://localhost:2000/api/profile", {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:2000/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (response.status === 200) {
-          const user = response.data.user;
+        if (res.status === 200) {
+          const user = res.data.user;
           setName(user.name);
           setProfilePicUrl(user.image);
-
-          // Update local admin state
-          const currentUserType = user.user_type;
-          setUserType(currentUserType);
-          setIsAdmin(currentUserType === "admin");
+          setUserType(user.user_type);
+          setIsAdmin(user.user_type === "admin");
         }
       } catch (error) {
-        console.error("Failed to load profile info:", error);
+        console.error("Failed to fetch profile info:", error);
       }
     };
 
     fetchProfile();
   }, []);
 
-  // Update admin state when props change
   useEffect(() => {
-    if (props.isAdmin !== undefined) {
-      setIsAdmin(props.isAdmin);
-    }
-    if (props.userType !== undefined) {
-      setUserType(props.userType);
-    }
-  }, [props.isAdmin, props.userType]);
+    if (propIsAdmin !== undefined) setIsAdmin(propIsAdmin);
+    if (propUserType !== undefined) setUserType(propUserType);
+  }, [propIsAdmin, propUserType]);
 
   useEffect(() => {
+    if (language === "English") {
+      setTranslatedLabels({});
+      return;
+    }
+
     const loadTranslations = async () => {
-      if (language === "English") {
-        setTranslatedLabels({});
-        return;
-      }
-
       const translated = await translateText(labelsToTranslate, "bn");
-      const translatedMap = {};
-      labelsToTranslate.forEach((label, idx) => {
-        translatedMap[label] = translated[idx];
-      });
-
-      setTranslatedLabels(translatedMap);
+      const map = {};
+      labelsToTranslate.forEach((label, i) => (map[label] = translated[i]));
+      setTranslatedLabels(map);
     };
 
     loadTranslations();
@@ -134,125 +117,141 @@ const NavbarAcholder = (props) => {
     language === "English" ? text : translatedLabels[text] || text;
 
   const toggleLanguage = () => {
-    localStorage.setItem(
-      "language",
-      language === "English" ? "বাংলা" : "English"
-    );
-    setLanguage(localStorage.getItem("language"));
+    const newLang = language === "English" ? "বাংলা" : "English";
+    localStorage.setItem("language", newLang);
+    setLanguage(newLang);
   };
 
   const handleSearch = async () => {
-    if (searchQuery.trim()) {
-      try {
-        const response = await axios.get("http://localhost:2000/api/search", {
-          params: {
-            query: searchQuery,
-            filter: searchFilter === "all" ? "" : searchFilter,
-          },
-        });
+    if (!searchQuery.trim()) return;
+    try {
+      const res = await axios.get("http://localhost:2000/api/search", {
+        params: {
+          query: searchQuery,
+          filter: searchFilter === "all" ? "" : searchFilter,
+        },
+      });
 
-        const results = response.data.results;
-        console.log("Search results:", results);
-
-        navigate("/search-results", {
-          state: {
-            results,
-            query: searchQuery,
-          },
-        });
-      } catch (error) {
-        console.error(
-          "Search request failed:",
-          error.response?.data || error.message
-        );
-      }
+      navigate("/search-results", {
+        state: {
+          results: res.data.results,
+          query: searchQuery,
+        },
+      });
+    } catch (err) {
+      console.error("Search failed:", err);
     }
   };
 
   return (
-    <motion.nav className="navbar">
-      <div className="navbar-left">
-            <div className="logo-list-item">
+    <motion.nav className="NavbarAcholderContainer">
+      <div className="NavbarAcholderTopSection">
+        <div className="NavbarAcholderTopInner">
+          <div className="NavbarAcholderLogoSection">
+            <div className="NavbarAcholderLogoItem">
               <img src={logo_dataghurhi} alt="DataGhurhi logo" />
               <span>DataGhurhi</span>
             </div>
           </div>
 
-      {/* Only show search bar for non-admin users */}
+          <div className="NavbarAcholderLangSwitch">
+            <label className="NavbarAcholderSwitch">
+              <input
+                type="checkbox"
+                onChange={toggleLanguage}
+                checked={language === "বাংলা"}
+              />
+              <span className="NavbarAcholderSlider"></span>
+            </label>
+            <div className="NavbarAcholderLangLabels">
+              <span className={language === "English" ? "LangActive" : ""}>
+                English
+              </span>
+              <span className={language === "বাংলা" ? "LangActive" : ""}>
+                বাংলা
+              </span>
+            </div>
+          </div>
 
-      <div className="search-container">
-        <select
-          className="search-filter"
-          value={searchFilter}
-          onChange={(e) => setSearchFilter(e.target.value)}
-        >
-          <option value="all">{getLabel("All")}</option>
-          <option value="project">{getLabel("Project")}</option>
-          <option value="survey">{getLabel("Survey")}</option>
-          <option value="account">{getLabel("Account")}</option>
-        </select>
+          {isMobile && (
+            <button
+              className="NavbarAcholderHamburger"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              ☰
+            </button>
+          )}
+        </div>
 
-        <input
-          type="text"
-          placeholder={getLabel("Search for projects, surveys, accounts...")}
-          className="search-input"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-        />
-        <FaSearch className="search-icon" onClick={handleSearch} />
+        <div className="NavbarAcholderSearchSection">
+          <select
+            className="NavbarAcholderSearchFilter"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+          >
+            <option value="all">{getLabel("All")}</option>
+            <option value="project">{getLabel("Project")}</option>
+            <option value="survey">{getLabel("Survey")}</option>
+            <option value="account">{getLabel("Account")}</option>
+          </select>
+
+          <div className="NavbarAcholderSearchBox">
+            <input
+              type="text"
+              placeholder={getLabel(
+                "Search for projects, surveys, accounts..."
+              )}
+              className="NavbarAcholderSearchInput"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <FaSearch
+              className="NavbarAcholderSearchIcon"
+              onClick={handleSearch}
+            />
+          </div>
+        </div>
       </div>
 
-      <ul className="nav-links">
-        <li>
-          <FaHome className="nav-icon" />
+      <ul
+        className={`NavbarAcholderNavList ${
+          menuOpen ? "NavbarAcholderPopupOpen" : ""
+        }`}
+      >
+        <li onClick={() => isMobile && setMenuOpen(false)}>
           <a href="/">
-            <span> {getLabel("Home")} </span>
+            <FaHome className="NavbarAcholderIcon" />
+            <span>{getLabel("Home")}</span>
           </a>
         </li>
-        <li>
+
+        <li onClick={() => isMobile && setMenuOpen(false)}>
           <a href="/about">
-            <FaInfoCircle className="nav-icon" />
+            <FaInfoCircle className="NavbarAcholderIcon" />
             <span>{getLabel("About")}</span>
           </a>
         </li>
-        <li>
+
+        <li onClick={() => isMobile && setMenuOpen(false)}>
           <a href="/faq">
-            <FaQuestionCircle className="nav-icon" />
-            <span>FAQ</span>
+            <FaQuestionCircle className="NavbarAcholderIcon" />
+            <span>{getLabel("FAQ")}</span>
           </a>
         </li>
 
-        {/* Only show Analysis link for non-admin users */}
         {!isAdmin && userType !== "admin" && (
-          <li>
+          <li onClick={() => isMobile && setMenuOpen(false)}>
             <a href="/analysis">
-              <FaChartBar className="nav-icon" />
+              <FaChartBar className="NavbarAcholderIcon" />
               <span>{language === "English" ? "Analysis" : "বিশ্লেষণ"}</span>
             </a>
           </li>
         )}
 
-        <li className="language-toggle">
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="slider"></span>
-          </label>
-          <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
-          </div>
-        </li>
-
-        <li>
-          <div className="navbar-profile">
-            <div className="avatar-container">
+        <li onClick={() => isMobile && setMenuOpen(false)}>
+          <div className="NavbarAcholderProfile">
+            <div className="NavbarAcholderAvatarWrap">
               <IconButton
                 onClick={(e) => setAnchorEl(e.currentTarget)}
                 sx={{ p: 0 }}
@@ -263,7 +262,7 @@ const NavbarAcholder = (props) => {
                   <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
                 )}
               </IconButton>
-              <div className="profile-name">
+              <div className="NavbarAcholderUserName">
                 {name?.trim().split(" ").slice(-1)[0] || "User"}
               </div>
             </div>
@@ -293,7 +292,6 @@ const NavbarAcholder = (props) => {
             </Menu>
           </div>
         </li>
-       
       </ul>
     </motion.nav>
   );
