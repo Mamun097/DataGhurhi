@@ -454,7 +454,8 @@
   }
 
   .project-card,
-  .add-project-card {
+  .add-project-card,
+  .project-card h4{
     width: 100%;
   }
 
@@ -488,7 +489,8 @@
     padding-bottom: 0.5rem;
   }
 
-  .edit-profile-header h3 {
+  .edit-profile-header h3
+   {
     font-size: 1.4rem;
     margin: 0;
   }
