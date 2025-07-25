@@ -397,6 +397,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
         placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
       />
 
       <div className="mb-3">
@@ -426,6 +427,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
                           value={row}
                           onChange={(e) => handleRowChange(index, e.target.value)}
                           onPaste={(e) => handleRowPaste(index, e)}
+                          onFocus={(e) => e.target.select()}
                           placeholder={`Row ${index + 1}`}
                         />
                         <button
@@ -479,6 +481,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
                           value={col}
                           onChange={(e) => handleColumnChange(index, e.target.value)}
                           onPaste={(e) => handleColumnPaste(index, e)}
+                          onFocus={(e) => e.target.select()}
                           placeholder={`Column ${index + 1}`}
                         />
                         <button

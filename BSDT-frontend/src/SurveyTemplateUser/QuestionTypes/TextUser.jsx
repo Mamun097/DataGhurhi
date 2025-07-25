@@ -145,6 +145,7 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
         className="form-control mt-3"
         value={userAnswer}
         onChange={handleChange}
+        onFocus={(e) => e.target.select()}
         disabled={question.disabled}
         aria-label="Text input"
       />

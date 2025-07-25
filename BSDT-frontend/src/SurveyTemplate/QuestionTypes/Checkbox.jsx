@@ -458,6 +458,7 @@ const Checkbox = ({
         placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -496,6 +497,7 @@ const Checkbox = ({
                           value={option}
                           onChange={(e) => handleOptionChange(idx, e.target.value)}
                           onPaste={(e) => handleOptionPaste(idx, e)}
+                          onFocus={(e) => e.target.select()}
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>
