@@ -838,6 +838,7 @@ const SurveyForm = ({
             placeholder={getLabel("Enter Survey Title")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onFocus={(e) => e.target.select()}
             style={{
               color: "#333",
               fontWeight: "bold",
@@ -873,6 +874,7 @@ const SurveyForm = ({
               rows="4"
               value={localDescriptionText}
               onChange={(e) => setLocalDescriptionText(e.target.value)}
+              onFocus={(e) => e.target.select()}
               placeholder={getLabel("Enter your survey description here")}
             />
             <div className="text-end mt-3">
