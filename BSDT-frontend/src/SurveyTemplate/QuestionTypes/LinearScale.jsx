@@ -386,6 +386,7 @@ const LinearScaleQuestion = ({
                 className="form-control"
                 value={leftLabel}
                 onChange={handleLeftLabelChange}
+                onFocus={(e) => e.target.select()}
               />
             </div>
             <div className="col-12 col-sm-6">
@@ -404,6 +405,7 @@ const LinearScaleQuestion = ({
                 className="form-control"
                 value={rightLabel}
                 onChange={handleRightLabelChange}
+                onFocus={(e) => e.target.select()}
               />
             </div>
           </div>
