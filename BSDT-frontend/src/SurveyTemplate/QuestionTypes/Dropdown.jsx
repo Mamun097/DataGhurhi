@@ -412,6 +412,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
         placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
       />
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -443,6 +444,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
                           value={option}
                           onChange={(e) => updateOption(idx, e.target.value)}
                           onPaste={(e) => handleOptionPaste(idx, e)}
+                          onFocus={(e) => e.target.select()}
                           placeholder={`Option ${idx + 1}`}
                         />
                       </div>

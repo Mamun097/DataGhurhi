@@ -363,6 +363,7 @@ const SurveySections = ({
                 placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
                 value={section.title || ""}
                 onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
+                onFocus={(e) => e.target.select()}
               />
             </>
           )}
