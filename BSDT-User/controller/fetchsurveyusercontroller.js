@@ -6,6 +6,7 @@ exports.fetchSurveyUser = async (req, res) =>{
     try {
         const { slug } = req.params;
         const userId = req.jwt?.id; // Get user ID from optional JWT
+        // console.log(`Fetching survey for user: ${userId}`);
 
         const { data: survey, error: surveyError } = await supabase
             .from('survey')
@@ -22,6 +23,7 @@ exports.fetchSurveyUser = async (req, res) =>{
 
         if (survey.response_user_logged_in_status === true) {
             if (!userId) {
+                // console.log("hehe")
                 return res.status(401).json({
                     status: 'LOGIN_REQUIRED',
                     message: 'You must be logged in to access this survey.'
