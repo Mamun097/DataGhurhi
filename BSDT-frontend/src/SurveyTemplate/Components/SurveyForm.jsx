@@ -838,6 +838,7 @@ const SurveyForm = ({
             placeholder={getLabel("Enter Survey Title")}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onFocus={(e) => e.target.select()}
             style={{
               color: "#333",
               fontWeight: "bold",
