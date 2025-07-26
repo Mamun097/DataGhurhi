@@ -542,25 +542,45 @@ exports.getUnitPrices = async (req, res) => {
     }
 };
 
-// ✅ Get validity price multipliers from validity_period table
-exports.getValidityPriceMultiplier = async (req, res) => {
+// ✅ Get validity periods with lower limits
+exports.getValidityPeriods = async (req, res) => {
     try {
-        const { data: validityPeriods, error } = await supabase
+        // Fetch validity periods with their lower limits
+        const { data, error } = await supabase
             .from("validity_periods")
-            .select("*");
+            .select(`
+                *,
+                items_lower_limit (
+                    participant,
+                    tag,
+                    question,
+                    survey
+                )
+            `)
+            .order('days', { ascending: true });
 
         if (error) {
-            console.error("Error fetching validity price multipliers:", error);
-            return res.status(500).json({ error: "Error fetching validity price multipliers: " + error.message });
+            console.error("Error fetching validity periods:", error);
+            return res.status(500).json({ error: "Error fetching validity periods: " + error.message });
         }
 
+        // Flatten the data structure to include lower limits directly in validity period objects
+        const flattenedData = data.map(validity => ({
+            ...validity,
+            participant: validity.items_lower_limit?.[0]?.participant || 0,
+            tag: validity.items_lower_limit?.[0]?.tag || 0,
+            question: validity.items_lower_limit?.[0]?.question || 0,
+            survey: validity.items_lower_limit?.[0]?.survey || 0,
+            items_lower_limit: undefined // Remove the nested structure
+        }));
+
         res.status(200).json({
-            validityPeriods: validityPeriods || [],
-            count: validityPeriods?.length || 0
+            message: "Validity periods fetched successfully",
+            validityPeriods: flattenedData
         });
 
     } catch (error) {
-        console.error("Server error:", error);
+        console.error("Server error in getValidityPeriods:", error);
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
@@ -617,11 +637,11 @@ exports.updateUnitPrice = async (req, res) => {
     }
 };
 
-// ✅ Update validity period
+// ✅ Update validity period with items lower limit (Fixed version)
 exports.updateValidityPeriod = async (req, res) => {
     try {
-        const { id } = req.params; // Extract the validity period ID from the request parameters
-        const validityData = req.body; // Extract the updated validity data from the request body
+        const { id } = req.params;
+        const validityData = req.body;
 
         if (!id) {
             return res.status(400).json({ error: "Validity period ID is required" });
@@ -630,6 +650,9 @@ exports.updateValidityPeriod = async (req, res) => {
         if (!validityData || Object.keys(validityData).length === 0) {
             return res.status(400).json({ error: "Validity data is required" });
         }
+
+        // Separate validity period data from lower limits
+        const { participant, tag, question, survey, ...validityPeriodData } = validityData;
 
         // Validate if the validity period exists
         const { data: existingValidity, error: fetchError } = await supabase
@@ -643,24 +666,74 @@ exports.updateValidityPeriod = async (req, res) => {
         }
 
         // Update the validity period
-        const { data, error } = await supabase
+        const { data: updatedValidity, error: validityError } = await supabase
             .from("validity_periods")
-            .update(validityData)
+            .update(validityPeriodData)
             .eq("id", id)
             .select();
 
-        if (error) {
-            console.error("Error updating validity period:", error);
-            return res.status(500).json({ error: "Error updating validity period: " + error.message });
+        if (validityError) {
+            console.error("Error updating validity period:", validityError);
+            return res.status(500).json({ error: "Error updating validity period: " + validityError.message });
         }
 
-        if (!data || data.length === 0) {
+        if (!updatedValidity || updatedValidity.length === 0) {
             return res.status(404).json({ error: "Validity period not updated" });
         }
 
+        // Handle items lower limit update
+        const lowerLimitData = {
+            participant: parseInt(participant),
+            tag: parseInt(tag),
+            question: parseInt(question),
+            survey: parseInt(survey)
+        };
+
+        // Check if items_lower_limit record exists for this validity_id
+        const { data: existingLimit, error: limitFetchError } = await supabase
+            .from("items_lower_limit")
+            .select("id")
+            .eq("validity_id", id)
+            .single();
+
+        if (existingLimit && !limitFetchError) {
+            // Update existing record
+            const { error: updateLimitError } = await supabase
+                .from("items_lower_limit")
+                .update(lowerLimitData)
+                .eq("validity_id", id);
+
+            if (updateLimitError) {
+                console.error("Error updating items lower limit:", updateLimitError);
+                return res.status(500).json({ error: "Error updating items lower limit: " + updateLimitError.message });
+            }
+        } else {
+            // Create new record if it doesn't exist
+            const { error: insertLimitError } = await supabase
+                .from("items_lower_limit")
+                .insert({
+                    validity_id: parseInt(id),
+                    ...lowerLimitData
+                });
+
+            if (insertLimitError) {
+                console.error("Error creating items lower limit:", insertLimitError);
+                return res.status(500).json({ error: "Error creating items lower limit: " + insertLimitError.message });
+            }
+        }
+
+        // Return the complete updated data including lower limits
+        const responseData = {
+            ...updatedValidity[0],
+            participant: parseInt(participant),
+            tag: parseInt(tag),
+            question: parseInt(question),
+            survey: parseInt(survey)
+        };
+
         res.status(200).json({
             message: "Validity period updated successfully",
-            validityPeriod: data[0]
+            validityPeriod: responseData
         });
 
     } catch (error) {
@@ -669,49 +742,72 @@ exports.updateValidityPeriod = async (req, res) => {
     }
 };
 
-// ✅ Create a new validity period
+// ✅ Create a new validity period with items lower limit (Working version)
 exports.createValidityPeriod = async (req, res) => {
     try {
-        const validityData = req.body; // Extract the validity data from the request body
+        const validityData = req.body;
 
-        // Validate required fields - Fixed field name
-        if (!validityData || !validityData.days || !validityData.price_multiplier) {
-            return res.status(400).json({
-                error: "Days and price multiplier are required"
-            });
+        if (!validityData || Object.keys(validityData).length === 0) {
+            return res.status(400).json({ error: "Validity data is required" });
         }
 
-        // Additional validation
-        if (validityData.days < 1) {
-            return res.status(400).json({
-                error: "Days must be greater than 0"
-            });
-        }
-
-        if (validityData.price_multiplier < 0) {
-            return res.status(400).json({
-                error: "Price multiplier must be non-negative"
-            });
-        }
+        // Separate validity period data from lower limits
+        const { participant, tag, question, survey, ...validityPeriodData } = validityData;
 
         // Insert the new validity period
-        const { data, error } = await supabase
+        const { data: createdValidity, error: validityError } = await supabase
             .from("validity_periods")
-            .insert(validityData)
+            .insert(validityPeriodData)
             .select();
 
-        if (error) {
-            console.error("Error creating validity period:", error);
-            return res.status(500).json({ error: "Error creating validity period: " + error.message });
+        if (validityError) {
+            console.error("Error creating validity period:", validityError);
+            return res.status(500).json({ error: "Error creating validity period: " + validityError.message });
         }
 
-        if (!data || data.length === 0) {
+        if (!createdValidity || createdValidity.length === 0) {
             return res.status(500).json({ error: "Validity period creation failed - no data returned" });
         }
 
+        const newValidityId = createdValidity[0].id;
+
+        // Insert the items lower limit
+        const lowerLimitData = {
+            validity_id: newValidityId,
+            participant: parseInt(participant),
+            tag: parseInt(tag),
+            question: parseInt(question),
+            survey: parseInt(survey)
+        };
+
+        const { error: limitError } = await supabase
+            .from("items_lower_limit")
+            .insert(lowerLimitData);
+
+        if (limitError) {
+            console.error("Error creating items lower limit:", limitError);
+            
+            // Rollback by deleting the created validity period
+            await supabase
+                .from("validity_periods")
+                .delete()
+                .eq("id", newValidityId);
+
+            return res.status(500).json({ error: "Error creating items lower limit: " + limitError.message });
+        }
+
+        // Return the complete created data including lower limits
+        const responseData = {
+            ...createdValidity[0],
+            participant: parseInt(participant),
+            tag: parseInt(tag),
+            question: parseInt(question),
+            survey: parseInt(survey)
+        };
+
         res.status(201).json({
             message: "Validity period created successfully",
-            validityPeriod: data[0]
+            validityPeriod: responseData
         });
 
     } catch (error) {
@@ -720,10 +816,10 @@ exports.createValidityPeriod = async (req, res) => {
     }
 };
 
-// ✅ Delete a validity period
+// ✅ Delete validity period (items_lower_limit will be auto-deleted due to CASCADE)
 exports.deleteValidityPeriod = async (req, res) => {
     try {
-        const { id } = req.params; // Extract the validity period ID from the request parameters
+        const { id } = req.params;
 
         if (!id) {
             return res.status(400).json({ error: "Validity period ID is required" });
@@ -732,7 +828,7 @@ exports.deleteValidityPeriod = async (req, res) => {
         // Validate if the validity period exists
         const { data: existingValidity, error: fetchError } = await supabase
             .from("validity_periods")
-            .select("id")
+            .select("id, days")
             .eq("id", id)
             .single();
 
@@ -740,18 +836,21 @@ exports.deleteValidityPeriod = async (req, res) => {
             return res.status(404).json({ error: "Validity period not found" });
         }
 
-        // Delete the validity period
-        const { error } = await supabase
+        // Delete the validity period (CASCADE will delete related items_lower_limit records)
+        const { error: deleteError } = await supabase
             .from("validity_periods")
             .delete()
             .eq("id", id);
 
-        if (error) {
-            console.error("Error deleting validity period:", error);
-            return res.status(500).json({ error: "Error deleting validity period: " + error.message });
+        if (deleteError) {
+            console.error("Error deleting validity period:", deleteError);
+            return res.status(500).json({ error: "Error deleting validity period: " + deleteError.message });
         }
 
-        res.status(200).json({ message: "Validity period deleted successfully" });
+        res.status(200).json({
+            message: "Validity period deleted successfully",
+            deletedId: id
+        });
 
     } catch (error) {
         console.error("Server error in deleteValidityPeriod:", error);

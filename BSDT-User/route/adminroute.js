@@ -13,7 +13,7 @@ router.get("/admin/survey-growth-stats", adminController.getSurveyGrowthStats);
 router.get("/admin/get-package-items", adminController.getAllPackageItems);
 router.get("/admin/get-validity-periods", adminController.getAllValidityPeriods);
 router.get("/admin/get-unit-price", adminController.getUnitPrices);
-router.get("/admin/get-validity-price-multiplier", adminController.getValidityPriceMultiplier);
+router.get("/admin/get-validity-price-multiplier", adminController.getValidityPeriods);
 router.post("/admin/update-unit-price/:id", adminController.updateUnitPrice);
 router.post("/admin/update-validity/:id", adminController.updateValidityPeriod);
 router.post("/admin/create-validity", adminController.createValidityPeriod);
