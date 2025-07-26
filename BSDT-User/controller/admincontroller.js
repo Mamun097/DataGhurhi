@@ -857,3 +857,38 @@ exports.deleteValidityPeriod = async (req, res) => {
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
+
+// ✅ Get items lower limit for a validity period
+exports.getItemsLowerLimit = async (req, res) => {
+    try {
+        const { validityId } = req.params;
+
+        if (!validityId) {
+            return res.status(400).json({ error: "Validity period ID is required" });
+        }
+
+        // Fetch items lower limit for the given validity period ID
+        const { data: lowerLimit, error } = await supabase
+            .from("items_lower_limit")
+            .select("*")
+            .eq("validity_id", validityId)
+            .single();
+
+        if (error) {
+            console.error("Error fetching items lower limit:", error);
+            return res.status(500).json({ error: "Error fetching items lower limit: " + error.message });
+        }
+
+        if (!lowerLimit) {
+            return res.status(404).json({ error: "Items lower limit not found for this validity period" });
+        }
+
+        res.status(200).json({
+            itemsLowerLimit: lowerLimit
+        });
+
+    } catch (error) {
+        console.error("Server error in getItemsLowerLimit:", error);
+        res.status(500).json({ error: "Server error: " + error.message });
+    }
+}

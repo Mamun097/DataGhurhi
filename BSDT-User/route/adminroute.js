@@ -18,5 +18,6 @@ router.post("/admin/update-unit-price/:id", adminController.updateUnitPrice);
 router.post("/admin/update-validity/:id", adminController.updateValidityPeriod);
 router.post("/admin/create-validity", adminController.createValidityPeriod);
 router.delete("/admin/delete-validity/:id", adminController.deleteValidityPeriod);
+router.get("/get-items-lower-limit/:validityId", adminController.getItemsLowerLimit);
 
 module.exports = router;
