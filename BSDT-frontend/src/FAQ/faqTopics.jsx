@@ -121,7 +121,7 @@ export default function FaqTopics() {
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const response = await axios.get("http://localhost:2000/api/faq");
+        const response = await axios.get("http://103.94.135.115:2000/api/faq");
         const faqs = response.data.faqs || [];
         const uniqueTopics = [...new Set(faqs.map((faq) => faq.topic))];
 

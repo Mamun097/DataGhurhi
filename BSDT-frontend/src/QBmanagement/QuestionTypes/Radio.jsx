@@ -29,7 +29,7 @@ const handleShareWithEmail = async () => {
   console.log("Sharing question with email:", emailToShare);
   try {
     const token = localStorage.getItem("token");
-    const response= await fetch(`http://localhost:2000/api/question-bank/share/${updatedQuestion.question_id}`, {
+    const response= await fetch(`http://103.94.135.115:2000/api/question-bank/share/${updatedQuestion.question_id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -75,7 +75,7 @@ const handleShareWithEmail = async () => {
     console.log("Delete question with ID:", question.question_id);
     const token = localStorage.getItem("token");
     try {
-      fetch(`http://localhost:2000/api/question-bank/delete/${updatedQuestion.question_id}`, {
+      fetch(`http://103.94.135.115:2000/api/question-bank/delete/${updatedQuestion.question_id}`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +177,7 @@ const handleShareWithEmail = async () => {
         if(newQuestion && updatedQuestion.new===true){
           try {
           // Create a new question
-          const response = await fetch("http://localhost:2000/api/question-bank/create", {
+          const response = await fetch("http://103.94.135.115:2000/api/question-bank/create", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -204,7 +204,7 @@ const handleShareWithEmail = async () => {
           // Update the existing question
         
         try {
-          const response = await fetch(`http://localhost:2000/api/question-bank/update/${updatedQuestion.question_id}`, {
+          const response = await fetch(`http://103.94.135.115:2000/api/question-bank/update/${updatedQuestion.question_id}`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json",

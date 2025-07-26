@@ -89,7 +89,7 @@ const NavbarHome = ({ language, setLanguage }) => {
   const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
-        const response = await axios.get("http://localhost:2000/api/search", {
+        const response = await axios.get("http://103.94.135.115:2000/api/search", {
           params: {
             query: searchQuery,
             filter: searchFilter === "all" ? "" : searchFilter,

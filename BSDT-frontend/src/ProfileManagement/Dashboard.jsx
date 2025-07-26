@@ -67,7 +67,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:2000/api/collaborator/${projectId}/accept-invitation`,
+        `http://103.94.135.115:2000/api/collaborator/${projectId}/accept-invitation`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -87,7 +87,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:2000/api/collaborator/${projectId}/decline-invitation`,
+        `http://103.94.135.115:2000/api/collaborator/${projectId}/decline-invitation`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -308,7 +308,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       await axios.put(
-        "http://localhost:2000/api/profile/update-profile-image",
+        "http://103.94.135.115:2000/api/profile/update-profile-image",
         { imageUrl },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -321,7 +321,7 @@ const Dashboard = () => {
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/admin/stats");
+      const response = await axios.get("http://103.94.135.115:2000/api/admin/stats");
 
       if (response.status === 200) {
         setAdminStats(response.data);
@@ -352,7 +352,7 @@ const Dashboard = () => {
   const getProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/profile", {
+      const response = await axios.get("http://103.94.135.115:2000/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
       console.log("Profile response:", response.data);
@@ -409,7 +409,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.put(
-        "http://localhost:2000/api/profile/update-profile",
+        "http://103.94.135.115:2000/api/profile/update-profile",
         editedValues,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -427,7 +427,7 @@ const Dashboard = () => {
   const fetchProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/project", {
+      const response = await axios.get("http://103.94.135.115:2000/api/project", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 200) setProjects(response.data.projects);
@@ -480,7 +480,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        "http://localhost:2000/api/collaborator/all-projects",
+        "http://103.94.135.115:2000/api/collaborator/all-projects",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -504,7 +504,7 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        "http://localhost:2000/api/collaborator/all-invitations",
+        "http://103.94.135.115:2000/api/collaborator/all-invitations",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

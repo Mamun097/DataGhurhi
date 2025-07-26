@@ -99,7 +99,7 @@ const SurveyResponses = () => {
           ? JSON.parse(tokenData).token
           : tokenData;
         const response = await axios.get(
-          `http://localhost:2000/api/generatecsv/${survey_id}`,
+          `http://103.94.135.115:2000/api/generatecsv/${survey_id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (typeof response.data === "string") {
@@ -239,7 +239,7 @@ const SurveyResponses = () => {
       formData.append("file_type", "survey");
       
 
-      const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
+      const response = await fetch("http://103.94.135.115:8001/api/upload-preprocessed/", {
         method: "POST",
         body: formData,
         headers: {

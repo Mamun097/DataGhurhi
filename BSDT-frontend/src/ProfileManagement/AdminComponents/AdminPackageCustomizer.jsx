@@ -41,7 +41,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     const fetchPackages = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://localhost:2000/api/admin/get-all-packages');
+            const response = await fetch('http://103.94.135.115:2000/api/admin/get-all-packages');
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -196,7 +196,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         try {
             setIsSubmitting(true);
 
-            const response = await fetch(`http://localhost:2000/api/admin/delete-package/${selectedPackage.package_id}`, {
+            const response = await fetch(`http://103.94.135.115:2000/api/admin/delete-package/${selectedPackage.package_id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json'
@@ -248,7 +248,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
             if (showEditModal) {
                 // API call to update package
-                response = await fetch(`http://localhost:2000/api/admin/update-package/${selectedPackage.package_id}`, {
+                response = await fetch(`http://103.94.135.115:2000/api/admin/update-package/${selectedPackage.package_id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)
@@ -274,7 +274,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
             } else {
                 // API call to create package
-                response = await fetch('http://localhost:2000/api/admin/create-package', {
+                response = await fetch('http://103.94.135.115:2000/api/admin/create-package', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)

@@ -211,7 +211,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   };
 
   const handleGenerate = () => {
-    fetch("http://localhost:2000/api/reduce-question-count", {
+    fetch("http://103.94.135.115:2000/api/reduce-question-count", {
       method: "GET",
       headers: {
         "Content-Type": "application/json",

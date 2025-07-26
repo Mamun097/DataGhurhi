@@ -111,7 +111,7 @@ const navigate = useNavigate();
     e.preventDefault();
     try {
       const response = await axios.post(
-        "http://localhost:2000/api/project/create-project",
+        "http://103.94.135.115:2000/api/project/create-project",
         formData,
         {
           headers: {

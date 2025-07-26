@@ -15,7 +15,10 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CSRF_TRUSTED_ORIGINS= ["https://statisticalanalysis-production.up.railway.app"]
+CSRF_TRUSTED_ORIGINS = [
+    "http://103.94.135.115:5173",
+    "http://dataghurhi.cse.buet.ac.bd", 
+]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -29,7 +32,10 @@ SECRET_KEY = 'django-insecure-ov=69yp!9$g4!=k=d9vm^u%m1pxk=j86g)!)jrwl)3=_2)_p#m
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = ["103.94.135.115",
+    "localhost",
+    "127.0.0.1",
+    "dataghurhi.cse.buet.ac.bd"]
 
 
 
@@ -136,17 +142,24 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 
-STATICSTORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "http://103.94.135.115:5173",
+    "http://localhost:5173",
+    "http://dataghurhi.cse.buet.ac.bd:5173"
+]
+
 CORS_ALLOW_HEADERS = [
     'authorization',
     'content-type',
     'userid',
     'filename',
 ]
-

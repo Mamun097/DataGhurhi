@@ -66,7 +66,7 @@ const Dashboard = () => {
 
     try {
       await axios.put(
-        "http://localhost:2000/api/profile/update-profile-image",
+        "http://103.94.135.115:2000/api/profile/update-profile-image",
         { imageUrl },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -89,7 +89,7 @@ const Dashboard = () => {
         },
       };
       const response = await axios.get(
-        "http://localhost:2000/api/profile",
+        "http://103.94.135.115:2000/api/profile",
         requestOptions
       );
 
@@ -134,7 +134,7 @@ const Dashboard = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:2000/api/profile/update-profile",
+        "http://103.94.135.115:2000/api/profile/update-profile",
         editedValues,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -154,7 +154,7 @@ const Dashboard = () => {
   const fetchProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://localhost:2000/api/project", {
+      const response = await axios.get("http://103.94.135.115:2000/api/project", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

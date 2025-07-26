@@ -181,7 +181,7 @@ const SearchResults = () => {
                         className="result-card"
                         key={index}
                         onClick={() => {
-                          const fullUrl = `https://localhost:5173/v/${survey.survey_link}`;
+                          const fullUrl = `http://103.94.135.115:5173/v/${survey.survey_link}`;
                           window.open(fullUrl, "_blank");
                         }}
                       >

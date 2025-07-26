@@ -45,7 +45,7 @@ const QB = ({ language, setLanguage }) => {
   useEffect(() => {
     const load = async () => {
       try {
-        const resp = await axios.get("http://localhost:2000/api/question-bank", {
+        const resp = await axios.get("http://103.94.135.115:2000/api/question-bank", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -65,7 +65,7 @@ const QB = ({ language, setLanguage }) => {
 
     const fetchSharedQuestions = async () => {
       try {
-        const resp = await axios.get("http://localhost:2000/api/question-bank/shared", {
+        const resp = await axios.get("http://103.94.135.115:2000/api/question-bank/shared", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

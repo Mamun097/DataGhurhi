@@ -79,7 +79,7 @@ const CollabSurveyTab = ({
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        "http://localhost:2000/api/survey-collaborator/all-collaborated-surveys",
+        "http://103.94.135.115:2000/api/survey-collaborator/all-collaborated-surveys",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -96,7 +96,7 @@ const CollabSurveyTab = ({
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:2000/api/surveytemplate/${survey_id}`,
+        `http://103.94.135.115:2000/api/surveytemplate/${survey_id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -122,7 +122,7 @@ const CollabSurveyTab = ({
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        "http://localhost:2000/api/survey-collaborator/all-invitations",
+        "http://103.94.135.115:2000/api/survey-collaborator/all-invitations",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -139,7 +139,7 @@ const CollabSurveyTab = ({
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:2000/api/survey-collaborator/${survey_id}/accept-invitation`,
+        `http://103.94.135.115:2000/api/survey-collaborator/${survey_id}/accept-invitation`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -158,7 +158,7 @@ const CollabSurveyTab = ({
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:2000/api/survey-collaborator/${survey_id}/decline-invitation`,
+        `http://103.94.135.115:2000/api/survey-collaborator/${survey_id}/decline-invitation`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

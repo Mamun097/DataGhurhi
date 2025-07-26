@@ -73,7 +73,7 @@ const NavbarAcholder = ({
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:2000/api/profile", {
+        const response = await axios.get("http://103.94.135.115:2000/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -123,14 +123,14 @@ const NavbarAcholder = ({
   };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
-    try {
-      const res = await axios.get("http://localhost:2000/api/search", {
-        params: {
-          query: searchQuery,
-          filter: searchFilter === "all" ? "" : searchFilter,
-        },
-      });
+    if (searchQuery.trim()) {
+      try {
+        const response = await axios.get("http://103.94.135.115:2000/api/search", {
+          params: {
+            query: searchQuery,
+            filter: searchFilter === "all" ? "" : searchFilter,
+          },
+        });
 
       navigate("/search-results", {
         state: {
@@ -140,6 +140,7 @@ const NavbarAcholder = ({
       });
     } catch (err) {
       console.error("Search failed:", err);
+    }
     }
   };
 

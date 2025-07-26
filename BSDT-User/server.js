@@ -11,20 +11,22 @@ const swaggerDocument = yaml.load("./docs/api-docs.yml");
 // serving Swagger UI
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.json());
 
-const allowedOrigins = ["https://localhost:5173", "http://localhost:5173"];
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    exposedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200,
-  })
-);
+const allowedOrigins = ['http://localhost:5173', 'http://103.94.135.115:5173', 'http://dataghurhi.cse.buet.ac.bd:5173']
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed from this origin: ' + origin));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 const registerRouter = require("./route/register");
 const loginRouter = require("./route/login");
@@ -121,16 +123,16 @@ const port = process.env.PORT || 2000;
 (async () => {
   const { data, error } = await supabase.rpc("now");
   if (error) {
-    console.error("Database connection failed:", error.message);
+    console.error('Database connection failed:', error.message);
   } else {
-    console.log("Database connected successfully:", data);
+    console.log('Database connected successfully:', data);
   }
-  app.listen(port, () => {
+  app.listen(port, '0.0.0.0', () => {
     console.log(`Server is running on port ${port}`);
   });
 })();
 
-app.use(express.json());
+
 // Routes
 app.use("/api/register", registerRouter);
 app.use("/api/login", loginRouter);
