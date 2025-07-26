@@ -4,6 +4,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
 
 import "../Dashboard.css";
+
 const ProjectTab = ({
   getLabel,
   handleAddProjectClick,
@@ -30,7 +31,7 @@ const ProjectTab = ({
         )
       )
     ) {
-      fetch(`http://localhost:2000/api/project/${projectId}/delete-project`, {
+      fetch(`http://103.94.135.115:2000/api/project/${projectId}/delete-project`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
@@ -61,6 +62,7 @@ const ProjectTab = ({
   return (
     <div>
       <h3>{getLabel("My Research Projects")}</h3>
+
       {/* New Project Section */}
       <div className="new-project-section">
         <h4>{getLabel("Create a New Project")}</h4>
@@ -68,7 +70,9 @@ const ProjectTab = ({
           <div className="plus-icon">+</div>
         </div>
       </div>
+
       <hr className="section-divider" />
+
       {/* Existing Projects */}
       <h4>{getLabel("Existing Projects")}</h4>
       <div className="project-filter-bar">
@@ -111,7 +115,6 @@ const ProjectTab = ({
         </select>
       </div>
 
-      {console.log("Projects:", projects)}
       {projects.length > 0 ? (
         <div className="project-grid">
           {projects
@@ -124,7 +127,6 @@ const ProjectTab = ({
               const aVal = a[sortField];
               const bVal = b[sortField];
 
-              // Check if field is date-like
               const isDateField =
                 sortField.toLowerCase().includes("created_at") ||
                 sortField.toLowerCase().includes("last_updated");
@@ -154,53 +156,42 @@ const ProjectTab = ({
                 >
                   <h4>{project.title}</h4>
                   <p>
-                    <strong>{getLabel("Research Field:")}</strong>{" "}
-                    {project.field}
+                    <strong>{getLabel("Research Field:")}</strong> {project.field}
                   </p>
-
                   <p>
                     <strong>{getLabel("Visibility Setting:")}</strong>{" "}
                     {project.privacy_mode}
                   </p>
-
                   <p>
                     <strong>{getLabel("Created At:")}</strong>{" "}
-                    {new Date(project.created_at + "Z").toLocaleString(
-                      "en-US",
-                      {
-                        timeZone: "Asia/Dhaka",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}
+                    {new Date(project.created_at + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
                   </p>
-
                   <p>
                     <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(project.last_updated + "Z").toLocaleString(
-                      "en-US",
-                      {
-                        timeZone: "Asia/Dhaka",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}
+                    {new Date(project.last_updated + "Z").toLocaleString("en-US", {
+                      timeZone: "Asia/Dhaka",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
                   </p>
                 </div>
 
-                {/* Delete Button */}
                 <IconButton
                   aria-label="delete"
                   onClick={(e) => {
-                    e.stopPropagation(); // Prevent triggering project click
+                    e.stopPropagation();
                     handleDeleteProject(project.project_id);
                   }}
                   sx={{
@@ -227,4 +218,5 @@ const ProjectTab = ({
     </div>
   );
 };
+
 export default ProjectTab;

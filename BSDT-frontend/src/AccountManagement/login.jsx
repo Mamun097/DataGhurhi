@@ -104,10 +104,7 @@ const Login = () => {
       return;
     }
     try {
-      const response = await axios.post(
-        "http://localhost:2000/api/login",
-        formData
-      );
+      const response = await axios.post("http://103.94.135.115:2000/api/login", formData, { withCredentials: true });
       if (response.status === 200) {
         toast.success(`✅ ${t("loginSuccess")} ${formData.email}`);
         localStorage.setItem("token", response.data.token);

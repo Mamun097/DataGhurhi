@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useMemo } from "react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "bootstrap-icons/font/bootstrap-icons.css";
-import "../CSS/SurveyForm.css";
-import { handleImageUpload } from "../utils/handleImageUpload";
-import SurveySections from "./SurveySections";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import "bootstrap-icons/font/bootstrap-icons.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "../CSS/SurveyForm.css";
+import CollaborationModal from "../utils/CollaborationModal";
+import { handleImageUpload } from "../utils/handleImageUpload";
 import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
-import CollaborationModal from "../utils/CollaborationModal";
+import SurveySections from "./SurveySections";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -339,8 +339,8 @@ const SurveyForm = ({
     setIsLoggedInRequired(isLoggedIn);
     setShuffleQuestions(isShuffled);
     let url;
-    if (actionType === "publish" || actionType === "update") {
-      url = "http://localhost:2000/api/surveytemplate";
+    if (actionType === 'publish' || actionType === 'update') {
+      url = "http://103.94.135.115:2000/api/surveytemplate";
     } else {
       console.error("Invalid action type for publication.");
       return;
@@ -470,7 +470,7 @@ const SurveyForm = ({
 
   const handleSave = () =>
     sendSurveyData(
-      "http://localhost:2000/api/surveytemplate/save",
+      "http://103.94.135.115:2000/api/surveytemplate/save",
       isLoggedInRequired,
       shuffleQuestions
     );

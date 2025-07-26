@@ -34,7 +34,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       const token = localStorage.getItem("token"); // Adjust based on your token storage method
       //console.log("Fetching user packages..."); // Debug log
       
-      const response = await axios.get("http://localhost:2000/api/get-user-packages", {
+      const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -115,7 +115,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       //console.log("Question Data:", questionData);
       //console.log("Question Info:", questionInfo);
 
-      const response = await fetch('http://localhost:2000/api/generate-question-with-llm/', {
+      const response = await fetch('http://103.94.135.115:2000/api/generate-question-with-llm/', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

@@ -240,7 +240,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
 
     try {
       // Fetch all packages
-      const packagesResponse = await fetch('http://localhost:2000/api/admin/get-all-packages');
+      const packagesResponse = await fetch('http://103.94.135.115:2000/api/admin/get-all-packages');
       if (!packagesResponse.ok) {
         throw new Error('Failed to fetch packages');
       }
@@ -248,16 +248,14 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
       const packagesArray = packagesData.packages || packagesData || [];
 
       // Fetch most popular package
-      try {
-        const popularResponse = await fetch('http://localhost:2000/api/admin/most-popular-package');
-        let popularPackageId = null;
-        if (popularResponse.ok) {
-          const popularData = await popularResponse.json();
-          popularPackageId = popularData.popularPackageId;
-        }
-        setMostPopularPackageId(popularPackageId);
-      } catch (popularError) {
-        console.warn('Failed to fetch most popular package:', popularError);
+      const popularResponse = await fetch('http://103.94.135.115:2000/api/admin/most-popular-package');
+      let popularPackageId = null;
+      if (popularResponse.ok) {
+        const popularData = await popularResponse.json();
+        popularPackageId = popularData.popularPackageId;
+        console.log('Popular Package API Response:', popularData);
+      } else {
+        console.warn('Failed to fetch most popular package, but continuing...');
       }
 
       setPackages(packagesArray);

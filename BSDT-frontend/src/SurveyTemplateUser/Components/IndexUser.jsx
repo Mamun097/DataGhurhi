@@ -38,8 +38,12 @@ const Index = () => {
             };
           }
           const response = await axios.get(
-            `http://localhost:2000/api/fetch-survey-user/${slug}`,
-            config
+            `http://103.94.135.115:2000/api/fetch-survey-user/${slug}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
           );
           
           const surveyData = response.data.data;
@@ -86,13 +90,23 @@ const Index = () => {
         { userResponse, calculatedMarks },
         config
       );
-      navigate('/survey-success');
-    } catch (error) {
-      console.error("Error submitting survey:", error);
-      alert("There was an error submitting your survey. Please try again.");
-    }
-  };
-  if (template === undefined) {
+      
+    await axios.post(
+      `http://103.94.135.115:2000/api/submit-survey/${slug}`,
+      {
+        userResponse: userResponse,
+        calculatedMarks: calculatedMarks,
+      },
+      config
+    );
+    navigate('/survey-success');
+  } catch (error) {
+    console.error("Error submitting survey:", error);
+    alert("There was an error submitting your survey. Please try again.");
+  }
+};
+
+  if (template === undefined || template === null) {
     return <p className="text-center mt-5">Loading templates…</p>;
   }
   return (

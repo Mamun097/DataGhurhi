@@ -48,7 +48,7 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
     try {
       const token = getAuthToken();
       const response = await axios.get(
-        `http://localhost:2000/api/survey-collaborator/get-survey-collaborators/${surveyId}`,
+        `http://103.94.135.115:2000/api/survey-collaborator/get-survey-collaborators/${surveyId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -85,7 +85,7 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
         access_role: accessRole,
       };
       await axios.post(
-        "http://localhost:2000/api/survey-collaborator/send-survey-collaboration-request",
+        "http://103.94.135.115:2000/api/survey-collaborator/send-survey-collaboration-request",
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -110,15 +110,15 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
     }
     setIsLoading(true);
     try {
-      const token = getAuthToken();
-      await axios.delete(
-        `http://localhost:2000/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      toast.success("Collaborator removed.");
-      fetchCollaborators();
+        const token = getAuthToken();
+        await axios.delete(
+            `http://103.94.135.115:2000/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
+            {
+                headers: { Authorization: `Bearer ${token}` },
+            }
+        );
+        toast.success("Collaborator removed.");
+        fetchCollaborators();
     } catch (err) {
       const errorMessage =
         err.response?.data?.error || "Failed to remove collaborator.";

@@ -20,7 +20,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
     useEffect(() => {
         const fetchUserGrowthStats = async () => {
             try {
-                const response = await fetch('http://localhost:2000/api/admin/user-growth-stats');
+                const response = await fetch('http://103.94.135.115:2000/api/admin/user-growth-stats');
                 if (response.ok) {
                     const data = await response.json();
                     setUserGrowthStats({
@@ -45,7 +45,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
     useEffect(() => {
         const fetchSurveyGrowthStats = async () => {
             try {
-                const response = await fetch('http://localhost:2000/api/admin/survey-growth-stats');
+                const response = await fetch('http://103.94.135.115:2000/api/admin/survey-growth-stats');
                 if (response.ok) {
                     const data = await response.json();
                     setSurveyGrowthStats({

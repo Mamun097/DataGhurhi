@@ -1,21 +1,20 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { useLocation } from "react-router-dom";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import SendIcon from "@mui/icons-material/Send";
+import IconButton from "@mui/material/IconButton";
 import axios from "axios";
-import "./createProject.css";
-import "./editProject.css";
-import { MdPublic } from "react-icons/md";
+import { useEffect, useState } from "react";
 import { FaLock } from "react-icons/fa";
-import { useParams, useNavigate } from "react-router-dom";
-import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+import { MdPublic } from "react-icons/md";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
-import { ToastContainer, toast } from "react-toastify";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import IconButton from "@mui/material/IconButton";
-import SendIcon from "@mui/icons-material/Send";
-import AutoSurveyGeneration from "./AutoSurveyGeneration";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
+import AutoSurveyGeneration from "./AutoSurveyGeneration";
+import "./createProject.css";
+import "./editProject.css";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -162,11 +161,11 @@ const EditProject = () => {
       if (!token && privacyMode === "public") {
         //header will have no token and fetch
          response = await axios.get(
-          `http://localhost:2000/api/project/${projectId}`
+          `http://103.94.135.115:2000/api/project/${projectId}`
         );
       } else {
         response = await axios.get(
-          `http://localhost:2000/api/project/${projectId}`,
+          `http://103.94.135.115:2000/api/project/${projectId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -210,7 +209,7 @@ const EditProject = () => {
     try {
       if(token){
       response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}/surveys`,
+        `http://103.94.135.115:2000/api/project/${projectId}/surveys`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -218,7 +217,7 @@ const EditProject = () => {
     }
     if(!token){
       response=await axios.get(
-        `http://localhost:2000/api/project/${projectId}/public/surveys`
+        `http://103.94.135.115:2000/api/project/${projectId}/public/surveys`
       );
     }
       if (response.status === 200) setSurveys(response.data.surveys || []);
@@ -231,7 +230,7 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}/collaborators`,
+        `http://103.94.135.115:2000/api/project/${projectId}/collaborators`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -258,7 +257,7 @@ const EditProject = () => {
     try {
       // 1. creating a new survey
       const resSurvey = await axios.post(
-        `http://localhost:2000/api/project/${projectId}/create-survey`,
+        `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
         { title: surveyMeta.topic || "Untitled Survey" },
         {
           headers: {
@@ -273,7 +272,7 @@ const EditProject = () => {
 
       // 2. calling LLM to generate questions
       const resLLM = await axios.post(
-        `http://localhost:2000/api/generate-multiple-questions-with-llm`,
+        `http://103.94.135.115:2000/api/generate-multiple-questions-with-llm`,
         {
           questionData: {
             type: surveyMeta.questionTypes,
@@ -338,7 +337,7 @@ const EditProject = () => {
 
       // 5. saving the generated survey template
       const resSave = await axios.put(
-        `http://localhost:2000/api/surveytemplate/save`,
+        `http://103.94.135.115:2000/api/surveytemplate/save`,
         surveyTemplatePayload,
         {
           headers: {
@@ -365,7 +364,7 @@ const EditProject = () => {
       }, 3000);
 
       //reducing survey count
-      fetch("http://localhost:2000/api/reduce-survey-count", {
+      fetch("http://103.94.135.115:2000/api/reduce-survey-count", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -414,7 +413,7 @@ const EditProject = () => {
       const token = localStorage.getItem("token");
       try {
         const response = await axios.post(
-          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
           { title: result.value },
           {
             headers: {
@@ -449,7 +448,7 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.delete(
-        `http://localhost:2000/api/surveytemplate/${surveyId}`,
+        `http://103.94.135.115:2000/api/surveytemplate/${surveyId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200) {
@@ -486,7 +485,7 @@ const EditProject = () => {
     e.preventDefault();
     try {
       await axios.put(
-        `http://localhost:2000/api/project/${projectId}/update-project`,
+        `http://103.94.135.115:2000/api/project/${projectId}/update-project`,
         formData,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -508,7 +507,7 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.post(
-        `http://localhost:2000/api/project/${projectId}/invite-collaborator`,
+        `http://103.94.135.115:2000/api/project/${projectId}/invite-collaborator`,
         {
           email: collabEmail,
           access_role: accessControl,

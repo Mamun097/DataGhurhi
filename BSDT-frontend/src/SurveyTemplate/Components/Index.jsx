@@ -133,7 +133,7 @@ const Index = () => {
       } else {
         try {
           const resp = await axios.get(
-            "http://localhost:2000/api/get-saved-survey"
+            "http://103.94.135.115:2000/api/get-saved-survey"
           );
           const data = resp.data;
           setTemplates(data);

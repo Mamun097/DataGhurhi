@@ -190,7 +190,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions }) => {
     setIsFetchingTags(true);
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('http://localhost:2000/api/all-tags');
+      const response = await fetch('http://103.94.135.115:2000/api/all-tags');
       if (response.ok) {
         const data = await response.json();
         setAllSystemTags(data.tags || []);
@@ -393,7 +393,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions }) => {
       if (question && question.meta) {
         meta_data = question.meta;
       }
-      const response = await fetch(`http://localhost:2000/api/generate-tags/`, {
+      const response = await fetch(`http://103.94.135.115:2000/api/generate-tags/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

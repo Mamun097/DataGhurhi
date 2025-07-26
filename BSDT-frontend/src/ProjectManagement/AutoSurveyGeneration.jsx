@@ -28,7 +28,7 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel }) => {
       const token = localStorage.getItem("token");
       console.log("Fetching user packages for survey generation..."); // Debug log
       
-      const response = await axios.get("http://localhost:2000/api/get-user-packages", {
+      const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

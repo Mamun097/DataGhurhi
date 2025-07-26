@@ -47,7 +47,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchUnitPrices = async () => {
         try {
-            const response = await fetch('http://localhost:2000/api/admin/get-unit-price');
+            const response = await fetch('http://103.94.135.115:2000/api/admin/get-unit-price');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -69,7 +69,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchValidityPeriods = async () => {
         try {
-            const response = await fetch('http://localhost:2000/api/admin/get-validity-price-multiplier');
+            const response = await fetch('http://103.94.135.115:2000/api/admin/get-validity-price-multiplier');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -115,7 +115,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setIsSubmitting(true);
             
             // Demo API call - replace with actual endpoint
-            const response = await fetch(`http://localhost:2000/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
+            const response = await fetch(`http://103.94.135.115:2000/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -202,7 +202,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
             if (showEditValidityModal) {
                 // Demo API call for update
-                const response = await fetch(`http://localhost:2000/api/admin/update-validity/${selectedValidity.id}`, {
+                const response = await fetch(`http://103.94.135.115:2000/api/admin/update-validity/${selectedValidity.id}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(validityData)
@@ -220,7 +220,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                 setShowEditValidityModal(false);
             } else if(showAddValidityModal){
                 // Demo API call for create
-                const response = await fetch('http://localhost:2000/api/admin/create-validity', {
+                const response = await fetch('http://103.94.135.115:2000/api/admin/create-validity', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(validityData)
@@ -254,7 +254,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setIsSubmitting(true);
 
             // Demo API call for delete
-            const response = await fetch(`http://localhost:2000/api/admin/delete-validity/${selectedValidity.id}`, {
+            const response = await fetch(`http://103.94.135.115:2000/api/admin/delete-validity/${selectedValidity.id}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' }
             });

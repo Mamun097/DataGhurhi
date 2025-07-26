@@ -15,11 +15,11 @@ const ImportFromQb = ({ addImportedQuestion, questionInfo}) => {
             let url = "";
 
             if (visibility === "own") {
-              url = `http://localhost:2000/api/own-questions/${userId}?tags=${tags}&limit=${limit}`;
+              url = `http://103.94.135.115:2000/api/own-questions/${userId}?tags=${tags}&limit=${limit}`;
             } else if (visibility === "public") {
-              url = `http://localhost:2000/api/public-questions?tags=${tags}&limit=${limit}`;
+              url = `http://103.94.135.115:2000/api/public-questions?tags=${tags}&limit=${limit}`;
             } else {
-              url = `http://localhost:2000/api/import-questions/${userId}?tags=${tags}&limit=${limit}`;
+              url = `http://103.94.135.115:2000/api/import-questions/${userId}?tags=${tags}&limit=${limit}`;
             }
 
             try {

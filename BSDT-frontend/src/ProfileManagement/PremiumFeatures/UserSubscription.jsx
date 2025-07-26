@@ -105,7 +105,7 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
         const token = localStorage.getItem("token");
         try {
             setLoading(true);
-            const response = await axios.get("http://localhost:2000/api/get-user-packages", {
+            const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

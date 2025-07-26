@@ -63,7 +63,7 @@ const usePaymentGateway = (getLabel) => {
     }
 
     try {
-      const response = await axios.get("http://localhost:2000/api/profile", {
+      const response = await axios.get("http://103.94.135.115:2000/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
       if (response.status === 200) {
@@ -82,7 +82,7 @@ const usePaymentGateway = (getLabel) => {
     if (!token) return;
 
     try {
-      const response = await axios.get(`http://localhost:2000/api/subscription/user/${userId}`, {
+      const response = await axios.get(`http://103.94.135.115:2000/api/subscription/user/${userId}`, {
         headers: { Authorization: "Bearer " + token },
       });
       if (response.status === 200) {
@@ -174,7 +174,7 @@ const usePaymentGateway = (getLabel) => {
     });
 
     try {
-      const response = await fetch('http://localhost:2000/api/payment/initiate', {
+      const response = await fetch('http://103.94.135.115:2000/api/payment/initiate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

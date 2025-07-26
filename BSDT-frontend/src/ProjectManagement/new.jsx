@@ -101,7 +101,7 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}`,
+        `http://103.94.135.115:2000/api/project/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200 && response.data?.project) {
@@ -120,7 +120,7 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}/surveys`,
+        `http://103.94.135.115:2000/api/project/${projectId}/surveys`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200) setSurveys(response.data.surveys || []);
@@ -133,7 +133,7 @@ const EditProject = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.get(
-        `http://localhost:2000/api/project/${projectId}/collaborators`,
+        `http://103.94.135.115:2000/api/project/${projectId}/collaborators`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCollaborators(response.data.collaborators || []);
@@ -182,7 +182,7 @@ const EditProject = () => {
       const token = localStorage.getItem("token");
       try {
         const response = await axios.post(
-          `http://localhost:2000/api/project/${projectId}/create-survey`,
+          `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
           { title: result.value },
           {
             headers: {
@@ -237,7 +237,7 @@ const EditProject = () => {
     e.preventDefault();
     try {
       await axios.put(
-        `http://localhost:2000/api/project/${projectId}/update-project`,
+        `http://103.94.135.115:2000/api/project/${projectId}/update-project`,
         formData,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
