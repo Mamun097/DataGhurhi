@@ -288,7 +288,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
     };
 
     const formatPrice = (price) => {
-        return `৳ ${price.toFixed(4)}`;
+        return `৳ ${price.toFixed(2)}`;
     };
 
     const formatMultiplier = (multiplier) => {
@@ -301,6 +301,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             case 'question': return getLabel("Question");
             case 'survey': return getLabel("Survey");
             case 'participant': return getLabel("Participant");
+            case 'advanced_analysis': return getLabel("Advanced Analyses");
             default: return itemType;
         }
     };
