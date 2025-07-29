@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// Updated Custom Package Builder Component with Premium Features
+// Updated Custom Package Builder Component with Premium Features and Lower Limits
 const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage }) => {
   const [packageItems, setPackageItems] = useState([]);
   const [validityPeriods, setValidityPeriods] = useState([]);
@@ -18,12 +18,37 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     advanced_analysis: false
   });
   const [selectedValidity, setSelectedValidity] = useState(null);
+  const [lowerLimits, setLowerLimits] = useState({
+    tag: 0,
+    question: 0,
+    survey: 0,
+    participant: 0
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
     fetchCustomPackageData();
   }, []);
+
+  useEffect(() => {
+    if (selectedValidity) {
+      fetchLowerLimits(selectedValidity.id);
+    }
+  }, [selectedValidity]);
+
+  // Update quantities when feature states change and we have lower limits
+  useEffect(() => {
+    if (Object.values(lowerLimits).some(limit => limit > 0)) {
+      setSelectedItems(prev => ({
+        tag: featureStates.tag ? Math.max(prev.tag, lowerLimits.tag) : prev.tag,
+        question: featureStates.question ? Math.max(prev.question, lowerLimits.question) : prev.question,
+        survey: featureStates.survey ? Math.max(prev.survey, lowerLimits.survey) : prev.survey,
+        participant: featureStates.participant ? Math.max(prev.participant, lowerLimits.participant) : prev.participant
+      }));
+    }
+  }, [featureStates, lowerLimits]);
 
   useEffect(() => {
     // Only call onPackageChange if it exists and packageItems are loaded
@@ -41,10 +66,10 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
         features: featureStates,
         validity: selectedValidity,
         totalPrice: totalPrice,
-        isValid: selectedValidity && hasAnyFeature && hasValidItems
+        isValid: selectedValidity && hasAnyFeature && hasValidItems && Object.keys(validationErrors).length === 0
       });
     }
-  }, [selectedItems, featureStates, selectedValidity, packageItems.length]);
+  }, [selectedItems, featureStates, selectedValidity, packageItems.length, validationErrors]);
 
   const fetchCustomPackageData = async () => {
     setLoading(true);
@@ -121,9 +146,59 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     } catch (err) {
       console.error('Error in fetchCustomPackageData:', err);
       setError(err.message);
-      
+
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchLowerLimits = async (validityId) => {
+    try {
+      console.log('Fetching lower limits for validity ID:', validityId);
+      const response = await fetch(`http://localhost:2000/api/get-items-lower-limit/${validityId}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch lower limits: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Lower limits response:', data);
+      
+      const limits = {
+        tag: data.itemsLowerLimit.tag || 0,
+        question: data.itemsLowerLimit.question || 0,
+        survey: data.itemsLowerLimit.survey || 0,
+        participant: data.itemsLowerLimit.participant || 0
+      };
+      
+      console.log('Processed limits:', limits);
+      setLowerLimits(limits);
+      
+      // Always update selected items to meet minimum requirements, regardless of feature states
+      // The feature states will be checked when rendering/validating
+      setSelectedItems(prev => {
+        const updated = {
+          tag: Math.max(prev.tag, limits.tag),
+          question: Math.max(prev.question, limits.question),
+          survey: Math.max(prev.survey, limits.survey),
+          participant: Math.max(prev.participant, limits.participant)
+        };
+        console.log('Updated selected items:', updated);
+        return updated;
+      });
+      
+      // Clear any existing validation errors when limits change
+      setValidationErrors({});
+      
+    } catch (error) {
+      console.error('Error fetching lower limits:', error);
+      // Set default limits if API fails
+      const defaultLimits = {
+        tag: 0,
+        question: 0,
+        survey: 0,
+        participant: 0
+      };
+      console.log('Setting default limits:', defaultLimits);
+      setLowerLimits(defaultLimits);
     }
   };
 
@@ -165,8 +240,25 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     return Math.round(basePrice * selectedValidity.price_multiplier);
   };
 
+  const validateItemCount = (itemType, value) => {
+    const minRequired = lowerLimits[itemType] || 0;
+    if (value < minRequired) {
+      return `Minimum ${minRequired} ${getFeatureLabel(itemType).toLowerCase()}(s) required for this validity period`;
+    }
+    return null;
+  };
+
   const handleItemChange = (itemType, value) => {
     const numValue = Math.max(0, parseInt(value) || 0);
+    
+    // Validate against lower limits
+    const validationError = validateItemCount(itemType, numValue);
+    
+    setValidationErrors(prev => ({
+      ...prev,
+      [itemType]: validationError
+    }));
+    
     setSelectedItems(prev => ({
       ...prev,
       [itemType]: numValue
@@ -174,18 +266,51 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
   };
 
   const handleFeatureToggle = (featureType) => {
+    const isCurrentlyEnabled = featureStates[featureType];
+    
     setFeatureStates(prev => ({
       ...prev,
       [featureType]: !prev[featureType]
     }));
 
+    // When enabling a feature, set to minimum required or current value, whichever is higher
+    if (!isCurrentlyEnabled && ['tag', 'question', 'survey', 'participant'].includes(featureType)) {
+      const minRequired = lowerLimits[featureType] || 0;
+      const newValue = Math.max(selectedItems[featureType], minRequired);
+      
+      console.log(`Enabling ${featureType}: setting value to ${newValue} (min: ${minRequired}, current: ${selectedItems[featureType]})`);
+      
+      setSelectedItems(prev => ({
+        ...prev,
+        [featureType]: newValue
+      }));
+      
+      // Clear validation error when feature is enabled with valid value
+      setValidationErrors(prev => ({
+        ...prev,
+        [featureType]: null
+      }));
+    }
+    
     // Reset quantity to 0 when feature is disabled
-    if (featureStates[featureType] && ['tag', 'question', 'survey', 'participant'].includes(featureType)) {
+    if (isCurrentlyEnabled && ['tag', 'question', 'survey', 'participant'].includes(featureType)) {
       setSelectedItems(prev => ({
         ...prev,
         [featureType]: 0
       }));
+      
+      // Clear validation error when feature is disabled
+      setValidationErrors(prev => ({
+        ...prev,
+        [featureType]: null
+      }));
     }
+  };
+
+  const handleValidityChange = (period) => {
+    setSelectedValidity(period);
+    // Clear validation errors when validity changes
+    setValidationErrors({});
   };
 
   const formatValidityDisplay = (days) => {
@@ -222,36 +347,52 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
     return getLabel ? getLabel(labels[featureType]) : labels[featureType];
   };
 
-  const renderQuantityFeature = (featureType) => (
-    <label className="feature-option">
-      <input
-        type="checkbox"
-        checked={featureStates[featureType]}
-        onChange={() => handleFeatureToggle(featureType)}
-      />
-      <div className="feature-card">
-        <div className="feature-header">
-          <div className="feature-icon">{getFeatureIcon(featureType)}</div>
-          <h4>{getFeatureLabel(featureType)}</h4>
-          <span className="feature-price">৳{getItemPrice(featureType)}/unit</span>
+  const renderQuantityFeature = (featureType) => {
+    const minRequired = lowerLimits[featureType] || 0;
+    const hasValidationError = validationErrors[featureType];
+    
+    return (
+      <label className="feature-option">
+        <input
+          type="checkbox"
+          checked={featureStates[featureType]}
+          onChange={() => handleFeatureToggle(featureType)}
+        />
+        <div className={`feature-card ${hasValidationError ? 'has-error' : ''}`}>
+          <div className="feature-header">
+            <div className="feature-icon">{getFeatureIcon(featureType)}</div>
+            <h4>{getFeatureLabel(featureType)}</h4>
+            <span className="feature-price">৳{getItemPrice(featureType)}/unit</span>
+          </div>
+          <div className={`quantity-controls ${!featureStates[featureType] ? 'disabled' : ''}`}>
+            <div className="quantity-input-wrapper">
+              <span className="quantity-label">Quantity:</span>
+              <input
+                type="number"
+                min={minRequired}
+                value={featureStates[featureType] ? selectedItems[featureType] : 0}
+                onChange={(e) => handleItemChange(featureType, e.target.value)}
+                disabled={!featureStates[featureType]}
+                placeholder={minRequired > 0 ? `Min: ${minRequired}` : "0"}
+                className={hasValidationError ? 'error' : ''}
+              />
+            </div>
+            {minRequired > 0 && featureStates[featureType] && (
+              <div className="minimum-requirement">
+                <span className="min-label">Minimum: {minRequired}</span>
+              </div>
+            )}
+            {hasValidationError && (
+              <div className="validation-error">
+                {/* <span className="error-icon">⚠️</span> */}
+                <span className="error-message">{hasValidationError}</span>
+              </div>
+            )}
+          </div>
         </div>
-        {/* <div className="feature-description">
-          <p>Add {getFeatureLabel(featureType).toLowerCase()} to your package</p>
-        </div> */}
-        <div className={`quantity-controls ${!featureStates[featureType] ? 'disabled' : ''}`}>
-          <span className="quantity-label">Quantity:</span>
-          <input
-            type="number"
-            min="0"
-            value={featureStates[featureType] ? selectedItems[featureType] : 0}
-            onChange={(e) => handleItemChange(featureType, e.target.value)}
-            disabled={!featureStates[featureType]}
-            placeholder="0"
-          />
-        </div>
-      </div>
-    </label>
-  );
+      </label>
+    );
+  };
 
   const renderToggleFeature = (featureType) => (
     <label className="feature-option">
@@ -319,7 +460,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
                       name="validity"
                       value={period.id}
                       checked={selectedValidity?.id === period.id}
-                      onChange={() => setSelectedValidity(period)}
+                      onChange={() => handleValidityChange(period)}
                     />
                     <div className="validity-card">
                       <span className="validity-duration">{formatValidityDisplay(period.days)}</span>
@@ -391,7 +532,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
             <button
               className="buy-custom-btn"
               onClick={handleBuyCustomPackage}
-              disabled={!Object.values(featureStates).some(state => state)}
+              disabled={!Object.values(featureStates).some(state => state) || Object.keys(validationErrors).some(key => validationErrors[key])}
             >
               {getLabel ? getLabel("Buy Now") : "Buy Now"}
             </button>
