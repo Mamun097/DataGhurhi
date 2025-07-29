@@ -6,26 +6,31 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
     const [validityPeriods, setValidityPeriods] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // Modal states
     const [showEditUnitPriceModal, setShowEditUnitPriceModal] = useState(false);
     const [showEditValidityModal, setShowEditValidityModal] = useState(false);
     const [showAddValidityModal, setShowAddValidityModal] = useState(false);
     const [showDeleteValidityModal, setShowDeleteValidityModal] = useState(false);
-    
+
     // Selected items for editing
     const [selectedUnitPrice, setSelectedUnitPrice] = useState(null);
     const [selectedValidity, setSelectedValidity] = useState(null);
-    
+
     // Form data
     const [unitPriceFormData, setUnitPriceFormData] = useState({
         base_price_per_unit: ''
     });
     const [validityFormData, setValidityFormData] = useState({
         days: '',
-        price_multiplier: ''
+        price_multiplier: '',
+        // Items lower limit
+        participant: '',
+        tag: '',
+        question: '',
+        survey: ''
     });
-    
+
     // Errors
     const [unitPriceErrors, setUnitPriceErrors] = useState({});
     const [validityErrors, setValidityErrors] = useState({});
@@ -52,9 +57,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            // Sort by item_type in the descending order of base_price_per_unit
             const sortedPrices = (data.unitPrices || []).sort((a, b) => b.base_price_per_unit - a.base_price_per_unit);
-
             setUnitPrices(data.unitPrices || []);
         } catch (error) {
             console.error('Error fetching unit prices:', error);
@@ -74,22 +77,13 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            // Sort by days in ascending order
             const sortedPeriods = (data.validityPeriods || []).sort((a, b) => a.days - b.days);
             setValidityPeriods(sortedPeriods);
         } catch (error) {
             console.error('Error fetching validity periods:', error);
-            // Mock data for demonstration
-            setValidityPeriods([
-                { id: 1, days: 7, price_multiplier: 1.00 },
-                { id: 2, days: 15, price_multiplier: 1.10 },
-                { id: 3, days: 30, price_multiplier: 1.30 },
-                { id: 4, days: 180, price_multiplier: 1.80 }
-            ]);
         }
     };
 
-    // Unit Price Functions
     const handleEditUnitPrice = (unitPrice) => {
         setSelectedUnitPrice(unitPrice);
         setUnitPriceFormData({
@@ -113,9 +107,14 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
         try {
             setIsSubmitting(true);
+<<<<<<< HEAD
             
             // Demo API call - replace with actual endpoint
             const response = await fetch(`http://103.94.135.115:2000/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
+=======
+
+            const response = await fetch(`http://localhost:2000/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
+>>>>>>> 9d06e25c592f1ad4fa19885241f4f99379463ce6
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -127,9 +126,8 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Update local state
-            setUnitPrices(unitPrices.map(item => 
-                item.id === selectedUnitPrice.id 
+            setUnitPrices(unitPrices.map(item =>
+                item.id === selectedUnitPrice.id
                     ? { ...item, base_price_per_unit: parseFloat(unitPriceFormData.base_price_per_unit) }
                     : item
             ));
@@ -138,7 +136,6 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setSelectedUnitPrice(null);
 
         } catch (error) {
-            console.error('Error updating unit price:', error);
             alert(`Failed to update unit price: ${error.message}`);
         } finally {
             setIsSubmitting(false);
@@ -150,7 +147,11 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
         setSelectedValidity(validity);
         setValidityFormData({
             days: validity.days.toString(),
-            price_multiplier: validity.price_multiplier.toString()
+            price_multiplier: validity.price_multiplier.toString(),
+            participant: validity.participant?.toString() || '',
+            tag: validity.tag?.toString() || '',
+            question: validity.question?.toString() || '',
+            survey: validity.survey?.toString() || ''
         });
         setValidityErrors({});
         setShowEditValidityModal(true);
@@ -160,7 +161,11 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
         setSelectedValidity(null);
         setValidityFormData({
             days: '',
-            price_multiplier: ''
+            price_multiplier: '',
+            participant: '',
+            tag: '',
+            question: '',
+            survey: ''
         });
         setValidityErrors({});
         setShowAddValidityModal(true);
@@ -179,7 +184,21 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
         if (!validityFormData.price_multiplier || parseFloat(validityFormData.price_multiplier) < 0) {
             errors.price_multiplier = getLabel("Valid price multiplier is required");
         }
-        
+
+        // Validate lower limits
+        if (!validityFormData.participant || parseInt(validityFormData.participant) < 0) {
+            errors.participant = getLabel("Valid participant limit is required");
+        }
+        if (!validityFormData.tag || parseInt(validityFormData.tag) < 0) {
+            errors.tag = getLabel("Valid tag limit is required");
+        }
+        if (!validityFormData.question || parseInt(validityFormData.question) < 0) {
+            errors.question = getLabel("Valid question limit is required");
+        }
+        if (!validityFormData.survey || parseInt(validityFormData.survey) < 0) {
+            errors.survey = getLabel("Valid survey limit is required");
+        }
+
         // Check if days already exist (for add mode)
         if (showAddValidityModal && validityPeriods.some(v => v.days === parseInt(validityFormData.days))) {
             errors.days = getLabel("This validity period already exists");
@@ -194,15 +213,24 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
         try {
             setIsSubmitting(true);
-            
+
             const validityData = {
                 days: parseInt(validityFormData.days),
-                price_multiplier: parseFloat(validityFormData.price_multiplier)
+                price_multiplier: parseFloat(validityFormData.price_multiplier),
+                // Items lower limit
+                participant: parseInt(validityFormData.participant),
+                tag: parseInt(validityFormData.tag),
+                question: parseInt(validityFormData.question),
+                survey: parseInt(validityFormData.survey)
             };
 
             if (showEditValidityModal) {
+<<<<<<< HEAD
                 // Demo API call for update
                 const response = await fetch(`http://103.94.135.115:2000/api/admin/update-validity/${selectedValidity.id}`, {
+=======
+                const response = await fetch(`http://localhost:2000/api/admin/update-validity/${selectedValidity.id}`, {
+>>>>>>> 9d06e25c592f1ad4fa19885241f4f99379463ce6
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(validityData)
@@ -212,15 +240,19 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                // Update local state
-                setValidityPeriods(validityPeriods.map(item => 
+                setValidityPeriods(validityPeriods.map(item =>
                     item.id === selectedValidity.id ? { ...item, ...validityData } : item
                 ).sort((a, b) => a.days - b.days));
 
                 setShowEditValidityModal(false);
+<<<<<<< HEAD
             } else if(showAddValidityModal){
                 // Demo API call for create
                 const response = await fetch('http://103.94.135.115:2000/api/admin/create-validity', {
+=======
+            } else if (showAddValidityModal) {
+                const response = await fetch('http://localhost:2000/api/admin/create-validity', {
+>>>>>>> 9d06e25c592f1ad4fa19885241f4f99379463ce6
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(validityData)
@@ -240,7 +272,6 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setSelectedValidity(null);
 
         } catch (error) {
-            console.error('Error saving validity:', error);
             alert(`Failed to save validity: ${error.message}`);
         } finally {
             setIsSubmitting(false);
@@ -253,8 +284,12 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
         try {
             setIsSubmitting(true);
 
+<<<<<<< HEAD
             // Demo API call for delete
             const response = await fetch(`http://103.94.135.115:2000/api/admin/delete-validity/${selectedValidity.id}`, {
+=======
+            const response = await fetch(`http://localhost:2000/api/admin/delete-validity/${selectedValidity.id}`, {
+>>>>>>> 9d06e25c592f1ad4fa19885241f4f99379463ce6
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' }
             });
@@ -263,13 +298,11 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            // Update local state
             setValidityPeriods(validityPeriods.filter(item => item.id !== selectedValidity.id));
             setShowDeleteValidityModal(false);
             setSelectedValidity(null);
 
         } catch (error) {
-            console.error('Error deleting validity:', error);
             alert(`Failed to delete validity: ${error.message}`);
         } finally {
             setIsSubmitting(false);
@@ -277,7 +310,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
     };
 
     const formatPrice = (price) => {
-        return `৳ ${price.toFixed(4)}`;
+        return `৳ ${price.toFixed(2)}`;
     };
 
     const formatMultiplier = (multiplier) => {
@@ -289,6 +322,8 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             case 'tag': return getLabel("Tag");
             case 'question': return getLabel("Question");
             case 'survey': return getLabel("Survey");
+            case 'participant': return getLabel("Participant");
+            case 'advanced_analysis': return getLabel("Advanced Analyses");
             default: return itemType;
         }
     };
@@ -326,7 +361,6 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     return (
         <div className="admin-custom-package-customizer">
-            {/* Header */}
             <div className="custom-package-header">
                 <div className="custom-package-header-content">
                     <div className="custom-package-header-info">
@@ -376,7 +410,6 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                     className="edit-price-btn"
                                     disabled={isSubmitting}
                                 >
-                                    {/* <span className="btn-icon">✏️</span> */}
                                     {getLabel("Edit Price")}
                                 </button>
                             </div>
@@ -394,7 +427,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                             {getLabel("Validity Periods")}
                         </h3>
                         <p className="section-subtitle">
-                            {getLabel("Configure validity periods and their price multipliers")}
+                            {getLabel("Configure validity periods, price multipliers and minimum item limits")}
                         </p>
                     </div>
                     <button
@@ -445,6 +478,31 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                         {formatMultiplier(validity.price_multiplier)}
                                     </span>
                                 </div>
+
+                                {/* Items Lower Limits Display */}
+                                <div className="lower-limits-display">
+                                    <div className="lower-limits-header">
+                                        <span className="lower-limits-title">{getLabel("Minimum Item Limits")}</span>
+                                    </div>
+                                    <div className="lower-limits-grid">
+                                        <div className="limit-item">
+                                            <span className="limit-label">{getLabel("Participants")}</span>
+                                            <span className="limit-value">{validity.participant || 0}</span>
+                                        </div>
+                                        <div className="limit-item">
+                                            <span className="limit-label">{getLabel("Tags")}</span>
+                                            <span className="limit-value">{validity.tag || 0}</span>
+                                        </div>
+                                        <div className="limit-item">
+                                            <span className="limit-label">{getLabel("Questions")}</span>
+                                            <span className="limit-value">{validity.question || 0}</span>
+                                        </div>
+                                        <div className="limit-item">
+                                            <span className="limit-label">{getLabel("Surveys")}</span>
+                                            <span className="limit-value">{validity.survey || 0}</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -479,9 +537,9 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                 <input
                                     type="number"
                                     value={unitPriceFormData.base_price_per_unit}
-                                    onChange={(e) => setUnitPriceFormData({ 
-                                        ...unitPriceFormData, 
-                                        base_price_per_unit: e.target.value 
+                                    onChange={(e) => setUnitPriceFormData({
+                                        ...unitPriceFormData,
+                                        base_price_per_unit: e.target.value
                                     })}
                                     className={`form-input ${unitPriceErrors.base_price_per_unit ? 'error' : ''}`}
                                     min="0"
@@ -510,7 +568,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             {/* Edit/Add Validity Modal */}
             {(showEditValidityModal || showAddValidityModal) && (
                 <div className="admin-modal-overlay">
-                    <div className="admin-modal">
+                    <div className="admin-modal validity-modal">
                         <div className="admin-modal-header">
                             <h3 className="modal-title">
                                 {showEditValidityModal ? getLabel("Edit Validity Period") : getLabel("Add Validity Period")}
@@ -529,48 +587,138 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                         </div>
 
                         <div className="admin-modal-body">
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label className="form-label required">
-                                        {getLabel("Days")} <span className="required-star">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={validityFormData.days}
-                                        onChange={(e) => setValidityFormData({ 
-                                            ...validityFormData, 
-                                            days: e.target.value 
-                                        })}
-                                        className={`form-input ${validityErrors.days ? 'error' : ''}`}
-                                        min="1"
-                                        disabled={isSubmitting}
-                                    />
-                                    {validityErrors.days && (
-                                        <p className="error-message">{validityErrors.days}</p>
-                                    )}
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label required">
-                                        {getLabel("Price Multiplier")} <span className="required-star">*</span>
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={validityFormData.price_multiplier}
-                                        onChange={(e) => setValidityFormData({ 
-                                            ...validityFormData, 
-                                            price_multiplier: e.target.value 
-                                        })}
-                                        className={`form-input ${validityErrors.price_multiplier ? 'error' : ''}`}
-                                        min="0"
-                                        step="0.01"
-                                        disabled={isSubmitting}
-                                    />
-                                    {validityErrors.price_multiplier && (
-                                        <p className="error-message">{validityErrors.price_multiplier}</p>
-                                    )}
+                            {/* Basic Settings */}
+                            <div className="form-section">
+                                <h4 className="form-section-title">{getLabel("Basic Settings")}</h4>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Days")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.days}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                days: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.days ? 'error' : ''}`}
+                                            min="1"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.days && (
+                                            <p className="error-message">{validityErrors.days}</p>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Price Multiplier")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.price_multiplier}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                price_multiplier: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.price_multiplier ? 'error' : ''}`}
+                                            min="0"
+                                            step="0.01"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.price_multiplier && (
+                                            <p className="error-message">{validityErrors.price_multiplier}</p>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                            
+
+                            {/* Items Lower Limits */}
+                            <div className="form-section">
+                                <h4 className="form-section-title">{getLabel("Minimum Item Limits")}</h4>
+                                <p className="form-section-subtitle">
+                                    {getLabel("Set minimum required quantities for each item type")}
+                                </p>
+                                <div className="lower-limits-form-grid">
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Participants")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.participant}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                participant: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.participant ? 'error' : ''}`}
+                                            min="0"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.participant && (
+                                            <p className="error-message">{validityErrors.participant}</p>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Tags")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.tag}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                tag: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.tag ? 'error' : ''}`}
+                                            min="0"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.tag && (
+                                            <p className="error-message">{validityErrors.tag}</p>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Questions")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.question}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                question: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.question ? 'error' : ''}`}
+                                            min="0"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.question && (
+                                            <p className="error-message">{validityErrors.question}</p>
+                                        )}
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="form-label required">
+                                            {getLabel("Surveys")} <span className="required-star">*</span>
+                                        </label>
+                                        <input
+                                            type="number"
+                                            value={validityFormData.survey}
+                                            onChange={(e) => setValidityFormData({
+                                                ...validityFormData,
+                                                survey: e.target.value
+                                            })}
+                                            className={`form-input ${validityErrors.survey ? 'error' : ''}`}
+                                            min="0"
+                                            disabled={isSubmitting}
+                                        />
+                                        {validityErrors.survey && (
+                                            <p className="error-message">{validityErrors.survey}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
                             {validityFormData.days && (
                                 <div className="validity-preview">
                                     <p className="preview-text">
