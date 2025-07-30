@@ -300,6 +300,8 @@ const StatisticalAnalysisTool = () => {
     const [uploadStatus, setUploadStatus] = useState('initial'); // 'initial', 'loading', 'success', 'error'
     const [columns, setColumns] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
+    const [testanalyze, setTestanalyze]= useState(false)
+    const [columnanalyze, setColumnanalyze]= useState(false)
 
 
     useEffect(() => {
@@ -489,6 +491,7 @@ useEffect(() => {
             const formData = new FormData();
             formData.append('file', selectedFile);
             console.log("File selected:", selectedFile);
+            // formData.append('selected_tests', testType);
 
             // Call the API to get columns
             // attach token
@@ -963,21 +966,15 @@ const handleSuggestionClick = () => {
                                                 </div>
                                                 {/* Preview & Suggestion Buttons */}
                                                     <div className="flex justify-end gap-4 mt-6">
-                                                    <button
-                                                        type="button"
-                                                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                        onClick={handlePreviewClick}
-                                                    >
-                                                        {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
-                                                    </button>
 
+{/* 
                                                     <button
                                                         type="button"
                                                         className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                                         onClick={handleSuggestionClick}
                                                     >
                                                         {language === 'bn' ? 'পরীক্ষার পরামর্শ' : 'Test Suggestion'}
-                                                    </button>
+                                                    </button> */}
                                                     </div>
                                             {isPreviewModalOpen && (
                                                 <>
@@ -985,16 +982,23 @@ const handleSuggestionClick = () => {
                                                  </>
 
                                                                                         )}
-                                            {isSuggestionModalOpen && (
+                                            {/* {isSuggestionModalOpen && (
                                                 <div >
                                                     <TestSuggestionsModal setIsSuggestionModalOpen={setIsSuggestionModalOpen} language={language} />
                                                 </div>
-                                            )}
+                                            )} */}
 
-                                                <div className="flex justify-end mt-4 mb-4">
+                                                <div className="flex justify-end gap-4 mt-4 mb-4">
+                                            <button
+                                                        type="button"
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                        onClick={handlePreviewClick}
+                                                    >
+                                                        {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
+                                                    </button>
                                                 <button
                                                     type="button"
-                                                    className="bg-green-600 hover:bg-green-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                    className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                                     onClick={() => {
                                                     console.log("User ID:", userId);
                                                     const path = "/preprocess";
@@ -1006,8 +1010,33 @@ const handleSuggestionClick = () => {
                                                 </div>
 
 
+                                        <div className="flex justify-end gap-4 mb-6">
+                                        {/* <button
+                                            type="button"
+                                           onClick={() => {
+                                                    console.log("analyze by test");
+                                                    setTestanalyze(!testanalyze);
+                                                    }}
+
+                                            className="bg-blue-600 text-black px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                                        >
+                                            {language === 'bn' ? 'পরীক্ষা পছন্দ অনুযায়ী বিশ্লেষণ' : 'Analyze by Test Choice'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                    console.log("analyze by column");
+                                                    setColumnanalyze(!columnanalyze);
+                                                    }} 
+                                            className="bg-green-600 text-black px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                                        >
+                                            {language === 'bn' ? 'কলাম অনুযায়ী বিশ্লেষণ' : 'Analyze by Column'}
+                                        </button> */}
+                                        </div>
 
 
+                                        {/* {testanalyze && ( */}
+                                            {/* <> */}
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectTest}</h5>
                                                 <div className="mb-4">
@@ -1093,8 +1122,7 @@ const handleSuggestionClick = () => {
 
                                                 </div>
                                             </div>
-
-
+                                
                                             {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation') && (
                                                 <div className="mb-6">
                                                     <label className="block text-gray-700 font-medium mb-2">
@@ -1156,6 +1184,7 @@ const handleSuggestionClick = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                        
 
 
                                         {testType !== 'eda_basics' && (
@@ -1261,6 +1290,7 @@ const handleSuggestionClick = () => {
                                                         </select>
                                                     </div>
                                                 )}
+                                                
 
 
                                                 {testType === 'kruskal' && (
@@ -1842,6 +1872,8 @@ const handleSuggestionClick = () => {
                                             </div>
                                         )}
 
+                                         
+
                                             {requiredFields.refValue && (
                                                 <div className="mb-6">
                                                     <label className="block text-gray-700 font-medium mb-2">
@@ -1859,11 +1891,11 @@ const handleSuggestionClick = () => {
                                                     />
                                                 </div>
                                             )}
-                                        
+                                                                                  
                                             <div className="text-center mt-6">
                                                 <button
                                                     type="submit"
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     disabled={isAnalyzing || !file || !column1 || (requiredFields.col2 && !column2) || (requiredFields.col3 && !column3)}
                                                 >
                                                     {isAnalyzing ? (
@@ -1881,7 +1913,10 @@ const handleSuggestionClick = () => {
                                                     )}
                                                 </button>
                                             </div>
+                                             {/* </>
+                                        )} */}
                                         </form>
+                                         
 
                                         {detailsModalVisible && (
                                             <div className="modal-overlay">
@@ -1913,6 +1948,7 @@ const handleSuggestionClick = () => {
                             
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>

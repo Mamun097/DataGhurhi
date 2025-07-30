@@ -36,7 +36,11 @@ const PreprocessDataPage = () => {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [missingValues, setMissingValues] = useState({});
   const [numericColumns, setNumericColumns] = useState([]);
+  const [outliersSummary, setOutliersSummary] = useState({});
+  const [outlierCells, setOutlierCells] = useState([]);
 
+  const [duplicateColumns, setDuplicateColumns] = useState([]);
+  const [missingSpec, setMissingSpec] = useState('');
 
   
 const location = useLocation();
@@ -74,12 +78,44 @@ useEffect(() => {
       setData(result.rows);
       setAvailableColumns(result.columns);
       setMissingValues(result.missing_values || {});
-      setNumericColumns(result.num_columns || []);
+      // setNumericColumns(result.num_columns || [])
+      
     })
     .catch(err => {
       console.error(" Failed to load preview data:", err.message);
     });
 }, [userId]);
+useEffect(() => {
+  
+  if (selectedOption === 'handle_outliers' ) {
+    console.log("entered");
+    fetch('http://127.0.0.1:8000/api/outliers-summary/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'userID': userId,
+        'filename': filename
+      }
+    })
+      .then(res => res.json())
+      .then(summaryData => {
+        if (!summaryData.success) {
+          alert(summaryData.error || "Failed to fetch outlier summary.");
+          return;
+        }
+
+        setNumericColumns(summaryData.numeric_columns || []);
+        setOutliersSummary(summaryData.outliers_summary);
+        setOutlierCells(summaryData.outlier_cells || []);
+        console.log("Fetched Outlier Summary:", summaryData);
+      })
+      .catch(err => {
+        console.error("Outlier summary fetch failed:", err);
+        alert("Server error while fetching outliers.");
+      });
+  }
+}, [selectedOption]); 
+
 
 useEffect(() => {
   console.log("Columns updated:", columns);
@@ -183,7 +219,10 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                     'userID': userId, // Include user ID in headers
                     'filename': filename, // Include filename in headers
                     'Content-Type': 'application/json',
+                    
                   },
+                  body: JSON.stringify({ columns: duplicateColumns }),
+                
                 })
                   .then((res) => res.json())
                   .then((result) => {
@@ -191,7 +230,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
-                      alert(`Removed ${result.removed} duplicate row(s).`);
+                      alert(result.message) ;
                     } else {
                       alert(result.error || "Something went wrong.");
                     }
@@ -211,7 +250,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                     , 'userID': userId // Include user ID in headers
                     , 'filename': filename // Include filename in headers
                    },
-                  body: JSON.stringify({ column: missingColumn, method: missingMethod })
+                  body: JSON.stringify({ column: missingColumn, method: missingMethod, missing_spec: missingSpec,
+ })
                 })
                   .then(res => res.json())
                   .then(result => {
@@ -228,6 +268,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
               // 4. Handle outliers
               else if (selectedOption === 'handle_outliers') {
+
+
                 if (!outlierColumn || !outlierMethod) {
                   alert("Please select both column and method.");
                   return;
@@ -306,11 +348,15 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                     column: splitTargetColumn,
                     method: splitMethod,
                     phrases: splitMethod === 'custom' ? customPhrases : [],  
+                    delete_original: true
                   }),
                 })
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      setColumns(result.columns);
+                      setData(result.rows);
+                      setAvailableColumns(result.columns);
                       alert("Column split successful!");
                       // fetch(`/preview-data/?_t=${Date.now()}`)
                       //   .then((res) => res.json())
@@ -469,100 +515,160 @@ function downloadAsPDF(data, filename = 'data.pdf') {
     
 
       {/*Conditional delete column selector goes here */}
-      {selectedOption === 'delete_column' && (
-        <div className="mb-6">
-          {/* Column(s) Big Box Display */}
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Column(s) to delete:
-          </label>
-          <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px]">
-            {columnsToDelete.length > 0 ? (
-              <p className="text-gray-800">{columnsToDelete.join(', ')}</p>
-            ) : (
-              <p className="text-gray-400">No columns selected yet</p>
-            )}
-          </div>
-
-          {/* Dropdown to Add Columns */}
-          <select
-            className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
-            onChange={(e) => {
-              const selected = e.target.value;
-              if (selected && !columnsToDelete.includes(selected)) {
-                setColumnsToDelete(prev => [...prev, selected]);
+{selectedOption === 'delete_column' && (
+  <div className="mb-6">
+    {/* Column(s) Big Box Display */}
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Column(s) to delete:
+    </label>
+    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px] flex flex-wrap gap-2">
+      {columnsToDelete.length > 0 ? (
+        columnsToDelete.map((col, idx) => (
+          <span key={idx} className="tag-chip">
+            {col}
+            <button
+              type="button"
+              aria-label={`Remove ${col}`}
+              className="remove-button"
+              onClick={() =>
+                setColumnsToDelete(prev =>
+                  prev.filter(item => item !== col)
+                )
               }
-              e.target.selectedIndex = 0;
-            }}
-          >
-            <option value="">Select column...</option>
-            {availableColumns
-              .filter(col => !columnsToDelete.includes(col))
-              .map((col, idx) => (
-                <option key={idx} value={col}>{col}</option>
-              ))}
-          </select>
-        </div>
+            >
+              &times;
+            </button>
+          </span>
+
+        ))
+      ) : (
+        <p className="text-gray-400">No columns selected yet</p>
       )}
+    </div>
 
-    {selectedOption === 'handle_missing' && (
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Select column (or 'all'):</label>
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
-          value={missingColumn}
-          onChange={(e) => setMissingColumn(e.target.value)}
-        >
-          <option value="">Select column...</option>
-          <option value="all">All Columns</option>
-          {Object.entries(missingValues).map(([col, count], idx) => (
-            <option key={idx} value={col}>
-              {col} ({count} missing)
-            </option>
-          ))}
-        </select>
+    {/* Dropdown to Add Columns */}
+    <select
+      className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
+      onChange={(e) => {
+        const selected = e.target.value;
+        if (selected && !columnsToDelete.includes(selected)) {
+          setColumnsToDelete(prev => [...prev, selected]);
+        }
+        e.target.selectedIndex = 0;
+      }}
+    >
+      <option value="">Select column...</option>
+      {availableColumns
+        .filter(col => !columnsToDelete.includes(col))
+        .map((col, idx) => (
+          <option key={idx} value={col}>{col}</option>
+        ))}
+    </select>
+  </div>
+)}
+    {selectedOption === 'remove_duplicates' && (
+  <div className="mb-6">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Column(s) to check duplicates:
+    </label>
 
-        <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
-        <select
-          className="border border-gray-300 rounded-lg px-3 py-2 w-full"
-          value={missingMethod}
-          onChange={(e) => setMissingMethod(e.target.value)}
-        >
-          <option value="">Choose method</option>
-          <option value="drop">Drop missing rows</option>
-          <option value="fill_mean">Fill with mean</option>
-          <option value="fill_median">Fill with median</option>
-        </select>
-      </div>
-    )}
+    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px]">
+      {duplicateColumns.length > 0 ? (
+        <p className="text-gray-800">{duplicateColumns.join(', ')}</p>
+      ) : (
+        <p className="text-gray-400">No columns selected yet</p>
+      )}
+    </div>
+
+    <select
+      className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
+      onChange={(e) => {
+        const selected = e.target.value;
+        if (selected && !duplicateColumns.includes(selected)) {
+          setDuplicateColumns(prev => [...prev, selected]);
+        }
+        e.target.selectedIndex = 0;
+      }}
+    >
+      <option value="">Select column...</option>
+      {availableColumns
+        .filter(col => !duplicateColumns.includes(col))
+        .map((col, idx) => (
+          <option key={idx} value={col}>{col}</option>
+        ))}
+    </select>
+  </div>
+)}
+
+
+   {selectedOption === 'handle_missing' && (
+  <div className="mb-4">
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Select column (or 'all'):
+    </label>
+    <select
+      className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
+      value={missingColumn}
+      onChange={(e) => setMissingColumn(e.target.value)}
+    >
+      <option value="">Select column...</option>
+      <option value="all">All Columns</option>
+      {Object.entries(missingValues).map(([col, count], idx) => (
+        <option key={idx} value={col}>
+          {col} ({count} missing)
+        </option>
+      ))}
+    </select>
+
+    <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
+    <select
+      className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
+      value={missingMethod}
+      onChange={(e) => setMissingMethod(e.target.value)}
+    >
+      <option value="">Choose method</option>
+      <option value="drop">Drop missing rows</option>
+      <option value="fill_mean">Fill with mean</option>
+      <option value="fill_median">Fill with median</option>
+      <option value="fill_mode">Fill with mode</option>
+    </select>
+
+    <label className="block text-sm font-medium text-gray-700 mb-1">
+      Missing value marker (optional):
+    </label>
+    <input
+      type="text"
+      placeholder="e.g. -, N/A, null"
+      className="border border-gray-300 rounded-lg px-3 py-2 w-full"
+      value={missingSpec}
+      onChange={(e) => setMissingSpec(e.target.value)}
+    />
+  </div>
+)}
+
+    
 
 
       
        {selectedOption === 'handle_outliers' && (
         <div className="mb-4">
+          {/*Column Selection */}
           <label className="block text-sm font-medium text-gray-700 mb-1">Select numeric column:</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
-            value={outlierColumn}
-            onChange={(e) => setOutlierColumn(e.target.value)}
-          >
-            <option value="">Select column...</option>
-            {numericColumns.map((col, idx) => (
-              <option key={idx} value={col}>{col}</option>
-            ))}
-          </select>
-
-          <label className="block text-sm font-medium text-gray-700 mb-1">Method:</label>
-          <select
-            className="border border-gray-300 rounded-lg px-3 py-2 w-full"
-            value={outlierMethod}
-            onChange={(e) => setOutlierMethod(e.target.value)}
-          >
-            <option value="">Choose method</option>
-            <option value="remove">Remove outliers</option>
-            <option value="cap">Cap outliers to bounds</option>
-          </select>
+      <select
+        className="border border-gray-300 rounded-lg px-3 py-2 w-full mb-2"
+        value={outlierColumn}
+        onChange={(e) => setOutlierColumn(e.target.value)}
+      >
+        <option value="">Select column...</option>
+        {numericColumns.map((col, idx) => (
+          <option key={idx} value={col}>
+            {col} (Outliers: {outliersSummary?.[col] ?? '0'})
+          </option>
+        ))}
+      </select>
         </div>
-        )}
+)}
+
 
       {selectedOption === 'rank_column' && (
         <div className="mb-4">
@@ -775,7 +881,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
       {/* Data Preview Table */}
-      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} outlierCells={outlierCells} selectedOption={selectedOption}/>
 
       <div className="text-center mt-6">
         <a href="/analysis" className="text-blue-600 hover:underline">← Back to Main Page</a>
