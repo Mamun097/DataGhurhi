@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/delete-columns/', views.delete_columns_api, name='delete_columns_api'),
     path('api/remove-duplicates/', views.remove_duplicates_api, name='remove_duplicates_api'),
     path('api/handle-missing/', views.handle_missing_api, name='handle_missing_api'),
+    path('api/outliers-summary/', views.outliers_summary_api, name='outliers_summary_api'), 
     path('api/handle-outliers/', views.handle_outliers_api, name='handle_outliers_api'),
     path('api/rank-column/', views.rank_categorical_column_api, name='rank_categorical_column_api'),
     path('api/split-column/', views.split_column_api, name='split_column_api'),

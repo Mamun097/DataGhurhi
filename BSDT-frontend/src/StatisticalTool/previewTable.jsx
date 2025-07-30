@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
 
-const PreviewTable = ({ columns, initialData, setData,data, setIsPreviewModalOpen, isPreviewModalOpen }) => {
+const PreviewTable = ({ columns, initialData, setData,data, setIsPreviewModalOpen, isPreviewModalOpen
+  ,outlierCells = [], selectedOption = "", 
+ }) => {
+    // Convert outlierCells array to a lookup map for fast access
+    const outlierCellMap = React.useMemo(() => {
+      const map = {};
+      outlierCells?.forEach(({ row, column, value }) => {
+        if (!map[row]) map[row] = {};
+        map[row][column] = true; // or store value if needed
+      });
+      return map;
+    }, [outlierCells]);
+
 
   const [selectedRowIndex, setSelectedRowIndex] = useState(null);
   const [findText, setFindText] = useState("");
@@ -173,12 +185,17 @@ const PreviewTable = ({ columns, initialData, setData,data, setIsPreviewModalOpe
                   {columns.map((col, cidx) => {
                     const value = row[col];
                     const isHighlighted = highlightMatches?.[ridx]?.[col];
+
+                    const isOutlier = selectedOption === "handle_outliers" &&
+                      outlierCellMap?.[ridx]?.[col];
+
+
+
                     return (
                       <td
                         key={cidx}
-                        className={`p-2 border text-gray-700 whitespace-nowrap max-w-xs truncate ${
-                            isHighlighted ? "bg-yellow-highlight" : ""
-                        }`}
+                        className={`cell ${isHighlighted ? "highlighted" : ""} ${isOutlier ? "outlier" : ""}`}
+
                         >
                         {value}
                         </td>
