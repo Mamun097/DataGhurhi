@@ -14,6 +14,7 @@ const AddQuestion = ({
   getLabel,
   addImportedQuestion,
 }) => {
+  const index = questionInfo ? questionInfo.index : 0; // This is used to determine the index of the new question being added
   return (
     <div>
       <style>
@@ -52,7 +53,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("radio")}
+                onClick={() => addNewQuestion("radio", index)}
               >
                 {getLabel("Multiple Choice")}
               </button>
@@ -60,7 +61,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("text")}
+                onClick={() => addNewQuestion("text", index)}
               >
                 {getLabel("Text")}
               </button>
@@ -68,7 +69,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("rating")}
+                onClick={() => addNewQuestion("rating", index)}
               >
                 {getLabel("Rating")}
               </button>
@@ -76,7 +77,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("linearScale")}
+                onClick={() => addNewQuestion("linearScale", index)}
               >
                 {getLabel("Linear Scale")}
               </button>
@@ -84,7 +85,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("checkbox")}
+                onClick={() => addNewQuestion("checkbox", index)}
               >
                 {getLabel("Checkbox")}
               </button>
@@ -92,7 +93,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("dropdown")}
+                onClick={() => addNewQuestion("dropdown", index)}
               >
                 {getLabel("Dropdown")}
               </button>
@@ -100,7 +101,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("datetime")}
+                onClick={() => addNewQuestion("datetime", index)}
               >
                 {getLabel("Date/Time")}
               </button>
@@ -108,7 +109,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("likert")}
+                onClick={() => addNewQuestion("likert", index)}
               >
                 {getLabel("Likert Scale")}
               </button>
@@ -116,7 +117,7 @@ const AddQuestion = ({
             <div className="col-12 col-sm-6 col-md-4 col-lg-3">
               <button
                 className="btn btn-outline-secondary w-100"
-                onClick={() => addNewQuestion("tickboxGrid")}
+                onClick={() => addNewQuestion("tickboxGrid", index)}
               >
                 {getLabel("Tick Box Grid")}
               </button>

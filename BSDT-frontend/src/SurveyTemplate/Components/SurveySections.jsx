@@ -26,9 +26,18 @@ const ThreeDotsIcon = () => (
 );
 
 const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
-    <path fillRule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    fill="currentColor"
+    viewBox="0 0 16 16"
+  >
+    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z" />
+    <path
+      fillRule="evenodd"
+      d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"
+    />
   </svg>
 );
 
@@ -44,10 +53,13 @@ const SurveySections = ({
 }) => {
   const [newQuestion, setNewQuestion] = useState(false);
   const [showLogicDropdown, setShowLogicDropdown] = useState(false);
-  const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] = useState(
-    section.triggerQuestionText || ""
-  );
+  const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] =
+    useState(section.triggerQuestionText || "");
   const logicRef = useRef(null);
+
+  const sectionQuestionCount = questions.filter(
+    (q) => q.section === section.id
+  ).length;
 
   const updateSectionLogic = useCallback(
     (questionText, option) => {
@@ -100,11 +112,11 @@ const SurveySections = ({
       }
     }
   }, [
-    questions, 
-    section.triggerQuestionText, 
-    section.triggerOption, 
-    getOptionsForSelectedQuestion, 
-    updateSectionLogic
+    questions,
+    section.triggerQuestionText,
+    section.triggerOption,
+    getOptionsForSelectedQuestion,
+    updateSectionLogic,
   ]);
 
   useEffect(() => {
@@ -128,7 +140,7 @@ const SurveySections = ({
     setSelectedTriggerQuestionText(questionText);
     updateSectionLogic(questionText, "");
   };
-  
+
   const handleTriggerOptionChange = (e) => {
     const optionValue = e.target.value;
     updateSectionLogic(selectedTriggerQuestionText, optionValue);
@@ -148,12 +160,7 @@ const SurveySections = ({
     );
   };
 
-  const questionInfo = {
-    id: questions.length + 1,
-    section: section.id,
-  };
-
-  const addNewQuestion = (type) => {
+  const addNewQuestion = (type, index) => {
     const baseQuestion = {
       id: questions.length + 1,
       type: type,
@@ -217,7 +224,22 @@ const SurveySections = ({
         break;
     }
 
-    setQuestions([...questions, newQ]);
+    // Questions is the array holding all questions,
+    // index is the array position where the new question should be added
+    // setQuestions is used to update the Questions
+    setQuestions((prevQuestions) => {
+      const updatedQuestions = [...prevQuestions];
+
+      if (index === questions.length) {
+        // If index is at the end, just push the new question
+        updatedQuestions.push(newQ);
+        return updatedQuestions;
+      }
+      // If index is in the middle, insert the new question at the specified index
+      updatedQuestions.splice(index, 0, newQ);
+      return updatedQuestions;
+    });
+
     setNewQuestion(false);
   };
 
@@ -321,9 +343,7 @@ const SurveySections = ({
       return question;
     });
 
-    let updatedSections = sections.filter(
-      (sec) => sec.id !== currentSectionId
-    );
+    let updatedSections = sections.filter((sec) => sec.id !== currentSectionId);
     updatedSections = updatedSections.map((sec) => {
       if (sec.id > currentSectionId) {
         return { ...sec, id: sec.id - 1 };
@@ -339,20 +359,23 @@ const SurveySections = ({
   const optionsForSelectedQuestion = getOptionsForSelectedQuestion();
 
   return (
-    <div className="survey-section__container container-fluid shadow border bg-white rounded p-3 mt-3 mb-3">
+    <div className="survey-section__container container-fluid shadow border bg-white rounded p-3 mt-5 mb-3">
       <div className="survey-section__header d-flex justify-content-between align-items-start">
         <div className="flex-grow-1">
           {sections.length !== 1 && (
             <>
-              <h4 className="survey-section__id-display text-left">
+              <h1 className="survey-section__id-display text-left mb-3">
                 <i>{getLabel("Section") || "Section"} </i>
                 {section.id}
-              </h4>
+              </h1>
               <textarea
                 className="survey-section__title-input form-control mt-2 mb-4"
-                placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
+                placeholder={
+                  getLabel("Enter Section Title") || "Enter Section Title"
+                }
                 value={section.title || ""}
                 onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
+                onFocus={(e) => e.target.select()}
               />
             </>
           )}
@@ -371,19 +394,27 @@ const SurveySections = ({
             {showLogicDropdown && (
               <div className="logic-modal shadow-lg rounded border-0 p-3">
                 <div className="logic-modal__header mb-3">
-                  <h6 className="fw-bold mb-1">{getLabel("Conditional Logic")}</h6>
-                  <p className="text-muted small mb-0">{getLabel("Show this section only if...")}</p>
+                  <h6 className="fw-bold mb-1">
+                    {getLabel("Conditional Logic")}
+                  </h6>
+                  <p className="text-muted small mb-0">
+                    {getLabel("Show this section only if...")}
+                  </p>
                 </div>
 
                 <div className="logic-modal__body">
                   <div className="mb-3">
-                    <label className="form-label small fw-medium">{getLabel("Question")}</label>
+                    <label className="form-label small fw-medium">
+                      {getLabel("Question")}
+                    </label>
                     <select
                       className="form-select form-select-sm"
                       value={selectedTriggerQuestionText}
                       onChange={handleTriggerQuestionChange}
                     >
-                      <option value="">{getLabel("Select a question...")}</option>
+                      <option value="">
+                        {getLabel("Select a question...")}
+                      </option>
                       {eligibleTriggerQuestions.map((q) => (
                         <option key={q.id} value={q.text}>
                           {q.text}
@@ -394,13 +425,17 @@ const SurveySections = ({
 
                   {selectedTriggerQuestionText && (
                     <div className="mb-3">
-                      <label className="form-label small fw-medium">{getLabel("Is equal to")}</label>
+                      <label className="form-label small fw-medium">
+                        {getLabel("Is equal to")}
+                      </label>
                       <select
                         className="form-select form-select-sm"
                         value={section.triggerOption || ""}
                         onChange={handleTriggerOptionChange}
                       >
-                        <option value="">{getLabel("Select an option...")}</option>
+                        <option value="">
+                          {getLabel("Select an option...")}
+                        </option>
                         {optionsForSelectedQuestion.map((opt, index) => (
                           <option key={index} value={opt.value}>
                             {opt.text}
@@ -414,7 +449,7 @@ const SurveySections = ({
                     className="btn btn-outline-danger btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-2"
                     onClick={removeSectionLogic}
                   >
-                    <TrashIcon /> 
+                    <TrashIcon />
                   </button>
                 </div>
               </div>
@@ -423,11 +458,34 @@ const SurveySections = ({
         )}
       </div>
 
+      {sectionQuestionCount === 0 && (
+        <div className="survey-section__add-question-area mb-3">
+          <AddQuestion
+            newQuestion={newQuestion}
+            setNewQuestion={setNewQuestion}
+            addNewQuestion={addNewQuestion}
+            addGeneratedQuestion={addGeneratedQuestion}
+            addImportedQuestion={addImportedQuestion}
+            questionInfo={{
+              id: questions.length + 1,
+              index: questions.length,
+              section: section.id,
+            }}
+            getLabel={getLabel}
+          />
+        </div>
+      )}
+
       <div className="survey-section__questions-area">
         <SurveyQuestions
           section={section}
           questions={questions}
           setQuestions={setQuestions}
+          newQuestion={newQuestion}
+          setNewQuestion={setNewQuestion}
+          addNewQuestion={addNewQuestion}
+          addGeneratedQuestion={addGeneratedQuestion}
+          addImportedQuestion={addImportedQuestion}
           language={language}
           setLanguage={setLanguage}
           getLabel={getLabel}
@@ -435,17 +493,6 @@ const SurveySections = ({
       </div>
 
       <div className="survey-section__actions-area mt-3">
-        <AddQuestion
-          newQuestion={newQuestion}
-          setNewQuestion={setNewQuestion}
-          addNewQuestion={addNewQuestion}
-          addGeneratedQuestion={addGeneratedQuestion}
-          addImportedQuestion={addImportedQuestion}
-          questionInfo={questionInfo}
-          language={language}
-          setLanguage={setLanguage}
-          getLabel={getLabel}
-        />
         <div className="survey-section__buttons d-flex justify-content-end mt-2">
           {sections.length > 1 && section.id !== 1 && (
             <button
