@@ -449,6 +449,7 @@ const Radio = ({
         className="form-control mb-2 mt-2"
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
         placeholder={getLabel("Enter your question here")}
       />
 
@@ -498,6 +499,7 @@ const Radio = ({
                             value={option.text || ""}
                             onChange={(e) => handleOptionChange(idx, e.target.value)}
                             onPaste={(e) => handleOptionPaste(idx, e)}
+                            onFocus={(e) => e.target.select()}
                             placeholder={`Option ${idx + 1}`}
                           />
                         </div>

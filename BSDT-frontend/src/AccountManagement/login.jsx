@@ -129,25 +129,6 @@ const Login = () => {
       <Navbarhome language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
         <motion.div
-          className="feature-card"
-          initial={{ x: -40 }}
-          animate={{ x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <img
-            src="/assets/images/login.png"
-            alt="Login Info"
-            className="feature-image"
-          />
-          <h3>{t("whyLogin")}</h3>
-          <ul>
-            {t("features").map((feat, i) => (
-              <li key={i}>{feat}</li>
-            ))}
-          </ul>
-        </motion.div>
-
-        <motion.div
           className="register-box"
           initial={{ y: -50 }}
           animate={{ y: 0 }}
@@ -190,6 +171,25 @@ const Login = () => {
           <p className="forgot-password-text">
             <a href="/forgot-password">Forgot Password?</a>
           </p>
+        </motion.div>
+
+        <motion.div
+          className="feature-card no-blur"
+          initial={{ x: -40 }}
+          animate={{ x: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <img
+            src="/assets/images/login.png"
+            alt="Login Info"
+            className="feature-image"
+          />
+          <h3>{t("whyLogin")}</h3>
+          <ul>
+            {t("features").map((feat, i) => (
+              <li key={i}>{feat}</li>
+            ))}
+          </ul>
         </motion.div>
       </div>
       <ToastContainer position="top-center" autoClose={4000} />

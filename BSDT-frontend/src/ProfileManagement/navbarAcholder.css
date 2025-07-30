@@ -1,0 +1,256 @@
+/* Container Styles */
+.NavbarAcholderContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: linear-gradient(90deg, #08c294, #38a782);
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+  padding: 0.8rem 1.2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  border-radius: 0 0 12px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Inner wrapper for all elements */
+.NavbarAcholderTopSection {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+/* Logo Section */
+.NavbarAcholderLogoSection {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-bottom: 1rem;
+}
+
+.NavbarAcholderLogoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #ffffff;
+}
+
+.NavbarAcholderLogoItem img {
+  height: 3rem;
+  width: auto;
+}
+
+/* Language Toggle */
+.NavbarAcholderLangSwitch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.NavbarAcholderSwitch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 22px;
+}
+
+.NavbarAcholderSwitch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.NavbarAcholderSlider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  border-radius: 22px;
+  transition: 0.3s;
+}
+
+.NavbarAcholderSwitch input:checked + .NavbarAcholderSlider {
+  background-color: #3fc1c9;
+}
+
+.NavbarAcholderSlider::before {
+  content: "";
+  position: absolute;
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.NavbarAcholderSwitch input:checked + .NavbarAcholderSlider::before {
+  transform: translateX(22px);
+}
+
+.NavbarAcholderLangLabels span {
+  font-size: 0.9rem;
+  color: #fff;
+  margin-left: 0.25rem;
+  transition: font-weight 0.2s;
+}
+
+.LangActive {
+  font-weight: bold;
+  color: #fff;
+}
+
+/* Hamburger Button (Mobile only) */
+.NavbarAcholderHamburger {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #ffffff;
+  display: none;
+}
+
+/* Search Section */
+.NavbarAcholderSearchSection {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  flex: 1;
+  max-width: 400px;
+}
+
+.NavbarAcholderSearchFilter {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.NavbarAcholderSearchBox {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ccc;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  background-color: white;
+  flex: 1;
+}
+
+.NavbarAcholderSearchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+}
+
+.NavbarAcholderSearchIcon {
+  color: #3fc1c9;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Navigation List */
+.NavbarAcholderNavList {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.NavbarAcholderNavList li a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  transition: background 0.2s, border-radius 0.2s;
+}
+
+.NavbarAcholderNavList li a:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+.NavbarAcholderIcon {
+  font-size: 1.1rem;
+}
+
+/* Profile Section */
+.NavbarAcholderProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.NavbarAcholderAvatarWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.NavbarAcholderUserName {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+/* Responsive Popup Menu */
+.NavbarAcholderPopupOpen {
+  display: flex;
+  flex-direction: column;
+  background-color: #f0f9ff;
+  padding: 1rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  gap: 0.8rem;
+}
+
+/* Responsive Behavior */
+@media (max-width: 768px) {
+  .NavbarAcholderContainer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .NavbarAcholderTopSection {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .NavbarAcholderSearchSection {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .NavbarAcholderNavList {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    gap: 0.6rem;
+  }
+
+  .NavbarAcholderHamburger {
+    display: block;
+  }
+}

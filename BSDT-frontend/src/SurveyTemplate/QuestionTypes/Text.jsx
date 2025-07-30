@@ -262,6 +262,7 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
           value={question.text}
           onChange={(e) => handleQuestionChange(e.target.value)}
           placeholder={getLabel("Enter your question here")}
+          onFocus={(e) => e.target.select()}
         />
       </div>
       <div className="mb-2">

@@ -181,6 +181,7 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
           placeholder={getLabel("Enter your question here")}
           value={question.text || ""}
           onChange={(e) => handleQuestionChange(e.target.value)}
+          onFocus={(e) => e.target.select()}
         />
       </div>
 

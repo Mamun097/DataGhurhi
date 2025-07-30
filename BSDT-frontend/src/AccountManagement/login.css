@@ -9,61 +9,54 @@
   padding-top: 80px; /* space for navbar */
 }
 
+.no-blur {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
+
 /* Wrapper to hold both left feature and right login box */
 .register-wrapper {
   display: flex;
   max-width: 800px;
   width: 90%;
-  background: rgba(255, 255, 255, 0.08);
   border-radius: 15px;
   overflow: hidden;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(8px);
+  background: none;
+  backdrop-filter: none !important;
+  filter: none !important;
 }
-.password-input-wrapper {
-  position: relative;
-  width: 100%;
-  margin-bottom: 1rem;
-}
-
-.password-input-wrapper input {
-  width: 100%;
-  padding: 10px 40px 10px 10px; /* leave space on right */
-  font-size: 1rem;
-}
-
-.password-toggle-icon {
-  position: absolute;
-  right: 12px;
-  top: 30%;
-  transform: translateY(-50%);
-  cursor: pointer;
-  font-size: 2rem;
-  color: #888;
-}
-
 
 /* Left Feature Card */
 .feature-card {
   flex: 1;
   padding: 40px 30px;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  backdrop-filter: blur(10px);
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  background-color: #ffffff !important; /* solid background */
+  backdrop-filter: none !important;
+  filter: none !important;
+  border-top-left-radius: 15px;
+  border-bottom-left-radius: 15px;
 }
 
 .feature-card h3 {
   font-size: 30px;
   margin-bottom: 10px;
+  color: #2d5b4f;
 }
 
 .feature-card ul {
   padding-left: 20px;
   list-style-type: disc;
   font-size: 16px;
+  color: #333;
 }
 
 .feature-card li {
@@ -73,22 +66,24 @@
 .feature-image {
   max-width: 100%;
   height: auto;
- 
+  margin-bottom: 20px;
 }
 
 /* Right Login Box */
-.login-box {
+.register-box {
   flex: 1;
   padding: 40px;
   text-align: center;
   background: rgba(255, 255, 255, 0.15);
   backdrop-filter: blur(10px);
+  border-top-right-radius: 15px;
+  border-bottom-right-radius: 15px;
 }
 
 /* Title */
-.login-title {
+.register-title {
   font-size: 24px;
-  color: white;
+  color: #003300;
   margin-bottom: 20px;
   font-weight: bold;
 }
@@ -104,11 +99,33 @@ input {
   box-sizing: border-box;
 }
 
+.password-input-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.password-input-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 10px;
+  font-size: 1rem;
+}
+
+.password-toggle-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: #888;
+}
+
 /* Login Button */
-.login-button {
+.register-button {
   width: 100%;
   padding: 12px;
-  background: #ff5733;
+  background: #007c59;
   border: none;
   color: white;
   font-size: 18px;
@@ -118,8 +135,8 @@ input {
   transition: all 0.3s ease-in-out;
 }
 
-.login-button:hover {
-  background: #ff471a;
+.register-button:hover {
+  background: #005c3f;
 }
 
 /* Error Message */
@@ -132,20 +149,45 @@ input {
   width: 100%;
 }
 
-/* Register Redirect Link */
+/* Register/Forgot Redirect */
 .register-link {
   margin-top: 15px;
   font-size: 14px;
-  color: white;
+  color: #333;
 }
 
 .register-link a {
-  color: #ffd700;
+  color: #007c59;
   text-decoration: none;
   font-weight: bold;
 }
 
+.forgot-password-text {
+  font-size: 14px;
+  margin-top: 10px;
+}
 
+.forgot-password-text a {
+  color: #0066cc;
+  text-decoration: underline;
+}
+
+/* Toast Styles */
+.custom-success-toast {
+  background: linear-gradient(to right, #f0f0f0, #00ff51);
+  color: #000000;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  border-radius: 8px;
+}
+
+.custom-error-toast {
+  background: linear-gradient(to right, #ffffff, #c20000);
+  color: #000000;
+  font-weight: 600;
+  font-family: "Poppins", sans-serif;
+  border-radius: 8px;
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -155,30 +197,16 @@ input {
   }
 
   .feature-card,
-  .login-box {
+  .register-box {
     width: 100%;
+    border-radius: 0;
   }
 
   .feature-card {
     padding: 25px 20px;
   }
 
-  .login-box {
+  .register-box {
     padding: 25px 20px;
   }
-}
-.custom-success-toast {
-  background: linear-gradient(to right, #f0f0f0, #00ff51);
-  color: #000000;
-  font-weight: 600;
-  font-family: 'Poppins', sans-serif;
-  border-radius: 8px;
-}
-
-.custom-error-toast {
-  background: linear-gradient(to right, #ffffff, #c20000);
-  color: #000000;
-  font-weight: 600;
-  font-family: 'Poppins', sans-serif;
-  border-radius: 8px;
 }
