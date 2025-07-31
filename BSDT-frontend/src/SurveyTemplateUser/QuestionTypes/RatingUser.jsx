@@ -2,7 +2,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const RatingQuestion = ({ question, userResponse, setUserResponse }) => {
+const RatingQuestion = ({ index, question, userResponse, setUserResponse }) => {
   // Default scale
   const scale = question.meta?.scale || 5;
   // Find the user's answer if it exists
@@ -35,6 +35,7 @@ const RatingQuestion = ({ question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>

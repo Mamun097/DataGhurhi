@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const LikertScale = ({ question, userResponse, setUserResponse }) => {
+const LikertScale = ({ index, question, userResponse, setUserResponse }) => {
   // Columns remain as they are, with a fallback
   const columns = question.meta?.columns?.length
     ? question.meta.columns
@@ -10,9 +10,8 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
 
   // Initialize user response for the question
   const userAnswer =
-    userResponse.find(
-      (response) => response.questionText === question.text
-    )?.userResponse || [];
+    userResponse.find((response) => response.questionText === question.text)
+      ?.userResponse || [];
 
   // This handler for selecting/deselecting an answer remains unchanged
   const handleClick = (row, columnValue) => {
@@ -22,16 +21,18 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
       );
 
       if (existingQuestionIndex !== -1) {
-        const existingQuestionResponse = prevUserResponse[existingQuestionIndex];
+        const existingQuestionResponse =
+          prevUserResponse[existingQuestionIndex];
         const existingRowAnswer = existingQuestionResponse.userResponse.find(
           (ans) => ans.row === row
         );
 
         if (existingRowAnswer) {
           if (existingRowAnswer.column === columnValue) {
-            const updatedUserResponse = existingQuestionResponse.userResponse.filter(
-              (ans) => ans.row !== row
-            );
+            const updatedUserResponse =
+              existingQuestionResponse.userResponse.filter(
+                (ans) => ans.row !== row
+              );
             if (updatedUserResponse.length === 0) {
               // If no answers left for this question, remove the entire question response
               return prevUserResponse.filter(
@@ -46,9 +47,10 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
               );
             }
           } else {
-            const updatedUserResponse = existingQuestionResponse.userResponse.map(
-              (ans) => (ans.row === row ? { ...ans, column: columnValue } : ans)
-            );
+            const updatedUserResponse =
+              existingQuestionResponse.userResponse.map((ans) =>
+                ans.row === row ? { ...ans, column: columnValue } : ans
+              );
             return prevUserResponse.map((resp, index) =>
               index === existingQuestionIndex
                 ? { ...resp, userResponse: updatedUserResponse }
@@ -95,6 +97,7 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2 me-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -134,7 +137,8 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
           </thead>
           <tbody>
             {shuffledRows.map((row, rowIndex) => {
-              const rowValue = typeof row === 'object' && row?.text ? row.text : row;
+              const rowValue =
+                typeof row === "object" && row?.text ? row.text : row;
               return (
                 <tr key={rowIndex}>
                   <td>{rowValue || `Row ${rowIndex + 1}`}</td>
@@ -143,7 +147,7 @@ const LikertScale = ({ question, userResponse, setUserResponse }) => {
                       <input
                         type="radio"
                         className="form-check-input me-2"
-                        name={`row-${question.id}-${rowIndex}`} 
+                        name={`row-${question.id}-${rowIndex}`}
                         value={col}
                         checked={userAnswer.some(
                           (ans) => ans.row === rowValue && ans.column === col

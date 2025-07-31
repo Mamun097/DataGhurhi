@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const Checkbox = ({ question, userResponse, setUserResponse }) => {
+const Checkbox = ({ index, question, userResponse, setUserResponse }) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
@@ -61,13 +61,14 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
         if (existingQuestionIndex !== -1) {
           const originalOptions = question.meta?.options || [];
           // Find out the index of the user's "Other" response by filtering out the original options
-          const otherIndex = prevUserResponse[existingQuestionIndex].userResponse.findIndex(
-            (resp) => !originalOptions.includes(resp)
-          );
+          const otherIndex = prevUserResponse[
+            existingQuestionIndex
+          ].userResponse.findIndex((resp) => !originalOptions.includes(resp));
           if (otherIndex !== -1) {
             // Update the "Other" response with the new text
             const updatedResponse = [...prevUserResponse];
-            updatedResponse[existingQuestionIndex].userResponse[otherIndex] = newOtherOption;
+            updatedResponse[existingQuestionIndex].userResponse[otherIndex] =
+              newOtherOption;
             return updatedResponse;
           }
         }
@@ -93,6 +94,7 @@ const Checkbox = ({ question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>

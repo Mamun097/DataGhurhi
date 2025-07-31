@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
+const TickBoxGrid = ({ index, question, userResponse, setUserResponse }) => {
   // Define the canonical (original order) rows and columns with fallbacks
   const rows = useMemo(
     () => (question.meta?.rows?.length ? question.meta.rows : ["Row 1"]),
@@ -32,7 +32,8 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
       );
 
       if (existingQuestionIndex !== -1) {
-        const existingQuestionResponse = prevUserResponse[existingQuestionIndex];
+        const existingQuestionResponse =
+          prevUserResponse[existingQuestionIndex];
         let updatedUserResponse = [...existingQuestionResponse.userResponse];
 
         const existingRowIndex = updatedUserResponse.findIndex(
@@ -93,7 +94,7 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
       }
     });
   };
-  
+
   const shuffledRows = useMemo(() => {
     if (question.meta?.enableRowShuffle) {
       const newRows = [...rows];
@@ -106,12 +107,13 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
     return rows;
   }, [rows, question.meta?.enableRowShuffle]);
 
-
   const isRequiredValid = () => {
     if (!question.required) return true;
     return rows.every((row) => {
-      const rowValue = typeof row === 'object' && row?.text ? row.text : row;
-      return userAnswer.some((ans) => ans.row === rowValue && ans.column?.length > 0);
+      const rowValue = typeof row === "object" && row?.text ? row.text : row;
+      return userAnswer.some(
+        (ans) => ans.row === rowValue && ans.column?.length > 0
+      );
     });
   };
 
@@ -119,6 +121,7 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2 me-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -158,26 +161,32 @@ const TickBoxGrid = ({ question, userResponse, setUserResponse }) => {
           </thead>
           <tbody>
             {shuffledRows.map((row, rowIndex) => {
-              const rowValue = typeof row === 'object' && row?.text ? row.text : row;
+              const rowValue =
+                typeof row === "object" && row?.text ? row.text : row;
               return (
-              <tr key={rowIndex}>
-                <td>{rowValue || `Row ${rowIndex + 1}`}</td>
-                {columns.map((col, colIndex) => {
-                  const colValue = typeof col === 'object' && col?.text ? col.text : col;
-                  return (
-                  <td key={colIndex} className="text-center">
-                    <input
-                      type="checkbox"
-                      className="form-check-input me-2"
-                      checked={isChecked(rowValue, colValue)}
-                      onChange={(e) => handleChange(rowValue, colValue, e.target.checked)}
-                      disabled={question.disabled}
-                      aria-label={`Select ${colValue} for ${rowValue}`}
-                    />
-                  </td>
-                )})}
-              </tr>
-            )})}
+                <tr key={rowIndex}>
+                  <td>{rowValue || `Row ${rowIndex + 1}`}</td>
+                  {columns.map((col, colIndex) => {
+                    const colValue =
+                      typeof col === "object" && col?.text ? col.text : col;
+                    return (
+                      <td key={colIndex} className="text-center">
+                        <input
+                          type="checkbox"
+                          className="form-check-input me-2"
+                          checked={isChecked(rowValue, colValue)}
+                          onChange={(e) =>
+                            handleChange(rowValue, colValue, e.target.checked)
+                          }
+                          disabled={question.disabled}
+                          aria-label={`Select ${colValue} for ${rowValue}`}
+                        />
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
