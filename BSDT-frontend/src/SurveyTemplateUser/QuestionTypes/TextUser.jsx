@@ -1,19 +1,30 @@
-import React, { useState, useEffect } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap-icons/font/bootstrap-icons.css';
+import React, { useState, useEffect } from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
-const TextUser = ({ question, userResponse, setUserResponse }) => {
-  const userAnswer = userResponse.find(response => response.questionText === question.text)?.userResponse || '';
-  const [error, setError] = useState('');
+const TextUser = ({ index, question, userResponse, setUserResponse }) => {
+  const userAnswer =
+    userResponse.find((response) => response.questionText === question.text)
+      ?.userResponse || "";
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const newValue = e.target.value;
-    setUserResponse(prev => {
-      const existingIndex = prev.findIndex(response => response.questionText === question.text);
+    setUserResponse((prev) => {
+      const existingIndex = prev.findIndex(
+        (response) => response.questionText === question.text
+      );
       if (existingIndex !== -1) {
-        return prev.map((response, index) => index === existingIndex ? { ...response, userResponse: newValue } : response);
+        return prev.map((response, index) =>
+          index === existingIndex
+            ? { ...response, userResponse: newValue }
+            : response
+        );
       } else {
-        return [...prev, { questionText: question.text, userResponse: newValue }];
+        return [
+          ...prev,
+          { questionText: question.text, userResponse: newValue },
+        ];
       }
     });
   };
@@ -43,10 +54,10 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
         case "Not Equal To":
           return num !== valNum;
         case "Between":
-          const [min, max] = validationText.split(',').map(parseFloat);
+          const [min, max] = validationText.split(",").map(parseFloat);
           return num >= min && num <= max;
         case "Not Between":
-          const [min2, max2] = validationText.split(',').map(parseFloat);
+          const [min2, max2] = validationText.split(",").map(parseFloat);
           return num < min2 || num > max2;
         default:
           return true;
@@ -61,7 +72,8 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           return emailRegex.test(value);
         case "URL":
-          const urlRegex = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
+          const urlRegex =
+            /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
           return urlRegex.test(value);
         default:
           return true;
@@ -99,18 +111,23 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
 
   const validate = () => {
     if (question.required && !userAnswer.trim()) {
-      setError('This field is required.');
+      setError("This field is required.");
       return;
     }
     const { validationType, condition, validationText } = question.meta || {};
     if (validationType) {
-      const isValid = checkValidation(userAnswer, validationType, condition, validationText);
+      const isValid = checkValidation(
+        userAnswer,
+        validationType,
+        condition,
+        validationText
+      );
       if (!isValid) {
-        setError(question.meta.errorText || 'Invalid input');
+        setError(question.meta.errorText || "Invalid input");
         return;
       }
     }
-    setError('');
+    setError("");
   };
 
   useEffect(() => {
@@ -120,6 +137,7 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
   return (
     <div className="mt-2 ms-2 me-2">
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -127,7 +145,9 @@ const TextUser = ({ question, userResponse, setUserResponse }) => {
         <div className="mt-4 mb-4">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
