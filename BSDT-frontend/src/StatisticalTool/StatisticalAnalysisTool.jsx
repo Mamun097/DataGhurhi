@@ -882,12 +882,14 @@ const handleSuggestionClick = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
                                         <span className="text-black">{t.formTitle}</span>
+                                        <div style={{ position: 'absolute', left: '57rem'}}>
                                         <button
                                             onClick={() => navigate('/report')}
-                                            className="ml-12 bg-blue-600 hover:bg-blue-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                         >
-                                            {language === 'bn' ? 'রিপোর্ট দেখুন' : 'Show Report'}
+                                            {language === 'বাংলা' ? 'রিপোর্ট দেখুন' : 'Show Report'}
                                         </button>
+                                        </div>
                                     </div>
                                     <div className="flex justify-end px-4 pt-4">
                                         <button
@@ -4107,7 +4109,7 @@ const renderFZTResults = () => {
                     <button
                         onClick={() => {
                             if (!results || !columns || !testType) {
-                                alert(language === 'bn'
+                                alert(language === 'বাংলা'
                                     ? 'রিপোর্ট যুক্ত করার জন্য সম্পূর্ণ বিশ্লেষণ প্রয়োজন'
                                     : 'Analysis must be completed before adding to report'
                                 );
@@ -4145,15 +4147,15 @@ const renderFZTResults = () => {
                                 ];
 
                                 localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
-                                alert(language === 'bn' ? 'রিপোর্টে যুক্ত হয়েছে' : 'Added to report');
+                                alert(language === 'বাংলা' ? 'রিপোর্টে যুক্ত হয়েছে' : 'Results and visulaizations are added to the report');
                             } catch (error) {
                                 console.error("Add to Report Failed:", error);
-                                alert(language === 'bn' ? 'রিপোর্ট যুক্ত করা যায়নি' : 'Failed to add to report');
+                                alert(language === 'বাংলা' ? 'রিপোর্ট যুক্ত করা যায়নি' : 'Failed to add to report');
                             }
                         }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-black font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 ml-4"
+                        className="bg-indigo-600 hover:bg-indigo-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 ml-4"
                     >
-                        {language === 'bn' ? 'রিপোর্টে যুক্ত করুন' : 'Add to Report'}
+                        {language === 'বাংলা' ? 'রিপোর্টে যুক্ত করুন' : 'Add to Report'}
                     </button>
 
                 </div>
