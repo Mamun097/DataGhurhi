@@ -25,12 +25,22 @@ const DateTimeQuestion = ({
   }, [question.required]);
 
   useEffect(() => {
-    if (question.dateType === undefined) {
+    if (question.meta?.dateType === undefined) {
       setQuestions((prev) =>
-        prev.map((q) => (q.id === question.id ? { ...q, dateType: "date" } : q))
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  dateType: "date",
+                },
+              }
+            : q
+        )
       );
     }
-  }, [question.id, question.dateType, setQuestions]);
+  }, [question.id, question.meta?.dateType, setQuestions]);
 
   const handleRequired = () => {
     const newRequiredState = !required;
@@ -50,11 +60,28 @@ const DateTimeQuestion = ({
 
   const handleTypeChange = (newType) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === question.id ? { ...q, dateType: newType } : q))
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                dateType: newType,
+              },
+            }
+          : q
+      )
     );
   };
 
   const handleDelete = () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete this Date/Time question? This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
     setQuestions((prev) => {
       const updatedQuestions = prev.filter((q) => q.id !== question.id);
       return updatedQuestions.map((q, index) => ({ ...q, id: index + 1 }));
@@ -108,9 +135,12 @@ const DateTimeQuestion = ({
       text: question.text,
       type: question.type,
       required: question.required,
-      dateType: question.dateType || "date", // Ensure dateType is copied
+      section: question.section,
       id: -1,
-      meta: copiedMeta,
+      meta: {
+        ...copiedMeta,
+        dateType: question.meta?.dateType || "date",
+      },
       imageUrls: copiedImageUrls,
     };
 
@@ -217,7 +247,7 @@ const DateTimeQuestion = ({
       {/* Date/Time Input & Type Selector */}
       <div className="d-flex flex-wrap align-items-center gap-2 ms-1 mb-3">
         <input
-          type={question.dateType === "time" ? "time" : "date"}
+          type={question.meta?.dateType === "time" ? "time" : "date"}
           className="form-control form-control-sm w-auto"
           readOnly
         />
@@ -225,7 +255,7 @@ const DateTimeQuestion = ({
           className="form-select form-select-sm"
           style={{ width: "80px" }}
           onChange={(e) => handleTypeChange(e.target.value)}
-          value={question.dateType || "date"}
+          value={question.meta?.dateType || "date"}
         >
           <option value="date">{getLabel("Date")}</option>
           <option value="time">{getLabel("Time")}</option>
@@ -263,7 +293,7 @@ const DateTimeQuestion = ({
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleTranslation}
-          title="Copy Question"
+          title="Translate Question"
         >
           <i className="bi bi-translate"></i>
         </button>
@@ -280,7 +310,7 @@ const DateTimeQuestion = ({
               className="form-check-label"
               htmlFor={`dateTimeRequired-${question.id}`}
             >
-              Required
+              {getLabel("Required")}
             </label>
           </div>
         </div>
