@@ -6,9 +6,17 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import translateText from "./QuestionSpecificUtils/Translation";
 
-const MAX_COLUMNS = 7; 
+const MAX_COLUMNS = 7;
 
-const LikertScale = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const LikertScale = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
@@ -35,16 +43,16 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
   );
   const columns = useMemo(
     () =>
-      question.meta?.columns?.length
-        ? question.meta.columns
-        : ["Column 1"],
+      question.meta?.columns?.length ? question.meta.columns : ["Column 1"],
     [question.meta?.columns]
   );
   const updateMeta = useCallback(
     (metaUpdate) => {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
+          q.id === question.id
+            ? { ...q, meta: { ...q.meta, ...metaUpdate } }
+            : q
         )
       );
     },
@@ -79,14 +87,14 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
   );
   const handleRowChange = useCallback(
     (index, newValue) => {
-      if (newValue.includes('\n')) {
-        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+      if (newValue.includes("\n")) {
+        const lines = newValue.split("\n").filter((line) => line.trim() !== "");
         if (lines.length > 1) {
           const currentRows = [...rows];
           currentRows[index] = lines[0].trim();
-          const newRows = lines.slice(1).map(line => line.trim());
+          const newRows = lines.slice(1).map((line) => line.trim());
           currentRows.splice(index + 1, 0, ...newRows);
-          
+
           updateMeta({ rows: currentRows });
         } else if (lines.length === 1) {
           const updated = [...rows];
@@ -103,8 +111,8 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
   );
   const handleColumnChange = useCallback(
     (index, newValue) => {
-      if (newValue.includes('\n')) {
-        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+      if (newValue.includes("\n")) {
+        const lines = newValue.split("\n").filter((line) => line.trim() !== "");
         if (lines.length > 1) {
           const currentColumns = [...columns];
           const totalNewColumns = currentColumns.length + lines.length - 1;
@@ -112,14 +120,16 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
             const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
             const truncatedLines = lines.slice(0, allowedNewColumns + 1);
             currentColumns[index] = truncatedLines[0].trim();
-            const newColumns = truncatedLines.slice(1).map(line => line.trim());
+            const newColumns = truncatedLines
+              .slice(1)
+              .map((line) => line.trim());
             currentColumns.splice(index + 1, 0, ...newColumns);
           } else {
             currentColumns[index] = lines[0].trim();
-            const newColumns = lines.slice(1).map(line => line.trim());
+            const newColumns = lines.slice(1).map((line) => line.trim());
             currentColumns.splice(index + 1, 0, ...newColumns);
           }
-          
+
           updateMeta({ columns: currentColumns });
         } else if (lines.length === 1) {
           const updated = [...columns];
@@ -134,62 +144,74 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     },
     [columns, updateMeta]
   );
-  const handleRowPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        const currentRows = [...rows];
-        currentRows[index] = lines[0].trim();
-        const newRows = lines.slice(1).map(line => line.trim());
-        currentRows.splice(index + 1, 0, ...newRows);
-        updateMeta({ rows: currentRows });
-      } else if (lines.length === 1) {
+  const handleRowPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          const currentRows = [...rows];
+          currentRows[index] = lines[0].trim();
+          const newRows = lines.slice(1).map((line) => line.trim());
+          currentRows.splice(index + 1, 0, ...newRows);
+          updateMeta({ rows: currentRows });
+        } else if (lines.length === 1) {
+          const updated = [...rows];
+          updated[index] = lines[0].trim();
+          updateMeta({ rows: updated });
+        }
+      } else {
         const updated = [...rows];
-        updated[index] = lines[0].trim();
+        updated[index] = pastedText;
         updateMeta({ rows: updated });
       }
-    } else {
-      const updated = [...rows];
-      updated[index] = pastedText;
-      updateMeta({ rows: updated });
-    }
-  }, [rows, updateMeta]);
-  const handleColumnPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        const currentColumns = [...columns];
-        const totalNewColumns = currentColumns.length + lines.length - 1;
-        if (totalNewColumns > MAX_COLUMNS) {
-          const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
-          const truncatedLines = lines.slice(0, allowedNewColumns + 1);
-          currentColumns[index] = truncatedLines[0].trim();
-          const newColumns = truncatedLines.slice(1).map(line => line.trim());
-          currentColumns.splice(index + 1, 0, ...newColumns);
-        } else {
-          currentColumns[index] = lines[0].trim();
-          const newColumns = lines.slice(1).map(line => line.trim());
-          currentColumns.splice(index + 1, 0, ...newColumns);
+    },
+    [rows, updateMeta]
+  );
+  const handleColumnPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          const currentColumns = [...columns];
+          const totalNewColumns = currentColumns.length + lines.length - 1;
+          if (totalNewColumns > MAX_COLUMNS) {
+            const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
+            const truncatedLines = lines.slice(0, allowedNewColumns + 1);
+            currentColumns[index] = truncatedLines[0].trim();
+            const newColumns = truncatedLines
+              .slice(1)
+              .map((line) => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          } else {
+            currentColumns[index] = lines[0].trim();
+            const newColumns = lines.slice(1).map((line) => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          }
+
+          updateMeta({ columns: currentColumns });
+        } else if (lines.length === 1) {
+          const updated = [...columns];
+          updated[index] = lines[0].trim();
+          updateMeta({ columns: updated });
         }
-        
-        updateMeta({ columns: currentColumns });
-      } else if (lines.length === 1) {
+      } else {
         const updated = [...columns];
-        updated[index] = lines[0].trim();
+        updated[index] = pastedText;
         updateMeta({ columns: updated });
       }
-    } else {
-      const updated = [...columns];
-      updated[index] = pastedText;
-      updateMeta({ columns: updated });
-    }
-  }, [columns, updateMeta]);
+    },
+    [columns, updateMeta]
+  );
   const handleAddRow = useCallback(() => {
     updateMeta({ rows: [...rows, `Row ${rows.length + 1}`] });
   }, [rows, updateMeta]);
@@ -217,14 +239,17 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-    if(event.target) event.target.value = null;
+    if (event.target) event.target.value = null;
   };
   const removeImage = useCallback(
     (index) => {
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
-            ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+              }
             : q
         )
       );
@@ -258,7 +283,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: -1, 
+      id: -1,
       meta: {
         ...question.meta,
         rows: [...rows],
@@ -273,7 +298,15 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
     setQuestions(updatedQuestions);
-  }, [question, questions, rows, columns, setQuestions, requireEachRowResponse, enableRowShuffle]);
+  }, [
+    question,
+    questions,
+    rows,
+    columns,
+    setQuestions,
+    requireEachRowResponse,
+    enableRowShuffle,
+  ]);
   const handleRowDragEnd = useCallback(
     (result) => {
       if (!result.destination) return;
@@ -304,35 +337,51 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
       if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
         throw new Error("No translation returned for question");
       }
-      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      handleQuestionChange(
+        questionResponse.data.data.translations[0].translatedText
+      );
       console.log("Meta rows before translation:", question.meta.rows);
-      const rowResponse = (question.meta.rows || []).map((opt) => opt.trim()).filter(opt => opt);
-      const colResponse = (question.meta.columns || []).map((opt) => opt.trim()).filter(opt => opt);
+      const rowResponse = (question.meta.rows || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
+      const colResponse = (question.meta.columns || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
       if (rowResponse.length > 0) {
         const rowTranslations = await translateText(rowResponse, "bn");
-        const translatedRows = rowTranslations.data.data.translations.map((t) => t.translatedText);
+        const translatedRows = rowTranslations.data.data.translations.map(
+          (t) => t.translatedText
+        );
         console.log("Translated rows:", translatedRows);
         updateMeta({ rows: translatedRows });
       }
       if (colResponse.length > 0) {
         const colTranslations = await translateText(colResponse, "bn");
-        const translatedColumns = colTranslations.data.data.translations.map((t) => t.translatedText);
+        const translatedColumns = colTranslations.data.data.translations.map(
+          (t) => t.translatedText
+        );
         console.log("Translated columns:", translatedColumns);
         updateMeta({ columns: translatedColumns });
       }
-      
     } catch (error) {
       console.error("Error in handleTranslation:", error.message);
     }
-  }, [handleQuestionChange, question.text, question.meta.rows, question.meta.columns, updateMeta]);
-  
+  }, [
+    handleQuestionChange,
+    question.text,
+    question.meta.rows,
+    question.meta.columns,
+    updateMeta,
+  ]);
 
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>{getLabel("Likert Scale")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Likert Scale")}</strong>
           </em>
         </label>
         <TagManager
@@ -361,7 +410,9 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
@@ -401,7 +452,9 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
       />
 
       <div className="mb-3">
-        <h6><b>{getLabel("Rows")}</b></h6>
+        <h6>
+          <b>{getLabel("Rows")}</b>
+        </h6>
         <DragDropContext onDragEnd={handleRowDragEnd}>
           <Droppable droppableId={`likert-rows-${question.id}`}>
             {(provided) => (
@@ -418,14 +471,23 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
                         {...prov.draggableProps}
                         className="d-flex align-items-center mb-2"
                       >
-                        <span {...prov.dragHandleProps} className="me-2 flex-shrink-0" style={{ cursor: "grab" }}>
-                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        <span
+                          {...prov.dragHandleProps}
+                          className="me-2 flex-shrink-0"
+                          style={{ cursor: "grab" }}
+                        >
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem" }}
+                          ></i>
                         </span>
                         <input
                           type="text"
                           className="form-control"
                           value={row}
-                          onChange={(e) => handleRowChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleRowChange(index, e.target.value)
+                          }
                           onPaste={(e) => handleRowPaste(index, e)}
                           onFocus={(e) => e.target.select()}
                           placeholder={`Row ${index + 1}`}
@@ -455,7 +517,9 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
       </div>
 
       <div className="mb-3">
-        <h6><b>{getLabel("Columns")}</b></h6>
+        <h6>
+          <b>{getLabel("Columns")}</b>
+        </h6>
         <DragDropContext onDragEnd={handleColumnDragEnd}>
           <Droppable droppableId={`likert-columns-${question.id}`}>
             {(provided) => (
@@ -467,19 +531,28 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
                     index={index}
                   >
                     {(prov) => (
-                       <div
+                      <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
                         className="d-flex align-items-center mb-2"
                       >
-                         <span {...prov.dragHandleProps} className="me-2" style={{ cursor: "grab" }}>
-                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        <span
+                          {...prov.dragHandleProps}
+                          className="me-2"
+                          style={{ cursor: "grab" }}
+                        >
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem" }}
+                          ></i>
                         </span>
                         <input
                           type="text"
                           className="form-control"
                           value={col}
-                          onChange={(e) => handleColumnChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleColumnChange(index, e.target.value)
+                          }
                           onPaste={(e) => handleColumnPaste(index, e)}
                           onFocus={(e) => e.target.select()}
                           placeholder={`Column ${index + 1}`}
@@ -505,10 +578,11 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
-          ➕ {getLabel("Add Column")} {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
+          ➕ {getLabel("Add Column")}{" "}
+          {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
         </button>
       </div>
-      
+
       {/* Grid Preview */}
       {/* {rows.length > 0 && columns.length > 0 && (
         <div className="table-responsive mb-3">
@@ -545,7 +619,11 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
 
       {/* Action Buttons - now separate from toggles */}
       <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-sm btn-outline-secondary w-auto me-2" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-sm btn-outline-secondary w-auto me-2"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
@@ -555,7 +633,10 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-sm btn-outline-secondary w-auto me-2" title="Add Image">
+        <label
+          className="btn btn-sm btn-outline-secondary w-auto me-2"
+          title="Add Image"
+        >
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -574,7 +655,7 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
       </div>
       {/* Additional Toggles Separated for Clarity */}
       <div className="mt-3 border-top pt-3">
-         <div className="form-check form-switch mb-2">
+        <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
             type="checkbox"
@@ -582,7 +663,10 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleRequireEachRowResponseToggle}
             checked={requireEachRowResponse}
           />
-          <label className="form-check-label" htmlFor={`requireEachRowLikert${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requireEachRowLikert${question.id}`}
+          >
             {getLabel("Require a response in each row")}
           </label>
         </div>
@@ -594,11 +678,14 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleEnableRowShuffleToggle}
             checked={enableRowShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableRowShuffleLikert${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableRowShuffleLikert${question.id}`}
+          >
             {getLabel("Shuffle row order")}
           </label>
         </div>
-         <div className="form-check form-switch">
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
@@ -606,7 +693,10 @@ const LikertScale = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleRequired}
             checked={required}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchLikert${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requiredSwitchLikert${question.id}`}
+          >
             {getLabel("Required")}
           </label>
         </div>

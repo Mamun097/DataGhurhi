@@ -65,11 +65,12 @@ const SurveyQuestions = ({
     setQuestions(newQuestions);
   };
 
-  const renderQuestionComponent = (question) => {
+  const renderQuestionComponent = (question, index) => {
     switch (question.type) {
       case "radio":
         return (
           <Radio
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -81,6 +82,7 @@ const SurveyQuestions = ({
       case "text":
         return (
           <Text
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -92,6 +94,7 @@ const SurveyQuestions = ({
       case "likert":
         return (
           <Likert
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -103,6 +106,7 @@ const SurveyQuestions = ({
       case "rating":
         return (
           <RatingQuestion
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -114,6 +118,7 @@ const SurveyQuestions = ({
       case "linearScale":
         return (
           <LinearScaleQuestion
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -125,6 +130,7 @@ const SurveyQuestions = ({
       case "datetime":
         return (
           <DateTimeQuestion
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -136,6 +142,7 @@ const SurveyQuestions = ({
       case "dropdown":
         return (
           <DropdownQuestion
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -147,6 +154,7 @@ const SurveyQuestions = ({
       case "tickboxGrid":
         return (
           <TickBoxGrid
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -158,6 +166,7 @@ const SurveyQuestions = ({
       case "checkbox":
         return (
           <Checkbox
+            index={index}
             question={question}
             questions={questions}
             setQuestions={setQuestions}
@@ -209,7 +218,7 @@ const SurveyQuestions = ({
                               <i className="bi bi-grip-vertical survey-question-drag-icon"></i>
                             </div>
                             <div className="survey-question-content-wrapper">
-                              {renderQuestionComponent(question)}
+                              {renderQuestionComponent(question, index + 1)}
                             </div>
                           </div>
                         </div>
