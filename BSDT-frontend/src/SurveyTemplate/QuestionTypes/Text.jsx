@@ -3,7 +3,15 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 
-const Text = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const Text = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [required, setRequired] = useState(question.required || false);
@@ -31,45 +39,52 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
     question.meta?.responseType || "short"
   );
 
-  const conditions = React.useMemo(() => ({
-    [getLabel("Number")]: [
-      getLabel("Greater Than"),
-      getLabel("Greater Than or Equal To"),
-      getLabel("Less Than"),
-      getLabel("Less Than or Equal To"),
-      getLabel("Equal To"),
-      getLabel("Not Equal To"),
-      getLabel("Between"),
-      getLabel("Not Between"),
-      getLabel("Is Number"),
-      getLabel("Is Not Number"),
-    ],
-    [getLabel("Text")]: [
-      getLabel("Contains"),
-      getLabel("Does Not Contain"),
-      getLabel("Email"),
-      getLabel("URL"),
-    ],
-    [getLabel("Length")]: [
-      getLabel("Maximum character Count"),
-      getLabel("Minimum character Count"),
-    ],
-    [getLabel("Regex")]: [
-      getLabel("Contains"),
-      getLabel("Doesn't Contain"),
-      getLabel("Matches"),
-      getLabel("Doesn't Match"),
-    ],
-  }), []);
+  const conditions = React.useMemo(
+    () => ({
+      [getLabel("Number")]: [
+        getLabel("Greater Than"),
+        getLabel("Greater Than or Equal To"),
+        getLabel("Less Than"),
+        getLabel("Less Than or Equal To"),
+        getLabel("Equal To"),
+        getLabel("Not Equal To"),
+        getLabel("Between"),
+        getLabel("Not Between"),
+        getLabel("Is Number"),
+        getLabel("Is Not Number"),
+      ],
+      [getLabel("Text")]: [
+        getLabel("Contains"),
+        getLabel("Does Not Contain"),
+        getLabel("Email"),
+        getLabel("URL"),
+      ],
+      [getLabel("Length")]: [
+        getLabel("Maximum character Count"),
+        getLabel("Minimum character Count"),
+      ],
+      [getLabel("Regex")]: [
+        getLabel("Contains"),
+        getLabel("Doesn't Contain"),
+        getLabel("Matches"),
+        getLabel("Doesn't Match"),
+      ],
+    }),
+    []
+  );
 
-  const updateQuestionMeta = useCallback((metaUpdate) => {
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
-      )
-    );
-  }, [question.id, setQuestions]);
-
+  const updateQuestionMeta = useCallback(
+    (metaUpdate) => {
+      setQuestions((prevQuestions) =>
+        prevQuestions.map((q) =>
+          q.id === question.id
+            ? { ...q, meta: { ...q.meta, ...metaUpdate } }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleSettings = useCallback(() => {
     const newValidationState = !inputValidation;
@@ -89,41 +104,56 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
         validationText: "",
       });
     }
-  }, [inputValidation, validationType, condition, errorText, validationText, updateQuestionMeta]);
-
+  }, [
+    inputValidation,
+    validationType,
+    condition,
+    errorText,
+    validationText,
+    updateQuestionMeta,
+  ]);
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-    if(event.target) event.target.value = null;
+    if (event.target) event.target.value = null;
   }, []);
 
-  const removeImage = useCallback((index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  },[question.id, setQuestions]);
+  const removeImage = useCallback(
+    (index) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const updateAlignment = useCallback((index, alignment) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              imageUrls: (q.imageUrls || []).map((img, i) =>
-                i === index ? { ...img, alignment } : img
-              ),
-            }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateAlignment = useCallback(
+    (index, alignment) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).map((img, i) =>
+                  i === index ? { ...img, alignment } : img
+                ),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleRequired = useCallback(() => {
     const newRequiredState = !required;
@@ -135,13 +165,16 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
     setRequired(newRequiredState);
   }, [required, question.id, setQuestions]);
 
-  const handleQuestionChange = useCallback((newText) => {
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, text: newText } : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      setQuestions((prevQuestions) =>
+        prevQuestions.map((q) =>
+          q.id === question.id ? { ...q, text: newText } : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleDelete = useCallback(() => {
     setQuestions((prevQuestions) => {
@@ -170,42 +203,71 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
     setQuestions(updatedQuestions);
-  }, [questions, question, responseType, inputValidation, validationType, condition, validationText, errorText, setQuestions]);
+  }, [
+    questions,
+    question,
+    responseType,
+    inputValidation,
+    validationType,
+    condition,
+    validationText,
+    errorText,
+    setQuestions,
+  ]);
 
-  const handleValidationTypeChange = useCallback((event) => {
-    const selectedType = event.target.value;
-    const newCondition = conditions[selectedType]?.[0] || conditions[Object.keys(conditions)[0]][0]; 
-    setValidationType(selectedType);
-    setCondition(newCondition);
-    updateQuestionMeta({ validationType: selectedType, condition: newCondition });
-  }, [conditions, updateQuestionMeta]);
+  const handleValidationTypeChange = useCallback(
+    (event) => {
+      const selectedType = event.target.value;
+      const newCondition =
+        conditions[selectedType]?.[0] ||
+        conditions[Object.keys(conditions)[0]][0];
+      setValidationType(selectedType);
+      setCondition(newCondition);
+      updateQuestionMeta({
+        validationType: selectedType,
+        condition: newCondition,
+      });
+    },
+    [conditions, updateQuestionMeta]
+  );
 
-  const handleConditionChange = useCallback((event) => {
-    const selectedCondition = event.target.value;
-    setCondition(selectedCondition);
-    updateQuestionMeta({ condition: selectedCondition });
-  }, [updateQuestionMeta]);
+  const handleConditionChange = useCallback(
+    (event) => {
+      const selectedCondition = event.target.value;
+      setCondition(selectedCondition);
+      updateQuestionMeta({ condition: selectedCondition });
+    },
+    [updateQuestionMeta]
+  );
 
-  const handleValidationTextChange = useCallback((event) => {
-    const newValidationText = event.target.value;
-    setValidationText(newValidationText);
-    updateQuestionMeta({ validationText: newValidationText });
-  }, [updateQuestionMeta]);
+  const handleValidationTextChange = useCallback(
+    (event) => {
+      const newValidationText = event.target.value;
+      setValidationText(newValidationText);
+      updateQuestionMeta({ validationText: newValidationText });
+    },
+    [updateQuestionMeta]
+  );
 
-  const handleMinMaxChange = useCallback((minValue, maxValue) => {
-    setMin(minValue);
-    setMax(maxValue);
-    const newValidationText = `${minValue},${maxValue}`;
-    setValidationText(newValidationText);
-    updateQuestionMeta({ validationText: newValidationText });
-  }, [updateQuestionMeta]);
+  const handleMinMaxChange = useCallback(
+    (minValue, maxValue) => {
+      setMin(minValue);
+      setMax(maxValue);
+      const newValidationText = `${minValue},${maxValue}`;
+      setValidationText(newValidationText);
+      updateQuestionMeta({ validationText: newValidationText });
+    },
+    [updateQuestionMeta]
+  );
 
-  const handleErrorTextChange = useCallback((event) => {
-    const newErrorText = event.target.value;
-    setErrorText(newErrorText);
-    updateQuestionMeta({ errorText: newErrorText });
-  },[updateQuestionMeta]);
-
+  const handleErrorTextChange = useCallback(
+    (event) => {
+      const newErrorText = event.target.value;
+      setErrorText(newErrorText);
+      updateQuestionMeta({ errorText: newErrorText });
+    },
+    [updateQuestionMeta]
+  );
 
   const handleResponseTypeToggle = useCallback(() => {
     const newResponseType = responseType === "short" ? "long" : "short";
@@ -213,16 +275,23 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
     updateQuestionMeta({ responseType: newResponseType });
   }, [responseType, updateQuestionMeta]);
 
-
   useEffect(() => {
     setRequired(question.required || false);
     setInputValidation(question.meta?.validationType ? true : false);
     const initialValidationType = question.meta?.validationType || "Number";
     setValidationType(initialValidationType);
-    setCondition(question.meta?.condition || conditions[initialValidationType]?.[0] || conditions[Object.keys(conditions)[0]][0]);
+    setCondition(
+      question.meta?.condition ||
+        conditions[initialValidationType]?.[0] ||
+        conditions[Object.keys(conditions)[0]][0]
+    );
     setErrorText(question.meta?.errorText || "");
     setValidationText(question.meta?.validationText || "");
-    if (question.meta?.validationText && (question.meta?.condition === "Between" || question.meta?.condition === "Not Between")) {
+    if (
+      question.meta?.validationText &&
+      (question.meta?.condition === "Between" ||
+        question.meta?.condition === "Not Between")
+    ) {
       const parts = question.meta.validationText.split(",");
       setMin(parts[0] || "");
       setMax(parts[1] || "");
@@ -236,15 +305,17 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
   const handleTranslation = useCallback(async () => {
     const response = await translateText(question.text);
     handleQuestionChange(response.data.data.translations[0].translatedText);
-
   }, [handleQuestionChange, question.text]);
-
 
   return (
     <div className="mb-3">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em><strong>{getLabel("Text")}</strong></em>
+          <em>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Text")}</strong>
+          </em>
         </label>
         <TagManager
           questionId={question.id}
@@ -281,9 +352,21 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
         {question.imageUrls && question.imageUrls.length > 0 && (
           <div className="mb-2">
             {question.imageUrls.map((img, idx) => (
-              <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-                <div className={`d-flex justify-content-${img.alignment || "start"}`}>
-                  <img src={img.url} alt={`Question ${idx}`} className="img-fluid rounded" style={{ maxHeight: 400 }}/>
+              <div
+                key={idx}
+                className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm"
+              >
+                <div
+                  className={`d-flex justify-content-${
+                    img.alignment || "start"
+                  }`}
+                >
+                  <img
+                    src={img.url}
+                    alt={`Question ${idx}`}
+                    className="img-fluid rounded"
+                    style={{ maxHeight: 400 }}
+                  />
                 </div>
                 <div className="d-flex flex-wrap justify-content-between align-items-center mt-2 gap-2">
                   <select
@@ -334,7 +417,9 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
               value={validationType}
             >
               {Object.keys(conditions).map((type) => (
-                <option key={type} value={type}>{type}</option>
+                <option key={type} value={type}>
+                  {type}
+                </option>
               ))}
             </select>
             <select
@@ -343,11 +428,13 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
               value={condition}
             >
               {conditions[validationType]?.map((cond) => (
-                <option key={cond} value={cond}>{cond}</option>
+                <option key={cond} value={cond}>
+                  {cond}
+                </option>
               ))}
             </select>
           </div>
-          {(condition === "Between" || condition === "Not Between") ? (
+          {condition === "Between" || condition === "Not Between" ? (
             <div className="d-flex flex-column flex-sm-row align-items-sm-center mt-2">
               <input
                 type="text"
@@ -365,16 +452,29 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
                 onChange={(e) => handleMinMaxChange(min, e.target.value)}
               />
             </div>
-          ) : (condition !== "Is Number" && condition !== "Is Not Number" && validationType !== "Text" || (validationType === "Text" && (condition === "Contains" || condition === "Does Not Contain"))) && (
-            <div className="d-flex align-items-center mt-2">
-              <input
-                type={validationType === "Number" && (condition !== "Is Number" && condition !== "Is Not Number") ? "number" : "text"}
-                className="form-control"
-                placeholder="Value"
-                value={validationText}
-                onChange={handleValidationTextChange}
-              />
-            </div>
+          ) : (
+            ((condition !== "Is Number" &&
+              condition !== "Is Not Number" &&
+              validationType !== "Text") ||
+              (validationType === "Text" &&
+                (condition === "Contains" ||
+                  condition === "Does Not Contain"))) && (
+              <div className="d-flex align-items-center mt-2">
+                <input
+                  type={
+                    validationType === "Number" &&
+                    condition !== "Is Number" &&
+                    condition !== "Is Not Number"
+                      ? "number"
+                      : "text"
+                  }
+                  className="form-control"
+                  placeholder="Value"
+                  value={validationText}
+                  onChange={handleValidationTextChange}
+                />
+              </div>
+            )
           )}
           <div>
             <input
@@ -389,15 +489,31 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
       )}
 
       <div className="d-flex flex-wrap align-items-center gy-5">
-        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2 mt-3"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleDelete} title="Delete Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2 mt-3"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto me-2 mt-3" title="Add Image">
+        <label
+          className="btn btn-outline-secondary w-auto me-2 mt-3"
+          title="Add Image"
+        >
           <i className="bi bi-image"></i>
-          <input type="file" accept="image/*" hidden onChange={handleQuestionImageUpload} />
+          <input
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handleQuestionImageUpload}
+          />
         </label>
         <button
           className="btn btn-outline-secondary w-auto me-2 mt-3"
@@ -406,35 +522,49 @@ const Text = ({ question, questions, setQuestions, language, setLanguage, getLab
         >
           <i className="bi bi-translate"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto me-2 mt-3" onClick={handleSettings} title="Response Validation Settings">
-          <i className={`bi ${inputValidation ? "bi-gear-fill text-primary" : "bi-gear"}`}></i>
+        <button
+          className="btn btn-outline-secondary w-auto me-2 mt-3"
+          onClick={handleSettings}
+          title="Response Validation Settings"
+        >
+          <i
+            className={`bi ${
+              inputValidation ? "bi-gear-fill text-primary" : "bi-gear"
+            }`}
+          ></i>
         </button>
 
         <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
-            <div className="form-check form-switch">
+          <div className="form-check form-switch">
             <input
-                className="form-check-input"
-                type="checkbox"
-                id={`responseTypeSwitch-${question.id}`}
-                onChange={handleResponseTypeToggle}
-                checked={responseType === "long"}
+              className="form-check-input"
+              type="checkbox"
+              id={`responseTypeSwitch-${question.id}`}
+              onChange={handleResponseTypeToggle}
+              checked={responseType === "long"}
             />
-            <label className="form-check-label" htmlFor={`responseTypeSwitch-${question.id}`}>
-                {getLabel("Long Answer")}
+            <label
+              className="form-check-label"
+              htmlFor={`responseTypeSwitch-${question.id}`}
+            >
+              {getLabel("Long Answer")}
             </label>
-            </div>
-            <div className="form-check form-switch ms-3">
+          </div>
+          <div className="form-check form-switch ms-3">
             <input
-                className="form-check-input"
-                type="checkbox"
-                id={`requiredSwitch-${question.id}`}
-                onChange={handleRequired}
-                checked={required}
+              className="form-check-input"
+              type="checkbox"
+              id={`requiredSwitch-${question.id}`}
+              onChange={handleRequired}
+              checked={required}
             />
-            <label className="form-check-label" htmlFor={`requiredSwitch-${question.id}`}>
-                {getLabel("Required")}
+            <label
+              className="form-check-label"
+              htmlFor={`requiredSwitch-${question.id}`}
+            >
+              {getLabel("Required")}
             </label>
-            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -11,7 +11,15 @@ const DEFAULT_SCALE = 5;
 
 const SCALE_OPTIONS = [3, 5, 7, 10];
 
-const RatingQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const RatingQuestion = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [required, setRequired] = useState(question.required || false);
   const [scale, setScale] = useState(question.meta?.scale || DEFAULT_SCALE);
   const [showCropper, setShowCropper] = useState(false);
@@ -22,23 +30,34 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
     setScale(question.meta?.scale || DEFAULT_SCALE);
   }, [question]);
 
-  const imageUrls = useMemo(() => question.imageUrls || [], [question.imageUrls]);
+  const imageUrls = useMemo(
+    () => question.imageUrls || [],
+    [question.imageUrls]
+  );
 
-  const updateQuestion = useCallback((updates) => {
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, ...updates } : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateQuestion = useCallback(
+    (updates) => {
+      setQuestions((prevQuestions) =>
+        prevQuestions.map((q) =>
+          q.id === question.id ? { ...q, ...updates } : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const updateQuestionMeta = useCallback((metaUpdate) => {
-    setQuestions((prevQuestions) =>
-      prevQuestions.map((q) =>
-        q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateQuestionMeta = useCallback(
+    (metaUpdate) => {
+      setQuestions((prevQuestions) =>
+        prevQuestions.map((q) =>
+          q.id === question.id
+            ? { ...q, meta: { ...q.meta, ...metaUpdate } }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleRequired = useCallback(() => {
     const newRequiredState = !required;
@@ -46,15 +65,21 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
     setRequired(newRequiredState);
   }, [required, updateQuestion]);
 
-  const handleQuestionChange = useCallback((newText) => {
-    updateQuestion({ text: newText });
-  }, [updateQuestion]);
+  const handleQuestionChange = useCallback(
+    (newText) => {
+      updateQuestion({ text: newText });
+    },
+    [updateQuestion]
+  );
 
-  const handleScaleChange = useCallback((newScaleValue) => {
-    const newScale = Number(newScaleValue);
-    updateQuestionMeta({ scale: newScale });
-    setScale(newScale);
-  }, [updateQuestionMeta]);
+  const handleScaleChange = useCallback(
+    (newScaleValue) => {
+      const newScale = Number(newScaleValue);
+      updateQuestionMeta({ scale: newScale });
+      setScale(newScale);
+    },
+    [updateQuestionMeta]
+  );
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -64,16 +89,22 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
     if (event.target) event.target.value = null;
   }, []);
 
-  const removeImageCb = useCallback((index) => {
-    updateQuestion({ imageUrls: imageUrls.filter((_, i) => i !== index) });
-  }, [imageUrls, updateQuestion]);
+  const removeImageCb = useCallback(
+    (index) => {
+      updateQuestion({ imageUrls: imageUrls.filter((_, i) => i !== index) });
+    },
+    [imageUrls, updateQuestion]
+  );
 
-  const updateAlignmentCb = useCallback((index, alignment) => {
-    const newImageUrls = imageUrls.map((img, i) =>
-      i === index ? { ...img, alignment } : img
-    );
-    updateQuestion({ imageUrls: newImageUrls });
-  }, [imageUrls, updateQuestion]);
+  const updateAlignmentCb = useCallback(
+    (index, alignment) => {
+      const newImageUrls = imageUrls.map((img, i) =>
+        i === index ? { ...img, alignment } : img
+      );
+      updateQuestion({ imageUrls: newImageUrls });
+    },
+    [imageUrls, updateQuestion]
+  );
 
   const handleDelete = useCallback(() => {
     setQuestions((prevQuestions) => {
@@ -103,7 +134,6 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
   const handleTranslation = useCallback(async () => {
     const response = await translateText(question.text);
     handleQuestionChange(response.data.data.translations[0].translatedText);
-
   }, [handleQuestionChange, question.text]);
 
   return (
@@ -112,7 +142,9 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>{getLabel("Rating")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Rating")}</strong>
           </em>
         </label>
         <TagManager
@@ -142,7 +174,9 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
         <div className="mb-2">
           {imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question Preview ${idx}`}
@@ -186,8 +220,16 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
       </div>
 
       {/* Scale Selector */}
-      <div className="d-flex flex-wrap align-items-center my-3 gap-2"> {/* Added flex-wrap and gap-2 */}
-        <label htmlFor={`scale-select-${question.id}`} className="form-label mb-0">{getLabel("Levels:")}</label> {/* Removed me-2, gap-2 on parent handles spacing */}
+      <div className="d-flex flex-wrap align-items-center my-3 gap-2">
+        {" "}
+        {/* Added flex-wrap and gap-2 */}
+        <label
+          htmlFor={`scale-select-${question.id}`}
+          className="form-label mb-0"
+        >
+          {getLabel("Levels:")}
+        </label>{" "}
+        {/* Removed me-2, gap-2 on parent handles spacing */}
         <select
           id={`scale-select-${question.id}`}
           className="form-select form-select-sm"
@@ -206,22 +248,44 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
       {/* Rating Preview - Already responsive with flex-wrap */}
       <div className="d-flex justify-content-center align-items-center flex-wrap mb-3 p-2 border rounded-md">
         {[...Array(scale)].map((_, i) => (
-          <div key={i} className="text-center mx-1 my-1" style={{ minWidth: '40px' }}>
-            <i className="bi bi-star-fill text-warning" style={{ fontSize: "24px" }}></i>
+          <div
+            key={i}
+            className="text-center mx-1 my-1"
+            style={{ minWidth: "40px" }}
+          >
+            <i
+              className="bi bi-star-fill text-warning"
+              style={{ fontSize: "24px" }}
+            ></i>
             <div className="small mt-1">{i + 1}</div>
           </div>
         ))}
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="d-flex flex-wrap align-items-center mt-3 gy-3"> {/* gy-3 for vertical spacing */}
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleCopy} title="Copy Question">
+      <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
+        {" "}
+        {/* gy-3 for vertical spacing */}
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleDelete} title="Delete Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto me-0 me-sm-2" title="Add Image"> {/* Adjusted margin for last button before switch */}
+        <label
+          className="btn btn-outline-secondary w-auto me-0 me-sm-2"
+          title="Add Image"
+        >
+          {" "}
+          {/* Adjusted margin for last button before switch */}
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -247,7 +311,12 @@ const RatingQuestion = ({ question, questions, setQuestions, language, setLangua
               checked={required}
               onChange={handleRequired}
             />
-            <label className="form-check-label" htmlFor={`requiredSwitchRating-${question.id}`}>{getLabel("Required")}</label>
+            <label
+              className="form-check-label"
+              htmlFor={`requiredSwitchRating-${question.id}`}
+            >
+              {getLabel("Required")}
+            </label>
           </div>
         </div>
       </div>
