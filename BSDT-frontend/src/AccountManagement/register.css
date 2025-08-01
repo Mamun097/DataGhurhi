@@ -60,9 +60,17 @@
   background-color: #bce9d6cc;
   padding: 30px 28px;
   border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
-  backdrop-filter: blur(10px);
+
+
 }
+.no-blur {
+  background: #ffffff !important;
+  backdrop-filter: none !important;
+  filter: none !important;
+  opacity: 1 !important;
+  box-shadow: none !important;
+}
+
 
 .register-title {
   font-size: 24px;

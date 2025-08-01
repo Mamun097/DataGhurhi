@@ -145,8 +145,8 @@ const LandingPage = () => {
     translateHeroTexts();
   }, [language]);
 
-  const toggleLanguage = () => {
-    const newLang = language === "English" ? "বাংলা" : "English";
+  const handleLanguageChange = (event) => {
+    const newLang = event.target.value;
     setLanguage(newLang);
     localStorage.setItem("language", newLang);
   };
@@ -196,24 +196,24 @@ const LandingPage = () => {
             )}
           </h1>
 
-          {/* Language Toggle */}
-          <div className="language-toggle-landing">
-            <label className="switch">
-              <input
-                type="checkbox"
-                onChange={toggleLanguage}
-                checked={language === "বাংলা"}
-              />
-              <span className="slider"></span>
-            </label>
-            <div className="language-labels">
-              <span className={language === "English" ? "active" : ""}>
-                English
-              </span>
-              <span className={language === "বাংলা" ? "active" : ""}>
-                বাংলা
-              </span>
-            </div>
+          {/* Language Dropdown */}
+          <div className="language-dropdown-landing">
+            {language === "English" ? (
+              <label htmlFor="language-select">Choose Language: </label>
+            ) : (
+              <label htmlFor="language-select" className="sr-only">
+                ভাষা নির্বাচন করুন:
+              </label>
+            )}
+            <select
+              id="language-select"
+              value={language}
+              onChange={handleLanguageChange}
+              className="language-dropdown"
+            >
+              <option value="English">English</option>
+              <option value="বাংলা">বাংলা</option>
+            </select>
           </div>
         </motion.div>
       </div>
@@ -280,15 +280,6 @@ const LandingPage = () => {
           ›
         </button>
       </div>
-      {/* 
-      <footer className="footer">
-        <div className="footer-logo-container">
-          <img src={logo_buet} alt="BUET Logo" className="footer-logo1" />
-          <img src={logo_ric} alt="RIC Logo" className="footer-logo2" />
-          <img src={logo_ict} alt="ICT Logo" className="footer-logo3" />
-          <img src={logo_edge} alt="EDGE Logo" className="footer-logo4" />
-        </div>
-      </footer> */}
     </div>
   );
 };

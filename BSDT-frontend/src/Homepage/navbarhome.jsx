@@ -47,8 +47,8 @@ const NavbarHome = ({ language, setLanguage }) => {
     }
   };
 
-  const toggleLanguage = () => {
-    const newLang = language === "English" ? "বাংলা" : "English";
+  const handleLanguageChange = (event) => {
+    const newLang = event.target.value;
     setLanguage(newLang);
     localStorage.setItem("language", newLang);
   };
@@ -123,24 +123,26 @@ const NavbarHome = ({ language, setLanguage }) => {
         <div className="navbar-left">
           <div className="logo-list-item">
             <img src={logo_dataghurhi} alt="DataGhurhi logo" />
-            <span>DataGhurhi</span>
+            {language === "বাংলা" ? (
+              <span className="logo-title">ডাটাঘুড়ি</span>
+            ) : (
+              <span className="logo-title">DataGhurhi</span>
+            )}
           </div>
         </div>
+
+        {/* Language Dropdown */}
         <div className="language-toggle">
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="slider"></span>
-          </label>
-          <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
-          </div>
+          {/* <label htmlFor="language-select">Language:</label> */}
+          <select
+            id="language-select"
+            value={language}
+            onChange={handleLanguageChange}
+            className="language-dropdown-navbar"
+          >
+            <option value="English">English</option>
+            <option value="বাংলা">বাংলা</option>
+          </select>
         </div>
 
         <div className="search-container">
@@ -170,7 +172,7 @@ const NavbarHome = ({ language, setLanguage }) => {
 
         {isMobile && (
           <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-            ☰ 
+            ☰
           </button>
         )}
       </div>

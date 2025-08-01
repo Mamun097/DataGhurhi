@@ -380,25 +380,6 @@ const Register = () => {
       <Navbarhome language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
         <motion.div
-          className="feature-card"
-          initial={{ x: -40 }}
-          animate={{ x: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <img
-            src="/assets/images/register.png"
-            alt="Account Benefits"
-            className="feature-image"
-          />
-          <h3>{t("whyAccount")}</h3>
-          <ul>
-            {t("benefits").map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
-          </ul>
-        </motion.div>
-
-        <motion.div
           className="register-box"
           initial={{ y: -50 }}
           animate={{ y: 0 }}
@@ -627,6 +608,25 @@ const Register = () => {
           <p className="login-link">
             {t("alreadyAccount")} <a href="/login">{t("login")}</a>
           </p>
+        </motion.div>
+
+        <motion.div
+          className="feature-card no-blur"
+          initial={{ x: -40 }}
+          animate={{ x: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <img
+            src="/assets/images/register.png"
+            alt="Account Benefits"
+            className="feature-image"
+          />
+          <h3>{t("whyAccount")}</h3>
+          <ul>
+            {t("benefits").map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
         </motion.div>
       </div>
       <ToastContainer position="top-center" autoClose={4000} />
