@@ -86,7 +86,7 @@ const Index = () => {
         config.headers.Authorization = `Bearer ${token}`;
       }
       await axios.post(
-        `http://localhost:2000/api/submit-survey/${slug}`,
+        `http://103.94.135.115:2000/api/submit-survey/${slug}`,
         { userResponse, calculatedMarks },
         config
       );

@@ -72,7 +72,6 @@ const NavbarAcholder = ({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
         const response = await axios.get("http://103.94.135.115:2000/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
