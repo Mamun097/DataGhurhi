@@ -219,7 +219,7 @@ select.border.border-gray-300.rounded-lg.p-3.w-full {
 }
 
 /* Buttons */
-/* .btn, button.bg-blue-600, button.bg-teal-600 {
+.btn, button.bg-blue-600, button.bg-teal-600 {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -238,7 +238,7 @@ select.border.border-gray-300.rounded-lg.p-3.w-full {
   background-color: var(--primary-color);
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-} */
+}
 
 /* .btn:hover, button.bg-blue-600:hover, button.bg-teal-600:hover {
   background-color: var(--primary-hover);
@@ -477,6 +477,65 @@ button[type="submit"] svg {
   font-weight: 600;
   color: #1e293b;
 }
+
+.cell {
+  padding: 8px;
+  border: 1px solid #ccc;
+  color: #374151; /* equivalent to Tailwind's text-gray-700 */
+  white-space: nowrap;
+  max-width: 20rem; /* similar to max-w-xs in Tailwind */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.cell:hover {
+  background-color: #eff6ff; /* light blue on hover */
+}
+
+.highlighted {
+  background-color: #e8ce5a; /* light yellow (similar to bg-yellow-100) */
+}
+
+.outlier {
+  background-color: #b37676; 
+  color: #571212;             
+  font-weight: 600;
+}
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  background-color: #f3f4f6; /* gray-100 */
+  color: #1f2937;            /* gray-800 */
+  font-size: 0.875rem;       /* text-sm */
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.remove-button {
+  margin-left: 0.5rem;
+  background: none;
+  border: none;
+  color: #ef4444;            /* red-500 */
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.remove-button:hover {
+  color: #b91c1c;            /* red-700 */
+}
+
+.remove-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3); /* focus ring */
+  border-radius: 9999px;
+}
+
+
 
 /* Responsive adjustments */
 @media (min-width: 768px) {

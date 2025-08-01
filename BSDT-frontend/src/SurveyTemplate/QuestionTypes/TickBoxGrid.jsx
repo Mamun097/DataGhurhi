@@ -8,7 +8,15 @@ import translateText from "./QuestionSpecificUtils/Translation";
 
 const MAX_COLUMNS = 7; // Define maximum number of columns
 
-const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => { 
+const TickBoxGrid = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -25,9 +33,7 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
   );
   const columns = useMemo(
     () =>
-      question.meta?.columns?.length
-        ? question.meta.columns
-        : ["Column 1"],
+      question.meta?.columns?.length ? question.meta.columns : ["Column 1"],
     [question.meta?.columns]
   );
 
@@ -35,7 +41,9 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
     (metaUpdate) => {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === question.id ? { ...q, meta: { ...q.meta, ...metaUpdate } } : q
+          q.id === question.id
+            ? { ...q, meta: { ...q.meta, ...metaUpdate } }
+            : q
         )
       );
     },
@@ -75,14 +83,14 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
 
   const handleRowChange = useCallback(
     (index, newValue) => {
-      if (newValue.includes('\n')) {
-        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+      if (newValue.includes("\n")) {
+        const lines = newValue.split("\n").filter((line) => line.trim() !== "");
         if (lines.length > 1) {
           const currentRows = [...rows];
           currentRows[index] = lines[0].trim();
-          const newRows = lines.slice(1).map(line => line.trim());
+          const newRows = lines.slice(1).map((line) => line.trim());
           currentRows.splice(index + 1, 0, ...newRows);
-          
+
           updateMeta({ rows: currentRows });
         } else if (lines.length === 1) {
           const updated = [...rows];
@@ -100,8 +108,8 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
 
   const handleColumnChange = useCallback(
     (index, newValue) => {
-      if (newValue.includes('\n')) {
-        const lines = newValue.split('\n').filter(line => line.trim() !== '');
+      if (newValue.includes("\n")) {
+        const lines = newValue.split("\n").filter((line) => line.trim() !== "");
         if (lines.length > 1) {
           const currentColumns = [...columns];
           const totalNewColumns = currentColumns.length + lines.length - 1;
@@ -109,14 +117,16 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
             const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
             const truncatedLines = lines.slice(0, allowedNewColumns + 1);
             currentColumns[index] = truncatedLines[0].trim();
-            const newColumns = truncatedLines.slice(1).map(line => line.trim());
+            const newColumns = truncatedLines
+              .slice(1)
+              .map((line) => line.trim());
             currentColumns.splice(index + 1, 0, ...newColumns);
           } else {
             currentColumns[index] = lines[0].trim();
-            const newColumns = lines.slice(1).map(line => line.trim());
+            const newColumns = lines.slice(1).map((line) => line.trim());
             currentColumns.splice(index + 1, 0, ...newColumns);
           }
-          
+
           updateMeta({ columns: currentColumns });
         } else if (lines.length === 1) {
           const updated = [...columns];
@@ -132,64 +142,76 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
     [columns, updateMeta]
   );
 
-  const handleRowPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        const currentRows = [...rows];
-        currentRows[index] = lines[0].trim();
-        const newRows = lines.slice(1).map(line => line.trim());
-        currentRows.splice(index + 1, 0, ...newRows);
-        
-        updateMeta({ rows: currentRows });
-      } else if (lines.length === 1) {
+  const handleRowPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          const currentRows = [...rows];
+          currentRows[index] = lines[0].trim();
+          const newRows = lines.slice(1).map((line) => line.trim());
+          currentRows.splice(index + 1, 0, ...newRows);
+
+          updateMeta({ rows: currentRows });
+        } else if (lines.length === 1) {
+          const updated = [...rows];
+          updated[index] = lines[0].trim();
+          updateMeta({ rows: updated });
+        }
+      } else {
         const updated = [...rows];
-        updated[index] = lines[0].trim();
+        updated[index] = pastedText;
         updateMeta({ rows: updated });
       }
-    } else {
-      const updated = [...rows];
-      updated[index] = pastedText;
-      updateMeta({ rows: updated });
-    }
-  }, [rows, updateMeta]);
+    },
+    [rows, updateMeta]
+  );
 
-  const handleColumnPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        const currentColumns = [...columns];
-        const totalNewColumns = currentColumns.length + lines.length - 1;
-        if (totalNewColumns > MAX_COLUMNS) {
-          const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
-          const truncatedLines = lines.slice(0, allowedNewColumns + 1);
-          currentColumns[index] = truncatedLines[0].trim();
-          const newColumns = truncatedLines.slice(1).map(line => line.trim());
-          currentColumns.splice(index + 1, 0, ...newColumns);
-        } else {
-          currentColumns[index] = lines[0].trim();
-          const newColumns = lines.slice(1).map(line => line.trim());
-          currentColumns.splice(index + 1, 0, ...newColumns);
+  const handleColumnPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          const currentColumns = [...columns];
+          const totalNewColumns = currentColumns.length + lines.length - 1;
+          if (totalNewColumns > MAX_COLUMNS) {
+            const allowedNewColumns = MAX_COLUMNS - currentColumns.length;
+            const truncatedLines = lines.slice(0, allowedNewColumns + 1);
+            currentColumns[index] = truncatedLines[0].trim();
+            const newColumns = truncatedLines
+              .slice(1)
+              .map((line) => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          } else {
+            currentColumns[index] = lines[0].trim();
+            const newColumns = lines.slice(1).map((line) => line.trim());
+            currentColumns.splice(index + 1, 0, ...newColumns);
+          }
+
+          updateMeta({ columns: currentColumns });
+        } else if (lines.length === 1) {
+          const updated = [...columns];
+          updated[index] = lines[0].trim();
+          updateMeta({ columns: updated });
         }
-        
-        updateMeta({ columns: currentColumns });
-      } else if (lines.length === 1) {
+      } else {
         const updated = [...columns];
-        updated[index] = lines[0].trim();
+        updated[index] = pastedText;
         updateMeta({ columns: updated });
       }
-    } else {
-      const updated = [...columns];
-      updated[index] = pastedText;
-      updateMeta({ columns: updated });
-    }
-  }, [columns, updateMeta]);
+    },
+    [columns, updateMeta]
+  );
 
   const handleAddRow = useCallback(() => {
     updateMeta({ rows: [...rows, `Row ${rows.length + 1}`] });
@@ -222,8 +244,8 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
     if (!file) return;
     setSelectedFile(file);
     setShowCropper(true);
-    event.target.value = null; 
-  }, []); 
+    event.target.value = null;
+  }, []);
 
   const removeImage = useCallback(
     (index) => {
@@ -282,7 +304,15 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
     setQuestions(updatedQuestions);
-  }, [question, questions, rows, columns, setQuestions, requireEachRowResponse, enableRowShuffle]);
+  }, [
+    question,
+    questions,
+    rows,
+    columns,
+    setQuestions,
+    requireEachRowResponse,
+    enableRowShuffle,
+  ]);
 
   const handleRowDragEnd = useCallback(
     (result) => {
@@ -315,35 +345,51 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
       if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
         throw new Error("No translation returned for question");
       }
-      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      handleQuestionChange(
+        questionResponse.data.data.translations[0].translatedText
+      );
       console.log("Meta rows before translation:", question.meta.rows);
-      const rowResponse = (question.meta.rows || []).map((opt) => opt.trim()).filter(opt => opt);
-      const colResponse = (question.meta.columns || []).map((opt) => opt.trim()).filter(opt => opt);
+      const rowResponse = (question.meta.rows || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
+      const colResponse = (question.meta.columns || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
       if (rowResponse.length > 0) {
         const rowTranslations = await translateText(rowResponse, "bn");
-        const translatedRows = rowTranslations.data.data.translations.map((t) => t.translatedText);
+        const translatedRows = rowTranslations.data.data.translations.map(
+          (t) => t.translatedText
+        );
         console.log("Translated rows:", translatedRows);
         updateMeta({ rows: translatedRows });
       }
       if (colResponse.length > 0) {
         const colTranslations = await translateText(colResponse, "bn");
-        const translatedColumns = colTranslations.data.data.translations.map((t) => t.translatedText);
+        const translatedColumns = colTranslations.data.data.translations.map(
+          (t) => t.translatedText
+        );
         console.log("Translated columns:", translatedColumns);
         updateMeta({ columns: translatedColumns });
       }
-      
     } catch (error) {
       console.error("Error in handleTranslation:", error.message);
     }
-  }, [handleQuestionChange, question.text, question.meta.rows, question.meta.columns, updateMeta]);
-  
+  }, [
+    handleQuestionChange,
+    question.text,
+    question.meta.rows,
+    question.meta.columns,
+    updateMeta,
+  ]);
 
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>{getLabel("Tick Box Grid")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Tick Box Grid")}</strong>
           </em>
         </label>
         <TagManager
@@ -424,8 +470,8 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 {rows.map((row, index) => (
                   <Draggable
-                    key={`row-tickbox-${question.id}-${index}`} 
-                    draggableId={`tickbox-row-${question.id}-${index}`} 
+                    key={`row-tickbox-${question.id}-${index}`}
+                    draggableId={`tickbox-row-${question.id}-${index}`}
                     index={index}
                   >
                     {(prov) => (
@@ -434,14 +480,23 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
                         {...prov.draggableProps}
                         className="d-flex align-items-center mb-2"
                       >
-                        <span {...prov.dragHandleProps} className="me-2" style={{ cursor: "grab" }}>
-                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        <span
+                          {...prov.dragHandleProps}
+                          className="me-2"
+                          style={{ cursor: "grab" }}
+                        >
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem" }}
+                          ></i>
                         </span>
                         <input
                           type="text"
                           className="form-control"
                           value={row}
-                          onChange={(e) => handleRowChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleRowChange(index, e.target.value)
+                          }
                           onPaste={(e) => handleRowPaste(index, e)}
                           onFocus={(e) => e.target.select()}
                           placeholder={`Row ${index + 1}`}
@@ -481,8 +536,8 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
               <div ref={provided.innerRef} {...provided.droppableProps}>
                 {columns.map((col, index) => (
                   <Draggable
-                    key={`col-tickbox-${question.id}-${index}`} 
-                    draggableId={`tickbox-col-${question.id}-${index}`} 
+                    key={`col-tickbox-${question.id}-${index}`}
+                    draggableId={`tickbox-col-${question.id}-${index}`}
                     index={index}
                   >
                     {(prov) => (
@@ -491,14 +546,23 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
                         {...prov.draggableProps}
                         className="d-flex align-items-center mb-2"
                       >
-                         <span {...prov.dragHandleProps} className="me-2" style={{ cursor: "grab" }}>
-                          <i className="bi bi-grip-vertical" style={{ fontSize: "1.5rem" }}></i>
+                        <span
+                          {...prov.dragHandleProps}
+                          className="me-2"
+                          style={{ cursor: "grab" }}
+                        >
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{ fontSize: "1.5rem" }}
+                          ></i>
                         </span>
                         <input
                           type="text"
                           className="form-control"
                           value={col}
-                          onChange={(e) => handleColumnChange(index, e.target.value)}
+                          onChange={(e) =>
+                            handleColumnChange(index, e.target.value)
+                          }
                           onPaste={(e) => handleColumnPaste(index, e)}
                           onFocus={(e) => e.target.select()}
                           placeholder={`Column ${index + 1}`}
@@ -524,7 +588,8 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
-          ➕ {getLabel("Add Column")} {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
+          ➕ {getLabel("Add Column")}{" "}
+          {columns.length >= MAX_COLUMNS && `(Max ${MAX_COLUMNS})`}
         </button>
       </div>
 
@@ -568,7 +633,10 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
 
       {/* Action Buttons */}
       <div className="d-flex align-items-center mt-3">
-        <button className="btn btn-sm btn-outline-secondary w-auto me-2" onClick={handleCopy}>
+        <button
+          className="btn btn-sm btn-outline-secondary w-auto me-2"
+          onClick={handleCopy}
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
@@ -597,7 +665,7 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
 
       {/* Additional Toggles Separated for Clarity */}
       <div className="mt-3 border-top pt-3">
-         <div className="form-check form-switch mb-2">
+        <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
             type="checkbox"
@@ -605,11 +673,14 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleRequireEachRowResponseToggle}
             checked={requireEachRowResponse}
           />
-          <label className="form-check-label" htmlFor={`requireEachRowTickbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requireEachRowTickbox${question.id}`}
+          >
             {getLabel("Require a response in each row")}
           </label>
-          </div>
-          <div className="form-check form-switch mb-2">
+        </div>
+        <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
             type="checkbox"
@@ -617,11 +688,14 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleEnableRowShuffleToggle}
             checked={enableRowShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableRowShuffleTickbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableRowShuffleTickbox${question.id}`}
+          >
             {getLabel("Shuffle row order")}
           </label>
-          </div>
-          <div className="form-check form-switch">
+        </div>
+        <div className="form-check form-switch">
           <input
             className="form-check-input"
             type="checkbox"
@@ -629,10 +703,13 @@ const TickBoxGrid = ({ question, questions, setQuestions, language, setLanguage,
             onChange={handleRequired}
             checked={required}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchTickbox${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requiredSwitchTickbox${question.id}`}
+          >
             {getLabel("Required")}
           </label>
-          </div>
+        </div>
       </div>
     </div>
   );

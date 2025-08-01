@@ -62,6 +62,7 @@ async function updateProfileImage(userId, imageUrl) {
 
 async function updateSurveyDesigner(userId, data) {
     console.log(userId);
+    console.log(data);
     // console.log(data);
     const { error } = await supabase.rpc('update_survey_designer', {
         u_id: userId,
@@ -69,16 +70,17 @@ async function updateSurveyDesigner(userId, data) {
         u_email: data.email,
         u_secret_question: data.secret_question,
         u_secret_answer: data.secret_answer,
-        u_address: data.address,
+        u_home_address: data.home_address,
         u_date_of_birth: data.date_of_birth,
-        u_contact: data.contact,
+        u_contact_no: data.contact_no,
         u_gender: data.gender,
         u_religion: data.religion,
-        u_affiliation: data.affiliation,
+        u_work_affiliation: data.work_affiliation,
         u_research_field: data.research_field,
         u_profession: data.profession,
         u_years_of_experience: data.years_of_experience,
-        u_profile_link: data.profile_link
+        u_profile_link: data.profile_link,
+        u_highest_education: data.highest_education
         
     });
     return { error };

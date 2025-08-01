@@ -9,6 +9,7 @@ import translateText from "./QuestionSpecificUtils/Translation";
 import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 
 const Radio = ({
+  index,
   question,
   questions,
   setQuestions,
@@ -382,7 +383,9 @@ const Radio = ({
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>{getLabel("Multiple Choice Question")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Multiple Choice Question")}</strong>
           </em>
         </label>
         <TagManager

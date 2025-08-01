@@ -1,30 +1,30 @@
-import { use, useEffect, useRef, useState } from 'react';
-import statTestDetails  from './stat_tests_details';
+import 'katex/dist/katex.min.css';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import KruskalOptions from './KruskalOptions';
-import MannWhitneyOptions from './MannWhitneyOptions';
-import PearsonOptions from './PearsonOptions';
-import ShapiroWilkOptions from './ShapiroWilkOptions';
-import SpearmanOptions from './SpearmanOptions';
-import './StatisticalAnalysisTool.css';
-import WilcoxonOptions from './WilcoxonOptions';
-import LinearRegressionOptions from './LinearRegressionOptions';
-import AnovaOptions from './AnovaOptions';
 import AncovaOptions from './AncovaOptions';
-import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
 import AndersonDarlingOptions from './AndersonDarlingOptions';
-import FZTOptions from './FZTOptions';
-import CrossTabulationOptions from './CrossTabulationOptions';
-import EDADistributionsOptions from './EDADistributionsOptions';
-import EDASwarmOptions from './EDASwarmOptions';
-import EDAPieChartOptions from './EDAPieChartOptions';
-import EDABasicsOptions from './EDABasicsOptions';
-import SimilarityOptions from './SimilarityOptions';
+import AnovaOptions from './AnovaOptions';
 import ChiSquareOptions from './ChiSquareOptions';
 import CramerVOptions from './CramerVOptions';
+import CrossTabulationOptions from './CrossTabulationOptions';
+import EDABasicsOptions from './EDABasicsOptions';
+import EDADistributionsOptions from './EDADistributionsOptions';
+import EDAPieChartOptions from './EDAPieChartOptions';
+import EDASwarmOptions from './EDASwarmOptions';
+import FZTOptions from './FZTOptions';
+import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
+import KruskalOptions from './KruskalOptions';
+import LinearRegressionOptions from './LinearRegressionOptions';
+import MannWhitneyOptions from './MannWhitneyOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
-import 'katex/dist/katex.min.css';
-import {useNavigate} from 'react-router-dom';
+import PearsonOptions from './PearsonOptions';
+import ShapiroWilkOptions from './ShapiroWilkOptions';
+import SimilarityOptions from './SimilarityOptions';
+import SpearmanOptions from './SpearmanOptions';
+import statTestDetails from './stat_tests_details';
+import './StatisticalAnalysisTool.css';
+import WilcoxonOptions from './WilcoxonOptions';
 
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
@@ -300,6 +300,8 @@ const StatisticalAnalysisTool = () => {
     const [uploadStatus, setUploadStatus] = useState('initial'); // 'initial', 'loading', 'success', 'error'
     const [columns, setColumns] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
+    const [testanalyze, setTestanalyze]= useState(false)
+    const [columnanalyze, setColumnanalyze]= useState(false)
 
 
     useEffect(() => {
@@ -489,6 +491,7 @@ useEffect(() => {
             const formData = new FormData();
             formData.append('file', selectedFile);
             console.log("File selected:", selectedFile);
+            // formData.append('selected_tests', testType);
 
             // Call the API to get columns
             // attach token
@@ -878,6 +881,14 @@ const handleSuggestionClick = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
                                         <span className="text-black">{t.formTitle}</span>
+                                        <div style={{ position: 'absolute', left: '57rem'}}>
+                                        <button
+                                            onClick={() => navigate('/report')}
+                                            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                        >
+                                            {language === 'বাংলা' ? 'রিপোর্ট দেখুন' : 'Show Report'}
+                                        </button>
+                                        </div>
                                     </div>
                                     <div className="flex justify-end px-4 pt-4">
                                         <button
@@ -962,21 +973,15 @@ const handleSuggestionClick = () => {
                                                 </div>
                                                 {/* Preview & Suggestion Buttons */}
                                                     <div className="flex justify-end gap-4 mt-6">
-                                                    <button
-                                                        type="button"
-                                                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                        onClick={handlePreviewClick}
-                                                    >
-                                                        {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
-                                                    </button>
 
+{/* 
                                                     <button
                                                         type="button"
                                                         className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                                         onClick={handleSuggestionClick}
                                                     >
                                                         {language === 'bn' ? 'পরীক্ষার পরামর্শ' : 'Test Suggestion'}
-                                                    </button>
+                                                    </button> */}
                                                     </div>
                                             {isPreviewModalOpen && (
                                                 <>
@@ -984,16 +989,23 @@ const handleSuggestionClick = () => {
                                                  </>
 
                                                                                         )}
-                                            {isSuggestionModalOpen && (
+                                            {/* {isSuggestionModalOpen && (
                                                 <div >
                                                     <TestSuggestionsModal setIsSuggestionModalOpen={setIsSuggestionModalOpen} language={language} />
                                                 </div>
-                                            )}
+                                            )} */}
 
-                                                <div className="flex justify-end mt-4 mb-4">
+                                                <div className="flex justify-end gap-4 mt-4 mb-4">
+                                            <button
+                                                        type="button"
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                        onClick={handlePreviewClick}
+                                                    >
+                                                        {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
+                                                    </button>
                                                 <button
                                                     type="button"
-                                                    className="bg-green-600 hover:bg-green-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                                    className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                                     onClick={() => {
                                                     console.log("User ID:", userId);
                                                     const path = "/preprocess";
@@ -1005,8 +1017,33 @@ const handleSuggestionClick = () => {
                                                 </div>
 
 
+                                        <div className="flex justify-end gap-4 mb-6">
+                                        {/* <button
+                                            type="button"
+                                           onClick={() => {
+                                                    console.log("analyze by test");
+                                                    setTestanalyze(!testanalyze);
+                                                    }}
+
+                                            className="bg-blue-600 text-black px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                                        >
+                                            {language === 'bn' ? 'পরীক্ষা পছন্দ অনুযায়ী বিশ্লেষণ' : 'Analyze by Test Choice'}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                    console.log("analyze by column");
+                                                    setColumnanalyze(!columnanalyze);
+                                                    }} 
+                                            className="bg-green-600 text-black px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                                        >
+                                            {language === 'bn' ? 'কলাম অনুযায়ী বিশ্লেষণ' : 'Analyze by Column'}
+                                        </button> */}
+                                        </div>
 
 
+                                        {/* {testanalyze && ( */}
+                                            {/* <> */}
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectTest}</h5>
                                                 <div className="mb-4">
@@ -1092,8 +1129,7 @@ const handleSuggestionClick = () => {
 
                                                 </div>
                                             </div>
-
-
+                                
                                             {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation') && (
                                                 <div className="mb-6">
                                                     <label className="block text-gray-700 font-medium mb-2">
@@ -1155,6 +1191,7 @@ const handleSuggestionClick = () => {
                                                     </p>
                                                 </div>
                                             )}
+                                        
 
 
                                         {testType !== 'eda_basics' && (
@@ -1260,6 +1297,7 @@ const handleSuggestionClick = () => {
                                                         </select>
                                                     </div>
                                                 )}
+                                                
 
 
                                                 {testType === 'kruskal' && (
@@ -1841,6 +1879,8 @@ const handleSuggestionClick = () => {
                                             </div>
                                         )}
 
+                                         
+
                                             {requiredFields.refValue && (
                                                 <div className="mb-6">
                                                     <label className="block text-gray-700 font-medium mb-2">
@@ -1858,11 +1898,11 @@ const handleSuggestionClick = () => {
                                                     />
                                                 </div>
                                             )}
-                                        
+                                                                                  
                                             <div className="text-center mt-6">
                                                 <button
                                                     type="submit"
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     disabled={isAnalyzing || !file || !column1 || (requiredFields.col2 && !column2) || (requiredFields.col3 && !column3)}
                                                 >
                                                     {isAnalyzing ? (
@@ -1880,7 +1920,10 @@ const handleSuggestionClick = () => {
                                                     )}
                                                 </button>
                                             </div>
+                                             {/* </>
+                                        )} */}
                                         </form>
+                                         
 
                                         {detailsModalVisible && (
                                             <div className="modal-overlay">
@@ -1912,6 +1955,7 @@ const handleSuggestionClick = () => {
                             
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -4056,15 +4100,71 @@ const renderFZTResults = () => {
                 {language === 'bn' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
             </div>
             <div className="p-6">
-                {renderResults()}
+                <div className="analysis-container">
+                    {renderResults()}
+                </div>
 
+                <div className="text-center mt-8">
+                    <button
+                        onClick={() => {
+                            if (!results || !columns || !testType) {
+                                alert(language === 'বাংলা'
+                                    ? 'রিপোর্ট যুক্ত করার জন্য সম্পূর্ণ বিশ্লেষণ প্রয়োজন'
+                                    : 'Analysis must be completed before adding to report'
+                                );
+                                return;
+                            }
+
+                            try {
+                                // Dynamically find image sources from the page
+                                const imagePaths = Array.from(document.querySelectorAll('.analysis-container img'))
+                                    .map(img => img.getAttribute('src'))
+                                    .filter(src => src?.includes('/media/'))
+                                    .map(fullSrc => {
+                                        try {
+                                            const url = new URL(fullSrc, window.location.origin);
+                                            return url.pathname;
+                                        } catch {
+                                            return fullSrc;
+                                        }
+                                    });
+
+                                const enrichedResults = {
+                                    ...results,
+                                    image_paths: imagePaths,
+                                };
+
+                                const existingReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
+                                const updatedReports = [
+                                    ...existingReports,
+                                    {
+                                        results: enrichedResults,
+                                        columns,
+                                        type: testType,
+                                        timestamp: new Date().toISOString()
+                                    }
+                                ];
+
+                                localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
+                                alert(language === 'বাংলা' ? 'রিপোর্টে যুক্ত হয়েছে' : 'Results and visulaizations are added to the report');
+                            } catch (error) {
+                                console.error("Add to Report Failed:", error);
+                                alert(language === 'বাংলা' ? 'রিপোর্ট যুক্ত করা যায়নি' : 'Failed to add to report');
+                            }
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 ml-4"
+                    >
+                        {language === 'বাংলা' ? 'রিপোর্টে যুক্ত করুন' : 'Add to Report'}
+                    </button>
+
+                </div>
                 <div className="text-center mt-8">
                     <button
                         onClick={() => {
                             //reload analysis
                             window.location.reload();
                         }}
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
+                        className="bg-teal-600 hover:bg-teal-700 text-black font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
                     >
                         {language === 'bn' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
                     </button>
