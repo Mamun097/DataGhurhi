@@ -559,7 +559,7 @@ const handleSavePassword = async () => {
   try {
     const token = localStorage.getItem("token");
     // Example POST request to backend API
-    const response = await axios.put("http://localhost:2000/api/profile/update-password", {
+    const response = await axios.put("http://103.94.135.115:2000/api/profile/update-password", {
       
       oldPassword:old_password,
       newPassword:new_password,

@@ -149,7 +149,7 @@ const ForgotPassword = () => {
     setOtpCooldown(180); // restart timer when OTP is sent
 
     try {
-      await axios.post("http://localhost:2000/api/send-otp", {
+      await axios.post("http://103.94.135.115:2000/api/send-otp", {
         email,
         otp: newOtp,
       });
@@ -177,7 +177,7 @@ const ForgotPassword = () => {
     if (password !== confirm) return toast.error(`❌ ${t("passwordMismatch")}`);
 
     try {
-      await axios.post("http://localhost:2000/api/login/reset-password", {
+      await axios.post("http://103.94.135.115:2000/api/login/reset-password", {
         email,
         newPassword: password,
       });

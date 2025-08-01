@@ -57,7 +57,7 @@ const Register = () => {
   const checkEmailExists = async () => {
     try {
       const res = await axios.post(
-        "http://localhost:2000/api/register/check-email",
+        "http://103.94.135.115:2000/api/register/check-email",
         {
           email: formData.email,
         }
@@ -246,7 +246,7 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://localhost:2000/api/register", {
+      const response = await axios.post("http://103.94.135.115:2000/api/register", {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
@@ -308,7 +308,7 @@ const Register = () => {
     setGeneratedOtp(newOtp);
 
     try {
-      await axios.post("http://localhost:2000/api/send-otp", {
+      await axios.post("http://103.94.135.115:2000/api/send-otp", {
         email: formData.email,
         otp: newOtp,
       });
