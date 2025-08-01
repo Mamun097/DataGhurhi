@@ -162,4 +162,5 @@ CORS_ALLOW_HEADERS = [
     'content-type',
     'userid',
     'filename',
+    'columns', 
 ]

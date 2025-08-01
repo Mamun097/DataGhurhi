@@ -20,6 +20,7 @@ import Layout from "./Layout";
 import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 import ForgotPassword from "./AccountManagement/forgotPassword";
+import ReportViewer from "./StatisticalTool/ReportViewer";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -61,6 +62,8 @@ function App() {
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
             
             <Route path="/group-preview" element={<GroupPreviewPage />} />
+
+            <Route path="/report" element={<ReportViewer />} />
 
           </>
         ) : (

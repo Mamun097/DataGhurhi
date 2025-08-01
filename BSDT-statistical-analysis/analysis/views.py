@@ -24,13 +24,20 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import OrdinalEncoder
 from .forms import AnalysisForm
+from scipy.stats import shapiro, anderson
 
+def infer_type(s, thresh=10):
+    if pd.api.types.is_numeric_dtype(s):
+        return 'categorical' if s.nunique() < thresh else 'numeric'
+    else:
+        return 'categorical'
 
 def get_columns(request):
     
         if request.method == 'POST' and request.FILES.get('file'):
             user_id = request.POST.get('userID') 
             print(f"Received user_id: {user_id}")
+            
 
             if not user_id:
                 return JsonResponse({'success': False, 'error': 'User ID not provided'})
@@ -40,6 +47,8 @@ def get_columns(request):
                 df = pd.read_excel(excel_file)
                 filename = request.FILES['file'].name                
                 print(f"Received file: {filename}")
+                # body = json.loads(request.body)
+                # selected_tests= body.get('selected_tests')
 
                 # Create the user's uploads folder: media/ID_<user_id>_uploads/uploads
                 user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
@@ -48,11 +57,140 @@ def get_columns(request):
                 # Save the file in that uploads folder
                 save_path = os.path.join(user_folder, filename)
                 df.to_excel(save_path, index=False)
+                
+                # Column and type inference
+                cols = list(df.columns)
+                # types = {c: infer_type(df[c]) for c in cols}
 
+                # # Normality test
+                # normality = {}
+                # for c, t in types.items():
+                #     if t == 'numeric':
+                #         xs = df[c].dropna()
+                #         normality[c] = (len(xs) >= 3 and shapiro(xs)[1] > 0.05)
+                #     else:
+                #         normality[c] = False
+
+                # Only process tests if selected
+                matched_results = {}
+                input_info = {}
+
+                # if selected_tests:
+                #     # def num_pairs():
+                #     #     return [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #             if types[x] == 'numeric' and types[y] == 'numeric']
+
+                #     # test_funcs = {
+                #     #     "Shapiro–Wilk Test":       lambda: [(c,) for c in cols if types[c]=='numeric'],
+                #     #     "Anderson–Darling Test":   lambda: [(c,) for c in cols if types[c]=='numeric'],
+                #     #     "Pearson Correlation":     lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                     if types[x]=='numeric' and types[y]=='numeric'
+                #     #                                         and normality.get(x, False) and normality.get(y, False)],
+                #     #     "Spearman Rank Correlation": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                         if types[x]=='numeric' and types[y]=='numeric'],
+                #     #     "T Test (paired)":         lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                     if types[x]=='numeric' and types[y]=='numeric'],
+                #     #     "Wilcoxon Signed‑Rank Test": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                         if types[x]=='numeric' and types[y]=='numeric'],
+                #     #     "Linear Regression":       lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                     if (types[x]=='numeric' and types[y]=='numeric')
+                #     #                                         or (types[x]=='numeric' and types[y]=='categorical')
+                #     #                                         or (types[x]=='categorical' and types[y]=='numeric')],
+                #     #     "Chi‑Squared Test":        lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                     if types[x]=='categorical' and types[y]=='categorical'],
+                #     #     "Cramer's V":              lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                     if types[x]=='categorical' and types[y]=='categorical'],
+                #     #     "Z Test for Two Proportions": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
+                #     #                                         if types[x]=='categorical' and types[y]=='categorical'
+                #     #                                             and df[x].nunique()==2 and df[y].nunique()==2],
+                #     #     "Independent Samples T Test": lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
+                #     #                                         for num in cols if types[num]=='numeric'],
+                #     #     "F Test for Equality of Variances": lambda: [(cat, num)
+                #     #                                                 for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
+                #     #                                                 for num in cols if types[num]=='numeric' and normality.get(num, False)],
+                #     #     "Mann‑Whitney U Test":     lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
+                #     #                                         for num in cols if types[num]=='numeric'],
+                #     #     "Kolmogorov–Smirnov Test": lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
+                #     #                                         for num in cols if types[num]=='numeric'],
+                #     #     "ANOVA (one‑way)":         lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
+                #     #                                         for num in cols if types[num]=='numeric' and normality.get(num, False)],
+                #     #     "Kruskal‑Wallis Test":     lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
+                #     #                                         for num in cols if types[num]=='numeric'],
+                #     #     "ANCOVA":                  lambda: [(cat, num)
+                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
+                #     #                                         for num in cols if types[num]=='numeric'],
+                #     # }
+
+                #     type_descriptions = {
+                #             "Shapiro–Wilk Test": "Univariate Numerical",
+                #             "Anderson–Darling Test": "Univariate Numerical",
+                #             "Pearson Correlation": "Numerical vs Numerical (both normal)",
+                #             "Spearman Rank Correlation": "Numerical vs Numerical",
+                #             "T Test (paired)": "Numerical vs Numerical (paired samples)",
+                #             "Wilcoxon Signed‑Rank Test": "Numerical vs Numerical (paired samples)",
+                #             "Linear Regression": "Numerical vs Numerical / Numerical vs Categorical",
+                #             "Chi‑Squared Test": "Categorical vs Categorical",
+                #             "Cramer's V": "Categorical vs Categorical",
+                #             "Z Test for Two Proportions": "Binary Categorical vs Binary Categorical",
+                #             "Independent Samples T Test": "Binary Categorical vs Numerical",
+                #             "F Test for Equality of Variances": "Binary Categorical vs Numerical (normal)",
+                #             "Mann‑Whitney U Test": "Binary Categorical vs Numerical",
+                #             "Kolmogorov–Smirnov Test": "Binary Categorical vs Numerical",
+                #             "ANOVA (one‑way)": "Multi-class Categorical vs Numerical (normal)",
+                #             "Kruskal‑Wallis Test": "Multi-class Categorical vs Numerical",
+                #             "ANCOVA": "Categorical vs Numerical (with covariate control)",
+                #         }
+                    
+                    # numeric_cols = [c for c, t in types.items() if t == 'numeric']
+                    # categorical_cols = [c for c, t in types.items() if t == 'categorical']
+
+
+
+                    # for test_name in selected_tests:
+                    #     if test_name in test_funcs:
+                    #         matched_results[test_name] = test_funcs[test_name]()
+                    #     else:
+                    #         matched_results[test_name] = []
+                    # print(matched_results)
+
+                    
+                #     for test in selected_tests:
+                #         desc = type_descriptions.get(test, '(missing)')
+                #         columns_info = {}
+                #         if 'Numerical' in desc and 'Categorical' in desc:
+                #             columns_info = {
+                #                 'numerical': numeric_cols,
+                #                 'categorical': categorical_cols
+                #             }
+                #         elif 'Numerical' in desc:
+                #             columns_info = {
+                #                 'numerical': numeric_cols
+                #             }
+                #         elif 'Categorical' in desc:
+                #             columns_info = {
+                #                 'categorical': categorical_cols
+                #             }
+                #         else:
+                #             columns_info = {
+                #                 'all': cols
+                #             }
+
+                #         input_info[test] = {
+                #             'description': desc,
+                #             'columns': columns_info
+                #         }
+
+                # print(input_info)
                 return JsonResponse({
                     'success': True,
                     'user_id': user_id,
-                    'columns': df.columns.tolist(),
+                    'columns': cols,
+                    'input_info': input_info,          
                     'fileURL': os.path.join(settings.MEDIA_URL, f"ID_{user_id}_uploads", "temporary_uploads", filename)
 
                 })
@@ -138,10 +276,21 @@ def analyze_data_api(request):
 
              # Process categorical data BEFORE passing to test functions
             print("Converting categorical columns to numerical values...")
+            ordinal_mappings = {}
             categorical_cols = df.select_dtypes(include=['object']).columns
+
             if not categorical_cols.empty:
-                df[categorical_cols] = OrdinalEncoder().fit_transform(df[categorical_cols])
+                encoder = OrdinalEncoder()
+                df[categorical_cols] = encoder.fit_transform(df[categorical_cols])
                 print(f"Converted categorical columns: {list(categorical_cols)}")
+
+                for i, col in enumerate(categorical_cols):
+                    categories = encoder.categories_[i]  # Use the fitted encoder's categories_
+                    ordinal_mappings[col] = {idx: cat for idx, cat in enumerate(categories)}
+
+                # print(ordinal_mappings)
+
+
             
             print(f"DataFrame head after conversion:\n{df[[col1, col2]].head() if col2 in df.columns else df[[col1]].head()}")
             
@@ -230,7 +379,7 @@ def analyze_data_api(request):
                 return process_eda_swarm_plot(request, df, column1, column2, user_id)
 
             elif test_type == 'eda_pie':
-                return process_eda_pie_chart(request, df, user_id)
+                return process_eda_pie_chart(request, df, user_id, ordinal_mappings)
 
             elif test_type == 'eda_basics':
                 return process_eda_basics(request, df, user_id)
@@ -2708,7 +2857,7 @@ def process_eda_swarm_plot(request, df, col_cat, col_num, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_pie_chart(request, df, user_id):
+def process_eda_pie_chart(request, df, user_id, ordinal_mappings):
 
     import os
     import math
@@ -2767,9 +2916,13 @@ def process_eda_pie_chart(request, df, user_id):
         final_img_path = os.path.join(plots_dir, f'pie_{col}.{img_format}')
 
         # --- 4. Create pie chart with PIL overlay ---
-        counts = df[col].astype(str).value_counts()
-        labels_data = counts.index.tolist()
+        counts = df[col].value_counts() 
+        # labels_data = counts.index.tolist()  
+        labels_data = [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
+
         sizes = counts.values
+
+        print(labels_data) 
 
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
         ax.pie(sizes, startangle=90)
@@ -3424,10 +3577,10 @@ def preview_data(request):
         try:
             df = pd.read_excel(file_path)
           
-            df = df.where(pd.notnull(df), "")
+            # df = df.where(pd.notnull(df), "")
  
             # Limit to first N rows for preview
-            preview_limit = 100
+            preview_limit = 1000
             preview_df = df.head(preview_limit).copy()
 
             # Convert complex data types to string for safe JSON serialization
@@ -3435,6 +3588,7 @@ def preview_data(request):
             ##show missing valuse and num columns for outliers
             missing_values = df.isnull().sum().to_dict()
             num_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+            # print(mi)
 
             return JsonResponse({
                 'success': True,
@@ -3493,36 +3647,78 @@ def delete_columns_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+
 @csrf_exempt
 def remove_duplicates_api(request):
     try:
-        # Extract user ID from request headers
+        # Extract headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+
         print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
+        # Load Excel
         df = pd.read_excel(file_path)
-        before = len(df)
-        df.drop_duplicates(inplace=True)
-        removed = before - len(df)
+        original_len = len(df)
 
+        # Get column filter
+        body = json.loads(request.body)
+        columns = body.get('columns', [])
+        
+        print(columns) 
+        removed_info = []
+
+        if columns:
+            # Column-specific duplicate removal
+            for col in columns:
+                if col not in df.columns:
+                    removed_info.append({'column': col, 'error': 'Column not found'})
+                    continue
+
+                dup_mask = df[col].duplicated(keep=False)
+                dup_indices = df.index[dup_mask].tolist()
+                # print(dup_indices)  
+
+                if dup_indices:
+                    dup_values = df.loc[dup_indices, col].tolist()
+                    df.drop(df[df[col].duplicated(keep='first')].index, inplace=True)
+                    removed = original_len - len(df)
+                    removed_info.append({
+                        'column': col,
+                        'duplicates_found': len(dup_indices),
+                        'removed_rows': removed,
+                        'duplicate_values': list(set(dup_values))
+                    })
+                    original_len = len(df)  # Update
+                else:
+                    removed_info.append({'column': col, 'message': 'No duplicates found'})
+                summary_msg = "Column-wise duplicate removal complete."
+        print(removed_info) 
+        
+
+        # Save the modified file
         df.to_excel(file_path, index=False)
 
         return JsonResponse({
             'success': True,
-            'message': f'Removed {removed} duplicate rows.',
+            'message': summary_msg,
+            'info': removed_info,
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'remaining_rows': len(df)
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 @csrf_exempt
 def handle_missing_api(request):
@@ -3542,28 +3738,44 @@ def handle_missing_api(request):
         body = json.loads(request.body)
         col = body.get('column')
         method = body.get('method', '')
+        missing_spec = body.get('missing_spec', '').strip()
 
-        if method not in ['drop', 'fill_mean', 'fill_median']:
+        if method not in ['drop', 'fill_mean', 'fill_median', 'fill_mode']:
             return JsonResponse({'success': False, 'error': 'Invalid method.'})
+        
+        if missing_spec:
+            df.replace(missing_spec, np.nan, inplace=True)
+
+
+        
+
+        empty_columns = df.columns[df.isnull().all()].tolist()
+        empty_rows = df.index[df.isnull().all(axis=1)].tolist()
+        df.drop(columns=empty_columns, inplace=True)
+        df.drop(index=empty_rows, inplace=True)
 
         targets = df.columns.tolist() if col == 'all' else [col]
 
         if method == 'drop':
             df.dropna(subset=targets, inplace=True)
-        elif method == 'fill_mean':
+        else:
             for c in targets:
-                if pd.api.types.is_numeric_dtype(df[c]):
+                if method == 'fill_mean' and pd.api.types.is_numeric_dtype(df[c]):
                     df[c] = df[c].fillna(df[c].mean())
-        elif method == 'fill_median':
-            for c in targets:
-                if pd.api.types.is_numeric_dtype(df[c]):
+                elif method == 'fill_median' and pd.api.types.is_numeric_dtype(df[c]):
                     df[c] = df[c].fillna(df[c].median())
+                elif method == 'fill_mode':
+                    mode_val = df[c].mode(dropna=True)
+                    if not mode_val.empty:
+                        df[c] = df[c].fillna(mode_val.iloc[0])
 
         df.to_excel(file_path, index=False)
-
+        
         return JsonResponse({
             'success': True,
             'message': f'Missing values handled using method: {method}',
+            'deleted_columns': empty_columns,
+            'deleted_rows': empty_rows,
             'columns': df.columns.tolist(),
             'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
         })
@@ -3571,6 +3783,68 @@ def handle_missing_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+@csrf_exempt
+def outliers_summary_api(request): 
+    try:
+        print("Request method:", request.method)
+
+        user_id = request.headers.get('userID')
+        filename = request.headers.get('filename')
+
+        if not user_id or not filename:
+            return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
+
+        folder = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder, filename)
+
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'File not found.'})
+
+        df = pd.read_excel(file_path)
+        num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+
+        if not num_cols:
+            return JsonResponse({'success': False, 'error': 'No numeric columns found.'})
+
+        # Compute IQR bounds
+        Q1 = df[num_cols].quantile(0.25)
+        Q3 = df[num_cols].quantile(0.75)
+        IQR = Q3 - Q1
+        lower = Q1 - 1.5 * IQR
+        upper = Q3 + 1.5 * IQR
+
+        # Detect outliers
+        outlier_mask = (df[num_cols] < lower) | (df[num_cols] > upper)
+
+        # Summary per column — convert to int
+        outliers_summary = {col: int(count) for col, count in outlier_mask.sum().items()}
+
+        # Cell-level details — convert index and value to JSON-safe types
+        outlier_cells = []
+        for col in num_cols:
+            for idx in df.index[outlier_mask[col]]:
+                value = df.at[idx, col]
+                # Convert value to native Python type
+                safe_value = float(value) if isinstance(value, (np.integer, np.floating)) else value
+                outlier_cells.append({
+                    'row': int(idx),
+                    'column': col,
+                    'value': safe_value
+                })
+
+        # print(num_cols)
+        # print(outliers_summary)
+        # print(outlier_cells) 
+
+        return JsonResponse({
+            'success': True,
+            'numeric_columns': num_cols,
+            'outliers_summary': outliers_summary,
+            'outlier_cells': outlier_cells
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 @csrf_exempt
 def handle_outliers_api(request):
     try:
@@ -3660,56 +3934,60 @@ def rank_categorical_column_api(request):
 
 @csrf_exempt
 def split_column_api(request):
+    from django.http import JsonResponse
+    from django.conf import settings
+    import pandas as pd
+    import os, json
     from collections import Counter
+
     try:
-        # Extract user ID from request headers
+        # --- Extract metadata ---
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename') 
-        if not user_id:
-            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
-        print(f"Received User ID: {user_id}")
-        print(f"Received Filename: {filename}")
+        if not user_id or not filename:
+            return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
+
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
 
         if not os.path.exists(file_path):
-            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+            return JsonResponse({'success': False, 'error': 'Uploaded file not found.'})
 
         try:
             df = pd.read_excel(file_path)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
 
+        # --- Parse JSON body ---
         body = json.loads(request.body)
-        column = body.get('column', '')
-        method = body.get('method', '')
+        column = body.get('column', '').strip()
+        method = body.get('method', '').strip().lower()
         phrases = body.get('phrases', [])
+        delete_original = body.get('delete_original', False)
 
         if column not in df.columns:
-            return JsonResponse({'success': False, 'error': f"Column '{column}' not found."})
+            return JsonResponse({'success': False, 'error': f"Column '{column}' not found in dataset."})
 
         new_cols = []
         df_split = None
+        original_idx = df.columns.get_loc(column)
 
-        # --- Method 1: Comma
+        # --- Split Logic ---
         if method == 'comma':
             df_split = df[column].astype(str).str.split(',', expand=True)
             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
             new_cols = df_split.columns.tolist()
 
-        # --- Method 2: Semicolon
         elif method == 'semicolon':
             df_split = df[column].astype(str).str.split(';', expand=True)
             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
             new_cols = df_split.columns.tolist()
 
-        # --- Method 3: Tags
         elif method == 'tags':
             df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
             df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
             new_cols = df_split.columns.tolist()
 
-        # --- Method 4: Custom phrases
         elif method == 'custom' and phrases:
             def count_phrases(text, known_phrases):
                 tokens = str(text).split(", ")
@@ -3726,35 +4004,44 @@ def split_column_api(request):
                     i += 1
                 return Counter(result)
 
-            new_data = {}
+            df_split = pd.DataFrame()
             for phrase in phrases:
-                new_data[phrase] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
-            df_split = pd.DataFrame(new_data)
+                df_split[phrase] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
             new_cols = df_split.columns.tolist()
 
         else:
-            return JsonResponse({'success': False, 'error': 'Invalid method or missing input.'})
+            return JsonResponse({'success': False, 'error': 'Invalid method or missing required input (phrases).'})
 
-        # --- Remove duplicate columns if already present
+        # --- Remove new columns if already exist ---
         for col in new_cols:
             if col in df.columns:
                 df.drop(columns=[col], inplace=True)
 
-        df = pd.concat([df, df_split], axis=1)
-        df.to_excel(file_path, index=False)
+        # --- Insert new columns after original ---
+        for i, col in enumerate(new_cols):
+            df.insert(original_idx + 1 + i, col, df_split[col])
 
-        df = df.fillna("").astype(str) 
+        # --- Delete original column if requested ---
+        if delete_original and column in df.columns:
+            df.drop(columns=[column], inplace=True)
+
+        # --- Save and Respond ---
+        df.to_excel(file_path, index=False)
+        df = df.fillna("").astype(str)
 
         return JsonResponse({
             'success': True,
-            'message': 'Column split successful.',
+            'message': f"Column '{column}' split successfully using '{method}' method.",
             'columns': df.columns.tolist(),
-            'rows': df.to_dict(orient='records'),
-            'new_columns': new_cols
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'), 
+            'new_columns': new_cols,
+            'original_column_deleted': delete_original
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+
 
 
 @csrf_exempt

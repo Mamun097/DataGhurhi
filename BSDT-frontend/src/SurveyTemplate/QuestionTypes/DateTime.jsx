@@ -6,10 +6,18 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 import axios from "axios";
 
-const DateTimeQuestion = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const DateTimeQuestion = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  
+
   const [required, setRequired] = useState(question.required || false);
 
   useEffect(() => {
@@ -17,14 +25,22 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
   }, [question.required]);
 
   useEffect(() => {
-    if (question.dateType === undefined) {
+    if (question.meta?.dateType === undefined) {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === question.id ? { ...q, dateType: "date" } : q
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  dateType: "date",
+                },
+              }
+            : q
         )
       );
     }
-  }, [question.id, question.dateType, setQuestions]);
+  }, [question.id, question.meta?.dateType, setQuestions]);
 
   const handleRequired = () => {
     const newRequiredState = !required;
@@ -44,11 +60,28 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
 
   const handleTypeChange = (newType) => {
     setQuestions((prev) =>
-      prev.map((q) => (q.id === question.id ? { ...q, dateType: newType } : q))
+      prev.map((q) =>
+        q.id === question.id
+          ? {
+              ...q,
+              meta: {
+                ...q.meta,
+                dateType: newType,
+              },
+            }
+          : q
+      )
     );
   };
 
   const handleDelete = () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete this Date/Time question? This action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
     setQuestions((prev) => {
       const updatedQuestions = prev.filter((q) => q.id !== question.id);
       return updatedQuestions.map((q, index) => ({ ...q, id: index + 1 }));
@@ -67,7 +100,10 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
     setQuestions((prev) =>
       prev.map((q) =>
         q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
+          ? {
+              ...q,
+              imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+            }
           : q
       )
     );
@@ -91,15 +127,20 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
   const handleCopy = () => {
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedMeta = question.meta ? { ...question.meta } : {};
-    const copiedImageUrls = question.imageUrls ? [...question.imageUrls.map(img => ({...img}))] : [];
+    const copiedImageUrls = question.imageUrls
+      ? [...question.imageUrls.map((img) => ({ ...img }))]
+      : [];
 
     const copiedQuestion = {
       text: question.text,
-      type: question.type, 
+      type: question.type,
       required: question.required,
-      dateType: question.dateType || "date", // Ensure dateType is copied
-      id: -1, 
-      meta: copiedMeta,
+      section: question.section,
+      id: -1,
+      meta: {
+        ...copiedMeta,
+        dateType: question.meta?.dateType || "date",
+      },
       imageUrls: copiedImageUrls,
     };
 
@@ -121,7 +162,9 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2em" }}>
           <em>
-            <strong>{getLabel("Date/Time")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Date/Time")}</strong>
           </em>
         </label>
         <TagManager
@@ -150,8 +193,15 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
         {question.imageUrls && question.imageUrls.length > 0 && (
           <div className="mb-2">
             {question.imageUrls.map((img, idx) => (
-              <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-                <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                key={idx}
+                className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm"
+              >
+                <div
+                  className={`d-flex justify-content-${
+                    img.alignment || "start"
+                  }`}
+                >
                   <img
                     src={img.url}
                     alt={`Question ${idx}`}
@@ -197,15 +247,15 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
       {/* Date/Time Input & Type Selector */}
       <div className="d-flex flex-wrap align-items-center gap-2 ms-1 mb-3">
         <input
-          type={question.dateType === "time" ? "time" : "date"}
+          type={question.meta?.dateType === "time" ? "time" : "date"}
           className="form-control form-control-sm w-auto"
-          readOnly 
+          readOnly
         />
         <select
           className="form-select form-select-sm"
           style={{ width: "80px" }}
           onChange={(e) => handleTypeChange(e.target.value)}
-          value={question.dateType || "date"}
+          value={question.meta?.dateType || "date"}
         >
           <option value="date">{getLabel("Date")}</option>
           <option value="time">{getLabel("Time")}</option>
@@ -214,13 +264,24 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
 
       {/* Action Buttons & Required Toggle */}
       <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
-        <button className="btn btn-outline-secondary w-auto me-2" onClick={handleDelete} title="Delete Question">
+        <button
+          className="btn btn-outline-secondary w-auto me-2"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto me-0 me-sm-2" title="Add Image">
+        <label
+          className="btn btn-outline-secondary w-auto me-0 me-sm-2"
+          title="Add Image"
+        >
           <i className="bi bi-image"></i>
           <input
             type="file"
@@ -232,7 +293,7 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleTranslation}
-          title="Copy Question"
+          title="Translate Question"
         >
           <i className="bi bi-translate"></i>
         </button>
@@ -245,7 +306,12 @@ const DateTimeQuestion = ({ question, questions, setQuestions, language, setLang
               onChange={handleRequired}
               checked={required}
             />
-            <label className="form-check-label" htmlFor={`dateTimeRequired-${question.id}`}>Required</label>
+            <label
+              className="form-check-label"
+              htmlFor={`dateTimeRequired-${question.id}`}
+            >
+              {getLabel("Required")}
+            </label>
           </div>
         </div>
       </div>

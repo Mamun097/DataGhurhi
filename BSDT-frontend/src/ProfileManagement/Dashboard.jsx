@@ -405,6 +405,7 @@ const Dashboard = () => {
 
   const handleSaveChanges = async () => {
     const token = localStorage.getItem("token");
+    console.log(editedValues);
     try {
       const response = await axios.put(
         "http://103.94.135.115:2000/api/profile/update-profile",
@@ -687,8 +688,8 @@ const handleSavePassword = async () => {
                     "Home Address",
                     "Contact No",
                     "Profile Link",
-                    "Religion",
-                    "Working Place"
+                    "Religion"
+                    
               
                   ].map((field, index) => (
                     <div key={index}>

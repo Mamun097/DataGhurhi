@@ -2,7 +2,12 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const LinearScaleQuestion = ({ question, userResponse, setUserResponse }) => {
+const LinearScaleQuestion = ({
+  index,
+  question,
+  userResponse,
+  setUserResponse,
+}) => {
   // Default min and max values
   const minValue = question.min || 1;
   const maxValue = question.max || 5;
@@ -51,6 +56,7 @@ const LinearScaleQuestion = ({ question, userResponse, setUserResponse }) => {
           wordBreak: "break-word",
         }}
       >
+        {index}{". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>

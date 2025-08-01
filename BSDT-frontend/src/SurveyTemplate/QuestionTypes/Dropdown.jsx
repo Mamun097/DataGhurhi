@@ -7,7 +7,15 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import axios from "axios";
 import translateText from "./QuestionSpecificUtils/Translation";
 
-const Dropdown = ({ question, questions, setQuestions, language, setLanguage, getLabel }) => {
+const Dropdown = ({
+  index,
+  question,
+  questions,
+  setQuestions,
+  language,
+  setLanguage,
+  getLabel,
+}) => {
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -71,10 +79,10 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
     const index = questions.findIndex((q) => q.id === question.id);
     const copiedQuestion = {
       ...question,
-      id: -1, 
+      id: -1,
       meta: {
         ...question.meta,
-        options: [...(options || [])], 
+        options: [...(options || [])],
         enableOptionShuffle: enableOptionShuffle,
       },
     };
@@ -84,13 +92,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
 
     setQuestions(updatedQuestions);
-  }, [
-    question,
-    questions,
-    setQuestions,
-    options, 
-    enableOptionShuffle,
-  ]);
+  }, [question, questions, setQuestions, options, enableOptionShuffle]);
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -123,31 +125,31 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
 
   const updateOption = useCallback(
     (idx, newText) => {
-      if (newText.includes('\n')) {
-        const lines = newText.split('\n').filter(line => line.trim() !== '');
+      if (newText.includes("\n")) {
+        const lines = newText.split("\n").filter((line) => line.trim() !== "");
         if (lines.length > 1) {
-          setQuestions(prev =>
-            prev.map(q => {
+          setQuestions((prev) =>
+            prev.map((q) => {
               if (q.id === question.id) {
                 const currentOptions = [...(q.meta?.options || [])];
                 currentOptions[idx] = lines[0].trim();
-                const newOptions = lines.slice(1).map(line => line.trim());
+                const newOptions = lines.slice(1).map((line) => line.trim());
                 currentOptions.splice(idx + 1, 0, ...newOptions);
-                
+
                 return {
                   ...q,
                   meta: {
                     ...q.meta,
-                    options: currentOptions
-                  }
+                    options: currentOptions,
+                  },
                 };
               }
               return q;
             })
           );
         } else if (lines.length === 1) {
-          setQuestions(prev =>
-            prev.map(q =>
+          setQuestions((prev) =>
+            prev.map((q) =>
               q.id === question.id
                 ? {
                     ...q,
@@ -163,8 +165,8 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
           );
         }
       } else {
-        setQuestions(prev =>
-          prev.map(q =>
+        setQuestions((prev) =>
+          prev.map((q) =>
             q.id === question.id
               ? {
                   ...q,
@@ -183,42 +185,62 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
     [question.id, setQuestions]
   );
 
-  const handleOptionPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        setQuestions(prev =>
-          prev.map(q => {
-            if (q.id === question.id) {
-              const currentOptions = [...(q.meta?.options || [])];
-              currentOptions[index] = lines[0].trim();
-              const newOptions = lines.slice(1).map(line => line.trim());
-              currentOptions.splice(index + 1, 0, ...newOptions);
-              
-              return {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: currentOptions
-                }
-              };
-            }
-            return q;
-          })
-        );
-      } else if (lines.length === 1) {
-        setQuestions(prev =>
-          prev.map(q =>
+  const handleOptionPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          setQuestions((prev) =>
+            prev.map((q) => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[index] = lines[0].trim();
+                const newOptions = lines.slice(1).map((line) => line.trim());
+                currentOptions.splice(index + 1, 0, ...newOptions);
+
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions,
+                  },
+                };
+              }
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions((prev) =>
+            prev.map((q) =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === index ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
             q.id === question.id
               ? {
                   ...q,
                   meta: {
                     ...q.meta,
                     options: (q.meta?.options || []).map((opt, i) =>
-                      i === index ? lines[0].trim() : opt
+                      i === index ? pastedText : opt
                     ),
                   },
                 }
@@ -226,24 +248,9 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
           )
         );
       }
-    } else {
-      setQuestions(prev =>
-        prev.map(q =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === index ? pastedText : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
+    },
+    [question.id, setQuestions]
+  );
 
   const removeOption = useCallback(
     (idx) => {
@@ -256,7 +263,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
               ...q,
               meta: {
                 ...q.meta,
-                options: updatedOptions, 
+                options: updatedOptions,
               },
             };
           }
@@ -275,40 +282,49 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
       setQuestions((prev) =>
         prev.map((q) => {
           if (q.id !== question.id) return q;
-          const opts = Array.from(options); 
+          const opts = Array.from(options);
           const [moved] = opts.splice(src, 1);
           opts.splice(dest, 0, moved);
           return { ...q, meta: { ...q.meta, options: opts } };
         })
       );
     },
-    [question.id, setQuestions, options] 
+    [question.id, setQuestions, options]
   );
 
-  const removeImageCb = useCallback((index) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? { ...q, imageUrls: (q.imageUrls || []).filter((_, i) => i !== index) }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const removeImageCb = useCallback(
+    (index) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).filter((_, i) => i !== index),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
-  const updateAlignmentCb = useCallback((index, alignment) => {
-    setQuestions((prev) =>
-      prev.map((q) =>
-        q.id === question.id
-          ? {
-              ...q,
-              imageUrls: (q.imageUrls || []).map((img, i) =>
-                i === index ? { ...img, alignment } : img
-              ),
-            }
-          : q
-      )
-    );
-  }, [question.id, setQuestions]);
+  const updateAlignmentCb = useCallback(
+    (index, alignment) => {
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                imageUrls: (q.imageUrls || []).map((img, i) =>
+                  i === index ? { ...img, alignment } : img
+                ),
+              }
+            : q
+        )
+      );
+    },
+    [question.id, setQuestions]
+  );
 
   const handleTranslation = useCallback(async () => {
     try {
@@ -316,9 +332,13 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
       if (!questionResponse?.data?.data?.translations?.[0]?.translatedText) {
         throw new Error("No translation returned for question");
       }
-      handleQuestionChange(questionResponse.data.data.translations[0].translatedText);
+      handleQuestionChange(
+        questionResponse.data.data.translations[0].translatedText
+      );
 
-      const optionTexts = (question.meta.options || []).map((opt) => opt.trim()).filter((opt) => opt);
+      const optionTexts = (question.meta.options || [])
+        .map((opt) => opt.trim())
+        .filter((opt) => opt);
 
       if (!optionTexts.length) {
         console.warn("No options to translate");
@@ -340,14 +360,21 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
     } catch (error) {
       console.error("Error in handleTranslation:", error.message);
     }
-  }, [handleQuestionChange, question.meta.options, question.text, updateOption]);
+  }, [
+    handleQuestionChange,
+    question.meta.options,
+    question.text,
+    updateOption,
+  ]);
 
   return (
     <div className="mb-3 dnd-isolate">
       <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
-            <strong>{getLabel("Dropdown")}</strong>
+            Question No: {index}
+            <hr />
+            Type: <strong>{getLabel("Dropdown")}</strong>
           </em>
         </label>
         <TagManager
@@ -376,7 +403,9 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
         <div className="mb-2">
           {question.imageUrls.map((img, idx) => (
             <div key={idx} className="mb-3 bg-gray-50 p-3 rounded-lg shadow-sm">
-              <div className={`d-flex justify-content-${img.alignment || "start"}`}>
+              <div
+                className={`d-flex justify-content-${img.alignment || "start"}`}
+              >
                 <img
                   src={img.url}
                   alt={`Question ${idx}`}
@@ -421,7 +450,7 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
             <div ref={provided.innerRef} {...provided.droppableProps}>
               {(options || []).map((option, idx) => (
                 <Draggable
-                  key={`opt-${question.id}-${idx}`} 
+                  key={`opt-${question.id}-${idx}`}
                   draggableId={`dropdown-opt-${question.id}-${idx}`}
                   index={idx}
                 >
@@ -429,15 +458,15 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      {...prov.dragHandleProps} 
-                      className="d-flex align-items-center mb-2 p-1 rounded" 
+                      {...prov.dragHandleProps}
+                      className="d-flex align-items-center mb-2 p-1 rounded"
                       style={{ cursor: "grab" }}
                     >
                       <i
-                        className="bi bi-grip-vertical me-2" 
+                        className="bi bi-grip-vertical me-2"
                         style={{ fontSize: "1.5rem" }}
                       ></i>
-                      <div className="flex-grow-1 me-2"> 
+                      <div className="flex-grow-1 me-2">
                         <input
                           type="text"
                           className="form-control form-control-sm"
@@ -451,7 +480,10 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
                       <button
                         className="btn btn-sm btn-outline-secondary w-auto"
                         onClick={() => removeOption(idx)}
-                        disabled={(options || []).length <= 1 && (options || []).length > 0 } 
+                        disabled={
+                          (options || []).length <= 1 &&
+                          (options || []).length > 0
+                        }
                       >
                         <i className="bi bi-trash"></i>
                       </button>
@@ -473,7 +505,11 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
       </button>
 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
-        <button className="btn btn-outline-secondary w-auto" onClick={handleCopy} title="Copy Question">
+        <button
+          className="btn btn-outline-secondary w-auto"
+          onClick={handleCopy}
+          title="Copy Question"
+        >
           <i className="bi bi-clipboard"></i>
         </button>
         <button
@@ -483,13 +519,16 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-sm btn-outline-secondary w-auto" title="Add Image">
+        <label
+          className="btn btn-sm btn-outline-secondary w-auto"
+          title="Add Image"
+        >
           <i className="bi bi-image"></i>
           <input
             type="file"
             accept="image/*"
             hidden
-            onChange={handleQuestionImageUpload} 
+            onChange={handleQuestionImageUpload}
           />
         </label>
         <button
@@ -510,7 +549,10 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
             onChange={handleEnableOptionShuffleToggle}
             checked={enableOptionShuffle}
           />
-          <label className="form-check-label" htmlFor={`enableOptionShuffleDropdown${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`enableOptionShuffleDropdown${question.id}`}
+          >
             {getLabel("Shuffle option order")}
           </label>
         </div>
@@ -520,9 +562,12 @@ const Dropdown = ({ question, questions, setQuestions, language, setLanguage, ge
             type="checkbox"
             id={`requiredSwitchDropdown${question.id}`}
             checked={required}
-            onChange={handleRequired} 
+            onChange={handleRequired}
           />
-          <label className="form-check-label" htmlFor={`requiredSwitchDropdown${question.id}`}>
+          <label
+            className="form-check-label"
+            htmlFor={`requiredSwitchDropdown${question.id}`}
+          >
             {getLabel("Required")}
           </label>
         </div>
