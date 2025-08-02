@@ -30,13 +30,15 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         fetchPackages();
     }, []);
 
-    // Auto-fill discount price when original price changes
+    // Auto-fill discount price when original price changes - ONLY for add package modal
     useEffect(() => {
-        setFormData(prev => ({
-            ...prev,
-            discount_price: formData.original_price
-        }));
-    }, [formData.original_price]);
+        if (showAddModal && formData.original_price) {
+            setFormData(prev => ({
+                ...prev,
+                discount_price: formData.original_price
+            }));
+        }
+    }, [formData.original_price, showAddModal]);
 
     const fetchPackages = async () => {
         try {
