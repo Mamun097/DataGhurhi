@@ -68,75 +68,59 @@ const PackageCard = ({
     // Order: Advanced analysis, participants, survey, question, tag
 
     // Advanced analysis feature (1st)
-    if (pkg.advanced_analysis && pkg.advanced_analysis > 0) {
-      features.push({
-        text: `${getLabel("Advanced Statistical Analyses")}`,
-        type: 'analysis'
-      });
-    }
+    const hasAdvancedAnalysis = pkg.advanced_analysis && pkg.advanced_analysis > 0;
+    features.push({
+      text: `${getLabel("Advanced Statistical Analyses")}`,
+      type: 'analysis',
+      included: hasAdvancedAnalysis,
+      highlight: false
+    });
 
     // Participant count feature (2nd)
-    if (pkg.participant_count !== undefined && pkg.participant_count !== null) {
-      features.push({
-        text: `${formatParticipantCount(pkg.participant_count)} ${getLabel("Survey Responses")}`,
-        type: 'participant',
-        highlight: pkg.participant_count === -1
-      });
-    }
+    const hasParticipants = pkg.participant_count !== undefined && 
+                           pkg.participant_count !== null && 
+                           pkg.participant_count !== 0;
+    features.push({
+      text: hasParticipants 
+        ? `${formatParticipantCount(pkg.participant_count)} ${getLabel("Survey Responses")}`
+        : `${getLabel("Survey Responses")}`,
+      type: 'participant',
+      included: hasParticipants,
+      highlight: pkg.participant_count === -1
+    });
 
     // Survey generation feature (3rd)
-    if (pkg.survey > 0) {
-      features.push({
-        text: `${pkg.survey.toLocaleString()} ${getLabel("Automatic Smart Survey Generation with LLM")}`,
-        type: 'survey'
-      });
-    }
+    const hasSurvey = pkg.survey && pkg.survey > 0;
+    features.push({
+      text: hasSurvey 
+        ? `${pkg.survey.toLocaleString()} ${getLabel("Automatic Smart Survey Generation with LLM")}`
+        : `${getLabel("Automatic Smart Survey Generation with LLM")}`,
+      type: 'survey',
+      included: hasSurvey,
+      highlight: false
+    });
 
     // Question generation feature (4th)
-    if (pkg.question > 0) {
-      features.push({
-        text: `${pkg.question.toLocaleString()} ${getLabel("Automatic Smart Question Generation with LLM")}`,
-        type: 'question'
-      });
-    }
+    const hasQuestion = pkg.question && pkg.question > 0;
+    features.push({
+      text: hasQuestion 
+        ? `${pkg.question.toLocaleString()} ${getLabel("Automatic Smart Question Generation with LLM")}`
+        : `${getLabel("Automatic Smart Question Generation with LLM")}`,
+      type: 'question',
+      included: hasQuestion,
+      highlight: false
+    });
 
     // Tag generation feature (5th)
-    if (pkg.tag > 0) {
-      features.push({
-        text: `${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`,
-        type: 'tag'
-      });
-    }
-
-    // Additional template features based on package type
-    // if (pkg.title && pkg.title.toLowerCase().includes('starter')) {
-    //   features.push({
-    //     text: getLabel("Basic Survey Templates"),
-    //     type: 'template'
-    //   });
-    // } else if (pkg.title && (pkg.title.toLowerCase().includes('professional') || pkg.title.toLowerCase().includes('yearly'))) {
-    //   features.push({
-    //     text: getLabel("Advanced Survey Templates"),
-    //     type: 'template'
-    //   });
-    //   features.push({
-    //     text: getLabel("Priority Support"),
-    //     type: 'support'
-    //   });
-    // } else if (pkg.title && pkg.title.toLowerCase().includes('enterprise')) {
-    //   features.push({
-    //     text: getLabel("Premium Survey Templates"),
-    //     type: 'template'
-    //   });
-    //   features.push({
-    //     text: getLabel("Premium Support"),
-    //     type: 'support'
-    //   });
-    //   features.push({
-    //     text: getLabel("Custom Integrations"),
-    //     type: 'integration'
-    //   });
-    // }
+    const hasTag = pkg.tag && pkg.tag > 0;
+    features.push({
+      text: hasTag 
+        ? `${pkg.tag.toLocaleString()} ${getLabel("Automatic Question Tag Generation")}`
+        : `${getLabel("Automatic Question Tag Generation")}`,
+      type: 'tag',
+      included: hasTag,
+      highlight: false
+    });
 
     return features;
   };
@@ -166,7 +150,6 @@ const PackageCard = ({
 
         {validityPeriod && (
           <div className={`validity-display ${validityType}`}>
-            <span className="validity-label">{getLabel("For ")}</span>
             <span className="validity-period">{validityPeriod}</span>
           </div>
         )}
@@ -174,10 +157,12 @@ const PackageCard = ({
 
       <div className="package-features">
         {getPackageFeatures(pkg).map((feature, index) => (
-          <div key={index} className={`feature ${feature.highlight ? 'highlight' : ''}`}>
-            <span className="check-icon">✓</span>
+          <div key={index} className={`feature ${feature.included ? 'included' : 'not-included'} ${feature.highlight ? 'highlight' : ''}`}>
+            <span className={`feature-icon ${feature.included ? 'check-icon' : 'cross-icon'}`}>
+              {feature.included ? '✓' : '×'}
+            </span>
             <span className="feature-text">{feature.text}</span>
-            {feature.highlight && <span className="unlimited-badge">{getLabel("Unlimited")}</span>}
+            {feature.highlight && feature.included && <span className="unlimited-badge">{getLabel("Unlimited")}</span>}
           </div>
         ))}
       </div>
