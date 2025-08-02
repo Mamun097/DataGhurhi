@@ -4,10 +4,9 @@ import AIChatbot from "./AIChatbot";
 import LoadingOverlay from "./LoadingOverlay";
 import PremiumPackagesModal from "../../../ProfileManagement/PremiumFeatures/PremiumPackagesModal";
 import "./ChatbotLoading.css";
+import apiClient from "../../../api";
 //import "./AutoGeneration.css";
 import mockQuestionGenerator from "./mockApiService";
-import axios from "axios";
-
 const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
   const [showChatbot, setShowChatbot] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +33,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       const token = localStorage.getItem("token"); // Adjust based on your token storage method
       //console.log("Fetching user packages..."); // Debug log
       
-      const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
+      const response = await apiClient.get("/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -115,8 +114,7 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
       //console.log("Question Data:", questionData);
       //console.log("Question Info:", questionInfo);
 
-      const response = await fetch('http://103.94.135.115:2000/api/generate-question-with-llm/', {
-        method: 'POST',
+      const response = await apiClient.post("/api/generate-question-with-llm/", {
         headers: {
             'Content-Type': 'application/json',
         },

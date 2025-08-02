@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./AdminPackageCustomizer.css";
 import AdminCustomPackageCustomizer from "./AdminCustomPackageCustomizer";
+import apiClient from "../../api";
 
 const AdminPackageCustomizer = ({ getLabel }) => {
     const [packages, setPackages] = useState([]);
@@ -41,7 +42,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
     const fetchPackages = async () => {
         try {
             setLoading(true);
-            const response = await fetch('http://103.94.135.115:2000/api/admin/get-all-packages');
+            const response = await apiClient.get('/api/admin/get-all-packages');
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -196,12 +197,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
         try {
             setIsSubmitting(true);
 
-            const response = await fetch(`http://103.94.135.115:2000/api/admin/delete-package/${selectedPackage.package_id}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            const response = await apiClient.delete(`/api/admin/delete-package/${selectedPackage.package_id}`);
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -248,8 +244,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
             if (showEditModal) {
                 // API call to update package
-                response = await fetch(`http://103.94.135.115:2000/api/admin/update-package/${selectedPackage.package_id}`, {
-                    method: 'PUT',
+                response = await apiClient.put(`/api/admin/update-package/${selectedPackage.package_id}`, {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)
                 });
@@ -274,8 +269,7 @@ const AdminPackageCustomizer = ({ getLabel }) => {
 
             } else {
                 // API call to create package
-                response = await fetch('http://103.94.135.115:2000/api/admin/create-package', {
-                    method: 'POST',
+                response = await apiClient.post('/api/admin/create-package', {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(packageData)
                 });

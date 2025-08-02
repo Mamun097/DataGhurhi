@@ -3,6 +3,7 @@ import './PremiumPackagesModal.css';
 import CustomPackageBuilder from './CustomPackage';
 import './CustomPackage.css';
 import usePaymentGateway from './PaymentGateway/FixedPackGateway';
+import apiClient from '../../api';
 
 // Tab Navigation Component
 const PackageTabNavigation = ({ activeTab, onTabChange, getLabel }) => {
@@ -240,7 +241,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
 
     try {
       // Fetch all packages
-      const packagesResponse = await fetch('http://103.94.135.115:2000/api/admin/get-all-packages');
+      const packagesResponse = await apiClient.get('/api/admin/get-all-packages');
       if (!packagesResponse.ok) {
         throw new Error('Failed to fetch packages');
       }
@@ -248,7 +249,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
       const packagesArray = packagesData.packages || packagesData || [];
 
       // Fetch most popular package
-      const popularResponse = await fetch('http://103.94.135.115:2000/api/admin/most-popular-package');
+      const popularResponse = await apiClient.get('/api/admin/most-popular-package');
       let popularPackageId = null;
       if (popularResponse.ok) {
         const popularData = await popularResponse.json();

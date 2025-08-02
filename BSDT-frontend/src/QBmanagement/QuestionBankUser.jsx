@@ -4,6 +4,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./CSS/SurveyForm.css";
 import SurveyForm from "./Components/SurveyForm";
 import { useLocation } from "react-router-dom";
+import apiClient from "../api";
 
 // Google Translate API Key
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -45,7 +46,7 @@ const QB = ({ language, setLanguage }) => {
   useEffect(() => {
     const load = async () => {
       try {
-        const resp = await axios.get("http://103.94.135.115:2000/api/question-bank", {
+        const resp = await apiClient.get("/api/question-bank", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -65,7 +66,7 @@ const QB = ({ language, setLanguage }) => {
 
     const fetchSharedQuestions = async () => {
       try {
-        const resp = await axios.get("http://103.94.135.115:2000/api/question-bank/shared", {
+        const resp = await apiClient.get("/api/question-bank/shared", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

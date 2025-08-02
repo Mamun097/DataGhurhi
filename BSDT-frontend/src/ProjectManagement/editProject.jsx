@@ -15,6 +15,7 @@ import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question
 import AutoSurveyGeneration from "./AutoSurveyGeneration";
 import "./createProject.css";
 import "./editProject.css";
+import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -160,12 +161,12 @@ const EditProject = () => {
     try {
       if (!token && privacyMode === "public") {
         //header will have no token and fetch
-         response = await axios.get(
-          `http://103.94.135.115:2000/api/project/${projectId}`
+         response = await apiClient.get(
+          `/api/project/${projectId}`
         );
       } else {
-        response = await axios.get(
-          `http://103.94.135.115:2000/api/project/${projectId}`,
+        response = await apiClient.get(
+          `/api/project/${projectId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -208,16 +209,16 @@ const EditProject = () => {
     let response;
     try {
       if(token){
-      response = await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}/surveys`,
+      response = await apiClient.get(
+        `/api/project/${projectId}/surveys`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
     }
     if(!token){
-      response=await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}/public/surveys`
+      response=await apiClient.get(
+        `/api/project/${projectId}/public/surveys`
       );
     }
       if (response.status === 200) setSurveys(response.data.surveys || []);
@@ -229,8 +230,8 @@ const EditProject = () => {
   const fetchCollaborators = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}/collaborators`,
+      const response = await apiClient.get(
+        `/api/project/${projectId}/collaborators`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -256,8 +257,8 @@ const EditProject = () => {
 
     try {
       // 1. creating a new survey
-      const resSurvey = await axios.post(
-        `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
+      const resSurvey = await apiClient.post(
+        `/api/project/${projectId}/create-survey`,
         { title: surveyMeta.topic || "Untitled Survey" },
         {
           headers: {
@@ -271,8 +272,8 @@ const EditProject = () => {
       if (!survey_id) throw new Error("Survey not created");
 
       // 2. calling LLM to generate questions
-      const resLLM = await axios.post(
-        `http://103.94.135.115:2000/api/generate-multiple-questions-with-llm`,
+      const resLLM = await apiClient.post(
+        `/api/generate-multiple-questions-with-llm`,
         {
           questionData: {
             type: surveyMeta.questionTypes,
@@ -336,8 +337,8 @@ const EditProject = () => {
       };
 
       // 5. saving the generated survey template
-      const resSave = await axios.put(
-        `http://103.94.135.115:2000/api/surveytemplate/save`,
+      const resSave = await apiClient.put(
+        `/api/surveytemplate/save`,
         surveyTemplatePayload,
         {
           headers: {
@@ -364,7 +365,7 @@ const EditProject = () => {
       }, 3000);
 
       //reducing survey count
-      fetch("http://103.94.135.115:2000/api/reduce-survey-count", {
+      apiClient.get("/api/reduce-survey-count", {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -412,8 +413,8 @@ const EditProject = () => {
     if (result.isConfirmed && result.value) {
       const token = localStorage.getItem("token");
       try {
-        const response = await axios.post(
-          `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
+        const response = await apiClient.post(
+          `/api/project/${projectId}/create-survey`,
           { title: result.value },
           {
             headers: {
@@ -447,8 +448,8 @@ const EditProject = () => {
   const handleDeleteSurvey = async (surveyId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.delete(
-        `http://103.94.135.115:2000/api/surveytemplate/${surveyId}`,
+      const response = await apiClient.delete(
+        `/api/surveytemplate/${surveyId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200) {
@@ -484,8 +485,8 @@ const EditProject = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(
-        `http://103.94.135.115:2000/api/project/${projectId}/update-project`,
+      await apiClient.put(
+        `/api/project/${projectId}/update-project`,
         formData,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
@@ -506,8 +507,8 @@ const EditProject = () => {
     }
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `http://103.94.135.115:2000/api/project/${projectId}/invite-collaborator`,
+      const response = await apiClient.post(
+        `/api/project/${projectId}/invite-collaborator`,
         {
           email: collabEmail,
           access_role: accessControl,

@@ -5,6 +5,7 @@ import "./register.css"; // reuse same CSS
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import apiClient from "../api"; 
 
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
@@ -149,7 +150,7 @@ const ForgotPassword = () => {
     setOtpCooldown(180); // restart timer when OTP is sent
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/send-otp", {
+      await apiClient.post("/api/send-otp", {
         email,
         otp: newOtp,
       });
@@ -177,7 +178,7 @@ const ForgotPassword = () => {
     if (password !== confirm) return toast.error(`❌ ${t("passwordMismatch")}`);
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/login/reset-password", {
+      await apiClient.post("/api/login/reset-password", {
         email,
         newPassword: password,
       });

@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
 import PremiumPackagesModal from "../ProfileManagement/PremiumFeatures/PremiumPackagesModal";
 import "./AutoSurveyGeneration.css";
-import axios from "axios";
+import apiClient from "../api";
 
 const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel }) => {
   const [showSurveyChatbot, setShowSurveyChatbot] = useState(false);
@@ -27,8 +27,8 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel }) => {
     try {
       const token = localStorage.getItem("token");
       console.log("Fetching user packages for survey generation..."); // Debug log
-      
-      const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
+
+      const response = await apiClient.get("/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

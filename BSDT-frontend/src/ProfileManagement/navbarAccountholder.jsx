@@ -15,6 +15,7 @@ import {
 
 import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 import "./navbarAcholder.css";
+import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -72,7 +73,7 @@ const NavbarAcholder = ({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get("http://103.94.135.115:2000/api/profile", {
+        const response = await apiClient.get("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -124,7 +125,7 @@ const NavbarAcholder = ({
   const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
-        const response = await axios.get("http://103.94.135.115:2000/api/search", {
+        const response = await apiClient.get("/api/search", {
           params: {
             query: searchQuery,
             filter: searchFilter === "all" ? "" : searchFilter,

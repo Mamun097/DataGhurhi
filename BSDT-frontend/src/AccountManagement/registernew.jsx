@@ -3,6 +3,7 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import "./register.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import apiClient from "../api";
 
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
@@ -56,12 +57,9 @@ const Register = () => {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const checkEmailExists = async () => {
     try {
-      const res = await axios.post(
-        "http://103.94.135.115:2000/api/register/check-email",
-        {
-          email: formData.email,
-        }
-      );
+      const res = await apiClient.post("/api/register/check-email", {
+        email: formData.email,
+      });
       return res.data.exists;
     } catch (err) {
       console.error("Error checking email:", err);
@@ -246,7 +244,7 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://103.94.135.115:2000/api/register", {
+      const response = await apiClient.post("/api/register", {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
@@ -308,7 +306,7 @@ const Register = () => {
     setGeneratedOtp(newOtp);
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/send-otp", {
+      await apiClient.post("/api/send-otp", {
         email: formData.email,
         otp: newOtp,
       });
