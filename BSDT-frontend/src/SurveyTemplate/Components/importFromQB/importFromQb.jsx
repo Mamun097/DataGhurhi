@@ -1,7 +1,7 @@
 import ImportQuestionModal from "./importModal";
 import React, { useState } from "react";
-import axios from "axios";
 import PreviewImportModal from "./previewModal";
+import apiClient from "../../../api";
 
 const ImportFromQb = ({ addImportedQuestion, questionInfo}) => {
 
@@ -15,15 +15,15 @@ const ImportFromQb = ({ addImportedQuestion, questionInfo}) => {
             let url = "";
 
             if (visibility === "own") {
-              url = `http://103.94.135.115:2000/api/own-questions/${userId}?tags=${tags}&limit=${limit}`;
+              url = `/api/own-questions/${userId}?tags=${tags}&limit=${limit}`;
             } else if (visibility === "public") {
-              url = `http://103.94.135.115:2000/api/public-questions?tags=${tags}&limit=${limit}`;
+              url = `/api/public-questions?tags=${tags}&limit=${limit}`;
             } else {
-              url = `http://103.94.135.115:2000/api/import-questions/${userId}?tags=${tags}&limit=${limit}`;
+              url = `/api/import-questions/${userId}?tags=${tags}&limit=${limit}`;
             }
 
             try {
-              const res = await axios.get(url, {
+              const res = await apiClient.get(url, {
                 headers: {
                   Authorization: `Bearer ${localStorage.getItem("token")}`,
                 },

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apiClient from '../../api';
 
 // Updated Custom Package Builder Component with Premium Features and Lower Limits
 const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackage }) => {
@@ -89,7 +90,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
       // Fetch package items with error handling
       let itemsData = [];
       try {
-        const itemsResponse = await fetchWithTimeout('http://103.94.135.115:2000/api/admin/get-package-items');
+        const itemsResponse = await fetchWithTimeout('/api/admin/get-package-items');
         if (!itemsResponse.ok) {
           throw new Error(`Failed to fetch package items: ${itemsResponse.status}`);
         }
@@ -111,7 +112,7 @@ const CustomPackageBuilder = ({ getLabel, onPackageChange, handleBuyCustomPackag
       // Fetch validity periods with error handling
       let validityData = [];
       try {
-        const validityResponse = await fetchWithTimeout('http://103.94.135.115:2000/api/admin/get-validity-periods');
+        const validityResponse = await fetchWithTimeout('/api/admin/get-validity-periods');
         if (!validityResponse.ok) {
           throw new Error(`Failed to fetch validity periods: ${validityResponse.status}`);
         }

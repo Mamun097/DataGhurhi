@@ -5,6 +5,7 @@ import React from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { useState, useCallback } from "react";
+import apiClient from "../../api";
 
 import TagManager from "./QuestionSpecificUtils/Tag";
 
@@ -45,8 +46,7 @@ const handleShareWithEmail = async () => {
   console.log("Sharing question with email:", emailToShare);
   try {
     const token = localStorage.getItem("token");
-    const response= await fetch(`http://103.94.135.115:2000/api/question-bank/share/${updatedQuestion.question_id}`, {
-      method: "POST",
+    const response= await apiClient.post(`/api/question-bank/share/${updatedQuestion.question_id}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -129,13 +129,12 @@ const handleShareWithEmail = async () => {
   };
 
  // Delete question 
-   const handleDelete = useCallback(() => {
+   const handleDelete = useCallback(async () => {
      // Logic to delete the question
      console.log("Delete question with ID:", question.question_id);
      const token = localStorage.getItem("token");
      try {
-       fetch(`http://103.94.135.115:2000/api/question-bank/delete/${updatedQuestion.question_id}`, {
-         method: "DELETE",
+       await apiClient.delete(`/api/question-bank/delete/${updatedQuestion.question_id}`, {
          headers: {
            "Content-Type": "application/json",
            Authorization: `Bearer ${token}`,
@@ -148,7 +147,7 @@ const handleShareWithEmail = async () => {
      catch (error) {
        console.error("Error deleting question:", error);
      }
-   }, [question.question_id]);
+   }, [question.question_id, updatedQuestion.question_id]);
 
    const handlesave =useCallback(async () => {
            // Logic to save the updated question
@@ -158,8 +157,7 @@ const handleShareWithEmail = async () => {
            if(newQuestion && updatedQuestion.new===true){
              try {
              // Create a new question
-             const response = await fetch("http://103.94.135.115:2000/api/question-bank/create", {
-               method: "POST",
+             const response = await apiClient.post("/api/question-bank/create", {
                headers: {
                  "Content-Type": "application/json",
                  Authorization: `Bearer ${token}`,
@@ -185,8 +183,7 @@ const handleShareWithEmail = async () => {
              // Update the existing question
            
            try {
-             const response = await fetch(`http://103.94.135.115:2000/api/question-bank/update/${updatedQuestion.question_id}`, {
-               method: "PUT",
+             const response = await apiClient.put(`/api/question-bank/update/${updatedQuestion.question_id}`, {
                headers: {
                  "Content-Type": "application/json",
                  Authorization: `Bearer ${token}`,
