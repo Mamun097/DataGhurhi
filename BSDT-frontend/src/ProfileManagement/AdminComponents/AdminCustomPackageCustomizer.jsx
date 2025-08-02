@@ -385,10 +385,10 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
                                 </div>
                                 <button
                                     onClick={() => handleEditUnitPrice(unitPrice)}
-                                    className="edit-price-btn"
+                                    className="validity-action-btn edit-btn"
                                     disabled={isSubmitting}
                                 >
-                                    {getLabel("Edit Price")}
+                                    ✏️
                                 </button>
                             </div>
                         </div>
