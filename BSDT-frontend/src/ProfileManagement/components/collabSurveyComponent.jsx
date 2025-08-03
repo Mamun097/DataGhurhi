@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import "../Dashboard.css";
+import apiClient from "../../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -31,30 +32,33 @@ const CollabSurveyTab = ({
   const [collabRequests, setCollabRequests] = useState([]);
   const [collaboratedSurveys, setCollaboratedSurveys] = useState([]);
 
-  const labelsToTranslate = [
-    "Collaborated Surveys",
-    "Surveys shared with you will appear below.",
-    "View Collaboration Requests",
-    "View Request",
-    "No collaborated Surveys found.",
-    "Created By",
-    "My Access Role",
-    "Close",
-    "Collaboration Requests",
-    "Survey Title",
-    "Owner",
-    "Role",
-    "Actions",
-    "Accept",
-    "Reject",
-    "No collaboration requests",
-    "Failed to fetch survey details. Please try again later.",
-  ];
+  const labelsToTranslate = React.useMemo(
+    () => [
+      "Collaborated Surveys",
+      "Surveys shared with you will appear below.",
+      "View Collaboration Requests",
+      "View Request",
+      "No collaborated Surveys found.",
+      "Created By",
+      "My Access Role",
+      "Close",
+      "Collaboration Requests",
+      "Survey Title",
+      "Owner",
+      "Role",
+      "Actions",
+      "Accept",
+      "Reject",
+      "No collaboration requests",
+      "Failed to fetch survey details. Please try again later.",
+    ],
+    []
+  );
 
   const getLabel = (text) =>
     language === "English" ? text : translatedLabels[text] || text;
 
-  const loadTranslations = async () => {
+  const loadTranslations = useCallback(async () => {
     if (language === "English") {
       setTranslatedLabels({});
       return;
@@ -65,11 +69,11 @@ const CollabSurveyTab = ({
       mapped[label] = translations[idx];
     });
     setTranslatedLabels(mapped);
-  };
+  }, [language, labelsToTranslate]);
 
   useEffect(() => {
     loadTranslations();
-  }, [language]);
+  }, [language, loadTranslations]);
 
   useEffect(() => {
     fetchCollaboratedSurveys();
@@ -78,8 +82,8 @@ const CollabSurveyTab = ({
   const fetchCollaboratedSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        "http://103.94.135.115:2000/api/survey-collaborator/all-collaborated-surveys",
+      const response = await apiClient.get(
+        "/api/survey-collaborator/all-collaborated-surveys",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -95,8 +99,8 @@ const CollabSurveyTab = ({
   const fetchSurveyDetails = async (survey_id) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/surveytemplate/${survey_id}`,
+      const response = await apiClient.get(
+        `/api/surveytemplate/${survey_id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -121,8 +125,8 @@ const CollabSurveyTab = ({
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        "http://103.94.135.115:2000/api/survey-collaborator/all-invitations",
+      const response = await apiClient.get(
+        "/api/survey-collaborator/all-invitations",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -138,8 +142,8 @@ const CollabSurveyTab = ({
   const handleAccept = async (survey_id) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `http://103.94.135.115:2000/api/survey-collaborator/${survey_id}/accept-invitation`,
+      const response = await apiClient.post(
+        `/api/survey-collaborator/${survey_id}/accept-invitation`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -157,8 +161,8 @@ const CollabSurveyTab = ({
   const handleReject = async (survey_id) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `http://103.94.135.115:2000/api/survey-collaborator/${survey_id}/decline-invitation`,
+      const response = await apiClient.post(
+        `/api/survey-collaborator/${survey_id}/decline-invitation`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

@@ -11,6 +11,7 @@ import { handleImageUpload } from "../utils/handleImageUpload";
 import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
 import SurveySections from "./SurveySections";
+import apiClient from "../../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -340,7 +341,7 @@ const SurveyForm = ({
     setShuffleQuestions(isShuffled);
     let url;
     if (actionType === 'publish' || actionType === 'update') {
-      url = "http://103.94.135.115:2000/api/surveytemplate";
+      url = "/api/surveytemplate";
     } else {
       console.error("Invalid action type for publication.");
       return;
@@ -399,7 +400,7 @@ const SurveyForm = ({
         shuffle_questions: isShuffled,
       };
 
-      const response = await axios.put(url, payload, {
+      const response = await apiClient.put(url, payload, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${
@@ -470,7 +471,7 @@ const SurveyForm = ({
 
   const handleSave = () =>
     sendSurveyData(
-      "http://103.94.135.115:2000/api/surveytemplate/save",
+      "/api/surveytemplate/save",
       isLoggedInRequired,
       shuffleQuestions
     );

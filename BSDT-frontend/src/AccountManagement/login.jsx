@@ -7,6 +7,7 @@ import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
+import apiClient from "../api";
 
 const translateText = async (text, targetLanguage) => {
   try {
@@ -104,7 +105,7 @@ const Login = () => {
       return;
     }
     try {
-      const response = await axios.post("http://103.94.135.115:2000/api/login", formData, { withCredentials: true });
+      const response = await apiClient.post("/api/login", formData, { withCredentials: true });
       if (response.status === 200) {
         toast.success(`✅ ${t("loginSuccess")} ${formData.email}`);
         localStorage.setItem("token", response.data.token);

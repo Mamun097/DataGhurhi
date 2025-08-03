@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
+import apiClient from "../../../api";
 
 // Individual tag component with animation and edit functionality
 const TagBadge = ({ tag, onDelete, onEdit, isAnimated, isEditing, editValue, setEditValue, onConfirmEdit }) => {
@@ -190,7 +191,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions }) => {
     setIsFetchingTags(true);
     try {
       // Replace with your actual API endpoint
-      const response = await fetch('http://103.94.135.115:2000/api/all-tags');
+      const response = await apiClient.get('/api/all-tags');
       if (response.ok) {
         const data = await response.json();
         setAllSystemTags(data.tags || []);
@@ -393,8 +394,7 @@ const TagManager = ({ questionId, questionText, questions, setQuestions }) => {
       if (question && question.meta) {
         meta_data = question.meta;
       }
-      const response = await fetch(`http://103.94.135.115:2000/api/generate-tags/`, {
-        method: 'POST',
+      const response = await apiClient.post(`/api/generate-tags/`, {
         headers: {
           'Content-Type': 'application/json',
         },

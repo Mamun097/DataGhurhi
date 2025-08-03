@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AdminDashboard.css";
+import apiClient from "../../api";
 
 const AdminDashboardOverview = ({ adminStats, getLabel }) => {
     const [userGrowthStats, setUserGrowthStats] = useState({
@@ -20,7 +21,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
     useEffect(() => {
         const fetchUserGrowthStats = async () => {
             try {
-                const response = await fetch('http://103.94.135.115:2000/api/admin/user-growth-stats');
+                const response = await apiClient.get('/api/admin/user-growth-stats');
                 if (response.ok) {
                     const data = await response.json();
                     setUserGrowthStats({
@@ -45,7 +46,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
     useEffect(() => {
         const fetchSurveyGrowthStats = async () => {
             try {
-                const response = await fetch('http://103.94.135.115:2000/api/admin/survey-growth-stats');
+                const response = await apiClient.get('/api/admin/survey-growth-stats');
                 if (response.ok) {
                     const data = await response.json();
                     setSurveyGrowthStats({

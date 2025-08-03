@@ -9,6 +9,7 @@ import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2"; // for prompt box
+import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -100,8 +101,8 @@ const EditProject = () => {
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}`,
+      const response = await apiClient.get(
+        `/api/project/${projectId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200 && response.data?.project) {
@@ -119,8 +120,8 @@ const EditProject = () => {
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}/surveys`,
+      const response = await apiClient.get(
+        `/api/project/${projectId}/surveys`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (response.status === 200) setSurveys(response.data.surveys || []);
@@ -132,8 +133,8 @@ const EditProject = () => {
   const fetchCollaborators = async () => {
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/project/${projectId}/collaborators`,
+      const response = await apiClient.get(
+        `/api/project/${projectId}/collaborators`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setCollaborators(response.data.collaborators || []);
@@ -181,8 +182,8 @@ const EditProject = () => {
     if (result.isConfirmed && result.value) {
       const token = localStorage.getItem("token");
       try {
-        const response = await axios.post(
-          `http://103.94.135.115:2000/api/project/${projectId}/create-survey`,
+        const response = await apiClient.post(
+          `/api/project/${projectId}/create-survey`,
           { title: result.value },
           {
             headers: {
@@ -236,8 +237,8 @@ const EditProject = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(
-        `http://103.94.135.115:2000/api/project/${projectId}/update-project`,
+      await apiClient.put(
+        `/api/project/${projectId}/update-project`,
         formData,
         {
           headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },

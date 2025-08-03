@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
 import IconButton from "@mui/material/IconButton";
+import apiClient from "../../api";
 
 import "../Dashboard.css";
 
@@ -31,10 +32,8 @@ const ProjectTab = ({
         )
       )
     ) {
-      fetch(`http://103.94.135.115:2000/api/project/${projectId}/delete-project`, {
-        method: "DELETE",
+      apiClient.delete(`/api/project/${projectId}/delete-project`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       })

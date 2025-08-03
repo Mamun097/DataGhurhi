@@ -17,6 +17,7 @@ import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
+import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -64,8 +65,8 @@ const Dashboard = () => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `http://103.94.135.115:2000/api/collaborator/${projectId}/accept-invitation`,
+      const response = await apiClient.post(
+        `/api/collaborator/${projectId}/accept-invitation`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -84,8 +85,8 @@ const Dashboard = () => {
     console.log("Rejected request:", projectId);
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.post(
-        `http://103.94.135.115:2000/api/collaborator/${projectId}/decline-invitation`,
+      const response = await apiClient.post(
+        `/api/collaborator/${projectId}/decline-invitation`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -305,8 +306,8 @@ const Dashboard = () => {
   const updateImageInDB = async (type, imageUrl) => {
     const token = localStorage.getItem("token");
     try {
-      await axios.put(
-        "http://103.94.135.115:2000/api/profile/update-profile-image",
+      await apiClient.put(
+        "/api/profile/update-profile-image",
         { imageUrl },
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -319,7 +320,7 @@ const Dashboard = () => {
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://103.94.135.115:2000/api/admin/stats");
+      const response = await apiClient.get("/api/admin/stats");
 
       if (response.status === 200) {
         setAdminStats(response.data);
@@ -350,7 +351,7 @@ const Dashboard = () => {
   const getProfile = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://103.94.135.115:2000/api/profile", {
+      const response = await apiClient.get("/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
       console.log("Profile response:", response.data);
@@ -407,8 +408,8 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     console.log(editedValues);
     try {
-      const response = await axios.put(
-        "http://103.94.135.115:2000/api/profile/update-profile",
+      const response = await apiClient.put(
+        "/api/profile/update-profile",
         editedValues,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -426,7 +427,7 @@ const Dashboard = () => {
   const fetchProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://103.94.135.115:2000/api/project", {
+      const response = await apiClient.get("/api/project", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.status === 200) setProjects(response.data.projects);
@@ -478,12 +479,9 @@ const Dashboard = () => {
   const fetchCollaboratedProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        "http://103.94.135.115:2000/api/collaborator/all-projects",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get("/api/collaborator/all-projects", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
         console.log("Collaborated Projects:", response.data.projects);
@@ -502,12 +500,9 @@ const Dashboard = () => {
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get(
-        "http://103.94.135.115:2000/api/collaborator/all-invitations",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await apiClient.get("/api/collaborator/all-invitations", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
         console.log("Collaboration Requests:", response.data.invitations);
@@ -560,10 +555,10 @@ const handleSavePassword = async () => {
   try {
     const token = localStorage.getItem("token");
     // Example POST request to backend API
-    const response = await axios.put("http://103.94.135.115:2000/api/profile/update-password", {
-      
-      oldPassword:old_password,
-      newPassword:new_password,
+    const response = await apiClient.put("/api/profile/update-password", {
+
+      oldPassword: old_password,
+      newPassword: new_password,
     },
   {
     

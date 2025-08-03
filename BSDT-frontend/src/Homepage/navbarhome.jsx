@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./navbarhome.css";
+import apiClient from "../api";
 
 import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 
@@ -89,7 +90,7 @@ const NavbarHome = ({ language, setLanguage }) => {
   const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
-        const response = await axios.get("http://103.94.135.115:2000/api/search", {
+        const response = await apiClient.get("/api/search", {
           params: {
             query: searchQuery,
             filter: searchFilter === "all" ? "" : searchFilter,

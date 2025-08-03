@@ -7,6 +7,7 @@ import NavbarAcholder from "./navbarAccountholder";
 import "./Dashboard.css";
 import defaultprofile from "./default_dp.png";
 import { Navigate } from "react-router-dom";
+import apiClient from "../api";
 
 const trendingTopics = [
   "AI in Healthcare",
@@ -65,8 +66,8 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
 
     try {
-      await axios.put(
-        "http://103.94.135.115:2000/api/profile/update-profile-image",
+      await apiClient.put(
+        "/api/profile/update-profile-image",
         { imageUrl },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -88,10 +89,7 @@ const Dashboard = () => {
           Authorization: "Bearer " + token,
         },
       };
-      const response = await axios.get(
-        "http://103.94.135.115:2000/api/profile",
-        requestOptions
-      );
+      const response = await apiClient.get("/api/profile", requestOptions);
 
       if (response.status === 200) {
         console.log(response.data);
@@ -133,8 +131,8 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
 
     try {
-      const response = await axios.put(
-        "http://103.94.135.115:2000/api/profile/update-profile",
+      const response = await apiClient.put(
+        "/api/profile/update-profile",
         editedValues,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -154,7 +152,7 @@ const Dashboard = () => {
   const fetchProjects = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await axios.get("http://103.94.135.115:2000/api/project", {
+      const response = await apiClient.get("/api/project", {
         headers: { Authorization: `Bearer ${token}` },
       });
 

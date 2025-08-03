@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "./AdminCustomPackageCustomizer.css";
+import apiClient from "../../api";
 
 const AdminCustomPackageCustomizer = ({ getLabel }) => {
     const [unitPrices, setUnitPrices] = useState([]);
@@ -52,7 +53,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchUnitPrices = async () => {
         try {
-            const response = await fetch('http://103.94.135.115:2000/api/admin/get-unit-price');
+            const response = await apiClient.get('/api/admin/get-unit-price');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -72,7 +73,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchValidityPeriods = async () => {
         try {
-            const response = await fetch('http://103.94.135.115:2000/api/admin/get-validity-price-multiplier');
+            const response = await apiClient.get('/api/admin/get-validity-price-multiplier');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -107,12 +108,8 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
         try {
             setIsSubmitting(true);
-            const response = await fetch(`http://103.94.135.115:2000/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    base_price_per_unit: parseFloat(unitPriceFormData.base_price_per_unit)
-                })
+            const response = await apiClient.post(`/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
+                base_price_per_unit: parseFloat(unitPriceFormData.base_price_per_unit)
             });
 
             if (!response.ok) {
@@ -220,12 +217,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             if (showEditValidityModal) {
 
                 // Demo API call for update
-                const response = await fetch(`http://103.94.135.115:2000/api/admin/update-validity/${selectedValidity.id}`, {
-
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(validityData)
-                });
+                const response = await apiClient.post(`/api/admin/update-validity/${selectedValidity.id}`, validityData);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -239,12 +231,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
             } else if(showAddValidityModal){
                 // Demo API call for create
-                const response = await fetch('http://103.94.135.115:2000/api/admin/create-validity', {
-
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(validityData)
-                });
+                const response = await apiClient.post('/api/admin/create-validity', validityData);
 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -273,10 +260,7 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setIsSubmitting(true);
 
             // Demo API call for delete
-            const response = await fetch(`http://103.94.135.115:2000/api/admin/delete-validity/${selectedValidity.id}`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' }
-            });
+            const response = await apiClient.delete(`/api/admin/delete-validity/${selectedValidity.id}`);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);

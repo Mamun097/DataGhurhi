@@ -4,6 +4,7 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import NavbarHome from "../Homepage/navbarhome";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+import apiClient from "../api";
 
 // MUI Icons
 import SchoolIcon from "@mui/icons-material/School";
@@ -121,7 +122,7 @@ export default function FaqTopics() {
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const response = await axios.get("http://103.94.135.115:2000/api/faq");
+        const response = await apiClient.get("/api/faq");
         const faqs = response.data.faqs || [];
         const uniqueTopics = [...new Set(faqs.map((faq) => faq.topic))];
 

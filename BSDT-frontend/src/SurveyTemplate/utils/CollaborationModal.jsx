@@ -10,9 +10,9 @@ import {
   Col,
   InputGroup,
 } from "react-bootstrap";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { useCallback } from "react";
+import apiClient from "../../api";
 
 const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
   const [collaborators, setCollaborators] = useState([]);
@@ -47,8 +47,8 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
     setError("");
     try {
       const token = getAuthToken();
-      const response = await axios.get(
-        `http://103.94.135.115:2000/api/survey-collaborator/get-survey-collaborators/${surveyId}`,
+      const response = await apiClient.get(
+        `/api/survey-collaborator/get-survey-collaborators/${surveyId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -84,8 +84,8 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
         request_email: email,
         access_role: accessRole,
       };
-      await axios.post(
-        "http://103.94.135.115:2000/api/survey-collaborator/send-survey-collaboration-request",
+      await apiClient.post(
+        "/api/survey-collaborator/send-survey-collaboration-request",
         payload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -111,8 +111,8 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
     setIsLoading(true);
     try {
         const token = getAuthToken();
-        await axios.delete(
-            `http://103.94.135.115:2000/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
+        await apiClient.delete(
+            `/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
             {
                 headers: { Authorization: `Bearer ${token}` },
             }

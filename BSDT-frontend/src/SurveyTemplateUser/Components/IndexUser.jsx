@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from 'react-router-dom'; // Combined useParams here
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyFormUser";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import { handleMarking } from "../Utils/handleMarking";
+import apiClient from "../../api";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -37,8 +37,8 @@ const Index = () => {
               Authorization: `Bearer ${token}`,
             };
           }
-          const response = await axios.get(
-            `http://103.94.135.115:2000/api/fetch-survey-user/${slug}`,
+          const response = await apiClient.get(
+            `/api/fetch-survey-user/${slug}`,
             {
               headers: {
                 Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -85,14 +85,14 @@ const Index = () => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
-      await axios.post(
-        `http://103.94.135.115:2000/api/submit-survey/${slug}`,
+      await apiClient.post(
+        `/api/submit-survey/${slug}`,
         { userResponse, calculatedMarks },
         config
       );
       
-    await axios.post(
-      `http://103.94.135.115:2000/api/submit-survey/${slug}`,
+    await apiClient.post(
+      `/api/submit-survey/${slug}`,
       {
         userResponse: userResponse,
         calculatedMarks: calculatedMarks,

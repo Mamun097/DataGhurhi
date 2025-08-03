@@ -5,6 +5,7 @@ import { Pie } from "react-chartjs-2";
 import "chart.js/auto";
 import "bootstrap/dist/css/bootstrap.min.css";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+import apiClient from "../../api";
 
 // Translation setup
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -98,8 +99,8 @@ const SurveyResponses = () => {
         const token = tokenData.startsWith("{")
           ? JSON.parse(tokenData).token
           : tokenData;
-        const response = await axios.get(
-          `http://103.94.135.115:2000/api/generatecsv/${survey_id}`,
+        const response = await apiClient.get(
+          `/api/generatecsv/${survey_id}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (typeof response.data === "string") {

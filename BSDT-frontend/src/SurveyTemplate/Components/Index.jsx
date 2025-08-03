@@ -6,6 +6,7 @@ import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyForm";
 import { useLocation, useParams } from "react-router-dom";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+import apiClient from "../../api";
 
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -132,8 +133,8 @@ const Index = () => {
         );
       } else {
         try {
-          const resp = await axios.get(
-            "http://103.94.135.115:2000/api/get-saved-survey"
+          const resp = await apiClient.get(
+            "/api/get-saved-survey"
           );
           const data = resp.data;
           setTemplates(data);

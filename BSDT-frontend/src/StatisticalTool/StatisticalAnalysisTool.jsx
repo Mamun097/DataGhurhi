@@ -25,7 +25,7 @@ import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
 import './StatisticalAnalysisTool.css';
 import WilcoxonOptions from './WilcoxonOptions';
-
+import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 
@@ -348,8 +348,7 @@ const StatisticalAnalysisTool = () => {
                 formData.append('file', newFile);
                 
 
-                return fetch('http://103.94.135.115:2000/api/upload/', {
-                    method: 'POST',
+                return apiClient.post('/api/upload/', {
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem("token")}`
                     },
@@ -496,8 +495,7 @@ useEffect(() => {
             // Call the API to get columns
             // attach token
             const token = localStorage.getItem("token");
-            fetch('http://103.94.135.115:2000/api/upload/', {
-                method: 'POST',
+            apiClient.post('/api/upload/', {
                 body: formData,
                 headers: {
                     'Authorization': `Bearer ${token}`

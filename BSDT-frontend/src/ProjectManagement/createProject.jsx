@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 //write code
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -8,6 +9,7 @@ import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -42,7 +44,8 @@ const navigate = useNavigate();
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
-  const loadTranslations = async () => {
+
+  const loadTranslations = useCallback(async () => {
     if (language === "English") {
       setTranslatedLabels({});
       return;
@@ -91,11 +94,11 @@ const navigate = useNavigate();
     });
 
     setTranslatedLabels(translations);
-  };
+  }, [language]);
 
   useEffect(() => {
     loadTranslations();
-  }, [language]);
+  }, [language, loadTranslations]);
 
   const getLabel = (eng, key) =>
     language === "English" ? eng : translatedLabels[key] || eng;
@@ -110,8 +113,8 @@ const navigate = useNavigate();
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        "http://103.94.135.115:2000/api/project/create-project",
+      const response = await apiClient.post(
+        "/api/project/create-project",
         formData,
         {
           headers: {

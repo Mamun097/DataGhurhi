@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './UserSubscription.css';
+import apiClient from '../../api';
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -105,7 +106,7 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
         const token = localStorage.getItem("token");
         try {
             setLoading(true);
-            const response = await axios.get("http://103.94.135.115:2000/api/get-user-packages", {
+            const response = await apiClient.get("/api/get-user-packages", {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

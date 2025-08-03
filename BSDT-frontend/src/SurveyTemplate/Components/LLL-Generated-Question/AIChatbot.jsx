@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./ChatbotLoading.css";
+import apiClient from "../../../api";
 
 const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   const [messages, setMessages] = useState([]);
@@ -211,8 +212,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   };
 
   const handleGenerate = () => {
-    fetch("http://103.94.135.115:2000/api/reduce-question-count", {
-      method: "GET",
+    apiClient.get("http://103.94.135.115:2000/api/reduce-question-count", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`
