@@ -14,6 +14,12 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         survey_growth_rate: 0
     });
 
+    const [revenueStats, setRevenueStats] = useState({
+        current_month_revenue: 0,
+        previous_month_revenue: 0,
+        revenue_growth_rate: 0
+    });
+
     const [loading, setLoading] = useState(true);
 
     // Fetch user growth statistics
@@ -41,7 +47,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         fetchUserGrowthStats();
     }, []);
 
-    // Fetch user growth statistics
+    // Fetch survey growth statistics
     useEffect(() => {
         const fetchSurveyGrowthStats = async () => {
             try {
@@ -54,10 +60,10 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                         survey_growth_rate: data.surveyGrowthStats.growth_rate || 0
                     });
                 } else {
-                    console.error('Failed to fetch user growth stats');
+                    console.error('Failed to fetch survey growth stats');
                 }
             } catch (error) {
-                console.error('Error fetching user growth stats:', error);
+                console.error('Error fetching survey growth stats:', error);
             } finally {
                 setLoading(false);
             }
@@ -66,7 +72,32 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         fetchSurveyGrowthStats();
     }, []);
 
-    console.log(adminStats);
+    // Fetch revenue statistics
+    useEffect(() => {
+        const fetchRevenueStats = async () => {
+            try {
+                const response = await fetch('http://103.94.135.115:2000/api/admin/revenue');
+                if (response.ok) {
+                    const data = await response.json();
+                    setRevenueStats({
+                        current_month_revenue: data.revenueGrowthStats.current_month_revenue || 0,
+                        previous_month_revenue: data.revenueGrowthStats.previous_month_revenue || 0,
+                        revenue_growth_rate: data.revenueGrowthStats.growth_percentage || 0
+                    });
+
+                    console.log('Revenue Stats:', data.revenueGrowthStats);
+                } else {
+                    console.error('Failed to fetch revenue stats');
+                }
+            } catch (error) {
+                console.error('Error fetching revenue stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRevenueStats();
+    }, []);
 
     const statCards = [
         {
@@ -181,15 +212,21 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                     <h3>{getLabel("Revenue Overview")}</h3>
                     <div className="revenue-summary">
                         <div className="revenue-item">
-                            <span className="revenue-amount">৳ 0.0</span>
+                            <span className="revenue-amount">
+                                {loading ? "Loading..." : `৳ ${revenueStats.current_month_revenue.toLocaleString()}`}
+                            </span>
                             <span className="revenue-label">{getLabel("This Month")}</span>
                         </div>
                         <div className="revenue-item">
-                            <span className="revenue-amount">৳ 0.0</span>
+                            <span className="revenue-amount">
+                                {loading ? "Loading..." : `৳ ${revenueStats.previous_month_revenue.toLocaleString()}`}
+                            </span>
                             <span className="revenue-label">{getLabel("Last Month")}</span>
                         </div>
                         <div className="revenue-trend">
-                            <span className="trend-positive">0% growth</span>
+                            <span className={`trend-${revenueStats.revenue_growth_rate >= 0 ? 'positive' : 'negative'}`}>
+                                {loading ? "Loading..." : `${revenueStats.revenue_growth_rate >= 0 ? '+' : ''}${revenueStats.revenue_growth_rate.toFixed(2)}% growth`}
+                            </span>
                         </div>
                     </div>
                 </div>

@@ -892,3 +892,87 @@ exports.getItemsLowerLimit = async (req, res) => {
         res.status(500).json({ error: "Server error: " + error.message });
     }
 }
+
+// ✅ Get revenue growth statistics
+exports.getRevenueGrowthStats = async (req, res) => {
+    try {
+        // Get current date and calculate month boundaries
+        const currentDate = new Date();
+        const currentYear = currentDate.getFullYear();
+        const currentMonth = currentDate.getMonth(); // 0-based (0 = January)
+
+        // Current month boundaries
+        const currentMonthStart = new Date(currentYear, currentMonth, 1);
+        const nextMonthStart = new Date(currentYear, currentMonth + 1, 1);
+
+        // Previous month boundaries
+        const previousMonthStart = new Date(currentYear, currentMonth - 1, 1);
+        const previousMonthEnd = new Date(currentYear, currentMonth, 1); // Start of current month
+
+        // Format dates for SQL queries (YYYY-MM-DD format)
+        const formatDate = (date) => date.toISOString().split('T')[0];
+
+        const currentMonthStartStr = formatDate(currentMonthStart);
+        const nextMonthStartStr = formatDate(nextMonthStart);
+        const previousMonthStartStr = formatDate(previousMonthStart);
+        const previousMonthEndStr = formatDate(previousMonthEnd);
+
+        // Query current month revenue
+        const { data: currentMonthData, error: currentMonthError } = await supabase
+            .from("subscription")
+            .select("cost")
+            .gte("start_date", currentMonthStartStr)
+            .lt("start_date", nextMonthStartStr);
+
+        if (currentMonthError) {
+            console.error("Error querying current month revenue:", currentMonthError);
+            return res.status(500).json({ error: "Error querying current month revenue: " + currentMonthError.message });
+        }
+
+        // Query previous month revenue
+        const { data: previousMonthData, error: previousMonthError } = await supabase
+            .from("subscription")
+            .select("cost")
+            .gte("start_date", previousMonthStartStr)
+            .lt("start_date", previousMonthEndStr);
+
+        if (previousMonthError) {
+            console.error("Error querying previous month revenue:", previousMonthError);
+            return res.status(500).json({ error: "Error querying previous month revenue: " + previousMonthError.message });
+        }
+
+        // Calculate total revenue for each month
+        const currentMonthRevenue = currentMonthData?.reduce((sum, sub) => sum + (parseFloat(sub.cost) || 0), 0) || 0;
+        const previousMonthRevenue = previousMonthData?.reduce((sum, sub) => sum + (parseFloat(sub.cost) || 0), 0) || 0;
+
+        // Calculate growth rate
+        const growthRate = parseFloat((currentMonthRevenue - previousMonthRevenue).toFixed(2));
+        let growthPercentage = 0.00;
+        if (previousMonthRevenue > 0) {
+            growthPercentage = parseFloat(((growthRate / previousMonthRevenue) * 100).toFixed(2));
+        } else if (currentMonthRevenue > 0) {
+            growthPercentage = 100.00;
+        }
+
+        res.status(200).json({
+            revenueGrowthStats: {
+                current_month_revenue: currentMonthRevenue,
+                previous_month_revenue: previousMonthRevenue,
+                growth_rate: growthRate,
+                growth_percentage: growthPercentage
+            }
+        });
+
+    } catch (error) {
+        console.error("Server error in getRevenueGrowthStats:", error);
+        res.status(500).json({
+            error: "Server error: " + error.message,
+            revenueGrowthStats: {
+                current_month_revenue: 0,
+                previous_month_revenue: 0,
+                growth_rate: 0.00,
+                growth_percentage: 0.00
+            }
+        });
+    }
+};
