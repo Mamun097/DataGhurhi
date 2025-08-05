@@ -25,9 +25,9 @@ exports.getStats = async (req, res) => {
             return res.status(500).json({ error: "Error counting surveys: " + surveyError.message });
         }
 
-        // 3. Count total responses
-        const { count: totalResponses, error: responseError } = await supabase
-            .from("survey_response")
+        // 3. Count total responses with better error handling
+        const { count: totalResponses, error: responseError} = await supabase
+            .from("response")
             .select("*", { count: "exact", head: true });
 
         if (responseError) {
@@ -54,8 +54,8 @@ exports.getStats = async (req, res) => {
         res.status(200).json({
             totalUsers: totalUsers || 0,
             activeSurveys: activeSurveys || 0,
+            premiumUsers: premiumUsers || 0,
             totalResponses: totalResponses || 0,
-            premiumUsers: premiumUsers || 0
         });
 
     } catch (error) {
