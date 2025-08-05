@@ -14,6 +14,12 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         survey_growth_rate: 0
     });
 
+    const [revenueStats, setRevenueStats] = useState({
+        current_month_revenue: 0,
+        previous_month_revenue: 0,
+        revenue_growth_rate: 0
+    });
+
     const [loading, setLoading] = useState(true);
 
     // Fetch user growth statistics
@@ -41,7 +47,7 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         fetchUserGrowthStats();
     }, []);
 
-    // Fetch user growth statistics
+    // Fetch survey growth statistics
     useEffect(() => {
         const fetchSurveyGrowthStats = async () => {
             try {
@@ -54,10 +60,10 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                         survey_growth_rate: data.surveyGrowthStats.growth_rate || 0
                     });
                 } else {
-                    console.error('Failed to fetch user growth stats');
+                    console.error('Failed to fetch survey growth stats');
                 }
             } catch (error) {
-                console.error('Error fetching user growth stats:', error);
+                console.error('Error fetching survey growth stats:', error);
             } finally {
                 setLoading(false);
             }
@@ -66,36 +72,60 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
         fetchSurveyGrowthStats();
     }, []);
 
+    // Fetch revenue statistics
+    useEffect(() => {
+        const fetchRevenueStats = async () => {
+            try {
+                const response = await fetch('http://103.94.135.115:2000/api/admin/revenue');
+                if (response.ok) {
+                    const data = await response.json();
+                    setRevenueStats({
+                        current_month_revenue: data.revenueGrowthStats.current_month_revenue || 0,
+                        previous_month_revenue: data.revenueGrowthStats.previous_month_revenue || 0,
+                        revenue_growth_rate: data.revenueGrowthStats.growth_percentage || 0
+                    });
+
+                    console.log('Revenue Stats:', data.revenueGrowthStats);
+                } else {
+                    console.error('Failed to fetch revenue stats');
+                }
+            } catch (error) {
+                console.error('Error fetching revenue stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRevenueStats();
+    }, []);
+
     const statCards = [
         {
             title: getLabel("Total Users"),
             value: adminStats.totalUsers,
             icon: "👥",
             color: "blue",
-            //trend: "+12%"
         },
         {
             title: getLabel("Premium Users"),
             value: adminStats.premiumUsers,
             icon: "💎",
             color: "gold",
-            //trend: "+15%"
         },
         {
             title: getLabel("Active Surveys"),
             value: adminStats.activeSurveys,
             icon: "📊",
             color: "green",
-            //trend: "+8%"
         },
         {
             title: getLabel("Total Responses"),
             value: adminStats.totalResponses,
             icon: "📝",
             color: "purple",
-            //trend: "+25%"
         },
     ];
+
 
     const systemHealthItems = [
         { label: getLabel("Database Status"), status: "Healthy", color: "green" },
@@ -119,7 +149,6 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                         <div className="stat-content">
                             <h3>{stat.value.toLocaleString()}</h3>
                             <p>{stat.title}</p>
-                            {/* <span className="stat-trend">{stat.trend}</span> */}
                         </div>
                     </div>
                 ))}
@@ -127,35 +156,6 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
 
             {/* Dashboard Content Grid */}
             <div className="admin-content-grid">
-                {/* Recent Activities */}
-                {/* <div className="admin-card">
-                <h3>{getLabel("Recent Activities")}</h3>
-                <div className="activities-list">
-                    {adminStats.recentActivities.map((activity) => (
-                        <div key={activity.id} className="activity-item">
-                            <div className="activity-content">
-                                <span className="activity-text">{activity.activity}</span>
-                                <span className="activity-time">{activity.time}</span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div> */}
-
-                {/* System Health */}
-                {/* <div className="admin-card">
-                <h3>{getLabel("Platform Health")}</h3>
-                <div className="health-list">
-                    {systemHealthItems.map((item, index) => (
-                        <div key={index} className="health-item">
-                            <span className="health-label">{item.label}</span>
-                            <span className={`health-status ${item.color}`}>{item.status}</span>
-                        </div>
-                    ))}
-                </div>
-            </div> */}
-
-                {/* Quick Analytics */}
                 <div className="admin-card">
                     <h3>{getLabel("User Analytics")}</h3>
                     <div className="analytics-summary">
@@ -178,10 +178,6 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                                 {loading ? "Loading..." : `${userGrowthStats.growth_rate >= 0 ? '+' : ''}${userGrowthStats.growth_rate.toFixed(2)} per Day`}
                             </span>
                         </div>
-                        {/* <div className="analytics-item">
-                            <span className="analytics-label">{getLabel("System Performance")}</span>
-                            <span className="analytics-value">Excellent</span>
-                        </div> */}
                     </div>
                 </div>
 
@@ -216,15 +212,21 @@ const AdminDashboardOverview = ({ adminStats, getLabel }) => {
                     <h3>{getLabel("Revenue Overview")}</h3>
                     <div className="revenue-summary">
                         <div className="revenue-item">
-                            <span className="revenue-amount">৳ 0.0</span>
+                            <span className="revenue-amount">
+                                {loading ? "Loading..." : `৳ ${revenueStats.current_month_revenue.toLocaleString()}`}
+                            </span>
                             <span className="revenue-label">{getLabel("This Month")}</span>
                         </div>
                         <div className="revenue-item">
-                            <span className="revenue-amount">৳ 0.0</span>
+                            <span className="revenue-amount">
+                                {loading ? "Loading..." : `৳ ${revenueStats.previous_month_revenue.toLocaleString()}`}
+                            </span>
                             <span className="revenue-label">{getLabel("Last Month")}</span>
                         </div>
                         <div className="revenue-trend">
-                            <span className="trend-positive">0% growth</span>
+                            <span className={`trend-${revenueStats.revenue_growth_rate >= 0 ? 'positive' : 'negative'}`}>
+                                {loading ? "Loading..." : `${revenueStats.revenue_growth_rate >= 0 ? '+' : ''}${revenueStats.revenue_growth_rate.toFixed(2)}% growth`}
+                            </span>
                         </div>
                     </div>
                 </div>
