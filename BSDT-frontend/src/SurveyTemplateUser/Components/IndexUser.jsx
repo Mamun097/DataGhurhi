@@ -27,55 +27,48 @@ const Index = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      if (slug) {
-        try {
-          const token = localStorage.getItem("token");
-          const config = {};
-          if (token) {
-            config.headers = {
-              Authorization: `Bearer ${token}`,
-            };
-          }
-          const response = await apiClient.get(
-            `/api/fetch-survey-user/${slug}`,
-            {
-              headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-              },
-            }
-          );
-          
-          const surveyData = response.data.data;
-          setTemplate(surveyData);
-          setTitle(surveyData.title);
-          setSections(surveyData.template.sections);
-          setQuestions(surveyData.template.questions);
-          setLogo(surveyData.template.logo);
-          setLogoAlignment(surveyData.template.logoAlignment || "left");
-          setLogoText(surveyData.template.logoText || "");
-          setBackgroundImage(surveyData.template.backgroundImage);
-          setShuffle(surveyData.shuffle_questions);
+  const load = async () => {
+    if (slug) {
+      try {
+        const token = localStorage.getItem("token");
+        const config = {};
+        if (token) {
+          config.headers = {
+            Authorization: `Bearer ${token}`,
+          };
+        }
+        const response = await apiClient.get(`/api/fetch-survey-user/${slug}`, config);
+        
+        const surveyData = response.data.data;
+        setTemplate(surveyData);
+        setTitle(surveyData.title);
+        setSections(surveyData.template.sections);
+        setQuestions(surveyData.template.questions);
+        setLogo(surveyData.template.logo);
+        setLogoAlignment(surveyData.template.logoAlignment || "left");
+        setLogoText(surveyData.template.logoText || "");
+        setBackgroundImage(surveyData.template.backgroundImage);
+        setShuffle(surveyData.shuffle_questions);
 
-        } catch (err) {
-          console.error("Failed to load template:", err);
-          if (err.response) {
-            if (err.response.data?.status === 'LOGIN_REQUIRED') {
-              alert(err.response.data.message);
-              navigate('/');
-            } else {
-              alert('This survey could not be loaded. It may not exist.');
-              navigate('/');
-            }
+      } catch (err) {
+        console.error("Failed to load template:", err);
+        if (err.response) {
+          if (err.response.data?.status === 'LOGIN_REQUIRED') {
+            alert(err.response.data.message);
+            navigate('/'); // Redirect to login or home
           } else {
-            alert('Could not connect to the server. Please try again later.');
+            alert(err.response.data.message || 'This survey could not be loaded.');
+            navigate('/');
           }
+        } else {
+          alert('Could not connect to the server. Please try again later.');
         }
       }
-    };
+    }
+  };
 
-    load();
-  }, [slug, navigate]);
+  load();
+}, [slug, navigate]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const calculatedMarks = handleMarking(userResponse, questions);
