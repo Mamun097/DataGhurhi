@@ -127,20 +127,20 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
         setMetadata({ numOptions: parseInt(optionId) });
         break;
       case "linearScale":
-        const [min, max] = optionId.split("-").map(Number);
+        { const [min, max] = optionId.split("-").map(Number);
         setMetadata({ min, max });
-        break;
+        break; }
       case "rating":
         setMetadata({ scale: parseInt(optionId) });
         break;
       case "likert":
-        const [rows_count, cols_count] = optionId.split("x").map(Number);
+        { const [rows_count, cols_count] = optionId.split("x").map(Number);
         setMetadata({ rows_count, cols_count });
-        break;
+        break; }
       case "tickboxGrid":
-        const [rows, cols] = optionId.split("x").map(Number);
+        { const [rows, cols] = optionId.split("x").map(Number);
         setMetadata({ rows, cols });
-        break;
+        break; }
     }
 
     // Move to additional info step
@@ -160,21 +160,21 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
         updatedMetadata = { numOptions: processedValue };
         break;
       case "linearScale":
-        const [min, max] = value.split("-").map(Number);
+        { const [min, max] = value.split("-").map(Number);
         updatedMetadata = { min, max };
-        break;
+        break; }
       case "rating":
         processedValue = parseInt(value);
         updatedMetadata = { scale: processedValue };
         break;
       case "likert":
-        const [rows_count, cols_count] = value.split("x").map(Number);
+        { const [rows_count, cols_count] = value.split("x").map(Number);
         updatedMetadata = { rows_count, cols_count };
-        break;
+        break; }
       case "tickboxGrid":
-        const [rows, cols] = value.split("x").map(Number);
+        { const [rows, cols] = value.split("x").map(Number);
         updatedMetadata = { rows, cols };
-        break;
+        break; }
     }
 
     setMetadata(updatedMetadata);
@@ -212,7 +212,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   };
 
   const handleGenerate = () => {
-    apiClient.get("http://103.94.135.115:2000/api/reduce-question-count", {
+    apiClient.get("/api/reduce-question-count", {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`
