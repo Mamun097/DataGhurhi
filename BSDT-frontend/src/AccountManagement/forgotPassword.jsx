@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
 import "./register.css"; // reuse same CSS
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import apiClient from "../api"; 
 
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
@@ -45,7 +45,7 @@ const ForgotPassword = () => {
 
   useEffect(() => {
     localStorage.setItem("language", language);
-  }, [language]);
+  }, [language, defaultTexts]);
   const getPasswordValidations = (password, confirmPassword) => ({
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -55,45 +55,48 @@ const ForgotPassword = () => {
     match: password === confirmPassword && confirmPassword !== "",
   });
 
-  const defaultTexts = {
-    title: "Reset Your Password",
-    email: "Email Address",
-    sendOtp: "Send OTP",
-    otp: "Enter OTP",
-    verifyOtp: "Verify OTP",
-    newPassword: "New Password",
-    confirmPassword: "Confirm Password",
-    resetPassword: "Reset Password",
-    otpSent: "OTP sent to your email.",
-    invalidOtp: "Invalid OTP.",
-    otpVerified: "OTP verified successfully.",
-    passwordMismatch: "Passwords do not match.",
-    passwordResetSuccess: "Password reset successful!",
-    passwordRequirement: "Password must be at least 8 characters.",
-    login: "Back to Login",
-    process: "To reset your password, follow these steps:",
-    resendOtpIn: "Resend OTP in",
+  const defaultTexts = React.useMemo(
+    () => ({
+      title: "Reset Your Password",
+      // email: "Email Address",
+      // sendOtp: "Send OTP",
+      otp: "Enter OTP",
+      // verifyOtp: "Verify OTP",
+      // newPassword: "New Password",
+      confirmPassword: "Confirm Password",
+      // resetPassword: "Reset Password",
+      otpSent: "OTP sent to your email.",
+      invalidOtp: "Invalid OTP.",
+      otpVerified: "OTP verified successfully.",
+      passwordMismatch: "Passwords do not match.",
+      passwordResetSuccess: "Password reset successful!",
+      passwordRequirement: "Password must be at least 8 characters.",
+      login: "Back to Login",
+      process: "To reset your password, follow these steps:",
+      resendOtpIn: "Resend OTP in",
 
-    email: "Enter your registered email address.",
-    sendOtp: "Click 'Send OTP' to receive a verification code in your email.",
-    writeOtp: "Enter the OTP you received in your inbox.",
-    verifyOtp: "Click 'Verify OTP' to confirm your identity.",
-    newPassword: "Enter your new password and confirm it.",
-    resetPassword: "Click 'Reset Password' to update your credentials.",
-    logincan: "You can now log in using your new password.",
-    sendOtpbutton: "Send OTP",
-    verifyOtpbutton: "Verify OTP",
-    newPasswordinput: "New Password",
-    confirmPasswordinput: "Confirm Password",
-    resetPasswordbutton: "Reset Password",
-    Passwordmustinclude: "Password must include:",
-    Atleast8characters: "At least 8 characters",
-    Oneuppercaseletter: "At least one uppercase letter",
-    Onelowercaseletter: "At least one lowercase letter",
-    Onenumber: "At least one number",
-    specialCharacter: "At least one special character",
-    passwordsMustMatch: "Both passwords must match",
-  };
+      email: "Enter your registered email address.",
+      sendOtp: "Click 'Send OTP' to receive a verification code in your email.",
+      writeOtp: "Enter the OTP you received in your inbox.",
+      verifyOtp: "Click 'Verify OTP' to confirm your identity.",
+      newPassword: "Enter your new password and confirm it.",
+      resetPassword: "Click 'Reset Password' to update your credentials.",
+      logincan: "You can now log in using your new password.",
+      sendOtpbutton: "Send OTP",
+      verifyOtpbutton: "Verify OTP",
+      newPasswordinput: "New Password",
+      confirmPasswordinput: "Confirm Password",
+      resetPasswordbutton: "Reset Password",
+      Passwordmustinclude: "Password must include:",
+      Atleast8characters: "At least 8 characters",
+      Oneuppercaseletter: "At least one uppercase letter",
+      Onelowercaseletter: "At least one lowercase letter",
+      Onenumber: "At least one number",
+      specialCharacter: "At least one special character",
+      passwordsMustMatch: "Both passwords must match",
+    }),
+    []
+  );
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
     upper: false,
@@ -124,7 +127,7 @@ const ForgotPassword = () => {
     };
 
     fetchTranslations();
-  }, [language]);
+  }, [language, defaultTexts]);
 
   const t = (key) =>
     language === "English" || loadingTranslations
@@ -149,7 +152,7 @@ const ForgotPassword = () => {
     setOtpCooldown(180); // restart timer when OTP is sent
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/send-otp", {
+      await apiClient.post("/api/send-otp", {
         email,
         otp: newOtp,
       });
@@ -157,6 +160,7 @@ const ForgotPassword = () => {
       setStep(2);
     } catch (err) {
       toast.error("❌ Failed to send OTP.");
+      console.error("OTP sending error:", err);
     }
   };
 
@@ -177,7 +181,7 @@ const ForgotPassword = () => {
     if (password !== confirm) return toast.error(`❌ ${t("passwordMismatch")}`);
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/login/reset-password", {
+      await apiClient.post("/api/login/reset-password", {
         email,
         newPassword: password,
       });

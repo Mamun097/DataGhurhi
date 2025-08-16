@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import "./register.css";
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
+import apiClient from "../api";
 
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
@@ -155,7 +156,7 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://103.94.135.115:2000/api/register", {
+      const response = await apiClient.post("/api/register", {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,

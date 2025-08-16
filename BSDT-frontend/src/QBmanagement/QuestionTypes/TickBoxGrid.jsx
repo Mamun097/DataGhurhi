@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
+import apiClient from "../../api";
 
 const TickBoxGrid = ({ question, setIsEditing,newQuestion, setNewQuestion }) => {
   // const [required, setRequired] = useState(question.required || false);
@@ -30,8 +31,7 @@ const handleShareWithEmail = async () => {
   console.log("Sharing question with email:", emailToShare);
   try {
     const token = localStorage.getItem("token");
-    const response= await fetch(`http://103.94.135.115:2000/api/question-bank/share/${updatedQuestion.question_id}`, {
-      method: "POST",
+    const response= await apiClient.post(`/api/question-bank/share/${updatedQuestion.question_id}`, {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
@@ -131,13 +131,12 @@ const updateMeta = (newMeta) => {
     }
   };
 
- const handleDelete = useCallback(() => {
+ const handleDelete = useCallback(async () => {
      // Logic to delete the question
      console.log("Delete question with ID:", question.question_id);
      const token = localStorage.getItem("token");
      try {
-       fetch(`http://103.94.135.115:2000/api/question-bank/delete/${question.question_id}`, {
-         method: "DELETE",
+       await apiClient.delete(`/api/question-bank/delete/${question.question_id}`, {
          headers: {
            "Content-Type": "application/json",
            Authorization: `Bearer ${token}`,
@@ -160,8 +159,7 @@ const updateMeta = (newMeta) => {
            if(newQuestion && updatedQuestion.new===true){
              try {
              // Create a new question
-             const response = await fetch("http://103.94.135.115:2000/api/question-bank/create", {
-               method: "POST",
+             const response = await apiClient.post("/api/question-bank/create", {
                headers: {
                  "Content-Type": "application/json",
                  Authorization: `Bearer ${token}`,
@@ -187,8 +185,7 @@ const updateMeta = (newMeta) => {
              // Update the existing question
            
            try {
-             const response = await fetch(`http://103.94.135.115:2000/api/question-bank/update/${updatedQuestion.question_id}`, {
-               method: "PUT",
+             const response = await apiClient.put(`/api/question-bank/update/${updatedQuestion.question_id}`, {
                headers: {
                  "Content-Type": "application/json",
                  Authorization: `Bearer ${token}`,

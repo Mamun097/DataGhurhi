@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import apiClient from '../api';
 
 export default function FaqList() {
   const [groupedFaqs, setGroupedFaqs] = useState({});
@@ -8,7 +8,7 @@ export default function FaqList() {
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const response = await axios.get('http://103.94.135.115:2000/api/faq');
+        const response = await apiClient.get('/api/faq');
         const faqs = response.data.faqs || [];
 
         // Group FAQs by topic

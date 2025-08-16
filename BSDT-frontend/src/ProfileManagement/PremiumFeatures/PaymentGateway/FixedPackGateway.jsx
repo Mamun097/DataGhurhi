@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import './PaymentModal.css';
+import apiClient from '../../../api';
 
 // Payment Processing Modal Component
 const PaymentProcessingModal = ({ isOpen, onClose, getLabel, status, message }) => {
@@ -63,7 +63,7 @@ const usePaymentGateway = (getLabel) => {
     }
 
     try {
-      const response = await axios.get("http://103.94.135.115:2000/api/profile", {
+      const response = await apiClient.get("/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
       if (response.status === 200) {
@@ -82,7 +82,7 @@ const usePaymentGateway = (getLabel) => {
     if (!token) return;
 
     try {
-      const response = await axios.get(`http://103.94.135.115:2000/api/subscription/user/${userId}`, {
+      const response = await apiClient.get(`/api/subscription/user/${userId}`, {
         headers: { Authorization: "Bearer " + token },
       });
       if (response.status === 200) {
@@ -174,8 +174,7 @@ const usePaymentGateway = (getLabel) => {
     });
 
     try {
-      const response = await fetch('http://103.94.135.115:2000/api/payment/initiate', {
-        method: 'POST',
+      const response = await apiClient.post('/api/payment/initiate', {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem("token")}`
