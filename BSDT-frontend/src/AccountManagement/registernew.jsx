@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
 import "./register.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
+import apiClient from "../api";
 
 import Navbarhome from "../Homepage/navbarhome";
 import { ToastContainer, toast } from "react-toastify";
@@ -56,12 +56,9 @@ const Register = () => {
   const [otpCooldown, setOtpCooldown] = useState(0);
   const checkEmailExists = async () => {
     try {
-      const res = await axios.post(
-        "http://103.94.135.115:2000/api/register/check-email",
-        {
-          email: formData.email,
-        }
-      );
+      const res = await apiClient.post("/api/register/check-email", {
+        email: formData.email,
+      });
       return res.data.exists;
     } catch (err) {
       console.error("Error checking email:", err);
@@ -79,57 +76,55 @@ const Register = () => {
   useEffect(() => {
     const { password, confirmPassword } = formData;
     setPasswordValidations(getPasswordValidations(password, confirmPassword));
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData]);
 
-  const defaultTexts = {
-    title: "Create an Account",
-    firstName: "First Name",
-    lastName: "Last Name",
-    email: "Email Address",
-    password: "Password",
-    confirmPassword: "Confirm Password",
-    signUp: "Sign Up",
-    alreadyAccount: "Already have an account?",
-    login: "Log in",
-    whyAccount: "Why Create an Account?",
-    benefits: [
-      "Create smart surveys effortlessly and share them easily",
-      "Collaborate with your team in real-time",
-      "Access data analysis and charts",
-      "Save progress, track deadlines and manage responses",
-      "Generate reports in English & Bangla",
-    ],
-    invalidEmail: "Invalid email address",
-    emailRequired: "Please enter a valid email before submitting.",
-    passwordMismatch: "Passwords do not match.",
-    registrationSuccess: "Registered Successfully",
-    EnterOTP: "Enter OTP",
-    VerifyOTP: "Verify OTP",
-    ResendOTP: "Resend OTP in",
-    sendOtp: "Send OTP",
-    Sending: "Sending...",
-    signUp: "Registration",
-    Info: "Info",
-    OTP: "OTP",
-    otpverified: "OTP verified successfully",
-    invalidOtp: "Invalid OTP",
-    Password: "Password",
-    VerifyOTP: "Verify OTP",
-    EnterOTP: "Enter OTP",
-    otpsent: "📧 OTP sent to your email",
-    failedToSendOtp: "❌ Failed to send OTP.",
-    Passwordmustinclude: "Password must include:",
-    Atleast8characters: "At least 8 characters",
-    Password: "Password",
-    confirmPassword: "Confirm Password",
-    Oneuppercaseletter: "At least one uppercase letter",
-    Onelowercaseletter: "At least one lowercase letter",
-    Onenumber: "At least one number",
-    specialCharacter: "At least one special alphabet",
-    passwordsMustMatch: "Both passwords must match",
+  const defaultTexts = React.useMemo(
+    () => ({
+      title: "Create an Account",
+      firstName: "First Name",
+      lastName: "Last Name",
+      email: "Email Address",
+      password: "Password",
+      confirmPassword: "Confirm Password",
+      signUp: "Sign Up",
+      alreadyAccount: "Already have an account?",
+      login: "Log in",
+      whyAccount: "Why Create an Account?",
+      benefits: [
+        "Create smart surveys effortlessly and share them easily",
+        "Collaborate with your team in real-time",
+        "Access data analysis and charts",
+        "Save progress, track deadlines and manage responses",
+        "Generate reports in English & Bangla",
+      ],
+      invalidEmail: "Invalid email address",
+      emailRequired: "Please enter a valid email before submitting.",
+      passwordMismatch: "Passwords do not match.",
+      registrationSuccess: "Registered Successfully",
+      EnterOTP: "Enter OTP",
+      VerifyOTP: "Verify OTP",
+      ResendOTP: "Resend OTP in",
+      sendOtp: "Send OTP",
+      Sending: "Sending...",
+      Info: "Info",
+      OTP: "OTP",
+      otpverified: "OTP verified successfully",
+      invalidOtp: "Invalid OTP",
+      Password: "Password",
+      otpsent: "📧 OTP sent to your email",
+      failedToSendOtp: "❌ Failed to send OTP.",
+      Passwordmustinclude: "Password must include:",
+      Atleast8characters: "At least 8 characters",
+      Oneuppercaseletter: "At least one uppercase letter",
+      Onelowercaseletter: "At least one lowercase letter",
+      Onenumber: "At least one number",
+      specialCharacter: "At least one special alphabet",
+      passwordsMustMatch: "Both passwords must match",
 
-    emailalreadyregistered: "This email is already registered.",
-  };
+      emailalreadyregistered: "This email is already registered.",
+    }),
+    []
+  );
 
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
@@ -149,11 +144,11 @@ const Register = () => {
       specialCharacter: /[~`!@#$%^&*(),.?":{}|<>]/.test(password),
       match: password === confirmPassword && confirmPassword !== "",
     });
-  }, [formData.password, formData.confirmPassword]);
+  }, [formData]);
 
   useEffect(() => {
     localStorage.setItem("language", language);
-  }, [language]);
+  }, [language, defaultTexts]);
 
   useEffect(() => {
     const fetchTranslations = async () => {
@@ -204,7 +199,7 @@ const Register = () => {
     };
 
     fetchTranslations();
-  }, [language]);
+  }, [language, defaultTexts]);
 
   const t = (key) =>
     language === "English" || loadingTranslations
@@ -240,13 +235,12 @@ const Register = () => {
     if (emailError) return toast.error(`❌ ${t("emailRequired")}`);
     if (formData.password !== formData.confirmPassword) {
       const msg = `❌ ${t("passwordMismatch")}`;
-      setErrorMessage(msg);
       return toast.error(msg);
     }
 
     setIsLoading(true);
     try {
-      const response = await axios.post("http://103.94.135.115:2000/api/register", {
+      const response = await apiClient.post("/api/register", {
         name: `${formData.firstName} ${formData.lastName}`,
         email: formData.email,
         password: formData.password,
@@ -260,8 +254,9 @@ const Register = () => {
         );
         setTimeout(() => (window.location.href = "/login"), 3000);
       }
-    } catch (err) {
+    } catch (error) {
       toast.error("❌ Something went wrong.");
+      console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
@@ -308,7 +303,7 @@ const Register = () => {
     setGeneratedOtp(newOtp);
 
     try {
-      await axios.post("http://103.94.135.115:2000/api/send-otp", {
+      await apiClient.post("/api/send-otp", {
         email: formData.email,
         otp: newOtp,
       });
@@ -358,13 +353,13 @@ const Register = () => {
         !validations.specialCharacter
       ) {
         toast.error(
-          i18n.language === "bn"
+          language === "Bangla"
             ? "❌ পাসওয়ার্ডটি যথাযথ নয়। অনুগ্রহ করে নির্দেশনা অনুসরণ করুন।"
             : "❌ Password does not meet requirements. Please follow the instructions."
         );
       } else if (!validations.match) {
         toast.error(
-          i18n.language === "bn"
+          language === "Bangla"
             ? "❌ পাসওয়ার্ড ও নিশ্চিতকরণ পাসওয়ার্ড মিলছে না।"
             : "❌ Password and confirm password do not match."
         );

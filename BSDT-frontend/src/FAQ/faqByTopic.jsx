@@ -4,6 +4,7 @@ import { useParams, Link } from "react-router-dom";
 import NavbarHome from "../Homepage/navbarhome";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import "./faqByTopic.css";
+import apiClient from "../api"; 
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -83,7 +84,7 @@ export default function FaqByTopic() {
   useEffect(() => {
     const fetchFaqs = async () => {
       try {
-        const response = await axios.get("http://103.94.135.115:2000/api/faq");
+        const response = await apiClient.get("/api/faq");
         const allFaqs = response.data.faqs || [];
         const filteredFaqs = allFaqs.filter((faq) => faq.topic === topic);
         setFaqs(filteredFaqs);
@@ -121,7 +122,7 @@ export default function FaqByTopic() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post("http://103.94.135.115:2000/api/faq", newQuestion);
+      const response = await apiClient.post("/api/faq", newQuestion);
       if (response.data) {
         setFaqs((prevFaqs) => [...prevFaqs, response.data]);
         setIsCreating(false);
