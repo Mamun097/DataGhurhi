@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from 'react-router-dom'; // Combined useParams here
+import { useNavigate, useParams } from "react-router-dom"; // Combined useParams here
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyFormUser";
@@ -27,48 +27,52 @@ const Index = () => {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-  const load = async () => {
-    if (slug) {
-      try {
-        const token = localStorage.getItem("token");
-        const config = {};
-        if (token) {
-          config.headers = {
-            Authorization: `Bearer ${token}`,
-          };
-        }
-        const response = await apiClient.get(`/api/fetch-survey-user/${slug}`, config);
-        
-        const surveyData = response.data.data;
-        setTemplate(surveyData);
-        setTitle(surveyData.title);
-        setSections(surveyData.template.sections);
-        setQuestions(surveyData.template.questions);
-        setLogo(surveyData.template.logo);
-        setLogoAlignment(surveyData.template.logoAlignment || "left");
-        setLogoText(surveyData.template.logoText || "");
-        setBackgroundImage(surveyData.template.backgroundImage);
-        setShuffle(surveyData.shuffle_questions);
-
-      } catch (err) {
-        console.error("Failed to load template:", err);
-        if (err.response) {
-          if (err.response.data?.status === 'LOGIN_REQUIRED') {
-            alert(err.response.data.message);
-            navigate('/'); // Redirect to login or home
-          } else {
-            alert(err.response.data.message || 'This survey could not be loaded.');
-            navigate('/');
+    const load = async () => {
+      if (slug) {
+        try {
+          const token = localStorage.getItem("token");
+          const config = {};
+          if (token) {
+            config.headers = {
+              Authorization: `Bearer ${token}`,
+            };
           }
-        } else {
-          alert('Could not connect to the server. Please try again later.');
+          const response = await apiClient.get(
+            `/api/fetch-survey-user/${slug}`,
+            config
+          );
+
+          const surveyData = response.data.data;
+          setTemplate(surveyData);
+          setTitle(surveyData.title);
+          setSections(surveyData.template.sections);
+          setQuestions(surveyData.template.questions);
+          setLogo(surveyData.template.logo);
+          setLogoAlignment(surveyData.template.logoAlignment || "left");
+          setLogoText(surveyData.template.logoText || "");
+          setBackgroundImage(surveyData.template.backgroundImage);
+          setShuffle(surveyData.shuffle_questions);
+        } catch (err) {
+          console.error("Failed to load template:", err);
+          if (err.response) {
+            if (err.response.data?.status === "LOGIN_REQUIRED") {
+              alert(err.response.data.message);
+              navigate("/"); // Redirect to login or home
+            } else {
+              alert(
+                err.response.data.message || "This survey could not be loaded."
+              );
+              navigate("/");
+            }
+          } else {
+            alert("Could not connect to the server. Please try again later.");
+          }
         }
       }
-    }
-  };
+    };
 
-  load();
-}, [slug, navigate]);
+    load();
+  }, [slug, navigate]);
   const handleSubmit = async (e) => {
     e.preventDefault();
     const calculatedMarks = handleMarking(userResponse, questions);
@@ -80,24 +84,18 @@ const Index = () => {
       }
       await apiClient.post(
         `/api/submit-survey/${slug}`,
-        { userResponse, calculatedMarks },
+        {
+          userResponse: userResponse,
+          calculatedMarks: calculatedMarks,
+        },
         config
       );
-      
-    await apiClient.post(
-      `/api/submit-survey/${slug}`,
-      {
-        userResponse: userResponse,
-        calculatedMarks: calculatedMarks,
-      },
-      config
-    );
-    navigate('/survey-success');
-  } catch (error) {
-    console.error("Error submitting survey:", error);
-    alert("There was an error submitting your survey. Please try again.");
-  }
-};
+      navigate("/survey-success");
+    } catch (error) {
+      console.error("Error submitting survey:", error);
+      alert("There was an error submitting your survey. Please try again.");
+    }
+  };
 
   if (template === undefined || template === null) {
     return <p className="text-center mt-5">Loading templates…</p>;
