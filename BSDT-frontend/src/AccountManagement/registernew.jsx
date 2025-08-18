@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { motion } from "framer-motion";
 import "./register.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import apiClient from "../api";
