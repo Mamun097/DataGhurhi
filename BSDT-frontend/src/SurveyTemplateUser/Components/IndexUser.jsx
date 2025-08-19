@@ -6,6 +6,7 @@ import SurveyForm from "../Components/SurveyFormUser";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import { handleMarking } from "../Utils/handleMarking";
 import apiClient from "../../api";
+import CustomLoader from "../Utils/CustomLoader";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -102,7 +103,7 @@ const Index = () => {
   };
 
   if (template === undefined || template === null) {
-    return <p className="text-center mt-5">Loading templates…</p>;
+    return <CustomLoader />;
   }
   return (
     <>
