@@ -195,12 +195,17 @@ const ProjectTab = ({
                   }}
                   sx={{
                     position: "absolute",
-                    top: 8,
-                    right: 8,
+                    top: { xs: 1, sm: 2 },        
+                    right: { xs: 1, sm: 2 },      
                     color: "red",
                     backgroundColor: "#fff",
+                    width: { xs: 24, sm: 36 },    
+                    height: { xs: 24, sm: 36 },
+                    "& .MuiSvgIcon-root": {
+                      fontSize: { xs: "1rem", sm: "1.5rem" } 
+                    },
                     "&:hover": {
-                      backgroundColor: "#ffe6e6",
+                      backgroundColor: "transparent",
                     },
                   }}
                 >

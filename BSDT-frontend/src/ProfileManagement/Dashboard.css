@@ -1,5 +1,6 @@
 /* General container */
 .dashboard-container {
+ 
   padding: 2rem;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #c8efdc 30%, #d8ebe7 30%);
@@ -9,6 +10,7 @@
 
 /* Layout */
 .dashboard-layout {
+  margin-top: 8rem;
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
@@ -16,6 +18,7 @@
 
 /* Profile Section */
 .profile-section {
+  
   flex: 1;
   max-width: 400px;
   background: rgba(255, 255, 255, 0.85);
@@ -531,7 +534,9 @@
   }
 
   .project-card,
-  .add-project-card {
+  .add-project-card,
+  .project-card h4 {
+   
     width: 100%;
     padding: 1rem;
     box-sizing: border-box;

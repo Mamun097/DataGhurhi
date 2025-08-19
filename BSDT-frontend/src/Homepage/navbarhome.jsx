@@ -21,7 +21,7 @@ const NavbarHome = ({ language, setLanguage }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFilter, setSearchFilter] = useState("all");
   const [translations, setTranslations] = useState({});
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1200);
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -120,90 +120,90 @@ const NavbarHome = ({ language, setLanguage }) => {
 
   return (
     <motion.nav className="navbar">
-      <div className="navbar-top-row">
-        <div className="navbar-left">
-          <div className="logo-list-item">
-            <img src={logo_dataghurhi} alt="DataGhurhi logo" />
-            <span>DataGhurhi</span>
-          </div>
-        </div>
-        <div className="language-toggle">
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="slider"></span>
-          </label>
-          <div className="language-labels">
-            <span className={language === "English" ? "active" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
-          </div>
-        </div>
-
-        <div className="search-container">
-          <select
-            className="search-filter"
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-          >
-            <option value="all">{getLabel("All")}</option>
-            <option value="project">{getLabel("Project")}</option>
-            <option value="survey">{getLabel("Survey")}</option>
-            <option value="account">{getLabel("Account")}</option>
-          </select>
-
-          <div className="search-box-wrapper">
-            <input
-              type="text"
-              placeholder={getLabel("Write your search query here...")}
-              className="search-input"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <FaSearch className="search-icon-inside" onClick={handleSearch} />
-          </div>
-        </div>
-
-        {isMobile && (
-          <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
-            ☰ 
-          </button>
-        )}
+  <div className="navbar-top-row">
+    <div className="navbar-left">
+      <div className="logo-list-item">
+        <img src={logo_dataghurhi} alt="DataGhurhi logo" />
+        <span>DataGhurhi</span>
       </div>
+    </div>
 
-      {/* Nav Popup */}
-      <ul className={`nav-links ${isMobile && menuOpen ? "popup-open" : ""}`}>
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/home">
-            <FaHome className="nav-icon" />
-            <span>{getLabel("Home")}</span>
-          </a>
-        </li>
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <button onClick={handleLoginClick} className="nav-link-button">
-            <FaSignInAlt className="nav-icon" />
-            <span>{getLabel("Login")}</span>
-          </button>
-        </li>
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/about">
-            <FaInfoCircle className="nav-icon" />
-            <span>{getLabel("About")}</span>
-          </a>
-        </li>
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/faq">
-            <FaQuestionCircle className="nav-icon" />
-            <span>FAQ</span>
-          </a>
-        </li>
-      </ul>
-    </motion.nav>
+    <div className="language-toggle">
+      <label className="switch">
+        <input
+          type="checkbox"
+          onChange={toggleLanguage}
+          checked={language === "বাংলা"}
+        />
+        <span className="slider"></span>
+      </label>
+      <div className="language-labels">
+        <span className={language === "English" ? "active" : ""}>English</span>
+        <span className={language === "বাংলা" ? "active" : ""}>বাংলা</span>
+      </div>
+    </div>
+
+    <div className="search-container">
+      <select
+        className="search-filter"
+        value={searchFilter}
+        onChange={(e) => setSearchFilter(e.target.value)}
+      >
+        <option value="all">{getLabel("All")}</option>
+        <option value="project">{getLabel("Project")}</option>
+        <option value="survey">{getLabel("Survey")}</option>
+        <option value="account">{getLabel("Account")}</option>
+      </select>
+
+      <div className="search-box-wrapper">
+        <input
+          type="text"
+          placeholder={getLabel("Write your search query here...")}
+          className="search-input"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+        />
+        <FaSearch className="search-icon-inside" onClick={handleSearch} />
+      </div>
+    </div>
+
+    <ul className={`nav-links ${isMobile  && menuOpen ? "popup-open" : ""}`}>
+      <li onClick={() => isMobile && setMenuOpen(false)}>
+        <a href="/home">
+          <FaHome className="nav-icon" />
+          <span>{getLabel("Home")}</span>
+        </a>
+      </li>
+  <li onClick={() => isMobile && setMenuOpen(false)}>
+    <button onClick={handleLoginClick} className="nav-link-button">
+      <FaSignInAlt className="nav-icon" />
+      <span>{getLabel("Login")}</span>
+    </button>
+  </li>
+  <li onClick={() => isMobile && setMenuOpen(false)}>
+    <a href="/about">
+      <FaInfoCircle className="nav-icon" />
+      <span>{getLabel("About")}</span>
+    </a>
+  </li>
+  <li onClick={() => isMobile && setMenuOpen(false)}>
+    <a href="/faq">
+      <FaQuestionCircle className="nav-icon" />
+      <span>FAQ</span>
+    </a>
+  </li>
+</ul>
+
+
+    {isMobile && (
+      <button className="hamburger" onClick={() => setMenuOpen(!menuOpen)}>
+        ☰
+      </button>
+    )}
+  </div>
+</motion.nav>
+
   );
 };
 
