@@ -23,7 +23,7 @@ const PreviewPage = () => {
   return (
     <>  
       <NavbarAcholder />
-      <div style={{ maxWidth: '900px', margin: '20px auto', padding: '10px' }}>
+      <div style={{ maxWidth: '900px', margin: '100px auto', padding: '10px' }}>
         <SurveyPreview
           title={title}
           sections={sections}
