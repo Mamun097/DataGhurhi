@@ -39,6 +39,7 @@ const SurveyForm = ({
   template,
   shuffle = false,
   onSubmit,
+  isSubmitting = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
 
@@ -273,17 +274,31 @@ const SurveyForm = ({
           <button
             type="button"
             className="btn btn-primary"
+            disabled={isSubmitting} // Also disable during submission
             onClick={handleNext}
           >
             Next
           </button>
         ) : (
+          // 2 & 3. UPDATE THE SUBMIT BUTTON
           <button
             type="button"
             className="btn btn-success"
             onClick={handleFormSubmit}
+            disabled={isSubmitting}
           >
-            Submit Survey
+            {isSubmitting ? (
+              <>
+                <span
+                  className="spinner-border spinner-border-sm me-2"
+                  role="status"
+                  aria-hidden="true"
+                ></span>
+                Submitting...
+              </>
+            ) : (
+              "Submit Survey"
+            )}
           </button>
         )}
       </div>
