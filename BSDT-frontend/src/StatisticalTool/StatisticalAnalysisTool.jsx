@@ -348,7 +348,8 @@ const StatisticalAnalysisTool = () => {
                 formData.append('file', newFile);
                 
 
-                return apiClient.post('/api/upload/', {
+                return fetch('http://103.94.135.115:2000/api/upload/', {
+                    method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem("token")}`
                     },
@@ -495,12 +496,13 @@ useEffect(() => {
             // Call the API to get columns
             // attach token
             const token = localStorage.getItem("token");
-            apiClient.post('/api/upload/', {
+            fetch('http://103.94.135.115:2000/api/upload/', {
+                method: 'POST',
+            
                 body: formData,
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            })
+                    'Authorization': `Bearer ${token}`}
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -751,6 +753,9 @@ useEffect(() => {
           if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
+        sessionStorage.removeItem("file_name");
+        sessionStorage.removeItem("fileURL");
+        
     };
 
     // Get required fields based on test type
@@ -853,7 +858,7 @@ const handleSuggestionClick = () => {
                 <NavbarAcholder language={language} setLanguage={setLanguage} />
 
 
-                <div className="container mx-auto py-8 px-4 relative">
+                <div className="container mx-auto py-10 px-4 relative">
                     <header className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-blue-600 mb-3">{t.title}</h1>
                     </header>

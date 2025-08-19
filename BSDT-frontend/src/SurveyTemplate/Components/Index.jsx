@@ -182,8 +182,8 @@ const Index = () => {
 
   return (
     <>
-      {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
-      <div className="container-fluid bg-white">
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
+      <div className="container-fluid bg-white ">
         <div className="row">
           {/* Sidebar */}
           <div className="col-12 col-md-2">
@@ -218,7 +218,7 @@ const Index = () => {
           </div>
 
           {/* Main form */}
-          <div className="col-12 col-md-8 mt-3">
+          <div className="col-12 col-md-8 mt-3 ">
             <SurveyForm
               title={title}
               setTitle={setTitle}

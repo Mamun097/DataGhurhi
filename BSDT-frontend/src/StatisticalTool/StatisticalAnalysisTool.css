@@ -1,5 +1,6 @@
 /* Main styles */
 :root {
+
   --primary-color: #4f46e5;
   --primary-hover: #4338ca;
   --secondary-color: #0ea5e9;
@@ -375,7 +376,9 @@ div[ref="uploadContainerRef"]:hover {
   padding-left: 1rem;
   padding-right: 1rem;
 }
-
+.py-10{
+  margin-top: 100px;
+}
 .py-2 {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
