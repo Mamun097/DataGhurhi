@@ -107,7 +107,7 @@ const Index = () => {
   }
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} />
+      {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
       <div className="container-fluid bg-white">
         <div className="row">
           <div className="col-2"></div>
