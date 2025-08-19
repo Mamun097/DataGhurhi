@@ -25,6 +25,7 @@ const Index = () => {
   const [logoText, setLogoText] = useState("");
   const [userResponse, setUserResponse] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -75,6 +76,7 @@ const Index = () => {
   }, [slug, navigate]);
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     const calculatedMarks = handleMarking(userResponse, questions);
     try {
       const token = localStorage.getItem("token");
@@ -94,6 +96,8 @@ const Index = () => {
     } catch (error) {
       console.error("Error submitting survey:", error);
       alert("There was an error submitting your survey. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -122,6 +126,7 @@ const Index = () => {
                 template={template}
                 shuffle={shuffle}
                 onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
               />
             </div>
           )}
