@@ -31,8 +31,7 @@ function App() {
     <Layout>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/home" element={<Home />} />
+
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/faq" element={<FaqTopics />} />
@@ -49,6 +48,8 @@ function App() {
         {/* Protected Routes */}
         {token && role== "user"? (
           <>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/home" element={<Dashboard/>} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
             <Route path="/view-project/:projectId" element={<EditProject />} />
@@ -67,7 +68,11 @@ function App() {
 
           </>
         ) : (
-          <Route path="*" element={<Navigate to="/login" />} />
+          <>
+            <Route path="/" element={<Home />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+          </>
         )}
 
         {/* Catch-All Route (404 Page) */}

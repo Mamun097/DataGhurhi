@@ -53,7 +53,7 @@ const NavbarAcholder = ({
   const [isAdmin, setIsAdmin] = useState(false);
   const [userType, setUserType] = useState("normal");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1200);
   const navigate = useNavigate();
   const open = Boolean(anchorEl);
 
@@ -151,7 +151,8 @@ return (
       
         <div className="NavbarAcholderLogoSection">
           <div className="NavbarAcholderLogoItem">
-            <img src={logo_dataghurhi} alt="DataGhurhi logo" />
+            <img src={logo_dataghurhi} alt="DataGhurhi logo"  
+            onClick={() => navigate("/")} />
             <span>DataGhurhi</span>
           </div>
         </div>

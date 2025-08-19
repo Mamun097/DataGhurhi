@@ -111,6 +111,7 @@ const Login = () => {
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("role", "user");
         localStorage.setItem("user_id", response.data.user_id);
+        console.log(localStorage.getItem("token"));
 
         setTimeout(() => (window.location.href = "/dashboard"), 2500);
       } else {
