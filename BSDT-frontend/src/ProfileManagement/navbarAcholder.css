@@ -1,4 +1,6 @@
-/* Container Styles */
+/* ===========================
+   NAVBAR CONTAINER
+=========================== */
 .NavbarAcholderContainer {
   position: fixed;
   top: 0;
@@ -7,60 +9,80 @@
   background: linear-gradient(90deg, #08c294, #38a782);
   color: white;
   font-family: "Segoe UI", sans-serif;
-  padding: 0.8rem 1.2rem;
+  padding: 1rem 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   border-radius: 0 0 12px 12px;
-  display: flex;
-  justify-content: space-between;
+  gap:0.5rem;
+ 
+}
+/* ===========================
+   TOP SECTION
+=========================== */
+.NavbarAcholderTopSection {
+  display: grid;
+  grid-template-areas: "logo lang search nav";
+  grid-template-columns: 12% 10% 115% 10%;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
+  width: 70%;
+  flex-wrap: nowrap; 
 }
 
-/* Inner wrapper for all elements */
-.NavbarAcholderTopSection {
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  flex: 1;
-  flex-wrap: wrap;
-}
-
-/* Logo Section */
+/* ===========================
+   LOGO SECTION
+=========================== */
 .NavbarAcholderLogoSection {
+  grid-area: logo;
   display: flex;
   align-items: center;
+  gap: 0.75rem;
   flex-shrink: 0;
-  margin-bottom: 1rem;
+  margin-left: 10px;
 }
 
 .NavbarAcholderLogoItem {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.4rem;
+  color: white;
+  background: none;
   font-weight: bold;
-  font-size: 1.5rem;
-  color: #ffffff;
+  font-size: 1rem;
+  text-align: center;
 }
 
 .NavbarAcholderLogoItem img {
+  width: 3rem;
   height: 3rem;
-  width: auto;
+  object-fit: contain;
+  background: none;
 }
 
-/* Language Toggle */
-.NavbarAcholderLangSwitch {
+
+
+/* ===========================
+   SEARCH + LANGUAGE SECTION
+=========================== */
+
+
+/* ===========================
+   LANGUAGE SWITCH
+=========================== */
+.NavbarAcholderLangSwitchInline {
+  grid-area: lang;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.4rem;
+  flex-shrink: 0;
 }
 
-.NavbarAcholderSwitch {
+.NavbarAcholderSwitch { 
   position: relative;
   display: inline-block;
-  width: 44px;
-  height: 22px;
+  width: 50px;
+  height: 24px;
 }
 
 .NavbarAcholderSwitch input {
@@ -75,102 +97,109 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  border-radius: 22px;
-  transition: 0.3s;
+  background-color: #095852;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: 0.4s;
 }
 
 .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider {
-  background-color: #3fc1c9;
+ background-color: #4caf50;
 }
 
 .NavbarAcholderSlider::before {
   content: "";
   position: absolute;
-  height: 16px;
-  width: 16px;
+  height: 18px;
+  width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: white;
+  background-color: rgb(255, 255, 255);
   border-radius: 50%;
-  transition: 0.3s;
+  transition: 0.4s;
 }
 
 .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider::before {
   transform: translateX(22px);
 }
+.NavbarAcholderLangLabels{
+    display: flex;
+  flex-direction: row;
+  align-items: center;
+  font-size: 0.85rem;
+  gap: 0.2rem;
+  color: rgb(55, 10, 158);
+}
 
 .NavbarAcholderLangLabels span {
-  font-size: 0.9rem;
-  color: #fff;
-  margin-left: 0.25rem;
-  transition: font-weight 0.2s;
+    opacity: 0.9;
+   transition: 0.3s ease;
 }
 
 .LangActive {
   font-weight: bold;
-  color: #fff;
+  color: #9f2222;
 }
 
-/* Hamburger Button (Mobile only) */
-.NavbarAcholderHamburger {
-  background: none;
-  border: none;
-  font-size: 1.8rem;
-  cursor: pointer;
-  color: #ffffff;
-  display: none;
-}
-
-/* Search Section */
 .NavbarAcholderSearchSection {
+ grid-area: search;
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  flex: 1;
-  max-width: 400px;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: none;
+  flex-grow: 1;
 }
 
+/* Search Filter */
 .NavbarAcholderSearchFilter {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
+  padding: 0.5rem;
   border-radius: 6px;
-  font-size: 0.95rem;
+  border: none;
+  background: #ffffffcc;
+  color: #000;
+  font-weight: 500;
+  flex-shrink: 0;
 }
 
+/* Search Box */
 .NavbarAcholderSearchBox {
+  flex-grow: 1;
+  position: relative;
   display: flex;
   align-items: center;
-  border: 1px solid #ccc;
-  padding: 0.3rem 0.6rem;
-  border-radius: 6px;
-  background-color: white;
-  flex: 1;
 }
 
 .NavbarAcholderSearchInput {
-  flex: 1;
+  width: 100%;
+  padding: 0.6rem 2.2rem 0.6rem 0.8rem;
+  border-radius: 6px;
   border: none;
-  outline: none;
-  font-size: 0.95rem;
+  background: #ffffffcc;
+  color: #000;
+  font-size: 0.9rem;
+  max-width: auto;
 }
 
 .NavbarAcholderSearchIcon {
-  color: #3fc1c9;
+  position: absolute;
+  right: 10px;
+  color: #444;
   cursor: pointer;
-  margin-left: 0.5rem;
-  font-size: 1.2rem;
 }
 
-/* Navigation List */
+/* ===========================
+   NAVIGATION MENU
+=========================== */
 .NavbarAcholderNavList {
+  grid-area: nav;
   display: flex;
-  align-items: center;
-  gap: 1.2rem;
+  gap: 1rem;
   list-style: none;
-  margin: 0;
-  padding: 0;
-  flex-shrink: 0;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  margin-right: 10px;
 }
 
 .NavbarAcholderNavList li a {
@@ -190,67 +219,112 @@
 }
 
 .NavbarAcholderIcon {
-  font-size: 1.1rem;
+  font-size: 1rem;
 }
 
-/* Profile Section */
+/* ===========================
+   PROFILE SECTION
+=========================== */
 .NavbarAcholderProfile {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex-shrink: 0;
 }
 
 .NavbarAcholderAvatarWrap {
   display: flex;
   align-items: center;
   gap: 0.4rem;
+  flex-direction: column;
 }
 
 .NavbarAcholderUserName {
   font-weight: 500;
   font-size: 0.95rem;
   color: #ffffff;
+  text-align: center;
 }
 
-/* Responsive Popup Menu */
-.NavbarAcholderPopupOpen {
+/* ===========================
+   MOBILE DROPDOWN
+=========================== */
+.NavbarAcholderNavList.NavbarAcholderPopupOpen {
   display: flex;
-  flex-direction: column;
-  background-color: #f0f9ff;
-  padding: 1rem;
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-  gap: 0.8rem;
 }
 
-/* Responsive Behavior */
-@media (max-width: 768px) {
-  .NavbarAcholderContainer {
-    flex-direction: column;
-    align-items: stretch;
-  }
+/* ===========================
+   HAMBURGER BUTTON
+=========================== */
+.NavbarAcholderHamburger {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #ffffff;
+  display: none; /* hidden by default, shown only on mobile */
+}
 
-  .NavbarAcholderTopSection {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.8rem;
-  }
-
-  .NavbarAcholderSearchSection {
-    flex-direction: column;
-    align-items: stretch;
+/* ===========================
+   RESPONSIVE BEHAVIOR
+=========================== */
+@media (max-width: 1200px) {
+  .NavbarAcholderTopSection{
+    display: grid;
+    grid-template-areas:
+      "hamburger logo lang"
+      "search search search";
+    grid-template-columns: 30% 30% 30%;
+    column-gap: 0.5rem;
+    row-gap: 0.5rem;
+    align-items: center;
     width: 100%;
   }
+   .NavbarAcholderSearchSection {
+    grid-area: search;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    padding: 0 1rem;
+  }
+
+  .NavbarAcholderSearchInput {
+    font-size: 0.75rem;
+  }
+  .NavbarAcholderSearchFilter {
+    font-size: 0.75rem;
+  }
+ 
+
+
+
 
   .NavbarAcholderNavList {
     flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
-    gap: 0.6rem;
+    position: absolute;
+    top: 100%;
+    right: 1rem;
+    background: linear-gradient(90deg, #08c294, #38a782);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    display: none;
+    gap: 0.5rem;
+    width: 200px;
+    margin-left: 0; /* reset for mobile */
   }
 
   .NavbarAcholderHamburger {
+    grid-area: hamburger;
     display: block;
+    font-size: 1.5rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+  }
+    .NavbarAcholderUserName {
+    display: none;
   }
 }

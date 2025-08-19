@@ -73,7 +73,8 @@ const NavbarAcholder = ({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await apiClient.get("/api/profile", {
+        const token = localStorage.getItem("token");
+        const res = await apiClient.get("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -144,158 +145,166 @@ const NavbarAcholder = ({
     }
   };
 
-  return (
-    <motion.nav className="NavbarAcholderContainer">
-      <div className="NavbarAcholderTopSection">
-        <div className="NavbarAcholderTopInner">
-          <div className="NavbarAcholderLogoSection">
-            <div className="NavbarAcholderLogoItem">
-              <img src={logo_dataghurhi} alt="DataGhurhi logo" />
-              <span>DataGhurhi</span>
-            </div>
+return (
+  <motion.nav className="NavbarAcholderContainer">
+    <div className="NavbarAcholderTopSection">
+      
+        <div className="NavbarAcholderLogoSection">
+          <div className="NavbarAcholderLogoItem">
+            <img src={logo_dataghurhi} alt="DataGhurhi logo" />
+            <span>DataGhurhi</span>
           </div>
-
-          <div className="NavbarAcholderLangSwitch">
-            <label className="NavbarAcholderSwitch">
-              <input
-                type="checkbox"
-                onChange={toggleLanguage}
-                checked={language === "বাংলা"}
-              />
-              <span className="NavbarAcholderSlider"></span>
-            </label>
-            <div className="NavbarAcholderLangLabels">
-              <span className={language === "English" ? "LangActive" : ""}>
-                English
-              </span>
-              <span className={language === "বাংলা" ? "LangActive" : ""}>
-                বাংলা
-              </span>
-            </div>
-          </div>
-
-          {isMobile && (
-            <button
-              className="NavbarAcholderHamburger"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              ☰
-            </button>
-          )}
         </div>
+      
 
-        <div className="NavbarAcholderSearchSection">
-          <select
-            className="NavbarAcholderSearchFilter"
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-          >
-            <option value="all">{getLabel("All")}</option>
-            <option value="project">{getLabel("Project")}</option>
-            <option value="survey">{getLabel("Survey")}</option>
-            <option value="account">{getLabel("Account")}</option>
-          </select>
 
-          <div className="NavbarAcholderSearchBox">
+      {/* Search + Language inline */}
+
+      
+        {/* Language Switch now inline with search */}
+        <div className="NavbarAcholderLangSwitchInline">
+          <label className="NavbarAcholderSwitch">
             <input
-              type="text"
-              placeholder={getLabel(
-                "Search for projects, surveys, accounts..."
-              )}
-              className="NavbarAcholderSearchInput"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              type="checkbox"
+              onChange={toggleLanguage}
+              checked={language === "বাংলা"}
             />
-            <FaSearch
-              className="NavbarAcholderSearchIcon"
-              onClick={handleSearch}
-            />
+            <span className="NavbarAcholderSlider"></span>
+          </label>
+          <div className="NavbarAcholderLangLabels">
+            <span className={language === "English" ? "LangActive" : ""}>
+              English
+            </span>
+            <span className={language === "বাংলা" ? "LangActive" : ""}>
+              বাংলা
+            </span>
           </div>
-        </div>
       </div>
 
-      <ul
-        className={`NavbarAcholderNavList ${
-          menuOpen ? "NavbarAcholderPopupOpen" : ""
-        }`}
-      >
+
+      <div className="NavbarAcholderSearchSection">
+        <select
+          className="NavbarAcholderSearchFilter"
+          value={searchFilter}
+          onChange={(e) => setSearchFilter(e.target.value)}
+        >
+          <option value="all">{getLabel("All")}</option>
+          <option value="project">{getLabel("Project")}</option>
+          <option value="survey">{getLabel("Survey")}</option>
+          <option value="account">{getLabel("Account")}</option>
+        </select>
+
+        <div className="NavbarAcholderSearchBox">
+          <input
+            type="text"
+            placeholder={getLabel(
+              "Search for projects, surveys, accounts..."
+            )}
+            className="NavbarAcholderSearchInput"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+          />
+          <FaSearch
+            className="NavbarAcholderSearchIcon"
+            onClick={handleSearch}
+          />
+        </div>
+     
+
+
+    {/* NAVIGATION MENU */}
+    <ul
+      className={`NavbarAcholderNavList ${
+        isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
+      }`}
+    >
+      <li onClick={() => isMobile && setMenuOpen(false)}>
+        <a href="/dashboard">
+          <FaHome className="NavbarAcholderIcon" />
+          <span>{getLabel("Home")}</span>
+        </a>
+      </li>
+
+      <li onClick={() => isMobile && setMenuOpen(false)}>
+        <a href="/about">
+          <FaInfoCircle className="NavbarAcholderIcon" />
+          <span>{getLabel("About")}</span>
+        </a>
+      </li>
+
+      <li onClick={() => isMobile && setMenuOpen(false)}>
+        <a href="/faq">
+          <FaQuestionCircle className="NavbarAcholderIcon" />
+          <span>{getLabel("FAQ")}</span>
+        </a>
+      </li>
+
+      {!isAdmin && userType !== "admin" && (
         <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/">
-            <FaHome className="NavbarAcholderIcon" />
-            <span>{getLabel("Home")}</span>
+          <a href="/analysis">
+            <FaChartBar className="NavbarAcholderIcon" />
+            <span>{language === "English" ? "Analysis" : "বিশ্লেষণ"}</span>
           </a>
         </li>
+      )}
+</ul>
+      {/* Profile dropdown always last */}
+     
+       <div className="NavbarAcholderProfile">
+  <div className="NavbarAcholderAvatarWrap">
+    <IconButton
+      onClick={(e) => setAnchorEl(e.currentTarget)}
+      sx={{ p: 0 }}
+    >
+      {profilePicUrl ? (
+        <Avatar alt={name} src={profilePicUrl} />
+      ) : (
+        <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
+      )}
+    </IconButton>
 
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/about">
-            <FaInfoCircle className="NavbarAcholderIcon" />
-            <span>{getLabel("About")}</span>
-          </a>
-        </li>
+    <div className="NavbarAcholderUserName">
+      {name?.trim().split(" ").slice(-1)[0] || "User"}
+    </div>
+  </div>
 
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/faq">
-            <FaQuestionCircle className="NavbarAcholderIcon" />
-            <span>{getLabel("FAQ")}</span>
-          </a>
-        </li>
+  <Menu
+    anchorEl={anchorEl}
+    open={open}
+    onClose={() => setAnchorEl(null)}
+    onClick={() => setAnchorEl(null)}
+    PaperProps={{
+      elevation: 3,
+      sx: {
+        mt: 1.5,
+        borderRadius: "12px",
+        filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
+      },
+    }}
+  >
+    <MenuItem onClick={() => (window.location.href = "/dashboard")}>
+      <IoPersonCircle style={{ marginRight: "8px" }} />
+      {getLabel("Go to Profile")}
+    </MenuItem>
+    <MenuItem onClick={logOut}>
+      <FaSignOutAlt style={{ marginRight: "8px" }} />
+      {getLabel("Logout")}
+    </MenuItem>
+  </Menu>
+</div>
 
-        {!isAdmin && userType !== "admin" && (
-          <li onClick={() => isMobile && setMenuOpen(false)}>
-            <a href="/analysis">
-              <FaChartBar className="NavbarAcholderIcon" />
-              <span>{language === "English" ? "Analysis" : "বিশ্লেষণ"}</span>
-            </a>
-          </li>
-        )}
+         </div>
 
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <div className="NavbarAcholderProfile">
-            <div className="NavbarAcholderAvatarWrap">
-              <IconButton
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                sx={{ p: 0 }}
-              >
-                {profilePicUrl ? (
-                  <Avatar alt={name} src={profilePicUrl} />
-                ) : (
-                  <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
-                )}
-              </IconButton>
-              <div className="NavbarAcholderUserName">
-                {name?.trim().split(" ").slice(-1)[0] || "User"}
-              </div>
-            </div>
+     {isMobile && (
+      <button className="NavbarAcholderHamburger" onClick={() => setMenuOpen(!menuOpen)}>
+        ☰
+      </button>
+    )}   
+     </div>
+  </motion.nav> 
+);
 
-            <Menu
-              anchorEl={anchorEl}
-              open={open}
-              onClose={() => setAnchorEl(null)}
-              onClick={() => setAnchorEl(null)}
-              PaperProps={{
-                elevation: 3,
-                sx: {
-                  mt: 1.5,
-                  borderRadius: "12px",
-                  filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
-                },
-              }}
-            >
-              <MenuItem onClick={() => (window.location.href = "/dashboard")}>
-                <IoPersonCircle style={{ marginRight: "8px" }} />
-                {getLabel("Go to Profile")}
-              </MenuItem>
-              <MenuItem onClick={logOut}>
-                <FaSignOutAlt style={{ marginRight: "8px" }} />
-                {getLabel("Logout")}
-              </MenuItem>
-            </Menu>
-          </div>
-        </li>
-      </ul>
-    </motion.nav>
-  );
 };
 
 export default NavbarAcholder;

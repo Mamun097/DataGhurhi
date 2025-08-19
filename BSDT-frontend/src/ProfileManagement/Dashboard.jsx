@@ -372,7 +372,7 @@ const Dashboard = () => {
           fetchAdminStats(); // Fetch admin statistics
         } else {
           setIsAdmin(false);
-          setActiveTab(getTabFromURL() || "editprofile"); // Set default tab for normal user
+          setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
 
           // Show ad banner for normal users only once per session
           if (currentUserType === "normal") {
@@ -582,13 +582,14 @@ const handleSavePassword = async () => {
 
 
   return (
-    <>
+    <div>
       <NavbarAcholder
         language={language}
         setLanguage={setLanguage}
         isAdmin={isAdmin}
         userType={userType}
       />
+      
       <div
         className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
       >
@@ -854,7 +855,7 @@ const handleSavePassword = async () => {
           getLabel={getLabel}
         />
       )}
-    </>
+    </div>
   );
 };
 
