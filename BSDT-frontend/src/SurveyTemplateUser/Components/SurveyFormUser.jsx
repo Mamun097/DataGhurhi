@@ -42,7 +42,9 @@ const SurveyForm = ({
   isSubmitting = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
-
+  console.log(questions);
+  console.log("User response");
+  console.log(userResponse);
   // Scroll to top when section changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -53,6 +55,16 @@ const SurveyForm = ({
     template?.template?.description || ""
   );
   const hasShuffled = useRef(false);
+  const questionsBySection = useMemo(() => {
+    return questions.reduce((acc, question) => {
+      const sectionId = question.section;
+      if (!acc[sectionId]) {
+        acc[sectionId] = [];
+      }
+      acc[sectionId].push(question);
+      return acc;
+    }, {});
+  }, [questions]);
 
   const visibleSections = useMemo(() => {
     return sections.filter((section) =>
@@ -100,16 +112,48 @@ const SurveyForm = ({
     }
   }, [shuffle, questions, setQuestions]);
 
+  const validateCurrentSection = () => {
+    const currentSection = visibleSections[currentVisibleIndex];
+    if (!currentSection) return true;
+    const questionsInSection = questionsBySection[currentSection.id] || [];
+    const responseMap = new Map(
+      userResponse.map((r) => [r.questionText, r.userResponse])
+    );
+    for (const question of questionsInSection) {
+      if (question.required) {
+        const answer = responseMap.get(question.text);
+        let isAnswered = false;
+        if (answer !== null && answer !== undefined) {
+          if (Array.isArray(answer)) {
+            isAnswered = answer.length > 0;
+          } else if (typeof answer === "string") {
+            isAnswered = answer.trim() !== "";
+          } else {
+            isAnswered = true;
+          }
+        }
+        if (!isAnswered) {
+          alert(`Please answer the required question: "${question.text}"`);
+          return false;
+        }
+      }
+    }
+    return true;
+  };
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    if (onSubmit) {
-      onSubmit(e);
+    if (validateCurrentSection()) {
+      if (onSubmit) {
+        onSubmit(e);
+      }
     }
   };
 
   const handleNext = () => {
-    if (currentVisibleIndex < visibleSections.length - 1) {
-      setCurrentVisibleIndex((prev) => prev + 1);
+    if (validateCurrentSection()) {
+      if (currentVisibleIndex < visibleSections.length - 1) {
+        setCurrentVisibleIndex((prev) => prev + 1);
+      }
     }
   };
 
