@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import SurveySections from "./SurveySectionsUser";
+import Linkify from "react-linkify";
 
 const isSectionVisible = (section, userResponse) => {
   const triggerQuestion = section.triggerQuestionText;
@@ -270,16 +271,29 @@ const SurveyForm = ({
       </div>
       {description && (
         <div className="container rounded">
-          <p
-            className="mt-3 px-2"
-            style={{
-              fontSize: "1.1em",
-              color: "#555",
-              whiteSpace: "pre-wrap",
-            }}
+          <Linkify
+            componentDecorator={(decoratedHref, decoratedText, key) => (
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href={decoratedHref}
+                key={key}
+              >
+                {decoratedText}
+              </a>
+            )}
           >
-            {description}
-          </p>
+            <p
+              className="mt-3 px-2"
+              style={{
+                fontSize: "1.1em",
+                color: "#555",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              {description}
+            </p>
+          </Linkify>
         </div>
       )}
       <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.1rem" }}>
