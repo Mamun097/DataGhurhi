@@ -51,6 +51,19 @@ const SurveyForm = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [currentVisibleIndex]);
 
+  // State and Effect for detecting mobile view ---
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768); // Using Bootstrap's 'md' breakpoint
+    };
+
+    window.addEventListener("resize", handleResize);
+    // Cleanup the event listener on component unmount
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const [backgroundImage, setBackgroundImage] = useState(image || "");
   const [description, setDescription] = useState(
     template?.template?.description || ""
@@ -168,7 +181,8 @@ const SurveyForm = ({
     <div>
       {logo && (
         <>
-          {logoAlignment === "center" ? (
+          {isMobile || logoAlignment === "center" ? (
+            // This block is used for CENTER alignment OR any alignment on MOBILE
             <div className="py-3 text-center">
               <img
                 src={logo}
@@ -195,6 +209,7 @@ const SurveyForm = ({
               )}
             </div>
           ) : (
+            // This block is ONLY used for LEFT/RIGHT alignment on DESKTOP
             <div
               className={`py-3 px-3 d-flex align-items-start justify-content-between flex-column flex-sm-row ${
                 logoAlignment === "left" ? "flex-sm-row" : "flex-sm-row-reverse"
@@ -289,6 +304,7 @@ const SurveyForm = ({
                 fontSize: "1.1em",
                 color: "#555",
                 whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
               }}
             >
               {description}
