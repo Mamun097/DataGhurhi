@@ -267,7 +267,7 @@ const SurveyResponses = () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container my-4">
+      <div className="container " style={{ marginTop:" 100px" }}>
         <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>{getLabel("Survey Responses")}</h3>
             <div className="d-flex gap-2">
