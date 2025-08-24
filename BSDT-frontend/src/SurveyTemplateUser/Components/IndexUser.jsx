@@ -75,6 +75,7 @@ const Index = () => {
 
     load();
   }, [slug, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -109,10 +110,9 @@ const Index = () => {
     <>
       {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
       <div className="container-fluid bg-white">
-        <div className="row">
-          <div className="col-2"></div>
+        <div className="row justify-content-center">
           {!submitted && (
-            <div className="col-8">
+            <div className="col-12 col-md-8">
               <SurveyForm
                 title={title}
                 sections={sections}
@@ -131,8 +131,7 @@ const Index = () => {
               />
             </div>
           )}
-          {submitted && <div className="col-8"></div>}
-          <div className="col-2" />
+          {submitted && <div className="col-12 col-md-8"></div>}
         </div>
       </div>
     </>
