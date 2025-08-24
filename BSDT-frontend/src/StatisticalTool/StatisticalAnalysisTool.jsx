@@ -701,7 +701,7 @@ useEffect(() => {
 
             }
 
-            if (['pearson', 'spearman', 'cross_tabulation'].includes(testType)) {
+            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap'].includes(testType)) {
                 formData.append('heatmapSize', heatmapSize);
                 selectedColumns.forEach((col, idx) => {
                     formData.append(`column${idx + 1}`, col);
@@ -765,7 +765,8 @@ useEffect(() => {
                 return { col2: false, col3: false, refValue: true, heatmapSize: false };
             case 'ancova':
                 return { col2: true, col3: true, refValue: false, heatmapSize: false };
-            case 'cross_tabulation':    
+            case 'cross_tabulation': 
+            case 'cramers_heatmap':   
             case 'spearman':
             case 'pearson':
                 return { col2: false, col3: false, col4: false, refValue: false, heatmapSize: true };
@@ -773,7 +774,7 @@ useEffect(() => {
             case 'kolmogorov':
             case 'anderson':
             case 'chi_square':
-            case 'cramers_heatmap':
+         
 
             case 'kruskal':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
@@ -1133,65 +1134,60 @@ const handleSuggestionClick = () => {
                                                 </div>
                                             </div>
                                 
-                                            {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation') && (
+                                            {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'cramers_heatmap') && (
                                                 <div className="mb-6">
-                                                    <label className="block text-gray-700 font-medium mb-2">
+                                                    {/* <label className="block text-gray-700 font-medium mb-2">
                                                         {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400 mb-4"
-                                                        value={heatmapSize}
-                                                        onChange={(e) => {
-                                                            const val = e.target.value;
-                                                            setHeatmapSize(val);
-                                                            setSelectedColumns([]); // Reset columns on size change
-                                                            if (val === '' || /^\d+$/.test(val)) {
-                                                                setErrorMessage('');
-                                                            } else {
-                                                                setErrorMessage('Please enter a valid integer for Heatmap Size');
-                                                            }
-                                                        }}
-                                                        placeholder="Enter number of columns (e.g., 5)"
-                                                    />
-
+                                                    </label> */}
+                                                    
                                                     {/* Column(s) Big Box Display */}
-                                                    <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
-                                                    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px]">
-                                                        {selectedColumns.length > 0 ? (
-                                                            <p className="text-gray-800">{selectedColumns.join(', ')}</p>
-                                                        ) : (
-                                                            <p className="text-gray-400">No columns selected yet</p>
-                                                        )}
-                                                    </div>
+                                                   {/* <label className="block text-gray-700 font-medium mb-2">Column(s)</label> */}
+                                                        {/* Column(s) Big Box Display */}
+                                                        <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
+                                                        <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px] flex flex-wrap gap-2">
+                                                            {selectedColumns.length > 0 ? (
+                                                                selectedColumns.map((col, idx) => (
+                                                                        <div key={idx} className="tag-chip">
+                                                                            <span>{col}</span>
+                                                                            <button
+                                                                                type="button"
+                                                                                className="remove-button"
+                                                                                onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
+                                                                            >
+                                                                                ×
+                                                                            </button>
+                                                                        </div>
+                                                                    ))
+                                                            
+                                                            ) : (
+                                                                <p className="text-gray-400">No columns selected yet</p>
+                                                            )}
+                                                        </div>
 
-                                                    {/* Dropdown Below Box */}
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
-                                                        onChange={(e) => {
-                                                            const selected = e.target.value;
-                                                            if (
-                                                                selected &&
-                                                                !selectedColumns.includes(selected) &&
-                                                                selectedColumns.length < parseInt(heatmapSize || 0)
-                                                            ) {
-                                                                setSelectedColumns(prev => [...prev, selected]);
-                                                            }
-                                                            e.target.selectedIndex = 0;
-                                                        }}
-                                                        disabled={selectedColumns.length >= parseInt(heatmapSize || 0)}
-                                                    >
-                                                        <option value="">Select column...</option>
-                                                        {columns
-                                                            .filter(col => !selectedColumns.includes(col))
-                                                            .map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))}
-                                                    </select>
+{/* Dropdown Below Box */}
+<select
+    className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
+    onChange={(e) => {
+        const selected = e.target.value;
+        if (selected && !selectedColumns.includes(selected)) {
+            setSelectedColumns(prev => [...prev, selected]);
+        }
+        e.target.selectedIndex = 0;
+    }}
+    disabled={selectedColumns.length >= columns.length}
+>
+    <option value="">Select column...</option>
+    {columns
+        .filter(col => !selectedColumns.includes(col))
+        .map((col, idx) => (
+            <option key={idx} value={col}>{col}</option>
+        ))}
+</select>
 
-                                                    <p className="text-sm text-gray-500 mt-2">
-                                                        {selectedColumns.length} of {heatmapSize || 0} column(s) selected
-                                                    </p>
+<p className="text-sm text-gray-500 mt-2">
+    {selectedColumns.length} column(s) selected
+</p>
+
                                                 </div>
                                             )}
                                         
@@ -1207,7 +1203,7 @@ const handleSuggestionClick = () => {
                                                 )}
 
                                                 {/* Now the rest of the logic stays the same — dropdowns, requiredFields, etc. */}
-                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph', 'cramers_heatmap'].includes(testType) && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
                                                             <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3973,7 +3969,7 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => {
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115:8001${path}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -3993,7 +3989,7 @@ const renderFZTResults = () => {
                                 return (
                                     <div key={index} className="bg-white rounded shadow p-2 relative">
                                         <img
-                                            src={`http://103.94.135.115:8001${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`cramer-v-plot-${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />

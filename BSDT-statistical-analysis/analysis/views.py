@@ -391,7 +391,13 @@ def analyze_data_api(request):
                 return process_chi_square(request, df, user_id)
 
             elif test_type == 'cramers_heatmap':
-                return process_cramers_heatmap(request, df, user_id)
+                selected_columns = []
+                for key in request.POST:
+                    if key.startswith("column"):
+                        value = request.POST[key]
+                        if value in df.columns:
+                            selected_columns.append(value)
+                return process_cramers_heatmap(request,selected_columns, df, user_id)
 
             elif test_type == 'network_graph':
                 return process_network_graph(request, df,user_id) 
@@ -3277,7 +3283,7 @@ def process_chi_square(request, df, user_id):
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
 
-def process_cramers_heatmap(request, df, user_id):
+def process_cramers_heatmap(request, selected_columns, df, user_id):
     from django.http import JsonResponse
     from django.conf import settings
     import pandas as pd
@@ -3287,22 +3293,20 @@ def process_cramers_heatmap(request, df, user_id):
     import matplotlib.font_manager as fm
     from googletrans import Translator
     from PIL import Image, ImageDraw, ImageFont
-    import os
-    import uuid
+    import os, uuid
+    from scipy.stats import chi2_contingency
+    import numpy as np
 
     try:
         # --- 1) Inputs ---
-        x_col = request.POST.get("column1")
-        y_col = request.POST.get("column2")
         lang = request.POST.get("language", "en")
         fmt = request.POST.get("format", "png").lower()
         pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
 
-        use_default = request.POST.get("use_default", "true") == "true"
         label_font_size = int(request.POST.get("label_font_size", 36))
         tick_font_size = int(request.POST.get("tick_font_size", 16))
         img_quality = int(request.POST.get("image_quality", 90))
-        palette = request.POST.get("palette", "deep")
+        palette = request.POST.get("palette", "coolwarm")
         image_size = request.POST.get("image_size", "800x600")
         try:
             width, height = map(int, image_size.lower().split("x"))
@@ -3325,66 +3329,171 @@ def process_cramers_heatmap(request, df, user_id):
         os.makedirs(plots_dir, exist_ok=True)
         uid = str(uuid.uuid4())[:8]
 
-        # --- 3) Crosstab ---
-        ct = pd.crosstab(df[x_col], df[y_col])
-        annot_df = ct.applymap(lambda v: map_digits(translate(str(int(v)))))
 
+        if len(selected_columns) < 2:
+            return JsonResponse({'success': False, 'error': "Select at least two columns"})
+        print(selected_columns) 
+
+        # --- 3) Compute Cramér’s V matrix ---
+        def cramers_v(x, y):
+            confusion_matrix = pd.crosstab(x, y)
+            # print("Confusion Matrix:\n", confusion_matrix)
+
+            chi2, _, _, _ = chi2_contingency(confusion_matrix)  # ✅ use scipy
+            n = confusion_matrix.sum().sum()
+            phi2 = chi2 / n
+            r, k = confusion_matrix.shape
+            #bias correction
+            phi2corr = max(0,phi2-((k-1)*(r-1))/(n-1))
+            rcorr = r - ((r - 1) ** 2) / ( n - 1 )
+            kcorr = k - ((k - 1) ** 2) / ( n - 1 )
+            return np.sqrt(phi2corr / min(kcorr - 1, rcorr - 1)) 
+
+
+        n = len(selected_columns)
+        mat = pd.DataFrame(np.zeros((n, n)), index=selected_columns, columns=selected_columns)
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    mat.iloc[i, j] = 1.0
+                else:
+                    mat.iloc[i, j] = cramers_v(df[selected_columns[i]], df[selected_columns[j]])
+        print(mat) 
         # --- 4) Heatmap ---
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
         cmap = sns.color_palette(palette, as_cmap=True)
-        hm = sns.heatmap(ct, annot=annot_df, fmt="", cmap=cmap, ax=ax)
+        hm = sns.heatmap(mat, annot=True, fmt=".2f", cmap=cmap, ax=ax)
 
         ax.set_xlabel('')
         ax.set_ylabel('')
-        ax.set_title('')
+        ax.set_title(translate("Cramér's V Heatmap"))
 
-        # Translate axis labels
-        ax.set_xticklabels([map_digits(translate(str(t))) for t in ct.columns], fontproperties=tick_prop)
-        ax.set_yticklabels([map_digits(translate(str(t))) for t in ct.index], fontproperties=tick_prop)
+        ax.set_xticklabels([map_digits(translate(str(t))) for t in mat.columns], fontproperties=tick_prop, rotation=45, ha='right')
+        ax.set_yticklabels([map_digits(translate(str(t))) for t in mat.index], fontproperties=tick_prop, rotation=0)
 
-        # Colorbar
-        cbar = hm.collections[0].colorbar
-        cb_vals = cbar.get_ticks()
-        cbar.set_ticklabels([map_digits(translate(str(int(v)))) for v in cb_vals])
-        cbar.ax.tick_params(labelsize=tick_font_size)
-
-        # Save with PIL label wrapping
-        base_path = os.path.join(plots_dir, f"cramers_heatmap_base_{uid}.png")
+        # Save
         final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
-        fig.savefig(base_path, dpi=300, bbox_inches='tight')
+        fig.savefig(final_path, dpi=300, bbox_inches='tight')
         plt.close(fig)
-
-        T = translate("Observed Counts Heatmap")
-        X = translate(x_col)
-        Y = translate(y_col)
-        bw, bh = Image.open(base_path).convert("RGB").size
-        tx = label_font.getbbox(T)[3]
-        xx = label_font.getbbox(X)[3]
-        yy = label_font.getbbox(Y)[2]
-        pad = label_font_size // 2
-
-        W = bw + yy + pad * 2
-        H = bh + tx + xx + pad * 2
-        canvas = Image.new("RGB", (W, H), "white")
-        img = Image.open(base_path).convert("RGB")
-        canvas.paste(img, (yy + pad, tx + pad))
-        draw = ImageDraw.Draw(canvas)
-        draw.text(((W - draw.textlength(T, font=label_font)) // 2, pad), T, font=label_font, fill='black')
-        draw.text(((W - draw.textlength(X, font=label_font)) // 2, tx + bh + pad), X, font=label_font, fill='black')
-        Yimg = Image.new("RGBA", label_font.getbbox(Y)[2:], (255,255,255,0))
-        ImageDraw.Draw(Yimg).text((0, 0), Y, font=label_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        canvas.paste(Yrot, (pad, tx + (bh - Yrot.size[1]) // 2), Yrot)
-        canvas.save(final_path, format=pil_fmt, quality=img_quality)
+        print(final_path) 
 
         return JsonResponse({
             'success': True,
             'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
-            'columns': [x_col, y_col],
+            'columns': selected_columns,
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+# def process_cramers_heatmap(request, df, user_id):
+#     from django.http import JsonResponse
+#     from django.conf import settings
+#     import pandas as pd
+#     import seaborn as sns
+#     import matplotlib.pyplot as plt
+#     import matplotlib as mpl
+#     import matplotlib.font_manager as fm
+#     from googletrans import Translator
+#     from PIL import Image, ImageDraw, ImageFont
+#     import os
+#     import uuid
+
+#     try:
+#         # --- 1) Inputs ---
+#         x_col = request.POST.get("column1")
+#         y_col = request.POST.get("column2")
+#         lang = request.POST.get("language", "en")
+#         fmt = request.POST.get("format", "png").lower()
+#         pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
+
+#         use_default = request.POST.get("use_default", "true") == "true"
+#         label_font_size = int(request.POST.get("label_font_size", 36))
+#         tick_font_size = int(request.POST.get("tick_font_size", 16))
+#         img_quality = int(request.POST.get("image_quality", 90))
+#         palette = request.POST.get("palette", "deep")
+#         image_size = request.POST.get("image_size", "800x600")
+#         try:
+#             width, height = map(int, image_size.lower().split("x"))
+#         except:
+#             width, height = 800, 600
+
+#         # --- 2) Font & Path setup ---
+#         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+#         fm.fontManager.addfont(font_path)
+#         bengali_font = fm.FontProperties(fname=font_path).get_name()
+#         mpl.rcParams['font.family'] = bengali_font
+#         tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
+#         label_font = ImageFont.truetype(font_path, size=label_font_size)
+
+#         translator = Translator()
+#         def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
+#         def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
+
+#         plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+#         os.makedirs(plots_dir, exist_ok=True)
+#         uid = str(uuid.uuid4())[:8]
+
+#         # --- 3) Crosstab ---
+#         ct = pd.crosstab(df[x_col], df[y_col])
+#         annot_df = ct.applymap(lambda v: map_digits(translate(str(int(v)))))
+
+#         # --- 4) Heatmap ---
+#         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+#         cmap = sns.color_palette(palette, as_cmap=True)
+#         hm = sns.heatmap(ct, annot=annot_df, fmt="", cmap=cmap, ax=ax)
+
+#         ax.set_xlabel('')
+#         ax.set_ylabel('')
+#         ax.set_title('')
+
+#         # Translate axis labels
+#         ax.set_xticklabels([map_digits(translate(str(t))) for t in ct.columns], fontproperties=tick_prop)
+#         ax.set_yticklabels([map_digits(translate(str(t))) for t in ct.index], fontproperties=tick_prop)
+
+#         # Colorbar
+#         cbar = hm.collections[0].colorbar
+#         cb_vals = cbar.get_ticks()
+#         cbar.set_ticklabels([map_digits(translate(str(int(v)))) for v in cb_vals])
+#         cbar.ax.tick_params(labelsize=tick_font_size)
+
+#         # Save with PIL label wrapping
+#         base_path = os.path.join(plots_dir, f"cramers_heatmap_base_{uid}.png")
+#         final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
+#         fig.savefig(base_path, dpi=300, bbox_inches='tight')
+#         plt.close(fig)
+
+#         T = translate("Observed Counts Heatmap")
+#         X = translate(x_col)
+#         Y = translate(y_col)
+#         bw, bh = Image.open(base_path).convert("RGB").size
+#         tx = label_font.getbbox(T)[3]
+#         xx = label_font.getbbox(X)[3]
+#         yy = label_font.getbbox(Y)[2]
+#         pad = label_font_size // 2
+
+#         W = bw + yy + pad * 2
+#         H = bh + tx + xx + pad * 2
+#         canvas = Image.new("RGB", (W, H), "white")
+#         img = Image.open(base_path).convert("RGB")
+#         canvas.paste(img, (yy + pad, tx + pad))
+#         draw = ImageDraw.Draw(canvas)
+#         draw.text(((W - draw.textlength(T, font=label_font)) // 2, pad), T, font=label_font, fill='black')
+#         draw.text(((W - draw.textlength(X, font=label_font)) // 2, tx + bh + pad), X, font=label_font, fill='black')
+#         Yimg = Image.new("RGBA", label_font.getbbox(Y)[2:], (255,255,255,0))
+#         ImageDraw.Draw(Yimg).text((0, 0), Y, font=label_font, fill='black')
+#         Yrot = Yimg.rotate(90, expand=True)
+#         canvas.paste(Yrot, (pad, tx + (bh - Yrot.size[1]) // 2), Yrot)
+#         canvas.save(final_path, format=pil_fmt, quality=img_quality)
+
+#         return JsonResponse({
+#             'success': True,
+#             'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
+#             'columns': [x_col, y_col],
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_network_graph(request, df, user_id): 
     import os
