@@ -116,13 +116,16 @@ const SurveyForm = ({
   const validateCurrentSection = () => {
     const currentSection = visibleSections[currentVisibleIndex];
     if (!currentSection) return true;
+
     const questionsInSection = questionsBySection[currentSection.id] || [];
     const responseMap = new Map(
       userResponse.map((r) => [r.questionText, r.userResponse])
     );
+
     for (const question of questionsInSection) {
-      if (question.required) {
+      if (question.required || question.meta?.requireEachRowResponse) {
         const answer = responseMap.get(question.text);
+
         let isAnswered = false;
         if (answer !== null && answer !== undefined) {
           if (Array.isArray(answer)) {
@@ -133,12 +136,45 @@ const SurveyForm = ({
             isAnswered = true;
           }
         }
-        if (!isAnswered) {
-          alert(`Please answer the required question: "${question.text}"`);
+        if (question.required && !isAnswered) {
+          alert(
+            `Please answer the required question: "${
+              question.text || "Untitled Question"
+            }"`
+          );
           return false;
+        }
+        if (
+          isAnswered &&
+          (question.type === "likert" || question.type === "tickboxGrid") &&
+          question.meta?.requireEachRowResponse
+        ) {
+          const totalRows = question.meta.rows.length;
+          const answeredRows = answer.length;
+          if (answeredRows < totalRows) {
+            alert(
+              `Please provide a response for every row in the question: "${
+                question.text || "Untitled Question"
+              }"`
+            );
+            return false;
+          }
+          if (question.type === "tickboxGrid") {
+            const hasEmptyRowSelection = answer.some(
+              (rowResponse) =>
+                !rowResponse.response || rowResponse.response.length === 0
+            );
+            if (hasEmptyRowSelection) {
+              alert(
+                `Please select at least one option for every row in the question: "${question.text}"`
+              );
+              return false;
+            }
+          }
         }
       }
     }
+
     return true;
   };
   const handleFormSubmit = (e) => {

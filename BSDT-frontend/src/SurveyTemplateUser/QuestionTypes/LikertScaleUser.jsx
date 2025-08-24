@@ -97,10 +97,16 @@ const LikertScale = ({ index, question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2 me-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}{". "}
+        {index}
+        {". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
+      {question.meta?.requireEachRowResponse && (
+        <p className="form-text text-muted ms-3">
+          A response is required for each row.
+        </p>
+      )}
 
       {/* Image Preview */}
       {question.imageUrls && question.imageUrls.length > 0 && (
