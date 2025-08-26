@@ -13,6 +13,7 @@ import {
   LinearScale,
 } from "chart.js/auto";
 import { Copy } from "lucide-react";
+import * as XLSX from "xlsx";
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -49,15 +50,17 @@ const parseCSV = (csvText) => {
   const lines = csvText.trim().split(/\r?\n/);
   if (lines.length === 0) return { headers: [], rows: [] };
   const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
-  const rows = lines.slice(1).map((line) =>
-    line.split(",").map((cell) => cell.trim().replace(/"/g, ""))
-  );
+  const rows = lines
+    .slice(1)
+    .map((line) =>
+      line.split(",").map((cell) => cell.trim().replace(/"/g, ""))
+    );
   return { headers, rows };
 };
 
 const SurveyResponses = () => {
   const { survey_id } = useParams();
-  const surveyTitle= useLocation().state?.title || "Survey Responses";
+  const surveyTitle = useLocation().state?.title || "Survey Responses";
   console.log("Survey ID:", survey_id);
   console.log("Survey Title:", surveyTitle);
   const [responses, setResponses] = useState({ headers: [], rows: [] });
@@ -90,7 +93,6 @@ const SurveyResponses = () => {
     localStorage.setItem("language", language);
   }, [language]);
 
-  
   useEffect(() => {
     const englishMap = {};
     labelsToTranslate.forEach((label) => (englishMap[label] = label));
@@ -119,10 +121,9 @@ const SurveyResponses = () => {
         const token = tokenData.startsWith("{")
           ? JSON.parse(tokenData).token
           : tokenData;
-        const response = await apiClient.get(
-          `/api/generatecsv/${survey_id}`,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await apiClient.get(`/api/generatecsv/${survey_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (typeof response.data === "string") {
           setRawCsv(response.data);
           setResponses(parseCSV(response.data));
@@ -203,12 +204,13 @@ const SurveyResponses = () => {
           <div className="col-12 col-lg-6">
             <div className="border border-dark rounded shadow p-4 bg-white h-100">
               {/* Caption/Header */}
-              <h6 className="text-center mb-4">
-                {header}
-              </h6>
+              <h6 className="text-center mb-4">{header}</h6>
 
               {/* Chart Container */}
-              <div className="d-flex justify-content-center align-items-center" style={{ height: "320px" }}>
+              <div
+                className="d-flex justify-content-center align-items-center"
+                style={{ height: "320px" }}
+              >
                 {chartType === "pie" ? (
                   <Pie
                     id={`chart-${index}`}
@@ -254,9 +256,6 @@ const SurveyResponses = () => {
     });
   };
 
-
-
-
   const renderQuestionTab = () => {
     const allAnswers = responses.rows.map(
       (row) => row[selectedQuestion] || "Empty"
@@ -290,7 +289,8 @@ const SurveyResponses = () => {
                 <div className="card-body d-flex justify-content-between align-items-center">
                   <span className="fw-medium">{option}</span>
                   <span className="text-muted">
-                    {counts[option]} {counts[option] > 1 ? "responses" : "response"}
+                    {counts[option]}{" "}
+                    {counts[option] > 1 ? "responses" : "response"}
                   </span>
                 </div>
               </div>
@@ -300,7 +300,6 @@ const SurveyResponses = () => {
       </div>
     );
   };
-
 
   const renderIndividualTab = () => {
     const response = responses.rows[currentResponse];
@@ -321,35 +320,35 @@ const SurveyResponses = () => {
             </table>
 
             {/* Navigation */}
-            <div 
-              className="mt-3" 
-              style={{ 
+            <div
+              className="mt-3"
+              style={{
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
                 gap: "12px",
                 flexDirection: "row", // Explicitly force row direction
-                flexWrap: "nowrap"
+                flexWrap: "nowrap",
               }}
             >
               <button
                 className="btn btn-outline-secondary d-flex justify-content-center align-items-center p-0 flex-shrink-0"
-                  style={{ 
-                  width: "36px", 
+                style={{
+                  width: "36px",
                   height: "36px",
-                  minWidth: "36px" // Ensures minimum width is maintained
+                  minWidth: "36px", // Ensures minimum width is maintained
                 }}
                 disabled={currentResponse === 0}
-                onClick={() => setCurrentResponse(prev => prev - 1)}
-              >         
+                onClick={() => setCurrentResponse((prev) => prev - 1)}
+              >
                 &lt;
               </button>
 
-              <span 
-                className="fw-medium text-center flex-shrink-0" 
-                style={{ 
+              <span
+                className="fw-medium text-center flex-shrink-0"
+                style={{
                   minWidth: "60px", // Increased from 40px for better mobile display
-                  whiteSpace: "nowrap" // Prevents text wrapping
+                  whiteSpace: "nowrap", // Prevents text wrapping
                 }}
               >
                 {currentResponse + 1} of {responses.rows.length}
@@ -357,13 +356,13 @@ const SurveyResponses = () => {
 
               <button
                 className="btn btn-outline-secondary d-flex justify-content-center align-items-center p-0 flex-shrink-0"
-                style={{ 
-                  width: "36px", 
+                style={{
+                  width: "36px",
                   height: "36px",
-                  minWidth: "36px" // Ensures minimum width is maintained
+                  minWidth: "36px", // Ensures minimum width is maintained
                 }}
                 disabled={currentResponse === responses.rows.length - 1}
-                onClick={() => setCurrentResponse(prev => prev + 1)}
+                onClick={() => setCurrentResponse((prev) => prev + 1)}
               >
                 &gt;
               </button>
@@ -373,9 +372,6 @@ const SurveyResponses = () => {
       </div>
     );
   };
-
-
-
 
   const downloadCSV = () => {
     const blob = new Blob([rawCsv], { type: "text/csv;charset=utf-8;" });
@@ -393,26 +389,33 @@ const SurveyResponses = () => {
 
     try {
       const blob = new Blob([rawCsv], { type: "text/csv" });
-      const file = new File([blob], `survey_${surveyTitle}_responses.csv`, { type: "text/csv" });
+      const file = new File([blob], `survey_${surveyTitle}_responses.csv`, {
+        type: "text/csv",
+      });
 
       const formData = new FormData();
       formData.append("file", file);
       formData.append("file_type", "survey");
-      
 
-      const response = await fetch("http://103.94.135.115:8001/api/upload-preprocessed/", {
-        method: "POST",
-        body: formData,
-        headers: {
-          userID: localStorage.getItem("user_id") || "",
-        },
-      });
+      const response = await fetch(
+        "http://103.94.135.115:8001/api/upload-preprocessed/",
+        {
+          method: "POST",
+          body: formData,
+          headers: {
+            userID: localStorage.getItem("user_id") || "",
+          },
+        }
+      );
 
       const result = await response.json();
 
       if (result.success) {
         sessionStorage.setItem("surveyfile", "true");
-        sessionStorage.setItem("file_name", `survey_${surveyTitle}_responses.xlsx`);
+        sessionStorage.setItem(
+          "file_name",
+          `survey_${surveyTitle}_responses.xlsx`
+        );
         window.location.href = "/analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");
@@ -423,30 +426,49 @@ const SurveyResponses = () => {
     }
   };
 
+  const downloadXLSX = () => {
+    if (!responses || !responses.headers || !responses.rows) {
+      console.error("No responses data available");
+      return;
+    }
+
+    try {
+      const dataForSheet = [responses.headers, ...responses.rows];
+      const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Responses");
+      XLSX.writeFile(wb, `survey_${surveyTitle}_responses.xlsx`);
+    } catch (error) {
+      console.error("Error generating XLSX:", error);
+    }
+  };
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container " style={{ marginTop:" 100px" }}>
+      <div className="container " style={{ marginTop: " 100px" }}>
         <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>{getLabel("Survey Responses")}</h3>
-            <div className="d-flex gap-2">
-              <button className="btn btn-primary" onClick={downloadCSV}>
-                {getLabel("Download CSV")}
-              </button>
-              <button className="btn btn-success" onClick={handleAnalyzeClick}>
-                {getLabel("Analyze the Result")}
-              </button>
-            </div>
+          <h3>{getLabel("Survey Responses")}</h3>
+          <div className="d-flex gap-2">
+            <button className="btn btn-primary" onClick={downloadCSV}>
+              {getLabel("Download CSV")}
+            </button>
+
+            <button className="btn btn-success" onClick={downloadXLSX}>
+              Download XLSX
+            </button>
+
+            <button className="btn btn-info" onClick={handleAnalyzeClick}>
+              {getLabel("Analyze the Result")}
+            </button>
           </div>
+        </div>
 
         <ul className="nav nav-tabs mb-3">
           {["summary", "questions", "individual"].map((tab) => (
             <li className="nav-item" key={tab}>
               <button
-                className={`nav-link ${
-                  activeTab === tab ? "active" : ""
-                }`}
+                className={`nav-link ${activeTab === tab ? "active" : ""}`}
                 onClick={() => setActiveTab(tab)}
               >
                 {getLabel(tab.charAt(0).toUpperCase() + tab.slice(1))}
