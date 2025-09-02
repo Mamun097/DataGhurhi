@@ -23,7 +23,7 @@ exports.uploadFile = async (req, res) => {
         console.log("User_ID:", req.jwt.id);
 
         // Call the Django API to process the file
-        const response = await axios.post('http://103.94.135.115:8001/api/get-columns/', formData, {
+        const response = await axios.post('http://127.0.0.1:8000/api/get-columns/', formData, {
             headers: formData.getHeaders(),
         });
          fs.unlinkSync(req.file.path); // Delete the file after processing

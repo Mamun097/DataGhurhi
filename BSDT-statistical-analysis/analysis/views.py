@@ -31,177 +31,235 @@ def infer_type(s, thresh=10):
         return 'categorical' if s.nunique() < thresh else 'numeric'
     else:
         return 'categorical'
+    
+try:
+    from openpyxl import load_workbook
+except ImportError:
+    load_workbook = None
 
+
+# --- keep these as-is (from your snippet) ------------------------------------
+def save_uploaded_file(user_id: str, django_file) -> dict:
+    filename = django_file.name
+    user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
+    os.makedirs(user_folder, exist_ok=True)
+
+    save_path = os.path.join(user_folder, filename)
+    with open(save_path, 'wb+') as dest:
+        for chunk in django_file.chunks():
+            dest.write(chunk)
+
+    file_url = os.path.join(
+        settings.MEDIA_URL, f"ID_{user_id}_uploads", "temporary_uploads", filename
+    ).replace('\\', '/')
+
+    return {
+        "save_path": save_path,
+        "filename": filename,
+        "file_url": file_url,
+        "user_folder": user_folder,
+    }
+
+
+def _get_active_sheet_name_xlsx(path: str) -> str | None:
+    if load_workbook is None:
+        return None
+    try:
+        wb = load_workbook(path, read_only=True, data_only=True)
+        return wb.active.title if wb and wb.active else None
+    except Exception:
+        return None
+
+
+def infer_columns_from_file(save_path: str, filename: str, active_sheet_name: str | None = None):
+    ext = os.path.splitext(filename)[1].lower()
+    cols: list[str] = []
+    sheet_names: list[str] = []
+    used_sheet: str | None = None
+
+    if ext == '.csv':
+        df = pd.read_csv(save_path, nrows=200)
+        cols = list(df.columns)
+        return cols, sheet_names, used_sheet
+
+    try:
+        xls = pd.ExcelFile(save_path)
+        sheet_names = xls.sheet_names or []
+    except Exception as e:
+        try:
+            df = pd.read_excel(save_path, nrows=200)
+            cols = list(df.columns)
+            return cols, sheet_names, used_sheet
+        except Exception as inner:
+            raise RuntimeError(f"Failed to read Excel file: {inner}") from e
+
+    target_sheet = None
+
+    if active_sheet_name and active_sheet_name in sheet_names:
+        target_sheet = active_sheet_name
+
+    if target_sheet is None and ext in ('.xlsx', '.xlsm', '.xltx', '.xltm'):
+        active_name = _get_active_sheet_name_xlsx(save_path)
+        if active_name and active_name in sheet_names:
+            target_sheet = active_name
+
+    if target_sheet is None and sheet_names:
+        target_sheet = sheet_names[0]
+
+    used_sheet = target_sheet
+
+    df = pd.read_excel(save_path, sheet_name=target_sheet, nrows=200)
+    cols = list(df.columns)
+
+    return cols, sheet_names, used_sheet
+# -----------------------------------------------------------------------------
+
+
+# 1) Upload-only API: returns file info (no column inference)
+@csrf_exempt
+def upload_file(request):
+    
+    if not request.FILES.get('file'):
+        return JsonResponse({'success': False, 'error': 'No file uploaded'})
+
+    user_id = request.POST.get('userID')
+    if not user_id:
+        return JsonResponse({'success': False, 'error': 'User ID not provided'})
+
+    try:
+        save_info = save_uploaded_file(user_id, request.FILES['file'])
+        return JsonResponse({
+            'success': True,
+            'user_id': user_id,
+            **{
+                'save_path': save_info['save_path'],
+                'filename': save_info['filename'],
+                'fileURL': save_info['file_url'],
+                'user_folder': save_info['user_folder'],
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
+
+
+# 2) Column-inference API: takes the saved file path (or filename) and returns columns/sheets
+@csrf_exempt
 def get_columns(request):
     
-        if request.method == 'POST' and request.FILES.get('file'):
-            user_id = request.POST.get('userID') 
-            print(f"Received user_id: {user_id}")
-            
+    user_id = request.POST.get('userID')
+    filename = request.POST.get('filename')
+    active_sheet_name = request.POST.get('activeSheet')  # optional
 
-            if not user_id:
-                return JsonResponse({'success': False, 'error': 'User ID not provided'})
+    user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
+    save_path = os.path.join(user_folder, filename)
 
+    if not user_id:
+        return JsonResponse({'success': False, 'error': 'User ID not provided'})
+    if not save_path or not filename:
+        return JsonResponse({'success': False, 'error': 'savePath and filename are required', 'user_id': user_id})
+
+    try:
+        try:
+            cols, sheet_names, used_sheet = infer_columns_from_file(
+                save_path=save_path,
+                filename=filename,
+                active_sheet_name=active_sheet_name
+            )
+        except Exception as infer_err:
             try:
-                excel_file = request.FILES['file']
-                df = pd.read_excel(excel_file)
-                filename = request.FILES['file'].name                
-                print(f"Received file: {filename}")
-                # body = json.loads(request.body)
-                # selected_tests= body.get('selected_tests')
-
-                # Create the user's uploads folder: media/ID_<user_id>_uploads/uploads
-                user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
-                os.makedirs(user_folder, exist_ok=True)
-
-                # Save the file in that uploads folder
-                save_path = os.path.join(user_folder, filename)
-                df.to_excel(save_path, index=False)
-                
-                # Column and type inference
+                df = pd.read_excel(save_path, nrows=200)
                 cols = list(df.columns)
-                # types = {c: infer_type(df[c]) for c in cols}
-
-                # # Normality test
-                # normality = {}
-                # for c, t in types.items():
-                #     if t == 'numeric':
-                #         xs = df[c].dropna()
-                #         normality[c] = (len(xs) >= 3 and shapiro(xs)[1] > 0.05)
-                #     else:
-                #         normality[c] = False
-
-                # Only process tests if selected
-                matched_results = {}
-                input_info = {}
-
-                # if selected_tests:
-                #     # def num_pairs():
-                #     #     return [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #             if types[x] == 'numeric' and types[y] == 'numeric']
-
-                #     # test_funcs = {
-                #     #     "Shapiro–Wilk Test":       lambda: [(c,) for c in cols if types[c]=='numeric'],
-                #     #     "Anderson–Darling Test":   lambda: [(c,) for c in cols if types[c]=='numeric'],
-                #     #     "Pearson Correlation":     lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                     if types[x]=='numeric' and types[y]=='numeric'
-                #     #                                         and normality.get(x, False) and normality.get(y, False)],
-                #     #     "Spearman Rank Correlation": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                         if types[x]=='numeric' and types[y]=='numeric'],
-                #     #     "T Test (paired)":         lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                     if types[x]=='numeric' and types[y]=='numeric'],
-                #     #     "Wilcoxon Signed‑Rank Test": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                         if types[x]=='numeric' and types[y]=='numeric'],
-                #     #     "Linear Regression":       lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                     if (types[x]=='numeric' and types[y]=='numeric')
-                #     #                                         or (types[x]=='numeric' and types[y]=='categorical')
-                #     #                                         or (types[x]=='categorical' and types[y]=='numeric')],
-                #     #     "Chi‑Squared Test":        lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                     if types[x]=='categorical' and types[y]=='categorical'],
-                #     #     "Cramer's V":              lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                     if types[x]=='categorical' and types[y]=='categorical'],
-                #     #     "Z Test for Two Proportions": lambda: [(x, y) for i, x in enumerate(cols) for y in cols[i+1:]
-                #     #                                         if types[x]=='categorical' and types[y]=='categorical'
-                #     #                                             and df[x].nunique()==2 and df[y].nunique()==2],
-                #     #     "Independent Samples T Test": lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
-                #     #                                         for num in cols if types[num]=='numeric'],
-                #     #     "F Test for Equality of Variances": lambda: [(cat, num)
-                #     #                                                 for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
-                #     #                                                 for num in cols if types[num]=='numeric' and normality.get(num, False)],
-                #     #     "Mann‑Whitney U Test":     lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
-                #     #                                         for num in cols if types[num]=='numeric'],
-                #     #     "Kolmogorov–Smirnov Test": lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()==2
-                #     #                                         for num in cols if types[num]=='numeric'],
-                #     #     "ANOVA (one‑way)":         lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
-                #     #                                         for num in cols if types[num]=='numeric' and normality.get(num, False)],
-                #     #     "Kruskal‑Wallis Test":     lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
-                #     #                                         for num in cols if types[num]=='numeric'],
-                #     #     "ANCOVA":                  lambda: [(cat, num)
-                #     #                                         for cat in cols if types[cat]=='categorical' and df[cat].nunique()>2
-                #     #                                         for num in cols if types[num]=='numeric'],
-                #     # }
-
-                #     type_descriptions = {
-                #             "Shapiro–Wilk Test": "Univariate Numerical",
-                #             "Anderson–Darling Test": "Univariate Numerical",
-                #             "Pearson Correlation": "Numerical vs Numerical (both normal)",
-                #             "Spearman Rank Correlation": "Numerical vs Numerical",
-                #             "T Test (paired)": "Numerical vs Numerical (paired samples)",
-                #             "Wilcoxon Signed‑Rank Test": "Numerical vs Numerical (paired samples)",
-                #             "Linear Regression": "Numerical vs Numerical / Numerical vs Categorical",
-                #             "Chi‑Squared Test": "Categorical vs Categorical",
-                #             "Cramer's V": "Categorical vs Categorical",
-                #             "Z Test for Two Proportions": "Binary Categorical vs Binary Categorical",
-                #             "Independent Samples T Test": "Binary Categorical vs Numerical",
-                #             "F Test for Equality of Variances": "Binary Categorical vs Numerical (normal)",
-                #             "Mann‑Whitney U Test": "Binary Categorical vs Numerical",
-                #             "Kolmogorov–Smirnov Test": "Binary Categorical vs Numerical",
-                #             "ANOVA (one‑way)": "Multi-class Categorical vs Numerical (normal)",
-                #             "Kruskal‑Wallis Test": "Multi-class Categorical vs Numerical",
-                #             "ANCOVA": "Categorical vs Numerical (with covariate control)",
-                #         }
-                    
-                    # numeric_cols = [c for c, t in types.items() if t == 'numeric']
-                    # categorical_cols = [c for c, t in types.items() if t == 'categorical']
-
-
-
-                    # for test_name in selected_tests:
-                    #     if test_name in test_funcs:
-                    #         matched_results[test_name] = test_funcs[test_name]()
-                    #     else:
-                    #         matched_results[test_name] = []
-                    # print(matched_results)
-
-                    
-                #     for test in selected_tests:
-                #         desc = type_descriptions.get(test, '(missing)')
-                #         columns_info = {}
-                #         if 'Numerical' in desc and 'Categorical' in desc:
-                #             columns_info = {
-                #                 'numerical': numeric_cols,
-                #                 'categorical': categorical_cols
-                #             }
-                #         elif 'Numerical' in desc:
-                #             columns_info = {
-                #                 'numerical': numeric_cols
-                #             }
-                #         elif 'Categorical' in desc:
-                #             columns_info = {
-                #                 'categorical': categorical_cols
-                #             }
-                #         else:
-                #             columns_info = {
-                #                 'all': cols
-                #             }
-
-                #         input_info[test] = {
-                #             'description': desc,
-                #             'columns': columns_info
-                #         }
-
-                # print(input_info)
-                return JsonResponse({
-                    'success': True,
-                    'user_id': user_id,
-                    'columns': cols,
-                    'input_info': input_info,          
-                    'fileURL': os.path.join(settings.MEDIA_URL, f"ID_{user_id}_uploads", "temporary_uploads", filename)
-
-                })
-
-            except Exception as e:
+                sheet_names = []
+                used_sheet = None
+            except Exception:
                 return JsonResponse({
                     'success': False,
-                    'error': str(e),
+                    'error': f'Failed to infer columns: {infer_err}',
                     'user_id': user_id
                 })
-        return JsonResponse({'success': False, 'error': 'Invalid request method or no file uploaded'})
+
+        return JsonResponse({
+            'success': True,
+            'user_id': user_id,
+            'columns': cols,
+            'sheet_names': sheet_names,
+            'active_sheet_used': used_sheet,
+            'filename': filename,
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
+
+
+# def get_columns(request):
+#     if request.method == 'POST' and request.FILES.get('file'):
+#         user_id = request.POST.get('userID')
+#         print(f"Received user_id: {user_id}")
+
+#         if not user_id:
+#             return JsonResponse({'success': False, 'error': 'User ID not provided'})
+
+#         try:
+#             excel_file = request.FILES['file']
+#             filename = request.FILES['file'].name
+#             print(f"Received file: {filename}")
+
+#             # Create the user's uploads folder: media/ID_<user_id>_uploads/temporary_uploads
+#             user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
+#             os.makedirs(user_folder, exist_ok=True)
+
+#             # Save the ORIGINAL upload unchanged
+#             save_path = os.path.join(user_folder, filename)
+#             with open(save_path, 'wb+') as dest:
+#                 for chunk in excel_file.chunks():
+#                     dest.write(chunk)
+
+#             # Infer columns (supports CSV and Excel). We'll reassign df AFTER saving.
+#             cols = []
+#             sheet_names = []
+#             try:
+#                 ext = os.path.splitext(filename)[1].lower()
+#                 if ext == '.csv':
+#                     df = pd.read_csv(save_path, nrows=200)  # peek only
+#                     cols = list(df.columns)
+#                 else:
+#                     xls = pd.ExcelFile(save_path)
+#                     sheet_names = xls.sheet_names
+#                     df = pd.read_excel(save_path, sheet_name=sheet_names[0], nrows=200)
+#                     cols = list(df.columns)
+#             except Exception as infer_err:
+#                 # Fallback: try generic Excel read (keeps your original behavior path)
+#                 df = pd.read_excel(save_path)
+#                 cols = list(df.columns)
+#                 print(f"Inference fallback due to: {infer_err}")
+
+#             # Only process tests if selected (keeping your placeholders)
+#             matched_results = {}
+#             input_info = {}
+
+#             return JsonResponse({
+#                 'success': True,
+#                 'user_id': user_id,
+#                 'columns': cols,
+#                 'input_info': input_info,
+#                 # Clean, browser-usable URL (forward slashes)
+#                 'fileURL': os.path.join(
+#                     settings.MEDIA_URL, f"ID_{user_id}_uploads", "temporary_uploads", filename
+#                 ).replace('\\', '/'),
+#                 # Helpful for multi-tab preview in the client (Excel only; CSV -> [])
+#                 'sheet_names': sheet_names,
+#                 'filename': filename,
+#             })
+
+#         except Exception as e:
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': str(e),
+#                 'user_id': user_id
+#             })
+
+#     return JsonResponse({'success': False, 'error': 'Invalid request method or no file uploaded'})
+
 
 from django.http import HttpResponse, JsonResponse
 import os
@@ -3358,7 +3416,7 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
                     mat.iloc[i, j] = 1.0
                 else:
                     mat.iloc[i, j] = cramers_v(df[selected_columns[i]], df[selected_columns[j]])
-        print(mat) 
+        # print(mat) 
         # --- 4) Heatmap ---
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
         cmap = sns.color_palette(palette, as_cmap=True)
@@ -3652,64 +3710,72 @@ def save_plot(plt, filename, user_id):
 @csrf_exempt
 def preview_data(request):
     from django.http import JsonResponse
-    import pandas as pd
-    import os
     from django.conf import settings
-    import json
+    import pandas as pd
+    import numpy as np
+    import os
 
-    if request.method == 'GET':
-        user_id = request.headers.get('userID')
-        print(f"Received User ID: {user_id}")
-        filename = request.headers.get('filename')
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET is allowed'}, status=405)
 
-        print(f"Received filename: {filename}")
+    user_id = request.headers.get('userID')
+    filename = request.headers.get('filename')
+    # Optional: active sheet name from the client (use the one you saved in sessionStorage)
+    requested_sheet = request.headers.get('sheet')  # e.g. "Sheet1"
 
+    if not user_id:
+        return JsonResponse({'error': 'User ID not provided'}, status=400)
+    if not filename:
+        return JsonResponse({'error': 'Filename not provided'}, status=400)
 
+    folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+    file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
 
-    
-        if not user_id:
-            return JsonResponse({'error': 'User ID not provided'}, status=400)
-        # if(filetype=='preprocessing'): 
-        #     folder_name = f"ID_{user_id}_uploads/temporary_uploads/preprocessing/"
-        # elif(filetype=='survey'):
-        #     folder_name = f"ID_{user_id}_uploads/temporary_uploads/survey/"
-        # else:
-        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        print(f"Looking for folder: {folder_name}")
+    try:
+        # Read all sheets once; lets us list names and select the active one
+        # If the file is CSV, fall back to a single-sheet behavior (optional)
+        if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+            book = pd.read_excel(file_path, sheet_name=None)  # dict: {sheet_name: df}
+            if not book:
+                return JsonResponse({'success': False, 'error': 'No sheets found in workbook.'}, status=400)
 
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
-        print(f"Full file path: {file_path}") 
+            sheet_names = list(book.keys())
 
+            # Choose active sheet: requested name if exists, else first
+            active_name = requested_sheet if requested_sheet in book else sheet_names[0]
+            df = book[active_name]
+        else:
+            # Non-Excel fallback (CSV, etc.) – treat as single "Sheet1"
+            df = pd.read_csv(file_path)
+            sheet_names = ["Sheet1"]
+            active_name = "Sheet1"
 
-       
+        # ---- build preview for the chosen sheet ----
+        preview_limit = 1000
+        df_for_stats = df  # keep original types for stats
+        preview_df = df.head(preview_limit).copy()
 
-        try:
-            df = pd.read_excel(file_path)
-          
-            # df = df.where(pd.notnull(df), "")
+        # Safe JSON: convert NaN/None to empty string
+        preview_df = preview_df.where(pd.notnull(preview_df), "")
+
+        # Stats based on the full selected sheet
+        missing_values = df_for_stats.isnull().sum().to_dict()
+        num_columns = df_for_stats.select_dtypes(include=[np.number]).columns.tolist()
+
+        return JsonResponse({
+            'success': True,
+            'sheet_names': sheet_names,       # all available sheet names
+            'active_sheet': active_name,      # which one was used
+            'columns': preview_df.columns.tolist(),
+            'rows': preview_df.to_dict(orient='records'),
+            'total_rows': int(len(df_for_stats)),
+            'preview_rows': int(min(preview_limit, len(df_for_stats))),
+            'missing_values': missing_values,
+            'num_columns': num_columns,
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'}, status=500)
  
-            # Limit to first N rows for preview
-            preview_limit = 1000
-            preview_df = df.head(preview_limit).copy()
-
-            # Convert complex data types to string for safe JSON serialization
-            preview_df = preview_df.applymap(lambda x: str(x) if pd.notnull(x) else "")
-            ##show missing valuse and num columns for outliers
-            missing_values = df.isnull().sum().to_dict()
-            num_columns = df.select_dtypes(include=[np.number]).columns.tolist()
-            # print(mi)
-
-            return JsonResponse({
-                'success': True,
-                'columns': preview_df.columns.tolist(),
-                'rows': preview_df.to_dict(orient='records'),
-                'total_rows': len(df),
-                'preview_rows': preview_limit,
-                'missing_values': missing_values,
-                'num_columns': num_columns
-            })
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'})
 
 
 
@@ -3759,75 +3825,220 @@ def delete_columns_api(request):
 
 
 @csrf_exempt
-def remove_duplicates_api(request):
+# def remove_duplicates_api(request):
+#     try:
+#         # Extract headers
+#         user_id = request.headers.get('userID')
+#         filename = request.headers.get('filename')
+#         if not user_id:
+#             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+
+#         print(f"Received User ID: {user_id}")
+#         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+#         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
+#         if not os.path.exists(file_path):
+#             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+
+#         # Load Excel
+#         df = pd.read_excel(file_path)
+#         original_len = len(df)
+
+#         # Get column filter
+#         body = json.loads(request.body)
+#         columns = body.get('columns', [])
+        
+#         print(columns) 
+#         removed_info = []
+
+#         if columns:
+#             # Column-specific duplicate removal
+#             for col in columns:
+#                 if col not in df.columns:
+#                     removed_info.append({'column': col, 'error': 'Column not found'})
+#                     continue
+
+#                 dup_mask = df[col].duplicated(keep=False)
+#                 dup_indices = df.index[dup_mask].tolist()
+#                 # print(dup_indices)  
+
+#                 if dup_indices:
+#                     dup_values = df.loc[dup_indices, col].tolist()
+#                     df.drop(df[df[col].duplicated(keep='first')].index, inplace=True)
+#                     removed = original_len - len(df)
+#                     removed_info.append({
+#                         'column': col,
+#                         'duplicates_found': len(dup_indices),
+#                         'removed_rows': removed,
+#                         'duplicate_values': list(set(dup_values))
+#                     })
+#                     original_len = len(df)  # Update
+#                 else:
+#                     removed_info.append({'column': col, 'message': 'No duplicates found'})
+#                 summary_msg = "Column-wise duplicate removal complete."
+#         print(removed_info) 
+        
+
+#         # Save the modified file
+#         df.to_excel(file_path, index=False)
+
+#         return JsonResponse({
+#             'success': True,
+#             'message': summary_msg,
+#             'info': removed_info,
+#             'columns': df.columns.tolist(),
+#             'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+#             'remaining_rows': len(df)
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
+
+def find_duplicates_api(request):
     try:
-        # Extract headers
+        # --- Extract headers ---
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
 
-        print(f"Received User ID: {user_id}")
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-        # Load Excel
+        # --- Load Excel ---
         df = pd.read_excel(file_path)
-        original_len = len(df)
+        total_rows = len(df)
 
-        # Get column filter
+        # --- Get columns from request body ---
         body = json.loads(request.body)
         columns = body.get('columns', [])
         
-        print(columns) 
-        removed_info = []
+        dup_info = []
+        summary_msg = "No duplicates detected."
+        duplicate_indices = []  
 
         if columns:
-            # Column-specific duplicate removal
-            for col in columns:
-                if col not in df.columns:
-                    removed_info.append({'column': col, 'error': 'Column not found'})
-                    continue
+            existing_cols = [c for c in columns if c in df.columns]
+            missing_cols = [c for c in columns if c not in df.columns]
 
+            for col in missing_cols:
+                dup_info.append({'column': col, 'error': 'Column not found'})
+
+            if len(existing_cols) == 1:
+                col = existing_cols[0]
                 dup_mask = df[col].duplicated(keep=False)
-                dup_indices = df.index[dup_mask].tolist()
-                # print(dup_indices)  
+                dupped_rows = df[dup_mask]
 
-                if dup_indices:
-                    dup_values = df.loc[dup_indices, col].tolist()
-                    df.drop(df[df[col].duplicated(keep='first')].index, inplace=True)
-                    removed = original_len - len(df)
-                    removed_info.append({
+                if not dupped_rows.empty:
+                    duplicate_indices = dupped_rows.index.tolist()
+                    dup_info.append({
                         'column': col,
-                        'duplicates_found': len(dup_indices),
-                        'removed_rows': removed,
-                        'duplicate_values': list(set(dup_values))
+                        'duplicates_found': len(dupped_rows),
+                        'duplicate_values': dupped_rows[col].tolist()
                     })
-                    original_len = len(df)  # Update
+                    summary_msg = f"Duplicates detected in column '{col}'."
                 else:
-                    removed_info.append({'column': col, 'message': 'No duplicates found'})
-                summary_msg = "Column-wise duplicate removal complete."
-        print(removed_info) 
-        
+                    dup_info.append({'column': col, 'message': 'No duplicates found'})
 
-        # Save the modified file
-        df.to_excel(file_path, index=False)
+            elif len(existing_cols) > 1:
+                dup_mask = df.duplicated(subset=existing_cols, keep=False)
+                dupped_rows = df[dup_mask]
 
+                if not dupped_rows.empty:
+                    duplicate_indices = dupped_rows.index.tolist()
+                    dup_info.append({
+                        'columns': existing_cols,
+                        'duplicates_found': len(dupped_rows),
+                        'duplicate_combinations': dupped_rows[existing_cols].drop_duplicates().to_dict(orient="records")
+                    })
+                    summary_msg = f"Duplicates detected based on combination of columns: {existing_cols}"
+                else:
+                    dup_info.append({'columns': existing_cols, 'message': 'No duplicates found'})
+        print(dupped_rows)
         return JsonResponse({
             'success': True,
             'message': summary_msg,
-            'info': removed_info,
+            'info': dup_info,
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
-            'remaining_rows': len(df)
+            'rows': df.fillna("").astype(str).to_dict(orient='records'),  
+            'duplicate_indices': duplicate_indices,  
+            'total_rows': total_rows
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+    
+
+@csrf_exempt
+def remove_duplicates(request):
+    user_id = request.headers.get('userID') 
+    filename = request.headers.get('filename')
+    body = json.loads(request.body) 
+    columns = body.get('columns', [])
+    mode = body.get('mode')  # "all" or "selected"
+    selected_indices = body.get('selected', [])
+
+    try:
+        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
+        if not os.path.exists(file_path):
+            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+
+        # --- Load Excel ---
+        df = pd.read_excel(file_path) 
+        before = len(df)
+
+        if mode == "all":
+            # If columns not given, use all columns
+            subset = columns if len(columns) > 0 else list(df.columns)
+
+            # Validate subset exists
+            missing = [c for c in subset if c not in df.columns]
+            if missing:
+                return JsonResponse({"success": False, "error": f"Columns not found: {missing}"}, status=400)
+
+            # Keep first, drop other duplicates across the subset
+            df = df.drop_duplicates(subset=subset, keep="first").reset_index(drop=True)
+
+        elif mode == "selected":
+            # Ensure ints and in range; drop by POSITION (not labels)
+            try:
+                positions = [int(i) for i in selected_indices]
+            except (TypeError, ValueError):
+                return JsonResponse({"success": False, "error": "'selected' must be an array of integers."}, status=400)
+
+            bad = [p for p in positions if p < 0 or p >= len(df)]
+            if bad:
+                return JsonResponse({"success": False, "error": f"Selected positions out of range: {sorted(bad)}"}, status=400)
+            df = df.drop(df.index[positions]).reset_index(drop=True)
+
+        else:
+            return JsonResponse({"success": False, "error": "mode must be 'all' or 'selected'."}, status=400)
+
+        removed = before - len(df)
+        df.to_excel(file_path, index=False)
+        print(removed)
+        #print rows after deletion
+        print(df) 
+
+        return JsonResponse({
+            "success": True,
+            "message": f"{'Kept first & dropped duplicates' if mode=='all' else 'Deleted selected'}; removed {removed} row(s).",
+            "removed": removed,
+            "rows": df.fillna("").astype(str).to_dict(orient="records"),
+            "columns": df.columns.tolist(),
+        })
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
 
 @csrf_exempt
 def handle_missing_api(request):
@@ -3874,7 +4085,7 @@ def handle_missing_api(request):
                 elif method == 'fill_median' and pd.api.types.is_numeric_dtype(df[c]):
                     df[c] = df[c].fillna(df[c].median())
                 elif method == 'fill_mode':
-                    mode_val = df[c].mode(dropna=True)
+                    mode_val = df[c].mode(dropna=True) 
                     if not mode_val.empty:
                         df[c] = df[c].fillna(mode_val.iloc[0])
 

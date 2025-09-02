@@ -163,4 +163,5 @@ CORS_ALLOW_HEADERS = [
     'userid',
     'filename',
     'columns', 
+    'sheet',
 ]

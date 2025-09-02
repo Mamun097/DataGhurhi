@@ -41,9 +41,10 @@ const PreprocessDataPage = () => {
 
   const [duplicateColumns, setDuplicateColumns] = useState([]);
   const [missingSpec, setMissingSpec] = useState('');
+  const [duplicateIndices, setDuplicateIndices] = useState([]); // New state for duplicate row indices
+  const [fileURL, setFileURL] = useState('');
 
-  
-const location = useLocation();
+  const location = useLocation();
 
 
 
@@ -64,6 +65,7 @@ useEffect(() => {
     headers: {
       'userID': userId,
       'filename': filename, // Include filename in headers
+      'sheet': sessionStorage.getItem("activesheetname") || ''
     }
   })
     .then(res => {
@@ -78,13 +80,14 @@ useEffect(() => {
       setData(result.rows);
       setAvailableColumns(result.columns);
       setMissingValues(result.missing_values || {});
+      setFileURL(result.fileURL || '');
       // setNumericColumns(result.num_columns || [])
       
     })
     .catch(err => {
       console.error(" Failed to load preview data:", err.message);
     });
-}, [userId]);
+}, [userId, sessionStorage.getItem("activesheetname")]);
 useEffect(() => {
   
   if (selectedOption === 'handle_outliers' ) {
@@ -213,29 +216,29 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
               // Option 2: Remove Duplicate Rows
               else if (selectedOption === 'remove_duplicates') {
-                fetch('http://127.0.0.1:8000/api/remove-duplicates/', {
+                fetch('http://127.0.0.1:8000/api/find-duplicates/', {
                   method: 'POST',
                   headers: {
-                    'userID': userId, // Include user ID in headers
-                    'filename': filename, // Include filename in headers
+                    'userID': userId,
+                    'filename': filename,
                     'Content-Type': 'application/json',
-                    
                   },
                   body: JSON.stringify({ columns: duplicateColumns }),
-                
                 })
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
                       setColumns(result.columns);
-                      setData(result.rows);
+                      setData(result.rows); 
                       setAvailableColumns(result.columns);
-                      alert(result.message) ;
+                      setDuplicateIndices(result.duplicate_indices); 
+                      alert(result.message);
                     } else {
                       alert(result.error || "Something went wrong.");
                     }
                   });
               }
+
 
               // 3. Handle missing values
               else if (selectedOption === 'handle_missing') {
@@ -358,15 +361,6 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                       setData(result.rows);
                       setAvailableColumns(result.columns);
                       alert("Column split successful!");
-                      // fetch(`/preview-data/?_t=${Date.now()}`)
-                      //   .then((res) => res.json())
-                      //   .then((data) => {
-                      //     if (data.success) {
-                      //       setAvailableColumns(data.columns);
-                      //       setPreviewData(data.rows);
-                      //     }
-                      //   });
-
                       setSplitTargetColumn('');
                       setSplitMethod('');
                       setCustomPhraseInput('');
@@ -880,9 +874,16 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
 
-      {/* Data Preview Table */}
-      <PreviewTable columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} outlierCells={outlierCells} selectedOption={selectedOption}/>
-
+    <PreviewTable
+  workbookUrl={`${sessionStorage.getItem("fileURL")}`}            // ← the only data source
+  columns={columns}
+  duplicateIndices={duplicateIndices}
+  setData={setData}
+  setIsPreviewModalOpen={setIsPreviewModalOpen}
+  isPreviewModalOpen={isPreviewModalOpen}
+  outlierCells={outlierCells}
+  selectedOption={selectedOption}
+/>
       <div className="text-center mt-6">
         <a href="/analysis" className="text-blue-600 hover:underline">← Back to Main Page</a>
       </div>

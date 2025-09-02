@@ -19,6 +19,8 @@
     "@mui/icons-material": "^7.1.0",
     "@mui/material": "^7.1.0",
     "@supabase/supabase-js": "^2.49.1",
+    "ag-grid-community": "^34.1.2",
+    "ag-grid-react": "^34.1.2",
     "axios": "^1.8.2",
     "bootstrap": "^5.3.6",
     "bootstrap-icons": "^1.11.3",
