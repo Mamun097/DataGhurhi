@@ -1,0 +1,31 @@
+/* Excel-like borders */
+.ag-theme-alpine.custom-grid .ag-cell {
+  border-right: 1px solid #dcdcdc !important;
+  border-bottom: 1px solid #dcdcdc !important;
+}
+
+.ag-theme-alpine.custom-grid .ag-header-cell {
+  border-right: 1px solid #bfbfbf !important;
+}
+
+/* Highlight selected cell */
+.ag-theme-alpine.custom-grid .ag-cell.ag-cell-focus {
+  border: 2px solid #0078d4 !important;
+}
+
+/* Editable header look */
+.ag-theme-alpine .editable-header {
+  cursor: text;
+}
+.ag-theme-alpine .custom-header {
+  background-color: #312f55; 
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+.ag-row-number-cell {
+  text-align: center;
+  font-weight: bold;
+  background-color: #f9f9f9;
+  border-right: 1px solid #ccc;
+}

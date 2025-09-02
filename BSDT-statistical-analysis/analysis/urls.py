@@ -5,11 +5,13 @@ from . import views
 
 urlpatterns = [
     path('', views.analyze_data_api, name='analyze'),
+    path('api/upload-file/', csrf_exempt(views.upload_file), name='api_upload_file'),
     path('api/get-columns/', csrf_exempt(views.get_columns), name='api_get_columns'),
     path('api/analyze/', csrf_exempt(views.analyze_data_api), name='api_analyze'),
-    path('api/preview-data/', views.preview_data, name='preview_data'),
+    path('api/preview-data/', views.preview_data, name='preview_data'), 
     path('api/delete-columns/', views.delete_columns_api, name='delete_columns_api'),
-    path('api/remove-duplicates/', views.remove_duplicates_api, name='remove_duplicates_api'),
+    path('api/find-duplicates/', views.find_duplicates_api, name='find_duplicates_api'),
+    path('api/remove-duplicates/', views.remove_duplicates, name='remove_duplicates_api'),
     path('api/handle-missing/', views.handle_missing_api, name='handle_missing_api'),
     path('api/outliers-summary/', views.outliers_summary_api, name='outliers_summary_api'), 
     path('api/handle-outliers/', views.handle_outliers_api, name='handle_outliers_api'),
