@@ -190,7 +190,7 @@ const PreviewTable = ({
     cancelled = true;
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [workbookFile, workbookUrl, multiSheetData, initialData, columns, defaultSheetName]);
+}, [workbookFile, workbookUrl, multiSheetData, columns, defaultSheetName]);
   // Outlier map
   const outlierCellMap = useMemo(() => {
     const map = {};
@@ -444,27 +444,27 @@ const PreviewTable = ({
         {/* AG Grid Table */}
         <div className="ag-theme-alpine" style={{ height: "70vh", width: "100%" }}>
           <AgGridReact
-  rowData={activeSheet?.data || []}
-  columnDefs={columnDefs}
-  rowSelection={selectedOption === "remove_duplicates" ? "multiple" : undefined}
-  getRowSelectable={(params) => params.node.rowIndex >= HEADER_ROWS}
-  onSelectionChanged={(params) => {
-    const dfPositions = params.api
-      .getSelectedNodes()
-      .map((n) => n.rowIndex - HEADER_ROWS) // grid index -> DF index
-      .filter((i) => i >= 0);
-    setSelectedDuplicates(dfPositions);
-  }}
-  animateRows={true}
-  onGridReady={onGridReady}
-  onCellValueChanged={onCellValueChanged}
-  defaultColDef={{
-    flex: 1,
-    minWidth: 80,
-    editable: true,
-    resizable: true,
-    sortable: true,
-    filter: true,
+          rowData={activeSheet?.data || []}
+          columnDefs={columnDefs}
+          rowSelection={selectedOption === "remove_duplicates" ? "multiple" : undefined}
+          getRowSelectable={(params) => params.node.rowIndex >= HEADER_ROWS}
+          onSelectionChanged={(params) => {
+            const dfPositions = params.api
+              .getSelectedNodes()
+              .map((n) => n.rowIndex - HEADER_ROWS) // grid index -> DF index
+              .filter((i) => i >= 0);
+            setSelectedDuplicates(dfPositions);
+          }}
+          animateRows={true}
+          onGridReady={onGridReady}
+          onCellValueChanged={onCellValueChanged}
+          defaultColDef={{
+            flex: 1,
+            minWidth: 80,
+            editable: true,
+            resizable: true,
+            sortable: true,
+            filter: true,
   }}
   suppressCopySingleCellRanges={false}
 />

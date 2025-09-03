@@ -309,7 +309,7 @@ const StatisticalAnalysisTool = () => {
     const uploadContainerRef = useRef(null);
     useEffect(() => {
         
-
+if (uploadStatus === "success") return;
     let filename =  '';
     if(isPreprocessed ) {
         filename = "preprocessed_"+sessionStorage.getItem("file_name") || '';
@@ -374,7 +374,7 @@ const StatisticalAnalysisTool = () => {
                 setUploadStatus("error");
             });
     }
-}, [isPreprocessed, isSurveyData]);
+}, []);
 useEffect(() => {
     //check columns state
     if (columns.length > 0) {
@@ -527,6 +527,7 @@ useEffect(() => {
 
 useEffect(() => {
   const storedSheetName = sessionStorage.getItem("activesheetname");
+  if(storedSheetName && fileName && userId){
   console.log("Active sheet name from sessionStorage:", storedSheetName);
    const formData = new FormData();
             formData.append('filename', fileName);
@@ -554,9 +555,9 @@ useEffect(() => {
                 .catch(error => {
                     console.error("Error:", error);
                 });
-
             }
-);
+
+},[fileName]);
 
     const handleSubmit = (e) => {
     e.preventDefault();
@@ -783,7 +784,8 @@ useEffect(() => {
         }
         sessionStorage.removeItem("file_name");
         sessionStorage.removeItem("fileURL");
-        
+        sessionStorage.removeItem("activesheetname");
+
     };
 
     // Get required fields based on test type

@@ -38,7 +38,7 @@ except ImportError:
     load_workbook = None
 
 
-# --- keep these as-is (from your snippet) ------------------------------------
+
 def save_uploaded_file(user_id: str, django_file) -> dict:
     filename = django_file.name
     user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
@@ -112,10 +112,7 @@ def infer_columns_from_file(save_path: str, filename: str, active_sheet_name: st
     cols = list(df.columns)
 
     return cols, sheet_names, used_sheet
-# -----------------------------------------------------------------------------
 
-
-# 1) Upload-only API: returns file info (no column inference)
 @csrf_exempt
 def upload_file(request):
     
@@ -142,13 +139,12 @@ def upload_file(request):
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
 
 
-# 2) Column-inference API: takes the saved file path (or filename) and returns columns/sheets
 @csrf_exempt
 def get_columns(request):
     
     user_id = request.POST.get('userID')
     filename = request.POST.get('filename')
-    active_sheet_name = request.POST.get('activeSheet')  # optional
+    active_sheet_name = request.POST.get('activeSheet')  
 
     user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
     save_path = os.path.join(user_folder, filename)
@@ -275,6 +271,7 @@ def analyze_data_api(request):
         try:
             user_id = request.POST.get('userID')
             filename = request.POST.get('file_name')
+            sheet_name= request.POST.get('sheet_name')
             # print(f"Received filename: {filename}")
 
                       
@@ -289,7 +286,33 @@ def analyze_data_api(request):
             if not os.path.exists(file_path):
                 return JsonResponse({'success': False, 'error': 'No uploaded file found for this user'}, status=404)
 
-            df = pd.read_excel(file_path)
+            lower = filename.lower()
+            if lower.endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+
+                try:
+                    xls = pd.ExcelFile(file_path)
+                    sheet_names = xls.sheet_names
+                except Exception as e:
+                    return JsonResponse({'success': False, 'error': f'Failed to read workbook: {e}'}, status=400)
+
+                if sheet_name:
+                    # Validate requested sheet
+                    if sheet_name not in sheet_names:
+                        return JsonResponse({
+                            'success': False,
+                            'error': f"Requested sheet '{sheet_name}' not found. Available: {sheet_names}"
+                        }, status=400)
+                    df = pd.read_excel(xls, sheet_name=sheet_name)
+                    active_sheet = sheet_name
+                else:
+                    # Fallback to the first sheet
+                    df = pd.read_excel(xls, sheet_name=sheet_names[0] if sheet_names else 0)
+                    active_sheet = sheet_names[0] if sheet_names else 'Sheet1'
+            else:
+                # Non-Excel (e.g., CSV) -> treat as a single sheet
+                df = pd.read_csv(file_path)
+                active_sheet = 'Sheet1'
+            
             # if df.empty:
             #     return JsonResponse({'success': False, 'error': 'The uploaded file is empty'}, status=400)
             # print(f"DataFrame loaded with {len(df)} rows and {len(df.columns)} columns")
@@ -464,6 +487,7 @@ def analyze_data_api(request):
             return render(request, 'analysis/results.html', {
                 'results': results,
                 'columns': [col1, col2, col3] if col3 else [col1, col2],
+                'active_sheet': active_sheet,
                 'media_url': settings.MEDIA_URL,
                 'plot_path': plot_path,
                 'test_type': test_type
