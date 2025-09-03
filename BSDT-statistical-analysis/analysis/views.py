@@ -141,39 +141,25 @@ def upload_file(request):
 
 @csrf_exempt
 def get_columns(request):
-    
     user_id = request.POST.get('userID')
     filename = request.POST.get('filename')
-    active_sheet_name = request.POST.get('activeSheet')  
+    active_sheet_name = request.POST.get('activeSheet')
+
+    if not user_id or not filename:
+        return JsonResponse({'success': False, 'error': 'User ID and filename are required.'})
 
     user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
     save_path = os.path.join(user_folder, filename)
 
-    if not user_id:
-        return JsonResponse({'success': False, 'error': 'User ID not provided'})
-    if not save_path or not filename:
-        return JsonResponse({'success': False, 'error': 'savePath and filename are required', 'user_id': user_id})
+    if not os.path.exists(save_path):
+        return JsonResponse({'success': False, 'error': f'File not found at path: {save_path}'})
 
     try:
-        try:
-            cols, sheet_names, used_sheet = infer_columns_from_file(
-                save_path=save_path,
-                filename=filename,
-                active_sheet_name=active_sheet_name
-            )
-        except Exception as infer_err:
-            try:
-                df = pd.read_excel(save_path, nrows=200)
-                cols = list(df.columns)
-                sheet_names = []
-                used_sheet = None
-            except Exception:
-                return JsonResponse({
-                    'success': False,
-                    'error': f'Failed to infer columns: {infer_err}',
-                    'user_id': user_id
-                })
-
+        cols, sheet_names, used_sheet = infer_columns_from_file(
+            save_path=save_path,
+            filename=filename,
+            active_sheet_name=active_sheet_name
+        )
         return JsonResponse({
             'success': True,
             'user_id': user_id,
@@ -182,10 +168,14 @@ def get_columns(request):
             'active_sheet_used': used_sheet,
             'filename': filename,
         })
-
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
-
+        # This will catch any failure from infer_columns_from_file or file reading
+        # and report it directly.
+        return JsonResponse({
+            'success': False, 
+            'error': f'Failed to process file. Error: {str(e)}', 
+            'user_id': user_id
+        })
 
 # def get_columns(request):
 #     if request.method == 'POST' and request.FILES.get('file'):
