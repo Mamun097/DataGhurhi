@@ -309,7 +309,7 @@ const StatisticalAnalysisTool = () => {
     const uploadContainerRef = useRef(null);
     useEffect(() => {
         
-if (uploadStatus === "success") return;
+
     let filename =  '';
     if(isPreprocessed ) {
         filename = "preprocessed_"+sessionStorage.getItem("file_name") || '';
@@ -527,7 +527,7 @@ useEffect(() => {
 
 useEffect(() => {
   const storedSheetName = sessionStorage.getItem("activesheetname");
-  if(storedSheetName && fileName && userId){
+  if( fileName && userId){
   console.log("Active sheet name from sessionStorage:", storedSheetName);
    const formData = new FormData();
             formData.append('filename', fileName);
