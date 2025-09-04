@@ -547,6 +547,7 @@ useEffect(() => {
                         console.log(testType);
                         // Process the returned column information
                        setColumns(data.columns || []);
+                       setColumn1(data.columns[0])
                        
                     } else {
                         console.error("Error fetching columns:", data.error);
@@ -621,7 +622,7 @@ useEffect(() => {
             formData.append('column2', column2);
         }
 
-    if ((testType === 'pearson' || testType === 'spearman') && isHeatmap4x4) {
+    if ((testType === 'pearson' || testType === 'spearman' ) && isHeatmap4x4) {
         if (column3 && column4) {
             formData.append('column3', column3);
             formData.append('column4', column4);
@@ -730,11 +731,13 @@ useEffect(() => {
 
             }
 
-            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap'].includes(testType)) {
+            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap','network_graph'].includes(testType)) {
                 formData.append('heatmapSize', heatmapSize);
+                
                 selectedColumns.forEach((col, idx) => {
                     formData.append(`column${idx + 1}`, col);
                 });
+
             }
         }
 
@@ -796,6 +799,7 @@ useEffect(() => {
             case 'ancova':
                 return { col2: true, col3: true, refValue: false, heatmapSize: false };
             case 'cross_tabulation': 
+            case 'network_graph':
             case 'cramers_heatmap':   
             case 'spearman':
             case 'pearson':
@@ -816,8 +820,7 @@ useEffect(() => {
                 return { col2: true, col3: false, refValue: false, heatmapSize: false };
             case 'eda_pie':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
-            case 'network_graph':
-                return { col1: false, col2: false, col3: false, refValue: false, heatmapSize: false }; 
+             
             case 'eda_basics':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'similarity':
@@ -1139,7 +1142,7 @@ const handleSuggestionClick = () => {
                                                 </div>
                                             </div>
                                 
-                                            {(testType === 'pearson' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'cramers_heatmap') && (
+                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'cramers_heatmap') && (
                                                 <div className="mb-6">
                                                     {/* <label className="block text-gray-700 font-medium mb-2">
                                                         {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
@@ -1151,6 +1154,7 @@ const handleSuggestionClick = () => {
                                                         <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
                                                         <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px] flex flex-wrap gap-2">
                                                             {selectedColumns.length > 0 ? (
+                                            
                                                                 selectedColumns.map((col, idx) => (
                                                                         <div key={idx} className="tag-chip">
                                                                             <span>{col}</span>
@@ -1163,6 +1167,8 @@ const handleSuggestionClick = () => {
                                                                             </button>
                                                                         </div>
                                                                     ))
+
+                    
                                                             
                                                             ) : (
                                                                 <p className="text-gray-400">No columns selected yet</p>
@@ -1906,7 +1912,7 @@ const handleSuggestionClick = () => {
                                             <div className="text-center mt-6">
                                                 <button
                                                     type="submit"
-                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow transitiozn duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
                                                     disabled={isAnalyzing || !file || !column1 || (requiredFields.col2 && !column2) || (requiredFields.col3 && !column3)}
                                                 >
                                                     {isAnalyzing ? (
