@@ -17,8 +17,6 @@ const SurveyQuestions = ({
   section,
   questions,
   setQuestions,
-  // newQuestion,
-  // setNewQuestion,
   addNewQuestion,
   addGeneratedQuestion,
   addImportedQuestion,
@@ -26,9 +24,7 @@ const SurveyQuestions = ({
   setLanguage,
   getLabel,
 }) => {
-  // Insert Question related state management here
   const [insertQuestionIndex, setInsertQuestionIndex] = useState(null);
-  // Function to handle click on the "Insert Question" button
   const handleInsertQuestionClick = (index) => {
     if (insertQuestionIndex === index) {
       setInsertQuestionIndex(null);
@@ -56,28 +52,18 @@ const SurveyQuestions = ({
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
-
-    const reordered = Array.from(sectionQuestions);
-    const [removed] = reordered.splice(result.source.index, 1);
-    reordered.splice(result.destination.index, 0, removed);
-
-    const updatedSectionQuestions = reordered.map((q, idx) => ({
+    const sectionQuestions = questions.filter((q) => q.section === section.id);
+    const [movedQuestion] = sectionQuestions.splice(result.source.index, 1);
+    sectionQuestions.splice(result.destination.index, 0, movedQuestion);
+    const otherQuestions = questions.filter((q) => q.section !== section.id);
+    const combinedQuestions = [...otherQuestions, ...sectionQuestions];
+    combinedQuestions.sort((a, b) => a.section - b.section);
+    const reindexedQuestions = combinedQuestions.map((q, idx) => ({
       ...q,
       id: idx + 1,
     }));
 
-    const newQuestions = questions
-      .filter((q) => q.section !== section.id)
-      .concat(updatedSectionQuestions);
-
-    newQuestions.sort((a, b) => {
-      if (a.section === b.section) {
-        return a.id - b.id;
-      }
-      return a.section - b.section;
-    });
-
-    setQuestions(newQuestions);
+    setQuestions(reindexedQuestions);
   };
 
   const renderQuestionComponent = (question, index) => {

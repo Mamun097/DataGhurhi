@@ -212,7 +212,7 @@ const SurveyForm = ({
   );
 
   const getLabel = (text) => translatedLabels[text] || text;
-
+  console.log(questions);
   useEffect(() => {
     setLogo(logoFromParent || null);
     setCurrentBackgroundImage(imageFromParent || "");
