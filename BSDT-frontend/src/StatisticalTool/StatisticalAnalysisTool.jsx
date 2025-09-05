@@ -11,6 +11,7 @@ import CrossTabulationOptions from './CrossTabulationOptions';
 import EDABasicsOptions from './EDABasicsOptions';
 import EDADistributionsOptions from './EDADistributionsOptions';
 import EDAPieChartOptions from './EDAPieChartOptions';
+import BarChartOptions from './BarChartOptions';
 import EDASwarmOptions from './EDASwarmOptions';
 import FZTOptions from './FZTOptions';
 import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
@@ -56,6 +57,7 @@ const translations = {
             eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
             eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
             eda_pie: "Pie Chart – For Categorical Column",
+            bar_chart: "Bar Chart – Horizontal or Vertical",
             similarity: "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
             pearson: "Pearson Correlation",
             spearman: "Spearman Rank Correlation",
@@ -85,6 +87,7 @@ const translations = {
             eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
             eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
             eda_pie: "Pie Chart – For Categorical Column",
+            bar_chart: "Bar Chart – Visualize categorical data frequencies as horizontal or vertical bars.", 
             similarity: "Measures how similar or different two numeric columns are using statistical and geometric metrics.",
             pearson: "Measures the strength and direction of the linear relationship between two continuous variables.",
             spearman: "A non-parametric test that assesses how well the relationship between two variables can be described using a monotonic function.",
@@ -171,6 +174,7 @@ const translations = {
             eda_distribution: "বিতরণ প্লট – হিস্টোগ্রাম + KDE (সংখ্যাগত)",
             eda_swarm: "স্বর্ম প্লট – শ্রেণিবিন্যাস বনাম সংখ্যাগত কলাম",
             eda_pie: "পাই চার্ট – শ্রেণিবিন্যাস কলামের জন্য",
+            bar_chart: "বার চার্ট – অনুভূমিক বা উল্লম্ব",
             similarity: "সাদৃশ্য ও দূরত্ব – কসাইন, ইউক্লিডীয়, পিয়ার্সন ইত্যাদি",
             pearson: "পিয়ারসন করেলেশন",
             spearman: "স্পিয়ারম্যান র‍্যাঙ্ক করেলেশন",
@@ -199,6 +203,7 @@ const translations = {
             eda_distribution: "বিতরণ প্লট – হিস্টোগ্রাম + KDE (সংখ্যাগত)",
             eda_swarm: "স্বর্ম প্লট – শ্রেণিবিন্যাস বনাম সংখ্যাগত কলাম",
             eda_pie: "পাই চার্ট – শ্রেণিবিন্যাস কলামের জন্য",
+            bar_chart: "বার চার্ট – শ্রেণিবিন্যাস ডেটার ফ্রিকোয়েন্সি অনুভূমিক বা উল্লম্ব বারে প্রদর্শন করে।",
             similarity: "দুইটি সংখ্যাগত কলামের মধ্যে সাদৃশ্য বা পার্থক্য পরিমাপ করে পরিসংখ্যানিক ও জ্যামিতিক পদ্ধতিতে।",
             pearson: "দুইটি ধারাবাহিক ভেরিয়েবলের মধ্যে রৈখিক সম্পর্কের শক্তি ও দিক পরিমাপ করে।",
             spearman: "দুইটি ভেরিয়েবলের মধ্যে একঘাত সম্পর্ক আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
@@ -417,6 +422,8 @@ useEffect(() => {
     const [violinWidth, setViolinWidth] = useState(0.8);
     const [detailsModalVisible, setDetailsModalVisible] = useState(false);
     //
+    const [histogramBins, setHistogramBins] = useState(30);
+    const [barColor, setBarColor] = useState('steelblue');
     const [legendFontSize, setLegendFontSize] = useState(16);
     const [lineColor, setLineColor] = useState('red');
     const [lineStyle, setLineStyle] = useState('solid');
@@ -459,6 +466,8 @@ useEffect(() => {
     const [useMatrix, setUseMatrix] = useState(false);
     const [matrixFile, setMatrixFile] = useState(null);
 
+    const [barChartType, setBarChartType] = useState("vertical");
+
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -475,6 +484,7 @@ useEffect(() => {
     'eda_distribution',
     'eda_swarm',
     'eda_pie',
+    'bar_chart',
     'similarity',
     ];
     
@@ -620,6 +630,10 @@ useEffect(() => {
         }else if (testType === 'network_graph') {
      
         }
+        else if (testType === 'bar_chart') {  // New Code for Bar Chart
+            formData.append('column1', column1);       //  Only one column
+            formData.append('orientation', barChartType); //  Vertical / Horizontal choice            
+        }
         else {
             formData.append('column1', column1);
             formData.append('column2', column2);
@@ -637,7 +651,7 @@ useEffect(() => {
     }
     //
 
-    if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'eda_pie', 'eda_basics', 'chi_square', 'cramers_heatmap', 'cross_tabulation','network_graph'].includes(testType)) {
+    if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm',  'bar_chart', 'eda_pie', 'eda_basics', 'chi_square', 'cramers_heatmap', 'cross_tabulation','network_graph'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -731,6 +745,9 @@ useEffect(() => {
                 if (testType === 'eda_swarm') {
                     formData.append('swarm_color', swarmColor);
                 }
+                if (testType === 'bar_chart') {
+                    formData.append('orientation', barChartType); // "vertical" | "horizontal"
+                }
 
             }
 
@@ -823,7 +840,8 @@ useEffect(() => {
                 return { col2: true, col3: false, refValue: false, heatmapSize: false };
             case 'eda_pie':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
-             
+            case 'bar_chart': // New Code for Bar Chart
+                return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'eda_basics':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'similarity':
@@ -1084,6 +1102,7 @@ const handleSuggestionClick = () => {
                                                             <option value="eda_distribution">{t.tests.eda_distribution}</option>
                                                             <option value="eda_swarm">{t.tests.eda_swarm}</option>
                                                             <option value="eda_pie">{t.tests.eda_pie}</option>
+                                                             <option value="bar_chart">{t.tests.bar_chart}</option>
                                                             <option value="similarity">{t.tests.similarity}</option>
                                                         </optgroup>
                                                         <optgroup label={t.testGroups.nonParametric}>
@@ -1149,6 +1168,21 @@ const handleSuggestionClick = () => {
 
                                                 </div>
                                             </div>
+                                                    {testType === "bar_chart" && (
+                                                <div className="mb-4">
+                                                    <label className="block mb-2 font-medium">
+                                                        {language === 'bn' ? 'বার চার্ট টাইপ নির্বাচন করুন:' : 'Select bar chart type:'}
+                                                    </label>
+                                                    <select
+                                                        value={barChartType}
+                                                        onChange={(e) => setBarChartType(e.target.value)}
+                                                        className="border rounded-md p-2 w-full"
+                                                    >
+                                                        <option value="vertical">{language === 'bn' ? 'উল্লম্ব (Vertical)' : 'Vertical'}</option>
+                                                        <option value="horizontal">{language === 'bn' ? 'অনুভূমিক (Horizontal)' : 'Horizontal'}</option>
+                                                    </select>
+                                                </div>
+                                            )}
                                 
                                             {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'cramers_heatmap') && (
                                                 <div className="mb-6">
@@ -1759,6 +1793,29 @@ const handleSuggestionClick = () => {
                                                         t={t}
                                                     />
                                                 )}
+                                                {testType === 'bar_chart' && (
+                                                    <BarChartOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        barColor={barColor}
+                                                        setBarColor={setBarColor}
+                                                        barChartType={barChartType}
+                                                        setBarChartType={setBarChartType}
+                                                        t={t}
+                                                    />
+                                                )}
 
                                                 {testType === 'eda_basics' && (
                                                     <EDABasicsOptions
@@ -2027,6 +2084,8 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
         return renderCramerVResults();
         }else if (testType === 'network_graph') {
         return renderNetworkGraphResults();
+        } else if (testType === 'bar_chart') {
+        return renderBarChartResults();
         }
 
         switch (testType) {
@@ -4093,6 +4152,54 @@ const renderFZTResults = () => {
                                 </svg>
                                 {language === 'bn' ? 'ডাউনলোড' : 'Download'}
                             </button>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+const [barChartType, setBarChartType] = useState("vertical");
+
+    const renderBarChartResults = () => {
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'বার চার্ট' : 'Bar Chart'}
+                </h2>
+
+                {columns && columns[0] && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Column analyzed:'}</strong> {columns[0]}
+                    </p>
+                )}
+
+                <p className="mb-2">
+                    <strong>{language === 'bn' ? 'বার চার্ট টাইপ:' : 'Bar chart type:'}</strong>{" "}
+                    {barChartType === "vertical"
+                        ? (language === 'bn' ? 'উল্লম্ব' : 'Vertical')
+                        : (language === 'bn' ? 'অনুভূমিক' : 'Horizontal')}
+                </p>
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.0.1:8000${path}`}
+                                        alt={`Bar chart visualization ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
