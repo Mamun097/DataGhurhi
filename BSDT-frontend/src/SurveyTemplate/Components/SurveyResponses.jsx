@@ -1,19 +1,22 @@
-import React, { use, useEffect, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
 import axios from "axios";
-import { Pie, Bar } from "react-chartjs-2";
-import ChartDataLabels from "chartjs-plugin-datalabels";
+import "bootstrap/dist/css/bootstrap.min.css";
 import {
-  Chart as ChartJS,
   ArcElement,
-  Tooltip,
-  Legend,
   BarElement,
   CategoryScale,
+  Chart as ChartJS,
+  Legend,
   LinearScale,
+  Tooltip,
 } from "chart.js/auto";
-import { Copy } from "lucide-react";
+import ChartDataLabels from "chartjs-plugin-datalabels";
+import jsPDF from "jspdf";
+import { useEffect, useRef, useState } from "react";
+import { Bar, Pie } from "react-chartjs-2";
+import { useLocation, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
+import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
+import apiClient from "../../api";
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -23,10 +26,6 @@ ChartJS.register(
   LinearScale,
   ChartDataLabels
 );
-import "chart.js/auto";
-import "bootstrap/dist/css/bootstrap.min.css";
-import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
-import apiClient from "../../api";
 
 // Translation setup
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -57,6 +56,9 @@ const parseCSV = (csvText) => {
     );
   return { headers, rows };
 };
+
+
+
 
 const SurveyResponses = () => {
   const { survey_id } = useParams();
@@ -146,115 +148,297 @@ const SurveyResponses = () => {
     return counts;
   };
 
-  const renderSummaryCharts = () => {
-    return responses.headers.map((header, index) => {
-      const counts = countResponses(index);
-      const labels = Object.keys(counts);
-      const values = Object.values(counts);
+  function SummaryCharts({ responses, countResponses }) {
+  const [titles, setTitles] = useState(() =>
+    responses.headers.map((h) => ({ caption: h, x: "Options", y: "Count" }))
+  );
 
-      // Decide chart type
-      const optionCount = labels.length;
-      let chartType = null;
+  const chartRefs = useRef({});
 
-      if (optionCount === 0) chartType = "ignore";
-      else if (optionCount <= 2) chartType = "pie";
-      else if (optionCount <= 10) chartType = "bar";
-      else chartType = "ignore";
+  const handleTitleChange = (i, field, value) => {
+    setTitles((prev) => {
+      const copy = [...prev];
+      copy[i] = { ...copy[i], [field]: value };
+      return copy;
+    });
+  };
 
-      if (chartType === "ignore") return null;
+  const safeFileName = (s) =>
+  (s || "chart").replace(/[<>:"/\\|?*\x00-\x1F]+/g, "_").slice(0, 80);
 
-      const chartData = {
-        labels,
-        datasets: [
-          {
-            data: values,
-            backgroundColor: [
-              "#FF6384",
-              "#36A2EB",
-              "#FFCE56",
-              "#4BC0C0",
-              "#9966FF",
-              "#FF9F40",
-            ],
-            borderColor: "black",
-            borderWidth: 2,
-          },
-        ],
-      };
+  const downloadChartPDF = (i, captionText) => {
+    const chart = chartRefs.current[i];
+    if (!chart) return;
 
-      const chartOptions = {
-        plugins: {
-          datalabels: {
-            color: "black",
-            font: { weight: "bold", size: 14 },
-            formatter: (value, context) => {
-              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return percentage + "%";
+    const canvas = chart.canvas || chart.ctx?.canvas;
+    if (!canvas) return;
+
+    const imgData = canvas.toDataURL("image/png");
+    const title = captionText || "Chart";
+
+    const landscape = canvas.width >= canvas.height;
+    const pdf = new jsPDF({
+      orientation: landscape ? "landscape" : "portrait",
+      unit: "pt",
+      format: "a4",
+    });
+
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+
+    const margin = 28;
+    const maxW = pageW - margin * 2;
+    const maxH = pageH - margin * 2;
+
+    // Paint white background
+    pdf.setFillColor(255, 255, 255);
+    pdf.rect(0, 0, pageW, pageH, "F");
+
+    
+    const canvasRatio = canvas.width / canvas.height;
+    const areaRatio = maxW / maxH;
+
+    let drawW, drawH;
+    if (canvasRatio > areaRatio) {
+      drawW = maxW;
+      drawH = maxW / canvasRatio;
+    } else {
+      drawH = maxH;
+      drawW = maxH * canvasRatio;
+    }
+
+    const x = (pageW - drawW) / 2;
+    const y = (pageH - drawH) / 2;
+
+    
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(16);
+    pdf.setTextColor(0, 0, 0);
+
+    const wrapped = pdf.splitTextToSize(title, maxW);
+    const lineHeight = 18;
+    const titleHeight = wrapped.length * lineHeight;
+
+    const captionY = y - 12;
+    const adjustedY = captionY - titleHeight; 
+
+    pdf.text(wrapped, pageW / 2, adjustedY, { align: "center" });
+
+    
+    pdf.addImage(imgData, "PNG", x, y, drawW, drawH, undefined, "FAST");
+
+    pdf.save(`${safeFileName(title)}.pdf`);
+  };
+
+  const [xLabelsState, setXLabelsState] = useState(
+    () => responses.headers.map(() => null)
+  );
+
+
+  const handleXLabelEdit = (chartIdx, labelIdx, nextValue, baseLabels) => {
+    setXLabelsState((prev) => {
+      const copy = [...prev];
+      const current = Array.isArray(copy[chartIdx]) && copy[chartIdx].length === baseLabels.length
+        ? [...copy[chartIdx]]
+        : [...baseLabels];
+      current[labelIdx] = nextValue;
+      copy[chartIdx] = current;
+      return copy;
+    });
+  };
+
+
+
+  return (
+    <>
+      {responses.headers.map((header, index) => {
+        const counts = countResponses(index);
+        const labels = Object.keys(counts);
+        const values = Object.values(counts);
+
+        const displayLabelsForBar = Array.isArray(xLabelsState[index]) && xLabelsState[index].length === labels.length ? xLabelsState[index] : labels;
+
+        const optionCount = labels.length;
+        let chartType = null;
+        if (optionCount === 0) chartType = "ignore";
+        else if (optionCount <= 2) chartType = "pie";
+        else if (optionCount <= 10) chartType = "bar";
+        else chartType = "ignore";
+        if (chartType === "ignore") return null;
+
+        const chartData = {
+          labels,
+          datasets: [
+            {
+              data: values,
+              backgroundColor: ["#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40"],
+              borderColor: "black",
+              borderWidth: 2,
             },
+          ],
+        };
+
+        const chartOptions = {
+          plugins: {
+            datalabels: {
+              color: "black",
+              font: { weight: "bold", size: 14 },
+              formatter: (value, context) => {
+                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                const percentage = ((value / total) * 100).toFixed(1);
+                return percentage + "%";
+              },
+            },
+            legend: { position: "bottom" },
           },
-          legend: { position: "bottom" },
-        },
-        maintainAspectRatio: false,
-        responsive: true,
-      };
+          maintainAspectRatio: false,
+          responsive: true,
+        };
 
-      return (
-        <div key={index} className="mb-4 d-flex justify-content-center">
-          <div className="col-12 col-lg-6">
-            <div className="border border-dark rounded shadow p-4 bg-white h-100">
-              {/* Caption/Header */}
-              <h6 className="text-center mb-4">{header}</h6>
+        const maxValue = Math.max(...values, 0);
+        const suggestedMax = maxValue === 0 ? 1 : Math.ceil(maxValue * 1.15);
 
-              {/* Chart Container */}
-              <div
-                className="d-flex justify-content-center align-items-center"
-                style={{ height: "320px" }}
-              >
-                {chartType === "pie" ? (
-                  <Pie
-                    id={`chart-${index}`}
-                    data={chartData}
-                    options={chartOptions}
-                  />
-                ) : (
-                  <div style={{ width: "90%", height: "100%" }}>
-                    <Bar
-                      id={`chart-${index}`}
-                      data={{
-                        ...chartData,
-                        datasets: [
-                          {
-                            ...chartData.datasets[0],
-                            backgroundColor: "#36A2EB",
-                          },
-                        ],
-                      }}
-                      options={{
-                        ...chartOptions,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          ...chartOptions.plugins,
-                          legend: { display: false },
-                          datalabels: {
-                            anchor: "end",
-                            align: "end",
-                            color: "black",
-                            font: { weight: "bold", size: 12 },
-                            formatter: (value) => value,
-                          },
-                        },
-                      }}
-                    />
+        
+        const captionText = titles[index]?.caption ?? header;
+        const xTitle = titles[index]?.x ?? "Options";
+        const yTitle = titles[index]?.y ?? "Count";
+
+        return (
+          <div key={index} className="mb-4 d-flex justify-content-center">
+            <div className="col-12 col-lg-8">
+              <div className="border border-dark rounded shadow p-4 bg-white h-100">
+
+                {/* Editable controls */}
+                <div className="mb-3">
+                  <div className="row g-2">
+                    <div className="col-12 col-md-4">
+                      <label className="form-label small mb-1">Caption</label>
+                      <input
+                        className="form-control form-control-sm"
+                        value={captionText}
+                        onChange={(e) => handleTitleChange(index, "caption", e.target.value)}
+                        placeholder="Chart caption"
+                      />
+                    </div>
+
+                    {/*X/Y axis titles*/}
+                    {chartType === "bar" && (
+                      <>
+                        <div className="col-6 col-md-4">
+                          <label className="form-label small mb-1">X-axis title</label>
+                          <input
+                            className="form-control form-control-sm"
+                            value={xTitle}
+                            onChange={(e) => handleTitleChange(index, "x", e.target.value)}
+                            placeholder="e.g., Options"
+                          />
+                        </div>
+                        <div className="col-6 col-md-4">
+                          <label className="form-label small mb-1">Y-axis title</label>
+                          <input
+                            className="form-control form-control-sm"
+                            value={yTitle}
+                            onChange={(e) => handleTitleChange(index, "y", e.target.value)}
+                            placeholder="e.g., Count"
+                          />
+                        </div>
+
+                        {/* Editable x-axis category labels */}
+                        <div className="col-12 mt-2">
+                          <label className="form-label small mb-2">Edit option labels (x-axis)</label>
+                          <div className="row g-2">
+                            {labels.map((lbl, li) => {
+                              const current =
+                                Array.isArray(xLabelsState[index]) && xLabelsState[index].length === labels.length
+                                  ? xLabelsState[index][li]
+                                  : lbl;
+
+                              return (
+                                <div className="col-12 col-md-6 col-lg-4" key={li}>
+                                  <input
+                                    className="form-control form-control-sm"
+                                    value={current ?? ""}
+                                    onChange={(e) => handleXLabelEdit(index, li, e.target.value, labels)}
+                                    placeholder={`Label ${li + 1}`}
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
-                )}
+                </div>
+
+                <div className="d-flex justify-content-start mb-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary btn-sm"
+                    onClick={() => downloadChartPDF(index, captionText)}
+                    title="Download this chart as PDF"
+                  >
+                    Download PDF
+                  </button>
+                </div>
+
+                <h6 className="text-center mb-3">{captionText}</h6>
+
+
+                
+                <div className="d-flex justify-content-center align-items-center" style={{ height: "320px" }}>
+                  {chartType === "pie" ? (
+                    <Pie id={`chart-${index}`} data={chartData} options={chartOptions} ref={(chart) => { chartRefs.current[index] = chart; }}/>
+                  ) : (
+                    <div style={{ width: "90%", height: "100%" }}>
+                      <Bar
+                        id={`chart-${index}`}
+                        data={{
+                          ...chartData,
+                          labels: displayLabelsForBar,
+                          datasets: [{ ...chartData.datasets[0], backgroundColor: "#36A2EB" }],
+                        }}
+                        options={{
+                          ...chartOptions,
+                          maintainAspectRatio: false,
+                          layout: { padding: { top: 16 } }, 
+                          plugins: {
+                            ...chartOptions.plugins,
+                            legend: { display: false },
+                            datalabels: {
+                              anchor: "end",
+                              align: "end",
+                              color: "black",
+                              font: { weight: "bold", size: 12 },
+                              formatter: (value) => value,
+                              clip: false,  
+                              clamp: true, 
+                              offset: 2,
+                            },
+                          },
+                          scales: {
+                            x: { title: { display: true, text: xTitle } },
+                            y: {
+                              beginAtZero: true,
+                              suggestedMax,
+                              title: { display: true, text: yTitle },
+                              ticks: { precision: 0 },
+                            },
+                          },
+                        }}
+                        ref={(chart) => { chartRefs.current[index] = chart; }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      );
-    });
-  };
+        );
+      })}
+    </>
+  );
+}
 
   const renderQuestionTab = () => {
     const allAnswers = responses.rows.map(
@@ -270,7 +454,6 @@ const SurveyResponses = () => {
     return (
       <div className="container">
         <div className="row justify-content-center">
-          {/* Half-width on desktop, full width on mobile */}
           <div className="col-12 col-md-6">
             <select
               className="form-select mb-4"
@@ -306,7 +489,6 @@ const SurveyResponses = () => {
     return (
       <div className="container">
         <div className="row justify-content-center">
-          {/* Half width on desktop, full width on mobile */}
           <div className="col-12 col-md-6">
             <table className="table table-bordered">
               <tbody>
@@ -319,7 +501,6 @@ const SurveyResponses = () => {
               </tbody>
             </table>
 
-            {/* Navigation */}
             <div
               className="mt-3"
               style={{
@@ -327,7 +508,7 @@ const SurveyResponses = () => {
                 justifyContent: "center",
                 alignItems: "center",
                 gap: "12px",
-                flexDirection: "row", // Explicitly force row direction
+                flexDirection: "row", 
                 flexWrap: "nowrap",
               }}
             >
@@ -336,7 +517,7 @@ const SurveyResponses = () => {
                 style={{
                   width: "36px",
                   height: "36px",
-                  minWidth: "36px", // Ensures minimum width is maintained
+                  minWidth: "36px", 
                 }}
                 disabled={currentResponse === 0}
                 onClick={() => setCurrentResponse((prev) => prev - 1)}
@@ -347,8 +528,8 @@ const SurveyResponses = () => {
               <span
                 className="fw-medium text-center flex-shrink-0"
                 style={{
-                  minWidth: "60px", // Increased from 40px for better mobile display
-                  whiteSpace: "nowrap", // Prevents text wrapping
+                  minWidth: "60px", 
+                  whiteSpace: "nowrap", 
                 }}
               >
                 {currentResponse + 1} of {responses.rows.length}
@@ -359,7 +540,7 @@ const SurveyResponses = () => {
                 style={{
                   width: "36px",
                   height: "36px",
-                  minWidth: "36px", // Ensures minimum width is maintained
+                  minWidth: "36px", 
                 }}
                 disabled={currentResponse === responses.rows.length - 1}
                 onClick={() => setCurrentResponse((prev) => prev + 1)}
@@ -487,7 +668,7 @@ const SurveyResponses = () => {
 
         {!isLoading && responses.rows.length > 0 && (
           <div>
-            {activeTab === "summary" && renderSummaryCharts()}
+            {activeTab === "summary" && <SummaryCharts responses={responses} countResponses={countResponses} />}
             {activeTab === "questions" && renderQuestionTab()}
             {activeTab === "individual" && renderIndividualTab()}
           </div>
