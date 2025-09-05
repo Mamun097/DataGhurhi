@@ -17,8 +17,8 @@ const SurveyQuestions = ({
   section,
   questions,
   setQuestions,
-  newQuestion,
-  setNewQuestion,
+  // newQuestion,
+  // setNewQuestion,
   addNewQuestion,
   addGeneratedQuestion,
   addImportedQuestion,
@@ -38,6 +38,21 @@ const SurveyQuestions = ({
   };
 
   const sectionQuestions = questions.filter((q) => q.section === section.id);
+
+  const handleAddNewQuestion = (type, index) => {
+    addNewQuestion(type, index);
+    setInsertQuestionIndex(null);
+  };
+
+  const handleAddGeneratedQuestion = (questions, index) => {
+    addGeneratedQuestion(questions, index);
+    setInsertQuestionIndex(null);
+  };
+
+  const handleAddImportedQuestion = (questions, index) => {
+    addImportedQuestion(questions, index);
+    setInsertQuestionIndex(null);
+  };
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -246,14 +261,14 @@ const SurveyQuestions = ({
                     </button>
                     {insertQuestionIndex === index && (
                       <AddQuestion
-                        newQuestion={newQuestion}
-                        setNewQuestion={setNewQuestion}
-                        addNewQuestion={addNewQuestion}
-                        addGeneratedQuestion={addGeneratedQuestion}
-                        addImportedQuestion={addImportedQuestion}
+                        addNewQuestion={handleAddNewQuestion}
+                        addGeneratedQuestion={handleAddGeneratedQuestion}
+                        addImportedQuestion={handleAddImportedQuestion}
                         questionInfo={{
                           id: questions.length + 1,
-                          index: questions.findIndex(q => q.id === question.id) + 1,
+                          index:
+                            questions.findIndex((q) => q.id === question.id) +
+                            1,
                           section: section.id,
                         }}
                         language={language}
