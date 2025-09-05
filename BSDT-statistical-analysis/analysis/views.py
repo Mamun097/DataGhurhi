@@ -487,6 +487,11 @@ def analyze_data_api(request):
                         selected_columns.append(request.POST[key])
                 return process_network_graph(request, df, selected_columns, user_id)
 
+            elif test_type == 'bar_chart':
+                col = request.POST.get('column1')
+                orientation = request.POST.get('orientation', 'vertical')
+                return process_bar_chart_test(request, df, col, orientation, user_id)
+            
 
             return render(request, 'analysis/results.html', {
                 'results': results,
@@ -3734,6 +3739,127 @@ def save_plot(plt, filename, user_id):
     except Exception as e:
         print(f"Failed to save plot: {filename}. Error: {e}")
         return None
+
+def process_bar_chart_test(request, df, col, user_id, orientation='vertical'):
+    import os, math
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    import seaborn as sns
+    from django.http import JsonResponse
+    from django.conf import settings
+    from PIL import Image, ImageDraw, ImageFont
+    from googletrans import Translator
+    import numpy as np
+    import pandas as pd
+
+    try:
+        # --- Params ---
+        language = request.POST.get('language', 'en')
+        fmt = request.POST.get('format', 'png').lower()
+        fmt = fmt if fmt in ('png', 'jpg', 'jpeg', 'pdf', 'tiff') else 'png'
+        pil_fmt = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[fmt]
+        orientation = orientation if orientation in ('horizontal','vertical') else 'vertical'
+
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if use_default:
+            dpi, width, height = 300, 900, 650
+            label_font_size, caption_font_size, tick_font_size = 56, 60, 16
+            cat_font_size, val_font_size = 44, 40
+            bar_color = 'steelblue'
+        else:
+            dpi = int(request.POST.get('dpi', 300))
+            width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
+            label_font_size = int(request.POST.get('label_font_size', 56))
+            caption_font_size = int(request.POST.get('caption_font_size', 60))
+            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            cat_font_size = int(request.POST.get('cat_font_size', 44))
+            val_font_size = int(request.POST.get('val_font_size', 40))
+            bar_color = request.POST.get('bar_color', 'steelblue')
+
+        # --- Font + Translator ---
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        fm.fontManager.addfont(font_path)
+        bengali_font_name = fm.FontProperties(fname=font_path).get_name()
+        if language == 'bn':
+            plt.rcParams['font.family'] = bengali_font_name
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+
+        translator = Translator()
+        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(txt): return translator.translate(txt, dest='bn').text if language == 'bn' else txt
+        def map_digits(txt): return txt.translate(digit_map) if language == 'bn' else txt
+
+        label_font   = ImageFont.truetype(font_path, size=label_font_size)
+        caption_font = ImageFont.truetype(font_path, size=caption_font_size)
+        cat_font     = ImageFont.truetype(font_path, size=cat_font_size)
+        val_font     = ImageFont.truetype(font_path, size=val_font_size)
+
+        # --- Data Prep ---
+        if col not in df.columns:
+            return JsonResponse({'success': False, 'error': f"Column {col} not found"})
+        counts = df[col].astype(str).fillna('NaN').value_counts(dropna=False).sort_index()
+        labels_raw = counts.index.tolist()
+        labels_display = [map_digits(translate(str(x))) for x in labels_raw]
+        values = counts.values
+
+        # --- Output path ---
+        plots_dir = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        base_name = f"barchart_{col}"
+        base_path = os.path.join(plots_dir, base_name + "_base.png")
+        final_path = os.path.join(plots_dir, f"{base_name}.{fmt}")
+
+        # --- Plot ---
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=dpi)
+
+        if orientation == 'vertical':
+            x_idx = np.arange(len(values))
+            bars = ax.bar(x_idx, values, color=bar_color, edgecolor='black', linewidth=1.0)
+            ax.set_xticks(x_idx)
+            ax.set_xticklabels(labels_display, fontproperties=tick_prop, rotation=40, ha='right')
+            ax.set_ylabel(map_digits(translate("Count")), fontsize=label_font_size)
+            ax.set_xlabel(map_digits(translate(col)), fontsize=label_font_size)
+
+            for bar, val in zip(bars, values):
+                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
+                        map_digits(str(val)), ha='center', va='bottom',
+                        fontsize=val_font_size)
+
+        else:  # horizontal
+            y_idx = np.arange(len(values))
+            bars = ax.barh(y_idx, values, color=bar_color, edgecolor='black', linewidth=1.0)
+            ax.set_yticks(y_idx)
+            ax.set_yticklabels(labels_display, fontproperties=tick_prop)
+            ax.set_xlabel(map_digits(translate("Count")), fontsize=label_font_size)
+            ax.set_ylabel(map_digits(translate(col)), fontsize=label_font_size)
+
+            for bar, val in zip(bars, values):
+                ax.text(bar.get_width() + 0.5, bar.get_y() + bar.get_height()/2,
+                        map_digits(str(val)), va='center', fontsize=val_font_size)
+
+        plt.tight_layout()
+        fig.savefig(base_path, dpi=dpi, bbox_inches='tight')
+        plt.close(fig)
+
+        # --- PIL overlay for title ---
+        img = Image.open(base_path).convert("RGB")
+        draw = ImageDraw.Draw(img)
+        title_txt = map_digits(translate(f"Bar Chart of {col}"))
+        tw, th = draw.textbbox((0,0), title_txt, font=caption_font)[2:]
+        bw, bh = img.size
+        draw.text(((bw - tw)//2, 10), title_txt, font=caption_font, fill='black')
+        img.save(final_path, format=pil_fmt)
+
+        return JsonResponse({
+            'success': True,
+            'test': 'Bar Chart',
+            'orientation': orientation,
+             'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
+            
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @csrf_exempt
 def preview_data(request):
