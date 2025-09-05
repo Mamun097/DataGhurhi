@@ -126,12 +126,12 @@ useEffect(() => {
 
 
 
-function downloadAsExcel(data, filename = `preprocessed_${filename}.xlsx`) {
+function downloadAsExcel(data, filename) {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
 
-  XLSX.writeFile(workbook, filename);
+  XLSX.writeFile(workbook, 'preprocessed_' + filename);
 }
 
 
@@ -444,7 +444,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
               
              
-                downloadAsExcel(data);
+                downloadAsExcel(data, filename);
               
               
             }}
@@ -459,44 +459,11 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                 return;
               }
 
-              // 1. Convert JSON data to Excel Blob
-              const worksheet = XLSX.utils.json_to_sheet(data);
-              const workbook = XLSX.utils.book_new();
-              XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-
-              const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-              const file = new Blob([excelBuffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              });
-
-              // 2. Upload to backend as FormData
-              const formData = new FormData();
-              formData.append("file", file, `preprocessed_${filename}`);
-              formData.append("file_type", "preprocessed");
-
-              try {
-                const response = await fetch("http://127.0.0.1:8000/api/upload-preprocessed/", {
-                  method: "POST",
-                  body: formData,
-                  headers: {
-                    'userID': userId // Include user ID in headers
-                    
-                  }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
+              
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
                   window.location.href = "/analysis";
-                } else {
-                  alert("Failed to upload Excel: " + result.error);
-                }
-              } catch (err) {
-                console.error("Upload error:", err);
-                alert("Failed to upload preprocessed data.");
-              }
+                
             }}
           >
             Analyze Data
@@ -875,15 +842,15 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
     <PreviewTable
-  workbookUrl={`${sessionStorage.getItem("fileURL")}`}            // ← the only data source
-  columns={columns}
-  duplicateIndices={duplicateIndices}
-  setData={setData}
-  setIsPreviewModalOpen={setIsPreviewModalOpen}
-  isPreviewModalOpen={isPreviewModalOpen}
-  outlierCells={outlierCells}
-  selectedOption={selectedOption}
-/>
+            workbookUrl={`${sessionStorage.getItem("fileURL")}`}            
+            columns={columns}
+            duplicateIndices={duplicateIndices}
+            setData={setData}
+            setIsPreviewModalOpen={setIsPreviewModalOpen}
+            isPreviewModalOpen={isPreviewModalOpen}
+            outlierCells={outlierCells}
+            selectedOption={selectedOption}
+          />
       <div className="text-center mt-6">
         <a href="/analysis" className="text-blue-600 hover:underline">← Back to Main Page</a>
       </div>

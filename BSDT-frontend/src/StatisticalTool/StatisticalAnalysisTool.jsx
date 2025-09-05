@@ -38,6 +38,7 @@ const translations = {
         formTitle: "Data Analysis Form",
         uploadLabel: "Upload Your Data",
         preprocessedLabel : "Preprocessed File",
+        surveyLabel : "Survey Data File",
         dropFile: "Drag & drop your Excel file or click to browse",
         processing: "Processing file, please wait...",
         testType: "Test Type",
@@ -312,8 +313,10 @@ const StatisticalAnalysisTool = () => {
 
     let filename =  '';
     if(isPreprocessed ) {
-        filename = "preprocessed_"+sessionStorage.getItem("file_name") || '';
-    } else {
+        filename = "preprocess_"+sessionStorage.getItem("file_name") || '';
+    } 
+    
+    else {
         filename = sessionStorage.getItem("file_name") || '';
     }
 
@@ -917,7 +920,12 @@ const handleSuggestionClick = () => {
                                             
                                             <div className="mb-6">
                                                 <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
-                                                    {(isPreprocessed || isSurveyData) ? t.preprocessedLabel : t.uploadLabel}
+                                                    {isPreprocessed 
+                                                    ? t.preprocessedLabel 
+                                                    : isSurveyData 
+                                                        ? t.surveyLabel 
+                                                        : t.uploadLabel}
+
                                                 </h5>
 
                                                 {(isPreprocessed || isSurveyData) ? (
