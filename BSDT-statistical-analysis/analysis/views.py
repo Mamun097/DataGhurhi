@@ -481,7 +481,11 @@ def analyze_data_api(request):
                 return process_cramers_heatmap(request,selected_columns, df, user_id)
 
             elif test_type == 'network_graph':
-                return process_network_graph(request, df,user_id) 
+                selected_columns = []
+                for key in request.POST:
+                    if key.startswith("column") and request.POST[key] in df.columns:
+                        selected_columns.append(request.POST[key])
+                return process_network_graph(request, df, selected_columns, user_id)
 
 
             return render(request, 'analysis/results.html', {
@@ -3577,7 +3581,7 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
 #     except Exception as e:
 #         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_network_graph(request, df, user_id): 
+def process_network_graph(request, df, selected_columns, user_id): 
     import os
     import random
     from django.http import JsonResponse
@@ -3810,6 +3814,7 @@ def delete_columns_api(request):
         ## extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet_name= request.headers.get('sheet')  
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
@@ -3819,11 +3824,40 @@ def delete_columns_api(request):
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
 
         try:
-            df = pd.read_excel(file_path)
+            # Check file extension and load data accordingly
+            file_extension = os.path.splitext(filename)[1].lower()
+            
+            if file_extension == '.xlsx':
+                df = pd.read_excel(source_path, sheet_name=None)  # Load all sheets as a dictionary
+                if sheet_name in df:
+                    df = df[sheet_name]
+                
+                else:
+                     df = list(df.values())[0]
+
+                    
+                
+            elif file_extension == '.csv':
+                df = pd.read_csv(source_path)
+                
+            else:
+                return JsonResponse({'success': False, 'error': 'Unsupported file format. Please upload .csv or .xlsx files.'})
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+            return JsonResponse({'success': False, 'error': f'Failed to read file: {str(e)}'})
+
 
         body = json.loads(request.body)
         columns = body.get('columns', [])
@@ -3834,7 +3868,7 @@ def delete_columns_api(request):
         df.drop(columns=columns, inplace=True, errors='ignore')
 
         # Save updated sheet
-        df.to_excel(file_path, index=False)
+        df.to_excel(preprocess_file_path, index=False)  
 
         return JsonResponse({
             'success': True,
@@ -3924,6 +3958,7 @@ def find_duplicates_api(request):
         # --- Extract headers ---
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet_name= request.headers.get('sheet')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
 
@@ -3932,9 +3967,30 @@ def find_duplicates_api(request):
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+        
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
 
         # --- Load Excel ---
-        df = pd.read_excel(file_path)
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name= None)
+                if sheet_name in df:
+                    df = df[sheet_name]
+                else:
+                    df = list(df.values())[0]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
         total_rows = len(df)
 
         # --- Get columns from request body ---
@@ -4005,6 +4061,7 @@ def find_duplicates_api(request):
 def remove_duplicates(request):
     user_id = request.headers.get('userID') 
     filename = request.headers.get('filename')
+    sheet_name= request.headers.get('sheet')
     body = json.loads(request.body) 
     columns = body.get('columns', [])
     mode = body.get('mode')  # "all" or "selected"
@@ -4016,9 +4073,29 @@ def remove_duplicates(request):
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
 
         # --- Load Excel ---
-        df = pd.read_excel(file_path) 
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet_name in df:
+                    df = df[sheet_name]
+                else:
+                    df = df[list(df.keys())[0]]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
         before = len(df)
 
         if mode == "all":
@@ -4049,7 +4126,7 @@ def remove_duplicates(request):
             return JsonResponse({"success": False, "error": "mode must be 'all' or 'selected'."}, status=400)
 
         removed = before - len(df)
-        df.to_excel(file_path, index=False)
+        df.to_excel(preprocess_file_path, index=False)
         print(removed)
         #print rows after deletion
         print(df) 
@@ -4070,6 +4147,7 @@ def handle_missing_api(request):
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet_name= request.headers.get('sheet')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -4077,8 +4155,28 @@ def handle_missing_api(request):
         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
 
-        df = pd.read_excel(file_path)
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet_name in df:
+                    df = df[sheet_name]
+                else:
+                    df = df[list(df.keys())[0]]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+
         body = json.loads(request.body)
         col = body.get('column')
         method = body.get('method', '')
@@ -4113,8 +4211,8 @@ def handle_missing_api(request):
                     if not mode_val.empty:
                         df[c] = df[c].fillna(mode_val.iloc[0])
 
-        df.to_excel(file_path, index=False)
-        
+        df.to_excel(preprocess_file_path, index=False)
+
         return JsonResponse({
             'success': True,
             'message': f'Missing values handled using method: {method}',
@@ -4134,6 +4232,7 @@ def outliers_summary_api(request):
 
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet= request.headers.get('sheet')
 
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
@@ -4144,7 +4243,30 @@ def outliers_summary_api(request):
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'File not found.'})
 
-        df = pd.read_excel(file_path)
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet in df:
+                    df = df[sheet]
+                else:
+                    df = df[list(df.keys())[0]]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read file: {str(e)}'})
+        
+        # Identify numeric columns
         num_cols = df.select_dtypes(include=[np.number]).columns.tolist()
 
         if not num_cols:
@@ -4195,6 +4317,8 @@ def handle_outliers_api(request):
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet= request.headers.get('sheet')
+
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -4203,7 +4327,30 @@ def handle_outliers_api(request):
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-        df = pd.read_excel(file_path)
+
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet in df:
+                    df = df[sheet]
+                else:
+                    df = df[list(df.keys())[0]]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+        
         body = json.loads(request.body)
         col = body.get('column', '')
         method = body.get('method', '')
@@ -4226,7 +4373,7 @@ def handle_outliers_api(request):
         else:
             return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
-        df.to_excel(file_path, index=False)
+        df.to_excel(preprocess_file_path, index=False)
 
         return JsonResponse({
             'success': True,
@@ -4244,6 +4391,8 @@ def rank_categorical_column_api(request):
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet= request.headers.get('sheet')
+
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -4252,7 +4401,29 @@ def rank_categorical_column_api(request):
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
-        df = pd.read_excel(file_path)
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet in df:
+                    df = df[sheet]
+                else:
+                    df = df[list(df.keys())[0]]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+        
         body = json.loads(request.body)
 
         col = body.get('column', '')
@@ -4264,7 +4435,7 @@ def rank_categorical_column_api(request):
         new_col = col + '_ranked'
         df[new_col] = df[col].map(mapping)
 
-        df.to_excel(file_path, index=False)
+        df.to_excel(preprocess_file_path, index=False)
 
         return JsonResponse({
             'success': True,
@@ -4276,18 +4447,131 @@ def rank_categorical_column_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+# @csrf_exempt
+# def split_column_api(request):
+#     from django.http import JsonResponse
+#     from django.conf import settings
+#     import pandas as pd
+#     import os, json
+#     from collections import Counter
+
+#     try:
+#         # --- Extract metadata ---
+#         user_id = request.headers.get('userID')
+#         filename = request.headers.get('filename') 
+#         if not user_id or not filename:
+#             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
+
+#         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+#         file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
+#         if not os.path.exists(file_path):
+#             return JsonResponse({'success': False, 'error': 'Uploaded file not found.'})
+
+#         try:
+#             df = pd.read_excel(file_path)
+#         except Exception as e:
+#             return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
+
+#         # --- Parse JSON body ---
+#         body = json.loads(request.body)
+#         column = body.get('column', '').strip()
+#         method = body.get('method', '').strip().lower()
+#         phrases = body.get('phrases', [])
+#         delete_original = body.get('delete_original', False)
+
+#         if column not in df.columns:
+#             return JsonResponse({'success': False, 'error': f"Column '{column}' not found in dataset."})
+
+#         new_cols = []
+#         df_split = None
+#         original_idx = df.columns.get_loc(column)
+
+#         # --- Split Logic ---
+#         if method == 'comma':
+#             df_split = df[column].astype(str).str.split(',', expand=True)
+#             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
+#             new_cols = df_split.columns.tolist()
+
+#         elif method == 'semicolon':
+#             df_split = df[column].astype(str).str.split(';', expand=True)
+#             df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
+#             new_cols = df_split.columns.tolist()
+
+#         elif method == 'tags':
+#             df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
+#             df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
+#             new_cols = df_split.columns.tolist()
+
+#         elif method == 'custom' and phrases:
+#             def count_phrases(text, known_phrases):
+#                 tokens = str(text).split(", ")
+#                 result = []
+#                 i = 0
+#                 while i < len(tokens):
+#                     if i + 1 < len(tokens):
+#                         combined = tokens[i] + ", " + tokens[i + 1]
+#                         if combined in known_phrases:
+#                             result.append(combined)
+#                             i += 2
+#                             continue
+#                     result.append(tokens[i])
+#                     i += 1
+#                 return Counter(result)
+
+#             df_split = pd.DataFrame()
+#             for phrase in phrases:
+#                 df_split[phrase] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
+#             new_cols = df_split.columns.tolist()
+
+#         else:
+#             return JsonResponse({'success': False, 'error': 'Invalid method or missing required input (phrases).'})
+
+#         # --- Remove new columns if already exist ---
+#         for col in new_cols:
+#             if col in df.columns:
+#                 df.drop(columns=[col], inplace=True)
+
+#         # --- Insert new columns after original ---
+#         for i, col in enumerate(new_cols):
+#             df.insert(original_idx + 1 + i, col, df_split[col])
+
+#         # --- Delete original column if requested ---
+#         if delete_original and column in df.columns:
+#             df.drop(columns=[column], inplace=True)
+
+#         # --- Save and Respond ---
+#         df.to_excel(file_path, index=False)
+#         df = df.fillna("").astype(str)
+
+#         return JsonResponse({
+#             'success': True,
+#             'message': f"Column '{column}' split successfully using '{method}' method.",
+#             'columns': df.columns.tolist(),
+#             'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'), 
+#             'new_columns': new_cols,
+#             'original_column_deleted': delete_original
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
+
 @csrf_exempt
 def split_column_api(request):
     from django.http import JsonResponse
     from django.conf import settings
     import pandas as pd
     import os, json
+    import re
     from collections import Counter
 
     try:
         # --- Extract metadata ---
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename') 
+        sheet_name = request.headers.get('sheet')
+
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
 
@@ -4297,10 +4581,29 @@ def split_column_api(request):
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'Uploaded file not found.'})
 
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
+
         try:
-            df = pd.read_excel(file_path)
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df = pd.read_excel(source_path, sheet_name=None)
+                if sheet_name in df:
+                    df = df[sheet_name]
+                else:
+                    df = list(df.values())[0]
+            else:
+                df = pd.read_csv(source_path)
         except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
+            return JsonResponse({'success': False, 'error': f'Failed to read file: {str(e)}'})
 
         # --- Parse JSON body ---
         body = json.loads(request.body)
@@ -4316,47 +4619,68 @@ def split_column_api(request):
         df_split = None
         original_idx = df.columns.get_loc(column)
 
+        # --- Helper: count user-defined phrases ---
+        def count_phrases(input_str, known_phrases):
+            tokens = str(input_str).split(", ")
+            result = []
+            i = 0
+            while i < len(tokens):
+                if i + 1 < len(tokens):
+                    combined = tokens[i] + ", " + tokens[i + 1]
+                    if combined in known_phrases:
+                        result.append(combined)
+                        i += 2
+                        continue
+                result.append(tokens[i])
+                i += 1
+            return Counter(result)
+
+        # --- Helper: extract main label before parentheses ---
+        def extract_main_label(text):
+            if pd.isna(text):
+                return []
+            # Split by comma outside parentheses
+            items = re.split(r',\s*(?![^()]*\))', text)
+            main_labels = []
+            for item in items:
+                main = re.split(r'\(', item)[0].strip().lower()  # main part before '('
+                if main:
+                    main_labels.append(main)
+            return main_labels
+
         # --- Split Logic ---
         if method == 'comma':
-            df_split = df[column].astype(str).str.split(',', expand=True)
-            df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
+            # Step 1: split and normalize main labels
+            split_data = df[column].apply(extract_main_label)
+            all_labels = sorted({label for sublist in split_data for label in sublist})
+
+            # Step 2: one-hot encode
+            df_split = pd.DataFrame()
+            for label in all_labels:
+                df_split[f"{column}[{label}]"] = split_data.apply(lambda x: 1 if label in x else 0)
+
             new_cols = df_split.columns.tolist()
 
         elif method == 'semicolon':
             df_split = df[column].astype(str).str.split(';', expand=True)
-            df_split.columns = [f"{column}_part_{i+1}" for i in range(df_split.shape[1])]
+            df_split.columns = [f"{column}[{col.strip()}]" for col in df_split.columns]
             new_cols = df_split.columns.tolist()
 
         elif method == 'tags':
             df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
-            df_split.columns = [f"{column}_tag_{i+1}" for i in range(df_split.shape[1])]
+            df_split.columns = [f"{column}[{col.strip()}]" for col in df_split.columns]
             new_cols = df_split.columns.tolist()
 
         elif method == 'custom' and phrases:
-            def count_phrases(text, known_phrases):
-                tokens = str(text).split(", ")
-                result = []
-                i = 0
-                while i < len(tokens):
-                    if i + 1 < len(tokens):
-                        combined = tokens[i] + ", " + tokens[i + 1]
-                        if combined in known_phrases:
-                            result.append(combined)
-                            i += 2
-                            continue
-                    result.append(tokens[i])
-                    i += 1
-                return Counter(result)
-
             df_split = pd.DataFrame()
             for phrase in phrases:
-                df_split[phrase] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
+                df_split[f"{column}[{phrase}]"] = df[column].apply(lambda x: count_phrases(x, phrases).get(phrase, 0))
             new_cols = df_split.columns.tolist()
 
         else:
             return JsonResponse({'success': False, 'error': 'Invalid method or missing required input (phrases).'})
 
-        # --- Remove new columns if already exist ---
+        # --- Remove existing new columns ---
         for col in new_cols:
             if col in df.columns:
                 df.drop(columns=[col], inplace=True)
@@ -4369,21 +4693,22 @@ def split_column_api(request):
         if delete_original and column in df.columns:
             df.drop(columns=[column], inplace=True)
 
-        # --- Save and Respond ---
-        df.to_excel(file_path, index=False)
+        # --- Save and respond ---
+        df.to_excel(preprocess_file_path, index=False)
         df = df.fillna("").astype(str)
 
         return JsonResponse({
             'success': True,
             'message': f"Column '{column}' split successfully using '{method}' method.",
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'), 
+            'rows': df.head(100).to_dict(orient='records'), 
             'new_columns': new_cols,
             'original_column_deleted': delete_original
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 
 
@@ -4401,6 +4726,7 @@ def group_data_api(request):
 
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet= request.headers.get('sheet')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
 
@@ -4416,8 +4742,26 @@ def group_data_api(request):
         if not grouping_pairs:
             return JsonResponse({'success': False, 'error': 'No grouping pairs provided.'})
 
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
         try:
-            df = pd.read_excel(file_path, engine='openpyxl')
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path,engine='openpyxl', sheet_name=[])
+                if sheet in df:
+                    df = df[sheet]
+                else:
+                    df = list(df.values())[0]
+            else:
+                df = pd.read_csv(source_path)
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to read Excel file: {str(e)}'})
 
@@ -4471,6 +4815,8 @@ def generate_unique_id_column_api(request):
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
+        sheet= request.headers.get('sheet')
+
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -4479,12 +4825,34 @@ def generate_unique_id_column_api(request):
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
 
-        df = pd.read_excel(file_path)
+        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
+    
+        # Create preprocess folder if not exists
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+         
+        # Define preprocess file path
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+
+        # Load from preprocess if exists, otherwise from original
+        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+
+
+        try:
+            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                df= pd.read_excel(source_path, sheet_name=[])
+                if sheet in df:
+                    df = df[sheet]
+                else:
+                    df = list(df.values())[0]
+            else:
+                df = pd.read_csv(source_path)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
 
         col_name = 'row_id'
         df[col_name] = np.arange(1, len(df) + 1)
 
-        df.to_excel(file_path, index=False)
+        df.to_excel(preprocess_file_path, index=False)
 
         return JsonResponse({
             'success': True,
@@ -4498,6 +4866,7 @@ def generate_unique_id_column_api(request):
     
 @csrf_exempt
 def save_preprocessed_file_api(request):
+    print("in") 
     if request.method == 'POST':
         try:
             user_id = request.headers.get('userID')
@@ -4507,23 +4876,27 @@ def save_preprocessed_file_api(request):
             print(f"Received User ID: {user_id}")
 
             uploaded_file = request.FILES.get('file')
-            file_type = request.POST.get('file_type')  # 'survey' or 'preprocessed'
+            # file_type = request.POST.get('file_type')  # 'survey' or 'preprocessed'
 
             if not uploaded_file:
                 return JsonResponse({'success': False, 'error': 'No file uploaded.'})
-            if file_type not in ['survey', 'preprocessed']:
-                return JsonResponse({'success': False, 'error': 'Invalid or missing file_type.'})
+            # if file_type not in ['survey', 'preprocessed']:
+            #     return JsonResponse({'success': False, 'error': 'Invalid or missing file_type.'})
 
             # Define folder path
-            folder_name = 'survey' if file_type == 'survey' else 'preprocessed'
+            folder_name = 'survey/' 
             folder_path = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads/temporary_uploads/', folder_name)
             os.makedirs(folder_path, exist_ok=True)
 
             # Handle CSV for survey type
             original_ext = os.path.splitext(uploaded_file.name)[1].lower()
-            if file_type == 'survey' and original_ext == '.csv':
+            if original_ext == '.csv':
                 df = pd.read_csv(uploaded_file)
-                file_name = os.path.splitext(uploaded_file.name)[0] + '.xlsx'
+                # Sanitize filename and change extension to .xlsx
+                base_name = os.path.splitext(uploaded_file.name)[0]
+                safe_base_name = "".join(c for c in base_name if c.isalnum() or c in (' ', '_', '-')).rstrip()
+                file_name = f"{safe_base_name}.xlsx" 
+
                 file_path = os.path.join(folder_path, file_name)
                 df.to_excel(file_path, index=False)
             else:
@@ -4533,6 +4906,7 @@ def save_preprocessed_file_api(request):
                 with open(file_path, 'wb+') as destination:
                     for chunk in uploaded_file.chunks():
                         destination.write(chunk)
+            print(f"File saved to: {file_path}")
 
             return JsonResponse({
                 'success': True,
