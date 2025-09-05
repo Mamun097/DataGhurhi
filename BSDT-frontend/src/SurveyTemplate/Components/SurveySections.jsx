@@ -51,7 +51,6 @@ const SurveySections = ({
   setLanguage,
   getLabel,
 }) => {
-  // const [newQuestion, setNewQuestion] = useState(false);
   const [showLogicDropdown, setShowLogicDropdown] = useState(false);
   const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] =
     useState(section.triggerQuestionText || "");
@@ -162,17 +161,13 @@ const SurveySections = ({
 
   const addNewQuestion = (type, index) => {
     const baseQuestion = {
-      id: questions.length + 1,
+      id: 0,
       type: type,
       section: section.id,
       required: false,
       image: null,
     };
-
-    let newQ = {
-      ...baseQuestion,
-      meta: {},
-    };
+    let newQ = { ...baseQuestion, meta: {} };
 
     switch (type) {
       case "radio":
@@ -224,74 +219,34 @@ const SurveySections = ({
         break;
     }
 
-    // Questions is the array holding all questions,
-    // index is the array position where the new question should be added
-    // setQuestions is used to update the Questions
     setQuestions((prevQuestions) => {
       const updatedQuestions = [...prevQuestions];
-
-      if (index === questions.length) {
-        // If index is at the end, just push the new question
-        updatedQuestions.push(newQ);
-        return updatedQuestions;
-      }
-      // If index is in the middle, insert the new question at the specified index
       updatedQuestions.splice(index, 0, newQ);
-      return updatedQuestions;
+      return updatedQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
     });
-
-    setNewQuestion(false);
   };
 
-  const addGeneratedQuestion = (generatedQuestion) => {
-    let processedQuestion = { ...generatedQuestion };
-    processedQuestion.id = questions.length + 1;
-    processedQuestion.section = section.id;
-    if (
-      processedQuestion.type === "radio" ||
-      processedQuestion.type === "checkbox"
-    ) {
-      if (processedQuestion.meta && processedQuestion.meta.options) {
-        processedQuestion.meta.options = processedQuestion.meta.options.map(
-          (option) => {
-            if (typeof option === "string") {
-              return new Option(option, 0);
-            } else if (option && typeof option === "object") {
-              return new Option(
-                option.text || option.label || option,
-                option.value || 0
-              );
-            }
-            return new Option(option, 0);
-          }
-        );
-      } else {
-        processedQuestion.meta = {
-          ...processedQuestion.meta,
-          options: [
-            new Option(getLabel("Option 1"), 0),
-            new Option(getLabel("Option 2"), 0),
-          ],
-        };
-      }
-    }
-    if (processedQuestion.type === "dropdown") {
-      if (processedQuestion.meta && processedQuestion.meta.options) {
-        if (
-          processedQuestion.meta.options[0] &&
-          typeof processedQuestion.meta.options[0] === "object"
-        ) {
-          processedQuestion.meta.options = processedQuestion.meta.options.map(
-            (opt) => opt.text || opt.label || opt
-          );
-        }
-      }
-    }
-    setQuestions((prevQuestions) => [...prevQuestions, processedQuestion]);
+  const addGeneratedQuestion = (generatedQuestion, index) => {
+    let processedQuestion = { ...generatedQuestion, section: section.id };
+
+    setQuestions((prevQuestions) => {
+      const updatedQuestions = [...prevQuestions];
+      updatedQuestions.splice(index, 0, processedQuestion);
+      return updatedQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+    });
   };
 
-  const addImportedQuestion = (importedQuestions) => {
-    setQuestions((prevQuestions) => [...prevQuestions, ...importedQuestions]);
+  const addImportedQuestion = (importedQuestions, index) => {
+    const questionsWithSection = importedQuestions.map((q) => ({
+      ...q,
+      section: section.id,
+    }));
+
+    setQuestions((prevQuestions) => {
+      const updatedQuestions = [...prevQuestions];
+      updatedQuestions.splice(index, 0, ...questionsWithSection);
+      return updatedQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+    });
   };
 
   const onPressDeleteSection = () => {
@@ -461,8 +416,6 @@ const SurveySections = ({
       {sectionQuestionCount === 0 && (
         <div className="survey-section__add-question-area mb-3">
           <AddQuestion
-            // newQuestion={newQuestion}
-            // setNewQuestion={setNewQuestion}
             addNewQuestion={addNewQuestion}
             addGeneratedQuestion={addGeneratedQuestion}
             addImportedQuestion={addImportedQuestion}
@@ -481,8 +434,6 @@ const SurveySections = ({
           section={section}
           questions={questions}
           setQuestions={setQuestions}
-          // newQuestion={newQuestion}
-          // setNewQuestion={setNewQuestion}
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
           addImportedQuestion={addImportedQuestion}
