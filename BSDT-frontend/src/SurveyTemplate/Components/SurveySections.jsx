@@ -51,7 +51,7 @@ const SurveySections = ({
   setLanguage,
   getLabel,
 }) => {
-  const [newQuestion, setNewQuestion] = useState(false);
+  // const [newQuestion, setNewQuestion] = useState(false);
   const [showLogicDropdown, setShowLogicDropdown] = useState(false);
   const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] =
     useState(section.triggerQuestionText || "");
@@ -461,8 +461,8 @@ const SurveySections = ({
       {sectionQuestionCount === 0 && (
         <div className="survey-section__add-question-area mb-3">
           <AddQuestion
-            newQuestion={newQuestion}
-            setNewQuestion={setNewQuestion}
+            // newQuestion={newQuestion}
+            // setNewQuestion={setNewQuestion}
             addNewQuestion={addNewQuestion}
             addGeneratedQuestion={addGeneratedQuestion}
             addImportedQuestion={addImportedQuestion}
@@ -481,8 +481,8 @@ const SurveySections = ({
           section={section}
           questions={questions}
           setQuestions={setQuestions}
-          newQuestion={newQuestion}
-          setNewQuestion={setNewQuestion}
+          // newQuestion={newQuestion}
+          // setNewQuestion={setNewQuestion}
           addNewQuestion={addNewQuestion}
           addGeneratedQuestion={addGeneratedQuestion}
           addImportedQuestion={addImportedQuestion}
