@@ -107,7 +107,7 @@ const PreviewTable = ({
       cellNF: false,
       raw: true,
     });
-    // DEBUG: log the sheet names we detected
+    
     console.log("[PreviewTable] Sheet names:", wb.SheetNames);
 
     const built = wb.SheetNames.map((name) => {
@@ -237,7 +237,7 @@ const PreviewTable = ({
         const isOutlier = selectedOption === "handle_outliers" && outlierCellMap?.[dfRowIndex]?.[col];
         const isDuplicate = selectedOption === "remove_duplicates" && duplicateIndices.includes(dfRowIndex);
         return {
-          backgroundColor: isOutlier ? "#ffe4e1" : isDuplicate ? "#fff3cd" : "white",
+          backgroundColor: isOutlier ? "#865b56ff" : isDuplicate ? "#b19539ff" : "white",
           color: isOutlier ? "red" : "black",
           borderRight: "1px solid #ccc",
           borderBottom: "1px solid #ccc",
