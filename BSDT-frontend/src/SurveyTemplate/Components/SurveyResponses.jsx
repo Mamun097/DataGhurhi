@@ -17,6 +17,19 @@ import { useLocation, useParams } from "react-router-dom";
 import * as XLSX from "xlsx";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import apiClient from "../../api";
+const chartAreaBorder = {
+  id: "chartAreaBorder",
+  afterDraw(chart, _args, opts) {
+    if (!opts || opts.display === false || !chart.chartArea) return;
+    const { ctx, chartArea: { left, top, right, bottom } } = chart;
+    ctx.save();
+    ctx.strokeStyle = opts.color || "#000";
+    ctx.lineWidth = opts.width ?? 1.5;
+    ctx.setLineDash(Array.isArray(opts.dash) ? opts.dash : []);
+    ctx.strokeRect(left, top, right - left, bottom - top);
+    ctx.restore();
+  },
+};
 ChartJS.register(
   ArcElement,
   Tooltip,
@@ -24,8 +37,12 @@ ChartJS.register(
   BarElement,
   CategoryScale,
   LinearScale,
-  ChartDataLabels
+  ChartDataLabels,
+  chartAreaBorder
 );
+
+ChartJS.defaults.color = "#000";
+ChartJS.defaults.borderColor = "#000";
 
 // Translation setup
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -153,6 +170,22 @@ const SurveyResponses = () => {
     responses.headers.map((h) => ({ caption: h, x: "Options", y: "Count" }))
   );
 
+  const PRESET_COLORS = [
+    "#36A2EB", "#FF6384", "#FFCE56", "#4BC0C0", "#9966FF",
+    "#FF9F40", "#2ECC71", "#E67E22", "#E74C3C", "#95A5A6"
+  ];
+
+  const [labelEditorsOpen, setLabelEditorsOpen] = useState(
+    () => responses.headers.map(() => false)
+  );
+  const toggleLabelEditor = (i) =>
+    setLabelEditorsOpen((prev) => {
+      const copy = [...prev];
+      copy[i] = !copy[i];
+      return copy;
+    });
+
+
   const chartRefs = useRef({});
 
   const handleTitleChange = (i, field, value) => {
@@ -164,7 +197,7 @@ const SurveyResponses = () => {
   };
 
   const safeFileName = (s) =>
-  (s || "chart").replace(/[<>:"/\\|?*\x00-\x1F]+/g, "_").slice(0, 80);
+    (s || "chart").replace(/[<>:"/\\|?*\x00-\x1F]+/g, "_").slice(0, 80);
 
   const downloadChartPDF = (i, captionText) => {
     const chart = chartRefs.current[i];
@@ -173,62 +206,118 @@ const SurveyResponses = () => {
     const canvas = chart.canvas || chart.ctx?.canvas;
     if (!canvas) return;
 
-    const imgData = canvas.toDataURL("image/png");
-    const title = captionText || "Chart";
+    const s = (style && style[i]) || {};
+    const title = (s.showCaption ? (captionText || "").trim() : "");
 
-    const landscape = canvas.width >= canvas.height;
-    const pdf = new jsPDF({
-      orientation: landscape ? "landscape" : "portrait",
-      unit: "pt",
-      format: "a4",
-    });
+    
+    const imgW = canvas.width;
+    const imgH = canvas.height;
 
-    const pageW = pdf.internal.pageSize.getWidth();
-    const pageH = pdf.internal.pageSize.getHeight();
+    
+    const outerPadX = 10; 
+    const outerPadY = 10; 
 
-    const margin = 28;
-    const maxW = pageW - margin * 2;
-    const maxH = pageH - margin * 2;
+    
+    const sidePad = 8;
+    const topPad  = 6;
+    const gap     = title ? 8 : 0;
 
-    // Paint white background
+    const orientation = imgW >= imgH ? "landscape" : "portrait";
+    const measureDoc = new jsPDF({ orientation, unit: "pt", format: [imgW, imgH] });
+
+    let captionHeight = 0;
+    let wrapped = [];
+    if (title) {
+      const captionSize = Math.max(8, Number(s.captionSize) || 16);
+      measureDoc.setFont("helvetica", "bold");
+      measureDoc.setFontSize(captionSize);
+      wrapped = measureDoc.splitTextToSize(title, imgW - sidePad * 2);
+      const lineHeight = Math.round(captionSize * 1.2);
+      captionHeight = wrapped.length * lineHeight;
+    }
+
+    const captionBlockH = title ? topPad + captionHeight + gap : 0;
+
+    
+    const pageW = imgW + outerPadX * 4;
+    const pageH = captionBlockH + imgH + outerPadY * 2;
+
+    const pdf = new jsPDF({ orientation, unit: "pt", format: [pageW, pageH] });
+
+    
     pdf.setFillColor(255, 255, 255);
     pdf.rect(0, 0, pageW, pageH, "F");
 
     
-    const canvasRatio = canvas.width / canvas.height;
-    const areaRatio = maxW / maxH;
-
-    let drawW, drawH;
-    if (canvasRatio > areaRatio) {
-      drawW = maxW;
-      drawH = maxW / canvasRatio;
-    } else {
-      drawH = maxH;
-      drawW = maxH * canvasRatio;
+    if (title) {
+      const captionSize = Math.max(8, Number(s.captionSize) || 16);
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(captionSize);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(wrapped, pageW / 2, outerPadY + topPad, {
+        align: "center",
+        baseline: "top",
+      });
     }
 
-    const x = (pageW - drawW) / 2;
-    const y = (pageH - drawH) / 2;
-
     
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(16);
-    pdf.setTextColor(0, 0, 0);
+    const y0 = outerPadY + captionBlockH;
+    pdf.addImage(canvas.toDataURL("image/png"), "PNG", outerPadX, y0, imgW, imgH, undefined, "FAST");
 
-    const wrapped = pdf.splitTextToSize(title, maxW);
-    const lineHeight = 18;
-    const titleHeight = wrapped.length * lineHeight;
-
-    const captionY = y - 12;
-    const adjustedY = captionY - titleHeight; 
-
-    pdf.text(wrapped, pageW / 2, adjustedY, { align: "center" });
-
-    
-    pdf.addImage(imgData, "PNG", x, y, drawW, drawH, undefined, "FAST");
-
-    pdf.save(`${safeFileName(title)}.pdf`);
+    pdf.save(`${safeFileName(title || "chart")}.pdf`);
   };
+
+
+
+
+  
+  const [style, setStyle] = useState(() =>
+    responses.headers.map(() => ({
+      showCaption: true,
+      captionSize: 16,          
+      axisTitleSize: 14,        
+      tickSize: 12,             
+      showValueLabels: true,    
+      showBorder: true,         
+      showGrid: true,           
+      barColor: "#36A2EB",      
+      barThickness: "",         
+      categoryPercentage: 0.85,  
+      stacked: false,           
+      customYMax: "",           
+      compactPDF: true,         
+      categorySlotPx: 160,
+    }))
+  );
+
+  const updateStyle = (i, field, value) =>
+    setStyle(prev => {
+      const copy = [...prev];
+      copy[i] = { ...copy[i], [field]: value };
+      return copy;
+    });
+
+
+  const [xColorsState, setXColorsState] = useState(
+    () => responses.headers.map(() => null)
+  );
+
+  const handleXColorEdit = (chartIdx, labelIdx, nextColor, baseLabels) => {
+    setXColorsState(prev => {
+      const copy = [...prev];
+      const uniformDefault = (style?.[chartIdx]?.barColor) || "#36A2EB";
+
+      const base =
+        Array.isArray(copy[chartIdx]) && copy[chartIdx].length === baseLabels.length
+          ? [...copy[chartIdx]]
+          : baseLabels.map(() => uniformDefault);
+
+      base[labelIdx] = nextColor;
+      copy[chartIdx] = base;
+      return copy;
+    });
+  };
+
 
   const [xLabelsState, setXLabelsState] = useState(
     () => responses.headers.map(() => null)
@@ -257,6 +346,7 @@ const SurveyResponses = () => {
         const values = Object.values(counts);
 
         const displayLabelsForBar = Array.isArray(xLabelsState[index]) && xLabelsState[index].length === labels.length ? xLabelsState[index] : labels;
+        
 
         const optionCount = labels.length;
         let chartType = null;
@@ -303,6 +393,22 @@ const SurveyResponses = () => {
         const xTitle = titles[index]?.x ?? "Options";
         const yTitle = titles[index]?.y ?? "Count";
 
+        const s = style[index] || {};
+        const yMax = s.customYMax === "" ? null : Number(s.customYMax);
+        const barThickness = s.barThickness === "" ? undefined : Number(s.barThickness);
+
+        const uniformDefault = (s.barColor || "#36A2EB");
+        const perBarColors =
+          Array.isArray(xColorsState[index]) && xColorsState[index].length === labels.length
+            ? xColorsState[index]
+            : labels.map(() => uniformDefault);
+
+        const slotPx   = Math.max(40, Number(s.categorySlotPx) || 160); 
+        const extraPx  = 140;  
+        const minPx    = 320;  
+        const chartWidthPx = Math.max(minPx, labels.length * slotPx + extraPx);
+
+
         return (
           <div key={index} className="mb-4 d-flex justify-content-center">
             <div className="col-12 col-lg-8">
@@ -310,124 +416,422 @@ const SurveyResponses = () => {
 
                 {/* Editable controls */}
                 <div className="mb-3">
-                  <div className="row g-2">
-                    <div className="col-12 col-md-4">
-                      <label className="form-label small mb-1">Caption</label>
-                      <input
-                        className="form-control form-control-sm"
-                        value={captionText}
-                        onChange={(e) => handleTitleChange(index, "caption", e.target.value)}
-                        placeholder="Chart caption"
-                      />
-                    </div>
+                  <div className="card border-0 shadow-sm">
+                    <div className="card-body">
+                      {chartType === "bar" && (
+                        <h6 className="mb-2">Edit Caption & Titles</h6>
+                      )}
 
-                    {/*X/Y axis titles*/}
-                    {chartType === "bar" && (
-                      <>
-                        <div className="col-6 col-md-4">
-                          <label className="form-label small mb-1">X-axis title</label>
+                      
+                      <div className="row g-3 align-items-end">
+                        
+                        <div className="col-12 col-lg-6">
+                          <label className="form-label small">Caption</label>
                           <input
                             className="form-control form-control-sm"
-                            value={xTitle}
-                            onChange={(e) => handleTitleChange(index, "x", e.target.value)}
-                            placeholder="e.g., Options"
-                          />
-                        </div>
-                        <div className="col-6 col-md-4">
-                          <label className="form-label small mb-1">Y-axis title</label>
-                          <input
-                            className="form-control form-control-sm"
-                            value={yTitle}
-                            onChange={(e) => handleTitleChange(index, "y", e.target.value)}
-                            placeholder="e.g., Count"
+                            value={captionText}
+                            onChange={(e) => handleTitleChange(index, "caption", e.target.value)}
+                            placeholder="Chart caption"
                           />
                         </div>
 
-                        {/* Editable x-axis category labels */}
-                        <div className="col-12 mt-2">
-                          <label className="form-label small mb-2">Edit option labels (x-axis)</label>
-                          <div className="row g-2">
-                            {labels.map((lbl, li) => {
-                              const current =
+                        
+                        {chartType === "bar" && (
+                          <>
+                            <div className="col-6 col-lg-3">
+                              <label className="form-label small">X-axis title</label>
+                              <input
+                                className="form-control form-control-sm"
+                                value={xTitle}
+                                onChange={(e) => handleTitleChange(index, "x", e.target.value)}
+                                placeholder="e.g., Options"
+                              />
+                            </div>
+                            <div className="col-6 col-lg-3">
+                              <label className="form-label small">Y-axis title</label>
+                              <input
+                                className="form-control form-control-sm"
+                                value={yTitle}
+                                onChange={(e) => handleTitleChange(index, "y", e.target.value)}
+                                placeholder="e.g., Count"
+                              />
+                            </div>
+                          </>
+                        )}
+                      </div>
+
+                      
+                      {chartType === "bar" && (
+                        <>
+                          <div className="d-flex align-items-center gap-2 mt-2">
+                            <button
+                              type="button"
+                              className={`btn btn-sm ${labelEditorsOpen[index] ? "btn-secondary" : "btn-outline-secondary"}`}
+                              onClick={() => toggleLabelEditor(index)}
+                              aria-expanded={!!labelEditorsOpen[index]}
+                              aria-controls={`xlabels-editor-${index}`}
+                            >
+                              {labelEditorsOpen[index] ? "Hide x-axis labels" : "Edit x-axis labels"}
+                            </button>
+                          </div>
+
+                          <div id={`xlabels-editor-${index}`} className={labelEditorsOpen[index] ? "mt-2" : "d-none"}>
+                            <div className="row g-2">
+                              {labels.map((lbl, li) => {
+                              
+                              const labelText =
                                 Array.isArray(xLabelsState[index]) && xLabelsState[index].length === labels.length
                                   ? xLabelsState[index][li]
                                   : lbl;
 
+                              
+                              const uniformDefault = (style?.[index]?.barColor) || "#36A2EB";
+                              const currentColor =
+                                Array.isArray(xColorsState[index]) && xColorsState[index].length === labels.length
+                                  ? xColorsState[index][li]
+                                  : uniformDefault;
+
                               return (
                                 <div className="col-12 col-md-6 col-lg-4" key={li}>
-                                  <input
-                                    className="form-control form-control-sm"
-                                    value={current ?? ""}
-                                    onChange={(e) => handleXLabelEdit(index, li, e.target.value, labels)}
-                                    placeholder={`Label ${li + 1}`}
-                                  />
+                                  <div className="border rounded p-2 h-100">
+                                    
+                                    <input
+                                      className="form-control form-control-sm mb-2"
+                                      value={labelText ?? ""}
+                                      onChange={(e) => handleXLabelEdit(index, li, e.target.value, labels)}
+                                      placeholder={`Label ${li + 1}`}
+                                      style={{
+                                        borderLeft: `5px solid ${currentColor}`,
+                                        paddingLeft: "0.5rem"
+                                      }}
+                                    />
+
+                                    
+                                    <div className="d-flex align-items-center flex-wrap gap-2">
+                                      
+                                      <input
+                                        type="color"
+                                        className="form-control form-control-color p-0"
+                                        style={{ width: 28, height: 28, cursor: "pointer" }}
+                                        value={currentColor}
+                                        onChange={(e) => handleXColorEdit(index, li, e.target.value, labels)}
+                                        aria-label={`Pick color for "${labelText || lbl}"`}
+                                        title={`Color for "${labelText || lbl}"`}
+                                      />
+
+                                      
+                                      <div className="d-flex flex-wrap gap-1">
+                                        {PRESET_COLORS.map((c) => (
+                                          <button
+                                            key={c}
+                                            type="button"
+                                            onClick={() => handleXColorEdit(index, li, c, labels)}
+                                            className="border-0 rounded"
+                                            style={{
+                                              width: 18,
+                                              height: 18,
+                                              background: c,
+                                              boxShadow:
+                                                c.toLowerCase() === (currentColor || "").toLowerCase()
+                                                  ? "0 0 0 2px #000 inset"
+                                                  : "0 0 0 1px rgba(0,0,0,.25) inset"
+                                            }}
+                                            aria-label={`Use ${c}`}
+                                            title={c}
+                                          />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               );
                             })}
+
+
+                            </div>
                           </div>
+                        </>
+                      )}
+
+                      {chartType === "bar" && (
+                        <hr className="my-3" />
+                      )}
+
+                      {/*Appearance & Styling (bar only)*/}
+                      {chartType === "bar" && (
+                        <div className="row g-3">
+                          <div className="col-12 col-md-3">
+                            <div className="small text-muted mb-1">Appearance</div>
+                            <div className="d-grid gap-2">
+                              <div className="form-check form-switch">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`cap-${index}`}
+                                  checked={!!s.showCaption}
+                                  onChange={(e) => updateStyle(index, "showCaption", e.target.checked)}
+                                />
+                                <label className="form-check-label" htmlFor={`cap-${index}`}>Caption</label>
+                              </div>
+
+                              <div className="form-check form-switch">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`val-${index}`}
+                                  checked={!!s.showValueLabels}
+                                  onChange={(e) => updateStyle(index, "showValueLabels", e.target.checked)}
+                                />
+                                <label className="form-check-label" htmlFor={`val-${index}`}>Data Labels</label>
+                              </div>
+
+                              <div className="form-check form-switch">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`brd-${index}`}
+                                  checked={!!s.showBorder}
+                                  onChange={(e) => updateStyle(index, "showBorder", e.target.checked)}
+                                />
+                                <label className="form-check-label" htmlFor={`brd-${index}`}>Border</label>
+                              </div>
+
+                              <div className="form-check form-switch">
+                                <input
+                                  className="form-check-input"
+                                  type="checkbox"
+                                  id={`grd-${index}`}
+                                  checked={!!s.showGrid}
+                                  onChange={(e) => updateStyle(index, "showGrid", e.target.checked)}
+                                />
+                                <label className="form-check-label" htmlFor={`grd-${index}`}>Grid</label>
+                              </div>
+                            </div>
+                          </div>
+
+                          
+                          <div className="col-12 col-md-3">
+                            <label className="form-label small">Caption size</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="8"
+                                max="32"
+                                className="form-control"
+                                value={s.captionSize}
+                                onChange={(e) => updateStyle(index, "captionSize", Number(e.target.value) || 12)}
+                              />
+                              <span className="input-group-text">px</span>
+                            </div>
+
+                            <label className="form-label small mt-2">Axis title size</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="8"
+                                max="28"
+                                className="form-control"
+                                value={s.axisTitleSize}
+                                onChange={(e) => updateStyle(index, "axisTitleSize", Number(e.target.value) || 12)}
+                              />
+                              <span className="input-group-text">px</span>
+                            </div>
+
+                            <label className="form-label small mt-2">X/Y label & value size</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="8"
+                                max="24"
+                                className="form-control"
+                                value={s.tickSize}
+                                onChange={(e) => updateStyle(index, "tickSize", Number(e.target.value) || 10)}
+                              />
+                              <span className="input-group-text">px</span>
+                            </div>
+                          </div>
+
+                          <div className="col-12 col-md-3">
+                            <label className="form-label small">Bar width</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="1"
+                                className="form-control"
+                                value={s.barThickness}
+                                onChange={(e) => updateStyle(index, "barThickness", e.target.value)}
+                                placeholder="auto"
+                              />
+                              <span className="input-group-text">px</span>
+                            </div>
+
+
+                            <label className="form-label small mt-2">Gap width</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="40"
+                                max="400"
+                                className="form-control"
+                                value={s.categorySlotPx}
+                                onChange={(e) =>
+                                  updateStyle(index, "categorySlotPx", Number(e.target.value) || 160)
+                                }
+                              />
+                              <span className="input-group-text">px</span>
+                            </div>
+
+
+                            <label className="form-label small mt-2">Y-Max</label>
+                            <div className="input-group input-group-sm">
+                              <input
+                                type="number"
+                                min="0"
+                                className="form-control"
+                                value={s.customYMax === "" ? suggestedMax : s.customYMax}
+                                onChange={(e) => updateStyle(index, "customYMax", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          
                         </div>
-                      </>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
+
+
+
 
                 <div className="d-flex justify-content-start mb-2">
                   <button
                     type="button"
                     className="btn btn-outline-secondary btn-sm"
                     onClick={() => downloadChartPDF(index, captionText)}
-                    title="Download this chart as PDF"
                   >
                     Download PDF
                   </button>
+
+
                 </div>
 
-                <h6 className="text-center mb-3">{captionText}</h6>
-
-
-                
+                {s.showCaption && (
+                  <h6 className="text-center mb-3" style={{ fontSize: `${s.captionSize}px`, color: "#000" }}>
+                    {captionText}
+                  </h6>
+                )}
                 <div className="d-flex justify-content-center align-items-center" style={{ height: "320px" }}>
                   {chartType === "pie" ? (
-                    <Pie id={`chart-${index}`} data={chartData} options={chartOptions} ref={(chart) => { chartRefs.current[index] = chart; }}/>
+                    <Pie id={`chart-${index}`} data={chartData} 
+                    options={{
+                      ...chartOptions,
+                      plugins: {
+                        ...chartOptions.plugins,
+                        chartAreaBorder: { display: false }, // <- ensure OFF for pie
+                      },
+                    }} 
+                    ref={(chart) => { chartRefs.current[index] = chart; }}/>
                   ) : (
-                    <div style={{ width: "90%", height: "100%" }}>
+                    <div
+                      className="w-100"
+                      style={{
+                        overflowX: "auto",
+                        WebkitOverflowScrolling: "touch",
+                      }}
+                    >
+                      
+                    <div
+                      style={{
+                        width: chartWidthPx,        
+                        minWidth: chartWidthPx,
+                        height: 320,
+                        margin: "0 auto",           
+                      }}
+                    >
                       <Bar
                         id={`chart-${index}`}
                         data={{
                           ...chartData,
                           labels: displayLabelsForBar,
-                          datasets: [{ ...chartData.datasets[0], backgroundColor: "#36A2EB" }],
+                          datasets: [{
+                            ...chartData.datasets[0],
+                            backgroundColor: perBarColors,
+                            borderColor: s.showBorder ? "#000" : "rgba(0,0,0,0)",
+                            borderWidth: s.showBorder ? 1.5 : 0,
+                            barThickness: s.barThickness === "" ? undefined : Number(s.barThickness),
+                            categoryPercentage: s.categoryPercentage,
+
+                            
+                            barPercentage: 1,
+                            maxBarThickness: Math.max(1, (Number(s.barThickness) || slotPx * 0.9)),
+                          }],
                         }}
                         options={{
                           ...chartOptions,
                           maintainAspectRatio: false,
-                          layout: { padding: { top: 16 } }, 
+                          layout: { padding: { top: 16 } },
                           plugins: {
                             ...chartOptions.plugins,
-                            legend: { display: false },
+                            legend: { display: false, labels: { color: "#000", font: { size: s.tickSize } } },
                             datalabels: {
+                              display: !!s.showValueLabels,
                               anchor: "end",
                               align: "end",
-                              color: "black",
-                              font: { weight: "bold", size: 12 },
+                              color: "#000",
+                              font: { weight: "bold", size: Math.max(10, s.tickSize - 1) },
                               formatter: (value) => value,
-                              clip: false,  
-                              clamp: true, 
+                              clip: false,
+                              clamp: true,
                               offset: 2,
+                            },
+                            
+                            chartAreaBorder: {
+                              display: !!s.showBorder,   
+                              color: "#000",
+                              width: 1.5,
+                              dash: [],                   
                             },
                           },
                           scales: {
-                            x: { title: { display: true, text: xTitle } },
+                            x: {
+                              title: { display: true, text: xTitle, color: "#000", font: { size: s.axisTitleSize } },
+                              ticks: { color: "#000", font: { size: s.tickSize }, maxRotation: 60, autoSkip: true },
+                              grid: {
+                                display: !!s.showGrid,
+                                color: "#000",
+                                lineWidth: 0.75,
+                                borderDash: [1, 3],      
+                                borderDashOffset: 0,
+                                drawOnChartArea: true,
+                                drawTicks: false,
+                                tickLength: 0,
+                              },
+                              border: { display: false }, 
+                            },
                             y: {
                               beginAtZero: true,
-                              suggestedMax,
-                              title: { display: true, text: yTitle },
-                              ticks: { precision: 0 },
+                              max: Number.isFinite(yMax) ? yMax : undefined,
+                              suggestedMax: Number.isFinite(yMax) ? undefined : suggestedMax,
+                              title: { display: true, text: yTitle, color: "#000", font: { size: s.axisTitleSize } },
+                              ticks: { color: "#000", font: { size: s.tickSize }, precision: 0 },
+                              grid: {
+                                display: !!s.showGrid,
+                                color: "#000",
+                                lineWidth: 0.75,
+                                borderDash: [1, 3],      
+                                borderDashOffset: 0,
+                                drawOnChartArea: true,
+                                drawTicks: false,
+                                tickLength: 0,
+                              },
+                              border: { display: false }, 
                             },
                           },
                         }}
                         ref={(chart) => { chartRefs.current[index] = chart; }}
                       />
+
+                    </div>
                     </div>
                   )}
                 </div>
