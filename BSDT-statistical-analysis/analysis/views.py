@@ -3586,9 +3586,150 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
 #     except Exception as e:
 #         return JsonResponse({'success': False, 'error': str(e)})
 
+# def process_network_graph(request, df, selected_columns, user_id): 
+#     import os
+#     import random
+#     from django.http import JsonResponse
+#     from django.conf import settings
+#     import matplotlib.pyplot as plt
+#     import matplotlib.font_manager as fm
+#     from PIL import Image, ImageDraw, ImageFont
+#     import networkx as nx
+#     import numpy as np
+#     import re
+
+#     try:
+#         language = request.POST.get("language", "en").strip().lower()
+#         node_color = request.POST.get("node_color", "#AED6F1")
+#         node_size = int(request.POST.get("node_size", 800))
+#         text_size = int(request.POST.get("text_size", 25))
+#         text_color = request.POST.get("text_color", "black")
+#         edge_width_factor = float(request.POST.get("edge_width_factor", 0.5))
+#         show_edge_weights = request.POST.get("show_edge_weights", "n").lower() == "y"
+#         weight_font_size = int(request.POST.get("weight_font_size", 3)) if show_edge_weights else 0
+#         weight_color = request.POST.get("weight_color", "red") if show_edge_weights else "red"
+#         use_matrix = request.POST.get("use_matrix", "n").lower() == "y"
+
+#         digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+#         root_bn = "নোড"
+
+#         print("Selected columns for network graph:", selected_columns)
+
+
+
+#         def to_bn(lbl):
+#             # Extract number part at the end of the label (e.g. Node12 → 12 → ১২)
+#             match = re.search(r'(\d+)$', lbl)
+#             if match:
+#                 number_part = match.group(1).translate(digit_map)
+#                 return root_bn + number_part
+#             return lbl  # fallback: no change if no digits found
+
+
+
+#         def to_label(lbl): return to_bn(lbl) if language == 'bengali' else lbl
+
+#         # Create graph
+#         if use_matrix:
+#             if 'matrix_file' not in request.FILES:
+#                 raise ValueError("Matrix file not uploaded.")
+#             matrix_file = request.FILES['matrix_file']
+#             df_matrix = pd.read_csv(matrix_file, index_col=0)
+#             if df_matrix.shape[0] != df_matrix.shape[1]:
+#                 raise ValueError("Adjacency matrix must be square.")
+#             mat = df_matrix.values
+#             nodes = list(df_matrix.index)
+#             G = nx.Graph()
+#             G.add_nodes_from(nodes)
+#             for i in range(len(nodes)):
+#                 for j in range(i+1, len(nodes)):
+#                     w = mat[i, j]
+#                     if w != 0:
+#                         G.add_edge(nodes[i], nodes[j], weight=w * edge_width_factor)
+#         else:
+#             num_nodes = 30
+#             nbr_count = 3
+#             nodes = [f"Node{i}" for i in range(1, num_nodes + 1)]
+#             G = nx.Graph()
+#             G.add_nodes_from(nodes)
+#             for node in nodes:
+#                 nbrs = random.sample([n for n in nodes if n != node], k=nbr_count)
+#                 for nbr in nbrs:
+#                     G.add_edge(node, nbr, weight=edge_width_factor)
+
+#         edge_widths = [d['weight'] for _, _, d in G.edges(data=True)]
+#         raw_edge_labels = {}
+#         for u, v, d in G.edges(data=True):
+#             raw = f"{d['weight']:.2f}"
+#             if language == 'bengali':
+#                 raw = raw.translate(digit_map)
+#             raw_edge_labels[(u, v)] = raw
+
+#         # Layout and draw
+#         dpi = 300
+#         fig, ax = plt.subplots(figsize=(8, 8), dpi=dpi)
+#         pos = nx.spring_layout(G, seed=42, k=0.8, iterations=200)
+#         nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, ax=ax)
+#         nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.6, edge_color="gray", ax=ax)
+#         ax.margins(0.10)
+#         ax.axis("off")
+#         fig.canvas.draw()
+
+#         renderer = fig.canvas.get_renderer()
+#         bbox = fig.get_tightbbox(renderer)
+#         crop_x0_px = int(bbox.x0 * dpi)
+#         crop_y0_px = int(bbox.y0 * dpi)
+#         final_W_px = int(bbox.width * dpi)
+#         final_H_px = int(bbox.height * dpi)
+#         data_to_px = ax.transData.transform
+#         def data_to_image_px(xy):
+#             px, py = data_to_px(xy)
+#             return (int(px - crop_x0_px), int(final_H_px - (py - crop_y0_px)))
+
+#         # Save base
+#         plots_dir = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+#         os.makedirs(plots_dir, exist_ok=True)
+#         base_path = os.path.join(plots_dir, 'network_base.png')
+#         fig.savefig(base_path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
+#         plt.close(fig)
+
+#         # Overlay labels
+#         img = Image.open(base_path).convert("RGBA")
+#         draw = ImageDraw.Draw(img)
+#         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+#         try:
+#             font_label = ImageFont.truetype(font_path, size=text_size)
+#         except:
+#             font_label = ImageFont.load_default()
+
+#         for node in G.nodes():
+#             label = to_label(node)
+#             px, py = data_to_image_px(pos[node])
+#             w, h = draw.textbbox((0, 0), label, font=font_label)[2:]
+#             draw.text((px - w/2, py - h/2), label, font=font_label, fill=text_color)
+
+#         if show_edge_weights:
+#             for (u, v), raw in raw_edge_labels.items():
+#                 midx = (pos[u][0] + pos[v][0]) / 2
+#                 midy = (pos[u][1] + pos[v][1]) / 2
+#                 px, py = data_to_image_px((midx, midy))
+#                 draw.text((px, py), raw, font=font_label, fill=weight_color, anchor="mm")
+
+#         labeled_path = os.path.join(plots_dir, 'network_labeled.png')
+#         img.save(labeled_path)
+
+#         return JsonResponse({
+#             'success': True,
+#             'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads','plots', 'network_labeled.png'),
+#             'message': "Network graph generated successfully"
+#         })
+#     except Exception as e:
+#         return JsonResponse({'success': False, 'error': str(e)})
+
 def process_network_graph(request, df, selected_columns, user_id): 
     import os
     import random
+    import pandas as pd
     from django.http import JsonResponse
     from django.conf import settings
     import matplotlib.pyplot as plt
@@ -3597,8 +3738,13 @@ def process_network_graph(request, df, selected_columns, user_id):
     import networkx as nx
     import numpy as np
     import re
+    from scipy.stats import pearsonr
+    from sklearn.metrics.pairwise import cosine_similarity
+    import warnings
+    warnings.filterwarnings('ignore')
 
     try:
+        # Get parameters from request
         language = request.POST.get("language", "en").strip().lower()
         node_color = request.POST.get("node_color", "#AED6F1")
         node_size = int(request.POST.get("node_size", 800))
@@ -3606,26 +3752,68 @@ def process_network_graph(request, df, selected_columns, user_id):
         text_color = request.POST.get("text_color", "black")
         edge_width_factor = float(request.POST.get("edge_width_factor", 0.5))
         show_edge_weights = request.POST.get("show_edge_weights", "n").lower() == "y"
-        weight_font_size = int(request.POST.get("weight_font_size", 3)) if show_edge_weights else 0
+        weight_font_size = int(request.POST.get("weight_font_size", 10)) if show_edge_weights else 0
         weight_color = request.POST.get("weight_color", "red") if show_edge_weights else "red"
         use_matrix = request.POST.get("use_matrix", "n").lower() == "y"
+        
+        # Additional parameters for better visualization
+        correlation_method = request.POST.get("correlation_method", "pearson")  # pearson, spearman, cosine
+        correlation_threshold = float(request.POST.get("correlation_threshold", 0.3))  # Minimum correlation to show edge
+        max_nodes = int(request.POST.get("max_nodes", 30))  # Limit number of nodes for performance
+
+        print("Selected columns for network graph:", selected_columns)
 
         digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
         root_bn = "নোড"
 
-
-
         def to_bn(lbl):
-            # Extract number part at the end of the label (e.g. Node12 → 12 → ১২)
-            match = re.search(r'(\d+)$', lbl)
-            if match:
-                number_part = match.group(1).translate(digit_map)
-                return root_bn + number_part
-            return lbl  # fallback: no change if no digits found
+            # For actual column names, translate digits but keep the original text
+            return str(lbl).translate(digit_map) if language == 'bengali' else str(lbl)
 
+        def to_label(lbl): 
+            return to_bn(lbl) if language == 'bengali' else str(lbl)
 
+        def calculate_correlation(col1, col2, method='pearson'):
+            """Calculate correlation between two columns"""
+            # Remove NaN values and ensure numeric data
+            try:
+                col1_clean = pd.to_numeric(col1, errors='coerce')
+                col2_clean = pd.to_numeric(col2, errors='coerce')
+                
+                mask = ~(pd.isna(col1_clean) | pd.isna(col2_clean))
+                if mask.sum() < 3:  # Need at least 3 valid pairs
+                    return 0
+                
+                clean_col1 = col1_clean[mask]
+                clean_col2 = col2_clean[mask]
+                
+                if method == 'pearson':
+                    corr, _ = pearsonr(clean_col1, clean_col2)
+                elif method == 'spearman':
+                    from scipy.stats import spearmanr
+                    corr, _ = spearmanr(clean_col1, clean_col2)
+                elif method == 'cosine':
+                    # Reshape for cosine similarity
+                    cos_sim = cosine_similarity([clean_col1], [clean_col2])[0, 0]
+                    corr = cos_sim
+                else:
+                    corr, _ = pearsonr(clean_col1, clean_col2)
+                
+                return abs(corr) if not np.isnan(corr) else 0
+            except:
+                return 0
 
-        def to_label(lbl): return to_bn(lbl) if language == 'bengali' else lbl
+        def clean_column_name(col_name):
+            """Clean and shorten column names for better display"""
+            name = str(col_name)
+            # Replace underscores with spaces
+            name = name.replace('_', ' ')
+            # Capitalize first letter of each word
+            name = ' '.join(word.capitalize() for word in name.split())
+            # Truncate if too long
+            if len(name) > 20:
+                name = name[:17] + "..."
+            return name
 
         # Create graph
         if use_matrix:
@@ -3636,43 +3824,164 @@ def process_network_graph(request, df, selected_columns, user_id):
             if df_matrix.shape[0] != df_matrix.shape[1]:
                 raise ValueError("Adjacency matrix must be square.")
             mat = df_matrix.values
-            nodes = list(df_matrix.index)
+            nodes = list(df_matrix.index)[:max_nodes]
             G = nx.Graph()
             G.add_nodes_from(nodes)
             for i in range(len(nodes)):
                 for j in range(i+1, len(nodes)):
                     w = mat[i, j]
-                    if w != 0:
-                        G.add_edge(nodes[i], nodes[j], weight=w * edge_width_factor)
+                    if abs(w) >= correlation_threshold:
+                        G.add_edge(nodes[i], nodes[j], weight=abs(w) * edge_width_factor)
         else:
-            num_nodes = 30
-            nbr_count = 3
-            nodes = [f"Node{i}" for i in range(1, num_nodes + 1)]
+            # Use actual data from DataFrame with selected columns
+            if df is None or df.empty:
+                raise ValueError("No data provided for network analysis.")
+            
+            # Determine which columns to analyze
+            if selected_columns and len(selected_columns) > 0:
+                # Use selected columns
+                available_columns = [col for col in selected_columns if col in df.columns]
+                if not available_columns:
+                    raise ValueError("Selected columns not found in the data.")
+                df_analysis = df[available_columns]
+                print(f"Using selected columns: {available_columns}")
+            else:
+                # Use all numeric columns if no selection
+                numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+                if not numeric_cols:
+                    raise ValueError("No numeric columns found in the data for correlation analysis.")
+                df_analysis = df[numeric_cols]
+                print(f"No columns selected. Using all numeric columns: {numeric_cols}")
+            
+            # Limit number of columns for performance
+            if len(df_analysis.columns) > max_nodes:
+                df_analysis = df_analysis.iloc[:, :max_nodes]
+                print(f"Limited to first {max_nodes} columns for performance.")
+            
+            nodes = list(df_analysis.columns)
+            
+            if len(nodes) < 2:
+                raise ValueError("At least 2 columns are needed to create a network graph.")
+            
             G = nx.Graph()
-            G.add_nodes_from(nodes)
+            # Add nodes with cleaned names for display
+            node_labels = {}
             for node in nodes:
-                nbrs = random.sample([n for n in nodes if n != node], k=nbr_count)
-                for nbr in nbrs:
-                    G.add_edge(node, nbr, weight=edge_width_factor)
+                clean_name = clean_column_name(node)
+                G.add_node(node, label=clean_name)
+                node_labels[node] = clean_name
+            
+            print(f"Creating network with {len(nodes)} nodes: {nodes}")
+            
+            # Calculate correlations between all pairs of columns
+            correlations_found = 0
+            for i, col1 in enumerate(nodes):
+                for j, col2 in enumerate(nodes):
+                    if i < j:  # Avoid duplicate edges
+                        correlation = calculate_correlation(
+                            df_analysis[col1], 
+                            df_analysis[col2], 
+                            correlation_method
+                        )
+                        
+                        print(f"Correlation between {col1} and {col2}: {correlation:.3f}")
+                        
+                        # Only add edge if correlation is above threshold
+                        if correlation >= correlation_threshold:
+                            # Scale edge width (make it more visible)
+                            edge_weight = max(correlation * edge_width_factor * 5, 0.5)
+                            G.add_edge(col1, col2, weight=edge_weight, correlation=correlation)
+                            correlations_found += 1
+            
+            print(f"Found {correlations_found} correlations above threshold {correlation_threshold}")
 
-        edge_widths = [d['weight'] for _, _, d in G.edges(data=True)]
+        # Check if graph has any edges
+        if G.number_of_edges() == 0:
+            # If still no correlations found, create edges for the strongest correlations anyway
+            print("No correlations found above threshold. Creating network with strongest available correlations.")
+            nodes_list = list(G.nodes())
+            
+            if 'correlation_details' in locals() and correlation_details:
+                # Sort by correlation strength and take top connections
+                sorted_correlations = sorted(correlation_details, key=lambda x: x['correlation'], reverse=True)
+                
+                # Add at least the top 3 correlations or number of possible edges, whichever is smaller
+                max_edges = min(len(sorted_correlations), max(3, len(nodes_list) - 1))
+                
+                for i in range(max_edges):
+                    detail = sorted_correlations[i]
+                    if detail['correlation'] > 0:  # Only positive correlations
+                        edge_weight = max(detail['correlation'] * edge_width_factor * 5, 0.5)
+                        G.add_edge(detail['col1'], detail['col2'], 
+                                 weight=edge_weight, correlation=detail['correlation'])
+                        print(f"Added edge: {detail['col1']} - {detail['col2']} (corr: {detail['correlation']:.3f})")
+            
+            # If still no edges, create a simple connected graph for visualization
+            if G.number_of_edges() == 0:
+                for i in range(len(nodes_list) - 1):
+                    G.add_edge(nodes_list[i], nodes_list[i+1], weight=0.1, correlation=0.1)
+
+        # Get edge properties
+        edge_widths = []
         raw_edge_labels = {}
+        
         for u, v, d in G.edges(data=True):
-            raw = f"{d['weight']:.2f}"
-            if language == 'bengali':
-                raw = raw.translate(digit_map)
-            raw_edge_labels[(u, v)] = raw
+            weight = d.get('weight', 0.5)
+            edge_widths.append(max(weight, 0.3))  # Minimum edge width for visibility
+            
+            if show_edge_weights:
+                # Show correlation value if available, otherwise weight
+                display_value = d.get('correlation', weight)
+                raw = f"{display_value:.2f}"
+                if language == 'bengali':
+                    raw = raw.translate(digit_map)
+                raw_edge_labels[(u, v)] = raw
+
+        # Determine figure size based on number of nodes
+        num_nodes = G.number_of_nodes()
+        if num_nodes <= 5:
+            figsize = (10, 8)
+            k_value = 3
+        elif num_nodes <= 10:
+            figsize = (12, 10)
+            k_value = 2
+        elif num_nodes <= 20:
+            figsize = (14, 12)
+            k_value = 1.5
+        else:
+            figsize = (16, 14)
+            k_value = 1
 
         # Layout and draw
         dpi = 300
-        fig, ax = plt.subplots(figsize=(8, 8), dpi=dpi)
-        pos = nx.spring_layout(G, seed=42, k=0.8, iterations=200)
-        nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=node_color, ax=ax)
-        nx.draw_networkx_edges(G, pos, width=edge_widths, alpha=0.6, edge_color="gray", ax=ax)
-        ax.margins(0.10)
+        fig, ax = plt.subplots(figsize=figsize, dpi=dpi)
+        
+        # Use better layout algorithm based on graph structure
+        if G.number_of_nodes() <= 8:
+            pos = nx.spring_layout(G, seed=42, k=k_value, iterations=500)
+        else:
+            pos = nx.spring_layout(G, seed=42, k=k_value, iterations=300)
+
+        # Draw network with improved styling
+        nx.draw_networkx_nodes(G, pos, 
+                              node_size=node_size, 
+                              node_color=node_color, 
+                              ax=ax, 
+                              alpha=0.8,
+                              edgecolors='black',
+                              linewidths=1)
+        
+        nx.draw_networkx_edges(G, pos, 
+                              width=edge_widths, 
+                              alpha=0.7, 
+                              edge_color="gray", 
+                              ax=ax)
+        
+        ax.margins(0.2)  # More margin for labels
         ax.axis("off")
         fig.canvas.draw()
 
+        # Calculate crop boundaries
         renderer = fig.canvas.get_renderer()
         bbox = fig.get_tightbbox(renderer)
         crop_x0_px = int(bbox.x0 * dpi)
@@ -3680,48 +3989,148 @@ def process_network_graph(request, df, selected_columns, user_id):
         final_W_px = int(bbox.width * dpi)
         final_H_px = int(bbox.height * dpi)
         data_to_px = ax.transData.transform
+        
         def data_to_image_px(xy):
             px, py = data_to_px(xy)
             return (int(px - crop_x0_px), int(final_H_px - (py - crop_y0_px)))
 
-        # Save base
-        plots_dir = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        # Save base image
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         base_path = os.path.join(plots_dir, 'network_base.png')
-        fig.savefig(base_path, dpi=dpi, bbox_inches="tight", pad_inches=0.05)
+        fig.savefig(base_path, dpi=dpi, bbox_inches="tight", pad_inches=0.15)
         plt.close(fig)
 
-        # Overlay labels
+        # Overlay labels with improved styling
         img = Image.open(base_path).convert("RGBA")
         draw = ImageDraw.Draw(img)
+        
+        # Font setup
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
         try:
             font_label = ImageFont.truetype(font_path, size=text_size)
+            if show_edge_weights:
+                font_weight = ImageFont.truetype(font_path, size=max(weight_font_size, 8))
+            else:
+                font_weight = font_label
         except:
             font_label = ImageFont.load_default()
+            font_weight = ImageFont.load_default()
 
+        # Draw node labels (use clean column names)
         for node in G.nodes():
-            label = to_label(node)
+            # Use cleaned label if available, otherwise use original
+            if hasattr(G.nodes[node], 'get') and G.nodes[node].get('label'):
+                label = to_label(G.nodes[node]['label'])
+            else:
+                label = to_label(clean_column_name(node))
+            
             px, py = data_to_image_px(pos[node])
-            w, h = draw.textbbox((0, 0), label, font=font_label)[2:]
-            draw.text((px - w/2, py - h/2), label, font=font_label, fill=text_color)
+            
+            # Handle multi-line labels for very long names
+            if len(label) > 12:
+                # Split into multiple lines
+                words = label.split(' ')
+                if len(words) > 1:
+                    mid = len(words) // 2
+                    line1 = ' '.join(words[:mid])
+                    line2 = ' '.join(words[mid:])
+                    label = f"{line1}\n{line2}"
+                elif len(label) > 20:
+                    label = f"{label[:12]}\n{label[12:]}"
+            
+            # Calculate text dimensions
+            bbox = draw.multiline_textbbox((0, 0), label, font=font_label)
+            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            
+            # Add semi-transparent background for better readability
+            padding = 4
+            bg_color = (255, 255, 255, 200)  # White with transparency
+            draw.rectangle([px - w/2 - padding, py - h/2 - padding, 
+                          px + w/2 + padding, py + h/2 + padding], 
+                          fill=bg_color)
+            
+            # Add subtle border
+            draw.rectangle([px - w/2 - padding, py - h/2 - padding, 
+                          px + w/2 + padding, py + h/2 + padding], 
+                          outline=(0, 0, 0, 100), width=1)
+            
+            # Draw text
+            draw.multiline_text((px - w/2, py - h/2), label, 
+                               font=font_label, fill=text_color, 
+                               align='center')
 
-        if show_edge_weights:
+        # Draw edge weight labels with improved styling
+        if show_edge_weights and raw_edge_labels:
             for (u, v), raw in raw_edge_labels.items():
                 midx = (pos[u][0] + pos[v][0]) / 2
                 midy = (pos[u][1] + pos[v][1]) / 2
                 px, py = data_to_image_px((midx, midy))
-                draw.text((px, py), raw, font=font_label, fill=weight_color, anchor="mm")
+                
+                # Background for weight labels
+                bbox = draw.textbbox((0, 0), raw, font=font_weight)
+                w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+                
+                # Semi-transparent background
+                bg_padding = 2
+                draw.rectangle([px - w/2 - bg_padding, py - h/2 - bg_padding, 
+                              px + w/2 + bg_padding, py + h/2 + bg_padding], 
+                              fill=(255, 255, 255, 180))
+                
+                draw.text((px - w/2, py - h/2), raw, font=font_weight, 
+                         fill=weight_color)
 
+        # Save final image with maximum quality and metadata
         labeled_path = os.path.join(plots_dir, 'network_labeled.png')
-        img.save(labeled_path)
+        
+        # Add a subtle watermark/signature (optional)
+        watermark_text = f"Network Analysis • {len(G.nodes())} Variables • {len(G.edges())} Connections"
+        try:
+            watermark_font = ImageFont.truetype(font_path, size=12)
+        except:
+            watermark_font = font_weight
+            
+        if watermark_font:
+            # Add watermark at bottom right
+            img_width, img_height = img.size
+            watermark_bbox = draw.textbbox((0, 0), watermark_text, font=watermark_font)
+            watermark_w = watermark_bbox[2] - watermark_bbox[0]
+            
+            # Semi-transparent background for watermark
+            draw.rectangle([img_width - watermark_w - 20, img_height - 30, 
+                          img_width - 5, img_height - 5], 
+                          fill=(255, 255, 255, 180))
+            
+            draw.text((img_width - watermark_w - 15, img_height - 25), watermark_text, 
+                     font=watermark_font, fill=(108, 117, 125, 200))
+        
+        img.save(labeled_path, 
+                quality=100, 
+                optimize=False, 
+                format='PNG',
+                pnginfo=None)  # High quality PNG
+
+        # Generate summary statistics
+        analyzed_columns = list(df_analysis.columns) if 'df_analysis' in locals() else selected_columns
+        stats = {
+            'total_nodes': G.number_of_nodes(),
+            'total_edges': G.number_of_edges(),
+            'correlation_method': correlation_method,
+            'correlation_threshold': correlation_threshold,
+            'columns_analyzed': analyzed_columns,
+            'selected_columns': selected_columns if selected_columns else "All numeric columns"
+        }
 
         return JsonResponse({
             'success': True,
-            'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads','plots', 'network_labeled.png'),
-            'message': "Network graph generated successfully"
+            'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 
+                                     'temporary_uploads', 'plots', 'network_labeled.png'),
+            'message': "Network graph generated successfully",
+            'stats': stats
         })
+
     except Exception as e:
+        print(f"Error in network graph generation: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
 def save_plot(plt, filename, user_id):
     import os
