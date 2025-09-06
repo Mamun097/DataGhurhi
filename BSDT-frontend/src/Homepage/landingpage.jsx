@@ -187,11 +187,11 @@ const LandingPage = () => {
           <h1 className="title">
             {language === "English" ? (
               <>
-                Welcome to <span className="highlight">DataGhurhi</span>
+                Welcome to <span className="highlight">DataGhurhi [Beta]</span>
               </>
             ) : (
               <>
-                <span className="highlight">ডাটাঘুড়ি</span>তে স্বাগতম
+                <span className="highlight">ডাটাঘুড়ি</span>তে স্বাগতম [Beta]
               </>
             )}
           </h1>
