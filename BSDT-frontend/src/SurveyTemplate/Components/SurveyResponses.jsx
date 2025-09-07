@@ -592,11 +592,17 @@ const SurveyResponses = () => {
       const result = await response.json();
 
       if (result.success) {
+        const fixedUrl = result.file_url.replace(/\\/g, '/');
+        console.log("Analysis file URL:", fixedUrl);
+
+        sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + fixedUrl || "");
         sessionStorage.setItem("surveyfile", "true");
         sessionStorage.setItem(
           "file_name",
           `survey_${surveyTitle}_responses.xlsx`
         );
+        //ask for confirmation before redirecting
+        // alert(fixedUrl)
         window.location.href = "/analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");
@@ -627,7 +633,7 @@ const SurveyResponses = () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container " style={{ marginTop: " 100px" }}>
+      <div className="container " style={{ marginTop: " 160px" }}>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3>{getLabel("Survey Responses")}</h3>
           <div className="d-flex gap-2">

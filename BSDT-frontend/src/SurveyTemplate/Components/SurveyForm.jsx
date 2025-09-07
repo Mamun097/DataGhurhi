@@ -507,7 +507,7 @@ const SurveyForm = ({
   };
 
   return (
-    <div className="px-2 px-md-3 py-10">
+    <div className="px-2 px-md-3 py-5">
       {/* Action Buttons */}
       <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
         {surveyStatus === "published" ? (

@@ -183,7 +183,7 @@ const Index = () => {
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container-fluid bg-white ">
+      <div className="container-fluid bg-white py-10">
         <div className="row">
           {/* Sidebar */}
           <div className="col-12 col-md-2">

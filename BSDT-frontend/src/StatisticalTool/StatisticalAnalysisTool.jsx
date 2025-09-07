@@ -316,30 +316,30 @@ const StatisticalAnalysisTool = () => {
     useEffect(() => {
         
 
-    let filename =  '';
-    if(isPreprocessed ) {
-        filename = "preprocess_"+sessionStorage.getItem("file_name") || '';
-    } 
     
-    else {
-        filename = sessionStorage.getItem("file_name") || '';
-    }
+    
+    
+    
+    const filename = sessionStorage.getItem("file_name") || '';
+    
 
     let fileUrl = "";
 
-
-    if (isPreprocessed) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
-       
-        sessionStorage.removeItem("preprocessed");
-    } else if (isSurveyData) {
-        fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/survey/${filename}`;
+     if (isSurveyData) {
+        
 
         sessionStorage.removeItem("surveyfile");
     }
-    else {
-        fileUrl = sessionStorage.getItem("fileURL");
+    else if (isPreprocessed) {
+        //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+       
+        sessionStorage.removeItem("preprocessed");
     }
+    
+        fileUrl = sessionStorage.getItem("fileURL");
+        console.log("File URL from sessionStorage:", fileUrl);
+
+    
 
 
     if (fileUrl) {
@@ -360,29 +360,16 @@ const StatisticalAnalysisTool = () => {
                 formData.append('file', newFile);
                 formData.append('userID', userId);
                 
-
-                return fetch('http://127.0.0.1:8000/api/upload-file/', {
-                    method: 'POST',
-                    body: formData,
-                });
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    
-                    setUploadStatus('success');
-                } else {
-                    setErrorMessage(data.error || "Failed to process columns");
-                    setUploadStatus('error');
-                }
             })
             .catch(err => {
-                console.error("Could not load and process file:", err);
-                setErrorMessage("File loading failed.");
+                console.error("Error loading file:", err);
+                setErrorMessage("Error loading file. Please re-upload.");
                 setUploadStatus("error");
             });
-    }
-}, []);
+        }
+}, [isPreprocessed, isSurveyData]);
+            
+
 useEffect(() => {
     //check columns state
     if (columns.length > 0) {
@@ -914,14 +901,14 @@ const handleSuggestionClick = () => {
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                         </svg>
                                         <span className="text-black">{t.formTitle}</span>
-                                        <div style={{ position: 'absolute', left: '57rem'}}>
+                                        
                                         <button
                                             onClick={() => navigate('/report')}
-                                            className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
+                                            className="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                                         >
                                             {language === 'বাংলা' ? 'রিপোর্ট দেখুন' : 'Show Report'}
                                         </button>
-                                        </div>
+                                        
                                     </div>
                                     <div className="flex justify-end px-4 pt-4">
                                         <button

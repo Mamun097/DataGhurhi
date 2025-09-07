@@ -3762,16 +3762,16 @@ def process_bar_chart_test(request, df, col, user_id, orientation='vertical'):
 
         use_default = request.POST.get('use_default', 'true') == 'true'
         if use_default:
-            dpi, width, height = 300, 900, 650
-            label_font_size, caption_font_size, tick_font_size = 56, 60, 16
-            cat_font_size, val_font_size = 44, 40
+            dpi, width, height = 400, 800, 750 
+            label_font_size, caption_font_size, tick_font_size = 30, 72, 12
+            cat_font_size, val_font_size = 32, 32 
             bar_color = 'steelblue'
         else:
-            dpi = int(request.POST.get('dpi', 300))
+            dpi = int(request.POST.get('dpi', 400))
             width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
-            label_font_size = int(request.POST.get('label_font_size', 56))
+            label_font_size = int(request.POST.get('label_font_size', 42))
             caption_font_size = int(request.POST.get('caption_font_size', 60))
-            tick_font_size = int(request.POST.get('tick_font_size', 16))
+            tick_font_size = int(request.POST.get('tick_font_size', 12))
             cat_font_size = int(request.POST.get('cat_font_size', 44))
             val_font_size = int(request.POST.get('val_font_size', 40))
             bar_color = request.POST.get('bar_color', 'steelblue')
@@ -3838,7 +3838,8 @@ def process_bar_chart_test(request, df, col, user_id, orientation='vertical'):
                         map_digits(str(val)), va='center', fontsize=val_font_size)
 
         plt.tight_layout()
-        fig.savefig(base_path, dpi=dpi, bbox_inches='tight')
+        fig.savefig(base_path, dpi=dpi, bbox_inches=None, pad_inches=0.4) 
+
         plt.close(fig)
 
         # --- PIL overlay for title ---
@@ -3928,7 +3929,7 @@ def preview_data(request):
             'num_columns': num_columns,
         })
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'}, status=500)
+        return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'}, status=500) 
  
 
 
@@ -3995,12 +3996,14 @@ def delete_columns_api(request):
 
         # Save updated sheet
         df.to_excel(preprocess_file_path, index=False)  
+        file_url = preprocess_file_path.replace('\\', '/')
 
         return JsonResponse({
             'success': True,
             'message': f'Deleted columns: {columns}',
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4256,6 +4259,7 @@ def remove_duplicates(request):
         print(removed)
         #print rows after deletion
         print(df) 
+        file_url = preprocess_file_path.replace('\\', '/')
 
         return JsonResponse({
             "success": True,
@@ -4263,6 +4267,7 @@ def remove_duplicates(request):
             "removed": removed,
             "rows": df.fillna("").astype(str).to_dict(orient="records"),
             "columns": df.columns.tolist(),
+            "file_url": file_url
         })
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
@@ -4338,6 +4343,7 @@ def handle_missing_api(request):
                         df[c] = df[c].fillna(mode_val.iloc[0])
 
         df.to_excel(preprocess_file_path, index=False)
+        file_url =preprocess_file_path.replace('\\', '/')
 
         return JsonResponse({
             'success': True,
@@ -4345,7 +4351,8 @@ def handle_missing_api(request):
             'deleted_columns': empty_columns,
             'deleted_rows': empty_rows,
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4500,12 +4507,14 @@ def handle_outliers_api(request):
             return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
         df.to_excel(preprocess_file_path, index=False)
+        file_url = preprocess_file_path.replace('\\', '/')
 
         return JsonResponse({
             'success': True,
             'message': message,
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4563,11 +4572,14 @@ def rank_categorical_column_api(request):
 
         df.to_excel(preprocess_file_path, index=False)
 
+        file_url = preprocess_file_path.replace('\\', '/')
+
         return JsonResponse({
             'success': True,
             'message': f"Column '{col}' ranked into '{new_col}'",
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4736,7 +4748,8 @@ def split_column_api(request):
         column = body.get('column', '').strip()
         method = body.get('method', '').strip().lower()
         phrases = body.get('phrases', [])
-        delete_original = body.get('delete_original', False)
+        delete_original = body.get('delete_original', False),
+
 
         if column not in df.columns:
             return JsonResponse({'success': False, 'error': f"Column '{column}' not found in dataset."})
@@ -4823,13 +4836,16 @@ def split_column_api(request):
         df.to_excel(preprocess_file_path, index=False)
         df = df.fillna("").astype(str)
 
+        file_url = preprocess_file_path.replace('\\', '/')
+
         return JsonResponse({
             'success': True,
             'message': f"Column '{column}' split successfully using '{method}' method.",
             'columns': df.columns.tolist(),
             'rows': df.head(100).to_dict(orient='records'), 
             'new_columns': new_cols,
-            'original_column_deleted': delete_original
+            'original_column_deleted': delete_original,
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4912,7 +4928,7 @@ def group_data_api(request):
 
         base_filename = os.path.splitext(filename)[0]
         grouped_filename = f"{base_filename}_grouped_splits.xlsx"
-        output_path = os.path.join(settings.MEDIA_ROOT, folder_name, grouped_filename)
+        output_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, grouped_filename)
 
         try:
             with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
@@ -4922,13 +4938,15 @@ def group_data_api(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to save grouped file: {str(e)}'})
         preview_data = grouped_dfs[0].to_dict(orient='records') if grouped_dfs else []
+        file_url = preprocess_file_path.replace('\\', '/')
+        
 
         return JsonResponse({
             'success': True,
             'message': 'Grouped splits saved to Excel file.',
             'download_url': f"/media/{folder_name}{grouped_filename}",
-            'preview_data': preview_data
-            
+            'preview_data': preview_data,
+            'file_url': file_url
         })
 
     except Exception as e:
@@ -4979,12 +4997,14 @@ def generate_unique_id_column_api(request):
         df[col_name] = np.arange(1, len(df) + 1)
 
         df.to_excel(preprocess_file_path, index=False)
+        file_url = preprocess_file_path.replace('\\', '/')
 
         return JsonResponse({
             'success': True,
             'message': f"Column '{col_name}' added with unique IDs.",
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records')
+            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'file_url': file_url,
         })
 
     except Exception as e:
@@ -5034,10 +5054,12 @@ def save_preprocessed_file_api(request):
                         destination.write(chunk)
             print(f"File saved to: {file_path}")
 
+            file_url = os.path.join('media', f'ID_{user_id}_uploads/temporary_uploads/', folder_name, file_name).replace('\\', '/')
+
             return JsonResponse({
                 'success': True,
                 'message': f"File saved as {file_name}",
-                'file_url': os.path.join(settings.MEDIA_URL,f'ID_{user_id}_uploads/temporary_uploads/', folder_name, file_name),
+                'file_url': file_url,
             })
 
         except Exception as e:
