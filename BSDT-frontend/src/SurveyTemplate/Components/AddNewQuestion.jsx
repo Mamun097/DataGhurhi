@@ -1,20 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import AutoGeneration from "./LLL-Generated-Question/AutoGeneration";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import ImportFromQb from "./importFromQB/importFromQb";
 
 const AddQuestion = ({
-  newQuestion,
-  setNewQuestion,
   addNewQuestion,
   addGeneratedQuestion,
   questionInfo,
   getLabel,
   addImportedQuestion,
 }) => {
-  const index = questionInfo ? questionInfo.index : 0; // This is used to determine the index of the new question being added
+  const [showQuestionTypes, setShowQuestionTypes] = useState(false);
+
+  const index = questionInfo ? questionInfo.index : 0;
+
   return (
     <div>
       <style>
@@ -32,7 +31,7 @@ const AddQuestion = ({
           }
         `}
       </style>
-      {newQuestion && (
+      {showQuestionTypes && (
         <div className="mt-3 p-3 border rounded shadow-sm bg-light position-relative">
           <button
             type="button"
@@ -44,7 +43,7 @@ const AddQuestion = ({
               zIndex: 2,
             }}
             aria-label="Close"
-            onClick={() => setNewQuestion(false)}
+            onClick={() => setShowQuestionTypes(false)}
           ></button>
           <p className="text-center h6 mt-2 mb-3 mx-3">
             <b>{getLabel("Select the type of question you want to add")}</b>
@@ -127,12 +126,16 @@ const AddQuestion = ({
       )}
 
       <div className="d-flex flex-column flex-md-row align-items-center justify-content-center mt-3 text-center">
-        <button
-          className="btn btn-outline-primary mb-2 mb-md-0 me-md-3"
-          onClick={() => setNewQuestion(true)}
-        >
-          <i className="bi bi-plus-lg"></i> {getLabel("Add Question")}
-        </button>
+        {!showQuestionTypes && (
+          <button
+            className="btn btn-outline-primary mb-2 mb-md-0 me-md-3"
+            onClick={() => setShowQuestionTypes(true)}
+          >
+            <i className="bi bi-plus-lg"></i>{" "}
+            {getLabel("Add Question Manually")}
+          </button>
+        )}
+
         <ImportFromQb
           addImportedQuestion={addImportedQuestion}
           questionInfo={questionInfo}
