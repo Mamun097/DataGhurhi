@@ -4,6 +4,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
+import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 import { useLocation } from 'react-router-dom'; // Import useLocation to access state
 
 const PreprocessDataPage = () => {
@@ -154,7 +155,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-6">
+    <>
+    <NavbarAcholder/>
+    <div className="min-h-screen bg-gray-50 py-12 px-6">
       <h1 className="text-3xl font-bold text-center text-blue-700 mb-8"> Data Preprocessing</h1>
 
       <div className="flex justify-between items-start mb-6 px-2 flex-wrap gap-4">
@@ -203,6 +206,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -228,6 +232,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows); 
                       setAvailableColumns(result.columns);
@@ -259,6 +264,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then(res => res.json())
                   .then(result => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -291,6 +297,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' +result.file_url || '');
                       alert(result.message);
                     } else {
                       alert(result.error || "Something went wrong.");
@@ -316,6 +323,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then(res => res.json())
                   .then(result => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000/' +result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -357,6 +365,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -389,6 +398,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
                       alert("Grouped data saved successfully!");
                       const link = document.createElement('a');
                       link.href = `http://103.94.135.115:8001${result.download_url}`;
@@ -414,6 +424,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
+                      sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000/' +result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -462,6 +473,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
               
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
+                  sessionStorage.setItem("file_name", 'preprocess_' + filename);
                   window.location.href = "/analysis";
                 
             }}
@@ -855,6 +867,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
         <a href="/analysis" className="text-blue-600 hover:underline">← Back to Main Page</a>
       </div>
     </div>
+    </>
   );
 };
 
