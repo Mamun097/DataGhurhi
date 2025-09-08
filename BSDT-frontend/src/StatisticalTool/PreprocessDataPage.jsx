@@ -464,6 +464,18 @@ function downloadAsPDF(data, filename = 'data.pdf') {
           </button>
           <button
             className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
+            onClick={() => {
+              if (data.length === 0) {
+                alert("No data available to visualize.");
+                return;
+              }
+              window.location.href = '/visualization';
+            }}
+          >
+            Visualize Data
+          </button>
+          <button
+            className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
             onClick={async () => {
               if (data.length === 0) {
                 alert("No preprocessed data available to analyze.");
