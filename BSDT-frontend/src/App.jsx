@@ -21,6 +21,7 @@ import SurveySuccess from "./SurveyTemplateUser/Components/SurveySuccess";
 import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 import ForgotPassword from "./AccountManagement/forgotPassword";
 import ReportViewer from "./StatisticalTool/ReportViewer";
+import Data_summary from "./StatisticalTool/visualization";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -60,6 +61,8 @@ function App() {
             {/* <Route path="/question-bank" element={<QB />} /> */}
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
             <Route path="/preprocess" element={<PreprocessDataPage />} />
+            <Route path="/visualization" element={<Data_summary />} />
+
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
             
             <Route path="/group-preview" element={<GroupPreviewPage />} />

@@ -1,5 +1,6 @@
 import os
-import matplotlib
+import matplotlib  as mpl
+import uuid
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,7 @@ import seaborn as sns
 from sklearn.preprocessing import OrdinalEncoder
 from django.views.decorators.csrf import csrf_exempt
 import json
-matplotlib.use('Agg')
+mpl.use('Agg') 
 from itertools import combinations
 import networkx as nx
 import statsmodels.api as sm
@@ -511,273 +512,325 @@ def analyze_data_api(request):
     return render(request, 'analysis/upload.html', {'form': form})
 
 
-def process_kruskal_test(request, df, col1, col2, user_id):
-    print(f"Processing Kruskal-Wallis test for columns: {col1} and {col2}")
-    print(f"Column {col1} type: {df[col1].dtype}, contains NaN: {df[col1].isna().any()}")
-    print(f"Column {col2} type: {df[col2].dtype}, contains NaN: {df[col2].isna().any()}")
-    print(f"First few values of {col1}: {df[col1].head()}")
-    print(f"First few values of {col2}: {df[col2].head()}")
+# views.py (or wherever your view lives)
 
-    try:
-        print("Attempting Kruskal-Wallis test...")
-        stat, p_value = stats.kruskal(df[col1], df[col2])
-        print(f"Kruskal-Wallis test result: Statistic = {stat}, P-value = {p_value}")
-    except Exception as e:
-        print(f"Error in Kruskal-Wallis test: {e}")
-        raise ValueError(f"Error in Kruskal-Wallis test: {e}")
+import os
+import io
+import json
+import math
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+import seaborn as sns
+import pandas as pd
+from PIL import Image, ImageDraw, ImageFont
+from scipy import stats
 
-    """Process Kruskal-Wallis test with Bengali language support"""
-    try:
-        print("Starting Kruskal-Wallis test processing")
-        # Get language preference
-        language = request.POST.get('language', 'en')
-        img_format = request.POST.get('format', 'png')
-        use_default = request.POST.get('use_default', 'true') == 'true'
+from django.conf import settings
+from django.http import JsonResponse
 
-        print(f"Request Params - Language: {language}, Format: {img_format}, Use Default: {use_default}")
-        print(f"Analyzing Columns: {col1} and {col2}")
-        print(f"DataFrame head:\n{df[[col1, col2]].head()}")
-        
-        # Set up file paths
-        media_root = settings.MEDIA_ROOT
-        media_url = settings.MEDIA_URL
-        #plots dir in user folder
-        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
+# Optional: googletrans for auto-translation of labels to Bengali
+try:
+    from googletrans import Translator  # pip install googletrans==4.0.0-rc1
+except Exception:  # pragma: no cover
+    Translator = None
 
-        os.makedirs(plots_dir, exist_ok=True)
-        
-        # Initialize translator
-        translator = Translator()
-        
-        # Define digit mapping for Bengali
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        
-        # Helper functions for Bengali translation and digit mapping
-        def translate(text):
-            if language == 'bn':
-                try:
-                    return translator.translate(text, dest='bn').text
-                except:
-                    return text
-            return text
-        
-        def map_digits(s):
-            if language == 'bn':
-                return s.translate(digit_map_bn)
-            return s
-        
-        # Set plot parameters
-        if use_default:
-            label_font_size = 36
-            tick_font_size = 16
-            img_quality = 90
-            try:
-                width, height = map(int, '800x600'.split('x'))
-            except:
-                width, height = 800, 600
-            palette = 'deep'
-            bar_width = 0.8
-            box_width = 0.8
-            violin_width = 0.8
-        else:
-            label_font_size = int(request.POST.get('label_font_size', 36))
-            tick_font_size = int(request.POST.get('tick_font_size', 16))
-            img_quality = int(request.POST.get('image_quality', 90))
-            size_input = request.POST.get('image_size', '800x600')
-            try:
-                width, height = map(int, size_input.split('x'))
-            except:
-                width, height = 800, 600
-            palette = request.POST.get('palette', 'deep')
-            bar_width = float(request.POST.get('bar_width', 0.8))
-            box_width = float(request.POST.get('box_width', 0.8))
-            violin_width = float(request.POST.get('violin_width', 0.8))
-        
 
-        if language == 'bn':
-            font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-            if not os.path.exists(font_path):
-                bengali_font_name = 'sans-serif'
-            else:
-                fm.fontManager.addfont(font_path)
-                bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-                matplotlib.rcParams['font.family'] = bengali_font_name
-        
-        # Perform Kruskal-Wallis test
-        stat, p_value = stats.kruskal(df[col1], df[col2])
-
-        print(f"Kruskal-Wallis test result: Statistic = {stat}, P-value = {p_value}")
-        
-        # Create and save visualizations
-        image_paths = []
-
-        def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
-            plt.tight_layout(pad=0)
-            
-            base_path = os.path.join(plots_dir, base_filename)
-            final_path = os.path.join(plots_dir, final_filename)
-
-            if language == 'bn' and os.path.exists(font_path):
-                # For Bengali, not set labels in matplotlib
-                ax.set_title('')
-                ax.set_xlabel('')
-                ax.set_ylabel('')
-                
-                # Save base image without labels
-                fig.savefig(base_path, bbox_inches='tight', dpi=300, format='PNG')
-                plt.close(fig)
-                
-                # Add Bengali labels with PIL
-                T = map_digits(translate(title))
-                X = map_digits(translate(xlabel))
-                Y = map_digits(translate(ylabel))
-                
-                label_font = ImageFont.truetype(font_path, size=label_font_size)
-                
-                tx0, ty0, tx1, ty1 = label_font.getbbox(T)
-                th = ty1 - ty0
-                xx0, xy0, xx1, xy1 = label_font.getbbox(X)
-                xh = xy1 - xy0
-                yx0, yy0, yx1, yy1 = label_font.getbbox(Y)
-                yw, yh = yx1 - yx0, yy1 - yy0
-                
-                pad = label_font_size // 2
-                lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
-                
-                base_img = Image.open(base_path).convert("RGB")
-                bw, bh = base_img.size
-                W, H = bw + lm + rm, bh + tm + bm
-                canvas = Image.new("RGB", (W, H), "white")
-                canvas.paste(base_img, (lm, tm))
-                draw = ImageDraw.Draw(canvas)
-                
-                def center_h(txt, fnt, total_w):
-                    return (total_w - int(draw.textlength(txt, font=fnt))) // 2
-                
-                # Title
-                tx = center_h(T, label_font, W)
-                draw.text((tx, (tm - th) // 2), T, font=label_font, fill="black")
-                
-                # X-axis label
-                xx = center_h(X, label_font, W)
-                draw.text((xx, tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
-                
-                # Y-axis label rotated
-                Yimg = Image.new("RGBA", (yw, yh), (255, 255, 255, 0))
-                d2 = ImageDraw.Draw(Yimg)
-                d2.text((0, 0), Y, font=label_font, fill="black")
-                Yrot = Yimg.rotate(90, expand=True)
-                canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-                
-                # Save the final image
-                canvas.save(final_path, format=img_format.upper(), quality=img_quality, dpi=(300, 300), optimize=True)
-            
-            else:
-                # For English, set the labels in matplotlib
-                ax.set_title(title)
-                ax.set_xlabel(xlabel)
-                ax.set_ylabel(ylabel)
-                
-                # Save directly to final path
-                fig.savefig(final_path, bbox_inches='tight', dpi=300, format=img_format.upper())
-                plt.close(fig)
-            print(f"Saved plot to {final_path}")
-
-            return f"{media_url}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
-
-        # Prepare category labels
-        categories = sorted(df[col1].unique())
-        if language == 'bn':
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if os.path.exists(font_path) else None
-            cat_labels = [map_digits(translate(str(c))) for c in categories]
-        else:
-            tick_prop = fm.FontProperties(size=tick_font_size)
-            cat_labels = [str(c) for c in categories]
-        
-        # 1. Count plot
-        fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.countplot(
-            data=df, x=col1, hue=col2,
-            palette=palette, width=bar_width, ax=ax1
-        )
-        ax1.set_xticks(range(len(categories)))
-        ax1.set_xticklabels(cat_labels, fontproperties=tick_prop)
-        
-        yt = ax1.get_yticks().astype(int)
-        yt_labels = [map_digits(str(i)) for i in yt] if language == 'bn' else [str(i) for i in yt]
-        ax1.set_yticks(yt)
-        ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
-        
-        leg = ax1.legend(prop=tick_prop)
-        for txt, lbl in zip(leg.texts, sorted(df[col2].unique())):
-            txt.set_text(map_digits(translate(str(lbl))))
-        
-        count_path = create_labeled_plot(
-            fig1, ax1,
-            title=f"{col1} vs {col2}",
-            xlabel=col1,
-            ylabel="Count",
-            base_filename="count_base.png",
-            final_filename=f"countplot.{img_format}"
-        )
-        image_paths.append(count_path)
-        
-        # 2. Box plot
-        fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.boxplot(x=col1, y=col2, data=df, palette=palette, width=box_width, ax=ax2)
-        ax2.set_xticks(range(len(categories)))
-        ax2.set_xticklabels(cat_labels, fontproperties=tick_prop)
-        
-        yt2 = ax2.get_yticks()
-        yt2_labels = [map_digits(f"{v:.2f}") for v in yt2] if language == 'bn' else [f"{v:.2f}" for v in yt2]
-        ax2.set_yticks(yt2)
-        ax2.set_yticklabels(yt2_labels, fontproperties=tick_prop)
-        
-        box_path = create_labeled_plot(
-            fig2, ax2,
-            title=f"Boxplot of {col2} by {col1}",
-            xlabel=col1,
-            ylabel=col2,
-            base_filename="box_base.png",
-            final_filename=f"boxplot.{img_format}"
-        )
-        image_paths.append(box_path)
-        
-        # 3. Violin plot
-        fig3, ax3 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.violinplot(x=col1, y=col2, data=df, palette=palette, width=violin_width, ax=ax3)
-        ax3.set_xticks(range(len(categories)))
-        ax3.set_xticklabels(cat_labels, fontproperties=tick_prop)
-        
-        yt3 = ax3.get_yticks()
-        yt3_labels = [map_digits(f"{v:.2f}") for v in yt3] if language == 'bn' else [f"{v:.2f}" for v in yt3]
-        ax3.set_yticks(yt3)
-        ax3.set_yticklabels(yt3_labels, fontproperties=tick_prop)
-        
-        violin_path = create_labeled_plot(
-            fig3, ax3,
-            title=f"Violin Plot of {col2} by {col1}",
-            xlabel=col1,
-            ylabel=col2,
-            base_filename="violin_base.png",
-            final_filename=f"violinplot.{img_format}"
-        )
-        image_paths.append(violin_path)
-        
-        # Return results
-        return JsonResponse({
-            'test': 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট',
-            'statistic': stat,
-            'p_value': p_value,
-            'success': True,
-            'image_paths': image_paths
-        })
+def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
     
+
+   
+    print(f"[Kruskal] cols: {col1}(group) | {col2}(value)")
+    if col1 not in df.columns or col2 not in df.columns:
+        return JsonResponse({'success': False, 'error': 'Invalid column names.'})
+
+    
+    try:
+        language   = request.POST.get('language', 'en').lower()
+        img_format = request.POST.get('format', 'png').lower()
+        use_default = request.POST.get('use_default', 'true') == 'true'
+    except Exception:
+        language, img_format, use_default = 'en', 'png', True
+
+    if language not in ('en', 'bn'):
+        language = 'en'
+    if img_format not in ('png', 'jpg', 'jpeg', 'pdf', 'tiff'):
+        img_format = 'png'
+
+    
+    pil_fmt = {
+        'png': 'PNG',
+        'jpg': 'JPEG',
+        'jpeg': 'JPEG',
+        'pdf': 'PDF',
+        'tiff': 'TIFF'
+    }.get(img_format, 'PNG')
+
+    # Plot params
+    if use_default:
+        label_font_size = 36
+        tick_font_size  = 16
+        img_quality     = 90
+        width, height   = 800, 600
+        palette         = 'deep'
+        bar_width       = 0.8
+        box_width       = 0.8
+        violin_width    = 0.8
+    else:
+        def _int(name, default):
+            try: return int(request.POST.get(name, default))
+            except Exception: return default
+        def _float(name, default):
+            try: return float(request.POST.get(name, default))
+            except Exception: return default
+
+        label_font_size = _int('label_font_size', 36)
+        tick_font_size  = _int('tick_font_size', 16)
+        img_quality     = _int('image_quality', 90)
+
+        size_input = request.POST.get('image_size', '800x600')
+        try:
+            width, height = map(int, size_input.lower().split('x'))
+        except Exception:
+            width, height = 800, 600
+
+        palette      = request.POST.get('palette', 'deep') or 'deep'
+        bar_width    = _float('bar_width', 0.8)
+        box_width    = _float('box_width', 0.8)
+        violin_width = _float('violin_width', 0.8)
+
+    
+    media_root = settings.MEDIA_ROOT
+    media_url  = settings.MEDIA_URL.rstrip('/') + '/'
+    plots_dir  = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
+    os.makedirs(plots_dir, exist_ok=True)
+
+    
+    translator = Translator() if (Translator is not None and language == 'bn') else None
+
+    digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+
+    def translate(text: str) -> str:
+        if language == 'bn' and translator is not None:
+            try:
+                return translator.translate(text, dest='bn').text
+            except Exception:
+                return text
+        return text
+
+    def map_digits(s: str) -> str:
+        return s.translate(digit_map_bn) if language == 'bn' else s
+
+    # -----------------------------
+    # 4) Bengali font setup (with fallback)
+    # -----------------------------
+    font_path = os.path.join(getattr(settings, 'BASE_DIR', ''), 'NotoSansBengali-Regular.ttf')
+
+    def get_pil_font(size: int) -> ImageFont.FreeTypeFont:
+       
+        try:
+            if language == 'bn' and os.path.exists(font_path):
+                return ImageFont.truetype(font_path, size=size)
+            djv_path = fm.findfont('DejaVu Sans', fallback_to_default=True)
+            if os.path.exists(djv_path):
+                return ImageFont.truetype(djv_path, size=size)
+        except Exception:
+            pass
+        return ImageFont.load_default()
+
+    # For Matplotlib tick labels: prefer same font family if available
+    try:
+        if language == 'bn' and os.path.exists(font_path):
+            fm.fontManager.addfont(font_path)
+            bengali_font_name = fm.FontProperties(fname=font_path).get_name()
+            matplotlib.rcParams['font.family'] = bengali_font_name
+        else:
+            # Use DejaVu Sans to maximize glyph coverage
+            matplotlib.rcParams['font.family'] = 'DejaVu Sans'
     except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': str(e)
-        })
+        print(f"[Kruskal] Matplotlib font setup warning: {e}")
+
+    tick_prop = fm.FontProperties(size=tick_font_size)
+    if language == 'bn' and os.path.exists(font_path):
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+
+    
+    work = df[[col1, col2]].copy()
+    work = work.dropna(subset=[col1, col2])
+    print(f"[Kruskal] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col1]):
+        work[col1] = work[col1].astype('category')
+
+    categories = list(work[col1].cat.categories)
+    if len(categories) < 2:
+        return JsonResponse({'success': False, 'error': 'Need at least 2 groups in the factor column for Kruskal–Wallis.'})
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col2]):
+        work[col2] = pd.to_numeric(work[col2], errors='coerce')
+        work = work.dropna(subset=[col2])
+        if not pd.api.types.is_numeric_dtype(work[col2]):
+            return JsonResponse({'success': False, 'error': f'"{col2}" must be numeric for Kruskal–Wallis.'})
+
+    
+    groups = [work.loc[work[col1] == g, col2].values for g in categories]
+    if any(len(g) == 0 for g in groups):
+        return JsonResponse({'success': False, 'error': 'Each group must contain at least one observation.'})
+
+    try:
+        stat, p_value = stats.kruskal(*groups)
+        print(f"[Kruskal] result: H={stat}, p={p_value}")
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': f'Error in Kruskal–Wallis test: {e}'})
+
+    # -----------------------------
+    # 7) PIL label compositing helper
+    # -----------------------------
+    def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
+        
+        # Remove mpl labels (we draw them with PIL)
+        ax.set_title('')
+        ax.set_xlabel('')
+        ax.set_ylabel('')
+
+        # Save high-res base image (PNG) without labels
+        base_path = os.path.join(plots_dir, base_filename)
+        final_path = os.path.join(plots_dir, final_filename)
+
+        plt.tight_layout(pad=0)
+        fig.savefig(base_path, bbox_inches='tight', dpi=300, format='PNG')
+        plt.close(fig)
+
+        # Prepare strings
+        T = map_digits(translate(title))
+        X = map_digits(translate(xlabel))
+        Y = map_digits(translate(ylabel))
+
+        # Fonts
+        label_font = get_pil_font(label_font_size)
+
+        # Measure text
+        tx0, ty0, tx1, ty1 = label_font.getbbox(T); th = ty1 - ty0
+        xx0, xy0, xx1, xy1 = label_font.getbbox(X); xh = xy1 - xy0
+        yx0, yy0, yx1, yy1 = label_font.getbbox(Y); yw, yh = yx1 - yx0, yy1 - yy0
+
+        # Padding (left must fit rotated Y label height)
+        pad = max(label_font_size // 2, 10)
+        lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
+
+        # Compose canvas
+        base_img = Image.open(base_path).convert("RGB")
+        bw, bh = base_img.size
+        W, H = bw + lm + rm, bh + tm + bm
+        canvas = Image.new("RGB", (W, H), "white")
+        canvas.paste(base_img, (lm, tm))
+        draw = ImageDraw.Draw(canvas)
+
+        # center helper
+        def center_h(txt, fnt, total_w):
+            return (total_w - int(draw.textlength(txt, font=fnt))) // 2
+
+        # Title (top center)
+        tx = center_h(T, label_font, W)
+        draw.text((tx, (tm - th) // 2), T, font=label_font, fill="black")
+
+        # X-axis (bottom center)
+        xx = center_h(X, label_font, W)
+        draw.text((xx, tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
+
+        # Y-axis (rotated)
+        Yimg = Image.new("RGBA", (yw, yh), (255, 255, 255, 0))
+        d2 = ImageDraw.Draw(Yimg)
+        d2.text((0, 0), Y, font=label_font, fill="black")
+        Yrot = Yimg.rotate(90, expand=True)
+        canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
+
+        # Save final in requested format
+        canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
+        print(f"[Kruskal] saved: {final_path}")
+
+        return f"{media_url}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
+
+   
+    cat_labels = [map_digits(translate(str(c))) for c in categories]
+
+   
+    image_paths = []
+
+    # 9a) Count plot (group sizes)
+    fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+    counts = work[col1].value_counts().reindex(categories).fillna(0).astype(int)
+    sns.barplot(x=[str(c) for c in categories], y=counts.values, ax=ax1, width=bar_width, palette=palette)
+    ax1.set_xticklabels(cat_labels, fontproperties=tick_prop)
+    # y ticks (map to digits if bn)
+    yt = ax1.get_yticks()
+    yt_labels = []
+    for v in yt:
+        if abs(v - int(round(v))) < 1e-6:
+            s = f"{int(round(v))}"
+        else:
+            s = f"{v:.0f}"
+        yt_labels.append(map_digits(s))
+    ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
+
+    count_path = create_labeled_plot(
+        fig1, ax1,
+        title=f"{col1} group sizes",
+        xlabel=col1, ylabel="Count",
+        base_filename="count_base.png",
+        final_filename=f"countplot.{img_format}"
+    )
+    image_paths.append(count_path)
+
+    # 9b) Box plot of col2 by col1
+    fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+    sns.boxplot(x=work[col1], y=work[col2], ax=ax2, width=box_width, palette=palette, order=categories)
+    ax2.set_xticklabels(cat_labels, fontproperties=tick_prop)
+    yt2 = ax2.get_yticks()
+    ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in yt2], fontproperties=tick_prop)
+
+    box_path = create_labeled_plot(
+        fig2, ax2,
+        title=f"Boxplot of {col2} by {col1}",
+        xlabel=col1, ylabel=col2,
+        base_filename="box_base.png",
+        final_filename=f"boxplot.{img_format}"
+    )
+    image_paths.append(box_path)
+
+    # 9c) Violin plot of col2 by col1
+    fig3, ax3 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
+    sns.violinplot(x=work[col1], y=work[col2], ax=ax3, width=violin_width, palette=palette, order=categories, cut=0)
+    ax3.set_xticklabels(cat_labels, fontproperties=tick_prop)
+    yt3 = ax3.get_yticks()
+    ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in yt3], fontproperties=tick_prop)
+
+    violin_path = create_labeled_plot(
+        fig3, ax3,
+        title=f"Violin plot of {col2} by {col1}",
+        xlabel=col1, ylabel=col2,
+        base_filename="violin_base.png",
+        final_filename=f"violinplot.{img_format}"
+    )
+    image_paths.append(violin_path)
+
+    
+    stat_out = stat
+    p_out    = p_value
+    if language == 'bn':
+        stat_out = map_digits(f"{stat:.6g}")
+        p_out    = map_digits(f"{p_value:.6g}")
+
+    return JsonResponse({
+        'test': 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট',
+        'statistic': stat_out,
+        'p_value': p_out,
+        'success': True,
+        'image_paths': image_paths
+    })
+ 
 
 def process_mannwhitney_test(request, df, col1, col2, user_id):
     from django.http import JsonResponse
@@ -928,17 +981,8 @@ def process_mannwhitney_test(request, df, col1, col2, user_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_pearson_test(request, df, selected_columns, user_id):
-    import os
+    
     from itertools import combinations
-
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from django.conf import settings
-    from django.http import JsonResponse
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
     from scipy.stats import pearsonr
 
     try:
@@ -1111,15 +1155,6 @@ def process_pearson_test(request, df, selected_columns, user_id):
 def process_spearman_test(request, df, selected_columns, user_id):
     import os
     from itertools import combinations
-
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    from django.conf import settings
-    from django.http import JsonResponse
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
     from scipy.stats import spearmanr
 
     try:
@@ -1271,17 +1306,8 @@ def process_spearman_test(request, df, selected_columns, user_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_shapiro_test(request, df, col1, user_id):
-    import os
+    
     from scipy.stats import shapiro, norm
-    from django.conf import settings
-    from django.http import JsonResponse
-    from googletrans import Translator
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    import seaborn as sns
-    from PIL import Image, ImageDraw, ImageFont
-    import numpy as np
-    import pandas as pd
     import re
 
     try:
@@ -1564,16 +1590,12 @@ def process_wilcoxon_test(request, df, col1, col2, user_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_linear_regression_test(request, df, col1, col2, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
+    
+    
     from sklearn.linear_model import LinearRegression
     from sklearn.metrics import r2_score, mean_squared_error
-    import matplotlib.font_manager as fm
-    from PIL import Image, ImageDraw, ImageFont
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
+    
+   
 
     try:
         # Handle options from request
@@ -3249,19 +3271,11 @@ def process_similarity(request, df, user_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_chi_square(request, df, user_id):
-    from django.http import JsonResponse
-    from django.conf import settings
-    import pandas as pd
-    import numpy as np
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from scipy.stats import chi2_contingency
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
-    import os
-    import uuid
+    
+
+    
+    
+    
 
     try:
         # --- 1) Get columns and settings ---
@@ -3375,18 +3389,7 @@ def process_chi_square(request, df, user_id):
         return JsonResponse({"success": False, "error": str(e)})
 
 def process_cramers_heatmap(request, selected_columns, df, user_id):
-    from django.http import JsonResponse
-    from django.conf import settings
-    import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
-    import os, uuid
-    from scipy.stats import chi2_contingency
-    import numpy as np
+    
 
     try:
         # --- 1) Inputs ---
@@ -3394,11 +3397,13 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         fmt = request.POST.get("format", "png").lower()
         pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
 
-        label_font_size = int(request.POST.get("label_font_size", 36))
-        tick_font_size = int(request.POST.get("tick_font_size", 16))
+        label_font_size = 58
+        tick_font_size =36
         img_quality = int(request.POST.get("image_quality", 90))
         palette = request.POST.get("palette", "coolwarm")
         image_size = request.POST.get("image_size", "800x600")
+
+        
         try:
             width, height = map(int, image_size.lower().split("x"))
         except:
@@ -3453,19 +3458,141 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         # --- 4) Heatmap ---
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
         cmap = sns.color_palette(palette, as_cmap=True)
-        hm = sns.heatmap(mat, annot=True, fmt=".2f", cmap=cmap, ax=ax)
+        hm = sns.heatmap(mat, annot=True, fmt=".2f", cmap=cmap, ax=ax, cbar=True)
+        
 
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        ax.set_title(translate("Cramér's V Heatmap"))
+        
+        # Hide all Matplotlib text; PIL will draw it
+        ax.set_xlabel(''); ax.set_ylabel(''); ax.set_title('')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.tick_params(axis='both', length=0)
 
-        ax.set_xticklabels([map_digits(translate(str(t))) for t in mat.columns], fontproperties=tick_prop, rotation=45, ha='right')
-        ax.set_yticklabels([map_digits(translate(str(t))) for t in mat.index], fontproperties=tick_prop, rotation=0)
+        # Ensure layout is computed
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
 
-        # Save
-        final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
-        fig.savefig(final_path, dpi=300, bbox_inches='tight')
+        n_rows, n_cols = mat.shape
+
+        # ----- exact edges & centers in figure pixels at fig.dpi -----
+        # left/right edge x at data x=0 and x=n_cols
+        x_left_fig,  _          = ax.transData.transform((0,        0))
+        x_right_fig, _          = ax.transData.transform((n_cols,   0))
+        # top/bottom edge y at data y=0 and y=n_rows  (note: pixel y grows downward)
+        _, y_top_fig            = ax.transData.transform((0,        0))
+        _, y_bottom_fig         = ax.transData.transform((0,   n_rows))
+
+        # column centers (x only)
+        col_centers_fig = [ax.transData.transform((j + 0.5, 0))[0] for j in range(n_cols)]
+        # row centers (y only)
+        row_centers_fig = [ax.transData.transform((0, i + 0.5))[1] for i in range(n_rows)]
+
+        # ----- scale to save DPI (e.g., 300) -----
+        save_dpi = 300
+        scale = save_dpi / fig.dpi
+
+        x_left_px   = int(x_left_fig   * scale)
+        x_right_px  = int(x_right_fig  * scale)
+        y_top_px    = int(y_top_fig    * scale)
+        y_bottom_px = int(y_bottom_fig * scale)
+        col_centers_px = [int(x * scale) for x in col_centers_fig]
+        row_centers_px = [int(y * scale) for y in row_centers_fig]
+
+        # Save BASE without tight-cropping (aligns pixel coords)
+        base_png_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}_base.png")
+        fig.savefig(base_png_path, dpi=save_dpi)   # <-- NO bbox_inches='tight'
         plt.close(fig)
+
+
+        # Prepare localized labels 
+        title_txt  = map_digits(translate("Cramér's V Heatmap"))
+        col_labels = [map_digits(translate(str(t))) for t in mat.columns]
+        row_labels = [map_digits(translate(str(t))) for t in mat.index]
+
+        # Fonts you already have
+        tick_font  = ImageFont.truetype(font_path, size=tick_font_size)
+        # label_font already defined
+
+        # Open base and make a canvas with margins
+        base = Image.open(base_png_path).convert("RGB")
+        bw, bh = base.size
+
+        def _w(font, txt): 
+            if not txt: return 0
+            a,b,c,d = font.getbbox(txt); return c-a
+        def _h(font, txt): 
+            if not txt: return 0
+            a,b,c,d = font.getbbox(txt); return d-b
+
+        title_h = _h(label_font, title_txt) if title_txt else 0
+        pad     = max(8, tick_font.size // 2)
+
+        # estimate needed margins
+        max_x_tick_h = max((_w(tick_font, s) for s in col_labels), default=0) // 2 + tick_font.size // 2
+        max_y_tick_w = max((_w(tick_font, s) for s in row_labels), default=0)
+
+        top_margin    = (title_h + pad) if title_txt else pad
+        bottom_margin = (max_x_tick_h + pad) if col_labels else pad
+        left_margin   = (max_y_tick_w + pad) if row_labels else pad
+        right_margin  = pad
+
+        W = bw + left_margin + right_margin
+        H = bh + top_margin + bottom_margin
+        canvas = Image.new("RGB", (W, H), "white")
+        canvas.paste(base, (left_margin, top_margin))
+        draw = ImageDraw.Draw(canvas)
+
+        # Title (top, centered)
+        if title_txt:
+            tlen = draw.textlength(title_txt, font=label_font)
+            tx = (W - int(tlen)) // 2
+            ty = (top_margin - title_h) // 2
+            draw.text((tx, ty), title_txt, font=label_font, fill="black")
+
+        # Convert heatmap edge & center pixels into canvas coords
+        x_left_c   = left_margin + x_left_px
+        x_right_c  = left_margin + x_right_px
+        y_top_c    = top_margin  + y_top_px
+        y_bottom_c = top_margin  + y_bottom_px
+        col_centers_c = [left_margin + x for x in col_centers_px]
+        row_centers_c = [top_margin  + y for y in row_centers_px]
+
+        # X labels (bottom, rotated 45°, centered under each column)
+        base_y =  y_bottom_c + pad
+        # X labels: bottom of the axis, horizontally centered under each column
+        for cx, lab in zip(col_centers_c, col_labels):
+            tw = int(draw.textlength(lab, font=tick_font))
+            th = tick_font.size
+            lx = cx - tw               # center text under the column
+            ly = y_bottom_c + pad           # place just below the heatmap bottom edge
+            
+            lab_img = Image.new("RGBA", (tw + 8, th + 8), (255,255,255,0))
+            d2 = ImageDraw.Draw(lab_img)
+            d2.text((4, 0), lab, font=tick_font, fill="black")
+            lab_rot = lab_img.rotate(30, expand=True)
+            lx = cx - lab_rot.width
+            ly = y_top_c + pad
+            canvas.paste(lab_rot, (lx, ly), lab_rot)
+
+
+
+        # Y labels (left, horizontal, centered on each row)
+        for cy, lab in zip(row_centers_c, row_labels):
+            tw = int(draw.textlength(lab, font=tick_font))
+            lx = max(0, x_left_c - pad - tw)
+            ly = cy - tick_font.size // 2
+            draw.text((lx, ly), lab, font=tick_font, fill="black")
+
+        # Final save
+        final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
+        if pil_fmt == "JPEG":
+            canvas.save(final_path, format=pil_fmt, quality=img_quality, subsampling=0, progressive=True)
+        elif pil_fmt == "PNG":
+            canvas.save(final_path, format=pil_fmt, optimize=True)
+        else:
+            canvas.save(final_path, format=pil_fmt)
+
+
+
         print(final_path) 
 
         return JsonResponse({
