@@ -57,7 +57,7 @@ exports.createSurveyForm = async (req, res) => {
   try {
     const { survey_id, project_id, survey_template, title, response_user_logged_in_status , shuffle_questions} = req.body;
     const user_id = req.jwt.id;
-    console.log(survey_template.questions);
+    
     // Validate input
     if (!project_id || !survey_template) {
       return res.status(400).json({
