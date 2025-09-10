@@ -67,6 +67,7 @@ useEffect(() => {
       'userID': userId,
       'filename': filename, // Include filename in headers
       'sheet': sessionStorage.getItem("activesheetname") || ''
+      ,'Fileurl': sessionStorage.getItem("fileURL") || ''
     }
   })
     .then(res => {
@@ -81,7 +82,7 @@ useEffect(() => {
       setData(result.rows);
       setAvailableColumns(result.columns);
       setMissingValues(result.missing_values || {});
-      setFileURL(result.fileURL || '');
+      
       // setNumericColumns(result.num_columns || [])
       
     })
@@ -182,6 +183,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
           <button
             className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg shadow"
             onClick={() => {
+              console.log(sessionStorage.getItem("fileURL"));
               if (!selectedOption) {
                 alert("Please select a preprocessing option first.");
                 return;
@@ -199,6 +201,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: {
                     'userID': userId, // Include user ID in headers
                     'filename': filename, // Include filename in headers
+                    'sheet': sessionStorage.getItem("activesheetname") || '',
+                    'Fileurl': sessionStorage.getItem("fileURL") || '',
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ columns: columnsToDelete }),
@@ -206,7 +210,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
+                      sessionStorage.setItem("fileURL",result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -225,6 +229,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: {
                     'userID': userId,
                     'filename': filename,
+                    'sheet': sessionStorage.getItem("activesheetname") || '',
+                    'file_url': sessionStorage.getItem("fileURL"),
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ columns: duplicateColumns }),
@@ -232,7 +238,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
+                      sessionStorage.setItem("fileURL", result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows); 
                       setAvailableColumns(result.columns);
@@ -257,6 +263,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: { 'Content-Type': 'application/json'
                     , 'userID': userId // Include user ID in headers
                     , 'filename': filename // Include filename in headers
+                    , 'file_url': sessionStorage.getItem("fileURL") // Include file URL in headers
+                    ,'sheet': sessionStorage.getItem("activesheetname") || ''
                    },
                   body: JSON.stringify({ column: missingColumn, method: missingMethod, missing_spec: missingSpec,
  })
@@ -264,7 +272,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then(res => res.json())
                   .then(result => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
+                      sessionStorage.setItem("fileURL", result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -288,6 +296,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json'
                     , 'userID': userId // Include user ID in headers
+                    , 'Fileurl': sessionStorage.getItem("fileURL") || ''
+                    , 'sheet': sessionStorage.getItem("activesheetname") || ''
                    },
                   body: JSON.stringify({ column: outlierColumn, method: outlierMethod })
                 })
@@ -297,7 +307,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' +result.file_url || '');
+                      sessionStorage.setItem("fileURL",result.file_url || '');
                       alert(result.message);
                     } else {
                       alert(result.error || "Something went wrong.");
@@ -317,13 +327,15 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: { 'Content-Type': 'application/json'
                     , 'userID': userId ,// Include user ID in headers
                     'filename': filename // Include filename in headers
+                    , 'Fileurl': sessionStorage.getItem("fileURL") // Include file URL in headers
+                    ,'sheet': sessionStorage.getItem("activesheetname") || ''
                    },
                   body: JSON.stringify({ column: rankColumn, mapping: rankMapping })
                 })
                   .then(res => res.json())
                   .then(result => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000/' +result.file_url || '');
+                      sessionStorage.setItem("fileURL",result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -353,7 +365,9 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: {
                     'Content-Type': 'application/json',
                     'userID': userId,
-                    'filename': filename 
+                    'filename': filename,
+                    'Fileurl': sessionStorage.getItem("fileURL") || '',
+                    'sheet': sessionStorage.getItem("activesheetname") || ''
                   },
                   body: JSON.stringify({
                     column: splitTargetColumn,
@@ -365,7 +379,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
+                      sessionStorage.setItem("fileURL", result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -391,6 +405,8 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   headers: {
                     'userID': userId, // Include user ID in headers
                     'filename': filename, // Include filename in headers
+                    'sheet': sessionStorage.getItem("activesheetname") || '',
+                    'Fileurl': sessionStorage.getItem("fileURL") || '',
                     'Content-Type': 'application/json',
                   },
                   body: JSON.stringify({ groupingPairs }),
@@ -398,7 +414,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + result.file_url || '');
+                      sessionStorage.setItem("fileURL", result.file_url || '');
                       alert("Grouped data saved successfully!");
                       const link = document.createElement('a');
                       link.href = `http://103.94.135.115:8001${result.download_url}`;
@@ -419,12 +435,14 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                     'Content-Type': 'application/json',
                     'userID': userId, // Include user ID in headers
                     'filename': filename // Include filename in headers
+                    , 'Fileurl': sessionStorage.getItem("fileURL") // Include file URL in headers
+                    ,'sheet': sessionStorage.getItem("activesheetname") || ''
                   },
                 })
                   .then((res) => res.json())
                   .then((result) => {
                     if (result.success) {
-                      sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000/' +result.file_url || '');
+                      sessionStorage.setItem("fileURL", result.file_url || '');
                       setColumns(result.columns);
                       setData(result.rows);
                       setAvailableColumns(result.columns);
@@ -486,6 +504,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
                   // 3. Store session flag and redirect
                   sessionStorage.setItem("preprocessed", "true");
                   sessionStorage.setItem("file_name", 'preprocess_' + filename);
+                  //alert(sessionStorage.getItem("fileURL"))
                   window.location.href = "/analysis";
                 
             }}
@@ -866,7 +885,7 @@ function downloadAsPDF(data, filename = 'data.pdf') {
 
 
     <PreviewTable
-            workbookUrl={`${sessionStorage.getItem("fileURL")}`}            
+            workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`}            
             columns={columns}
             duplicateIndices={duplicateIndices}
             setData={setData}
