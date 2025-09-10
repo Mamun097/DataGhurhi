@@ -105,10 +105,11 @@ const CollabSurveyTab = ({
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+    
       if (response.status === 200) {
         navigate(`/view-survey/${survey_id}`, {
           state: {
-            project_id: response.data.projectId,
+            project_id: response.data.project_id,
             survey_details: response.data,
             input_title: response.data.title || "Untitled Survey",
             response_user_logged_in_status:
