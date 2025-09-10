@@ -541,6 +541,24 @@ button[type="submit"] svg {
   border-radius: 9999px;
 }
 
+.bg-slate-800{
+  background-color: #283f64;
+  color: white;
+}
+
+.bg-slate-800:hover{
+  background-color: #576376;
+  color: white;
+}
+.bg-emerald-600 {
+  background-color: #466d62;
+  color: white;
+}
+.bg-emerald-600:hover {
+  background-color: #065f46;
+  color: white;
+}
+
 
 
 /* Responsive adjustments */
@@ -582,7 +600,7 @@ button[type="submit"] svg {
   
   
 }
-  
+
 }
 
 /* Utility classes */

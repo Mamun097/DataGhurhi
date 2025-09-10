@@ -146,9 +146,15 @@ def get_columns(request):
     user_id = request.POST.get('userID')
     filename = request.POST.get('filename')
     active_sheet_name = request.POST.get('activeSheet')  
+    file_url= request.POST.get('file_url')
 
-    user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
-    save_path = os.path.join(user_folder, filename)
+
+    if not file_url:
+        return JsonResponse({'success': False, 'error': 'File URL not provided'})
+
+    user_folder = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
+    
+    save_path = user_folder 
 
     if not user_id:
         return JsonResponse({'success': False, 'error': 'User ID not provided'})
@@ -273,6 +279,7 @@ def analyze_data_api(request):
             user_id = request.POST.get('userID')
             filename = request.POST.get('file_name')
             sheet_name= request.POST.get('sheet_name')
+            file_url= request.POST.get('Fileurl') 
             # print(f"Received filename: {filename}")
 
                       
@@ -283,7 +290,7 @@ def analyze_data_api(request):
             # Load the  DataFrame of file name
 
 
-            file_path = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", filename)
+            file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", "")) 
             if not os.path.exists(file_path):
                 return JsonResponse({'success': False, 'error': 'No uploaded file found for this user'}, status=404)
 
@@ -470,7 +477,14 @@ def analyze_data_api(request):
                 return process_similarity(request, df, user_id)
 
             elif test_type == 'chi_square':
-                return process_chi_square(request, df, user_id)
+                selected_columns = []
+                for key in request.POST:
+                    if key.startswith("column"):
+                        value = request.POST[key]
+                        if value in df.columns:
+                            selected_columns.append(value)
+                print("Selected columns for Chi-Square www :", selected_columns )
+                return process_chi_square(request, df, selected_columns, user_id)
 
             elif test_type == 'cramers_heatmap':
                 selected_columns = []
@@ -491,7 +505,7 @@ def analyze_data_api(request):
             elif test_type == 'bar_chart':
                 col = request.POST.get('column1')
                 orientation = request.POST.get('orientation', 'vertical')
-                return process_bar_chart_test(request, df, col, orientation, user_id)
+                return process_bar_chart_test(request, df, col, user_id, orientation)
             
 
             return render(request, 'analysis/results.html', {
@@ -601,7 +615,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
 
     
     media_root = settings.MEDIA_ROOT
-    media_url  = settings.MEDIA_URL.rstrip('/') + '/'
     plots_dir  = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
     os.makedirs(plots_dir, exist_ok=True)
 
@@ -685,9 +698,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Error in Kruskal–Wallis test: {e}'})
 
-    # -----------------------------
-    # 7) PIL label compositing helper
-    # -----------------------------
     def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
         
         # Remove mpl labels (we draw them with PIL)
@@ -751,7 +761,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
         print(f"[Kruskal] saved: {final_path}")
 
-        return f"{media_url}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
+        return f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}" 
 
    
     cat_labels = [map_digits(translate(str(c))) for c in categories]
@@ -2074,17 +2084,8 @@ def process_ancova_test(request, df, col_group, col_covariate, col_outcome, user
         return JsonResponse({'success': False, 'error': str(e)})
 
 def process_ks_test(request, df, col, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from scipy.stats import kstest, norm
-    from PIL import Image, ImageDraw, ImageFont
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
+    
+    from scipy.stats import kstest, norm    
     import re
 
     try:
@@ -3270,123 +3271,239 @@ def process_similarity(request, df, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_chi_square(request, df, user_id):
-    
-
-    
-    
-    
+def process_chi_square(request, df, selected_columns, user_id):
+    from scipy.stats import chi2_contingency
+   
 
     try:
-        # --- 1) Get columns and settings ---
-        x_col = request.POST.get("column1")
-        y_col = request.POST.get("column2")
-        lang = request.POST.get("language", "en")
-        fmt = request.POST.get("format", "png").lower()
-        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
-
-        use_default = request.POST.get("use_default", "true") == "true"
-        label_font_size = int(request.POST.get("label_font_size", 36))
-        tick_font_size = int(request.POST.get("tick_font_size", 16))
-        img_quality = int(request.POST.get("image_quality", 90))
-        palette = request.POST.get("palette", "deep")
+        # ── 1) Inputs ──────────────────────────────────────────────────────
+        lang = (request.POST.get("language", "en") or "en").lower()
+        is_bn = (lang == "bn")
+        palette = request.POST.get("palette", "viridis")
         image_size = request.POST.get("image_size", "800x600")
         try:
             width, height = map(int, image_size.lower().split("x"))
-        except:
+        except Exception:
             width, height = 800, 600
 
-        # --- 2) Setup font and paths ---
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        fm.fontManager.addfont(font_path)
-        bengali_font = fm.FontProperties(fname=font_path).get_name()
-        mpl.rcParams['font.family'] = bengali_font
-
-        tick_font = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
-        label_font = ImageFont.truetype(font_path, label_font_size)
-
-        translator = Translator()
-        def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
-        def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
-
+        # Variables to analyze
+        vars_list = selected_columns or []
+        if len(vars_list) < 2:
+            return JsonResponse({'success': False, 'error': 'Please select at least two categorical variables.'})
+        # ── 2) Paths & fonts 
         plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         uid = str(uuid.uuid4())[:8]
 
-        # --- 3) Chi-square calculation ---
-        observed = pd.crosstab(df[x_col], df[y_col])
-        chi2, p_value, dof, expected = chi2_contingency(observed)
-        exp_df = pd.DataFrame(expected, index=observed.index, columns=observed.columns)
+        # Try Bengali font (safe fallback if missing)
+        font_path = os.path.join(getattr(settings, "BASE_DIR", ""), 'NotoSansBengali-Regular.ttf')
+        try:
+            fm.fontManager.addfont(font_path)
+            bn_font_name = fm.FontProperties(fname=font_path).get_name()
+            mpl.rcParams['font.family'] = bn_font_name if is_bn else mpl.rcParams.get('font.family', 'sans-serif')
+        except Exception:
+            pass
+        # PIL font for title
+        try:
+            title_font = ImageFont.truetype(font_path, 50  if width >= 800 else 42)
+        except Exception:
+            title_font = ImageFont.load_default()
 
-        def interpret_p(p):
-            if p < 0.001:
-                return translate("P < 0.001: Highly significant association between variables.")
-            elif p < 0.01:
-                return translate("P < 0.01: Moderately significant association between variables.")
-            elif p < 0.05:
-                return translate("P < 0.05: Significant association between variables.")
+        # Bengali digit mapping for any overlay text
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def map_digits(s):
+            if not is_bn: return s
+            return str(s).translate(digit_map_bn)
+
+        # ── 3) Core helpers ────────────────────────────────────────────────
+        def fnum(x):
+            if x is None or (isinstance(x, float) and np.isnan(x)): return None
+            try: return float(x)
+            except Exception: return None
+
+        def inum(x):
+            if x is None or (isinstance(x, float) and np.isnan(x)): return None
+            try: return int(x)
+            except Exception:
+                try: return int(float(x))
+                except Exception: return None
+
+        def chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True):
+            s1, s2 = df[a], df[b]
+            if include_na_as_category:
+                s1, s2 = s1.fillna("__NA__"), s2.fillna("__NA__")
+            elif dropna:
+                m = s1.notna() & s2.notna()
+                s1, s2 = s1[m], s2[m] 
+            ct = pd.crosstab(s1, s2, dropna=False)
+            if ct.shape[0] == 0 or ct.shape[1] == 0:
+                return dict(n=0, chi2=np.nan, dof=np.nan, p=np.nan)
+            yates = yates_for_2x2 and (ct.shape[0] == 2 and ct.shape[1] == 2)
+            chi2, p, dof, _ = chi2_contingency(ct, correction=yates)
+            return dict(n=int(ct.values.sum()), chi2=float(chi2), dof=int(dof), p=float(p))
+
+        def fdr_bh(pvals):
+            p = np.asarray(pvals, float)
+            n = p.size
+            order = np.argsort(p)
+            ranked = p[order]
+            adj = np.empty(n, float)
+            cm = 1.0
+            for i in range(n-1, -1, -1):
+                cm = min(cm, ranked[i] * n / (i+1))
+                adj[i] = cm
+            out = np.empty(n, float)
+            out[order] = np.minimum(adj, 1.0)
+            return out
+
+        
+        def one_block(anchor, do_fdr=True):
+            others = [c for c in vars_list if c != anchor]
+            rows = []
+            for o in others:
+                r = chi2_one(anchor, o, dropna=True, include_na_as_category=False, yates_for_2x2=True)
+                rows.append({
+                    "variable1": anchor,
+                    "variable2": o,
+                    "chi2": fnum(r["chi2"]),
+                    "p_value": fnum(r["p"]),
+                    "dof": inum(r["dof"]),
+                    "n": inum(r["n"]),
+                })
+
+            if do_fdr and any(row["p_value"] is not None for row in rows):
+                ps = np.array([row["p_value"] if row["p_value"] is not None else np.nan for row in rows], float)
+                mask = ~np.isnan(ps)
+                padj = np.full(len(rows), np.nan, float)
+                if mask.any():
+                    padj[mask] = fdr_bh(ps[mask])
+                for i, row in enumerate(rows):
+                    row["_p_adj_tmp"] = float(padj[i]) if not np.isnan(padj[i]) else None
+                rows.sort(key=lambda r: (r["_p_adj_tmp"] is None, r["_p_adj_tmp"] if r["_p_adj_tmp"] is not None else 1.0))
+                for row in rows:
+                    row.pop("_p_adj_tmp", None)
             else:
-                return translate("P ≥ 0.05: No statistically significant association between variables.")
+                rows.sort(key=lambda r: (r["p_value"] is None, r["p_value"] if r["p_value"] is not None else 1.0))
+            return rows
 
-        scenario_text = interpret_p(p_value)
+        blocks, summary_rows = [], []
+        for anchor in vars_list:
+            block_rows = one_block(anchor, do_fdr=True)
+            blocks.append({"anchor": anchor, "rows": block_rows})
+            summary_rows.extend(block_rows)
 
-        # --- 4) Countplot ---
-        fig1, ax1 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.countplot(data=df, x=x_col, hue=y_col, palette=palette, ax=ax1)
-        handles, labels = ax1.get_legend_handles_labels()
-        if ax1.get_legend(): ax1.get_legend().remove()
-        ax1.set_title(map_digits(translate("Count Plot")))
-        ax1.set_xlabel(map_digits(translate(x_col)))
-        ax1.set_ylabel(map_digits(translate("Frequency")))
-        ax1.set_xticklabels([map_digits(translate(lbl.get_text())) for lbl in ax1.get_xticklabels()], fontproperties=tick_font)
-        ax1.set_yticklabels([map_digits(str(int(lbl))) for lbl in ax1.get_yticks()], fontproperties=tick_font)
-        count_path = os.path.join(plots_dir, f"chi_countplot_{uid}.{fmt}")
-        fig1.savefig(count_path, dpi=300, bbox_inches='tight')
-        plt.close(fig1)
+        
+        n = len(vars_list)
+        P = np.ones((n, n), dtype=float)
+        for i, a in enumerate(vars_list):
+            for j in range(i+1, n):
+                b = vars_list[j]
+                res = chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True)
+                P[i, j] = P[j, i] = res["p"] if res["p"] is not None else 1.0
+        np.fill_diagonal(P, 1.0)
 
-        # --- 5) Observed heatmap ---
-        fig2, ax2 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.heatmap(observed, annot=observed.applymap(lambda x: map_digits(str(int(x)))), cmap=sns.color_palette(palette, as_cmap=True), fmt="", ax=ax2)
-        ax2.set_title(map_digits(translate("Observed Frequency Heatmap")))
-        ax2.set_xlabel(map_digits(translate(x_col)))
-        ax2.set_ylabel(map_digits(translate(y_col)))
-        ax2.set_xticklabels([map_digits(translate(lbl.get_text())) for lbl in ax2.get_xticklabels()], fontproperties=tick_font)
-        ax2.set_yticklabels([map_digits(translate(lbl.get_text())) for lbl in ax2.get_yticklabels()], fontproperties=tick_font)
-        observed_path = os.path.join(plots_dir, f"chi_observed_heatmap_{uid}.{fmt}")
-        fig2.savefig(observed_path, dpi=300, bbox_inches='tight')
-        plt.close(fig2)
+        
 
-        # --- 6) Expected heatmap ---
-        fig3, ax3 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.heatmap(exp_df, annot=exp_df.applymap(lambda x: map_digits(f"{x:.1f}")), cmap=sns.color_palette(palette, as_cmap=True), fmt="", ax=ax3)
-        ax3.set_title(map_digits(translate("Expected Frequency Heatmap")))
-        ax3.set_xlabel(map_digits(translate(x_col)))
-        ax3.set_ylabel(map_digits(translate(y_col)))
-        ax3.set_xticklabels([map_digits(translate(lbl.get_text())) for lbl in ax3.get_xticklabels()], fontproperties=tick_font)
-        ax3.set_yticklabels([map_digits(translate(lbl.get_text())) for lbl in ax3.get_yticklabels()], fontproperties=tick_font)
-        expected_path = os.path.join(plots_dir, f"chi_expected_heatmap_{uid}.{fmt}")
-        fig3.savefig(expected_path, dpi=300, bbox_inches='tight')
-        plt.close(fig3)
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        sns.heatmap(
+            P,
+            vmin=0, vmax=1,
+            cmap="coolwarm",
+            annot=np.round(P, 2),
+            fmt=".2f",
+            square=True,
+            linewidths=0.75,
+            linecolor="white",
+            cbar_kws={"label": "p-value"}
+        )
+        ax.set_xticks(np.arange(n) + 0.5)
+        ax.set_yticks(np.arange(n) + 0.5)
+        ax.set_xticklabels(vars_list, rotation=45, ha="right", fontsize=10)
+        ax.set_yticklabels(vars_list, rotation=0, fontsize=10)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+        plt.tight_layout()
 
+        base_name = f"chi2_pairwise_heatmap_base_{uid}.png"
+        final_name = f"chi2_pairwise_heatmap_{uid}.png"
+        base_path = os.path.join(plots_dir, base_name)
+        final_path = os.path.join(plots_dir, final_name)
+        plt.savefig(base_path, dpi=300, bbox_inches="tight")
+        plt.close(fig)
+
+        
+        base_img = Image.open(base_path).convert("RGB")
+        bw, bh = base_img.size
+        pad = 16
+        title_text = ("p-value pairwise chi-square heatmap"
+                    if lang != "bn"
+                    else "p-value জোড়াভিত্তিক কাই-স্কয়ার হিটম্যাপ")
+        try:
+            title_font = ImageFont.truetype(font_path, 50 if width >= 800 else 28)
+        except Exception:
+            title_font = ImageFont.load_default()
+
+        
+        # measure
+        try:
+            tx0, ty0, tx1, ty1 = title_font.getbbox(title_text)
+            th = ty1 - ty0
+            tw = tx1 - tx0
+        except Exception:
+            th, tw = 40, 400
+
+        top_margin = th + 2*pad
+        canvas = Image.new("RGB", (bw, bh + top_margin), "white")
+        canvas.paste(base_img, (0, top_margin))
+        draw2 = ImageDraw.Draw(canvas)
+        tx = max(0, (bw - tw) // 2)
+        ty = max(0, (top_margin - th) // 2)
+        draw2.text((tx, ty), title_text, fill="black", font=title_font)
+        canvas.save(final_path, format="PNG")
+        try:
+            os.remove(base_path)
+        except Exception:
+            pass
+
+        # Public URL for React
+        base_url = os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        heatmap_url = os.path.join(base_url, final_name)
+
+
+        # ── 6) Table columns for React ─────────────────────────────────────
+        if is_bn:
+            table_columns = [
+                {"key": "variable1", "label": "ভেরিয়েবল ১"},
+                {"key": "variable2", "label": "ভেরিয়েবল ২"},
+                {"key": "chi2",      "label": "কাই-স্কয়ার পরিসংখ্যান"},
+                {"key": "p_value",   "label": "পি-মান"},
+                {"key": "dof",       "label": "স্বাধীনতার মাত্রা"},
+                {"key": "n",         "label": "নমুনা"},
+            ]
+        else:
+            table_columns = [
+                {"key": "variable1", "label": "Variable 1"},
+                {"key": "variable2", "label": "Variable 2"},
+                {"key": "chi2",      "label": "Chi-square statistic"},
+                {"key": "p_value",   "label": "P-value"},
+                {"key": "dof",       "label": "DoF"},
+                {"key": "n",         "label": "N"},
+            ]
+
+        # ── 7) Response (no heatmap payload; image URL only) ───────────────
         return JsonResponse({
-            'success': True,
-            'test': 'Chi-Square Test' if lang == 'en' else 'কাই-স্কয়ার টেস্ট',
-            'statistic': {
-                'chi2': f"{chi2:.4f}",
-                'p_value': f"{p_value:.4f}",
-                'dof': str(dof),
-            },
-            'interpretation': scenario_text,
-            'image_paths': [
-                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(count_path)),
-                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(observed_path)),
-                os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(expected_path))
-            ],
-            'columns': [x_col, y_col]
+            "success": True, 
+            "variables": vars_list,
+            "table_columns": table_columns,
+            "summary_rows": summary_rows,  
+            "blocks": blocks,             
+            "image_path": heatmap_url     
         })
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
+
+ 
 
 def process_cramers_heatmap(request, selected_columns, df, user_id):
     
@@ -3467,17 +3584,16 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         ax.set_xticklabels([]); ax.set_yticklabels([])
         ax.tick_params(axis='both', length=0)
 
-        # Ensure layout is computed
+        
         fig.canvas.draw()
         renderer = fig.canvas.get_renderer()
 
         n_rows, n_cols = mat.shape
 
-        # ----- exact edges & centers in figure pixels at fig.dpi -----
-        # left/right edge x at data x=0 and x=n_cols
+        
         x_left_fig,  _          = ax.transData.transform((0,        0))
         x_right_fig, _          = ax.transData.transform((n_cols,   0))
-        # top/bottom edge y at data y=0 and y=n_rows  (note: pixel y grows downward)
+        
         _, y_top_fig            = ax.transData.transform((0,        0))
         _, y_bottom_fig         = ax.transData.transform((0,   n_rows))
 
@@ -3486,7 +3602,7 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         # row centers (y only)
         row_centers_fig = [ax.transData.transform((0, i + 0.5))[1] for i in range(n_rows)]
 
-        # ----- scale to save DPI (e.g., 300) -----
+    
         save_dpi = 300
         scale = save_dpi / fig.dpi
 
@@ -3497,9 +3613,9 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         col_centers_px = [int(x * scale) for x in col_centers_fig]
         row_centers_px = [int(y * scale) for y in row_centers_fig]
 
-        # Save BASE without tight-cropping (aligns pixel coords)
+        
         base_png_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}_base.png")
-        fig.savefig(base_png_path, dpi=save_dpi)   # <-- NO bbox_inches='tight'
+        fig.savefig(base_png_path, dpi=save_dpi)   
         plt.close(fig)
 
 
@@ -3508,9 +3624,8 @@ def process_cramers_heatmap(request, selected_columns, df, user_id):
         col_labels = [map_digits(translate(str(t))) for t in mat.columns]
         row_labels = [map_digits(translate(str(t))) for t in mat.index]
 
-        # Fonts you already have
+        
         tick_font  = ImageFont.truetype(font_path, size=tick_font_size)
-        # label_font already defined
 
         # Open base and make a canvas with margins
         base = Image.open(base_png_path).convert("RGB")
@@ -4411,16 +4526,19 @@ def preview_data(request):
 
     user_id = request.headers.get('userID')
     filename = request.headers.get('filename')
-    # Optional: active sheet name from the client (use the one you saved in sessionStorage)
-    requested_sheet = request.headers.get('sheet')  # e.g. "Sheet1"
+    requested_sheet = request.headers.get('sheet')  
+    file_url = request.headers.get('Fileurl')
 
     if not user_id:
         return JsonResponse({'error': 'User ID not provided'}, status=400)
     if not filename:
         return JsonResponse({'error': 'Filename not provided'}, status=400)
+    
+    if not file_url:
+        return JsonResponse({'error': 'File URL not provided'}, status=400)
 
     folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-    file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+    file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
     try:
         # Read all sheets once; lets us list names and select the active one
@@ -4472,19 +4590,24 @@ def preview_data(request):
 
 @csrf_exempt
 def delete_columns_api(request):
-    try:
+    try: 
         ##post_method
         ## extract user ID from request headers
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet_name= request.headers.get('sheet')  
+        file_url = request.headers.get('Fileurl')  
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         # Load file safely
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
         preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
@@ -4531,8 +4654,8 @@ def delete_columns_api(request):
         df.drop(columns=columns, inplace=True, errors='ignore')
 
         # Save updated sheet
-        df.to_excel(preprocess_file_path, index=False)  
-        file_url = preprocess_file_path.replace('\\', '/')
+        df.to_excel(preprocess_file_path, index=False) 
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -4624,11 +4747,15 @@ def find_duplicates_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet_name= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl') 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
-
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+
+
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
@@ -4727,6 +4854,7 @@ def remove_duplicates(request):
     user_id = request.headers.get('userID') 
     filename = request.headers.get('filename')
     sheet_name= request.headers.get('sheet')
+    file_url = request.headers.get('Fileurl')
     body = json.loads(request.body) 
     columns = body.get('columns', [])
     mode = body.get('mode')  # "all" or "selected"
@@ -4734,7 +4862,7 @@ def remove_duplicates(request):
 
     try:
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
@@ -4795,7 +4923,7 @@ def remove_duplicates(request):
         print(removed)
         #print rows after deletion
         print(df) 
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             "success": True,
@@ -4815,11 +4943,16 @@ def handle_missing_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet_name= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
         preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
@@ -4879,7 +5012,7 @@ def handle_missing_api(request):
                         df[c] = df[c].fillna(mode_val.iloc[0])
 
         df.to_excel(preprocess_file_path, index=False)
-        file_url =preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -4902,12 +5035,15 @@ def outliers_summary_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
 
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
 
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
         folder = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'File not found.'})
@@ -4987,12 +5123,17 @@ def handle_outliers_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -5043,7 +5184,7 @@ def handle_outliers_api(request):
             return JsonResponse({'success': False, 'error': 'Invalid method.'})
 
         df.to_excel(preprocess_file_path, index=False)
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -5063,12 +5204,17 @@ def rank_categorical_column_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
 
@@ -5108,7 +5254,7 @@ def rank_categorical_column_api(request):
 
         df.to_excel(preprocess_file_path, index=False)
 
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -5245,12 +5391,16 @@ def split_column_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename') 
         sheet_name = request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
 
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
+        
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
 
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'Uploaded file not found.'})
@@ -5372,7 +5522,7 @@ def split_column_api(request):
         df.to_excel(preprocess_file_path, index=False)
         df = df.fillna("").astype(str)
 
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -5397,19 +5547,20 @@ def group_data_api(request):
         return JsonResponse({'success': False, 'error': 'Invalid request method.'})
 
     try:
-        import os
-        import json
-        import pandas as pd
-        from django.conf import settings
+      
 
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
 
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'Uploaded Excel file not found.'})
@@ -5474,7 +5625,7 @@ def group_data_api(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to save grouped file: {str(e)}'})
         preview_data = grouped_dfs[0].to_dict(orient='records') if grouped_dfs else []
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
         
 
         return JsonResponse({
@@ -5496,12 +5647,17 @@ def generate_unique_id_column_api(request):
         user_id = request.headers.get('userID')
         filename = request.headers.get('filename')
         sheet= request.headers.get('sheet')
+        file_url = request.headers.get('Fileurl')
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
+        if not file_url:
+            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+        
+
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-        file_path = os.path.join(settings.MEDIA_ROOT, folder_name, filename)
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded Excel file found.'})
 
@@ -5533,7 +5689,7 @@ def generate_unique_id_column_api(request):
         df[col_name] = np.arange(1, len(df) + 1)
 
         df.to_excel(preprocess_file_path, index=False)
-        file_url = preprocess_file_path.replace('\\', '/')
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -5590,7 +5746,7 @@ def save_preprocessed_file_api(request):
                         destination.write(chunk)
             print(f"File saved to: {file_path}")
 
-            file_url = os.path.join('media', f'ID_{user_id}_uploads/temporary_uploads/', folder_name, file_name).replace('\\', '/')
+            file_url = os.path.join('/media', f'ID_{user_id}_uploads/temporary_uploads/', folder_name, file_name).replace('\\', '/')
 
             return JsonResponse({
                 'success': True,
@@ -5628,7 +5784,7 @@ def save_results_api(request):
             # print(image_paths)
             # print(test_name)
             # print(user_id)
-            # print(Excel_filename) 
+            # print(Excel_filename)  
 
 
             save_dir=os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads/saved_files/', Excel_filename, test_name)

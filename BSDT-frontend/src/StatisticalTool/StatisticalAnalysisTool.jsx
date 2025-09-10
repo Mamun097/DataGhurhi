@@ -1,5 +1,7 @@
 import 'katex/dist/katex.min.css';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo, use } from 'react';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import AncovaOptions from './AncovaOptions';
@@ -313,16 +315,22 @@ const StatisticalAnalysisTool = () => {
     // Refs
     const fileInputRef = useRef(null);
     const uploadContainerRef = useRef(null);
+    const [fileURL, setFileURL] = useState('');
+    const userId =localStorage.getItem("user_id");
     useEffect(() => {
-        
+  const stored = sessionStorage.getItem("fileURL") || '';
+  if (stored) setFileURL(stored);
+}, []);
 
-    
-    
-    
-    
+
+
+
+
+    useEffect(() => {    
+
     const filename = sessionStorage.getItem("file_name") || '';
     
-
+   
     let fileUrl = "";
 
      if (isSurveyData) {
@@ -335,14 +343,14 @@ const StatisticalAnalysisTool = () => {
        
         sessionStorage.removeItem("preprocessed");
     }
-    
-        fileUrl = sessionStorage.getItem("fileURL");
+
+        fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
 
     
 
 
-    if (fileUrl) {
+    if (sessionStorage.getItem("fileURL")) {
         fetch(fileUrl)
             .then(res => {
                 if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
@@ -366,16 +374,14 @@ const StatisticalAnalysisTool = () => {
                 setErrorMessage("Error loading file. Please re-upload.");
                 setUploadStatus("error");
             });
+          
         }
-}, [isPreprocessed, isSurveyData]);
+
+   
+}, [isPreprocessed, isSurveyData, fileName]);
             
 
-useEffect(() => {
-    //check columns state
-    if (columns.length > 0) {
-        console.log("Columns loaded:", columns);
-    }
-}, [columns]);
+
 
     console.log("File URL from sessionStorage:", file);
     
@@ -458,7 +464,7 @@ useEffect(() => {
     // Results state
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
-    const userId =localStorage.getItem("user_id");
+
 
 
 
@@ -504,7 +510,12 @@ useEffect(() => {
                                         
                         setUploadStatus('success');
                         const fixedUrl = data.fileURL.replace(/\\/g, '/');
-                        sessionStorage.setItem("fileURL", 'http://127.0.0.1:8000/' + fixedUrl);
+  sessionStorage.setItem("fileURL",  data.fileURL);
+                        sessionStorage.getItem("fileURL");
+
+                        console.log("File uploaded successfully. URL:", fixedUrl);
+                        // Store file URL in sessionStorage
+                      
                     } else {
                         setErrorMessage(data.error);
                         setUploadStatus('error');
@@ -515,24 +526,23 @@ useEffect(() => {
                     setUploadStatus('error');
                 });
         }
+       
+       
     };
 
-    
-useEffect(() => {
-  if (userId) {
-    console.log(" React state updated: userId =", userId);
-  }
-}, [userId]);
+  
 
-
-useEffect(() => {
+useEffect (() => {
   const storedSheetName = sessionStorage.getItem("activesheetname");
-  if( fileName && userId){
+  if( fileName && userId && fileURL){
   console.log("Active sheet name from sessionStorage:", storedSheetName);
    const formData = new FormData();
+   
+   
             formData.append('filename', fileName);
             formData.append('userID', userId);
             formData.append('activeSheet', storedSheetName || '');
+            formData.append('file_url', sessionStorage.getItem("fileURL") || '');
                                 
 
               // Call the API to get columns
@@ -544,10 +554,11 @@ useEffect(() => {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        console.log(testType);
-                        // Process the returned column information
+                       
+                        console.log(data.columns);
                        setColumns(data.columns || []);
                        setColumn1(data.columns[0])
+                       console.log(columns);
                        
                     } else {
                         console.error("Error fetching columns:", data.error);
@@ -558,7 +569,14 @@ useEffect(() => {
                 });
             }
 
-},[fileName]);
+},[file]);
+
+
+
+
+
+
+ 
 
     const handleSubmit = (e) => {
     e.preventDefault();
@@ -589,7 +607,8 @@ useEffect(() => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('file_name', fileName);
-    formData.append('userID', userId); // Attach user ID if available
+    formData.append('userID', userId); 
+    formData.append('Fileurl', sessionStorage.getItem("fileURL") || '');
     formData.append('test_type', testType);
     formData.append('column1', column1);
     formData.append('column2', column2);
@@ -738,7 +757,7 @@ useEffect(() => {
 
             }
 
-            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap','network_graph'].includes(testType)) {
+            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap','chi_square','network_graph'].includes(testType)) {
                 formData.append('heatmapSize', heatmapSize);
                 
                 selectedColumns.forEach((col, idx) => {
@@ -807,14 +826,15 @@ useEffect(() => {
                 return { col2: true, col3: true, refValue: false, heatmapSize: false };
             case 'cross_tabulation': 
             case 'network_graph':
-            case 'cramers_heatmap':   
+            case 'cramers_heatmap': 
+            case 'chi_square':  
             case 'spearman':
             case 'pearson':
                 return { col2: false, col3: false, col4: false, refValue: false, heatmapSize: true };
             case 'shapiro':
             case 'kolmogorov':
             case 'anderson':
-            case 'chi_square':
+            
          
 
             case 'kruskal':
@@ -1010,7 +1030,7 @@ const handleSuggestionClick = () => {
                                                     </div>
                                             {isPreviewModalOpen && (
                                                 <>
-                                                  <PreviewTable workbookUrl={sessionStorage.getItem("fileURL")} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+                                                  <PreviewTable workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
                                                  </>
 
                                                                                         )}
@@ -1171,7 +1191,7 @@ const handleSuggestionClick = () => {
                                                 </div>
                                             )}
                                 
-                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'cramers_heatmap') && (
+                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
                                                 <div className="mb-6">
                                                     {/* <label className="block text-gray-700 font-medium mb-2">
                                                         {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
@@ -1243,7 +1263,7 @@ const handleSuggestionClick = () => {
                                                 )}
 
                                                 {/* Now the rest of the logic stays the same — dropdowns, requiredFields, etc. */}
-                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph', 'cramers_heatmap'].includes(testType) && (
+                                                {!['spearman', 'pearson', 'cross_tabulation', 'network_graph', 'cramers_heatmap', 'chi_square'].includes(testType) && (
                                                     <div className="mb-4">
                                                         <label className="block text-gray-700 font-medium mb-2">
                                                             <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3898,101 +3918,344 @@ const renderFZTResults = () => {
     };
 
     const renderChiSquareResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
+  // Hold DOM refs per anchor so we can snapshot each table
+const blockRefs = useRef({});
 
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
+// Get a stable list of anchors once results arrive
+const anchors = useMemo(
+  () => (results?.blocks || []).map(b => b.anchor),
+  [results]
+);
 
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? 'কাই-স্কয়ার টেস্টের ফলাফল' : 'Chi-Square Test Results'}
-                </h2>
+// PNG for a single block
+const downloadBlockPNG = async (anchor) => {
+  const el = blockRefs.current[anchor];
+  if (!el) return;
+  const canvas = await html2canvas(el, {
+    backgroundColor: "#ffffff",
+    scale: window.devicePixelRatio < 2 ? 2 : window.devicePixelRatio,
+  });
+  const dataURL = canvas.toDataURL("image/png");
+  const link = document.createElement("a");
+  link.href = dataURL;
+  link.download = `${anchor.replace(/\s+/g,'_')}_chi2_table.png`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+};
 
-                {columns && columns.length >= 2 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong> 
-                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
-                    </p>
-                )}
+// PDF for a single block (fit to A4 page)
+const downloadBlockPDF = async (anchor) => {
+  const el = blockRefs.current[anchor];
+  if (!el) return;
+  const canvas = await html2canvas(el, {
+    backgroundColor: "#ffffff",
+    scale: window.devicePixelRatio < 2 ? 2 : window.devicePixelRatio,
+  });
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white shadow p-4 rounded border">
-                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'Chi² পরিসংখ্যান' : 'Chi² Statistic'}</h4>
-                        <p>{mapDigitIfBengali(results.statistic?.chi2 || '-')}</p>
-                    </div>
-                    <div className="bg-white shadow p-4 rounded border">
-                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'P-মান' : 'P-value'}</h4>
-                        <p>{mapDigitIfBengali(results.statistic?.p_value || '-')}</p>
-                    </div>
-                    <div className="bg-white shadow p-4 rounded border">
-                        <h4 className="text-lg font-semibold mb-2">{language === 'bn' ? 'স্বাধীনতার মাত্রা (df)' : 'Degrees of Freedom'}</h4>
-                        <p>{mapDigitIfBengali(results.statistic?.dof || '-')}</p>
-                    </div>
-                </div>
+  const imgData = canvas.toDataURL("image/png");
+  const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
 
-                {results.interpretation && (
-                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-900 p-4 mb-6 rounded">
-                        <p className="font-medium">
-                            {language === 'bn' ? 'ব্যাখ্যা:' : 'Interpretation:'}
-                        </p>
-                        <p>{results.interpretation}</p>
-                    </div>
-                )}
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
 
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {results.image_paths.map((path, index) => {
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = path.split('/').pop() || `chi_square_plot_${index + 1}.png`;
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                };
+  // Fit image to page (preserving aspect ratio)
+  const imgW = pageW - 40; // side margins
+  const imgH = (canvas.height * imgW) / canvas.width;
+  const marginX = 20;
+  const marginY = 20;
 
-                                return (
-                                    <div key={index} className="bg-white rounded shadow p-2 relative">
-                                        <img
-                                            src={`http://127.0.0.1:8000/${path}`}
-                                            alt={`chi-square-plot-${index + 1}`}
-                                            className="w-full h-auto object-contain"
-                                        />
-                                        <button
-                                            onClick={handleDownload}
-                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
-                                            title={language === 'bn' ? 'ডাউনলোড করুন' : 'Download'}
-                                        >
-                                            ⬇ {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
+  // If too tall, scale to also fit height
+  const scale = Math.min(imgW / imgW, (pageH - 40) / imgH);
+  const finalW = imgW * scale;
+  const finalH = imgH * scale;
+
+  pdf.addImage(imgData, "PNG", marginX, marginY, finalW, finalH);
+  pdf.save(`${anchor.replace(/\s+/g,'_')}_chi2_table.pdf`);
+};
+
+// Build a multi-page PDF: one page per block
+const downloadAllBlocksPDF = async () => {
+  if (!results?.blocks?.length) return;
+  const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+
+  let first = true;
+  for (const { anchor } of results.blocks) {
+    const el = blockRefs.current[anchor];
+    if (!el) continue;
+
+    const canvas = await html2canvas(el, {
+      backgroundColor: "#ffffff",
+      scale: window.devicePixelRatio < 2 ? 2 : window.devicePixelRatio,
+    });
+    const imgData = canvas.toDataURL("image/png");
+
+    const imgW = pageW - 40;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    const scale = Math.min(1, (pageH - 40) / imgH);
+    const finalW = imgW * scale;
+    const finalH = imgH * scale;
+
+    if (!first) pdf.addPage();
+    pdf.addImage(imgData, "PNG", 20, 20, finalW, finalH);
+    first = false;
+  }
+
+  pdf.save("chi2_anchor_tables.pdf");
+};
+
+
+  const mapDigitIfBengali = (text) => {
+    if (language !== 'bn' || text === null || text === undefined) return text ?? '';
+    const s = String(text);
+    return s.split('').map((ch) => digitMapBn[ch] ?? ch).join('');
+  };
+
+  const fmt = (v, digits = 6) => {
+    if (v === null || v === undefined || Number.isNaN(v)) return '–';
+    // Keep raw JSON numbers, format for display only
+    const s = typeof v === 'number' ? v.toFixed(digits) : String(v);
+    return mapDigitIfBengali(s);
+  };
+
+  if (!results) {
+    return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+  }
+
+  const t = (en, bn) => (language === 'bn' ? bn : en);
+
+  
+  const renderHeader = (cols) => (
+    <thead className="bg-gray-50">
+      <tr>
+        {cols.map((c) => (
+          <th
+            key={c.key}
+            className="px-3 py-2 text-left text-sm font-semibold text-gray-700 border-b"
+          >
+            {mapDigitIfBengali(c.label)}
+          </th>
+        ))}
+      </tr>
+    </thead>
+  );
+
+  const baseColumns =
+    results.table_columns ??
+    [
+      { key: 'variable1', label: t('Variable 1', 'ভেরিয়েবল ১') },
+      { key: 'variable2', label: t('Variable 2', 'ভেরিয়েবল ২') },
+      { key: 'chi2', label: t('Chi-square statistic', 'কাই-স্কয়ার পরিসংখ্যান') },
+      { key: 'p_value', label: t('P-value', 'পি-মান') },
+      { key: 'dof', label: t('DoF', 'স্বাধীনতার মাত্রা') },
+      { key: 'n', label: t('N', 'নমুনা') },
+    ];
+
+  const renderRows = (rows) => (
+    <tbody>
+      {rows.map((row, idx) => (
+        <tr key={idx} className="odd:bg-white even:bg-gray-50">
+          <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable1)}</td>
+          <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable2)}</td>
+          <td className="px-3 py-2 text-sm border-b">{fmt(row.chi2)}</td>
+          <td className="px-3 py-2 text-sm border-b">{fmt(row.p_value)}</td>
+          <td className="px-3 py-2 text-sm border-b">{fmt(row.dof, 0)}</td>
+          <td className="px-3 py-2 text-sm border-b">{fmt(row.n, 0)}</td>
+        </tr>
+      ))}
+    </tbody>
+  );
+
+  // Per-variable (“stacked”) tables like your design
+  const renderBlocks = () => {
+  if (!results.blocks || results.blocks.length === 0) return null;
+  return (
+    <div className="space-y-8 ">
+      {/* Export All (PDF) */}
+      <div className="flex justify-end">
+        <button
+          onClick={downloadAllBlocksPDF}
+          className="px-3 py-2 mb-2 text-sm bg-slate-800 text-white rounded hover:bg-slate-700"
+          title={t("Export all blocks as PDF", "সব ব্লক PDF হিসেবে ডাউনলোড করুন")}
+        >
+          {t("Download all (PDF)", "সব ডাউনলোড (PDF)")}
+        </button>
+      </div>
+
+      {results.blocks.map((block, i) => (
+        <>
+        <div
+          key={i}
+          ref={(el) => { blockRefs.current[block.anchor] = el; }}
+          className="bg-white shadow border rounded"
+        >
+          <div className="px-4 py-3 border-b bg-gray-100 rounded-t flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">
+                {t('Variable 1: ', 'ভেরিয়েবল ১: ')}
+                <span className="font-bold">{mapDigitIfBengali(block.anchor)}</span>
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                {t('Compared against all other variables below.', 'নীচে অন্যান্য সব ভেরিয়েবলের সাথে তুলনা করা হয়েছে।')}
+              </p>
+            </div>
+
+          </div>
+
+          
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              {renderHeader(baseColumns.filter(c => c.key !== 'variable1'))}
+              <tbody>
+                {block.rows.map((row, rIdx) => (
+                  <tr key={rIdx} className="odd:bg-white even:bg-gray-50">
+                    {/* anchor implied, don’t show col 1 */}
+                    <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable2)}</td>
+                    <td className="px-3 py-2 text-sm border-b">{fmt(row.chi2)}</td>
+                    <td className="px-3 py-2 text-sm border-b">{fmt(row.p_value)}</td>
+                    <td className="px-3 py-2 text-sm border-b">{fmt(row.dof, 0)}</td>
+                    <td className="px-3 py-2 text-sm border-b">{fmt(row.n, 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+        </div>
+{/* Download buttons for this block */}
+            <div className="flex gap-2 mt-2 mb-2 justify-end">
+              <button
+                onClick={() => downloadBlockPNG(block.anchor)}
+                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                title={t("Download PNG of this table", "এই টেবিল PNG ডাউনলোড করুন")}
+              >
+                PNG ⬇
+              </button>
+              <button
+                onClick={() => downloadBlockPDF(block.anchor)}
+                className="px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
+                title={t("Download PDF of this table", "এই টেবিল PDF ডাউনলোড করুন")}
+              >
+                PDF ⬇
+              </button>
+            </div>
             </>
-        );
-    };
+        
+      ))}
+    </div>
+  );
+};
+
+
+//   // Optional: a single flat table with every pair
+//   const renderFlatTable = () => {
+//     if (!results.summary_rows || results.summary_rows.length === 0) return null;
+//     return (
+//       <div className="bg-white shadow border rounded">
+//         <div className="px-4 py-3 border-b bg-gray-100 rounded-t">
+//           <h3 className="text-lg font-semibold">
+//             {t('All pairwise tests (stacked)', 'সব জোড়াভিত্তিক টেস্ট (স্ট্যাকড)')}
+//           </h3>
+//         </div>
+//         <div className="overflow-x-auto">
+//           <table className="min-w-full">
+//             {renderHeader(baseColumns)}
+//             {renderRows(results.summary_rows)}
+//           </table>
+//         </div>
+//       </div>
+//     );
+//   };
+
+  
+
+  
+  return (
+    <>
+      <h2 className="text-2xl font-bold mb-4">
+        {t('Chi-Square Results', 'কাই-স্কয়ার ফলাফল')}
+      </h2>
+
+      {/* Variables selected */}
+      {results.variables && results.variables.length > 0 && (
+        <p className="mb-4 text-sm text-gray-700">
+          <strong>{t('Variables:', 'ভেরিয়েবলসমূহ:')}</strong>{' '}
+          {results.variables.map((v, i) => (
+            <span key={i}>
+              {mapDigitIfBengali(v)}
+              {i < results.variables.length - 1 ? ', ' : ''}
+            </span>
+          ))}
+        </p>
+      )}
+
+      {/* Stacked per-variable tables */}
+      <div className="mb-8">{renderBlocks()}</div>
+
+    
+      {/* <div className="mb-8">{renderFlatTable()}</div> */}
+
+        {/* Heatmap */}
+        { results.image_path && (
+            <div className="mt-6">
+                <h3 className="text-xl font-semibold mb-3">
+                    {language === 'bn' ? 'হিটম্যাপ ভিজ্যুয়ালাইজেশন' : 'Heatmap Visualization'}
+                </h3>
+                <div className="bg-white rounded-lg shadow-md p-4">
+                    <div className="relative">
+                        
+                        <img
+                            src={`http://127.0.0.1:8000/${results.image_path}`}
+                            alt="Heatmap"
+                            className="w-full h-auto"
+                        />
+                        <button
+                            onClick={async () => {
+                                try {
+                                    const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
+                                    const blob = await response.blob();
+                                    const url = window.URL.createObjectURL(blob);
+                                    const link = document.createElement('a');
+                                    const filename = results.image_path.split('/').pop() || 'heatmap.png';
+                                    link.href = url;
+                                    link.download = filename;
+                                    link.click();
+                                    window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                    console.error('Error downloading heatmap:', error);
+                                }
+                            }}
+                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
+                        >
+                            <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            />
+                        </svg>
+                            Download
+                        </button>
+                    </div>
+                    
+                </div>
+            </div>
+        )}
+
+        
+    </>
+  );
+};
+
 
 
     const renderCramerVResults = () => {
@@ -4011,12 +4274,21 @@ const renderFZTResults = () => {
                     {language === 'bn' ? "ক্র্যামের ভি হিটম্যাপ" : "Cramér's V Heatmap"}
                 </h2>
 
-                {/* {columns && columns.length >= 2 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
-                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
-                    </p>
-                )} */}
+
+                <p>
+                    {results.columns.length>0 &&(
+
+                        // print first n-1 columns
+
+                        <><strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
+                        {results.columns.map((col, i) => (
+                            <span key={i}>
+                                {col}{i < results.columns.length - 1 ? (language === 'bn' ? ' , ' : ' , ') : ''}
+                            </span>
+                        ))}</>
+
+                    )}
+                </p>
 
                 {results.statistic !== undefined && (
                     <p className="mb-2">
@@ -4206,10 +4478,13 @@ const [barChartType, setBarChartType] = useState("vertical");
     return (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
             <div className="bg-gray-700 text-white p-4 font-semibold">
-                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {/* <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                {language === 'bn' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
+                </svg> */}
+                < p className="text-black inline">
+                    {language === 'bn' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
+                </p>
+                
             </div>
             <div className="p-6">
                 <div className="analysis-container">
@@ -4276,7 +4551,7 @@ const [barChartType, setBarChartType] = useState("vertical");
                             //reload analysis
                             window.location.reload();
                         }}
-                        className="bg-teal-600 hover:bg-teal-700 text-black font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
+                        className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
                     >
                         {language === 'bn' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
                     </button>

@@ -999,7 +999,7 @@ const SurveyResponses = () => {
         const fixedUrl = result.file_url.replace(/\\/g, '/');
         console.log("Analysis file URL:", fixedUrl);
 
-        sessionStorage.setItem("fileURL",'http://127.0.0.1:8000/' + fixedUrl || "");
+        sessionStorage.setItem("fileURL", fixedUrl || "");
         sessionStorage.setItem("surveyfile", "true");
         sessionStorage.setItem(
           "file_name",
