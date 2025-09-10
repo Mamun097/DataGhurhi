@@ -339,8 +339,6 @@ const StatisticalAnalysisTool = () => {
         sessionStorage.removeItem("surveyfile");
     }
     else if (isPreprocessed) {
-        //fileUrl = `http://103.94.135.115/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
-       
         sessionStorage.removeItem("preprocessed");
     }
 
@@ -510,7 +508,7 @@ const StatisticalAnalysisTool = () => {
                                         
                         setUploadStatus('success');
                         const fixedUrl = data.fileURL.replace(/\\/g, '/');
-                        sessionStorage.setItem("fileURL", 'http://103.94.135.115/' + fixedUrl);
+                        sessionStorage.setItem("fileURL", 'http://103.94.135.115:8001/' + fixedUrl);
                     } else {
                         setErrorMessage(data.error);
                         setUploadStatus('error');
@@ -2229,7 +2227,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <div className="relative">
                                             <img
-                                                src={`http://103.94.135.115/${path}`}
+                                                src={`http://103.94.135.115:8001/${path}`}
                                                 alt={`${t.kruskalTitle} visualization ${index + 1}`}
                                                 className="w-full h-auto object-contain"
                                             />
@@ -2315,7 +2313,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`Wilcoxon visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -2423,7 +2421,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <div className="relative">
                                             <img
-                                                src={`http://103.94.135.115/${path}`}
+                                                src={`http://103.94.135.115:8001/${path}`}
                                                 alt={`${t.tests.mannwhitney} visualization ${index + 1}`}
                                                 className="w-full h-auto object-contain"
                                             />
@@ -2534,7 +2532,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <div className="relative">
                                 <img
-                                    src={`http://103.94.135.115/${results.image_path}`}
+                                    src={`http://103.94.135.115:8001/${results.image_path}`}
                                     alt="Shapiro-Wilk visualization"
                                     className="w-full h-auto object-contain"
                                 />
@@ -2616,7 +2614,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`Spearman visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -2698,7 +2696,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`Pearson visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -2799,7 +2797,7 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://103.94.135.115/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115:8001/${results.image_paths[0]}`}
                                 alt="Linear Regression Plot"
                                 className="w-full h-auto object-contain"
                             />
@@ -2890,7 +2888,7 @@ const renderLinearRegressionResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://103.94.135.115/${path}`}
+                                        src={`http://103.94.135.115:8001/${path}`}
                                         alt={`${t.anovaTitle} visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
@@ -2978,7 +2976,7 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://103.94.135.115/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115:8001/${results.image_paths[0]}`}
                                 alt="ANCOVA Plot"
                                 className="w-full h-auto object-contain"
                             />
@@ -3068,7 +3066,7 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://103.94.135.115/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115:8001/${results.image_paths[0]}`}
                                 alt="K–S Plot"
                                 className="w-full h-auto object-contain"
                             />
@@ -3159,14 +3157,14 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://103.94.135.115/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115:8001/${results.image_paths[0]}`}
                                 alt="Anderson–Darling Plot"
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115/${results.image_paths[0]}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${results.image_paths[0]}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -3303,14 +3301,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://103.94.135.115/${path}`}
+                                        src={`http://103.94.135.115:8001/${path}`}
                                         alt={`FZT visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://103.94.135.115/${path}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const link = document.createElement('a');
@@ -3432,7 +3430,7 @@ const renderFZTResults = () => {
                                 {language === 'bn' ? 'হিটম্যাপ' : 'Heatmap'}
                             </h4>
                             <img
-                                src={`http://103.94.135.115/${results.heatmap_path}`}
+                                src={`http://103.94.135.115:8001/${results.heatmap_path}`}
                                 alt="Heatmap"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -3445,7 +3443,7 @@ const renderFZTResults = () => {
                                 {language === 'bn' ? 'বারপ্লট' : 'Bar Plot'}
                             </h4>
                             <img
-                                src={`http://103.94.135.115/${results.barplot_path}`}
+                                src={`http://103.94.135.115:8001/${results.barplot_path}`}
                                 alt="Bar Plot"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -3504,14 +3502,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://103.94.135.115/${path}`}
+                                        src={`http://103.94.135.115:8001/${path}`}
                                         alt={`EDA Distribution plot ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://103.94.135.115/${path}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                 if (!response.ok) throw new Error('Network response was not ok');
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
@@ -3590,14 +3588,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://103.94.135.115/${path}`}
+                                        src={`http://103.94.135.115:8001/${path}`}
                                         alt={`Swarm Plot ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://103.94.135.115/${path}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                 if (!response.ok) throw new Error('Network response was not ok');
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
@@ -3681,14 +3679,14 @@ const renderFZTResults = () => {
                                 {results.image_paths.map((path, index) => (
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`Pie Chart ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://103.94.135.115/${path}`);
+                                                    const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                     if (!response.ok) throw new Error('Network response was not ok');
                                                     const blob = await response.blob();
                                                     const url = window.URL.createObjectURL(blob);
@@ -3963,7 +3961,7 @@ const downloadBlockPDF = async (anchor) => {
                             {results.image_paths.map((path, index) => {
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115/${path}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -3983,7 +3981,7 @@ const downloadBlockPDF = async (anchor) => {
                                 return (
                                     <div key={index} className="bg-white rounded shadow p-2 relative">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`chi-square-plot-${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -4159,7 +4157,7 @@ const downloadBlockPDF = async (anchor) => {
                             {results.image_paths.map((path, index) => {
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115/${path}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -4179,7 +4177,7 @@ const downloadBlockPDF = async (anchor) => {
                                 return (
                                     <div key={index} className="bg-white rounded shadow p-2 relative">
                                         <img
-                                            src={`http://103.94.135.115/${path}`}
+                                            src={`http://103.94.135.115:8001/${path}`}
                                             alt={`cramer-v-plot-${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -4224,14 +4222,14 @@ const downloadBlockPDF = async (anchor) => {
                     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
                         <div className="relative">
                             <img
-                                src={`http://103.94.135.115/${results.image_path}`}
+                                src={`http://103.94.135.115:8001/${results.image_path}`}
                                 alt={language === 'bn' ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115/${results.image_path}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${results.image_path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -4306,7 +4304,7 @@ const [barChartType, setBarChartType] = useState("vertical");
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://103.94.135.115${path}`}
+                                        src={`http://103.94.135.115:8001/${path}`}
                                         alt={`Bar chart visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
