@@ -2,12 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Modal, Button, Form } from "react-bootstrap";
 
 const PublicationSettingsModal = ({
-  show,
-  handleClose,
-  handleConfirm,
-  isLoggedInRequired,
+  show, // Boolean to control modal visibility
+  handleClose, 
+  handleConfirm, 
+  isLoggedInRequired, 
   shuffleQuestions,
-  action,
+  action, // "publish" or "update"
 }) => {
   const [localIsLoggedIn, setLocalIsLoggedIn] = useState(isLoggedInRequired);
   const [localShuffle, setLocalShuffle] = useState(shuffleQuestions);
