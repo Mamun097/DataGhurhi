@@ -353,7 +353,7 @@ const PreviewTable = ({
 
     if (!window.confirm(msg)) return;
 
-    fetch("http://127.0.0.1:8000/api/remove-duplicates/", {
+    fetch("http://103.94.135.115:8001/api/remove-duplicates/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

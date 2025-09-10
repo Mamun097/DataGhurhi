@@ -339,7 +339,7 @@ const StatisticalAnalysisTool = () => {
         sessionStorage.removeItem("surveyfile");
     }
     else if (isPreprocessed) {
-        //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+        //fileUrl = `http://103.94.135.115/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
        
         sessionStorage.removeItem("preprocessed");
     }
@@ -499,7 +499,7 @@ const StatisticalAnalysisTool = () => {
 
             // Call the API to get columns
             
-                fetch('http://127.0.0.1:8000/api/upload-file/', {
+                fetch('http://103.94.135.115:8001/api/upload-file/', {
                 method: 'POST',
             
                 body: formData,
@@ -510,12 +510,7 @@ const StatisticalAnalysisTool = () => {
                                         
                         setUploadStatus('success');
                         const fixedUrl = data.fileURL.replace(/\\/g, '/');
-  sessionStorage.setItem("fileURL",  data.fileURL);
-                        sessionStorage.getItem("fileURL");
-
-                        console.log("File uploaded successfully. URL:", fixedUrl);
-                        // Store file URL in sessionStorage
-                      
+                        sessionStorage.setItem("fileURL", 'http://103.94.135.115/' + fixedUrl);
                     } else {
                         setErrorMessage(data.error);
                         setUploadStatus('error');
@@ -546,7 +541,7 @@ useEffect (() => {
                                 
 
               // Call the API to get columns
-            fetch('http://127.0.0.1:8000/api/get-columns/', {
+            fetch('http://103.94.135.115:8001/api/get-columns/', {
                 method: 'POST',
                 body: formData,
                
@@ -772,7 +767,7 @@ useEffect (() => {
         console.log(`${pair[0]}: ${pair[1]}`);
     }
 
-    fetch('http://127.0.0.1:8000/api/analyze/', {
+    fetch('http://103.94.135.115:8001/api/analyze/', {
         method: 'POST',
         body: formData
 
@@ -2133,7 +2128,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
         const handleSaveResult = async () => {
             console.log('Saving result...');
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
+                const response = await fetch('http://103.94.135.115:8001/api/save-results/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -2210,7 +2205,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                             {results.image_paths.map((path, index) => {
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -2234,7 +2229,7 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <div className="relative">
                                             <img
-                                                src={`http://127.0.0.1:8000/${path}`}
+                                                src={`http://103.94.135.115/${path}`}
                                                 alt={`${t.kruskalTitle} visualization ${index + 1}`}
                                                 className="w-full h-auto object-contain"
                                             />
@@ -2320,14 +2315,14 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://127.0.0.1:8000/${path}`}
+                                            src={`http://103.94.135.115/${path}`}
                                             alt={`Wilcoxon visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                    const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                     const blob = await response.blob();
                                                     const url = window.URL.createObjectURL(blob);
                                                     const link = document.createElement('a');
@@ -2428,14 +2423,14 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <div className="relative">
                                             <img
-                                                src={`http://127.0.0.1:8000/${path}`}
+                                                src={`http://103.94.135.115/${path}`}
                                                 alt={`${t.tests.mannwhitney} visualization ${index + 1}`}
                                                 className="w-full h-auto object-contain"
                                             />
                                             <button
                                                 onClick={async () => {
                                                     try {
-                                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                        const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                         const blob = await response.blob();
                                                         const url = window.URL.createObjectURL(blob);
                                                         const link = document.createElement('a');
@@ -2539,14 +2534,14 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <div className="relative">
                                 <img
-                                    src={`http://127.0.0.1:8000/${results.image_path}`}
+                                    src={`http://103.94.135.115/${results.image_path}`}
                                     alt="Shapiro-Wilk visualization"
                                     className="w-full h-auto object-contain"
                                 />
                                 <button
                                     onClick={async () => {
                                         try {
-                                            const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
+                                            const response = await fetch(`http://103.94.135.115:8001/${results.image_path}`);
                                             const blob = await response.blob();
                                             const url = window.URL.createObjectURL(blob);
                                             const link = document.createElement('a');
@@ -2621,14 +2616,14 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://127.0.0.1:8000/${path}`}
+                                            src={`http://103.94.135.115/${path}`}
                                             alt={`Spearman visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                    const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                     const blob = await response.blob();
                                                     const url = window.URL.createObjectURL(blob);
                                                     const link = document.createElement('a');
@@ -2703,14 +2698,14 @@ const AnalysisResults = ({ user_id,results, testType, columns, language = 'Engli
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <div className="relative">
                                         <img
-                                            src={`http://127.0.0.1:8000/${path}`}
+                                            src={`http://103.94.135.115/${path}`}
                                             alt={`Pearson visualization ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                    const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                     const blob = await response.blob();
                                                     const url = window.URL.createObjectURL(blob);
                                                     const link = document.createElement('a');
@@ -2804,14 +2799,14 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115/${results.image_paths[0]}`}
                                 alt="Linear Regression Plot"
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
+                                        const response = await fetch(`http://103.94.135.115:8001/${results.image_paths[0]}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -2895,14 +2890,14 @@ const renderLinearRegressionResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000/${path}`}
+                                        src={`http://103.94.135.115/${path}`}
                                         alt={`${t.anovaTitle} visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${path}`);
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const link = document.createElement('a');
@@ -2983,14 +2978,14 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115/${results.image_paths[0]}`}
                                 alt="ANCOVA Plot"
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${results.image_paths[0]}`);
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const link = document.createElement('a');
@@ -3073,14 +3068,14 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115/${results.image_paths[0]}`}
                                 alt="K–S Plot"
                                 className="w-full h-auto object-contain"
                             />
                             <button 
                              onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
+                                                const response = await fetch(`http://103.94.135.115:8001/${results.image_paths[0]}`);
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const link = document.createElement('a');
@@ -3164,14 +3159,14 @@ const renderLinearRegressionResults = () => {
                         </h3>
                         <div className="bg-white rounded-lg shadow-md p-4">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
+                                src={`http://103.94.135.115/${results.image_paths[0]}`}
                                 alt="Anderson–Darling Plot"
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
+                                        const response = await fetch(`http://103.94.135.115/${results.image_paths[0]}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -3308,14 +3303,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000/${path}`}
+                                        src={`http://103.94.135.115/${path}`}
                                         alt={`FZT visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                const response = await fetch(`http://103.94.135.115/${path}`);
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
                                                 const link = document.createElement('a');
@@ -3437,7 +3432,7 @@ const renderFZTResults = () => {
                                 {language === 'bn' ? 'হিটম্যাপ' : 'Heatmap'}
                             </h4>
                             <img
-                                src={`http://127.0.0.1:8000/${results.heatmap_path}`}
+                                src={`http://103.94.135.115/${results.heatmap_path}`}
                                 alt="Heatmap"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -3450,7 +3445,7 @@ const renderFZTResults = () => {
                                 {language === 'bn' ? 'বারপ্লট' : 'Bar Plot'}
                             </h4>
                             <img
-                                src={`http://127.0.0.1:8000/${results.barplot_path}`}
+                                src={`http://103.94.135.115/${results.barplot_path}`}
                                 alt="Bar Plot"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -3509,14 +3504,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000/${path}`}
+                                        src={`http://103.94.135.115/${path}`}
                                         alt={`EDA Distribution plot ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                const response = await fetch(`http://103.94.135.115/${path}`);
                                                 if (!response.ok) throw new Error('Network response was not ok');
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
@@ -3595,14 +3590,14 @@ const renderFZTResults = () => {
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000/${path}`}
+                                        src={`http://103.94.135.115/${path}`}
                                         alt={`Swarm Plot ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
                                     <button
                                         onClick={async () => {
                                             try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                const response = await fetch(`http://103.94.135.115/${path}`);
                                                 if (!response.ok) throw new Error('Network response was not ok');
                                                 const blob = await response.blob();
                                                 const url = window.URL.createObjectURL(blob);
@@ -3686,14 +3681,14 @@ const renderFZTResults = () => {
                                 {results.image_paths.map((path, index) => (
                                     <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                         <img
-                                            src={`http://127.0.0.1:8000/${path}`}
+                                            src={`http://103.94.135.115/${path}`}
                                             alt={`Pie Chart ${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
                                         <button
                                             onClick={async () => {
                                                 try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                                    const response = await fetch(`http://103.94.135.115/${path}`);
                                                     if (!response.ok) throw new Error('Network response was not ok');
                                                     const blob = await response.blob();
                                                     const url = window.URL.createObjectURL(blob);
@@ -3959,194 +3954,52 @@ const downloadBlockPDF = async (anchor) => {
   const pageW = pdf.internal.pageSize.getWidth();
   const pageH = pdf.internal.pageSize.getHeight();
 
-  // Fit image to page (preserving aspect ratio)
-  const imgW = pageW - 40; // side margins
-  const imgH = (canvas.height * imgW) / canvas.width;
-  const marginX = 20;
-  const marginY = 20;
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {results.image_paths.map((path, index) => {
+                                const handleDownload = async () => {
+                                    try {
+                                        const response = await fetch(`http://103.94.135.115/${path}`);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        const filename = path.split('/').pop() || `chi_square_plot_${index + 1}.png`;
+                                        link.href = url;
+                                        link.download = filename;
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                };
 
-  // If too tall, scale to also fit height
-  const scale = Math.min(imgW / imgW, (pageH - 40) / imgH);
-  const finalW = imgW * scale;
-  const finalH = imgH * scale;
-
-  pdf.addImage(imgData, "PNG", marginX, marginY, finalW, finalH);
-  pdf.save(`${anchor.replace(/\s+/g,'_')}_chi2_table.pdf`);
-};
-
-// Build a multi-page PDF: one page per block
-const downloadAllBlocksPDF = async () => {
-  if (!results?.blocks?.length) return;
-  const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-  const pageW = pdf.internal.pageSize.getWidth();
-  const pageH = pdf.internal.pageSize.getHeight();
-
-  let first = true;
-  for (const { anchor } of results.blocks) {
-    const el = blockRefs.current[anchor];
-    if (!el) continue;
-
-    const canvas = await html2canvas(el, {
-      backgroundColor: "#ffffff",
-      scale: window.devicePixelRatio < 2 ? 2 : window.devicePixelRatio,
-    });
-    const imgData = canvas.toDataURL("image/png");
-
-    const imgW = pageW - 40;
-    const imgH = (canvas.height * imgW) / canvas.width;
-    const scale = Math.min(1, (pageH - 40) / imgH);
-    const finalW = imgW * scale;
-    const finalH = imgH * scale;
-
-    if (!first) pdf.addPage();
-    pdf.addImage(imgData, "PNG", 20, 20, finalW, finalH);
-    first = false;
-  }
-
-  pdf.save("chi2_anchor_tables.pdf");
-};
-
-
-  const mapDigitIfBengali = (text) => {
-    if (language !== 'bn' || text === null || text === undefined) return text ?? '';
-    const s = String(text);
-    return s.split('').map((ch) => digitMapBn[ch] ?? ch).join('');
-  };
-
-  const fmt = (v, digits = 6) => {
-    if (v === null || v === undefined || Number.isNaN(v)) return '–';
-    // Keep raw JSON numbers, format for display only
-    const s = typeof v === 'number' ? v.toFixed(digits) : String(v);
-    return mapDigitIfBengali(s);
-  };
-
-  if (!results) {
-    return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-  }
-
-  const t = (en, bn) => (language === 'bn' ? bn : en);
-
-  
-  const renderHeader = (cols) => (
-    <thead className="bg-gray-50">
-      <tr>
-        {cols.map((c) => (
-          <th
-            key={c.key}
-            className="px-3 py-2 text-left text-sm font-semibold text-gray-700 border-b"
-          >
-            {mapDigitIfBengali(c.label)}
-          </th>
-        ))}
-      </tr>
-    </thead>
-  );
-
-  const baseColumns =
-    results.table_columns ??
-    [
-      { key: 'variable1', label: t('Variable 1', 'ভেরিয়েবল ১') },
-      { key: 'variable2', label: t('Variable 2', 'ভেরিয়েবল ২') },
-      { key: 'chi2', label: t('Chi-square statistic', 'কাই-স্কয়ার পরিসংখ্যান') },
-      { key: 'p_value', label: t('P-value', 'পি-মান') },
-      { key: 'dof', label: t('DoF', 'স্বাধীনতার মাত্রা') },
-      { key: 'n', label: t('N', 'নমুনা') },
-    ];
-
-  const renderRows = (rows) => (
-    <tbody>
-      {rows.map((row, idx) => (
-        <tr key={idx} className="odd:bg-white even:bg-gray-50">
-          <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable1)}</td>
-          <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable2)}</td>
-          <td className="px-3 py-2 text-sm border-b">{fmt(row.chi2)}</td>
-          <td className="px-3 py-2 text-sm border-b">{fmt(row.p_value)}</td>
-          <td className="px-3 py-2 text-sm border-b">{fmt(row.dof, 0)}</td>
-          <td className="px-3 py-2 text-sm border-b">{fmt(row.n, 0)}</td>
-        </tr>
-      ))}
-    </tbody>
-  );
-
-  // Per-variable (“stacked”) tables like your design
-  const renderBlocks = () => {
-  if (!results.blocks || results.blocks.length === 0) return null;
-  return (
-    <div className="space-y-8 ">
-      {/* Export All (PDF) */}
-      <div className="flex justify-end">
-        <button
-          onClick={downloadAllBlocksPDF}
-          className="px-3 py-2 mb-2 text-sm bg-slate-800 text-white rounded hover:bg-slate-700"
-          title={t("Export all blocks as PDF", "সব ব্লক PDF হিসেবে ডাউনলোড করুন")}
-        >
-          {t("Download all (PDF)", "সব ডাউনলোড (PDF)")}
-        </button>
-      </div>
-
-      {results.blocks.map((block, i) => (
-        <>
-        <div
-          key={i}
-          ref={(el) => { blockRefs.current[block.anchor] = el; }}
-          className="bg-white shadow border rounded"
-        >
-          <div className="px-4 py-3 border-b bg-gray-100 rounded-t flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">
-                {t('Variable 1: ', 'ভেরিয়েবল ১: ')}
-                <span className="font-bold">{mapDigitIfBengali(block.anchor)}</span>
-              </h3>
-              <p className="text-sm text-gray-600 mt-1">
-                {t('Compared against all other variables below.', 'নীচে অন্যান্য সব ভেরিয়েবলের সাথে তুলনা করা হয়েছে।')}
-              </p>
-            </div>
-
-          </div>
-
-          
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full">
-              {renderHeader(baseColumns.filter(c => c.key !== 'variable1'))}
-              <tbody>
-                {block.rows.map((row, rIdx) => (
-                  <tr key={rIdx} className="odd:bg-white even:bg-gray-50">
-                    {/* anchor implied, don’t show col 1 */}
-                    <td className="px-3 py-2 text-sm border-b">{mapDigitIfBengali(row.variable2)}</td>
-                    <td className="px-3 py-2 text-sm border-b">{fmt(row.chi2)}</td>
-                    <td className="px-3 py-2 text-sm border-b">{fmt(row.p_value)}</td>
-                    <td className="px-3 py-2 text-sm border-b">{fmt(row.dof, 0)}</td>
-                    <td className="px-3 py-2 text-sm border-b">{fmt(row.n, 0)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-        </div>
-{/* Download buttons for this block */}
-            <div className="flex gap-2 mt-2 mb-2 justify-end">
-              <button
-                onClick={() => downloadBlockPNG(block.anchor)}
-                className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
-                title={t("Download PNG of this table", "এই টেবিল PNG ডাউনলোড করুন")}
-              >
-                PNG ⬇
-              </button>
-              <button
-                onClick={() => downloadBlockPDF(block.anchor)}
-                className="px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
-                title={t("Download PDF of this table", "এই টেবিল PDF ডাউনলোড করুন")}
-              >
-                PDF ⬇
-              </button>
-            </div>
-            </>
-        
-      ))}
-    </div>
-  );
+                                return (
+                                    <div key={index} className="bg-white rounded shadow p-2 relative">
+                                        <img
+                                            src={`http://103.94.135.115/${path}`}
+                                            alt={`chi-square-plot-${index + 1}`}
+                                            className="w-full h-auto object-contain"
+                                        />
+                                        <button
+                                            onClick={handleDownload}
+                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
+                                            title={language === 'bn' ? 'ডাউনলোড করুন' : 'Download'}
+                                        >
+                                            ⬇ {language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                        </button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
 };
 
 
@@ -4306,7 +4159,7 @@ const downloadAllBlocksPDF = async () => {
                             {results.image_paths.map((path, index) => {
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                        const response = await fetch(`http://103.94.135.115/${path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -4326,7 +4179,7 @@ const downloadAllBlocksPDF = async () => {
                                 return (
                                     <div key={index} className="bg-white rounded shadow p-2 relative">
                                         <img
-                                            src={`http://127.0.0.1:8000/${path}`}
+                                            src={`http://103.94.135.115/${path}`}
                                             alt={`cramer-v-plot-${index + 1}`}
                                             className="w-full h-auto object-contain"
                                         />
@@ -4371,14 +4224,14 @@ const downloadAllBlocksPDF = async () => {
                     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
                         <div className="relative">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_path}`}
+                                src={`http://103.94.135.115/${results.image_path}`}
                                 alt={language === 'bn' ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
+                                        const response = await fetch(`http://103.94.135.115/${results.image_path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
@@ -4453,7 +4306,7 @@ const [barChartType, setBarChartType] = useState("vertical");
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000${path}`}
+                                        src={`http://103.94.135.115${path}`}
                                         alt={`Bar chart visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
@@ -4559,13 +4412,7 @@ const [barChartType, setBarChartType] = useState("vertical");
             </div>
         </div>
     );
-
-
-
-
-
-
-
+};
 // Other visualization components
 const CorrelationHeatmap = ({ data }) => {
     // Extracting unique variables
@@ -4636,6 +4483,5 @@ const CorrelationHeatmap = ({ data }) => {
             </table>
         </div>
     );
-};
 };
 export default StatisticalAnalysisTool;
