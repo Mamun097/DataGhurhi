@@ -146,7 +146,7 @@ def get_columns(request):
     user_id = request.POST.get('userID')
     filename = request.POST.get('filename')
     active_sheet_name = request.POST.get('activeSheet')  
-    file_url= request.POST.get('file_url')
+    file_url= request.POST.get('Fileurl')
 
 
     if not file_url:
