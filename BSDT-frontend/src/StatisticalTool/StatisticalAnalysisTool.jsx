@@ -2,27 +2,27 @@ import "katex/dist/katex.min.css";
 import { useEffect, useRef, useState, useMemo, use } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import AncovaOptions from "./AncovaOptions";
+import AncovaOptions from "./StatisticalTools/AncovaOptions";
 import AndersonDarlingOptions from "./AndersonDarlingOptions";
-import AnovaOptions from "./AnovaOptions";
-import ChiSquareOptions from "./ChiSquareOptions";
-import CramerVOptions from "./CramerVOptions";
-import CrossTabulationOptions from "./CrossTabulationOptions";
-import EDABasicsOptions from "./EDABasicsOptions";
-import EDADistributionsOptions from "./EDADistributionsOptions";
-import EDAPieChartOptions from "./EDAPieChartOptions";
-import BarChartOptions from "./BarChartOptions";
-import EDASwarmOptions from "./EDASwarmOptions";
-import FZTOptions from "./FZTOptions";
-import KolmogorovSmirnovOptions from "./KolmogorovSmirnovOptions";
-import KruskalOptions from "./KruskalOptions";
-import LinearRegressionOptions from "./LinearRegressionOptions";
-import MannWhitneyOptions from "./MannWhitneyOptions";
-import NetworkGraphOptions from "./NetworkGraphOptions";
-import PearsonOptions from "./PearsonOptions";
-import ShapiroWilkOptions from "./ShapiroWilkOptions";
-import SimilarityOptions from "./SimilarityOptions";
-import SpearmanOptions from "./SpearmanOptions";
+import AnovaOptions from "./StatisticalTools/AnovaOptions";
+import ChiSquareOptions from "./StatisticalTools/ChiSquareOptions";
+import CramerVOptions from "./StatisticalTools/CramerVOptions";
+import CrossTabulationOptions from "./StatisticalTools/CrossTabulationOptions";
+import EDABasicsOptions from "./StatisticalTools/EDABasicsOptions";
+import EDADistributionsOptions from "./StatisticalTools/EDADistributionsOptions";
+import EDAPieChartOptions from "./StatisticalTools/EDAPieChartOptions";
+import BarChartOptions from "./StatisticalTools/BarChartOptions";
+import EDASwarmOptions from "./StatisticalTools/EDASwarmOptions";
+import FZTOptions from "./StatisticalTools/FZTOptions";
+import KolmogorovSmirnovOptions from "./StatisticalTools/KolmogorovSmirnovOptions";
+import KruskalOptions from "./StatisticalTools/KruskalOptions";
+import LinearRegressionOptions from "./StatisticalTools/LinearRegressionOptions";
+import MannWhitneyOptions from "./StatisticalTools/MannWhitneyOptions";
+import NetworkGraphOptions from "./StatisticalTools/NetworkGraphOptions";
+import PearsonOptions from "./StatisticalTools/PearsonOptions";
+import ShapiroWilkOptions from "./StatisticalTools/ShapiroWilkOptions";
+import SimilarityOptions from "./StatisticalTools/SimilarityOptions";
+import SpearmanOptions from "./StatisticalTools/SpearmanOptions";
 import statTestDetails from "./stat_tests_details";
 import "./StatisticalAnalysisTool.css";
 import WilcoxonOptions from "./WilcoxonOptions";
@@ -386,7 +386,6 @@ const StatisticalAnalysisTool = () => {
     if (isSurveyData) {
       sessionStorage.removeItem("surveyfile");
     } else if (isPreprocessed) {
-
       sessionStorage.removeItem("preprocessed");
     }
     fileUrl = `${django_base_url}${sessionStorage.getItem("fileURL")}`;
@@ -1108,9 +1107,7 @@ const StatisticalAnalysisTool = () => {
                         </button>
                       </div>
 
-                      <div className="flex justify-end gap-4 mb-6">
-
-                      </div>
+                      <div className="flex justify-end gap-4 mb-6"></div>
                       <div className="mb-6">
                         <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
                           {t.selectTest}
