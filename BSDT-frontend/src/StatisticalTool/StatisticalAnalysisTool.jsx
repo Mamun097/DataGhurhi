@@ -1,5 +1,5 @@
 import "katex/dist/katex.min.css";
-import { useEffect, useRef, useState, useMemo, use } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import AncovaOptions from "./StatisticalTools/AncovaOptions";
