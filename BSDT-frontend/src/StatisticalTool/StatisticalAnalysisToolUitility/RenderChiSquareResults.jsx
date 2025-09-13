@@ -135,7 +135,6 @@ const renderChiSquareResults = ({
     if (!results.blocks || results.blocks.length === 0) return null;
     return (
       <div className="space-y-8 ">
-        {/* Export All (PDF) */}
         <div className="flex justify-end">
           <button
             onClick={downloadAllBlocksPDF}
