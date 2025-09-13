@@ -201,8 +201,6 @@ const StatisticalAnalysisTool = () => {
     "similarity",
   ];
 
-  // Handle file selection async
-
   // Reset form to start a new analysis
   const resetForm = () => {
     setResults(null);
@@ -229,19 +227,12 @@ const StatisticalAnalysisTool = () => {
     sessionStorage.removeItem("activesheetname");
     setFileURL("");
   };
-
-  // Get required fields based on test type
   const getRequiredFields = () => {
     switch (testType) {
       case "ttest_onesample":
         return { col2: false, col3: false, refValue: true, heatmapSize: false };
       case "ancova":
         return { col2: true, col3: true, refValue: false, heatmapSize: false };
-      case "cross_tabulation":
-      case "network_graph":
-      case "cramers_heatmap":
-      case "chi_square":
-      case "spearman":
       case "pearson":
         return {
           col2: false,
@@ -250,8 +241,6 @@ const StatisticalAnalysisTool = () => {
           refValue: false,
           heatmapSize: true,
         };
-      case "shapiro":
-      case "kolmogorov":
       case "anderson":
         return {
           col2: true,
