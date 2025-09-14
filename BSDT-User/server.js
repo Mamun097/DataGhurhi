@@ -70,6 +70,10 @@ const surveyCollabRouter = require("./route/surveyCollaborator");
 const faqRoutes = require("./route/faqRouter");
 const searchRouter = require("./route/searchRouter");
 
+// voucher routes
+const voucherRouter = require("./route/voucherroute");
+app.use("/api", voucherRouter);
+
 //file upload for analysis
 const analysisFileUploadRouter = require("./route/analysisFileUpload");
 
