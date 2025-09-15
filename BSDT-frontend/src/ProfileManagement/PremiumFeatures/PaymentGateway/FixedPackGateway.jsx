@@ -1,37 +1,54 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import './PaymentModal.css';
-import apiClient from '../../../api';
+import React, { useState, useEffect, useCallback } from "react";
+import "./PaymentModal.css";
+import apiClient from "../../../api";
 
 // Payment Processing Modal Component
-const PaymentProcessingModal = ({ isOpen, onClose, getLabel, status, message }) => {
+const PaymentProcessingModal = ({
+  isOpen,
+  onClose,
+  getLabel,
+  status,
+  message,
+}) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="payment-modal" onClick={(e) => e.stopPropagation()}>
         <div className="payment-modal-content">
-          {status === 'processing' && (
+          {status === "processing" && (
             <>
               <div className="loading-spinner large"></div>
               <h3>{getLabel("Processing Payment...")}</h3>
-              <p>{getLabel("Please wait while we redirect you to the payment gateway.")}</p>
+              <p>
+                {getLabel(
+                  "Please wait while we redirect you to the payment gateway."
+                )}
+              </p>
             </>
           )}
-          {status === 'success' && (
+          {status === "success" && (
             <>
               <div className="success-icon">✅</div>
               <h3>{getLabel("Payment Successful!")}</h3>
-              <p>{message || getLabel("Your subscription has been activated successfully.")}</p>
+              <p>
+                {message ||
+                  getLabel(
+                    "Your subscription has been activated successfully."
+                  )}
+              </p>
               <button className="close-btn" onClick={onClose}>
                 {getLabel("Close")}
               </button>
             </>
           )}
-          {status === 'error' && (
+          {status === "error" && (
             <>
               <div className="error-icon">❌</div>
               <h3>{getLabel("Payment Failed")}</h3>
-              <p>{message || getLabel("Something went wrong. Please try again.")}</p>
+              <p>
+                {message || getLabel("Something went wrong. Please try again.")}
+              </p>
               <button className="close-btn" onClick={onClose}>
                 {getLabel("Close")}
               </button>
@@ -50,7 +67,7 @@ const usePaymentGateway = (getLabel) => {
   const [paymentModal, setPaymentModal] = useState({
     isOpen: false,
     status: null,
-    message: ''
+    message: "",
   });
   const [processingPayment, setProcessingPayment] = useState(false);
 
@@ -96,55 +113,61 @@ const usePaymentGateway = (getLabel) => {
   // Handle payment response from URL parameters
   const handlePaymentResponse = useCallback(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    
+
     // Check for both 'payment' and 'status' parameters for backward compatibility
-    const paymentStatus = urlParams.get('payment');
-    const status = urlParams.get('status');
-    const tran_id = urlParams.get('tran_id');
-    const packageName = urlParams.get('package');
-    const errorMsg = urlParams.get('error');
-    const message = urlParams.get('message');
-    
+    const paymentStatus = urlParams.get("payment");
+    const status = urlParams.get("status");
+    const tran_id = urlParams.get("tran_id");
+    const packageName = urlParams.get("package");
+    const errorMsg = urlParams.get("error");
+    const message = urlParams.get("message");
+
     // Use whichever parameter is available
     const finalStatus = paymentStatus || status;
-    
-    if (finalStatus && (tran_id || finalStatus === 'success')) {
-      if (finalStatus === 'success') {
+
+    if (finalStatus && (tran_id || finalStatus === "success")) {
+      if (finalStatus === "success") {
         setPaymentModal({
           isOpen: true,
-          status: 'success',
-          message: packageName 
-            ? getLabel(`Payment completed successfully! Your ${decodeURIComponent(packageName)} subscription is now active.`)
-            : getLabel('Payment completed successfully! Your subscription is now active.')
+          status: "success",
+          message: packageName
+            ? getLabel(
+                `Payment completed successfully! Your ${decodeURIComponent(
+                  packageName
+                )} subscription is now active.`
+              )
+            : getLabel(
+                "Payment completed successfully! Your subscription is now active."
+              ),
         });
-      } else if (finalStatus === 'failed') {
-        const failureMessage = errorMsg 
+      } else if (finalStatus === "failed") {
+        const failureMessage = errorMsg
           ? decodeURIComponent(errorMsg)
-          : getLabel('Payment failed. Please try again.');
-        
+          : getLabel("Payment failed. Please try again.");
+
         setPaymentModal({
           isOpen: true,
-          status: 'error',
-          message: failureMessage
+          status: "error",
+          message: failureMessage,
         });
-      } else if (finalStatus === 'cancelled') {
+      } else if (finalStatus === "cancelled") {
         setPaymentModal({
           isOpen: true,
-          status: 'error',
-          message: getLabel('Payment was cancelled.')
+          status: "error",
+          message: getLabel("Payment was cancelled."),
         });
-      } else if (finalStatus === 'error') {
-        const errorMessage = message 
+      } else if (finalStatus === "error") {
+        const errorMessage = message
           ? decodeURIComponent(message)
-          : getLabel('An error occurred during payment processing.');
-        
+          : getLabel("An error occurred during payment processing.");
+
         setPaymentModal({
           isOpen: true,
-          status: 'error',
-          message: errorMessage
+          status: "error",
+          message: errorMessage,
         });
       }
-      
+
       // Clean up URL parameters
       const cleanUrl = window.location.origin + window.location.pathname;
       window.history.replaceState({}, document.title, cleanUrl);
@@ -154,14 +177,16 @@ const usePaymentGateway = (getLabel) => {
   // Handle buy click for packages
   const handleBuyClick = async (packageId) => {
     if (!currentUser || !currentUser.user_id) {
-      alert(getLabel('Please login to purchase a package'));
+      alert(getLabel("Please login to purchase a package"));
       return;
     }
 
     // Check if user already has an active subscription
     if (userSubscription && new Date(userSubscription.end_date) > new Date()) {
       const confirmUpgrade = window.confirm(
-        getLabel('You already have an active subscription. Do you want to upgrade/renew?')
+        getLabel(
+          "You already have an active subscription. Do you want to upgrade/renew?"
+        )
       );
       if (!confirmUpgrade) return;
     }
@@ -169,46 +194,49 @@ const usePaymentGateway = (getLabel) => {
     setProcessingPayment(true);
     setPaymentModal({
       isOpen: true,
-      status: 'processing',
-      message: ''
+      status: "processing",
+      message: "",
     });
 
     try {
-      const response = await apiClient.post('/api/payment/initiate', {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({
+      const response = await apiClient.post(
+        "/api/payment/initiate",
+        {
           packageId: packageId,
           userId: currentUser.user_id,
-          customerName: currentUser.name || 'Customer',
+          customerName: currentUser.name || "Customer",
           customerEmail: currentUser.email,
-          customerPhone: currentUser.contact || '01700000000',
-          customerAddress: currentUser.address || 'Dhaka, Bangladesh'
-        })
-      });
+          customerPhone: currentUser.contact || "01700000000",
+          customerAddress: currentUser.address || "Dhaka, Bangladesh",
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok && data.success) {
-        // Close the modal before redirecting
-        setPaymentModal({ isOpen: false, status: null, message: '' });
-        
-        // Store the transaction ID for reference
-        localStorage.setItem('pending_transaction', data.transaction_id);
-        
-        // Redirect to SSLCommerz payment gateway
+      if (response.status === 200 && data.success) {
+        // Closing the modal before redirecting
+        setPaymentModal({ isOpen: false, status: null, message: "" });
+
+        // Storing the transaction ID for reference
+        localStorage.setItem("pending_transaction", data.transaction_id);
+
+        // Redirecting to SSLCommerz payment gateway
         window.location.href = data.GatewayPageURL;
       } else {
-        throw new Error(data.message || 'Failed to initiate payment');
+        throw new Error(data.message || "Failed to initiate payment");
       }
     } catch (error) {
-      console.error('Payment initiation error:', error);
+      console.error("Error initiating payment:", error);
       setPaymentModal({
         isOpen: true,
-        status: 'error',
-        message: error.message || getLabel('Failed to initiate payment. Please try again.')
+        status: "error",
+        message: getLabel("Failed to initiate payment. Please try again."),
       });
     } finally {
       setProcessingPayment(false);
@@ -218,12 +246,16 @@ const usePaymentGateway = (getLabel) => {
   // Handle custom package payment
   const handleBuyCustomPackage = async () => {
     if (!currentUser || !currentUser.user_id) {
-      alert(getLabel('Please login to purchase a package'));
+      alert(getLabel("Please login to purchase a package"));
       return;
     }
 
     // For now, show a message that custom package will be implemented
-    alert(getLabel('Custom package payment will be implemented soon. Please contact support for custom packages.'));
+    alert(
+      getLabel(
+        "Custom package payment will be implemented soon. Please contact support for custom packages."
+      )
+    );
   };
 
   // Close payment modal
@@ -231,10 +263,10 @@ const usePaymentGateway = (getLabel) => {
     setPaymentModal({
       isOpen: false,
       status: null,
-      message: ''
+      message: "",
     });
     // Refresh user data after successful payment
-    if (paymentModal.status === 'success') {
+    if (paymentModal.status === "success") {
       getProfile();
     }
   };
@@ -258,7 +290,7 @@ const usePaymentGateway = (getLabel) => {
     closePaymentModal,
     initializePaymentGateway,
     getProfile,
-    PaymentProcessingModal
+    PaymentProcessingModal,
   };
 };
 
