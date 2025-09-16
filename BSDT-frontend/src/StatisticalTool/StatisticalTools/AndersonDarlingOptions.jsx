@@ -1,39 +1,18 @@
-import React from 'react';
-
-const AndersonDarlingOptions = ({
-  language,
-  setLanguage,
-  imageFormat,
-  setImageFormat,
-  useDefaultSettings,
-  setUseDefaultSettings,
-  labelFontSize,
-  setLabelFontSize,
-  tickFontSize,
-  setTickFontSize,
-  imageQuality,
-  setImageQuality,
-  imageSize,
-  setImageSize,
-  dotColor,       // scatter plot color
-  setDotColor,
-  lineColor,      // reference line color
-  setLineColor,
-  lineStyle,
-  setLineStyle,
-  t,
-  selectedColumn,
-  setSelectedColumn
-}) => {
+const AndersonDarlingOptions = ({ language, options, setOptions, t }) => {
+  const handleChange = (key, value) => {
+    setOptions((prevOptions) => ({
+      ...prevOptions,
+      [key]: value,
+    }));
+  };
   return (
     <div className="bg-white rounded-md shadow-md p-4 mt-4 space-y-4">
       <h3 className="text-lg font-semibold">{t.selectVariables}</h3>
-
       <div>
         <label className="block font-medium mb-1">{t.downloadLabel}</label>
         <select
-          value={imageFormat}
-          onChange={(e) => setImageFormat(e.target.value)}
+          value={options.imageFormat}
+          onChange={(e) => handleChange("imageFormat", e.target.value)}
           className="w-full border rounded p-2"
         >
           <option value="png">PNG</option>
@@ -42,26 +21,25 @@ const AndersonDarlingOptions = ({
           <option value="tiff">TIFF</option>
         </select>
       </div>
-
       <div>
-        <label className="block font-medium mb-1">
-          {t.useDefaultSettings}
-        </label>
+        <label className="block font-medium mb-1">{t.useDefaultSettings}</label>
         <input
           type="checkbox"
-          checked={useDefaultSettings}
-          onChange={(e) => setUseDefaultSettings(e.target.checked)}
+          checked={options.useDefaultSettings}
+          onChange={(e) => handleChange("useDefaultSettings", e.target.checked)}
         />
       </div>
 
-      {!useDefaultSettings && (
+      {!options.useDefaultSettings && (
         <>
           <div>
             <label className="block font-medium mb-1">{t.labelFontSize}</label>
             <input
               type="number"
-              value={labelFontSize}
-              onChange={(e) => setLabelFontSize(parseInt(e.target.value))}
+              value={options.labelFontSize}
+              onChange={(e) =>
+                handleChange("labelFontSize", parseInt(e.target.value))
+              }
               className="w-full border rounded p-2"
               min={10}
               max={72}
@@ -72,8 +50,10 @@ const AndersonDarlingOptions = ({
             <label className="block font-medium mb-1">{t.tickFontSize}</label>
             <input
               type="number"
-              value={tickFontSize}
-              onChange={(e) => setTickFontSize(parseInt(e.target.value))}
+              value={options.tickFontSize}
+              onChange={(e) =>
+                handleChange("tickFontSize", parseInt(e.target.value))
+              }
               className="w-full border rounded p-2"
               min={8}
               max={48}
@@ -84,8 +64,10 @@ const AndersonDarlingOptions = ({
             <label className="block font-medium mb-1">{t.imageQuality}</label>
             <input
               type="number"
-              value={imageQuality}
-              onChange={(e) => setImageQuality(parseInt(e.target.value))}
+              value={options.imageQuality}
+              onChange={(e) =>
+                handleChange("imageQuality", parseInt(e.target.value))
+              }
               className="w-full border rounded p-2"
               min={10}
               max={100}
@@ -96,8 +78,8 @@ const AndersonDarlingOptions = ({
             <label className="block font-medium mb-1">{t.imageSize}</label>
             <input
               type="text"
-              value={imageSize}
-              onChange={(e) => setImageSize(e.target.value)}
+              value={options.imageSize}
+              onChange={(e) => handleChange("imageSize", e.target.value)}
               className="w-full border rounded p-2"
               placeholder="800x600"
             />
@@ -105,12 +87,14 @@ const AndersonDarlingOptions = ({
 
           <div>
             <label className="block font-medium mb-1">
-              {language === 'bn' ? 'স্ক্যাটার রঙ (বিন্দু)' : 'Scatter Color (dots)'}
+              {language === "bn"
+                ? "স্ক্যাটার রঙ (বিন্দু)"
+                : "Scatter Color (dots)"}
             </label>
             <input
               type="text"
-              value={dotColor}
-              onChange={(e) => setDotColor(e.target.value)}
+              value={options.dotColor}
+              onChange={(e) => handleChange("dotColor", e.target.value)}
               className="w-full border rounded p-2"
               placeholder="steelblue"
             />
@@ -118,12 +102,14 @@ const AndersonDarlingOptions = ({
 
           <div>
             <label className="block font-medium mb-1">
-              {language === 'bn' ? 'রেফারেন্স লাইনের রঙ' : 'Reference Line Color'}
+              {language === "bn"
+                ? "রেফারেন্স লাইনের রঙ"
+                : "Reference Line Color"}
             </label>
             <input
               type="text"
-              value={lineColor}
-              onChange={(e) => setLineColor(e.target.value)}
+              value={options.lineColor}
+              onChange={(e) => handleChange("lineColor", e.target.value)}
               className="w-full border rounded p-2"
               placeholder="red"
             />
@@ -131,16 +117,22 @@ const AndersonDarlingOptions = ({
 
           <div>
             <label className="block font-medium mb-1">
-              {language === 'bn' ? 'লাইনের স্টাইল' : 'Line Style'}
+              {language === "bn" ? "লাইনের স্টাইল" : "Line Style"}
             </label>
             <select
-              value={lineStyle}
-              onChange={(e) => setLineStyle(e.target.value)}
+              value={options.lineStyle}
+              onChange={(e) => handleChange("lineStyle", e.target.value)}
               className="w-full border rounded p-2"
             >
-              <option value="solid">{language === 'bn' ? 'সলিড' : 'Solid'}</option>
-              <option value="dashed">{language === 'bn' ? 'ড্যাশড' : 'Dashed'}</option>
-              <option value="dotted">{language === 'bn' ? 'ডটেড' : 'Dotted'}</option>
+              <option value="solid">
+                {language === "bn" ? "সলিড" : "Solid"}
+              </option>
+              <option value="dashed">
+                {language === "bn" ? "ড্যাশড" : "Dashed"}
+              </option>
+              <option value="dotted">
+                {language === "bn" ? "ডটেড" : "Dotted"}
+              </option>
             </select>
           </div>
         </>
