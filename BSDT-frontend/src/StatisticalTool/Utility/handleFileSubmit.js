@@ -1,9 +1,5 @@
 export const handleSubmit = ({file, setErrorMessage, testType, setIsAnalyzing, language, heatmapSize, fileName, userId, column1, column2
-    , column3, column4, imageFormat, useDefaultSettings, labelFontSize, tickFontSize, 
-    imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, histogramBins, barColor, 
-    lineColor, lineStyle, legendFontSize, dotWidth, lineWidth, dotColor, boxColor, medianColor, fCurveColor, 
-    fLineColor, zCurveColor, zLineColor, tCurveColor, tLineColor, hist1Color, hist2Color, extraColumns = [], 
-    histColor, kdeColor, distColor, swarmColor, barChartType = "vertical", selectedColumns = [], setResults, django_base_url,
+    , column3, column4, visOptions,selectedColumns, extraColumns, setResults, django_base_url,
     t,
 }) => (e) => {
     e.preventDefault();
@@ -71,7 +67,7 @@ export const handleSubmit = ({file, setErrorMessage, testType, setIsAnalyzing, l
     } else if (testType === "bar_chart") {
       // New Code for Bar Chart
       formData.append("column1", column1); //  Only one column
-      formData.append("orientation", barChartType); //  Vertical / Horizontal choice
+      formData.append("orientation", visOptions.barChartType); //  Vertical / Horizontal choice
     } else {
       formData.append("column1", column1);
       formData.append("column2", column2);
@@ -112,80 +108,80 @@ export const handleSubmit = ({file, setErrorMessage, testType, setIsAnalyzing, l
         "network_graph",
       ].includes(testType)
     ) {
-      formData.append("format", imageFormat);
-      formData.append("use_default", useDefaultSettings ? "true" : "false");
+      formData.append("format", visOptions.imageFormat);
+      formData.append("use_default", visOptions.useDefaultSettings ? "true" : "false");
 
-      if (!useDefaultSettings) {
-        formData.append("label_font_size", labelFontSize.toString());
-        formData.append("tick_font_size", tickFontSize.toString());
-        formData.append("image_quality", imageQuality.toString());
-        formData.append("image_size", imageSize);
-        formData.append("palette", colorPalette);
-        formData.append("bar_width", barWidth.toString());
+      if (!visOptions.useDefaultSettings) {
+        formData.append("label_font_size", visOptions.labelFontSize.toString());
+        formData.append("tick_font_size", visOptions.tickFontSize.toString());
+        formData.append("image_quality", visOptions.imageQuality.toString());
+        formData.append("image_size", visOptions.imageSize);
+        formData.append("palette", visOptions.colorPalette);
+        formData.append("bar_width", visOptions.barWidth.toString());
 
         if (["kruskal", "mannwhitney"].includes(testType)) {
-          formData.append("box_width", boxWidth.toString());
-          formData.append("violin_width", violinWidth.toString());
+          formData.append("box_width", visOptions.boxWidth.toString());
+          formData.append("violin_width", visOptions.violinWidth.toString());
         }
 
         if (testType === "shapiro") {
-          formData.append("bins", histogramBins.toString());
-          formData.append("bar_color", barColor);
-          formData.append("line_color", lineColor);
-          formData.append("line_style", lineStyle);
+          formData.append("bins", visOptions.histogramBins.toString());
+          formData.append("bar_color", visOptions.barColor);
+          formData.append("line_color", visOptions.lineColor);
+          formData.append("line_style", visOptions.lineStyle);
         }
 
         if (testType === "linear_regression") {
-          formData.append("legend_font_size", legendFontSize.toString());
-          formData.append("line_color", lineColor);
-          formData.append("line_style", lineStyle);
-          formData.append("dot_width", dotWidth.toString());
-          formData.append("line_width", lineWidth.toString());
-          formData.append("dot_color", dotColor);
+          formData.append("legend_font_size", visOptions.legendFontSize.toString());
+          formData.append("line_color", visOptions.lineColor);
+          formData.append("line_style", visOptions.lineStyle);
+          formData.append("dot_width", visOptions.dotWidth.toString());
+          formData.append("line_width", visOptions.lineWidth.toString());
+          formData.append("dot_color", visOptions.dotColor);
         }
 
         if (testType === "anova") {
-          formData.append("box_color", boxColor);
-          formData.append("median_color", medianColor);
+          formData.append("box_color", visOptions.boxColor);
+          formData.append("median_color", visOptions.medianColor);
         }
 
         if (testType === "ancova") {
-          formData.append("box_color", boxColor);
-          formData.append("line_color", lineColor);
-          formData.append("line_style", lineStyle);
-          formData.append("dot_color", dotColor);
-          formData.append("dot_width", dotWidth.toString());
-          formData.append("line_width", lineWidth.toString());
+          formData.append("box_color", visOptions.boxColor);
+          formData.append("line_color", visOptions.lineColor);
+          formData.append("line_style", visOptions.lineStyle);
+          formData.append("dot_color", visOptions.dotColor);
+          formData.append("dot_width", visOptions.dotWidth.toString());
+          formData.append("line_width", visOptions.lineWidth.toString());
         }
 
         if (testType === "kolmogorov") {
-          formData.append("label_font_size", labelFontSize.toString());
-          formData.append("tick_font_size", tickFontSize.toString());
-          formData.append("image_quality", imageQuality.toString());
-          formData.append("image_width", imageSize.split("x")[0]);
-          formData.append("image_height", imageSize.split("x")[1]);
-          formData.append("ecdf_color", dotColor);
-          formData.append("cdf_color", lineColor);
-          formData.append("line_style", lineStyle);
+          formData.append("label_font_size", visOptions.labelFontSize.toString());
+          formData.append("tick_font_size", visOptions.tickFontSize.toString());
+          formData.append("image_quality", visOptions.imageQuality.toString());
+          formData.append("image_width", visOptions.imageSize.split("x")[0]);
+          formData.append("image_height", visOptions.imageSize.split("x")[1]);
+          formData.append("ecdf_color", visOptions.dotColor);
+          formData.append("cdf_color", visOptions.lineColor);
+          formData.append("line_style", visOptions.lineStyle);
         }
 
         if (testType === "anderson") {
-          formData.append("scatter_color", dotColor);
-          formData.append("line_color", lineColor);
-          formData.append("line_style", lineStyle);
+          formData.append("scatter_color", visOptions.dotColor);
+          formData.append("line_color", visOptions.lineColor);
+          formData.append("line_style", visOptions.lineStyle);
         }
 
         if (testType === "fzt") {
-          formData.append("line_width", lineWidth.toString());
-          formData.append("line_style", lineStyle);
-          formData.append("f_curve_color", fCurveColor);
-          formData.append("f_line_color", fLineColor);
-          formData.append("z_curve_color", zCurveColor);
-          formData.append("z_line_color", zLineColor);
-          formData.append("t_curve_color", tCurveColor);
-          formData.append("t_line_color", tLineColor);
-          formData.append("hist1_color", hist1Color);
-          formData.append("hist2_color", hist2Color);
+          formData.append("line_width", visOptions.lineWidth.toString());
+          formData.append("line_style", visOptions.lineStyle);
+          formData.append("f_curve_color", visOptions.fCurveColor);
+          formData.append("f_line_color", visOptions.fLineColor);
+          formData.append("z_curve_color", visOptions.zCurveColor);
+          formData.append("z_line_color", visOptions.zLineColor);
+          formData.append("t_curve_color", visOptions.tCurveColor);
+          formData.append("t_line_color", visOptions.tLineColor);
+          formData.append("hist1_color", visOptions.hist1Color);
+          formData.append("hist2_color", visOptions.hist2Color);
         }
 
         if (testType === "cross_tabulation") {
@@ -197,16 +193,16 @@ export const handleSubmit = ({file, setErrorMessage, testType, setIsAnalyzing, l
         }
 
         if (testType === "eda_distribution") {
-          formData.append("hist_color", histColor);
-          formData.append("kde_color", kdeColor);
-          formData.append("dist_color", distColor);
+          formData.append("hist_color", visOptions.histColor);
+          formData.append("kde_color", visOptions.kdeColor);
+          formData.append("dist_color", visOptions.distColor);
         }
 
         if (testType === "eda_swarm") {
-          formData.append("swarm_color", swarmColor);
+          formData.append("swarm_color", visOptions.swarmColor);
         }
         if (testType === "bar_chart") {
-          formData.append("orientation", barChartType); // "vertical" | "horizontal"
+          formData.append("orientation", visOptions.barChartType); // "vertical" | "horizontal"
         }
       }
 

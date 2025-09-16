@@ -143,51 +143,53 @@ const StatisticalAnalysisTool = () => {
   const [column4, setColumn4] = useState("");
   const [column5, setColumn5] = useState("");
   const [heatmapSize, setHeatmapSize] = useState("");
-  const [imageFormat, setImageFormat] = useState("png");
-  const [useDefaultSettings, setUseDefaultSettings] = useState(true);
-  const [labelFontSize, setLabelFontSize] = useState(36);
-  const [tickFontSize, setTickFontSize] = useState(16);
-  const [imageQuality, setImageQuality] = useState(90);
-  const [imageSize, setImageSize] = useState("800x600");
-  const [colorPalette, setColorPalette] = useState("deep");
-  const [barWidth, setBarWidth] = useState(0.8);
-  const [boxWidth, setBoxWidth] = useState(0.8);
-  const [violinWidth, setViolinWidth] = useState(0.8);
   const [detailsModalVisible, setDetailsModalVisible] = useState(false);
-  const [histogramBins, setHistogramBins] = useState(30);
-  const [barColor, setBarColor] = useState("steelblue");
-  const [legendFontSize, setLegendFontSize] = useState(16);
-  const [lineColor, setLineColor] = useState("red");
-  const [lineStyle, setLineStyle] = useState("solid");
-  const [lineWidth, setLineWidth] = useState(2);
-  const [dotColor, setDotColor] = useState("blue");
-  const [dotWidth, setDotWidth] = useState(5);
-  const [boxColor, setBoxColor] = useState("steelblue");
-  const [medianColor, setMedianColor] = useState("red");
-  const [fCurveColor, setFCurveColor] = useState("blue");
-  const [fLineColor, setFLineColor] = useState("red");
-  const [zCurveColor, setZCurveColor] = useState("gray");
-  const [zLineColor, setZLineColor] = useState("green");
-  const [tCurveColor, setTCurveColor] = useState("gray");
-  const [tLineColor, setTLineColor] = useState("purple");
-  const [hist1Color, setHist1Color] = useState("red");
-  const [hist2Color, setHist2Color] = useState("orange");
   const [selectedColumns, setSelectedColumns] = useState([]);
   const [extraColumns, setExtraColumns] = useState([]);
-  const [swarmColor, setSwarmColor] = useState("orange");
-  const [histColor, setHistColor] = useState("blue");
-  const [kdeColor, setKdeColor] = useState("green");
-  const [distColor, setDistColor] = useState("purple");
-  const [nodeColor, setNodeColor] = useState("#AED6F1");
-  const [nodeSize, setNodeSize] = useState(800);
-  const [textSize, setTextSize] = useState(25);
-  const [textColor, setTextColor] = useState("black");
-  const [edgeWidthFactor, setEdgeWidthFactor] = useState(0.5);
-  const [showEdgeWeights, setShowEdgeWeights] = useState(false);
-  const [weightFontSize, setWeightFontSize] = useState(3);
-  const [weightColor, setWeightColor] = useState("red");
-  const [useMatrix, setUseMatrix] = useState(false);
-  const [barChartType, setBarChartType] = useState("vertical");
+  const [visOptions, setVisOptions] = useState({
+    imageFormat: "png",
+    useDefaultSettings: true,
+    labelFontSize: 36,
+    tickFontSize: 16,
+    imageQuality: 90,
+    imageSize: "800x600",
+    colorPalette: "deep",
+    barWidth: 0.8,
+    boxWidth: 0.8,
+    violinWidth: 0.8,
+    histogramBins: 30,
+    barColor: "steelblue",
+    legendFontSize: 16,
+    lineColor: "red",
+    lineStyle: "solid",
+    lineWidth: 2,
+    dotColor: "blue",
+    dotWidth: 5,
+    boxColor: "steelblue",
+    medianColor: "red",
+    fCurveColor: "blue",
+    fLineColor: "red",
+    zCurveColor: "gray",
+    zLineColor: "green",
+    tCurveColor: "gray",
+    tLineColor: "purple",
+    hist1Color: "red",
+    hist2Color: "orange",
+    swarmColor: "orange",
+    histColor: "blue",
+    kdeColor: "green",
+    distColor: "purple",
+    nodeColor: "#AED6F1",
+    nodeSize: 800,
+    textSize: 25,
+    textColor: "black",
+    edgeWidthFactor: 0.5,
+    showEdgeWeights: false,
+    weightFontSize: 3,
+    weightColor: "red",
+    useMatrix: false,
+    barChartType: "vertical",
+  });
   const [results, setResults] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -397,41 +399,9 @@ const StatisticalAnalysisTool = () => {
                         column2,
                         column3,
                         column4,
-                        imageFormat,
-                        useDefaultSettings,
-                        labelFontSize,
-                        tickFontSize,
-                        imageQuality,
-                        imageSize,
-                        colorPalette,
-                        barWidth,
-                        boxWidth,
-                        violinWidth,
-                        histogramBins,
-                        barColor,
-                        lineColor,
-                        lineStyle,
-                        legendFontSize,
-                        dotWidth,
-                        lineWidth,
-                        dotColor,
-                        boxColor,
-                        medianColor,
-                        fCurveColor,
-                        fLineColor,
-                        zCurveColor,
-                        zLineColor,
-                        tCurveColor,
-                        tLineColor,
-                        hist1Color,
-                        hist2Color,
-                        extraColumns,
-                        histColor,
-                        kdeColor,
-                        distColor,
-                        swarmColor,
-                        barChartType,
+                        visOptions,
                         selectedColumns,
+                        extraColumns,
                         setResults,
                         django_base_url,
                         t,
@@ -707,8 +677,10 @@ const StatisticalAnalysisTool = () => {
                               : "Select bar chart type:"}
                           </label>
                           <select
-                            value={barChartType}
-                            onChange={(e) => setBarChartType(e.target.value)}
+                            value={visOptions.barChartType}
+                            onChange={(e) =>
+                              visOptions.setBarChartType(e.target.value)
+                            }
                             className="border rounded-md p-2 w-full"
                           >
                             <option value="vertical">
@@ -961,56 +933,16 @@ const StatisticalAnalysisTool = () => {
 
                           {testType === "kruskal" && (
                             <KruskalOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              boxWidth={boxWidth}
-                              setBoxWidth={setBoxWidth}
-                              violinWidth={violinWidth}
-                              setViolinWidth={setViolinWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "mannwhitney" && (
                             <MannWhitneyOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              boxWidth={boxWidth}
-                              setBoxWidth={setBoxWidth}
-                              violinWidth={violinWidth}
-                              setViolinWidth={setViolinWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1018,23 +950,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "pearson" && (
                             <PearsonOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1042,23 +959,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "spearman" && (
                             <SpearmanOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1066,55 +968,16 @@ const StatisticalAnalysisTool = () => {
                           {testType === "shapiro" && (
                             <ShapiroWilkOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              boxWidth={boxWidth}
-                              setBoxWidth={setBoxWidth}
-                              violinWidth={violinWidth}
-                              setViolinWidth={setViolinWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "wilcoxon" && (
                             <WilcoxonOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              boxWidth={boxWidth}
-                              setBoxWidth={setBoxWidth}
-                              violinWidth={violinWidth}
-                              setViolinWidth={setViolinWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1122,39 +985,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "linear_regression" && (
                             <LinearRegressionOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              boxWidth={boxWidth}
-                              setBoxWidth={setBoxWidth}
-                              violinWidth={violinWidth}
-                              setViolinWidth={setViolinWidth}
-                              legendFontSize={legendFontSize}
-                              setLegendFontSize={setLegendFontSize}
-                              lineColor={lineColor}
-                              setLineColor={setLineColor}
-                              lineStyle={lineStyle}
-                              setLineStyle={setLineStyle}
-                              lineWidth={lineWidth}
-                              setLineWidth={setLineWidth}
-                              dotColor={dotColor}
-                              setDotColor={setDotColor}
-                              dotWidth={dotWidth}
-                              setDotWidth={setDotWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1163,22 +995,8 @@ const StatisticalAnalysisTool = () => {
                             <AnovaOptions
                               language={language}
                               setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              boxColor={boxColor}
-                              setBoxColor={setBoxColor}
-                              medianColor={medianColor}
-                              setMedianColor={setMedianColor}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1186,29 +1004,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "ancova" && (
                             <AncovaOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              dotColor={dotColor}
-                              setDotColor={setDotColor}
-                              lineColor={lineColor}
-                              setLineColor={setLineColor}
-                              lineStyle={lineStyle}
-                              setLineStyle={setLineStyle}
-                              dotWidth={dotWidth}
-                              setDotWidth={setDotWidth}
-                              lineWidth={lineWidth}
-                              setLineWidth={setLineWidth}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1216,55 +1013,17 @@ const StatisticalAnalysisTool = () => {
                           {testType === "kolmogorov" && (
                             <KolmogorovSmirnovOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              ecdfColor={dotColor} // reuse dotColor for ECDF
-                              setEcdfColor={setDotColor}
-                              cdfColor={lineColor} // reuse lineColor for CDF
-                              setCdfColor={setLineColor}
-                              lineStyle={lineStyle}
-                              setLineStyle={setLineStyle}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
-                              selectedColumn={column1}
-                              setSelectedColumn={setColumn1}
                             />
                           )}
 
                           {testType === "anderson" && (
                             <AndersonDarlingOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              scatterColor={dotColor} // reuse dotColor for scatter
-                              setScatterColor={setDotColor}
-                              lineColor={lineColor}
-                              setLineColor={setLineColor}
-                              lineStyle={lineStyle}
-                              setLineStyle={setLineStyle}
-                              selectedColumn={column1}
-                              setSelectedColumn={setColumn1}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1272,39 +1031,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "fzt" && (
                             <FZTOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              lineWidth={lineWidth}
-                              setLineWidth={setLineWidth}
-                              lineStyle={lineStyle}
-                              setLineStyle={setLineStyle}
-                              fCurveColor={fCurveColor}
-                              setFCurveColor={setFCurveColor}
-                              fLineColor={fLineColor}
-                              setFLineColor={setFLineColor}
-                              zCurveColor={zCurveColor}
-                              setZCurveColor={setZCurveColor}
-                              zLineColor={zLineColor}
-                              setZLineColor={setZLineColor}
-                              tCurveColor={tCurveColor}
-                              setTCurveColor={setTCurveColor}
-                              tLineColor={tLineColor}
-                              setTLineColor={setTLineColor}
-                              hist1Color={hist1Color}
-                              setHist1Color={setHist1Color}
-                              hist2Color={hist2Color}
-                              setHist2Color={setHist2Color}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1313,23 +1041,8 @@ const StatisticalAnalysisTool = () => {
                             <CrossTabulationOptions
                               language={language}
                               setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
-                              barWidth={barWidth}
-                              setBarWidth={setBarWidth}
-                              t={t}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                             />
                           )}
 
@@ -1337,129 +1050,48 @@ const StatisticalAnalysisTool = () => {
                             <EDADistributionsOptions
                               language={language}
                               setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              histColor={histColor}
-                              setHistColor={setHistColor}
-                              kdeColor={kdeColor}
-                              setKdeColor={setKdeColor}
-                              distColor={distColor}
-                              setDistColor={setDistColor}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "eda_swarm" && (
                             <EDASwarmOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              swarmColor={swarmColor}
-                              setSwarmColor={setSwarmColor}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "eda_pie" && (
                             <EDAPieChartOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
                           {testType === "bar_chart" && (
                             <BarChartOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              barColor={barColor}
-                              setBarColor={setBarColor}
-                              barChartType={barChartType}
-                              setBarChartType={setBarChartType}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "eda_basics" && (
                             <EDABasicsOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
 
                           {testType === "similarity" && (
                             <SimilarityOptions
-                              language={language}
-                              setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1468,20 +1100,8 @@ const StatisticalAnalysisTool = () => {
                             <ChiSquareOptions
                               language={language}
                               setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1490,20 +1110,8 @@ const StatisticalAnalysisTool = () => {
                             <CramerVOptions
                               language={language}
                               setLanguage={setLanguage}
-                              imageFormat={imageFormat}
-                              setImageFormat={setImageFormat}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              labelFontSize={labelFontSize}
-                              setLabelFontSize={setLabelFontSize}
-                              tickFontSize={tickFontSize}
-                              setTickFontSize={setTickFontSize}
-                              imageQuality={imageQuality}
-                              setImageQuality={setImageQuality}
-                              imageSize={imageSize}
-                              setImageSize={setImageSize}
-                              colorPalette={colorPalette}
-                              setColorPalette={setColorPalette}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
@@ -1511,27 +1119,8 @@ const StatisticalAnalysisTool = () => {
                           {testType === "network_graph" && (
                             <NetworkGraphOptions
                               language={language}
-                              setLanguage={setLanguage}
-                              useDefaultSettings={useDefaultSettings}
-                              setUseDefaultSettings={setUseDefaultSettings}
-                              nodeColor={nodeColor}
-                              setNodeColor={setNodeColor}
-                              nodeSize={nodeSize}
-                              setNodeSize={setNodeSize}
-                              textSize={textSize}
-                              setTextSize={setTextSize}
-                              textColor={textColor}
-                              setTextColor={setTextColor}
-                              edgeWidthFactor={edgeWidthFactor}
-                              setEdgeWidthFactor={setEdgeWidthFactor}
-                              showEdgeWeights={showEdgeWeights}
-                              setShowEdgeWeights={setShowEdgeWeights}
-                              weightFontSize={weightFontSize}
-                              setWeightFontSize={setWeightFontSize}
-                              weightColor={weightColor}
-                              setWeightColor={setWeightColor}
-                              useMatrix={useMatrix}
-                              setUseMatrix={setUseMatrix}
+                              options={visOptions}
+                              setOptions={setVisOptions}
                               t={t}
                             />
                           )}
