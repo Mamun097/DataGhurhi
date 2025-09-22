@@ -487,24 +487,39 @@ const SurveyForm = ({
     });
   };
 
+  // Preview Mode
+  // Previously, this function saved data before navigating to preview named component.
+  // Now, it saves data then loads survey template user interface as preview component
+  // with some restrictions (like disabling submit button).
   const handlePreview = async () => {
     // save all data and navigate to preview
     await handleSave();
-    // After saving, navigate to preview with all necessary data
+    // After saving, navigate to preview with survey link as the prop
     navigate("/preview", {
       state: {
-        title: title,
-        sections: sections,
-        questions: questions,
-        logo: logo,
-        logoAlignment: logoAlignment,
-        logoText: logoText,
-        image: currentBackgroundImage,
-        description: description,
-        language: language,
+        slug: surveyLink
       },
     });
   };
+
+  // const handlePreview = async () => {
+  //   // save all data and navigate to preview
+  //   await handleSave();
+  //   // After saving, navigate to preview with all necessary data
+  //   navigate("/preview", {
+  //     state: {
+  //       title: title,
+  //       sections: sections,
+  //       questions: questions,
+  //       logo: logo,
+  //       logoAlignment: logoAlignment,
+  //       logoText: logoText,
+  //       image: currentBackgroundImage,
+  //       description: description,
+  //       language: language,
+  //     },
+  //   });
+  // };
 
   return (
     <div className="px-2 px-md-3 py-5">
