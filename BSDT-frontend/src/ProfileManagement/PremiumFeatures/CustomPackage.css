@@ -716,6 +716,7 @@
   margin-top: 20px;
 }
 
+
 .buy-custom-btn {
   background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
   color: white;
@@ -738,6 +739,80 @@
 .buy-custom-btn:active {
   transform: translateY(0);
 }
+
+
+/*? APPLYING COUPON STYLES */
+
+.custom-package-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.coupon-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.coupon-link {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color 0.2s ease;
+}
+
+.coupon-link:hover {
+  color: #2563eb;
+}
+
+.applied-coupon-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #f0fdf4;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #22c55e;
+}
+
+.coupon-applied-text {
+  color: #15803d;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.remove-coupon-btn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.remove-coupon-btn:hover {
+  color: #b91c1c;
+}
+
+/* Ensure the buy button remains prominent */
+/* .buy-custom-btn {
+  align-self: stretch;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+} */
 
 /* Custom Package Loading and Error States */
 .custom-package-loading {

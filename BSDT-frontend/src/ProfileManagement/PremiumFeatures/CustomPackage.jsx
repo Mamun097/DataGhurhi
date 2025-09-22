@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import CouponOverlay from './CouponOverlay';
 import apiClient from "../../api";
 
 // Updated Custom Package Builder Component with Premium Features and Lower Limits
@@ -32,6 +33,9 @@ const CustomPackageBuilder = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
+
+  const [isCouponOverlayOpen, setIsCouponOverlayOpen] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
 
   useEffect(() => {
     fetchCustomPackageData();
@@ -397,9 +401,8 @@ const CustomPackageBuilder = ({
             </span>
           </div>
           <div
-            className={`quantity-controls ${
-              !featureStates[featureType] ? "disabled" : ""
-            }`}
+            className={`quantity-controls ${!featureStates[featureType] ? "disabled" : ""
+              }`}
           >
             <div className="quantity-input-wrapper">
               <span className="quantity-label">Quantity:</span>
@@ -449,14 +452,40 @@ const CustomPackageBuilder = ({
           <p>
             {getLabel
               ? getLabel(
-                  "Unlock advanced statistical analyses and insights along with basic ones"
-                )
+                "Unlock advanced statistical analyses and insights along with basic ones"
+              )
               : "Unlock advanced statistical analyses and insights along with basic ones"}
           </p>
         </div>
       </div>
     </label>
   );
+
+  const handleApplyCoupon = (couponCode, type, couponData = null) => {
+    console.log('Applying coupon:', { couponCode, type, couponData });
+
+    // Placeholder logic - replace with actual implementation
+    if (type === 'manual') {
+      // Handle manual coupon code
+      setAppliedCoupon({
+        code: couponCode,
+        type: 'manual'
+      });
+    } else if (type === 'public') {
+      // Handle public coupon
+      setAppliedCoupon({
+        code: couponCode,
+        type: 'public',
+        data: couponData
+      });
+    }
+
+    // Close the overlay after applying
+    setIsCouponOverlayOpen(false);
+
+    // You can add success notification here
+    alert(`Coupon ${couponCode} applied successfully!`);
+  };
 
   // Always render something, even during loading
   return (
@@ -493,8 +522,8 @@ const CustomPackageBuilder = ({
             <p>
               {getLabel
                 ? getLabel(
-                    "Select the features you need and choose validity period"
-                  )
+                  "Select the features you need and choose validity period"
+                )
                 : "Select the features you need and choose validity period"}
             </p>
           </div>
@@ -535,15 +564,15 @@ const CustomPackageBuilder = ({
                       <span className="validity-multiplier">
                         {period.price_multiplier < 1
                           ? `${Math.round(
-                              (1 - period.price_multiplier) * 100
-                            )}% ${getLabel ? getLabel("OFF") : "OFF"}`
+                            (1 - period.price_multiplier) * 100
+                          )}% ${getLabel ? getLabel("OFF") : "OFF"}`
                           : period.price_multiplier > 1
-                          ? `+${Math.round(
+                            ? `+${Math.round(
                               (period.price_multiplier - 1) * 100
                             )}%`
-                          : getLabel
-                          ? getLabel("Standard")
-                          : "Standard"}
+                            : getLabel
+                              ? getLabel("Standard")
+                              : "Standard"}
                       </span>
                     </div>
                   </label>
@@ -631,7 +660,44 @@ const CustomPackageBuilder = ({
             </div>
           </div>
 
+          {/* <div className="custom-package-actions">
+            <button
+              className="buy-custom-btn"
+              onClick={handleBuyCustomPackage}
+              disabled={
+                !Object.values(featureStates).some((state) => state) ||
+                Object.keys(validationErrors).some(
+                  (key) => validationErrors[key]
+                )
+              }
+            >
+              {getLabel ? getLabel("Buy Now") : "Buy Now"}
+            </button>
+          </div> */}
+
           <div className="custom-package-actions">
+            <div className="coupon-section">
+              <button
+                className="coupon-link"
+                onClick={() => setIsCouponOverlayOpen(true)}
+              >
+                Have a coupon? 🎟️
+              </button>
+              {appliedCoupon && (
+                <div className="applied-coupon-info">
+                  <span className="coupon-applied-text">
+                    ✅ Coupon {appliedCoupon.code} applied
+                  </span>
+                  <button
+                    className="remove-coupon-btn"
+                    onClick={() => setAppliedCoupon(null)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
               className="buy-custom-btn"
               onClick={handleBuyCustomPackage}
@@ -645,8 +711,15 @@ const CustomPackageBuilder = ({
               {getLabel ? getLabel("Buy Now") : "Buy Now"}
             </button>
           </div>
+
         </>
       )}
+      <CouponOverlay
+        isOpen={isCouponOverlayOpen}
+        onClose={() => setIsCouponOverlayOpen(false)}
+        totalAmount={calculateCustomPackagePrice()}
+        onApplyCoupon={handleApplyCoupon}
+      />
     </div>
   );
 };
