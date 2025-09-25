@@ -8,10 +8,14 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
     const [error, setError] = useState(null);
     const [manualCouponCode, setManualCouponCode] = useState('');
     const [applyingCoupon, setApplyingCoupon] = useState(null);
+    const [manualCouponError, setManualCouponError] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             fetchPublicCoupons();
+            // Reset manual coupon state when overlay opens
+            setManualCouponCode('');
+            setManualCouponError('');
         }
     }, [isOpen]);
 
@@ -44,19 +48,70 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
         }
     };
 
-    const handleManualApply = () => {
+    const validateManualCoupon = async (couponCode) => {
+        try {
+            console.log('Validating manual coupon:', couponCode);
+
+            const response = await apiClient.post('/api/vouchers/validate', {
+                code: couponCode.trim().toUpperCase(),
+                totalAmount: totalAmount
+            });
+
+            console.log('Manual coupon validation response:', response.data);
+
+            if (response.data.success && response.data.voucher) {
+                return response.data.voucher;
+            } else {
+                throw new Error(response.data.message || 'Invalid coupon code');
+            }
+        } catch (err) {
+            console.error('Manual coupon validation error:', err);
+
+            // Handle different types of errors
+            if (err.response) {
+                // API responded with error status
+                const errorMessage = err.response.data?.message || 'Invalid coupon code';
+                throw new Error(errorMessage);
+            } else if (err.request) {
+                // Network error
+                throw new Error('Unable to validate coupon. Please check your connection.');
+            } else {
+                // Other errors
+                throw new Error(err.message || 'Failed to validate coupon');
+            }
+        }
+    };
+
+    const handleManualApply = async () => {
         if (!manualCouponCode.trim()) return;
 
-        // Placeholder for manual coupon application logic
-        console.log('Applying manual coupon:', manualCouponCode);
-        onApplyCoupon && onApplyCoupon(manualCouponCode, 'manual');
+        setApplyingCoupon('manual');
+        setManualCouponError('');
+
+        try {
+            // Validate the manual coupon
+            const couponData = await validateManualCoupon(manualCouponCode);
+
+            // Check if coupon meets minimum spend requirement
+            if (couponData.min_spend_req && totalAmount < couponData.min_spend_req) {
+                throw new Error(`Minimum spend of ৳${couponData.min_spend_req} required for this coupon`);
+            }
+
+            console.log('Applying manual coupon:', manualCouponCode, couponData);
+            onApplyCoupon && onApplyCoupon(manualCouponCode, 'manual', couponData);
+        } catch (error) {
+            console.error('Manual coupon validation failed:', error);
+            setManualCouponError(error.message || 'Invalid coupon code');
+        } finally {
+            setApplyingCoupon(null);
+        }
     };
 
     const handleCouponApply = (coupon) => {
         if (!isCouponApplicable(coupon)) return;
 
         setApplyingCoupon(coupon.code);
-        // Placeholder for coupon application logic
+        // Apply the coupon immediately since it's already validated
         setTimeout(() => {
             console.log('Applying coupon:', coupon);
             onApplyCoupon && onApplyCoupon(coupon.code, 'public', coupon);
@@ -65,6 +120,12 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
     };
 
     const isCouponApplicable = (coupon) => {
+        // Check if coupon is expired
+        if (new Date(coupon.end_at) < new Date()) {
+            return false;
+        }
+
+        // Check minimum spend requirement
         return totalAmount >= coupon.min_spend_req;
     };
 
@@ -88,10 +149,35 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
 
     return (
         <div className="coupon-overlay-backdrop" onClick={onClose}>
-            <div className="coupon-overlay" onClick={(e) => e.stopPropagation()}>
+            <div
+                className="coupon-overlay"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    // Reset styles to prevent inheritance
+                    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+                    fontSize: '14px',
+                    fontWeight: 'normal',
+                    lineHeight: 'normal',
+                    textAlign: 'left',
+                    textDecoration: 'none',
+                    textTransform: 'none',
+                    letterSpacing: 'normal',
+                    wordSpacing: 'normal',
+                    whiteSpace: 'normal',
+                    verticalAlign: 'baseline',
+                    color: '#111827',
+                    background: '#ffffff',
+                    border: 'none',
+                    borderRadius: '0',
+                    boxShadow: 'none',
+                    margin: '0',
+                    padding: '0',
+                    position: 'static'
+                }}
+            >
                 <div className="coupon-overlay-header">
                     <h3>Apply Coupon</h3>
-                    <button className="close-btn" onClick={onClose}>
+                    <button className="close-btn" onClick={onClose} type="button">
                         <span>&times;</span>
                     </button>
                 </div>
@@ -106,16 +192,33 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
                                 placeholder="Enter coupon code"
                                 value={manualCouponCode}
                                 onChange={(e) => setManualCouponCode(e.target.value.toUpperCase())}
-                                className="coupon-input"
+                                className={`coupon-input ${manualCouponError ? 'error' : ''}`}
+                                autoComplete="off"
+                                spellCheck="false"
+                                disabled={applyingCoupon === 'manual'}
                             />
                             <button
-                                className="apply-manual-btn"
+                                type="button"
+                                className={`apply-manual-btn ${applyingCoupon === 'manual' ? 'applying' : ''}`}
                                 onClick={handleManualApply}
-                                disabled={!manualCouponCode.trim()}
+                                disabled={!manualCouponCode.trim() || applyingCoupon === 'manual'}
                             >
-                                Apply
+                                {applyingCoupon === 'manual' ? (
+                                    <span className="applying-text">
+                                        <span className="applying-spinner"></span>
+                                        Applying...
+                                    </span>
+                                ) : (
+                                    'Apply'
+                                )}
                             </button>
                         </div>
+                        {manualCouponError && (
+                            <div className="manual-coupon-error">
+                                <span className="error-icon">⚠️</span>
+                                <span className="error-message">{manualCouponError}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Divider */}
@@ -134,7 +237,7 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
                             <div className="error-state">
                                 <span className="error-icon">⚠️</span>
                                 <p>{error}</p>
-                                <button className="retry-btn" onClick={fetchPublicCoupons}>
+                                <button type="button" className="retry-btn" onClick={fetchPublicCoupons}>
                                     Retry
                                 </button>
                             </div>
@@ -154,6 +257,11 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
                                         <div
                                             key={coupon.id || index}
                                             className={`coupon-card ${!isApplicable ? 'not-applicable' : ''} ${isExpired ? 'expired' : ''}`}
+                                            style={{
+                                                // Additional inline styles for protection
+                                                boxSizing: 'border-box',
+                                                fontFamily: 'inherit'
+                                            }}
                                         >
                                             <div className="coupon-left">
                                                 <div className="coupon-code">{coupon.code}</div>
@@ -207,6 +315,7 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
 
                                             <div className="coupon-right">
                                                 <button
+                                                    type="button"
                                                     className={`apply-coupon-btn ${applyingCoupon === coupon.code ? 'applying' : ''}`}
                                                     onClick={() => handleCouponApply(coupon)}
                                                     disabled={!isApplicable || isExpired || applyingCoupon === coupon.code}

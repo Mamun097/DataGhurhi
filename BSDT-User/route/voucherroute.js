@@ -8,4 +8,6 @@ router.get('/voucher-usage', voucherController.getAllVoucherUsageInfo);
 router.get('/vouchers/active', voucherController.getActiveVouchers);
 router.get('/vouchers/public', voucherController.getPublicVouchers);
 
+router.post('/vouchers/validate', voucherController.validateVoucher);
+
 module.exports = router;

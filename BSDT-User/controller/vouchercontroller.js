@@ -125,3 +125,135 @@ exports.getPublicVouchers = async (req, res) => {
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
+
+// Validate manual coupon code
+exports.validateVoucher = async (req, res) => {
+    try {
+        const { code, totalAmount } = req.body;
+
+        // Validate input parameters
+        if (!code || !code.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Coupon code is required"
+            });
+        }
+
+        if (typeof totalAmount !== 'number' || totalAmount < 0) {
+            return res.status(400).json({
+                success: false,
+                message: "Valid total amount is required"
+            });
+        }
+
+        const couponCode = code.trim().toUpperCase();
+        console.log('Validating coupon:', couponCode, 'for amount:', totalAmount);
+
+        // Fetch voucher from database
+        const { data: voucher, error: voucherError } = await supabase
+            .from("voucher")
+            .select("*")
+            .eq("code", couponCode)
+            .single();
+
+        if (voucherError) {
+            console.error("Error fetching voucher:", voucherError);
+            
+            // If no voucher found
+            if (voucherError.code === 'PGRST116') {
+                return res.status(404).json({
+                    success: false,
+                    message: "Coupon code not found"
+                });
+            }
+            
+            return res.status(500).json({
+                success: false,
+                message: "Error validating coupon: " + voucherError.message
+            });
+        }
+
+        if (!voucher) {
+            return res.status(404).json({
+                success: false,
+                message: "Coupon code not found"
+            });
+        }
+
+        // Check if voucher is active (using 'status' column)
+        if (!voucher.status) {
+            return res.status(400).json({
+                success: false,
+                message: "This coupon is no longer active"
+            });
+        }
+
+        // Check if voucher has expired
+        const currentDate = new Date();
+        const expiryDate = new Date(voucher.end_at);
+        
+        if (expiryDate < currentDate) {
+            return res.status(400).json({
+                success: false,
+                message: "This coupon has expired"
+            });
+        }
+
+        // Note: Your table doesn't have start_at column, so removing this check
+        // If you need start date validation, add 'start_at' column to your table
+
+        // Check minimum spend requirement
+        if (voucher.min_spend_req && totalAmount < voucher.min_spend_req) {
+            return res.status(400).json({
+                success: false,
+                message: `Minimum spend of ৳${voucher.min_spend_req} required for this coupon`
+            });
+        }
+
+        // Check usage limits if applicable (using 'max_use_count' column)
+        if (voucher.max_use_count && voucher.max_use_count > 0) {
+            // Get current usage count
+            const { count: usageCount, error: usageError } = await supabase
+                .from("voucher_usage") // Assuming you have a usage tracking table
+                .select("*", { count: "exact", head: true })
+                .eq("voucher_id", voucher.voucher_id); // Using voucher_id as primary key
+
+            if (usageError) {
+                console.error("Error checking voucher usage:", usageError);
+                // Continue without usage check if there's an error
+            } else if (usageCount >= voucher.max_use_count) {
+                return res.status(400).json({
+                    success: false,
+                    message: "This coupon has reached its usage limit"
+                });
+            }
+        }
+
+        // If we reach here, the voucher is valid
+        console.log('Voucher validated successfully:', voucher);
+
+        // Return voucher data in the same format as public vouchers
+        res.status(200).json({
+            success: true,
+            message: "Coupon is valid and applicable",
+            voucher: {
+                id: voucher.voucher_id, // Using voucher_id as primary key
+                code: voucher.code,
+                discount_percentage: voucher.discount_percentage,
+                max_discount: voucher.max_discount,
+                min_spend_req: voucher.min_spend_req,
+                description: voucher.description,
+                end_at: voucher.end_at,
+                status: voucher.status,
+                voucher_type: voucher.voucher_type
+            }
+        });
+
+    } catch (error) {
+        console.error("Server error in validateVoucher:", error);
+        res.status(500).json({
+            success: false,
+            message: "Server error: " + error.message
+        });
+    }
+};
