@@ -68,7 +68,8 @@ const CustomPackageBuilder = ({
   useEffect(() => {
     // Only call onPackageChange if it exists and packageItems are loaded
     if (onPackageChange && packageItems.length > 0) {
-      const totalPrice = calculateCustomPackagePrice();
+      const basePrice = calculateCustomPackagePrice();
+      const finalPrice = calculateFinalPrice(basePrice);
       const hasAnyFeature = Object.values(featureStates).some((state) => state);
       const hasValidItems =
         (featureStates.tag && selectedItems.tag > 0) ||
@@ -81,7 +82,9 @@ const CustomPackageBuilder = ({
         items: selectedItems,
         features: featureStates,
         validity: selectedValidity,
-        totalPrice: totalPrice,
+        basePrice: basePrice,
+        finalPrice: finalPrice,
+        appliedCoupon: appliedCoupon,
         isValid:
           selectedValidity &&
           hasAnyFeature &&
@@ -95,11 +98,9 @@ const CustomPackageBuilder = ({
     selectedValidity,
     packageItems.length,
     validationErrors,
+    appliedCoupon,
   ]);
 
-  // Aranna's note: The fetchCustomPackageData function has been updated using apiClient
-  // to ensure it works correctly with the existing API client setup.
-  // To go back to the previous version, go to commit before August 10, 2025.
   const fetchCustomPackageData = async () => {
     setLoading(true);
     setError(null);
@@ -260,6 +261,41 @@ const CustomPackageBuilder = ({
     }
 
     return Math.round(basePrice * selectedValidity.price_multiplier);
+  };
+
+  const calculateFinalPrice = (basePrice) => {
+    if (!appliedCoupon || !appliedCoupon.data) {
+      return basePrice;
+    }
+
+    const coupon = appliedCoupon.data;
+    
+    // Check if coupon has required properties
+    if (!coupon.discount_percentage) {
+      return basePrice;
+    }
+
+    // Calculate discount amount
+    const discountAmount = Math.round((basePrice * coupon.discount_percentage) / 100);
+    
+    // Apply max discount limit if it exists
+    const actualDiscount = coupon.max_discount 
+      ? Math.min(discountAmount, coupon.max_discount) 
+      : discountAmount;
+    
+    // Calculate final price (ensure it's not less than 0)
+    const finalPrice = Math.max(0, basePrice - actualDiscount);
+    
+    console.log('Price calculation:', {
+      basePrice,
+      discountPercentage: coupon.discount_percentage,
+      calculatedDiscount: discountAmount,
+      maxDiscount: coupon.max_discount,
+      actualDiscount,
+      finalPrice
+    });
+
+    return finalPrice;
   };
 
   const validateItemCount = (itemType, value) => {
@@ -464,12 +500,13 @@ const CustomPackageBuilder = ({
   const handleApplyCoupon = (couponCode, type, couponData = null) => {
     console.log('Applying coupon:', { couponCode, type, couponData });
 
-    // Placeholder logic - replace with actual implementation
+    // Set the applied coupon with the coupon data for price calculation
     if (type === 'manual') {
-      // Handle manual coupon code
+      // Handle manual coupon code - you might want to validate this via API
       setAppliedCoupon({
         code: couponCode,
-        type: 'manual'
+        type: 'manual',
+        data: couponData // Manual coupons might not have data initially
       });
     } else if (type === 'public') {
       // Handle public coupon
@@ -486,6 +523,15 @@ const CustomPackageBuilder = ({
     // You can add success notification here
     alert(`Coupon ${couponCode} applied successfully!`);
   };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+  };
+
+  // Calculate prices for display
+  const basePrice = calculateCustomPackagePrice();
+  const finalPrice = calculateFinalPrice(basePrice);
+  const discountAmount = basePrice - finalPrice;
 
   // Always render something, even during loading
   return (
@@ -652,28 +698,29 @@ const CustomPackageBuilder = ({
                 </div>
               )}
             </div>
+            
+            {/* Base Price */}
+            <div className="summary-subtotal">
+              <span>{getLabel ? getLabel("Subtotal") : "Subtotal"}: ৳{basePrice}</span>
+            </div>
+
+            {/* Discount Information */}
+            {appliedCoupon && appliedCoupon.data && discountAmount > 0 && (
+              <div className="summary-discount">
+                <span>
+                  {getLabel ? getLabel("Discount") : "Discount"} ({appliedCoupon.code}): 
+                  -৳{discountAmount}
+                </span>
+              </div>
+            )}
+
+            {/* Final Total */}
             <div className="summary-total">
               <strong>
-                {getLabel ? getLabel("Total") : "Total"}: ৳{" "}
-                {calculateCustomPackagePrice()}
+                {getLabel ? getLabel("Total") : "Total"}: ৳{finalPrice}
               </strong>
             </div>
           </div>
-
-          {/* <div className="custom-package-actions">
-            <button
-              className="buy-custom-btn"
-              onClick={handleBuyCustomPackage}
-              disabled={
-                !Object.values(featureStates).some((state) => state) ||
-                Object.keys(validationErrors).some(
-                  (key) => validationErrors[key]
-                )
-              }
-            >
-              {getLabel ? getLabel("Buy Now") : "Buy Now"}
-            </button>
-          </div> */}
 
           <div className="custom-package-actions">
             <div className="coupon-section">
@@ -687,10 +734,15 @@ const CustomPackageBuilder = ({
                 <div className="applied-coupon-info">
                   <span className="coupon-applied-text">
                     ✅ Coupon {appliedCoupon.code} applied
+                    {appliedCoupon.data && (
+                      <span className="coupon-discount-text">
+                        ({appliedCoupon.data.discount_percentage}% off)
+                      </span>
+                    )}
                   </span>
                   <button
                     className="remove-coupon-btn"
-                    onClick={() => setAppliedCoupon(null)}
+                    onClick={handleRemoveCoupon}
                   >
                     Remove
                   </button>
@@ -708,7 +760,7 @@ const CustomPackageBuilder = ({
                 )
               }
             >
-              {getLabel ? getLabel("Buy Now") : "Buy Now"}
+              {getLabel ? getLabel("Buy Now") : "Buy Now"} : ৳{finalPrice}
             </button>
           </div>
 
@@ -717,7 +769,7 @@ const CustomPackageBuilder = ({
       <CouponOverlay
         isOpen={isCouponOverlayOpen}
         onClose={() => setIsCouponOverlayOpen(false)}
-        totalAmount={calculateCustomPackagePrice()}
+        totalAmount={basePrice}
         onApplyCoupon={handleApplyCoupon}
       />
     </div>
