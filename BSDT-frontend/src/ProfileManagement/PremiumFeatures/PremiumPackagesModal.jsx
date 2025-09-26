@@ -86,8 +86,8 @@ const PackageCard = ({
     features.push({
       text: hasParticipants
         ? `${formatParticipantCount(pkg.participant_count)} ${getLabel(
-            "Survey Responses"
-          )}`
+          "Survey Responses"
+        )}`
         : `${getLabel("Survey Responses")}`,
       type: "participant",
       included: hasParticipants,
@@ -99,8 +99,8 @@ const PackageCard = ({
     features.push({
       text: hasSurvey
         ? `${pkg.survey.toLocaleString()} ${getLabel(
-            "Automatic Smart Survey Generation with LLM"
-          )}`
+          "Automatic Smart Survey Generation with LLM"
+        )}`
         : `${getLabel("Automatic Smart Survey Generation with LLM")}`,
       type: "survey",
       included: hasSurvey,
@@ -112,8 +112,8 @@ const PackageCard = ({
     features.push({
       text: hasQuestion
         ? `${pkg.question.toLocaleString()} ${getLabel(
-            "Automatic Smart Question Generation with LLM"
-          )}`
+          "Automatic Smart Question Generation with LLM"
+        )}`
         : `${getLabel("Automatic Smart Question Generation with LLM")}`,
       type: "question",
       included: hasQuestion,
@@ -125,8 +125,8 @@ const PackageCard = ({
     features.push({
       text: hasTag
         ? `${pkg.tag.toLocaleString()} ${getLabel(
-            "Automatic Question Tag Generation"
-          )}`
+          "Automatic Question Tag Generation"
+        )}`
         : `${getLabel("Automatic Question Tag Generation")}`,
       type: "tag",
       included: hasTag,
@@ -172,14 +172,12 @@ const PackageCard = ({
         {getPackageFeatures(pkg).map((feature, index) => (
           <div
             key={index}
-            className={`feature ${
-              feature.included ? "included" : "not-included"
-            } ${feature.highlight ? "highlight" : ""}`}
+            className={`feature ${feature.included ? "included" : "not-included"
+              } ${feature.highlight ? "highlight" : ""}`}
           >
             <span
-              className={`feature-icon ${
-                feature.included ? "check-icon" : "cross-icon"
-              }`}
+              className={`feature-icon ${feature.included ? "check-icon" : "cross-icon"
+                }`}
             >
               {feature.included ? "✓" : "×"}
             </span>
@@ -233,7 +231,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     closePaymentModal,
     initializePaymentGateway,
     PaymentProcessingModal,
-  } = usePaymentGateway(getLabel);
+  } = usePaymentGateway(getLabel, onClose);
 
   // Initialize payment gateway when modal opens
   useEffect(() => {
@@ -471,6 +469,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                   getLabel={getLabel}
                   onPackageChange={handleCustomPackageChange}
                   handleBuyCustomPackage={handleCustomPackageBuy}
+                  handleCloseModal={onClose}
                 />
               </div>
             )}

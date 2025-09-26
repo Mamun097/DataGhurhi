@@ -7,6 +7,7 @@ const CustomPackageBuilder = ({
   getLabel,
   onPackageChange,
   handleBuyCustomPackage,
+  handleCloseModal
 }) => {
   const [packageItems, setPackageItems] = useState([]);
   const [validityPeriods, setValidityPeriods] = useState([]);
@@ -36,6 +37,9 @@ const CustomPackageBuilder = ({
 
   const [isCouponOverlayOpen, setIsCouponOverlayOpen] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState(null);
+
+  // New state for processing custom package purchase
+  const [processingPurchase, setProcessingPurchase] = useState(false);
 
   useEffect(() => {
     fetchCustomPackageData();
@@ -269,7 +273,7 @@ const CustomPackageBuilder = ({
     }
 
     const coupon = appliedCoupon.data;
-    
+
     // Check if coupon has required properties
     if (!coupon.discount_percentage) {
       return basePrice;
@@ -277,15 +281,15 @@ const CustomPackageBuilder = ({
 
     // Calculate discount amount
     const discountAmount = Math.round((basePrice * coupon.discount_percentage) / 100);
-    
+
     // Apply max discount limit if it exists
-    const actualDiscount = coupon.max_discount 
-      ? Math.min(discountAmount, coupon.max_discount) 
+    const actualDiscount = coupon.max_discount
+      ? Math.min(discountAmount, coupon.max_discount)
       : discountAmount;
-    
+
     // Calculate final price (ensure it's not less than 0)
     const finalPrice = Math.max(0, basePrice - actualDiscount);
-    
+
     console.log('Price calculation:', {
       basePrice,
       discountPercentage: coupon.discount_percentage,
@@ -528,6 +532,145 @@ const CustomPackageBuilder = ({
     setAppliedCoupon(null);
   };
 
+  // New function to handle custom package purchase
+  const handleCustomPackagePurchase = async () => {
+    const basePrice = calculateCustomPackagePrice();
+    const finalPrice = calculateFinalPrice(basePrice);
+
+    // Check if final price is greater than 0
+    if (finalPrice > 0) {
+      alert(
+        getLabel
+          ? getLabel("Custom package payment will be implemented soon. Please contact support for custom packages.")
+          : "Custom package payment will be implemented soon. Please contact support for custom packages."
+      );
+      return;
+    }
+
+    // Get current user from localStorage token
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(getLabel ? getLabel("Please login to purchase a package") : "Please login to purchase a package");
+      return;
+    }
+
+    // Get user profile to get user_id
+    let currentUser = null;
+    try {
+      const profileResponse = await apiClient.get("/api/profile", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      if (profileResponse.status === 200) {
+        currentUser = profileResponse.data.user;
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      alert(getLabel ? getLabel("Error fetching user profile") : "Error fetching user profile");
+      return;
+    }
+
+    if (!currentUser || !currentUser.user_id) {
+      alert(getLabel ? getLabel("Please login to purchase a package") : "Please login to purchase a package");
+      return;
+    }
+
+    setProcessingPurchase(true);
+
+    try {
+      // 1. Add transaction to transaction table (commented out for now)
+      // TODO: Implement transaction logging
+      // const transactionData = {
+      //   user_id: currentUser.user_id,
+      //   amount: finalPrice,
+      //   type: 'custom_package',
+      //   status: 'completed',
+      //   package_details: {
+      //     items: selectedItems,
+      //     features: featureStates,
+      //     validity: selectedValidity,
+      //     appliedCoupon: appliedCoupon
+      //   }
+      // };
+      // await apiClient.post('/api/transaction/create', transactionData);
+
+      // 2. Add the pack to user account (subscription table)
+      const currentDate = new Date();
+      const endDate = new Date(currentDate.getTime() + (selectedValidity.days * 24 * 60 * 60 * 1000));
+
+      const subscriptionData = {
+        user_id: currentUser.user_id,
+        tag: featureStates.tag ? selectedItems.tag : 0,
+        question: featureStates.question ? selectedItems.question : 0,
+        survey: featureStates.survey ? selectedItems.survey : 0,
+        participant_count: featureStates.participant ? selectedItems.participant : 0,
+        advanced_analysis: featureStates.advanced_analysis,
+        start_date: currentDate.toISOString(),
+        end_date: endDate.toISOString(),
+        cost: finalPrice,
+        package_id: null // null for custom package
+      };
+
+      console.log('Creating subscription with data:', subscriptionData);
+
+      // Placeholder API call for adding subscription
+      const subscriptionResponse = await apiClient.post("/api/subscription/create", subscriptionData, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log('Subscription created:', subscriptionResponse.data);
+
+      // 3. Add coupon usage info if coupon is applied
+      if (appliedCoupon && appliedCoupon.data) {
+        const discountAmount = basePrice - finalPrice;
+
+        const voucherUsedData = {
+          user_id: currentUser.user_id,
+          voucher_id: appliedCoupon.data.id || appliedCoupon.data.voucher_id, // Adjust based on your coupon structure
+          subscription_id: subscriptionResponse.data.subscription_id || subscriptionResponse.data.id, // Adjust based on API response
+          purchased_at: currentDate.toISOString(),
+          discount_amount: discountAmount
+        };
+
+        console.log('Recording voucher usage with data:', voucherUsedData);
+
+        // Placeholder API call for adding voucher usage
+        await apiClient.post('/api/voucher-used/create', voucherUsedData, {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log('Voucher usage recorded');
+      }
+
+      // Show success message
+      alert(
+        getLabel
+          ? getLabel("Custom package purchased successfully! Your subscription is now active.")
+          : "Custom package purchased successfully! Your subscription is now active."
+      );
+
+      // Reset form or redirect user
+      // You might want to reset the form or redirect to a success page
+      // For now, we'll just clear the applied coupon
+      setAppliedCoupon(null);
+
+    } catch (error) {
+      console.error("Error processing custom package purchase:", error);
+      alert(
+        getLabel
+          ? getLabel("Error processing purchase. Please try again.")
+          : "Error processing purchase. Please try again."
+      );
+    } finally {
+      setProcessingPurchase(false);
+    }
+  };
+
   // Calculate prices for display
   const basePrice = calculateCustomPackagePrice();
   const finalPrice = calculateFinalPrice(basePrice);
@@ -698,7 +841,7 @@ const CustomPackageBuilder = ({
                 </div>
               )}
             </div>
-            
+
             {/* Base Price */}
             <div className="summary-subtotal">
               <span>{getLabel ? getLabel("Subtotal") : "Subtotal"}: ৳{basePrice}</span>
@@ -708,7 +851,7 @@ const CustomPackageBuilder = ({
             {appliedCoupon && appliedCoupon.data && discountAmount > 0 && (
               <div className="summary-discount">
                 <span>
-                  {getLabel ? getLabel("Discount") : "Discount"} ({appliedCoupon.code}): 
+                  {getLabel ? getLabel("Discount") : "Discount"} ({appliedCoupon.code}):
                   -৳{discountAmount}
                 </span>
               </div>
@@ -752,20 +895,24 @@ const CustomPackageBuilder = ({
 
             <button
               className="buy-custom-btn"
-              onClick={handleBuyCustomPackage}
+              onClick={handleCustomPackagePurchase}
               disabled={
+                processingPurchase ||
                 !Object.values(featureStates).some((state) => state) ||
                 Object.keys(validationErrors).some(
                   (key) => validationErrors[key]
                 )
               }
             >
-              {getLabel ? getLabel("Buy Now") : "Buy Now"} : ৳{finalPrice}
+              {processingPurchase
+                ? (getLabel ? getLabel("Processing...") : "Processing...")
+                : `${getLabel ? getLabel("Buy Now") : "Buy Now"} : ৳${finalPrice}`
+              }
             </button>
           </div>
-
         </>
       )}
+
       <CouponOverlay
         isOpen={isCouponOverlayOpen}
         onClose={() => setIsCouponOverlayOpen(false)}
