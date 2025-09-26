@@ -12,7 +12,7 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const slug = location.state?.slug;
-  
+
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -35,12 +35,14 @@ const Index = () => {
     return (
       <div style={{ textAlign: "center", marginTop: "50px" }}>
         <h2>No Preview Available</h2>
-        <p>Preview data can only be shown by navigating from the survey editor.</p>
+        <p>
+          Preview data can only be shown by navigating from the survey editor.
+        </p>
         <a href="/dashboard">Return to Dashboard</a>
       </div>
     );
   }
-  
+
   useEffect(() => {
     const load = async () => {
       if (slug) {
@@ -72,7 +74,7 @@ const Index = () => {
           if (err.response) {
             if (err.response.data?.status === "LOGIN_REQUIRED") {
               alert(err.response.data.message);
-              navigate("/"); // Redirect to login or home
+              navigate("/");
             } else {
               alert(
                 err.response.data.message || "This survey could not be loaded."
@@ -123,34 +125,34 @@ const Index = () => {
   const handleGoBack = () => {
     window.history.back();
   };
-  
+
   return (
     <>
-      <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container-fluid bg-white py-10">
-        <div className="row justify-content-center">
-          {!submitted && (
-            <div className="col-12 col-md-8">
-              <SurveyForm
-                title={title}
-                sections={sections}
-                questions={questions}
-                setQuestions={setQuestions}
-                logo={logo}
-                logoAlignment={logoAlignment}
-                logoText={logoText}
-                image={backgroundImage}
-                userResponse={userResponse}
-                setUserResponse={setUserResponse}
-                template={template}
-                shuffle={shuffle}
-                onSubmit={handleSubmit}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-          )}
-          {submitted && <div className="col-12 col-md-8"></div>}
-        </div>
+      <div className="hide-on-print">
+        <NavbarAcholder language={language} setLanguage={setLanguage} />
+      </div>
+      <div className="container-fluid bg-white py-10 row justify-content-center">
+        {!submitted && (
+          <div className="col-12 col-md-8">
+            <SurveyForm
+              title={title}
+              sections={sections}
+              questions={questions}
+              setQuestions={setQuestions}
+              logo={logo}
+              logoAlignment={logoAlignment}
+              logoText={logoText}
+              image={backgroundImage}
+              userResponse={userResponse}
+              setUserResponse={setUserResponse}
+              template={template}
+              shuffle={shuffle}
+              onSubmit={handleSubmit}
+              isSubmitting={isSubmitting}
+            />
+          </div>
+        )}
+        {submitted && <div className="col-12 col-md-8"></div>}
       </div>
     </>
   );
