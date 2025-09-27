@@ -55,7 +55,9 @@ const SurveyForm = ({
 }) => {
   // State for the logo
   const [logo, setLogo] = useState(logoFromParent);
-  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "left");
+  const [logoAlignment, setLogoAlignment] = useState(
+    logoAlignmentFromParent || "left"
+  );
   const [logoText, setLogoText] = useState(logoTextFromParent || "");
 
   // State for the background image
@@ -93,6 +95,7 @@ const SurveyForm = ({
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
+  const [responseCount, setResponseCount] = useState(null);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -258,6 +261,41 @@ const SurveyForm = ({
     loadTranslations();
   }, [language, labelsToTranslate]);
 
+  useEffect(() => {
+    if (!survey_id) {
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("Authentication token not found.");
+      return;
+    }
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    console.log(API_BASE_URL);
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/api/surveytemplate/stream/${survey_id}?token=${token}`
+    );
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.count !== undefined) {
+        setResponseCount(data.count);
+      }
+      if (data.error) {
+        console.error("Stream error:", data.error);
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [survey_id]);
+
   // Function to update the logo and relay it to the parent component
   const updateAndRelayLogo = (newLogo) => {
     setLogo(newLogo);
@@ -340,7 +378,7 @@ const SurveyForm = ({
     setIsLoggedInRequired(isLoggedIn);
     setShuffleQuestions(isShuffled);
     let url;
-    if (actionType === 'publish' || actionType === 'update') {
+    if (actionType === "publish" || actionType === "update") {
       url = "/api/surveytemplate";
     } else {
       console.error("Invalid action type for publication.");
@@ -497,7 +535,7 @@ const SurveyForm = ({
     // After saving, navigate to preview with survey link as the prop
     navigate("/preview", {
       state: {
-        slug: surveyLink
+        slug: surveyLink,
       },
     });
   };
@@ -615,9 +653,13 @@ const SurveyForm = ({
             />
             <button
               onClick={handleSurveyResponses}
-              className="btn btn-outline-info btn-sm me-2"
+              className="btn btn-outline-info btn-sm me-2 d-flex align-items-center"
             >
-              <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
+              <i className="bi bi-bar-chart"></i>
+              <span className="ms-1">{getLabel("View Response")}</span>
+              {responseCount !== null && (
+                <span className="badge bg-secondary ms-2">{responseCount}</span>
+              )}
             </button>
             <button
               className="btn btn-outline-secondary btn-sm me-2"
