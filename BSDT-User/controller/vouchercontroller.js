@@ -71,7 +71,7 @@ exports.getAllVoucherUsageInfo = async (req, res) => {
 exports.getActiveVouchers = async (req, res) => {
     try {
         const currentDate = new Date().toISOString();
-        
+
         const { data: activeVouchers, error } = await supabase
             .from("voucher")
             .select("*")
@@ -96,15 +96,21 @@ exports.getActiveVouchers = async (req, res) => {
     }
 };
 
-// Controller to fetch public vouchers only
+// Controller to fetch active public vouchers only (with usage limit check)
 exports.getPublicVouchers = async (req, res) => {
     try {
         const currentDate = new Date().toISOString();
-        
+        const userId = req.jwt.id;
+
+        if (!userId) {
+            return res.status(401).json({ error: "User authentication required" });
+        }
+
         const { data: publicVouchers, error } = await supabase
             .from("voucher")
             .select("*")
             .eq('voucher_type', 'public')
+            .eq('status', true) // Only active vouchers
             .gt('end_at', currentDate); // Only active public vouchers
 
         if (error) {
@@ -112,12 +118,44 @@ exports.getPublicVouchers = async (req, res) => {
             return res.status(500).json({ error: "Error fetching public vouchers: " + error.message });
         }
 
+        // Get usage count for this user for each voucher
+        const voucherIds = publicVouchers.map(voucher => voucher.voucher_id);
+
+        const { data: usageData, error: usageError } = await supabase
+            .from("voucher_used_info")
+            .select("voucher_id")
+            .eq('user_id', userId)
+            .in('voucher_id', voucherIds);
+
+        if (usageError) {
+            console.error("Error fetching voucher usage data:", usageError);
+            return res.status(500).json({ error: "Error fetching voucher usage data: " + usageError.message });
+        }
+
+        // Count usage for each voucher
+        const usageCount = {};
+        usageData.forEach(usage => {
+            usageCount[usage.voucher_id] = (usageCount[usage.voucher_id] || 0) + 1;
+        });
+
+        // Filter vouchers based on usage limit
+        const availableVouchers = publicVouchers.filter(voucher => {
+            const userUsageCount = usageCount[voucher.voucher_id] || 0;
+
+            // If max_use_count is NULL, treat as unlimited (infinite usage)
+            if (voucher.max_use_count === null || voucher.max_use_count === undefined) {
+                return true;
+            }
+
+            return userUsageCount < voucher.max_use_count;
+        });
+
         // Sort by discount_percentage in descending order (best deals first)
-        publicVouchers.sort((a, b) => b.discount_percentage - a.discount_percentage);
+        availableVouchers.sort((a, b) => b.discount_percentage - a.discount_percentage);
 
         res.status(200).json({
-            publicVouchers: publicVouchers || [],
-            count: publicVouchers?.length || 0
+            publicVouchers: availableVouchers || [],
+            count: availableVouchers?.length || 0
         });
 
     } catch (error) {
@@ -130,6 +168,15 @@ exports.getPublicVouchers = async (req, res) => {
 exports.validateVoucher = async (req, res) => {
     try {
         const { code, totalAmount } = req.body;
+        const userId = req.jwt.id;
+
+        // Check if user is authenticated
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                message: "User authentication required"
+            });
+        }
 
         // Validate input parameters
         if (!code || !code.trim()) {
@@ -147,7 +194,7 @@ exports.validateVoucher = async (req, res) => {
         }
 
         const couponCode = code.trim().toUpperCase();
-        console.log('Validating coupon:', couponCode, 'for amount:', totalAmount);
+        console.log('Validating coupon:', couponCode, 'for amount:', totalAmount, 'for user:', userId);
 
         // Fetch voucher from database
         const { data: voucher, error: voucherError } = await supabase
@@ -158,7 +205,7 @@ exports.validateVoucher = async (req, res) => {
 
         if (voucherError) {
             console.error("Error fetching voucher:", voucherError);
-            
+
             // If no voucher found
             if (voucherError.code === 'PGRST116') {
                 return res.status(404).json({
@@ -166,7 +213,7 @@ exports.validateVoucher = async (req, res) => {
                     message: "Coupon code not found"
                 });
             }
-            
+
             return res.status(500).json({
                 success: false,
                 message: "Error validating coupon: " + voucherError.message
@@ -191,16 +238,13 @@ exports.validateVoucher = async (req, res) => {
         // Check if voucher has expired
         const currentDate = new Date();
         const expiryDate = new Date(voucher.end_at);
-        
+
         if (expiryDate < currentDate) {
             return res.status(400).json({
                 success: false,
                 message: "This coupon has expired"
             });
         }
-
-        // Note: Your table doesn't have start_at column, so removing this check
-        // If you need start date validation, add 'start_at' column to your table
 
         // Check minimum spend requirement
         if (voucher.min_spend_req && totalAmount < voucher.min_spend_req) {
@@ -210,34 +254,42 @@ exports.validateVoucher = async (req, res) => {
             });
         }
 
-        // Check usage limits if applicable (using 'max_use_count' column)
-        if (voucher.max_use_count && voucher.max_use_count > 0) {
-            // Get current usage count
-            const { count: usageCount, error: usageError } = await supabase
-                .from("voucher_usage") // Assuming you have a usage tracking table
-                .select("*", { count: "exact", head: true })
-                .eq("voucher_id", voucher.voucher_id); // Using voucher_id as primary key
+        // Check per-user usage limits if applicable (using 'max_use_count' column)
+        if (voucher.max_use_count !== null && voucher.max_use_count !== undefined) {
+            // Get current usage count for this specific user
+            const { data: userUsageData, error: usageError } = await supabase
+                .from("voucher_used_info")
+                .select("voucher_id")
+                .eq("user_id", userId)
+                .eq("voucher_id", voucher.voucher_id);
 
             if (usageError) {
-                console.error("Error checking voucher usage:", usageError);
-                // Continue without usage check if there's an error
-            } else if (usageCount >= voucher.max_use_count) {
+                console.error("Error checking user voucher usage:", usageError);
+                return res.status(500).json({
+                    success: false,
+                    message: "Error checking voucher usage: " + usageError.message
+                });
+            }
+
+            const userUsageCount = userUsageData ? userUsageData.length : 0;
+
+            if (userUsageCount >= voucher.max_use_count) {
                 return res.status(400).json({
                     success: false,
-                    message: "This coupon has reached its usage limit"
+                    message: `You have already used this coupon ${voucher.max_use_count} time(s). Usage limit reached.`
                 });
             }
         }
 
         // If we reach here, the voucher is valid
-        console.log('Voucher validated successfully:', voucher);
+        console.log('Voucher validated successfully for user:', userId, voucher);
 
         // Return voucher data in the same format as public vouchers
         res.status(200).json({
             success: true,
             message: "Coupon is valid and applicable",
             voucher: {
-                id: voucher.voucher_id, // Using voucher_id as primary key
+                voucher_id: voucher.voucher_id,
                 code: voucher.code,
                 discount_percentage: voucher.discount_percentage,
                 max_discount: voucher.max_discount,

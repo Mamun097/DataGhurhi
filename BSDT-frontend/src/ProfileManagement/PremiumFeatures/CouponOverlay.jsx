@@ -23,9 +23,16 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
         setLoading(true);
         setError(null);
 
+        const token = localStorage.getItem("token");
+        if (!token) {
+            alert(getLabel ? getLabel("Please login to purchase a package") : "Please login to purchase a package");
+            return;
+        }
+
         try {
-            const response = await apiClient.get('/api/vouchers/public');
-            console.log('Public coupons API response:', response.data);
+            const response = await apiClient.get('/api/vouchers/public', {
+                headers: { Authorization: "Bearer " + token },
+            });
 
             // Handle the specific API response format with publicVouchers
             let couponsData = [];
@@ -49,13 +56,22 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
     };
 
     const validateManualCoupon = async (couponCode) => {
+        const token = localStorage.getItem("token");
+        if (!token) {
+            throw new Error('Please login to validate coupon');
+        }
+
         try {
             console.log('Validating manual coupon:', couponCode);
 
             const response = await apiClient.post('/api/vouchers/validate', {
                 code: couponCode.trim().toUpperCase(),
                 totalAmount: totalAmount
-            });
+            },
+                {
+                    headers: { Authorization: "Bearer " + token },
+                }
+            );
 
             console.log('Manual coupon validation response:', response.data);
 
@@ -215,7 +231,7 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
                         </div>
                         {manualCouponError && (
                             <div className="manual-coupon-error">
-                                <span className="error-icon">⚠️</span>
+                                {/* <span className="error-icon">⚠️</span> */}
                                 <span className="error-message">{manualCouponError}</span>
                             </div>
                         )}
