@@ -26,7 +26,7 @@ import ShapiroWilkOptions from './ShapiroWilkOptions';
 import SimilarityOptions from './SimilarityOptions';
 import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
-import './StatisticalAnalysisTool.css';
+// import './StatisticalAnalysisTool.css';
 import WilcoxonOptions from './WilcoxonOptions';
 import apiClient from '../api';
 import PreviewTable from './previewTable';
