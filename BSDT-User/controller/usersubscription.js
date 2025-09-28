@@ -38,6 +38,8 @@ exports.getUserPackages = async (req, res) => {
             tag: parseInt(row.tag) || 0,
             question: parseInt(row.question) || 0,
             survey: parseInt(row.survey) || 0,
+            participant_count: parseInt(row.participant_count) || 0,
+            advanced_analysis: row.advanced_analysis,
             start_date: row.start_date,
             end_date: row.end_date,
             cost: parseFloat(row.cost) || 0,
