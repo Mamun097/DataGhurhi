@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import './StatisticalAnalysisTool.css';
+// import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
 import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 import { useLocation } from 'react-router-dom'; // Import useLocation to access state
