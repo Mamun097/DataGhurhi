@@ -422,3 +422,73 @@ exports.getSurvey = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
+
+exports.getResponseCount = async (req, res) => {
+  const { survey_id } = req.params;
+  const user_id = req.jwt.id;
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+  try {
+    const { data: survey, error } = await supabase
+      .from("survey")
+      .select("user_id")
+      .eq("survey_id", survey_id)
+      .single();
+
+    if (error || !survey) {
+      throw new Error("Survey not found.");
+    }
+
+    if (survey.user_id !== user_id) {
+      res.write('data: {"error": "Forbidden"}\n\n');
+      return res.end();
+    }
+  } catch (err) {
+    console.error("Authorization failed:", err.message);
+    res.write(`data: {"error": "${err.message}"}\n\n`);
+    return res.end();
+  }
+  const sendCount = async () => {
+    const { count, error } = await supabase
+      .from('response') 
+      .select('*', { count: 'exact', head: true })
+      .eq('survey_id', survey_id);
+
+    if (error) {
+      console.error("Error fetching count:", error);
+    } else {
+      res.write(`data: ${JSON.stringify({ count })}\n\n`);
+    }
+  };
+  
+  sendCount();
+  const channel = supabase.channel(`response-count-${survey_id}`);
+  
+  channel
+    .on(
+      'postgres_changes',
+      { 
+        event: 'INSERT',
+        schema: 'public',
+        table: 'response',
+        filter: `survey_id=eq.${survey_id}`
+      },
+      (payload) => {
+        console.log('New response detected! Sending updated count.');
+        sendCount();
+      }
+    )
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log(`Successfully subscribed to realtime updates for survey ${survey_id}`);
+      }
+    });
+  req.on('close', () => {
+    console.log(`Client disconnected from survey ${survey_id} stream. Unsubscribing.`);
+    supabase.removeChannel(channel);
+    res.end();
+  });
+};
