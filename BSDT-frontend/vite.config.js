@@ -11,6 +11,13 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     https: false,
-    allowedHosts: ['dataghurhi.cse.buet.ac.bd'] 
+    allowedHosts: ['dataghurhi.cse.buet.ac.bd'] ,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:2000',
+        changeOrigin: true,
+        secure: false,
+      },
+    }
   }
 })
