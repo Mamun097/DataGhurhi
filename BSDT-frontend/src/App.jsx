@@ -8,7 +8,8 @@ import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
 import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 import SurveyResponses from "./SurveyTemplate/Components/SurveyResponses"
-import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
+//import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
+import PreviewPage from "./SurveyTemplate/Components/Preview/Components/IndexUser";
 import QB from "./QBmanagement/QuestionBankUser";
 import FaqTopics from "./FAQ/faqTopics";
 import FaqByTopic from "./FAQ/faqByTopic";
