@@ -273,11 +273,6 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
                                         <div
                                             key={coupon.id || index}
                                             className={`coupon-card ${!isApplicable ? 'not-applicable' : ''} ${isExpired ? 'expired' : ''}`}
-                                            style={{
-                                                // Additional inline styles for protection
-                                                boxSizing: 'border-box',
-                                                fontFamily: 'inherit'
-                                            }}
                                         >
                                             <div className="coupon-left">
                                                 <div className="coupon-code">{coupon.code}</div>
@@ -306,55 +301,48 @@ const CouponOverlay = ({ isOpen, onClose, totalAmount, onApplyCoupon }) => {
 
                                                 {/* Progress Indicator */}
                                                 <div className="progress-container">
-                                                    <div className="progress-info">
-                                                        <span className="progress-text">
-                                                            {isApplicable
-                                                                ? 'Coupon applicable!'
-                                                                : `Spend ${formatAmount(coupon.min_spend_req - totalAmount)} more to unlock`
-                                                            }
-                                                        </span>
-                                                        <span className="progress-percentage">
-                                                            {Math.round(progressPercentage)}%
-                                                        </span>
+                                                    <div className="progress-wrapper">
+                                                        <div className="progress-info">
+                                                            <span className="progress-text">
+                                                                {isApplicable
+                                                                    ? 'Coupon applicable!'
+                                                                    : `Spend ${formatAmount(coupon.min_spend_req - totalAmount)} more to unlock`
+                                                                }
+                                                            </span>
+                                                            <span className="progress-percentage">
+                                                                {Math.round(progressPercentage)}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="progress-bar">
+                                                            <div
+                                                                className="progress-fill"
+                                                                style={{
+                                                                    width: `${progressPercentage}%`
+                                                                }}
+                                                            />
+                                                        </div>
                                                     </div>
-                                                    <div className="progress-bar">
-                                                        <div
-                                                            className="progress-fill"
-                                                            style={{
-                                                                width: `${progressPercentage}%`,
-                                                                animationDelay: `${index * 0.1}s`
-                                                            }}
-                                                        />
-                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className={`apply-coupon-btn ${applyingCoupon === coupon.code ? 'applying' : ''}`}
+                                                        onClick={() => handleCouponApply(coupon)}
+                                                        disabled={!isApplicable || isExpired || applyingCoupon === coupon.code}
+                                                    >
+                                                        {applyingCoupon === coupon.code ? (
+                                                            <span className="applying-text">
+                                                                <span className="applying-spinner"></span>
+                                                                Applying...
+                                                            </span>
+                                                        ) : isExpired ? (
+                                                            'Expired'
+                                                        ) : (
+                                                            'Apply'
+                                                        )}
+                                                    </button>
                                                 </div>
                                             </div>
 
-                                            <div className="coupon-right">
-                                                <button
-                                                    type="button"
-                                                    className={`apply-coupon-btn ${applyingCoupon === coupon.code ? 'applying' : ''}`}
-                                                    onClick={() => handleCouponApply(coupon)}
-                                                    disabled={!isApplicable || isExpired || applyingCoupon === coupon.code}
-                                                >
-                                                    {applyingCoupon === coupon.code ? (
-                                                        <span className="applying-text">
-                                                            <span className="applying-spinner"></span>
-                                                            Applying...
-                                                        </span>
-                                                    ) : isExpired ? (
-                                                        'Expired'
-                                                    ) : (
-                                                        'Apply'
-                                                    )}
-                                                </button>
-                                            </div>
 
-                                            {/* Coupon decorative elements */}
-                                            <div className="coupon-perforations">
-                                                {[...Array(8)].map((_, i) => (
-                                                    <div key={i} className="perforation" />
-                                                ))}
-                                            </div>
                                         </div>
                                     );
                                 })}

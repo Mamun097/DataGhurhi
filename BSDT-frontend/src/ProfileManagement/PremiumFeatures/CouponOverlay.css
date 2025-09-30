@@ -285,7 +285,7 @@
   transition: all 0.3s ease !important;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1) !important;
   display: flex !important;
-  min-height: 120px !important;
+  min-height: 160px !important;
   margin: 0 !important;
   border: none !important;
   outline: none !important;
@@ -313,7 +313,10 @@
   flex-direction: column !important;
   justify-content: center !important;
   align-items: center !important;
-  min-width: 120px !important;
+  width: 140px !important;
+  min-width: 140px !important;
+  max-width: 140px !important;
+  flex-shrink: 0 !important;
   position: relative !important;
   margin: 0 !important;
   border: none !important;
@@ -344,7 +347,7 @@
 
 .coupon-overlay .max-discount {
   display: block !important;
-  font-size: 10px !important;
+  font-size: 13px !important;
   color: #6b7280 !important;
   font-weight: 500 !important;
   margin-top: 2px !important;
@@ -360,13 +363,13 @@
   color: white !important;
   display: flex !important;
   flex-direction: column !important;
-  justify-content: space-between !important;
+  justify-content: flex-start !important;
   margin: 0 !important;
   border: none !important;
 }
 
 .coupon-overlay .coupon-description {
-  font-size: 16px !important;
+  font-size: 14px !important;
   font-weight: 600 !important;
   margin-bottom: 12px !important;
   margin-top: 0 !important;
@@ -375,6 +378,14 @@
   line-height: 1.4 !important;
   padding: 0 !important;
   color: white !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  display: block !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  hyphens: auto !important;
+  width: 100% !important;
 }
 
 .coupon-overlay .coupon-details {
@@ -403,6 +414,15 @@
   margin-bottom: 0 !important;
   margin-left: 0 !important;
   margin-right: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.coupon-overlay .progress-wrapper {
+  flex: 1 !important;
+  margin: 0 !important;
   padding: 0 !important;
 }
 
@@ -459,25 +479,18 @@
   }
 }
 
-.coupon-overlay .coupon-right {
-  display: flex !important;
-  align-items: center !important;
-  padding: 20px !important;
-  margin: 0 !important;
-}
-
 .coupon-overlay .apply-coupon-btn {
   padding: 12px 20px !important;
-  background: rgba(255, 255, 255, 0.95) !important;
+  background: rgba(255, 255, 255, 0.85) !important;
   color: #1f2937 !important;
   border: none !important;
-  border-radius: 8px !important;
+  border-radius: 4px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  min-width: 80px !important;
-  height: 44px !important;
+  min-width: 72px !important;
+  height: 36px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -487,7 +500,7 @@
 
 .coupon-overlay .apply-coupon-btn:hover:not(:disabled) {
   background: white !important;
-  transform: scale(1.05) !important;
+  transform: scale(1.03) !important;
 }
 
 .coupon-overlay .apply-coupon-btn:disabled {
@@ -515,27 +528,21 @@
   padding: 0 !important;
 }
 
-/* Coupon Perforations */
-.coupon-overlay .coupon-perforations {
-  position: absolute !important;
-  left: 120px !important;
-  top: 0 !important;
-  bottom: 0 !important;
-  width: 20px !important;
+/* Manual Coupon Error */
+.coupon-overlay .manual-coupon-error {
   display: flex !important;
-  flex-direction: column !important;
-  justify-content: space-around !important;
   align-items: center !important;
-  padding: 10px 0 !important;
-  margin: 0 !important;
+  gap: 8px !important;
+  margin-top: 8px !important;
+  padding: 8px 12px !important;
+  background: #fee2e2 !important;
+  border-radius: 6px !important;
+  color: #dc2626 !important;
+  font-size: 14px !important;
 }
 
-.coupon-overlay .perforation {
-  width: 8px !important;
-  height: 8px !important;
-  background: white !important;
-  border-radius: 50% !important;
-  opacity: 0.7 !important;
+.coupon-overlay .error-message {
+  flex: 1 !important;
   margin: 0 !important;
   padding: 0 !important;
 }
@@ -561,9 +568,14 @@
     padding: 16px !important;
   }
   
-  .coupon-overlay .coupon-right {
-    padding: 16px !important;
-    justify-content: center !important;
+  .coupon-overlay .progress-container {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  
+  .coupon-overlay .apply-coupon-btn {
+    width: 100% !important;
   }
   
   .coupon-overlay .coupon-perforations {
