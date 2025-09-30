@@ -1,4 +1,4 @@
-const CramerVOptions = ({ optionss, setOptions, t }) => {
+const CramerVOptions = ({ options, setOptions, t }) => {
   const handleChange = (key, value) => {
     setOptions((prevOptions) => ({
       ...prevOptions,
@@ -10,7 +10,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
       <h4 className="font-semibold text-lg mb-3">{t.cramersTitle}</h4>
       <label className="block mb-2">{t.downloadLabel}</label>
       <select
-        value={optionss.imageFormat}
+        value={options.imageFormat}
         onChange={(e) => handleChange("imageFormat", e.target.value)}
         className="mb-4 border p-2 rounded w-full"
       >
@@ -22,12 +22,12 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
       <label className="block mb-2">{t.useDefaultSettings}</label>
       <input
         type="checkbox"
-        checked={optionss.useDefaultSettings}
+        checked={options.useDefaultSettings}
         onChange={(e) => handleChange("useDefaultSettings", e.target.checked)}
         className="mb-4"
       />
 
-      {!optionss.useDefaultSettings && (
+      {!options.useDefaultSettings && (
         <div className="bg-white shadow rounded-lg p-6 mt-4 border border-gray-200">
           <h5 className="text-md font-semibold text-gray-800 mb-4">
             {t.customSettings}
@@ -41,7 +41,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
               <input
                 type="number"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                value={optionss.labelFontSize}
+                value={options.labelFontSize}
                 onChange={(e) =>
                   handleChange("labelFontSize", Number(e.target.value))
                 }
@@ -54,7 +54,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
               <input
                 type="number"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                value={optionss.tickFontSize}
+                value={options.tickFontSize}
                 onChange={(e) =>
                   handleChange("tickFontSize", Number(e.target.value))
                 }
@@ -69,7 +69,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
                 min={1}
                 max={100}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                value={optionss.imageQuality}
+                value={options.imageQuality}
                 onChange={(e) =>
                   handleChange("imageQuality", Number(e.target.value))
                 }
@@ -83,7 +83,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
                 type="text"
                 placeholder="e.g. 800x600"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                value={optionss.imageSize}
+                value={options.imageSize}
                 onChange={(e) => handleChange("imageSize", e.target.value)}
               />
             </div>
@@ -95,7 +95,7 @@ const CramerVOptions = ({ optionss, setOptions, t }) => {
                 type="text"
                 placeholder="e.g. deep, Set2"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                value={optionss.colorPalette}
+                value={options.colorPalette}
                 onChange={(e) => handleChange("colorPalette", e.target.value)}
               />
             </div>
