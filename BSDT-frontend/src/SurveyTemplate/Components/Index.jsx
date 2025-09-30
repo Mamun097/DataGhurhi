@@ -39,6 +39,7 @@ const Index = () => {
     input_title,
     response_user_logged_in_status,
   } = location.state || {};
+  console.log("Survey Details:", survey_details);
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
