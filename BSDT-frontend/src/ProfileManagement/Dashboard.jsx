@@ -195,8 +195,6 @@ const Dashboard = () => {
       "Survey Creation Growth Rate",
       "This Month",
       "Last Month",
-
-
       "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
@@ -206,8 +204,6 @@ const Dashboard = () => {
       "Tags",
       "Questions",
       "Surveys",
-
-
       "Choose Your Premium Package",
       "Unlock Powerful AI Features",
       "AI Survey Generation",
@@ -503,9 +499,12 @@ const Dashboard = () => {
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get("/api/collaborator/all-invitations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(
+        "/api/collaborator/all-invitations",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
         console.log("Collaboration Requests:", response.data.invitations);
@@ -514,7 +513,6 @@ const Dashboard = () => {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
-
 
   // Get tabs based on user type
   const getTabs = () => {
@@ -559,19 +557,18 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       // Example POST request to backend API
-      const response = await apiClient.put("/api/profile/update-password", {
 
-        oldPassword: old_password,
-        newPassword: new_password,
-      },
+      const response = await apiClient.put(
+        "/api/profile/update-password",
         {
-
-          headers: {
-            Authorization: `Bearer ${token}`,
-
-          },
-        });
-
+          oldPassword: old_password,
+          newPassword: new_password,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
       if (response.data.success) {
         alert("Password updated successfully.");
         setShowPasswordFields(false);
@@ -584,7 +581,6 @@ const Dashboard = () => {
       alert("An error occurred while changing the password.");
     }
   };
-
 
   return (
     <div>
@@ -694,9 +690,7 @@ const Dashboard = () => {
                     "Home Address",
                     "Contact No",
                     "Profile Link",
-                    "Religion"
-
-
+                    "Religion",
                   ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
@@ -745,8 +739,7 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-
-
+                
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
                     {getLabel("Save Changes")}
@@ -754,14 +747,18 @@ const Dashboard = () => {
                 )}
 
                 <div className="change-password-section">
-                  <button className="change-password-toggle-btn" onClick={togglePasswordFields}>
-                    {showPasswordFields ? getLabel("Cancel Password Change") : getLabel("Change Password")}
+                  <button
+                    className="change-password-toggle-btn"
+                    onClick={togglePasswordFields}
+                  >
+                    {showPasswordFields
+                      ? getLabel("Cancel Password Change")
+                      : getLabel("Change Password")}
                   </button>
 
                   {showPasswordFields && (
                     <div className="password-fields">
                       <div>
-
                         <input
                           type="password"
                           name="old_password"
@@ -772,7 +769,6 @@ const Dashboard = () => {
                         />
                       </div>
                       <div>
-
                         <input
                           type="password"
                           name="new_password"
@@ -782,13 +778,15 @@ const Dashboard = () => {
                           required
                         />
                       </div>
-                      <button className="save-password-btn" onClick={handleSavePassword}>
+                      <button
+                        className="save-password-btn"
+                        onClick={handleSavePassword}
+                      >
                         {getLabel("Save Password")}
                       </button>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
@@ -823,7 +821,6 @@ const Dashboard = () => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-
               />
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (
