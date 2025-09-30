@@ -467,8 +467,11 @@ def analyze_data_api(request):
                 column2 = request.POST.get('column2')  
                 return process_eda_swarm_plot(request, df, column1, column2, user_id)
 
+            # New Code for Pie Chart
             elif test_type == 'eda_pie':
-                return process_eda_pie_chart(request, df, user_id, ordinal_mappings)
+                col = request.POST.get('column1')
+                return process_pie_chart(request, df, col)
+
 
             elif test_type == 'eda_basics':
                 return process_eda_basics(request, df, user_id)
@@ -841,7 +844,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         'image_paths': image_paths
     })
  
-
 def process_mannwhitney_test(request, df, col1, col2, user_id):
     from django.http import JsonResponse
     import os
@@ -2977,118 +2979,188 @@ def process_eda_swarm_plot(request, df, col_cat, col_num, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_eda_pie_chart(request, df, user_id, ordinal_mappings):
-
-    import os
-    import math
-    import pandas as pd
-    import numpy as np
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
-    from django.conf import settings
+def process_pie_chart(request, df, col):
     from django.http import JsonResponse
-    from functools import lru_cache
+    import os, math, re
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from matplotlib.patches import Patch
+    from PIL import Image
+    from googletrans import Translator
+    import numpy as np
+    import pandas as pd 
+    from django.conf import settings
 
     try:
-        # --- 1. Input values ---
-        col = request.POST.get("column")
-        language = request.POST.get("language", "en")
-        img_format = request.POST.get("format", "png").lower()
-        if img_format not in ('png','jpg','jpeg','pdf','tiff'):
-            img_format = 'png'
-        pil_fmt = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[img_format]
+        # --- Params ---
+        language = request.POST.get('language', 'en')
+        fmt = request.POST.get('format', 'png').lower()
+        fmt = fmt if fmt in ('png', 'jpg', 'jpeg', 'pdf', 'tiff') else 'png'
 
-        if col not in df.columns:
-            return JsonResponse({'success': False, 'error': f"Column '{col}' not found."})
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if use_default:
+            dpi, width, height = 300, 900, 650
+        else:
+            dpi = int(request.POST.get('dpi', 300))
+            width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
 
-        # --- 2. Fonts and theme ---
-        width, height = 800, 600
-        dpi = 300
-        default_label_size = 50
-        default_caption_size = 50
-        default_tick_size = 12
-
+        # --- Fonts / translator ---
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        fm.fontManager.addfont(font_path)
-        bengali_font = fm.FontProperties(fname=font_path).get_name()
-        if language == 'bn':
-            mpl.rcParams['font.family'] = bengali_font
+        try:
+            fm.fontManager.addfont(font_path)
+        except Exception:
+            pass
+        if language == 'bn' and os.path.exists(font_path):
+            plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
 
         translator = Translator()
-        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text): 
+            if language == 'bn':
+                try:
+                    return translator.translate(text, dest='bn').text
+                except Exception:
+                    return text
+            return text
+        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
 
-        @lru_cache(None)
-        def translate(txt): return translator.translate(txt, dest='bn').text if language == 'bn' else txt
+        # --- Validate col ---
+        if col not in df.columns:
+            return JsonResponse({'success': False, 'error': f"Column {col} not found"})
 
-        def map_digits(txt): return txt.translate(digit_map) if language == 'bn' else txt
-
-        label_font = ImageFont.truetype(font_path, size=default_label_size)
-        caption_font = ImageFont.truetype(font_path, size=default_caption_size)
-
-        # --- 3. Plot directory ---
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_img_path = os.path.join(plots_dir, 'pie_base.png')
-        final_img_path = os.path.join(plots_dir, f'pie_{col}.{img_format}')
-
-        # --- 4. Create pie chart with PIL overlay ---
-        counts = df[col].value_counts() 
-        # labels_data = counts.index.tolist()  
-        labels_data = [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
-
+        # --- Treat column as categorical always ---
+        series = df[col].astype(str).fillna('NaN')
+        counts = series.value_counts(dropna=False)
+        # FIX: Convert index to strings explicitly like Python code
+        labels_raw = counts.index.tolist()
         sizes = counts.values
 
-        print(labels_data) 
+        # --- Too many categories check ---
+        if len(labels_raw) > 10:
+            msg = ("শ্রেণি সংখ্যা ১০ এর বেশি। পাই চার্ট উপযুক্ত নয়। বার চার্ট ব্যবহার করুন।"
+                   if language == 'bn'
+                   else "Too many categories (>10). Pie charts are not suitable. Please try a bar chart instead.")
+            return JsonResponse({'success': False, 'error': msg})
 
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        ax.pie(sizes, startangle=90)
-        ax.axis('equal')
+        # --- Colors & figure ---
+        colors = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",
+                  "#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(width/100, height/100), dpi=dpi,
+                                       gridspec_kw={'width_ratios': [2, 1]})
+        total = sum(sizes)
+
+        # autopct
+        def make_autopct(values):
+            def my_autopct(pct):
+                text = f"{pct:.1f}%"
+                return map_digits(text) if language == 'bn' else text
+            return my_autopct
+
+        wedges, texts, autotexts = ax1.pie(
+            sizes, labels=None, autopct=make_autopct(sizes),
+            startangle=90, colors=colors[:len(sizes)],
+            wedgeprops=dict(edgecolor='black', linewidth=1.2), radius=1.0
+        )
+        ax1.axis('equal')
+
+        # --- Improved small slice handling ---
+        total = sum(sizes)
+        small_slices = []
+        for i, (wedge, autotext) in enumerate(zip(wedges, autotexts)):
+            try:
+                pct = float(autotext.get_text().replace('%', ''))
+            except Exception:
+                pct = 0.0
+
+            if pct >= 5:
+                autotext.set_color("white")
+                autotext.set_weight("bold")
+            else:
+                ang = (wedge.theta2 + wedge.theta1) / 2.0
+                small_slices.append((i, wedge, autotext, pct, ang))
+
+        # sort by angle
+        small_slices.sort(key=lambda x: x[4])
+        distances = [1.3, 1.5, 1.8, 2.0]
+
+        for idx, (i, wedge, autotext, pct, ang) in enumerate(small_slices):
+            distance_idx = idx % len(distances)
+            label_distance = distances[distance_idx]
+            line_end_distance = label_distance - 0.1
+
+            x = label_distance * math.cos(math.radians(ang))
+            y = label_distance * math.sin(math.radians(ang))
+
+            percentage_text = f"{pct:.1f}%"
+            if language == 'bn':
+                percentage_text = map_digits(percentage_text)
+
+            autotext.set_text(percentage_text)
+            autotext.set_color("black")
+            autotext.set_weight("bold")
+            autotext.set_position((x, y))
+            autotext.set_ha('center')
+            autotext.set_va('center')
+
+            # draw leader line
+            x1 = 1.0 * math.cos(math.radians(ang))
+            y1 = 1.0 * math.sin(math.radians(ang))
+            x2 = line_end_distance * math.cos(math.radians(ang))
+            y2 = line_end_distance * math.sin(math.radians(ang))
+            ax1.plot([x1, x2], [y1, y2], color="black", linewidth=1)
+
+        # Title
+        ax1.set_title(map_digits(translate(f"Pie Chart of {col}")), fontsize=16, pad=20)
+
+        # FIXED: Legend - EXACTLY like the Python code
+        # Create labels_display exactly like in Python code
+        labels_display = [map_digits(translate(str(lab))) for lab in labels_raw]
+
+        legend_elements = []
+        for i, (label, size_val) in enumerate(zip(labels_display, sizes)):
+            percentage = size_val/total*100
+            percentage_text = f'{percentage:.1f}%'
+            if language == 'bn':
+                percentage_text = map_digits(percentage_text)
+
+            legend_text = f"{label} - {percentage_text}"
+            legend_elements.append(Patch(
+                facecolor=colors[i % len(colors)],
+                edgecolor='black', 
+                label=legend_text
+            ))
+
+        ax2.legend(handles=legend_elements, loc='center', frameon=False,
+                fontsize=12, handlelength=1, handleheight=1, handletextpad=0.5)
+        ax2.axis('off')
+
         plt.tight_layout()
-        fig.savefig(base_img_path, dpi=dpi, bbox_inches='tight')
+
+        # --- Safe filename ---
+        def safe_filename(name):
+            # Replace invalid characters with underscore and truncate long names
+            cleaned = re.sub(r'[<>:"/\\|?*]', '_', name)
+            return cleaned[:100]  # max 100 chars to avoid OS limits
+
+        filename = f"pie_{safe_filename(col)}.{fmt}"
+        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        out_path = os.path.join(plots_dir, filename)
+
+        plt.savefig(out_path, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
-
-        img = Image.open(base_img_path).convert('RGB')
-        bw0, bh0 = img.size
-        draw = ImageDraw.Draw(img)
-
-        cx, cy = bw0 / 2, bh0 / 2
-        radius = min(cx, cy) * 0.8
-        total = sizes.sum()
-        cum_angle = 0
-        for label, size in zip(labels_data, sizes):
-            angle = (size / total) * 360
-            mid_angle = cum_angle + angle / 2
-            rad = math.radians(mid_angle + 90)
-            x = cx + radius * 0.7 * math.cos(rad)
-            y = cy - radius * 0.7 * math.sin(rad)
-            translated_label = map_digits(translate(label))
-            translated_percent = map_digits(f"{(size / total) * 100:.1f}%")
-            txt = f"{translated_label} {translated_percent}"
-            bbox_txt = draw.textbbox((0, 0), txt, font=label_font)
-            w, h = bbox_txt[2] - bbox_txt[0], bbox_txt[3] - bbox_txt[1]
-            draw.text((x - w / 2, y - h / 2), txt, font=label_font, fill='black')
-            cum_angle += angle
-
-        title = map_digits(translate(f'Pie Chart of {col}'))
-        bbox_p = caption_font.getbbox(title)
-        wT = bbox_p[2] - bbox_p[0]
-        draw.text(((bw0 - wT) // 2, 10), title, font=caption_font, fill='black')
-
-        img.save(final_img_path, format=pil_fmt)
 
         return JsonResponse({
             'success': True,
-            'test': 'Pie Chart' if language == 'en' else 'পাই চার্ট',
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'pie_{col}.{img_format}')],
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', filename)],
+            'message': "Pie chart generated successfully",
             'columns': [col]
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 
 def process_eda_basics(request, df, user_id):
     import numpy as np
@@ -3502,8 +3574,6 @@ def process_chi_square(request, df, selected_columns, user_id):
 
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)})
-
- 
 
 def process_cramers_heatmap(request, selected_columns, df, user_id):
     
@@ -4374,6 +4444,7 @@ def process_network_graph(request, df, selected_columns, user_id):
     except Exception as e:
         print(f"Error in network graph generation: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
+
 def save_plot(plt, filename, user_id):
     import os
 
@@ -4391,127 +4462,176 @@ def save_plot(plt, filename, user_id):
         print(f"Failed to save plot: {filename}. Error: {e}")
         return None
 
-def process_bar_chart_test(request, df, col, user_id, orientation='vertical'):
-    import os, math
+
+def process_bar_chart_test(request, df, col, user_id, orientation="vertical"):
+    import os, re, math
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
     import matplotlib.pyplot as plt
     import matplotlib.font_manager as fm
-    import seaborn as sns
     from django.http import JsonResponse
     from django.conf import settings
     from PIL import Image, ImageDraw, ImageFont
-    from googletrans import Translator
-    import numpy as np
-    import pandas as pd
+    try:
+        from googletrans import Translator
+    except Exception:
+        class Translator:
+            def translate(self, txt, dest="bn"):
+                class _R:
+                    def __init__(self, t): self.text = t
+                    text = t
+                return _R(txt)
 
     try:
-        # --- Params ---
-        language = request.POST.get('language', 'en')
-        fmt = request.POST.get('format', 'png').lower()
-        fmt = fmt if fmt in ('png', 'jpg', 'jpeg', 'pdf', 'tiff') else 'png'
-        pil_fmt = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[fmt]
-        orientation = orientation if orientation in ('horizontal','vertical') else 'vertical'
+        # ---------------- Parameters ----------------
+        language = request.POST.get("language", "en")
+        fmt = request.POST.get("format", "png").lower()
+        fmt = fmt if fmt in ("png", "jpg", "jpeg", "pdf", "tiff") else "png"
+        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}[fmt]
+        orientation = orientation if orientation in ("horizontal", "vertical") else "vertical"
 
-        use_default = request.POST.get('use_default', 'true') == 'true'
+        use_default = request.POST.get("use_default", "true") == "true"
         if use_default:
-            dpi, width, height = 400, 800, 750 
-            label_font_size, caption_font_size, tick_font_size = 30, 72, 12
-            cat_font_size, val_font_size = 32, 32 
-            bar_color = 'steelblue'
+            dpi, width, height = 300, 800, 600
+            label_font_size, caption_font_size, tick_font_size = 15, 50, 16
+            cat_font_size, val_font_size = 44, 10
+            bar_color, theme = "steelblue", "darkgrid"
         else:
-            dpi = int(request.POST.get('dpi', 400))
-            width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
-            label_font_size = int(request.POST.get('label_font_size', 42))
-            caption_font_size = int(request.POST.get('caption_font_size', 60))
-            tick_font_size = int(request.POST.get('tick_font_size', 12))
-            cat_font_size = int(request.POST.get('cat_font_size', 44))
-            val_font_size = int(request.POST.get('val_font_size', 40))
-            bar_color = request.POST.get('bar_color', 'steelblue')
+            dpi = int(request.POST.get("dpi", 300))
+            width, height = map(int, request.POST.get("image_size", "800x600").split("x"))
+            label_font_size = int(request.POST.get("label_font_size", 15))
+            caption_font_size = int(request.POST.get("caption_font_size", 50))
+            tick_font_size = int(request.POST.get("tick_font_size", 16))
+            cat_font_size = int(request.POST.get("cat_font_size", 44))
+            val_font_size = int(request.POST.get("val_font_size", 10))
+            bar_color = request.POST.get("bar_color", "steelblue")
+            theme = request.POST.get("theme", "darkgrid")
 
-        # --- Font + Translator ---
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        sns.set_theme(style=theme)
+
+        # ---------------- Fonts & Translator ----------------
+        font_path = os.path.join(settings.BASE_DIR, "NotoSansBengali-Regular.ttf")
         fm.fontManager.addfont(font_path)
-        bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-        if language == 'bn':
-            plt.rcParams['font.family'] = bengali_font_name
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+        bengali_font = fm.FontProperties(fname=font_path).get_name()
+        if language == "bn":
+            plt.rcParams["font.family"] = bengali_font
 
         translator = Translator()
-        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(txt): return translator.translate(txt, dest='bn').text if language == 'bn' else txt
-        def map_digits(txt): return txt.translate(digit_map) if language == 'bn' else txt
+        digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
 
-        label_font   = ImageFont.truetype(font_path, size=label_font_size)
+        def translate(txt):
+            try:
+                return translator.translate(txt, dest="bn").text if language == "bn" else txt
+            except Exception:
+                return txt
+
+        def map_digits(txt):
+            return txt.translate(digit_map) if language == "bn" else txt
+
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
         caption_font = ImageFont.truetype(font_path, size=caption_font_size)
-        cat_font     = ImageFont.truetype(font_path, size=cat_font_size)
-        val_font     = ImageFont.truetype(font_path, size=val_font_size)
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+        cat_font = ImageFont.truetype(font_path, size=cat_font_size)
+        val_font = ImageFont.truetype(font_path, size=val_font_size)
 
-        # --- Data Prep ---
+        # ---------------- Data Prep ----------------
         if col not in df.columns:
-            return JsonResponse({'success': False, 'error': f"Column {col} not found"})
-        counts = df[col].astype(str).fillna('NaN').value_counts(dropna=False).sort_index()
+            return JsonResponse({"success": False, "error": f"Column {col} not found"})
+
+        counts = df[col].fillna("NaN").value_counts(dropna=False).sort_index()
         labels_raw = counts.index.tolist()
-        labels_display = [map_digits(translate(str(x))) for x in labels_raw]
         values = counts.values
+        labels_display = [map_digits(translate(str(x))) for x in labels_raw]
 
-        # --- Output path ---
-        plots_dir = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        # ---------------- Output Paths ----------------
+        safe_col = re.sub(r"[^\w\-_\.]", "_", col)
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
         os.makedirs(plots_dir, exist_ok=True)
-        base_name = f"barchart_{col}"
-        base_path = os.path.join(plots_dir, base_name + "_base.png")
-        final_path = os.path.join(plots_dir, f"{base_name}.{fmt}")
+        final_path = os.path.join(plots_dir, f"barchart_{safe_col}.{fmt}")
 
-        # --- Plot ---
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=dpi)
+        # ---------------- Plot ----------------
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=dpi)
 
-        if orientation == 'vertical':
+        if orientation == "vertical":
             x_idx = np.arange(len(values))
-            bars = ax.bar(x_idx, values, color=bar_color, edgecolor='black', linewidth=1.0)
+            bars = ax.bar(x_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
             ax.set_xticks(x_idx)
-            ax.set_xticklabels(labels_display, fontproperties=tick_prop, rotation=40, ha='right')
+            ax.set_xticklabels(labels_display, fontproperties=tick_prop, rotation=40, ha="right")
             ax.set_ylabel(map_digits(translate("Count")), fontsize=label_font_size)
             ax.set_xlabel(map_digits(translate(col)), fontsize=label_font_size)
 
-            for bar, val in zip(bars, values):
-                ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.5,
-                        map_digits(str(val)), ha='center', va='bottom',
-                        fontsize=val_font_size)
+            max_val = max(values) if len(values) > 0 else 1
+            ax.set_ylim(0, max_val + max_val * 0.25)  # add headroom for labels
 
-        else:  # horizontal
+            for bar, val in zip(bars, values):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + (0.05 * max_val),
+                    map_digits(str(val)),
+                    ha="center", va="bottom", fontsize=val_font_size
+                )
+
+        else:
             y_idx = np.arange(len(values))
-            bars = ax.barh(y_idx, values, color=bar_color, edgecolor='black', linewidth=1.0)
+            bars = ax.barh(y_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
             ax.set_yticks(y_idx)
             ax.set_yticklabels(labels_display, fontproperties=tick_prop)
             ax.set_xlabel(map_digits(translate("Count")), fontsize=label_font_size)
             ax.set_ylabel(map_digits(translate(col)), fontsize=label_font_size)
 
+            max_val = max(values) if len(values) > 0 else 1
+            ax.set_xlim(0, max_val + max_val * 0.25)  # add headroom for labels
+
             for bar, val in zip(bars, values):
-                ax.text(bar.get_width() + 0.5, bar.get_y() + bar.get_height()/2,
-                        map_digits(str(val)), va='center', fontsize=val_font_size)
+                ax.text(
+                    bar.get_width() + (0.05 * max_val),
+                    bar.get_y() + bar.get_height() / 2,
+                    map_digits(str(val)),
+                    va="center", ha="left", fontsize=val_font_size
+                )
 
+        
+        title_txt = map_digits(translate(f"Bar Chart of {col}"))
+        
+
+        ax.grid(axis="y" if orientation == "vertical" else "x", linestyle="--", alpha=0.35)
         plt.tight_layout()
-        fig.savefig(base_path, dpi=dpi, bbox_inches=None, pad_inches=0.4) 
-
+        fig.savefig(final_path, dpi=dpi, bbox_inches="tight")
         plt.close(fig)
 
-        # --- PIL overlay for title ---
-        img = Image.open(base_path).convert("RGB")
-        draw = ImageDraw.Draw(img)
-        title_txt = map_digits(translate(f"Bar Chart of {col}"))
-        tw, th = draw.textbbox((0,0), title_txt, font=caption_font)[2:]
+        # ---------------- Title Overlay (PIL) ----------------
+        img = Image.open(final_path).convert("RGB")
         bw, bh = img.size
-        draw.text(((bw - tw)//2, 10), title_txt, font=caption_font, fill='black')
-        img.save(final_path, format=pil_fmt)
+
+        # Add extra space above for title (20% of image height, adjust as needed)
+        extra_height = int(bh * 0.15)
+        new_img = Image.new("RGB", (bw, bh + extra_height), "white")
+
+        # Paste original chart lower (shift down)
+        new_img.paste(img, (0, extra_height))
+
+        # Draw title in the new top space
+        draw = ImageDraw.Draw(new_img)
+        title_txt = map_digits(translate(f"Bar Chart of {col}"))
+        tw, th = draw.textbbox((0, 0), title_txt, font=caption_font)[2:]
+        draw.text(((bw - tw) // 2, (extra_height - th) // 2), title_txt, font=caption_font, fill="black")
+
+        # Save final
+        new_img.save(final_path, format=pil_fmt)
 
         return JsonResponse({
-            'success': True,
-            'test': 'Bar Chart',
-            'orientation': orientation,
-             'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
-            
+            "success": True,
+            "test": "Bar Chart",
+            "orientation": orientation,
+            "image_paths": [
+                f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{os.path.basename(final_path)}"
+            ]
         })
 
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({"success": False, "error": str(e)})
+
 
 @csrf_exempt
 def preview_data(request):
@@ -4585,9 +4705,6 @@ def preview_data(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'}, status=500) 
  
-
-
-
 @csrf_exempt
 def delete_columns_api(request):
     try: 
@@ -4668,8 +4785,6 @@ def delete_columns_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-
-
 @csrf_exempt
 # def remove_duplicates_api(request):
 #     try:
@@ -4739,7 +4854,6 @@ def delete_columns_api(request):
 
 #     except Exception as e:
 #         return JsonResponse({'success': False, 'error': str(e)})
-
 
 def find_duplicates_api(request):
     try:
@@ -4848,7 +4962,6 @@ def find_duplicates_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
     
-
 @csrf_exempt
 def remove_duplicates(request):
     user_id = request.headers.get('userID') 
@@ -5116,6 +5229,7 @@ def outliers_summary_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
 @csrf_exempt
 def handle_outliers_api(request):
     try:
@@ -5376,7 +5490,6 @@ def rank_categorical_column_api(request):
 #     except Exception as e:
 #         return JsonResponse({'success': False, 'error': str(e)})
 
-
 @csrf_exempt
 def split_column_api(request):
     from django.http import JsonResponse
@@ -5537,10 +5650,6 @@ def split_column_api(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-
-
-
-
 @csrf_exempt
 def group_data_api(request):
     if request.method != 'POST':
@@ -5638,7 +5747,6 @@ def group_data_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
 
 @csrf_exempt
 def generate_unique_id_column_api(request):

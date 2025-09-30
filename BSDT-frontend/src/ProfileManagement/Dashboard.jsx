@@ -11,6 +11,7 @@ import "./Dashboard.css";
 import "./PremiumFeatures/PremiumAdBanner.css";
 import "./PremiumFeatures/PremiumPackagesModal.css";
 import "./AdminComponents/AdminDashboard.css";
+import "./AdminComponents/CouponManagement.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
@@ -18,6 +19,8 @@ import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
 import apiClient from "../api";
+
+import CouponManagement from "./AdminComponents/CouponManagement";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -192,7 +195,6 @@ const Dashboard = () => {
       "Survey Creation Growth Rate",
       "This Month",
       "Last Month",
-
       "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
@@ -202,7 +204,6 @@ const Dashboard = () => {
       "Tags",
       "Questions",
       "Surveys",
-
       "Choose Your Premium Package",
       "Unlock Powerful AI Features",
       "AI Survey Generation",
@@ -519,6 +520,7 @@ const Dashboard = () => {
       return [
         { label: "Dashboard", key: "dashboard" },
         { label: "Customize Packages", key: "customizepackages" },
+        { label: "Manage Coupons", key: "managecoupons" },
         { label: "My Profile", key: "editprofile" },
       ];
     } else {
@@ -555,6 +557,7 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem("token");
       // Example POST request to backend API
+
       const response = await apiClient.put(
         "/api/profile/update-password",
         {
@@ -565,7 +568,7 @@ const Dashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
+      
       if (response.data.success) {
         alert("Password updated successfully.");
         setShowPasswordFields(false);
@@ -658,6 +661,11 @@ const Dashboard = () => {
               <AdminPackageCustomizer getLabel={getLabel} />
             )}
 
+            {/* Admin Coupon Management */}
+            {isAdmin && activeTab === "managecoupons" && (
+              <CouponManagement getLabel={getLabel} />
+            )}
+
             {/* Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
@@ -692,7 +700,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -714,7 +722,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -731,7 +739,7 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
-
+                
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
                     {getLabel("Save Changes")}

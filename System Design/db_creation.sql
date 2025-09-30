@@ -462,3 +462,38 @@ CREATE INDEX IF NOT EXISTS idx_payment_user_id ON payment_transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_payment_transaction_id ON payment_transactions(transaction_id);
 CREATE INDEX IF NOT EXISTS idx_payment_status ON payment_transactions(status);
 CREATE INDEX IF NOT EXISTS idx_payment_created_at ON payment_transactions(created_at);
+
+
+
+
+
+
+
+---VOUCHER SYSTEM---
+CREATE TABLE voucher (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    description TEXT NOT NULL,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    end_at TIMESTAMPTZ NOT NULL,
+    min_spend_req DECIMAL(10,2) NOT NULL CHECK (min_spend_req >= 0),
+    discount_percentage DECIMAL(5,2) NOT NULL CHECK (discount_percentage >= 0 AND discount_percentage <= 100),
+    max_discount DECIMAL(10,2) NOT NULL CHECK (max_discount >= 0),
+    max_use_count INTEGER CHECK (max_use_count > 0)
+);
+
+
+CREATE TABLE voucher_used_info (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    voucher_id UUID NOT NULL,
+    subscription_id INTEGER NOT NULL,
+    purchased_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    discount_amount DECIMAL(10,2) NOT NULL CHECK (discount_amount >= 0),
+    
+    -- Foreign key constraints
+    
+    CONSTRAINT fk_voucher_used_user FOREIGN KEY (user_id) REFERENCES "user"(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_voucher_used_voucher FOREIGN KEY (voucher_id) REFERENCES "voucher"(voucher_id) ON DELETE CASCADE,
+    CONSTRAINT fk_voucher_used_subscription FOREIGN KEY (subscription_id) REFERENCES "subscription"(subscription_id) ON DELETE CASCADE
+);
