@@ -75,6 +75,7 @@ const SurveyForm = ({
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
+  const [responseCount, setResponseCount] = useState(null);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -235,6 +236,64 @@ const SurveyForm = ({
     };
     loadTranslations();
   }, [language, labelsToTranslate]);
+
+  useEffect(() => {
+    if (!survey_id) {
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("Authentication token not found.");
+      return;
+    }
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    console.log(API_BASE_URL);
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/api/surveytemplate/stream/${survey_id}?token=${token}`
+    );
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.count !== undefined) {
+        setResponseCount(data.count);
+      }
+      if (data.error) {
+        console.error("Stream error:", data.error);
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [survey_id]);
+
+  // Function to update the logo and relay it to the parent component
+  const updateAndRelayLogo = (newLogo) => {
+    setLogo(newLogo);
+    if (setLogoInParent) {
+      setLogoInParent(newLogo);
+    }
+  };
+
+  // Function to handle Logo alignment changes
+  const handleLogoAlignmentChange = (alignment) => {
+    if (["left", "center", "right"].includes(alignment)) {
+      setLogoAlignment(alignment);
+    }
+  };
+
+  // Function to update the background image and relay it to the parent component
+  const updateAndRelayBackgroundImage = (newImageSrc) => {
+    setCurrentBackgroundImage(newImageSrc);
+    if (setImageInParent) {
+      setImageInParent(newImageSrc);
+    }
+  };
 
   const handleAddSection = () => {
     const newSectionId =
@@ -506,7 +565,11 @@ const SurveyForm = ({
               onClick={handleSurveyResponses}
               className="btn btn-outline-success btn-sm me-2"
             >
-              <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
+              <i className="bi bi-bar-chart"></i>
+              <span className="ms-1">{getLabel("View Response")}</span>
+              {responseCount !== null && (
+                <span className="badge bg-secondary ms-2">{responseCount}</span>
+              )}
             </button>
             <button
               className="btn btn-outline-success btn-sm me-2"

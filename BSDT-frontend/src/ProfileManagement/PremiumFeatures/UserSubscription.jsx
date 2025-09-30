@@ -41,39 +41,40 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
       "Active",
       "Expired",
       "Expiring Soon",
+      "Premium",
 
       // Main section labels
-      "My Subscription Packages",
-      "Manage and view your premium subscription packages",
-      "Loading subscription packages...",
-      "Failed to load subscription packages",
-      "Retry",
+      "Subscription Plans",
+      "Manage your active subscriptions and view usage history",
+      "Loading subscriptions...",
+      "Failed to load subscriptions",
+      "Try Again",
 
       // Package section labels
-      "Active Packages",
-      "Package History",
-      "No Active Packages",
-      "You don't have any active subscription packages at the moment.",
-      "Hide Package History",
-      "View Package History",
+      "Active Subscriptions",
+      "Subscription History",
+      "No Active Subscriptions",
+      "You don't have any active subscriptions. Upgrade to unlock premium features.",
+      "Hide History",
+      "Show History",
+      "Get Premium",
 
       // Feature labels
-      "Auto Survey Generation",
-      "Auto Question Generation",
-      "Auto Tag Generation",
-      "Tags",
-      "Questions",
-      "Surveys",
+      "AI Survey Generation",
+      "AI Question Generation",
+      "AI Tag Generation",
+      "Advanced Analytics",
+      "Extended Participants",
+      "Unlimited",
 
       // Timeline labels
-      "Started",
-      "Expires",
-      "Expired",
-      "Days Remaining",
-      // "days",
+      "Valid Until",
+      "Activated",
+      "Days Left",
+      "days",
 
       // Cost labels
-      "Package Cost",
+      "Total",
     ];
 
     try {
@@ -115,7 +116,7 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
       }
     } catch (error) {
       console.error("Failed to fetch user packages:", error);
-      setError("Failed to load subscription packages");
+      setError("Failed to load subscriptions");
     } finally {
       setLoading(false);
     }
@@ -128,20 +129,9 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
-      month: "long",
+      month: "short",
       day: "numeric",
     });
-  };
-
-  const getPackageTypeLabel = (subscription) => {
-    const features = [];
-    if (subscription.tag > 0)
-      features.push(`${subscription.tag} ${getLabel("Tags")}`);
-    if (subscription.question > 0)
-      features.push(`${subscription.question} ${getLabel("Questions")}`);
-    if (subscription.survey > 0)
-      features.push(`${subscription.survey} ${getLabel("Surveys")}`);
-    return features.join(" + ");
   };
 
   const getDaysRemaining = (endDate) => {
@@ -152,23 +142,63 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
     return daysDiff;
   };
 
-  const getStatusBadge = (subscription) => {
+  const getStatusInfo = (subscription) => {
     const isActive = isPackageActive(subscription.end_date);
     const daysRemaining = getDaysRemaining(subscription.end_date);
 
     if (!isActive) {
-      return (
-        <span className="status-badge expired">{getLabel("Expired")}</span>
-      );
+      return { status: "expired", label: getLabel("Expired"), color: "red" };
     } else if (daysRemaining <= 7) {
-      return (
-        <span className="status-badge expiring-soon">
-          {getLabel("Expiring Soon")}
-        </span>
-      );
+      return { status: "expiring", label: getLabel("Expiring Soon"), color: "orange" };
     } else {
-      return <span className="status-badge active">{getLabel("Active")}</span>;
+      return { status: "active", label: getLabel("Active"), color: "green" };
     }
+  };
+
+  const getFeatureList = (subscription) => {
+    const features = [];
+
+    if (subscription.survey > 0) {
+      features.push({
+        icon: "📊",
+        name: getLabel("AI Survey Generation"),
+        value: subscription.survey
+      });
+    }
+
+    if (subscription.question > 0) {
+      features.push({
+        icon: "❓",
+        name: getLabel("AI Question Generation"),
+        value: subscription.question
+      });
+    }
+
+    if (subscription.tag > 0) {
+      features.push({
+        icon: "🏷️",
+        name: getLabel("AI Tag Generation"),
+        value: subscription.tag
+      });
+    }
+
+    if (subscription.advanced_analysis) {
+      features.push({
+        icon: "📈",
+        name: getLabel("Advanced Analytics"),
+        value: getLabel("Unlimited")
+      });
+    }
+
+    if (subscription.participant_count > 0) {
+      features.push({
+        icon: "👥",
+        name: getLabel("Extended Participants"),
+        value: `+${subscription.participant_count}`
+      });
+    }
+
+    return features;
   };
 
   const activePackages = subscriptions.filter((sub) =>
@@ -179,15 +209,15 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
   );
 
   if (userType === "admin") {
-    return null; // Don't show for admin users
+    return null;
   }
 
   if (loading) {
     return (
-      <div className="subscriptions-section">
-        <div className="subscriptions-loading">
-          <div className="loading-spinner"></div>
-          <p>{getLabel("Loading subscription packages...")}</p>
+      <div className="subscription-container">
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>{getLabel("Loading subscriptions...")}</p>
         </div>
       </div>
     );
@@ -195,11 +225,12 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
 
   if (error) {
     return (
-      <div className="subscriptions-section">
-        <div className="subscriptions-error">
-          <p>{getLabel(error)}</p>
-          <button onClick={fetchUserPackages} className="retry-btn">
-            {getLabel("Retry")}
+      <div className="subscription-container">
+        <div className="error-state">
+          <div className="error-icon">⚠️</div>
+          <h3>{getLabel("Failed to load subscriptions")}</h3>
+          <button onClick={fetchUserPackages} className="btn-retry">
+            {getLabel("Try Again")}
           </button>
         </div>
       </div>
@@ -207,234 +238,168 @@ const UserSubscriptions = ({ userType, language = "English" }) => {
   }
 
   return (
-    <div className="subscriptions-section">
-      <div className="subscriptions-header">
-        <h3>{getLabel("My Subscription Packages")}</h3>
-        <p className="subscriptions-subtitle">
-          {getLabel("Manage and view your premium subscription packages")}
-        </p>
+    <div className="subscription-container">
+      {/* Header */}
+      <div className="subscription-header">
+        <div className="header-content">
+          <h2>{getLabel("Subscription Plans")}</h2>
+          <p>{getLabel("Manage your active subscriptions and view usage history")}</p>
+        </div>
       </div>
 
-      {/* Active Packages */}
+      {/* Active Subscriptions */}
       {activePackages.length > 0 && (
-        <div className="active-packages">
-          <h4 className="packages-section-title">
-            <span className="title-icon">🟢</span>
-            {getLabel("Active Packages")} ({activePackages.length})
-          </h4>
-          <div className="packages-grid">
-            {activePackages.map((subscription) => (
-              <div
-                key={subscription.subscription_id}
-                className="package-card active-card"
-              >
-                <div className="package-header">
-                  {getStatusBadge(subscription)}
+        <div className="subscriptions-section">
+          <div className="section-header">
+            <h3>{getLabel("Active Subscriptions")}</h3>
+            <span className="count-badge">{activePackages.length}</span>
+          </div>
+
+          <div className="subscription-grid">
+            {activePackages.map((subscription) => {
+              const statusInfo = getStatusInfo(subscription);
+              const features = getFeatureList(subscription);
+              const daysLeft = getDaysRemaining(subscription.end_date);
+
+              return (
+                <div key={subscription.subscription_id} className="subscription-card active">
+                  {/* Card Header */}
+                  <div className="card-header">
+                    <div className="header-left">
+                      <div className="plan-title">
+                        <h4>{getLabel("Premium")} {getLabel("Subscription Plans").split(' ')[0]}</h4>
+                        <div className={`status-badge ${statusInfo.status}`}>
+                          <div className="status-dot"></div>
+                          <span>{statusInfo.label}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="header-right">
+                      <div className="price-display">
+                        <span className="price-amount">৳{subscription.cost}</span>
+                        <span className="price-label">{getLabel("Total")}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Content */}
+                  <div className="card-content">
+                    {/* Features Section */}
+                    <div className="features-section">
+                      <div className="features-grid-compact">
+                        {features.map((feature, idx) => (
+                          <div key={idx} className="feature-item-compact">
+                            <span className="feature-icon">{feature.icon}</span>
+                            <span className="feature-name">{feature.name}</span>
+                            <span className="feature-value">{feature.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Timeline Section */}
+                    <div className="timeline-section">
+                      <div className="timeline-row">
+                        <div className="timeline-col">
+                          <span className="timeline-label">{getLabel("Activated")}</span>
+                          <span className="timeline-value">{formatDate(subscription.start_date)}</span>
+                        </div>
+                        <div className="timeline-col">
+                          <span className="timeline-label">{getLabel("Valid Until")}</span>
+                          <span className="timeline-value">{formatDate(subscription.end_date)}</span>
+                        </div>
+                        {daysLeft > 0 && (
+                          <div className="timeline-col">
+                            <span className="timeline-label">
+                              {daysLeft <= 7 ? '⚠️ Expiring in' : '📅 Valid for'}
+                            </span>
+                            <span className={`timeline-value ${daysLeft <= 7 ? 'urgent' : ''}`}>
+                              <strong>{daysLeft}</strong> {getLabel("days")}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer - only show if subscription is expired */}
+                  {daysLeft <= 0 && (
+                    <div className="card-footer">
+                      <div className="expiry-notice expired">
+                        <div className="expiry-content">
+                          <span className="expiry-text">🔴 Subscription Expired</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                <div className="package-details">
-                  <div className="package-features">
-                    {subscription.advanced_analysis && (
-                      <div className="feature-item">
-                        <span className="feature-icon">📈</span>
-                        <span>{getLabel("Advanced Statistical Analyses")}</span>
-                      </div>
-                    )}
-                    {subscription.participant_count > 0 && (
-                      <div className="feature-item">
-                        <span className="feature-icon">👥</span>
-                        <span>
-                          {subscription.participant_count}{" "}
-                          {getLabel("Survey Participants beyond Free Limit")}
-                        </span>
-                      </div>
-                    )}
-                    {subscription.survey > 0 && (
-                      <div className="feature-item">
-                        <span className="feature-icon">📊</span>
-                        <span>
-                          {subscription.survey}{" "}
-                          {getLabel("Auto Survey Generation")}
-                        </span>
-                      </div>
-                    )}
-                    {subscription.question > 0 && (
-                      <div className="feature-item">
-                        <span className="feature-icon">❓</span>
-                        <span>
-                          {subscription.question}{" "}
-                          {getLabel("Auto Question Generation")}
-                        </span>
-                      </div>
-                    )}
-
-                    {subscription.tag > 0 && (
-                      <div className="feature-item">
-                        <span className="feature-icon">🏷️</span>
-                        <span>
-                          {subscription.tag} {getLabel("Auto Tag Generation")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="package-timeline">
-                    <div className="timeline-item">
-                      <span className="timeline-label">
-                        {getLabel("Started")}:
-                      </span>
-                      <span className="timeline-date">
-                        {formatDate(subscription.start_date)}
-                      </span>
-                    </div>
-                    <div className="timeline-item">
-                      <span className="timeline-label">
-                        {getLabel("Expires")}:
-                      </span>
-                      <span className="timeline-date">
-                        {formatDate(subscription.end_date)}
-                      </span>
-                    </div>
-                    <div className="timeline-item">
-                      <span className="timeline-label">
-                        {getLabel("Days Remaining")}:
-                      </span>
-                      <span
-                        className={`timeline-date ${
-                          getDaysRemaining(subscription.end_date) <= 7
-                            ? "urgent"
-                            : ""
-                        }`}
-                      >
-                        {getDaysRemaining(subscription.end_date)}{" "}
-                        {getLabel("days")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="package-cost">
-                    <span className="cost-label">
-                      {getLabel("Package Cost")}
-                    </span>
-                    <span className="cost-amount">৳ {subscription.cost}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* No Active Packages Message */}
+      {/* Empty State */}
       {activePackages.length === 0 && (
-        <div className="no-packages">
-          <div className="no-packages-icon">📦</div>
-          <h4>{getLabel("No Active Packages")}</h4>
-          <p>
-            {getLabel(
-              "You don't have any active subscription packages at the moment."
-            )}
-          </p>
+        <div className="empty-state">
+          <div className="empty-icon">💼</div>
+          <h3>{getLabel("No Active Subscriptions")}</h3>
+          <p>{getLabel("You don't have any active subscriptions. Upgrade to unlock premium features.")}</p>
+          <button className="btn-primary">{getLabel("Get Premium")}</button>
         </div>
       )}
 
-      {/* Expired Packages Toggle */}
+      {/* History Toggle */}
       {expiredPackages.length > 0 && (
-        <div className="expired-packages-section">
+        <div className="history-section">
           <button
-            className="toggle-expired-btn"
+            className="history-toggle"
             onClick={() => setShowExpired(!showExpired)}
           >
-            <span className="toggle-icon">{showExpired ? "📉" : "📋"}</span>
-            {showExpired
-              ? getLabel("Hide Package History")
-              : `${getLabel("View Package History")} (${
-                  expiredPackages.length
-                })`}
-            <span className={`chevron ${showExpired ? "up" : "down"}`}>
-              {showExpired ? "▲" : "▼"}
+            <span>{showExpired ? getLabel("Hide History") : getLabel("Show History")}</span>
+            <span className="history-count">({expiredPackages.length})</span>
+            <span className={`chevron ${showExpired ? 'up' : 'down'}`}>
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </span>
           </button>
 
           {showExpired && (
-            <div className="expired-packages">
-              <h4 className="packages-section-title">
-                <span className="title-icon">🔴</span>
-                {getLabel("Package History")}
-              </h4>
-              <div className="packages-grid">
-                {expiredPackages.map((subscription) => (
-                  <div
-                    key={subscription.subscription_id}
-                    className="package-card expired-card"
-                  >
-                    <div className="package-header">
-                      {getStatusBadge(subscription)}
-                    </div>
+            <div className="expired-subscriptions">
+              <div className="section-header">
+                <h3>{getLabel("Subscription History")}</h3>
+              </div>
 
-                    <div className="package-details">
-                      <div className="package-features">
-                        {subscription.survey > 0 && (
-                          <div className="feature-item">
-                            <span className="feature-icon">📊</span>
-                            <span>
-                              {subscription.survey}{" "}
-                              {getLabel("Auto Survey Generation")}
-                            </span>
-                          </div>
-                        )}
+              <div className="subscription-list">
+                {expiredPackages.map((subscription) => {
+                  const features = getFeatureList(subscription);
 
-                        {subscription.question > 0 && (
-                          <div className="feature-item">
-                            <span className="feature-icon">❓</span>
-                            <span>
-                              {subscription.question}{" "}
-                              {getLabel("Auto Question Generation")}
-                            </span>
-                          </div>
-                        )}
-
-                        {subscription.tag > 0 && (
-                          <div className="feature-item">
-                            <span className="feature-icon">🏷️</span>
-                            <span>
-                              {subscription.tag}{" "}
-                              {getLabel("Auto Tag Generation")}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="package-timeline">
-                        <div className="timeline-item">
-                          <span className="timeline-label">
-                            {getLabel("Started")}:
-                          </span>
-                          <span className="timeline-date">
-                            {formatDate(subscription.start_date)}
-                          </span>
-                        </div>
-                        <div className="timeline-item">
-                          <span className="timeline-label">
-                            {getLabel("Expired")}:
-                          </span>
-                          <span className="timeline-date expired-date">
-                            {formatDate(subscription.end_date)}
-                          </span>
+                  return (
+                    <div key={subscription.subscription_id} className="subscription-item expired">
+                      <div className="item-left">
+                        <div className="plan-badge expired">{getLabel("Expired")}</div>
+                        <div className="period-info">
+                          <span>{formatDate(subscription.start_date)} - {formatDate(subscription.end_date)}</span>
                         </div>
                       </div>
 
-                      <div className="package-cost">
-                        <span className="cost-label">
-                          {getLabel("Package Cost")}
-                        </span>
-                        <span className="cost-amount">
-                          ৳ {subscription.cost}
-                        </span>
+                      <div className="item-center">
+                        <div className="features-summary">
+                          {features.map((feature, idx) => (
+                            <span key={idx} className="feature-tag">
+                              {feature.icon} {feature.value} {feature.name.split(' ').pop()}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="item-right">
+                        <span className="cost">৳{subscription.cost}</span>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

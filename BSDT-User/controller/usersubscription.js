@@ -14,9 +14,9 @@ exports.getUserPackages = async (req, res) => {
 
         if (error) {
             console.error("Error fetching user packages:", error);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error fetching user packages: " + error.message 
+                error: "Error fetching user packages: " + error.message
             });
         }
 
@@ -38,6 +38,8 @@ exports.getUserPackages = async (req, res) => {
             tag: parseInt(row.tag) || 0,
             question: parseInt(row.question) || 0,
             survey: parseInt(row.survey) || 0,
+            participant_count: parseInt(row.participant_count) || 0,
+            advanced_analysis: row.advanced_analysis,
             start_date: row.start_date,
             end_date: row.end_date,
             cost: parseFloat(row.cost) || 0,
@@ -61,9 +63,9 @@ exports.getUserPackages = async (req, res) => {
 
     } catch (error) {
         console.error("Server error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: "Server error: " + error.message 
+            error: "Server error: " + error.message
         });
     }
 };
@@ -86,9 +88,9 @@ exports.reduceQuestionCount = async (req, res) => {
 
         if (allError) {
             console.error("Error fetching all subscriptions:", allError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error fetching subscriptions: " + allError.message 
+                error: "Error fetching subscriptions: " + allError.message
             });
         }
 
@@ -105,17 +107,17 @@ exports.reduceQuestionCount = async (req, res) => {
         const activePackagesWithQuestions = allSubscriptions.filter(subscription => {
             const endDate = subscription.end_date;
             const questionCount = subscription.question;
-            
+
             console.log(`Checking subscription ${subscription.subscription_id}:`);
             console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
             console.log(`  Question Count: ${questionCount} (type: ${typeof questionCount})`);
             console.log(`  Is Active: ${endDate >= currentDate}`);
             console.log(`  Has Questions: ${questionCount && parseInt(questionCount) > 0}`);
-            
-            return endDate >= currentDate && 
-                   questionCount !== null && 
-                   questionCount !== undefined && 
-                   parseInt(questionCount) > 0;
+
+            return endDate >= currentDate &&
+                questionCount !== null &&
+                questionCount !== undefined &&
+                parseInt(questionCount) > 0;
         });
 
         console.log("Active packages with questions:", JSON.stringify(activePackagesWithQuestions, null, 2));
@@ -140,7 +142,7 @@ exports.reduceQuestionCount = async (req, res) => {
         // Update the question field by reducing it by 1
         const { data: updatedData, error: updateError } = await supabase
             .from("subscription")
-            .update({ 
+            .update({
                 question: currentQuestionCount - 1
             })
             .eq("subscription_id", packageToUpdate.subscription_id)
@@ -148,9 +150,9 @@ exports.reduceQuestionCount = async (req, res) => {
 
         if (updateError) {
             console.error("Error updating package:", updateError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error updating package: " + updateError.message 
+                error: "Error updating package: " + updateError.message
             });
         }
 
@@ -168,9 +170,9 @@ exports.reduceQuestionCount = async (req, res) => {
 
     } catch (error) {
         console.error("Server error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: "Server error: " + error.message 
+            error: "Server error: " + error.message
         });
     }
 };
@@ -192,9 +194,9 @@ exports.reduceSurveyCount = async (req, res) => {
 
         if (allError) {
             console.error("Error fetching all subscriptions:", allError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error fetching subscriptions: " + allError.message 
+                error: "Error fetching subscriptions: " + allError.message
             });
         }
 
@@ -211,17 +213,17 @@ exports.reduceSurveyCount = async (req, res) => {
         const activePackagesWithSurveys = allSubscriptions.filter(subscription => {
             const endDate = subscription.end_date;
             const surveyCount = subscription.survey;
-            
+
             console.log(`Checking subscription ${subscription.subscription_id}:`);
             console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
             console.log(`  Survey Count: ${surveyCount} (type: ${typeof surveyCount})`);
             console.log(`  Is Active: ${endDate >= currentDate}`);
             console.log(`  Has Surveys: ${surveyCount && parseInt(surveyCount) > 0}`);
-            
-            return endDate >= currentDate && 
-                   surveyCount !== null && 
-                   surveyCount !== undefined && 
-                   parseInt(surveyCount) > 0;
+
+            return endDate >= currentDate &&
+                surveyCount !== null &&
+                surveyCount !== undefined &&
+                parseInt(surveyCount) > 0;
         });
 
         console.log("Active packages with surveys:", JSON.stringify(activePackagesWithSurveys, null, 2));
@@ -246,7 +248,7 @@ exports.reduceSurveyCount = async (req, res) => {
         // Update the survey field by reducing it by 1
         const { data: updatedData, error: updateError } = await supabase
             .from("subscription")
-            .update({ 
+            .update({
                 survey: currentSurveyCount - 1
             })
             .eq("subscription_id", packageToUpdate.subscription_id)
@@ -254,9 +256,9 @@ exports.reduceSurveyCount = async (req, res) => {
 
         if (updateError) {
             console.error("Error updating package:", updateError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error updating package: " + updateError.message 
+                error: "Error updating package: " + updateError.message
             });
         }
 
@@ -274,9 +276,9 @@ exports.reduceSurveyCount = async (req, res) => {
 
     } catch (error) {
         console.error("Server error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: "Server error: " + error.message 
+            error: "Server error: " + error.message
         });
     }
 };
@@ -298,9 +300,9 @@ exports.reduceTagCount = async (req, res) => {
 
         if (allError) {
             console.error("Error fetching all subscriptions:", allError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error fetching subscriptions: " + allError.message 
+                error: "Error fetching subscriptions: " + allError.message
             });
         }
 
@@ -317,17 +319,17 @@ exports.reduceTagCount = async (req, res) => {
         const activePackagesWithTags = allSubscriptions.filter(subscription => {
             const endDate = subscription.end_date;
             const tagCount = subscription.tag;
-            
+
             console.log(`Checking subscription ${subscription.subscription_id}:`);
             console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
             console.log(`  Tag Count: ${tagCount} (type: ${typeof tagCount})`);
             console.log(`  Is Active: ${endDate >= currentDate}`);
             console.log(`  Has Tags: ${tagCount && parseInt(tagCount) > 0}`);
-            
-            return endDate >= currentDate && 
-                   tagCount !== null && 
-                   tagCount !== undefined && 
-                   parseInt(tagCount) > 0;
+
+            return endDate >= currentDate &&
+                tagCount !== null &&
+                tagCount !== undefined &&
+                parseInt(tagCount) > 0;
         });
 
         console.log("Active packages with tags:", JSON.stringify(activePackagesWithTags, null, 2));
@@ -352,7 +354,7 @@ exports.reduceTagCount = async (req, res) => {
         // Update the tag field by reducing it by 1
         const { data: updatedData, error: updateError } = await supabase
             .from("subscription")
-            .update({ 
+            .update({
                 tag: currentTagCount - 1
             })
             .eq("subscription_id", packageToUpdate.subscription_id)
@@ -360,9 +362,9 @@ exports.reduceTagCount = async (req, res) => {
 
         if (updateError) {
             console.error("Error updating package:", updateError);
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
-                error: "Error updating package: " + updateError.message 
+                error: "Error updating package: " + updateError.message
             });
         }
 
@@ -380,9 +382,173 @@ exports.reduceTagCount = async (req, res) => {
 
     } catch (error) {
         console.error("Server error:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: "Server error: " + error.message 
+            error: "Server error: " + error.message
+        });
+    }
+};
+
+
+// ✅ Create a new subscription (for custom packages)
+exports.createSubscription = async (req, res) => {
+    try {
+        const subscriptionData = req.body;
+
+        // Validate required fields
+        if (!subscriptionData.user_id || !subscriptionData.start_date || !subscriptionData.end_date) {
+            return res.status(400).json({
+                error: "user_id, start_date, and end_date are required"
+            });
+        }
+
+        // Validate user_id is a valid number
+        if (isNaN(subscriptionData.user_id)) {
+            return res.status(400).json({
+                error: "user_id must be a valid number"
+            });
+        }
+
+        // Validate date formats
+        const startDate = new Date(subscriptionData.start_date);
+        const endDate = new Date(subscriptionData.end_date);
+
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            return res.status(400).json({
+                error: "start_date and end_date must be valid ISO date strings"
+            });
+        }
+
+        if (endDate <= startDate) {
+            return res.status(400).json({
+                error: "end_date must be after start_date"
+            });
+        }
+
+        // Set default values for optional fields
+        const subscriptionPayload = {
+            user_id: parseInt(subscriptionData.user_id),
+            tag: subscriptionData.tag || 0,
+            question: subscriptionData.question || 0,
+            survey: subscriptionData.survey || 0,
+            participant_count: subscriptionData.participant_count || 0,
+            advanced_analysis: subscriptionData.advanced_analysis || false,
+            start_date: subscriptionData.start_date,
+            end_date: subscriptionData.end_date,
+            cost: subscriptionData.cost || 0,
+            package_id: subscriptionData.package_id || null, // null for custom packages
+        };
+
+        // Check if user already has an active subscription (optional business logic)
+        const { data: existingSubscription } = await supabase
+            .from("subscription")
+            .select("subscription_id, end_date")
+            .eq("user_id", subscriptionPayload.user_id)
+            .gte("end_date", new Date().toISOString())
+            .order("end_date", { ascending: false })
+            .limit(1);
+
+        // If user has active subscription, you might want to handle this
+        // For now, we'll just log it and continue
+        if (existingSubscription && existingSubscription.length > 0) {
+            console.log(`User ${subscriptionPayload.user_id} already has an active subscription ending at ${existingSubscription[0].end_date}`);
+        }
+
+        const { data, error } = await supabase
+            .from("subscription")
+            .insert(subscriptionPayload)
+            .select();
+
+        if (error) {
+            console.error("Error creating subscription:", error);
+            return res.status(500).json({
+                error: "Error creating subscription: " + error.message
+            });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(500).json({
+                error: "Subscription creation failed - no data returned"
+            });
+        }
+
+        res.status(201).json({
+            message: "Subscription created successfully",
+            subscription: data[0],
+            subscription_id: data[0].subscription_id || data[0].id
+        });
+
+    } catch (error) {
+        console.error("Server error:", error);
+        res.status(500).json({ error: "Server error: " + error.message });
+    }
+};
+
+// ✅ Create voucher usage record (FIXED VERSION)
+exports.createVoucherUsage = async (req, res) => {
+    try {
+        console.log("Received voucher usage data:", req.body);
+        const voucherUsageData = req.body;
+
+        // Validate required fields
+        if (!voucherUsageData.user_id || !voucherUsageData.voucher_id || !voucherUsageData.subscription_id) {
+            console.log("Missing required fields:", {
+                user_id: voucherUsageData.user_id,
+                voucher_id: voucherUsageData.voucher_id,
+                subscription_id: voucherUsageData.subscription_id
+            });
+            return res.status(400).json({
+                error: "user_id, voucher_id, and subscription_id are required"
+            });
+        }
+        let purchasedAt = new Date().toISOString();
+
+        // Validate discount_amount is a positive number
+        const discountAmount = parseFloat(voucherUsageData.discount_amount) || 0;
+        if (discountAmount < 0) {
+            return res.status(400).json({
+                error: "discount_amount must be a positive number"
+            });
+        }
+
+        // Prepare voucher usage payload
+        const voucherUsagePayload = {
+            user_id: parseInt(voucherUsageData.user_id),
+            voucher_id: voucherUsageData.voucher_id, // Keep as string (UUID)
+            subscription_id: parseInt(voucherUsageData.subscription_id),
+            purchased_at: purchasedAt,
+            discount_amount: discountAmount,
+        };
+
+        const { data, error } = await supabase
+            .from("voucher_used_info") // Make sure this matches your actual table name
+            .insert(voucherUsagePayload)
+            .select();
+
+        if (error) {
+            console.error("Error creating voucher usage record:", error);
+            return res.status(500).json({
+                error: "Error creating voucher usage record: " + error.message,
+                details: error
+            });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(500).json({
+                error: "Voucher usage record creation failed - no data returned"
+            });
+        }
+        res.status(201).json({
+            message: "Voucher usage recorded successfully",
+            voucher_usage: data[0],
+            voucher_used_id: data[0].id
+        });
+
+    } catch (error) {
+        console.error("Server error in createVoucherUsage:", error);
+        res.status(500).json({
+            error: "Server error: " + error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 };
