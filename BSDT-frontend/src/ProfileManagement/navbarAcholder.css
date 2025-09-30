@@ -10,11 +10,10 @@
   color: white;
   font-family: "Segoe UI", sans-serif;
   padding: 1rem 2rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); */
   z-index: 1000;
-  border-radius: 0 0 12px 12px;
-  gap:0.5rem;
- 
+  /* border-radius: 0 0 12px 12px;
+  gap:0.5rem; */
 }
 /* ===========================
    TOP SECTION

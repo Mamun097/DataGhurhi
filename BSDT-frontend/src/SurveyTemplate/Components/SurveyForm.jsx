@@ -282,7 +282,6 @@ const SurveyForm = ({
     }
 
     try {
-      let tokenToUse = bearerTokenString;
       try {
         const parsedToken = JSON.parse(bearerTokenString);
         if (parsedToken && typeof parsedToken === "object") {
@@ -420,7 +419,7 @@ const SurveyForm = ({
           <button
             onClick={handleUpdate}
             disabled={isLoading}
-            className="btn btn-outline-primary btn-sm me-2"
+            className="btn btn-outline-secondary btn-sm me-2"
           >
             {isLoading && actionType === "update" ? (
               <>
@@ -462,7 +461,7 @@ const SurveyForm = ({
             <button
               onClick={handlePublish}
               disabled={isLoading}
-              className="btn btn-outline-success btn-sm me-2"
+              className="btn btn-outline-secondary btn-sm me-2"
             >
               {isLoading && actionType === "publish" ? (
                 <>
@@ -488,11 +487,11 @@ const SurveyForm = ({
               className="btn btn-outline-info btn-sm me-2"
               title="Share survey link"
             >
-              <i className="bi bi-share"></i> {getLabel("Share Survey")}
+              <i className="bi bi-share"></i> {getLabel("Survey Link")}
             </button>
             <button
               onClick={() => setShowCollaborationModal(true)}
-              className="btn btn-outline-warning btn-sm me-2"
+              className="btn btn-outline-info btn-sm me-2"
               title="Manage collaborators"
             >
               <i className="bi bi-people"></i> {getLabel("Collaborate")}
@@ -505,12 +504,12 @@ const SurveyForm = ({
             />
             <button
               onClick={handleSurveyResponses}
-              className="btn btn-outline-info btn-sm me-2"
+              className="btn btn-outline-success btn-sm me-2"
             >
               <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
             </button>
             <button
-              className="btn btn-outline-secondary btn-sm me-2"
+              className="btn btn-outline-success btn-sm me-2"
               onClick={() => handlePreview()}
             >
               <i className="bi bi-eye"></i> {getLabel("Preview")}
