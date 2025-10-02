@@ -53,13 +53,11 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchUnitPrices = async () => {
         try {
-            const response = await apiClient.get('/api/admin/get-unit-price');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            const sortedPrices = (data.unitPrices || []).sort((a, b) => b.base_price_per_unit - a.base_price_per_unit);
-            setUnitPrices(data.unitPrices || []);
+            const data = await apiClient.get('/api/admin/get-unit-price');
+            // Handle both direct data and nested response structures
+            const unitPricesData = data.unitPrices || data.data?.unitPrices || data;
+            const sortedPrices = (Array.isArray(unitPricesData) ? unitPricesData : []).sort((a, b) => b.base_price_per_unit - a.base_price_per_unit);
+            setUnitPrices(sortedPrices);
         } catch (error) {
             console.error('Error fetching unit prices:', error);
             // Mock data for demonstration
@@ -73,15 +71,15 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
     const fetchValidityPeriods = async () => {
         try {
-            const response = await apiClient.get('/api/admin/get-validity-price-multiplier');
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
-            const sortedPeriods = (data.validityPeriods || []).sort((a, b) => a.days - b.days);
+            const data = await apiClient.get('/api/admin/get-validity-price-multiplier');
+            // Handle both direct data and nested response structures
+            const validityPeriodsData = data.validityPeriods || data.data?.validityPeriods || data;
+            const sortedPeriods = (Array.isArray(validityPeriodsData) ? validityPeriodsData : []).sort((a, b) => a.days - b.days);
             setValidityPeriods(sortedPeriods);
         } catch (error) {
             console.error('Error fetching validity periods:', error);
+            // Set empty array on error
+            setValidityPeriods([]);
         }
     };
 
@@ -108,14 +106,26 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
 
         try {
             setIsSubmitting(true);
-            const response = await apiClient.post(`/api/admin/update-unit-price/${selectedUnitPrice.id}`, {
+            const requestData = {
                 base_price_per_unit: parseFloat(unitPriceFormData.base_price_per_unit)
-            });
+            };
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Try different HTTP methods for updates
+            let response;
+            try {
+                // First try PUT
+                response = await apiClient.put(`/api/admin/update-unit-price/${selectedUnitPrice.id}`, requestData);
+            } catch (putError) {
+                try {
+                    // If PUT fails, try PATCH
+                    response = await apiClient.patch(`/api/admin/update-unit-price/${selectedUnitPrice.id}`, requestData);
+                } catch (patchError) {
+                    // If PATCH fails, try POST
+                    response = await apiClient.post(`/api/admin/update-unit-price/${selectedUnitPrice.id}`, requestData);
+                }
             }
 
+            // Update local state
             setUnitPrices(unitPrices.map(item =>
                 item.id === selectedUnitPrice.id
                     ? { ...item, base_price_per_unit: parseFloat(unitPriceFormData.base_price_per_unit) }
@@ -126,7 +136,22 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             setSelectedUnitPrice(null);
 
         } catch (error) {
-            alert(`Failed to update unit price: ${error.message}`);
+            console.error('Error updating unit price:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            let errorMessage = 'Unknown error';
+            if (error.response) {
+                errorMessage = `Server error (${error.response.status}): ${error.response.data?.message || error.message}`;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            alert(getLabel(`Failed to update unit price: ${errorMessage}`));
         } finally {
             setIsSubmitting(false);
         }
@@ -215,39 +240,93 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
             };
 
             if (showEditValidityModal) {
-
-                // Demo API call for update
-                const response = await apiClient.post(`/api/admin/update-validity/${selectedValidity.id}`, validityData);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Try different HTTP methods for update
+                let response;
+                try {
+                    // First try PUT
+                    response = await apiClient.put(`/api/admin/update-validity/${selectedValidity.id}`, validityData);
+                } catch (putError) {
+                    try {
+                        // If PUT fails, try PATCH
+                        response = await apiClient.patch(`/api/admin/update-validity/${selectedValidity.id}`, validityData);
+                    } catch (patchError) {
+                        // If PATCH fails, try POST
+                        response = await apiClient.post(`/api/admin/update-validity/${selectedValidity.id}`, validityData);
+                    }
                 }
 
+                // Update local state
                 setValidityPeriods(validityPeriods.map(item =>
                     item.id === selectedValidity.id ? { ...item, ...validityData } : item
                 ).sort((a, b) => a.days - b.days));
 
                 setShowEditValidityModal(false);
+                setSelectedValidity(null);
 
-            } else if(showAddValidityModal){
-                // Demo API call for create
+            } else if (showAddValidityModal) {
+                // Create new validity period
                 const response = await apiClient.post('/api/admin/create-validity', validityData);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                console.log('Create response:', response); // Debug log
+
+                // Handle different response structures more robustly
+                let newValidity;
+                if (response && typeof response === 'object') {
+                    // If response has the validity data directly
+                    if (response.id) {
+                        newValidity = { ...response };
+                    }
+                    // If response has nested data
+                    else if (response.data && response.data.id) {
+                        newValidity = { ...response.data };
+                    }
+                    // If response has validity property
+                    else if (response.validity && response.validity.id) {
+                        newValidity = { ...response.validity };
+                    }
+                    // If response only has success message, create object with timestamp ID
+                    else {
+                        newValidity = {
+                            id: Date.now(),
+                            ...validityData
+                        };
+                    }
+                } else {
+                    // Fallback: create object with timestamp ID
+                    newValidity = {
+                        id: Date.now(),
+                        ...validityData
+                    };
                 }
 
-                // Add to local state
-                const newValidity = { id: Date.now(), ...validityData };
-                setValidityPeriods([...validityPeriods, newValidity].sort((a, b) => a.days - b.days));
+                // Ensure the new validity has all required fields
+                newValidity = { ...validityData, ...newValidity };
+
+                // Update state
+                const updatedValidityPeriods = [...validityPeriods, newValidity].sort((a, b) => a.days - b.days);
+                setValidityPeriods(updatedValidityPeriods);
 
                 setShowAddValidityModal(false);
+                setSelectedValidity(null);
             }
 
-            setSelectedValidity(null);
-
         } catch (error) {
-            alert(`Failed to save validity: ${error.message}`);
+            console.error('Error saving validity:', error);
+            console.error('Error details:', {
+                message: error.message,
+                response: error.response,
+                status: error.response?.status,
+                data: error.response?.data
+            });
+
+            let errorMessage = 'Unknown error';
+            if (error.response) {
+                errorMessage = `Server error (${error.response.status}): ${error.response.data?.message || error.message}`;
+            } else if (error.message) {
+                errorMessage = error.message;
+            }
+
+            alert(getLabel(`Failed to save validity: ${errorMessage}`));
         } finally {
             setIsSubmitting(false);
         }
@@ -259,19 +338,16 @@ const AdminCustomPackageCustomizer = ({ getLabel }) => {
         try {
             setIsSubmitting(true);
 
-            // Demo API call for delete
-            const response = await apiClient.delete(`/api/admin/delete-validity/${selectedValidity.id}`);
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            // Delete validity period
+            await apiClient.delete(`/api/admin/delete-validity/${selectedValidity.id}`);
 
             setValidityPeriods(validityPeriods.filter(item => item.id !== selectedValidity.id));
             setShowDeleteValidityModal(false);
             setSelectedValidity(null);
 
         } catch (error) {
-            alert(`Failed to delete validity: ${error.message}`);
+            console.error('Error deleting validity:', error);
+            alert(getLabel(`Failed to delete validity: ${error.message || 'Unknown error'}`));
         } finally {
             setIsSubmitting(false);
         }

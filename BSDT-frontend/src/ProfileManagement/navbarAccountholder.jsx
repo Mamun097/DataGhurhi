@@ -133,35 +133,34 @@ const NavbarAcholder = ({
           },
         });
 
-      navigate("/search-results", {
-        state: {
-          results: res.data.results,
-          query: searchQuery,
-        },
-      });
-    } catch (err) {
-      console.error("Search failed:", err);
-    }
+        navigate("/search-results", {
+          state: {
+            results: res.data.results,
+            query: searchQuery,
+          },
+        });
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
     }
   };
 
-return (
-  <motion.nav className="NavbarAcholderContainer">
-    <div className="NavbarAcholderTopSection">
-      
+  return (
+    <motion.nav className="NavbarAcholderContainer">
+      <div className="NavbarAcholderTopSection">
         <div className="NavbarAcholderLogoSection">
           <div className="NavbarAcholderLogoItem">
-            <img src={logo_dataghurhi} alt="DataGhurhi logo"  
-            onClick={() => navigate("/")} />
+            <img
+              src={logo_dataghurhi}
+              alt="DataGhurhi logo"
+              onClick={() => navigate("/")}
+            />
             <span>DataGhurhi</span>
           </div>
         </div>
-      
 
+        {/* Search + Language inline */}
 
-      {/* Search + Language inline */}
-
-      
         {/* Language Switch now inline with search */}
         <div className="NavbarAcholderLangSwitchInline">
           <label className="NavbarAcholderSwitch">
@@ -180,132 +179,132 @@ return (
               বাংলা
             </span>
           </div>
-      </div>
-
-
-      <div className="NavbarAcholderSearchSection">
-        <select
-          className="NavbarAcholderSearchFilter"
-          value={searchFilter}
-          onChange={(e) => setSearchFilter(e.target.value)}
-        >
-          <option value="all">{getLabel("All")}</option>
-          <option value="project">{getLabel("Project")}</option>
-          <option value="survey">{getLabel("Survey")}</option>
-          <option value="account">{getLabel("Account")}</option>
-        </select>
-
-        <div className="NavbarAcholderSearchBox">
-          <input
-            type="text"
-            placeholder={getLabel(
-              "Search for projects, surveys, accounts..."
-            )}
-            className="NavbarAcholderSearchInput"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          />
-          <FaSearch
-            className="NavbarAcholderSearchIcon"
-            onClick={handleSearch}
-          />
         </div>
-     
 
+        <div className="NavbarAcholderSearchSection">
+          <select
+            className="NavbarAcholderSearchFilter"
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+          >
+            <option value="all">{getLabel("All")}</option>
+            <option value="project">{getLabel("Project")}</option>
+            <option value="survey">{getLabel("Survey")}</option>
+            <option value="account">{getLabel("Account")}</option>
+          </select>
 
-    {/* NAVIGATION MENU */}
-    <ul
-      className={`NavbarAcholderNavList ${
-        isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
-      }`}
-    >
-      <li onClick={() => isMobile && setMenuOpen(false)}>
-        <a href="/dashboard">
-          <FaHome className="NavbarAcholderIcon" />
-          <span>{getLabel("Home")}</span>
-        </a>
-      </li>
+          <div className="NavbarAcholderSearchBox">
+            <input
+              type="text"
+              placeholder={getLabel(
+                "Search for projects, surveys, accounts..."
+              )}
+              className="NavbarAcholderSearchInput"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <FaSearch
+              className="NavbarAcholderSearchIcon"
+              onClick={handleSearch}
+            />
+          </div>
 
-      <li onClick={() => isMobile && setMenuOpen(false)}>
-        <a href="/about">
-          <FaInfoCircle className="NavbarAcholderIcon" />
-          <span>{getLabel("About")}</span>
-        </a>
-      </li>
+          {/* NAVIGATION MENU */}
+          <ul
+            className={`NavbarAcholderNavList ${
+              isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
+            }`}
+          >
+            <li onClick={() => isMobile && setMenuOpen(false)}>
+              <a href="/dashboard">
+                <FaHome className="NavbarAcholderIcon" />
+                <span>{getLabel("Home")}</span>
+              </a>
+            </li>
 
-      <li onClick={() => isMobile && setMenuOpen(false)}>
-        <a href="/faq">
-          <FaQuestionCircle className="NavbarAcholderIcon" />
-          <span>{getLabel("FAQ")}</span>
-        </a>
-      </li>
+            <li onClick={() => isMobile && setMenuOpen(false)}>
+              <a href="/about">
+                <FaInfoCircle className="NavbarAcholderIcon" />
+                <span>{getLabel("About")}</span>
+              </a>
+            </li>
 
-      {!isAdmin && userType !== "admin" && (
-        <li onClick={() => isMobile && setMenuOpen(false)}>
-          <a href="/analysis">
-            <FaChartBar className="NavbarAcholderIcon" />
-            <span>{language === "English" ? "Analysis" : "বিশ্লেষণ"}</span>
-          </a>
-        </li>
-      )}
-</ul>
-      {/* Profile dropdown always last */}
-     
-       <div className="NavbarAcholderProfile">
-  <div className="NavbarAcholderAvatarWrap">
-    <IconButton
-      onClick={(e) => setAnchorEl(e.currentTarget)}
-      sx={{ p: 0 }}
-    >
-      {profilePicUrl ? (
-        <Avatar alt={name} src={profilePicUrl} />
-      ) : (
-        <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
-      )}
-    </IconButton>
+            <li onClick={() => isMobile && setMenuOpen(false)}>
+              <a href="/faq">
+                <FaQuestionCircle className="NavbarAcholderIcon" />
+                <span>{getLabel("FAQ")}</span>
+              </a>
+            </li>
 
-    <div className="NavbarAcholderUserName">
-      {name?.trim().split(" ").slice(-1)[0] || "User"}
-    </div>
-  </div>
+            {!isAdmin && userType !== "admin" && (
+              <li onClick={() => isMobile && setMenuOpen(false)}>
+                <a href="/analysis">
+                  <FaChartBar className="NavbarAcholderIcon" />
+                  <span>
+                    {language === "English" ? "Analysis" : "বিশ্লেষণ"}
+                  </span>
+                </a>
+              </li>
+            )}
+          </ul>
+          {/* Profile dropdown always last */}
 
-  <Menu
-    anchorEl={anchorEl}
-    open={open}
-    onClose={() => setAnchorEl(null)}
-    onClick={() => setAnchorEl(null)}
-    PaperProps={{
-      elevation: 3,
-      sx: {
-        mt: 1.5,
-        borderRadius: "12px",
-        filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
-      },
-    }}
-  >
-    <MenuItem onClick={() => (window.location.href = "/dashboard")}>
-      <IoPersonCircle style={{ marginRight: "8px" }} />
-      {getLabel("Go to Profile")}
-    </MenuItem>
-    <MenuItem onClick={logOut}>
-      <FaSignOutAlt style={{ marginRight: "8px" }} />
-      {getLabel("Logout")}
-    </MenuItem>
-  </Menu>
-</div>
+          <div className="NavbarAcholderProfile">
+            <div className="NavbarAcholderAvatarWrap">
+              <IconButton
+                onClick={(e) => setAnchorEl(e.currentTarget)}
+                sx={{ p: 0 }}
+              >
+                {profilePicUrl ? (
+                  <Avatar alt={name} src={profilePicUrl} />
+                ) : (
+                  <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
+                )}
+              </IconButton>
 
-         </div>
+              <div className="NavbarAcholderUserName">
+                {name?.trim().split(" ").slice(-1)[0] || "User"}
+              </div>
+            </div>
 
-     {isMobile && (
-      <button className="NavbarAcholderHamburger" onClick={() => setMenuOpen(!menuOpen)}>
-        ☰
-      </button>
-    )}   
-     </div>
-  </motion.nav> 
-);
+            <Menu
+              anchorEl={anchorEl}
+              open={open}
+              onClose={() => setAnchorEl(null)}
+              onClick={() => setAnchorEl(null)}
+              PaperProps={{
+                elevation: 3,
+                sx: {
+                  mt: 1.5,
+                  borderRadius: "12px",
+                  filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
+                },
+              }}
+            >
+              <MenuItem onClick={() => (window.location.href = "/dashboard")}>
+                <IoPersonCircle style={{ marginRight: "8px" }} />
+                {getLabel("Go to Profile")}
+              </MenuItem>
+              <MenuItem onClick={logOut}>
+                <FaSignOutAlt style={{ marginRight: "8px" }} />
+                {getLabel("Logout")}
+              </MenuItem>
+            </Menu>
+          </div>
+        </div>
 
+        {isMobile && (
+          <button
+            className="NavbarAcholderHamburger"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            ☰
+          </button>
+        )}
+      </div>
+    </motion.nav>
+  );
 };
 
 export default NavbarAcholder;

@@ -11,6 +11,7 @@ import "./Dashboard.css";
 import "./PremiumFeatures/PremiumAdBanner.css";
 import "./PremiumFeatures/PremiumPackagesModal.css";
 import "./AdminComponents/AdminDashboard.css";
+import "./AdminComponents/CouponManagement.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
@@ -18,6 +19,8 @@ import ProjectTab from "./components/projectComponent";
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
 import apiClient from "../api";
+
+import CouponManagement from "./AdminComponents/CouponManagement";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -60,7 +63,7 @@ const Dashboard = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-//  console.log(localStorage.getItem("user_id"));
+  //  console.log(localStorage.getItem("user_id"));
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
@@ -157,7 +160,7 @@ const Dashboard = () => {
       "Profile Link",
       "Religion",
       "Working Place",
-     "Create a New Project",
+      "Create a New Project",
       "Existing Projects",
       "Filter by: ",
       "All",
@@ -192,8 +195,6 @@ const Dashboard = () => {
       "Survey Creation Growth Rate",
       "This Month",
       "Last Month",
-
- 
       "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
@@ -203,8 +204,6 @@ const Dashboard = () => {
       "Tags",
       "Questions",
       "Surveys",
-
-  
       "Choose Your Premium Package",
       "Unlock Powerful AI Features",
       "AI Survey Generation",
@@ -213,9 +212,9 @@ const Dashboard = () => {
       "Generate relevant questions based on your research goals",
       "Automatic Tagging",
       "Organize questions with intelligent tagging system",
-   
+
       "Most Popular",
-   
+
       "Build Your Custom Package",
       "Select the items you need and choose validity period",
       "Question Tags",
@@ -241,7 +240,7 @@ const Dashboard = () => {
       "AI Survey Template Generation",
       "Smart Question Generation",
       "Automatic Question Tagging",
-  
+
       "Survey",
       "Question",
       "Tag",
@@ -259,7 +258,7 @@ const Dashboard = () => {
       "Price Multiplier",
       "Edit Unit Price",
       "Base Price Per Unit",
-      
+
       "Collaborated Surveys",
     ];
 
@@ -500,9 +499,12 @@ const Dashboard = () => {
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get("/api/collaborator/all-invitations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(
+        "/api/collaborator/all-invitations",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
         console.log("Collaboration Requests:", response.data.invitations);
@@ -512,13 +514,13 @@ const Dashboard = () => {
     }
   }, []);
 
-  
   // Get tabs based on user type
   const getTabs = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard" },
         { label: "Customize Packages", key: "customizepackages" },
+        { label: "Manage Coupons", key: "managecoupons" },
         { label: "My Profile", key: "editprofile" },
       ];
     } else {
@@ -526,60 +528,59 @@ const Dashboard = () => {
         { label: "My Profile", key: "editprofile" },
         { label: "Projects", key: "projects" },
         { label: "Collaborated Projects", key: "collaboratedprojects" },
-        { label: "Collaborated Surveys", key: "collaboratedsurveys"},
+        { label: "Collaborated Surveys", key: "collaboratedsurveys" },
         { label: "Question Bank", key: "questionbank" },
         { label: "Premium Packages", key: "premiumpackages" },
       ];
     }
   };
-const [showPasswordFields, setShowPasswordFields] = useState(false);
-const [passwordValues, setPasswordValues] = useState({
-  old_password: "",
-  new_password: "",
-});
-const handlePasswordChange = (e) => {
-  setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
-};
-
-const togglePasswordFields = () => {
-  setShowPasswordFields((prev) => !prev);
-};
-const handleSavePassword = async () => {
-  const { old_password, new_password } = passwordValues;
-
-  if (!old_password || !new_password) {
-    alert("Please fill out both the old and new password fields.");
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem("token");
-    // Example POST request to backend API
-    const response = await apiClient.put("/api/profile/update-password", {
-
-      oldPassword: old_password,
-      newPassword: new_password,
-    },
-  {
-    
-      headers: { Authorization: `Bearer ${token}`,
-     
-  },
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [passwordValues, setPasswordValues] = useState({
+    old_password: "",
+    new_password: "",
   });
+  const handlePasswordChange = (e) => {
+    setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
+  };
 
-    if (response.data.success) {
-      alert("Password updated successfully.");
-      setShowPasswordFields(false);
-      setPasswordValues({ old_password: "", new_password: "" });
-    } else {
-      alert(response.data.message || "Password update failed.");
+  const togglePasswordFields = () => {
+    setShowPasswordFields((prev) => !prev);
+  };
+  const handleSavePassword = async () => {
+    const { old_password, new_password } = passwordValues;
+
+    if (!old_password || !new_password) {
+      alert("Please fill out both the old and new password fields.");
+      return;
     }
-  } catch (error) {
-    console.error("Password change error:", error);
-    alert("An error occurred while changing the password.");
-  }
-};
 
+    try {
+      const token = localStorage.getItem("token");
+      // Example POST request to backend API
+
+      const response = await apiClient.put(
+        "/api/profile/update-password",
+        {
+          oldPassword: old_password,
+          newPassword: new_password,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      if (response.data.success) {
+        alert("Password updated successfully.");
+        setShowPasswordFields(false);
+        setPasswordValues({ old_password: "", new_password: "" });
+      } else {
+        alert(response.data.message || "Password update failed.");
+      }
+    } catch (error) {
+      console.error("Password change error:", error);
+      alert("An error occurred while changing the password.");
+    }
+  };
 
   return (
     <div>
@@ -589,7 +590,7 @@ const handleSavePassword = async () => {
         isAdmin={isAdmin}
         userType={userType}
       />
-      
+
       <div
         className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
       >
@@ -660,6 +661,11 @@ const handleSavePassword = async () => {
               <AdminPackageCustomizer getLabel={getLabel} />
             )}
 
+            {/* Admin Coupon Management */}
+            {isAdmin && activeTab === "managecoupons" && (
+              <CouponManagement getLabel={getLabel} />
+            )}
+
             {/* Profile - Common for both admin and normal users */}
             {activeTab === "editprofile" && (
               <div className="edit-profile-content">
@@ -684,9 +690,7 @@ const handleSavePassword = async () => {
                     "Home Address",
                     "Contact No",
                     "Profile Link",
-                    "Religion"
-                    
-              
+                    "Religion",
                   ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
@@ -696,7 +700,7 @@ const handleSavePassword = async () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -718,7 +722,7 @@ const handleSavePassword = async () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -735,7 +739,6 @@ const handleSavePassword = async () => {
                     </div>
                   ))}
                 </div>
-
                 
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
@@ -744,14 +747,18 @@ const handleSavePassword = async () => {
                 )}
 
                 <div className="change-password-section">
-                  <button className="change-password-toggle-btn" onClick={togglePasswordFields}>
-                    {showPasswordFields ? getLabel("Cancel Password Change") : getLabel("Change Password")}
+                  <button
+                    className="change-password-toggle-btn"
+                    onClick={togglePasswordFields}
+                  >
+                    {showPasswordFields
+                      ? getLabel("Cancel Password Change")
+                      : getLabel("Change Password")}
                   </button>
 
                   {showPasswordFields && (
                     <div className="password-fields">
                       <div>
-                      
                         <input
                           type="password"
                           name="old_password"
@@ -762,7 +769,6 @@ const handleSavePassword = async () => {
                         />
                       </div>
                       <div>
-                       
                         <input
                           type="password"
                           name="new_password"
@@ -772,13 +778,15 @@ const handleSavePassword = async () => {
                           required
                         />
                       </div>
-                      <button className="save-password-btn" onClick={handleSavePassword}>
+                      <button
+                        className="save-password-btn"
+                        onClick={handleSavePassword}
+                      >
                         {getLabel("Save Password")}
                       </button>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
@@ -813,7 +821,6 @@ const handleSavePassword = async () => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-                
               />
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (
