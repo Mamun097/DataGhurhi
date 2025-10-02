@@ -1,19 +1,45 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "../CSS/SurveySettingsDrawer.css";
 
 const SurveySettingsDrawer = ({
   isOpen,
   onClose,
-  collectResponse,
-  endingDate,
+  collectResponse: initialCollectResponse,
+  endingDate: initialEndingDate,
   onSave,
 }) => {
+  const [pendingCollectResponse, setPendingCollectResponse] = useState(
+    initialCollectResponse
+  );
+  const [pendingEndingDate, setPendingEndingDate] = useState(
+    initialEndingDate || ""
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setPendingCollectResponse(initialCollectResponse);
+      setPendingEndingDate(initialEndingDate || "");
+    }
+  }, [isOpen, initialCollectResponse, initialEndingDate]);
+
   const handleToggleChange = (isToggled) => {
-    onSave({ collectResponse: isToggled, endingDate });
+    setPendingCollectResponse(isToggled);
   };
 
   const handleDateChange = (newDate) => {
-    onSave({ collectResponse, endingDate: newDate });
+    setPendingEndingDate(newDate);
+  };
+
+  const handleSave = () => {
+    onSave({
+      collectResponse: pendingCollectResponse,
+      endingDate: pendingEndingDate,
+    });
+    onClose();
+  };
+
+  const handleCancel = () => {
+    onClose();
   };
 
   if (!isOpen) {
@@ -22,11 +48,11 @@ const SurveySettingsDrawer = ({
 
   return (
     <>
-      <div className="drawer-overlay" onClick={onClose}></div>
+      <div className="drawer-overlay" onClick={handleCancel}></div>
       <div className={`drawer-container ${isOpen ? "open" : ""}`}>
         <div className="drawer-header">
           <h4 className="drawer-title">Survey Settings</h4>
-          <button onClick={onClose} className="drawer-close-btn">
+          <button onClick={handleCancel} className="drawer-close-btn">
             &times;
           </button>
         </div>
@@ -41,14 +67,14 @@ const SurveySettingsDrawer = ({
                 type="checkbox"
                 role="switch"
                 id="collectResponseToggle"
-                checked={collectResponse}
+                checked={pendingCollectResponse}
                 onChange={(e) => handleToggleChange(e.target.checked)}
               />
               <label
                 className="form-check-label"
                 htmlFor="collectResponseToggle"
               >
-                {collectResponse ? "On" : "Off"}
+                {pendingCollectResponse ? "On" : "Off"}
               </label>
             </div>
             <small className="form-text text-muted">
@@ -64,7 +90,7 @@ const SurveySettingsDrawer = ({
               type="datetime-local"
               id="endingDateInput"
               className="form-control"
-              value={endingDate || ""}
+              value={pendingEndingDate}
               onChange={(e) => handleDateChange(e.target.value)}
             />
             <small className="form-text text-muted">
@@ -74,8 +100,11 @@ const SurveySettingsDrawer = ({
           </div>
         </div>
         <div className="drawer-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
-            Close
+          <button className="btn btn-secondary" onClick={handleCancel}>
+            Cancel
+          </button>
+          <button className="btn btn-primary" onClick={handleSave}>
+            Save Changes
           </button>
         </div>
       </div>

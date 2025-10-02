@@ -82,7 +82,7 @@ const SurveyForm = ({
   const [showShareModal, setShowShareModal] = useState(false);
   const [responseCount, setResponseCount] = useState(null);
   const [collectResponse, setCollectResponse] = useState(true); // Default to on
-  const [endingDate, setEndingDate] = useState(""); // Default to no date
+  const [endingDate, setEndingDate] = useState(null); // Default to no date
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
 
   const labelsToTranslate = useMemo(
@@ -463,16 +463,18 @@ const SurveyForm = ({
         collect_response: collectResponse,
         ending_date: endingDate || null,
       };
+
       await apiClient.put(`/api/surveytemplate/settings/${survey_id}`, payload);
+
       setCollectResponse(collectResponse);
       setEndingDate(endingDate);
+
       toast.success("Response settings saved successfully!");
     } catch (error) {
       console.error("Error saving survey settings:", error);
       toast.error("Failed to save settings. Please try again.");
     }
   };
-
   const handleSave = () =>
     sendSurveyData(
       "/api/surveytemplate/save",
