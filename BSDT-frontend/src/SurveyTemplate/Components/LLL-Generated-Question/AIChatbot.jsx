@@ -279,7 +279,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
             </div>
 
             {message.options && message.options.length > 0 && (
-              <div className="options-container">
+              <div className="options-container-chatbot">
                 {message.options.map(option => (
                   <button
                     key={option.id}

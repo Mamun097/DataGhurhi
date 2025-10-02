@@ -1,0 +1,3 @@
+Format setting: StatisticalAnalysisTool.jsx (Line-684)
+Then, at 1382 line, send those format settings to individual test 
+individual test files has that default format checkbox, modify there
