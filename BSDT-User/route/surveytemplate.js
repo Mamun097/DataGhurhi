@@ -7,5 +7,6 @@ router.put('/', jwtAuthMiddleware, surveyTemplateController.createSurveyForm);
 router.put('/save', jwtAuthMiddleware, surveyTemplateController.saveSurveyForm);
 router.delete('/:survey_id', jwtAuthMiddleware, surveyTemplateController.deleteSurveyForm);
 router.get('/:survey_id', jwtAuthMiddleware, surveyTemplateController.getSurvey);
+router.get('/stream/:survey_id', jwtAuthMiddleware, surveyTemplateController.getResponseCount)
 
 module.exports = router;

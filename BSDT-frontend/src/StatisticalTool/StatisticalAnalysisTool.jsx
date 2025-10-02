@@ -2,6 +2,7 @@ import "katex/dist/katex.min.css";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+
 import AncovaOptions from "./StatisticalTools/AncovaOptions";
 import AndersonDarlingOptions from "./StatisticalTools/AndersonDarlingOptions";
 import AnovaOptions from "./StatisticalTools/AnovaOptions";
@@ -42,6 +43,7 @@ const StatisticalAnalysisTool = () => {
   useEffect(() => {
     localStorage.setItem("language", language);
   }, [language]);
+
 
   const t = translations[language];
   const [isPreprocessed, setIsPreprocessed] = useState(
@@ -515,6 +517,7 @@ const StatisticalAnalysisTool = () => {
                           type="button"
                           className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
                           onClick={handlePreviewClick}
+
                         >
                           {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
                         </button>
@@ -719,6 +722,7 @@ const StatisticalAnalysisTool = () => {
                                       setSelectedColumns((prev) =>
                                         prev.filter((c) => c !== col)
                                       )
+
                                     }
                                   >
                                     ×
