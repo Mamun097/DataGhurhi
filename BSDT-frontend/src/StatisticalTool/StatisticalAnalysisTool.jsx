@@ -316,6 +316,9 @@ const StatisticalAnalysisTool = () => {
     const uploadContainerRef = useRef(null);
     const [fileURL, setFileURL] = useState('');
     const userId = localStorage.getItem("user_id");
+
+    // Generate Again Functionality
+    const [isFirstTimeAnalysis, setIsFirstTimeAnalysis] = useState(true);
     useEffect(() => {
         const stored = sessionStorage.getItem("fileURL") || '';
         if (stored) setFileURL(stored);
@@ -481,14 +484,14 @@ const StatisticalAnalysisTool = () => {
 
     const [imageFormat, setImageFormat] = useState('png');
     const [useDefaultSettings, setUseDefaultSettings] = useState(true);
-    const [labelFontSize, setLabelFontSize] = useState(36);
-    const [tickFontSize, setTickFontSize] = useState(16);
-    const [imageQuality, setImageQuality] = useState(90);
-    const [imageSize, setImageSize] = useState('800x600');
-    const [colorPalette, setColorPalette] = useState('deep');
-    const [barWidth, setBarWidth] = useState(0.8);
-    const [boxWidth, setBoxWidth] = useState(0.8);
-    const [violinWidth, setViolinWidth] = useState(0.8);
+    const [labelFontSize, setLabelFontSize] = useState(86);
+    const [tickFontSize, setTickFontSize] = useState(18);
+    const [imageQuality, setImageQuality] = useState(100);
+    const [imageSize, setImageSize] = useState('1280x720');
+    const [colorPalette, setColorPalette] = useState('husl');
+    const [barWidth, setBarWidth] = useState(0.5);
+    const [boxWidth, setBoxWidth] = useState(0.5);
+    const [violinWidth, setViolinWidth] = useState(0.5);
     const [detailsModalVisible, setDetailsModalVisible] = useState(false);
     //
     const [histogramBins, setHistogramBins] = useState(30);
@@ -625,6 +628,8 @@ const StatisticalAnalysisTool = () => {
         }
 
         setIsAnalyzing(true);
+        setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
+
         const langCode = language === 'বাংলা' ? 'bn' : 'en';
         const isHeatmap4x4 = heatmapSize === '4x4';
 
@@ -803,8 +808,10 @@ const StatisticalAnalysisTool = () => {
         })
             .then(res => res.json())
             .then(data => {
-                setResults(data);
+                // Add timestamp to force image reload
+                setResults({ ...data, _timestamp: Date.now() });
                 setIsAnalyzing(false);
+                setIsFirstTimeAnalysis(false);
             })
             .catch(err => {
                 setErrorMessage('Error analyzing: ' + err);
@@ -832,6 +839,8 @@ const StatisticalAnalysisTool = () => {
         setSelectedColumns([]);
         setIsPreprocessed(false);
         setIsSurveyData(false);
+        setIsFirstTimeAnalysis(true);
+
         if (fileInputRef.current) {
             fileInputRef.current.value = '';
         }
@@ -1377,6 +1386,8 @@ const StatisticalAnalysisTool = () => {
 
                                                     {testType === 'kruskal' && (
                                                         <KruskalOptions
+                                                            isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
                                                             language={language}
                                                             setLanguage={setLanguage}
                                                             imageFormat={imageFormat}
@@ -2041,42 +2052,39 @@ const StatisticalAnalysisTool = () => {
                                     </div>
                                 </div>
                             ) : (
-                                <AnalysisResults
-                                    handleSubmit={handleSubmit}
-                                    user_id={userId}
-                                    results={results}
-                                    testType={testType}
-                                    columns={[column1, column2, column3]}
-                                    language={language}
-                                    setLanguage={setLanguage}
-                                    imageFormat={imageFormat}
-                                    setImageFormat={setImageFormat}
-                                    useDefaultSettings={useDefaultSettings}
-                                    setUseDefaultSettings={setUseDefaultSettings}
-                                    labelFontSize={labelFontSize}
-                                    setLabelFontSize={setLabelFontSize}
-                                    tickFontSize={tickFontSize}
-                                    setTickFontSize={setTickFontSize}
-                                    imageQuality={imageQuality}
-                                    setImageQuality={setImageQuality}
-                                    imageSize={imageSize}
-                                    setImageSize={setImageSize}
-                                    colorPalette={colorPalette}
-                                    setColorPalette={setColorPalette}
-                                    barWidth={barWidth}
-                                    setBarWidth={setBarWidth}
-                                    boxWidth={boxWidth}
-                                    setBoxWidth={setBoxWidth}
-                                    violinWidth={violinWidth}
-                                    setViolinWidth={setViolinWidth}
+                                    <AnalysisResults
+                                        handleSubmit={handleSubmit}
+                                        user_id={userId}
+                                        results={results}
+                                        testType={testType}
+                                        columns={[column1, column2, column3]}
+                                        language={language}
+                                        setLanguage={setLanguage}
+                                        imageFormat={imageFormat}
+                                        setImageFormat={setImageFormat}
+                                        useDefaultSettings={useDefaultSettings}
+                                        setUseDefaultSettings={setUseDefaultSettings}
+                                        labelFontSize={labelFontSize}
+                                        setLabelFontSize={setLabelFontSize}
+                                        tickFontSize={tickFontSize}
+                                        setTickFontSize={setTickFontSize}
+                                        imageQuality={imageQuality}
+                                        setImageQuality={setImageQuality}
+                                        imageSize={imageSize}
+                                        setImageSize={setImageSize}
+                                        colorPalette={colorPalette}
+                                        setColorPalette={setColorPalette}
+                                        barWidth={barWidth}
+                                        setBarWidth={setBarWidth}
+                                        boxWidth={boxWidth}
+                                        setBoxWidth={setBoxWidth}
+                                        violinWidth={violinWidth}
+                                        setViolinWidth={setViolinWidth}
 
-                                    t={t}
-                                    filename={fileName}
+                                        t={t}
+                                        filename={fileName}
+                                    />
 
-
-
-
-                                />
                             )}
 
                         </div>
@@ -2174,6 +2182,10 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
         if (!results) {
             return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
         }
+
+        // ADD THIS: Generate cache-busting parameter
+        const cacheBuster = results._timestamp || Date.now();
+
         const handleSaveResult = async () => {
             console.log('Saving result...');
             try {
@@ -2212,8 +2224,6 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
                         {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
                     </button>
                 </div>
-
-
 
                 {columns && columns[0] && (
                     <p className="mb-3">
@@ -2280,15 +2290,17 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
 
                         <div className="grid grid-cols-1 gap-6">
                             {results.image_paths.map((path, index) => {
+                                // ADD CACHE-BUSTING TO BOTH IMAGE AND DOWNLOAD URLs
+                                const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
+
                                 const handleDownload = async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
+                                        const response = await fetch(imageUrl);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
                                         link.href = url;
 
-                                        // Extract filename from path or create a default name
                                         const filename = path.split('/').pop() || `${t.kruskalTitle}_visualization_${index + 1}.png`;
                                         link.download = filename;
 
@@ -2303,10 +2315,10 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
                                 };
 
                                 return (
-                                    <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <div key={`${index}-${cacheBuster}`} className="bg-white rounded-lg shadow-md p-4">
                                         <div className="relative">
                                             <img
-                                                src={`http://127.0.0.1:8000/${path}`}
+                                                src={imageUrl}
                                                 alt={`${t.kruskalTitle} visualization ${index + 1}`}
                                                 className="w-full h-auto object-contain"
                                             />
