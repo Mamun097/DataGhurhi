@@ -38,7 +38,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV=/home/m/Desktop/DataGhurhi/BSDT-statistical-analysis/venv
+VIRTUAL_ENV=/home/tawhidumar/codes/DataGhurhi/BSDT-statistical-analysis/venv
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"
