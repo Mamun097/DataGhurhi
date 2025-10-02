@@ -55,7 +55,7 @@ exports.saveSurveyForm = async (req, res) => {
 
 exports.createSurveyForm = async (req, res) => {
   try {
-    const { survey_id, project_id, survey_template, title, response_user_logged_in_status , shuffle_questions} = req.body;
+    const { survey_id, project_id, survey_template, title, response_user_logged_in_status , shuffle_questions, collect_response, ending_date} = req.body;
     const user_id = req.jwt.id;
     
     // Validate input
@@ -93,6 +93,8 @@ exports.createSurveyForm = async (req, res) => {
         survey_status: "published",
         response_user_logged_in_status: response_user_logged_in_status || false,
         shuffle_questions: shuffle_questions || false,
+        collect_response: collect_response || true,
+        ending_date: ending_date || null
       })
       .eq("survey_id", survey_id)
       .select("*");
@@ -491,4 +493,42 @@ exports.getResponseCount = async (req, res) => {
     supabase.removeChannel(channel);
     res.end();
   });
+};
+exports.updateSurveySettings = async (req, res) => {
+  console.log("Received request to update survey settings:", req.body);
+  try {
+    const { survey_id } = req.params;
+    const { collect_response, ending_date } = req.body;
+    const user_id = req.jwt.id;
+
+    if (typeof collect_response !== 'boolean') {
+      return res.status(400).json({ error: "The 'collect_response' field must be a boolean." });
+    }
+    const { data, error, count } = await supabase
+      .from("survey")
+      .update({
+        collect_response: collect_response,
+        ending_date: ending_date || null,
+      })
+      .eq("survey_id", survey_id)
+      .eq("user_id", user_id)
+      .select();
+
+    if (error) {
+      console.error("Supabase update error for survey settings:", error);
+      return res.status(500).json({ error: "Failed to update survey settings." });
+    }
+    if (count === 0) {
+      return res.status(404).json({ error: "Survey not found or you do not have permission to edit it." });
+    }
+    console.log("Survey settings updated successfully for survey_id:", survey_id);
+    return res.status(200).json({
+      message: "Survey settings updated successfully.",
+      data: data[0],
+    });
+
+  } catch (err) {
+    console.error("Error in updateSurveySettings:", err);
+    return res.status(500).json({ error: "Internal server error." });
+  }
 };

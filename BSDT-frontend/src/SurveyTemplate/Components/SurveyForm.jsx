@@ -14,6 +14,7 @@ import SurveyLogo from "./SurveyLogo";
 import SurveyBanner from "./SurveyBanner";
 import SurveyDescription from "./SurveyDescription";
 import apiClient from "../../api";
+import SurveySettingsDrawer from "./SurveySettingsDrawer";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -58,11 +59,15 @@ const SurveyForm = ({
 }) => {
   // State for the logo
   const [logo, setLogo] = useState(logoFromParent);
-  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "center");
+  const [logoAlignment, setLogoAlignment] = useState(
+    logoAlignmentFromParent || "center"
+  );
   const [logoText, setLogoText] = useState(logoTextFromParent || "");
 
   // State for the background image
-  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(imageFromParent || "");
+  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
+    imageFromParent || ""
+  );
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
@@ -76,6 +81,9 @@ const SurveyForm = ({
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
   const [responseCount, setResponseCount] = useState(null);
+  const [collectResponse, setCollectResponse] = useState(true); // Default to on
+  const [endingDate, setEndingDate] = useState(""); // Default to no date
+  const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -373,6 +381,8 @@ const SurveyForm = ({
         user_id: userIdInPayload,
         response_user_logged_in_status: isLoggedInStatus,
         shuffle_questions: isShuffled,
+        collect_response: collectResponse,
+        ending_date: endingDate || null,
       };
 
       const response = await apiClient.put(url, payload, {
@@ -441,6 +451,25 @@ const SurveyForm = ({
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+  const handleSaveSettings = async ({ collectResponse, endingDate }) => {
+    if (!survey_id) {
+      toast.error("Survey ID is missing. Cannot save settings.");
+      return;
+    }
+    try {
+      const payload = {
+        collect_response: collectResponse,
+        ending_date: endingDate || null,
+      };
+      await apiClient.put(`/api/surveytemplate/settings/${survey_id}`, payload);
+      setCollectResponse(collectResponse);
+      setEndingDate(endingDate);
+      toast.success("Response settings saved successfully!");
+    } catch (error) {
+      console.error("Error saving survey settings:", error);
+      toast.error("Failed to save settings. Please try again.");
     }
   };
 
@@ -579,6 +608,13 @@ const SurveyForm = ({
             </button>
           </>
         )}
+        <button
+          onClick={() => setIsSettingsDrawerOpen(true)}
+          className="btn btn-outline-secondary btn-sm me-2"
+          title="Survey Settings"
+        >
+          <i className="bi bi-gear"></i> Settings
+        </button>
       </div>
 
       <hr className="my-4" />
@@ -670,6 +706,13 @@ const SurveyForm = ({
         surveyTitle={title}
       />
       <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
+      <SurveySettingsDrawer
+        isOpen={isSettingsDrawerOpen}
+        onClose={() => setIsSettingsDrawerOpen(false)}
+        collectResponse={collectResponse}
+        endingDate={endingDate}
+        onSave={handleSaveSettings}
+      />
     </div>
   );
 };
