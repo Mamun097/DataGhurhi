@@ -585,14 +585,14 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
 
     # Plot params
     if use_default:
-        label_font_size = 36
-        tick_font_size  = 16
-        img_quality     = 90
-        width, height   = 800, 600
-        palette         = 'deep'
-        bar_width       = 0.8
-        box_width       = 0.8
-        violin_width    = 0.8
+        label_font_size = 86
+        tick_font_size  = 18
+        img_quality     = 100
+        width, height   = 1280, 720
+        palette         = 'husl'
+        bar_width       = 0.5
+        box_width       = 0.5
+        violin_width    = 0.5
     else:
         def _int(name, default):
             try: return int(request.POST.get(name, default))
@@ -601,20 +601,20 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
             try: return float(request.POST.get(name, default))
             except Exception: return default
 
-        label_font_size = _int('label_font_size', 36)
-        tick_font_size  = _int('tick_font_size', 16)
-        img_quality     = _int('image_quality', 90)
+        label_font_size = _int('label_font_size', 86)
+        tick_font_size  = _int('tick_font_size', 18)
+        img_quality     = _int('image_quality', 100)
 
-        size_input = request.POST.get('image_size', '800x600')
+        size_input = request.POST.get('image_size', '1280x720')
         try:
             width, height = map(int, size_input.lower().split('x'))
         except Exception:
-            width, height = 800, 600
+            width, height = 1280, 720
 
-        palette      = request.POST.get('palette', 'deep') or 'deep'
-        bar_width    = _float('bar_width', 0.8)
-        box_width    = _float('box_width', 0.8)
-        violin_width = _float('violin_width', 0.8)
+        palette      = request.POST.get('palette', 'husl') or 'husl'
+        bar_width    = _float('bar_width', 0.5)
+        box_width    = _float('box_width', 0.5)
+        violin_width = _float('violin_width', 0.5)
 
     
     media_root = settings.MEDIA_ROOT

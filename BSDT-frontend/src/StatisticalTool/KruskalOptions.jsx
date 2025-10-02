@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import './KruskalOptions.css';
 
 const KruskalOptions = ({
+    isFirstTimeAnalysis,
+    setIsFirstTimeAnalysis,
     handleSubmit,
     language,
     setLanguage,
@@ -29,31 +31,32 @@ const KruskalOptions = ({
 }) => {
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
 
     // Store temporary values
     const [tempValues, setTempValues] = useState({
         imageFormat: imageFormat || 'png',
-        labelFontSize: labelFontSize || 12,
-        tickFontSize: tickFontSize || 10,
-        imageQuality: imageQuality || 95,
-        imageSize: imageSize || '800x600',
-        colorPalette: colorPalette || 'deep',
-        barWidth: barWidth || 0.8,
-        boxWidth: boxWidth || 0.8,
-        violinWidth: violinWidth || 0.8
+        labelFontSize: labelFontSize || 86,
+        tickFontSize: tickFontSize || 18,
+        imageQuality: imageQuality || 100,
+        imageSize: imageSize || '1280x720',
+        colorPalette: colorPalette || 'husl',
+        barWidth: barWidth || 0.5,
+        boxWidth: boxWidth || 0.5,
+        violinWidth: violinWidth || 0.5
     });
 
     // Default values to compare against
     const defaultValues = {
         imageFormat: 'png',
-        labelFontSize: 12,
-        tickFontSize: 10,
-        imageQuality: 95,
-        imageSize: '800x600',
-        colorPalette: 'deep',
-        barWidth: 0.8,
-        boxWidth: 0.8,
-        violinWidth: 0.8
+        labelFontSize: 86,
+        tickFontSize: 18,
+        imageQuality: 100,
+        imageSize: '1280x720',
+        colorPalette: 'husl',
+        barWidth: 0.5,
+        boxWidth: 0.5,
+        violinWidth: 0.5
     };
 
     // Color palette descriptions
@@ -66,14 +69,24 @@ const KruskalOptions = ({
         colorblind: 'Optimized for colorblind accessibility',
         Set2: 'Professional qualitative palette - widely used in publications',
         Set3: 'Lighter qualitative palette - good for multiple categories',
+        Paired: 'Paired colors palette - excellent for comparative data',
+        tab10: 'Tableau 10 - industry standard for business analytics',
+        tab20: 'Tableau 20 - extended palette for many categories',
         husl: 'Perceptually uniform colors - balanced brightness',
-        viridis: 'Sequential gradient palette - excellent for scientific plots'
+        hls: 'Evenly spaced hues - good color distinction',
+        viridis: 'Sequential gradient - excellent for scientific plots',
+        plasma: 'Perceptually uniform - great for heatmaps',
+        magma: 'Sequential dark-to-light - professional scientific palette',
+        cividis: 'Colorblind-friendly sequential - optimized accessibility',
+        rocket: 'Warm sequential palette - dramatic and clear',
+        mako: 'Cool sequential palette - modern and clean',
+        flare: 'Warm diverging palette - emphasizes extremes'
     };
 
     // Check if any values have changed from defaults
     useEffect(() => {
         const changed = Object.keys(defaultValues).some(
-            key => tempValues[key] !== defaultValues[key]
+            key => String(tempValues[key]) !== String(defaultValues[key])
         );
         setHasChanges(changed);
     }, [tempValues]);
@@ -82,7 +95,7 @@ const KruskalOptions = ({
     const openOverlay = (e) => {
         e.preventDefault();
         e.stopPropagation();
-        setTempValues({
+        const initialValues = {
             imageFormat: imageFormat || defaultValues.imageFormat,
             labelFontSize: labelFontSize || defaultValues.labelFontSize,
             tickFontSize: tickFontSize || defaultValues.tickFontSize,
@@ -92,34 +105,42 @@ const KruskalOptions = ({
             barWidth: barWidth || defaultValues.barWidth,
             boxWidth: boxWidth || defaultValues.boxWidth,
             violinWidth: violinWidth || defaultValues.violinWidth
-        });
+        };
+        setTempValues(initialValues);
         setIsOverlayOpen(true);
     };
 
     const handleSave = () => {
-        setImageFormat(tempValues.imageFormat);
-        setLabelFontSize(tempValues.labelFontSize);
-        setTickFontSize(tempValues.tickFontSize);
-        setImageQuality(tempValues.imageQuality);
-        setImageSize(tempValues.imageSize);
-        setColorPalette(tempValues.colorPalette);
-        setBarWidth(tempValues.barWidth);
-        setBoxWidth(tempValues.boxWidth);
-        setViolinWidth(tempValues.violinWidth);
-        //handleSubmit(); // Call the submit handler to save changes
+        // CRITICAL: Set useDefaultSettings to false so custom settings are used
+        if (setUseDefaultSettings) setUseDefaultSettings(false);
+
+        // Ensure all setters are called with actual values
+        if (setImageFormat) setImageFormat(tempValues.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
+        if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
+        if (setImageQuality) setImageQuality(tempValues.imageQuality);
+        if (setImageSize) setImageSize(tempValues.imageSize);
+        if (setColorPalette) setColorPalette(tempValues.colorPalette);
+        if (setBarWidth) setBarWidth(tempValues.barWidth);
+        if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
+        if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
+
         setIsOverlayOpen(false);
     };
 
     const handleKeepDefault = () => {
-        setImageFormat(defaultValues.imageFormat);
-        setLabelFontSize(defaultValues.labelFontSize);
-        setTickFontSize(defaultValues.tickFontSize);
-        setImageQuality(defaultValues.imageQuality);
-        setImageSize(defaultValues.imageSize);
-        setColorPalette(defaultValues.colorPalette);
-        setBarWidth(defaultValues.barWidth);
-        setBoxWidth(defaultValues.boxWidth);
-        setViolinWidth(defaultValues.violinWidth);
+        if (setUseDefaultSettings) setUseDefaultSettings(false);
+
+        if (setImageFormat) setImageFormat(defaultValues.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(defaultValues.labelFontSize);
+        if (setTickFontSize) setTickFontSize(defaultValues.tickFontSize);
+        if (setImageQuality) setImageQuality(defaultValues.imageQuality);
+        if (setImageSize) setImageSize(defaultValues.imageSize);
+        if (setColorPalette) setColorPalette(defaultValues.colorPalette);
+        if (setBarWidth) setBarWidth(defaultValues.barWidth);
+        if (setBoxWidth) setBoxWidth(defaultValues.boxWidth);
+        if (setViolinWidth) setViolinWidth(defaultValues.violinWidth);
+
         setIsOverlayOpen(false);
     };
 
@@ -130,19 +151,91 @@ const KruskalOptions = ({
         }));
     };
 
+    const handleRegenerate = (e) => {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    if (!handleSubmit) {
+        console.error('handleSubmit function not provided');
+        return;
+    }
+
+    // Apply settings immediately before regenerating
+    if (setUseDefaultSettings) setUseDefaultSettings(false);
+    if (setImageFormat) setImageFormat(tempValues.imageFormat);
+    if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
+    if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
+    if (setImageQuality) setImageQuality(tempValues.imageQuality);
+    if (setImageSize) setImageSize(tempValues.imageSize);
+    if (setColorPalette) setColorPalette(tempValues.colorPalette);
+    if (setBarWidth) setBarWidth(tempValues.barWidth);
+    if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
+    if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
+
+    setIsRegenerating(true);
+    
+    // Give state time to update
+    setTimeout(() => {
+        const syntheticEvent = {
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        };
+        
+        handleSubmit(syntheticEvent);
+        
+        setTimeout(() => {
+            setIsRegenerating(false);
+        }, 500);
+    }, 200);
+};
+
     return (
         <div className="kruskal-options-container">
             <div className="customize-link-wrapper">
-                <button 
-                    type="button"
-                    onClick={openOverlay}
-                    className="customize-link"
-                >
-                    {t.customizeSettings || 'Customize Plot Settings'}
-                </button>
+                {/* Show different buttons based on isFirstTimeAnalysis */}
+                {isFirstTimeAnalysis ? (
+                    <button
+                        type="button"
+                        onClick={openOverlay}
+                        className="customize-link"
+                    >
+                        {t.customizeSettings || 'Customize Plot Settings'}
+                    </button>
+                ) : (
+                    <div className="regenerate-controls">
+                        <button
+                            type="button"
+                            onClick={openOverlay}
+                            className="customize-link"
+                        >
+                            {t.customizeSettings || 'Customize Plot Settings'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleRegenerate}
+                            disabled={isRegenerating}
+                            className="regenerate-button"
+                        >
+                            {isRegenerating ? (
+                                <>
+                                    <span className="spinner"></span>
+                                    {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    {t.generateAgain || language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again'}
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </div>
 
-            {/* Overlay */}
             {isOverlayOpen && (
                 <>
                     <div className="overlay-backdrop" onClick={() => setIsOverlayOpen(false)} />
@@ -151,7 +244,7 @@ const KruskalOptions = ({
                             <h3 className="overlay-title">
                                 {t.customSettings || 'Plot Customization Settings'}
                             </h3>
-                            <button 
+                            <button
                                 type="button"
                                 className="overlay-close"
                                 onClick={() => setIsOverlayOpen(false)}
@@ -192,13 +285,17 @@ const KruskalOptions = ({
 
                                 <div className="form-group">
                                     <label className="form-label">{t.imageSize || 'Image Size'}</label>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g. 800x600"
-                                        className="form-input"
+                                    <select
                                         value={tempValues.imageSize}
                                         onChange={(e) => handleTempChange('imageSize', e.target.value)}
-                                    />
+                                        className="form-select"
+                                    >
+                                        <option value="640x480">640x480</option>
+                                        <option value="800x600">800x600</option>
+                                        <option value="1024x768">1024x768</option>
+                                        <option value="1280x720">1280x720</option>
+                                        <option value="1920x1080">1920x1080</option>
+                                    </select>
                                 </div>
                             </div>
 
@@ -236,16 +333,34 @@ const KruskalOptions = ({
                                         onChange={(e) => handleTempChange('colorPalette', e.target.value)}
                                         className="form-select"
                                     >
-                                        <option value="deep">Deep</option>
-                                        <option value="muted">Muted</option>
-                                        <option value="pastel">Pastel</option>
-                                        <option value="bright">Bright</option>
-                                        <option value="dark">Dark</option>
-                                        <option value="colorblind">Colorblind</option>
-                                        <option value="Set2">Set2</option>
-                                        <option value="Set3">Set3</option>
-                                        <option value="husl">HUSL</option>
-                                        <option value="viridis">Viridis</option>
+                                        <optgroup label="Qualitative">
+                                            <option value="deep">Deep</option>
+                                            <option value="muted">Muted</option>
+                                            <option value="pastel">Pastel</option>
+                                            <option value="bright">Bright</option>
+                                            <option value="dark">Dark</option>
+                                            <option value="Set2">Set2</option>
+                                            <option value="Set3">Set3</option>
+                                            <option value="Paired">Paired</option>
+                                            <option value="tab10">Tableau 10</option>
+                                            <option value="tab20">Tableau 20</option>
+                                            <option value="husl">HUSL</option>
+                                            <option value="hls">HLS</option>
+                                        </optgroup>
+                                        <optgroup label="Sequential">
+                                            <option value="viridis">Viridis</option>
+                                            <option value="plasma">Plasma</option>
+                                            <option value="magma">Magma</option>
+                                            <option value="rocket">Rocket</option>
+                                            <option value="mako">Mako</option>
+                                        </optgroup>
+                                        <optgroup label="Diverging">
+                                            <option value="flare">Flare</option>
+                                        </optgroup>
+                                        <optgroup label="Others">
+                                            <option value="colorblind">Colorblind</option>
+                                            <option value="cividis">Cividis</option>
+                                        </optgroup>
                                     </select>
                                     {tempValues.colorPalette && (
                                         <p className="palette-description">
@@ -295,22 +410,22 @@ const KruskalOptions = ({
                             </div>
                         </div>
 
-                        {/* Action Buttons - Only show if changes detected */}
+                        {/* Action Buttons - Show only if changes made */}
                         {hasChanges && (
                             <div className="overlay-footer">
-                                <button 
+                                <button
                                     type="button"
                                     className="btn-secondary"
                                     onClick={handleKeepDefault}
                                 >
-                                    {t.keepDefault || 'Keep Default'}
+                                    {t.keepDefault || 'Reset to Default'}
                                 </button>
-                                <button 
+                                <button
                                     type="button"
                                     className="btn-primary"
                                     onClick={handleSave}
                                 >
-                                    {t.save || 'Save Changes'}
+                                    {t.save || 'Apply Changes'}
                                 </button>
                             </div>
                         )}
