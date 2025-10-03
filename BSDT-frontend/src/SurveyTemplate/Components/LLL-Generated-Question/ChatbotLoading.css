@@ -84,7 +84,7 @@
   border-bottom-right-radius: 5px;
 }
 
-.options-container {
+.options-container-chatbot {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -451,7 +451,7 @@
     font-size: 14px;
   }
 
-  .options-container {
+  .options-container-chatbot {
     gap: 4px;
     margin-top: 8px;
   }
@@ -568,7 +568,7 @@
     font-size: 15px;
   }
 
-  .options-container {
+  .options-container-chatbot {
     gap: 6px;
     margin-top: 10px;
   }

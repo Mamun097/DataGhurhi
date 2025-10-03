@@ -1,4 +1,10 @@
+import { useState, useEffect } from 'react';
+import './KruskalOptions.css';
+
 const KruskalOptions = ({
+    isFirstTimeAnalysis,
+    setIsFirstTimeAnalysis,
+    handleSubmit,
     language,
     setLanguage,
     imageFormat,
@@ -23,142 +29,409 @@ const KruskalOptions = ({
     setViolinWidth,
     t
 }) => {
+    const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
+    const [isRegenerating, setIsRegenerating] = useState(false);
+
+    // Store temporary values
+    const [tempValues, setTempValues] = useState({
+        imageFormat: imageFormat || 'png',
+        labelFontSize: labelFontSize || 86,
+        tickFontSize: tickFontSize || 18,
+        imageQuality: imageQuality || 100,
+        imageSize: imageSize || '1280x720',
+        colorPalette: colorPalette || 'husl',
+        barWidth: barWidth || 0.5,
+        boxWidth: boxWidth || 0.5,
+        violinWidth: violinWidth || 0.5
+    });
+
+    // Default values to compare against
+    const defaultValues = {
+        imageFormat: 'png',
+        labelFontSize: 86,
+        tickFontSize: 18,
+        imageQuality: 100,
+        imageSize: '1280x720',
+        colorPalette: 'husl',
+        barWidth: 0.5,
+        boxWidth: 0.5,
+        violinWidth: 0.5
+    };
+
+    // Color palette descriptions
+    const paletteDescriptions = {
+        deep: 'Rich, saturated colors - ideal for presentations and reports',
+        muted: 'Softer, desaturated colors - easy on the eyes',
+        pastel: 'Light, gentle colors - perfect for a subtle look',
+        bright: 'Vivid, high saturation colors - makes plots stand out',
+        dark: 'Darker color variations - great for dark backgrounds',
+        colorblind: 'Optimized for colorblind accessibility',
+        Set2: 'Professional qualitative palette - widely used in publications',
+        Set3: 'Lighter qualitative palette - good for multiple categories',
+        Paired: 'Paired colors palette - excellent for comparative data',
+        tab10: 'Tableau 10 - industry standard for business analytics',
+        tab20: 'Tableau 20 - extended palette for many categories',
+        husl: 'Perceptually uniform colors - balanced brightness',
+        hls: 'Evenly spaced hues - good color distinction',
+        viridis: 'Sequential gradient - excellent for scientific plots',
+        plasma: 'Perceptually uniform - great for heatmaps',
+        magma: 'Sequential dark-to-light - professional scientific palette',
+        cividis: 'Colorblind-friendly sequential - optimized accessibility',
+        rocket: 'Warm sequential palette - dramatic and clear',
+        mako: 'Cool sequential palette - modern and clean',
+        flare: 'Warm diverging palette - emphasizes extremes'
+    };
+
+    // Check if any values have changed from defaults
+    useEffect(() => {
+        const changed = Object.keys(defaultValues).some(
+            key => String(tempValues[key]) !== String(defaultValues[key])
+        );
+        setHasChanges(changed);
+    }, [tempValues]);
+
+    // Initialize temp values when overlay opens
+    const openOverlay = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const initialValues = {
+            imageFormat: imageFormat || defaultValues.imageFormat,
+            labelFontSize: labelFontSize || defaultValues.labelFontSize,
+            tickFontSize: tickFontSize || defaultValues.tickFontSize,
+            imageQuality: imageQuality || defaultValues.imageQuality,
+            imageSize: imageSize || defaultValues.imageSize,
+            colorPalette: colorPalette || defaultValues.colorPalette,
+            barWidth: barWidth || defaultValues.barWidth,
+            boxWidth: boxWidth || defaultValues.boxWidth,
+            violinWidth: violinWidth || defaultValues.violinWidth
+        };
+        setTempValues(initialValues);
+        setIsOverlayOpen(true);
+    };
+
+    const handleSave = () => {
+        // CRITICAL: Set useDefaultSettings to false so custom settings are used
+        if (setUseDefaultSettings) setUseDefaultSettings(false);
+
+        // Ensure all setters are called with actual values
+        if (setImageFormat) setImageFormat(tempValues.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
+        if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
+        if (setImageQuality) setImageQuality(tempValues.imageQuality);
+        if (setImageSize) setImageSize(tempValues.imageSize);
+        if (setColorPalette) setColorPalette(tempValues.colorPalette);
+        if (setBarWidth) setBarWidth(tempValues.barWidth);
+        if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
+        if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
+
+        setIsOverlayOpen(false);
+    };
+
+    const handleKeepDefault = () => {
+        if (setUseDefaultSettings) setUseDefaultSettings(false);
+
+        if (setImageFormat) setImageFormat(defaultValues.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(defaultValues.labelFontSize);
+        if (setTickFontSize) setTickFontSize(defaultValues.tickFontSize);
+        if (setImageQuality) setImageQuality(defaultValues.imageQuality);
+        if (setImageSize) setImageSize(defaultValues.imageSize);
+        if (setColorPalette) setColorPalette(defaultValues.colorPalette);
+        if (setBarWidth) setBarWidth(defaultValues.barWidth);
+        if (setBoxWidth) setBoxWidth(defaultValues.boxWidth);
+        if (setViolinWidth) setViolinWidth(defaultValues.violinWidth);
+
+        setIsOverlayOpen(false);
+    };
+
+    const handleTempChange = (field, value) => {
+        setTempValues(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
+    const handleRegenerate = (e) => {
+    if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    if (!handleSubmit) {
+        console.error('handleSubmit function not provided');
+        return;
+    }
+
+    // Apply settings immediately before regenerating
+    if (setUseDefaultSettings) setUseDefaultSettings(false);
+    if (setImageFormat) setImageFormat(tempValues.imageFormat);
+    if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
+    if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
+    if (setImageQuality) setImageQuality(tempValues.imageQuality);
+    if (setImageSize) setImageSize(tempValues.imageSize);
+    if (setColorPalette) setColorPalette(tempValues.colorPalette);
+    if (setBarWidth) setBarWidth(tempValues.barWidth);
+    if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
+    if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
+
+    setIsRegenerating(true);
+    
+    // Give state time to update
+    setTimeout(() => {
+        const syntheticEvent = {
+            preventDefault: () => {},
+            stopPropagation: () => {}
+        };
+        
+        handleSubmit(syntheticEvent);
+        
+        setTimeout(() => {
+            setIsRegenerating(false);
+        }, 500);
+    }, 200);
+};
+
     return (
-        <div className="mt-4 border-t pt-4">
-            <h4 className="font-semibold text-lg mb-3">{t.kruskalTitle}</h4>
-
-            {/* Image Format */}
-            <label className="block mb-2">{t.downloadLabel}</label>
-            <select
-                value={imageFormat}
-                onChange={(e) => setImageFormat(e.target.value)}
-                className="mb-4 border p-2 rounded w-full"
-            >
-                <option value="png">PNG</option>
-                <option value="jpg">JPG</option>
-                <option value="pdf">PDF</option>
-                <option value="tiff">TIFF</option>
-            </select>
-
-            {/* Default Settings */}
-            <label className="block mb-2">{t.useDefaultSettings}</label>
-            <input
-                type="checkbox"
-                checked={useDefaultSettings}
-                onChange={(e) => setUseDefaultSettings(e.target.checked)}
-                className="mb-4"
-            />
-
-            {!useDefaultSettings && (
-                <div className="bg-white shadow rounded-lg p-6 mt-4 border border-gray-200">
-                    <h5 className="text-md font-semibold text-gray-800 mb-4">{t.customSettings}</h5>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {/* Label Font Size */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.labelFontSize}</label>
-                            <input
-                                type="number"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={labelFontSize}
-                                onChange={(e) => setLabelFontSize(Number(e.target.value))}
-                            />
-                        </div>
-
-                        {/* Tick Font Size */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.tickFontSize}</label>
-                            <input
-                                type="number"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={tickFontSize}
-                                onChange={(e) => setTickFontSize(Number(e.target.value))}
-                            />
-                        </div>
-
-                        {/* Image Quality */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.imageQuality}</label>
-                            <input
-                                type="number"
-                                min={1}
-                                max={100}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={imageQuality}
-                                onChange={(e) => setImageQuality(Number(e.target.value))}
-                            />
-                        </div>
-
-                        {/* Image Size */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.imageSize}</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. 800x600"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={imageSize}
-                                onChange={(e) => setImageSize(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Color Palette */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.palette}</label>
-                            <input
-                                type="text"
-                                placeholder="e.g. deep, Set2"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={colorPalette}
-                                onChange={(e) => setColorPalette(e.target.value)}
-                            />
-                        </div>
-
-                        {/* Bar Width */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.barWidth}</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0.1"
-                                max="1.0"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={barWidth}
-                                onChange={(e) => setBarWidth(Number(e.target.value))}
-                            />
-                        </div>
-
-                        {/* Box Width */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.boxWidth}</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0.1"
-                                max="1.0"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={boxWidth}
-                                onChange={(e) => setBoxWidth(Number(e.target.value))}
-                            />
-                        </div>
-
-                        {/* Violin Width */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">{t.violinWidth}</label>
-                            <input
-                                type="number"
-                                step="0.1"
-                                min="0.1"
-                                max="1.0"
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                                value={violinWidth}
-                                onChange={(e) => setViolinWidth(Number(e.target.value))}
-                            />
-                        </div>
+        <div className="kruskal-options-container">
+            <div className="customize-link-wrapper">
+                {/* Show different buttons based on isFirstTimeAnalysis */}
+                {isFirstTimeAnalysis ? (
+                    <button
+                        type="button"
+                        onClick={openOverlay}
+                        className="customize-link"
+                    >
+                        {t.customizeSettings || 'Customize Plot Settings'}
+                    </button>
+                ) : (
+                    <div className="regenerate-controls">
+                        <button
+                            type="button"
+                            onClick={openOverlay}
+                            className="customize-link"
+                        >
+                            {t.customizeSettings || 'Customize Plot Settings'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleRegenerate}
+                            disabled={isRegenerating}
+                            className="regenerate-button"
+                        >
+                            {isRegenerating ? (
+                                <>
+                                    <span className="spinner"></span>
+                                    {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
+                                </>
+                            ) : (
+                                <>
+                                    <svg className="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                    </svg>
+                                    {t.generateAgain || language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again'}
+                                </>
+                            )}
+                        </button>
                     </div>
-                </div>
+                )}
+            </div>
+
+            {isOverlayOpen && (
+                <>
+                    <div className="overlay-backdrop" onClick={() => setIsOverlayOpen(false)} />
+                    <div className="overlay-panel">
+                        <div className="overlay-header">
+                            <h3 className="overlay-title">
+                                {t.customSettings || 'Plot Customization Settings'}
+                            </h3>
+                            <button
+                                type="button"
+                                className="overlay-close"
+                                onClick={() => setIsOverlayOpen(false)}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className="overlay-content">
+                            {/* Image Format Section */}
+                            <div className="settings-section">
+                                <h4 className="section-title">{t.imageFormatSection || 'Image Format'}</h4>
+                                <div className="form-group">
+                                    <label className="form-label">{t.downloadLabel || 'Download Format'}</label>
+                                    <select
+                                        value={tempValues.imageFormat}
+                                        onChange={(e) => handleTempChange('imageFormat', e.target.value)}
+                                        className="form-select"
+                                    >
+                                        <option value="png">PNG</option>
+                                        <option value="jpg">JPG</option>
+                                        <option value="pdf">PDF</option>
+                                        <option value="tiff">TIFF</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.imageQuality || 'Image Quality'} (1-100)</label>
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        className="form-input"
+                                        value={tempValues.imageQuality}
+                                        onChange={(e) => handleTempChange('imageQuality', Number(e.target.value))}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.imageSize || 'Image Size'}</label>
+                                    <select
+                                        value={tempValues.imageSize}
+                                        onChange={(e) => handleTempChange('imageSize', e.target.value)}
+                                        className="form-select"
+                                    >
+                                        <option value="640x480">640x480</option>
+                                        <option value="800x600">800x600</option>
+                                        <option value="1024x768">1024x768</option>
+                                        <option value="1280x720">1280x720</option>
+                                        <option value="1920x1080">1920x1080</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            {/* Typography Section */}
+                            <div className="settings-section">
+                                <h4 className="section-title">{t.typographySection || 'Typography'}</h4>
+                                <div className="form-group">
+                                    <label className="form-label">{t.labelFontSize || 'Label Font Size'}</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={tempValues.labelFontSize}
+                                        onChange={(e) => handleTempChange('labelFontSize', Number(e.target.value))}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.tickFontSize || 'Tick Font Size'}</label>
+                                    <input
+                                        type="number"
+                                        className="form-input"
+                                        value={tempValues.tickFontSize}
+                                        onChange={(e) => handleTempChange('tickFontSize', Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Visual Styling Section */}
+                            <div className="settings-section">
+                                <h4 className="section-title">{t.visualStylingSection || 'Visual Styling'}</h4>
+                                <div className="form-group">
+                                    <label className="form-label">{t.palette || 'Color Palette'}</label>
+                                    <select
+                                        value={tempValues.colorPalette}
+                                        onChange={(e) => handleTempChange('colorPalette', e.target.value)}
+                                        className="form-select"
+                                    >
+                                        <optgroup label="Qualitative">
+                                            <option value="deep">Deep</option>
+                                            <option value="muted">Muted</option>
+                                            <option value="pastel">Pastel</option>
+                                            <option value="bright">Bright</option>
+                                            <option value="dark">Dark</option>
+                                            <option value="Set2">Set2</option>
+                                            <option value="Set3">Set3</option>
+                                            <option value="Paired">Paired</option>
+                                            <option value="tab10">Tableau 10</option>
+                                            <option value="tab20">Tableau 20</option>
+                                            <option value="husl">HUSL</option>
+                                            <option value="hls">HLS</option>
+                                        </optgroup>
+                                        <optgroup label="Sequential">
+                                            <option value="viridis">Viridis</option>
+                                            <option value="plasma">Plasma</option>
+                                            <option value="magma">Magma</option>
+                                            <option value="rocket">Rocket</option>
+                                            <option value="mako">Mako</option>
+                                        </optgroup>
+                                        <optgroup label="Diverging">
+                                            <option value="flare">Flare</option>
+                                        </optgroup>
+                                        <optgroup label="Others">
+                                            <option value="colorblind">Colorblind</option>
+                                            <option value="cividis">Cividis</option>
+                                        </optgroup>
+                                    </select>
+                                    {tempValues.colorPalette && (
+                                        <p className="palette-description">
+                                            {paletteDescriptions[tempValues.colorPalette]}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.barWidth || 'Bar Width'} (0.1-1.0)</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        max="1.0"
+                                        className="form-input"
+                                        value={tempValues.barWidth}
+                                        onChange={(e) => handleTempChange('barWidth', Number(e.target.value))}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.boxWidth || 'Box Width'} (0.1-1.0)</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        max="1.0"
+                                        className="form-input"
+                                        value={tempValues.boxWidth}
+                                        onChange={(e) => handleTempChange('boxWidth', Number(e.target.value))}
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">{t.violinWidth || 'Violin Width'} (0.1-1.0)</label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        max="1.0"
+                                        className="form-input"
+                                        value={tempValues.violinWidth}
+                                        onChange={(e) => handleTempChange('violinWidth', Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons - Show only if changes made */}
+                        {hasChanges && (
+                            <div className="overlay-footer">
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={handleKeepDefault}
+                                >
+                                    {t.keepDefault || 'Reset to Default'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={handleSave}
+                                >
+                                    {t.save || 'Apply Changes'}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </>
             )}
-
-
         </div>
     );
 };

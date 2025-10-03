@@ -617,12 +617,12 @@ button[type="submit"] svg {
 .mt-2 { margin-top: 0.5rem; }
 .mt-4 { margin-top: 1rem; }
 .mt-6 { margin-top: 1.5rem; }
-.mt-8 { margin-top: 2rem; }
+.mt-8 { margin-top: 0.25rem; }
 .mb-2 { margin-bottom: 0.5rem; }
-.mb-3 { margin-bottom: 0.75rem; }
+.mb-3 { margin-bottom: 0.5rem; }
 .mb-4 { margin-bottom: 1rem; }
 .mb-6 { margin-bottom: 1.5rem; }
-.mb-8 { margin-bottom: 2rem; }
+.mb-8 { margin-bottom: 0.25rem; }
 .ml-2 { margin-left: 0.5rem; }
 .ml-3 { margin-left: 28rem; }
 .mr-2 { margin-right: 0.5rem; }
@@ -710,7 +710,6 @@ button.language-toggle:hover {
   display: inline-block;
 }
 
-
 @media
 (max-width: 640px) {
  .ml-3 {
@@ -721,15 +720,6 @@ button.language-toggle:hover {
     padding-right: 0.1rem;
   }
 }
-
-
-
-
-
-
-
-
-
 
 .modal-overlay {
   position: fixed;
