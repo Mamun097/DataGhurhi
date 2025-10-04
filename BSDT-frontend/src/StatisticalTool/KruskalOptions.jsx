@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './KruskalOptions.css';
 
 const KruskalOptions = ({
@@ -32,6 +32,9 @@ const KruskalOptions = ({
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
+    const [showResetButton, setShowResetButton] = useState(true);
+    const [forceShowFooter, setForceShowFooter] = useState(false);
+    const pendingRegenerateRef = useRef(false);
 
     // Store temporary values
     const [tempValues, setTempValues] = useState({
@@ -91,6 +94,39 @@ const KruskalOptions = ({
         setHasChanges(changed);
     }, [tempValues]);
 
+    // Effect to handle regeneration after props are updated
+    useEffect(() => {
+        if (pendingRegenerateRef.current && handleSubmit) {
+            // Check if all values match what we wanted to set
+            const allValuesMatch = 
+                imageFormat === tempValues.imageFormat &&
+                labelFontSize === tempValues.labelFontSize &&
+                tickFontSize === tempValues.tickFontSize &&
+                imageQuality === tempValues.imageQuality &&
+                imageSize === tempValues.imageSize &&
+                colorPalette === tempValues.colorPalette &&
+                barWidth === tempValues.barWidth &&
+                boxWidth === tempValues.boxWidth &&
+                violinWidth === tempValues.violinWidth;
+
+            if (allValuesMatch) {
+                pendingRegenerateRef.current = false;
+                
+                const syntheticEvent = {
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                };
+                
+                handleSubmit(syntheticEvent);
+                
+                setTimeout(() => {
+                    setIsRegenerating(false);
+                    setIsOverlayOpen(false);
+                }, 500);
+            }
+        }
+    }, [imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, tempValues, handleSubmit]);
+
     // Initialize temp values when overlay opens
     const openOverlay = (e) => {
         e.preventDefault();
@@ -108,40 +144,57 @@ const KruskalOptions = ({
         };
         setTempValues(initialValues);
         setIsOverlayOpen(true);
+        // Reset the showResetButton state when overlay opens
+        setShowResetButton(true);
+        setForceShowFooter(false);
+    };
+
+    const applySettings = (values) => {
+        // Apply settings immediately and synchronously
+        if (setUseDefaultSettings) setUseDefaultSettings(false);
+        if (setImageFormat) setImageFormat(values.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(values.labelFontSize);
+        if (setTickFontSize) setTickFontSize(values.tickFontSize);
+        if (setImageQuality) setImageQuality(values.imageQuality);
+        if (setImageSize) setImageSize(values.imageSize);
+        if (setColorPalette) setColorPalette(values.colorPalette);
+        if (setBarWidth) setBarWidth(values.barWidth);
+        if (setBoxWidth) setBoxWidth(values.boxWidth);
+        if (setViolinWidth) setViolinWidth(values.violinWidth);
     };
 
     const handleSave = () => {
-        // CRITICAL: Set useDefaultSettings to false so custom settings are used
-        if (setUseDefaultSettings) setUseDefaultSettings(false);
-
-        // Ensure all setters are called with actual values
-        if (setImageFormat) setImageFormat(tempValues.imageFormat);
-        if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
-        if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
-        if (setImageQuality) setImageQuality(tempValues.imageQuality);
-        if (setImageSize) setImageSize(tempValues.imageSize);
-        if (setColorPalette) setColorPalette(tempValues.colorPalette);
-        if (setBarWidth) setBarWidth(tempValues.barWidth);
-        if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
-        if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
-
+        applySettings(tempValues);
         setIsOverlayOpen(false);
     };
 
     const handleKeepDefault = () => {
         if (setUseDefaultSettings) setUseDefaultSettings(false);
 
-        if (setImageFormat) setImageFormat(defaultValues.imageFormat);
-        if (setLabelFontSize) setLabelFontSize(defaultValues.labelFontSize);
-        if (setTickFontSize) setTickFontSize(defaultValues.tickFontSize);
-        if (setImageQuality) setImageQuality(defaultValues.imageQuality);
-        if (setImageSize) setImageSize(defaultValues.imageSize);
-        if (setColorPalette) setColorPalette(defaultValues.colorPalette);
-        if (setBarWidth) setBarWidth(defaultValues.barWidth);
-        if (setBoxWidth) setBoxWidth(defaultValues.boxWidth);
-        if (setViolinWidth) setViolinWidth(defaultValues.violinWidth);
+        // Reset temp values to defaults
+        const resetValues = {
+            imageFormat: defaultValues.imageFormat,
+            labelFontSize: defaultValues.labelFontSize,
+            tickFontSize: defaultValues.tickFontSize,
+            imageQuality: defaultValues.imageQuality,
+            imageSize: defaultValues.imageSize,
+            colorPalette: defaultValues.colorPalette,
+            barWidth: defaultValues.barWidth,
+            boxWidth: defaultValues.boxWidth,
+            violinWidth: defaultValues.violinWidth
+        };
+        
+        setTempValues(resetValues);
+        applySettings(resetValues);
 
-        setIsOverlayOpen(false);
+        // For first time analysis, close overlay
+        if (isFirstTimeAnalysis) {
+            setIsOverlayOpen(false);
+        } else {
+            // For regeneration, hide reset button but keep footer visible
+            setShowResetButton(false);
+            setForceShowFooter(true);
+        }
     };
 
     const handleTempChange = (field, value) => {
@@ -152,88 +205,33 @@ const KruskalOptions = ({
     };
 
     const handleRegenerate = (e) => {
-    if (e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
-    if (!handleSubmit) {
-        console.error('handleSubmit function not provided');
-        return;
-    }
+        if (!handleSubmit) {
+            console.error('handleSubmit function not provided');
+            return;
+        }
 
-    // Apply settings immediately before regenerating
-    if (setUseDefaultSettings) setUseDefaultSettings(false);
-    if (setImageFormat) setImageFormat(tempValues.imageFormat);
-    if (setLabelFontSize) setLabelFontSize(tempValues.labelFontSize);
-    if (setTickFontSize) setTickFontSize(tempValues.tickFontSize);
-    if (setImageQuality) setImageQuality(tempValues.imageQuality);
-    if (setImageSize) setImageSize(tempValues.imageSize);
-    if (setColorPalette) setColorPalette(tempValues.colorPalette);
-    if (setBarWidth) setBarWidth(tempValues.barWidth);
-    if (setBoxWidth) setBoxWidth(tempValues.boxWidth);
-    if (setViolinWidth) setViolinWidth(tempValues.violinWidth);
+        setIsRegenerating(true);
+        pendingRegenerateRef.current = true;
 
-    setIsRegenerating(true);
-    
-    // Give state time to update
-    setTimeout(() => {
-        const syntheticEvent = {
-            preventDefault: () => {},
-            stopPropagation: () => {}
-        };
-        
-        handleSubmit(syntheticEvent);
-        
-        setTimeout(() => {
-            setIsRegenerating(false);
-        }, 500);
-    }, 200);
-};
+        // Apply all settings
+        applySettings(tempValues);
+    };
 
     return (
         <div className="kruskal-options-container">
             <div className="customize-link-wrapper">
-                {/* Show different buttons based on isFirstTimeAnalysis */}
-                {isFirstTimeAnalysis ? (
-                    <button
-                        type="button"
-                        onClick={openOverlay}
-                        className="customize-link"
-                    >
-                        {t.customizeSettings || 'Customize Plot Settings'}
-                    </button>
-                ) : (
-                    <div className="regenerate-controls">
-                        <button
-                            type="button"
-                            onClick={openOverlay}
-                            className="customize-link"
-                        >
-                            {t.customizeSettings || 'Customize Plot Settings'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleRegenerate}
-                            disabled={isRegenerating}
-                            className="regenerate-button"
-                        >
-                            {isRegenerating ? (
-                                <>
-                                    <span className="spinner"></span>
-                                    {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
-                                </>
-                            ) : (
-                                <>
-                                    <svg className="inline-block w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                    {t.generateAgain || language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again'}
-                                </>
-                            )}
-                        </button>
-                    </div>
-                )}
+                <button
+                    type="button"
+                    onClick={openOverlay}
+                    className="customize-link"
+                >
+                    {t.customizeSettings || 'Customize Plot Settings'}
+                </button>
             </div>
 
             {isOverlayOpen && (
@@ -413,20 +411,45 @@ const KruskalOptions = ({
                         {/* Action Buttons - Show only if changes made */}
                         {hasChanges && (
                             <div className="overlay-footer">
-                                <button
-                                    type="button"
-                                    className="btn-secondary"
-                                    onClick={handleKeepDefault}
-                                >
-                                    {t.keepDefault || 'Reset to Default'}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn-primary"
-                                    onClick={handleSave}
-                                >
-                                    {t.save || 'Apply Changes'}
-                                </button>
+                                {showResetButton && (
+                                    <button
+                                        type="button"
+                                        className="btn-secondary"
+                                        onClick={handleKeepDefault}
+                                    >
+                                        {t.keepDefault || 'Reset to Default'}
+                                    </button>
+                                )}
+                                {isFirstTimeAnalysis ? (
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={handleSave}
+                                    >
+                                        {t.save || 'Apply Changes'}
+                                    </button>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        className="btn-primary"
+                                        onClick={handleRegenerate}
+                                        disabled={isRegenerating}
+                                    >
+                                        {isRegenerating ? (
+                                            <>
+                                                <span className="spinner"></span>
+                                                {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <svg className="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                                </svg>
+                                                {t.generateAgain || (language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again')}
+                                            </>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
