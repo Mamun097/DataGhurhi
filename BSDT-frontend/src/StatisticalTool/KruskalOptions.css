@@ -10,6 +10,12 @@
     padding: 0 0;
 }
 
+.customize-button-wrapper {
+    display: flex !important;
+    justify-content: flex-end !important;
+    padding: 0 0;
+}
+
 .customize-link {
     background: none;
     border: none;
@@ -24,6 +30,25 @@
 
 .customize-link:hover {
     color: #1d4ed8;
+}
+
+.customize-button {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+.customize-button:hover {
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
 .overlay-backdrop {
@@ -295,6 +320,10 @@
     .btn-primary,
     .btn-secondary {
         width: 100%;
+    }
+    
+    .customize-button-wrapper {
+        justify-content: center !important;
     }
 }
 

@@ -2054,6 +2054,8 @@ const StatisticalAnalysisTool = () => {
                                 </div>
                             ) : (
                                 <AnalysisResults
+                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
                                     handleSubmit={handleSubmit}
                                     user_id={userId}
                                     results={results}
@@ -2098,7 +2100,7 @@ const StatisticalAnalysisTool = () => {
 };
 
 // Component for rendering analysis results
-const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, t, filename }) => {
+const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, t, filename }) => {
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2340,36 +2342,74 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
             {/* Visualizations Section */}
             {results.image_paths && results.image_paths.length > 0 && (
                 <div className="stats-viz-section">
-                    <h3 className="stats-viz-header">
-                        {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                    </h3>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <h3 className="stats-viz-header" style={{ margin: 0 }}>
+                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
 
-                    <KruskalOptions
-                        handleSubmit={handleSubmit}
-                        language={language}
-                        setLanguage={setLanguage}
-                        imageFormat={imageFormat}
-                        setImageFormat={setImageFormat}
-                        useDefaultSettings={useDefaultSettings}
-                        setUseDefaultSettings={setUseDefaultSettings}
-                        labelFontSize={labelFontSize}
-                        setLabelFontSize={setLabelFontSize}
-                        tickFontSize={tickFontSize}
-                        setTickFontSize={setTickFontSize}
-                        imageQuality={imageQuality}
-                        setImageQuality={setImageQuality}
-                        imageSize={imageSize}
-                        setImageSize={setImageSize}
-                        colorPalette={colorPalette}
-                        setColorPalette={setColorPalette}
-                        barWidth={barWidth}
-                        setBarWidth={setBarWidth}
-                        boxWidth={boxWidth}
-                        setBoxWidth={setBoxWidth}
-                        violinWidth={violinWidth}
-                        setViolinWidth={setViolinWidth}
-                        t={t}
-                    />
+                        {!isFirstTimeAnalysis && (
+                            <KruskalOptions
+                                isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                                handleSubmit={handleSubmit}
+                                language={language}
+                                setLanguage={setLanguage}
+                                imageFormat={imageFormat}
+                                setImageFormat={setImageFormat}
+                                useDefaultSettings={useDefaultSettings}
+                                setUseDefaultSettings={setUseDefaultSettings}
+                                labelFontSize={labelFontSize}
+                                setLabelFontSize={setLabelFontSize}
+                                tickFontSize={tickFontSize}
+                                setTickFontSize={setTickFontSize}
+                                imageQuality={imageQuality}
+                                setImageQuality={setImageQuality}
+                                imageSize={imageSize}
+                                setImageSize={setImageSize}
+                                colorPalette={colorPalette}
+                                setColorPalette={setColorPalette}
+                                barWidth={barWidth}
+                                setBarWidth={setBarWidth}
+                                boxWidth={boxWidth}
+                                setBoxWidth={setBoxWidth}
+                                violinWidth={violinWidth}
+                                setViolinWidth={setViolinWidth}
+                                t={t}
+                            />
+                        )}
+                    </div>
+
+                    {isFirstTimeAnalysis && (
+                        <KruskalOptions
+                            isFirstTimeAnalysis={isFirstTimeAnalysis}
+                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                            handleSubmit={handleSubmit}
+                            language={language}
+                            setLanguage={setLanguage}
+                            imageFormat={imageFormat}
+                            setImageFormat={setImageFormat}
+                            useDefaultSettings={useDefaultSettings}
+                            setUseDefaultSettings={setUseDefaultSettings}
+                            labelFontSize={labelFontSize}
+                            setLabelFontSize={setLabelFontSize}
+                            tickFontSize={tickFontSize}
+                            setTickFontSize={setTickFontSize}
+                            imageQuality={imageQuality}
+                            setImageQuality={setImageQuality}
+                            imageSize={imageSize}
+                            setImageSize={setImageSize}
+                            colorPalette={colorPalette}
+                            setColorPalette={setColorPalette}
+                            barWidth={barWidth}
+                            setBarWidth={setBarWidth}
+                            boxWidth={boxWidth}
+                            setBoxWidth={setBoxWidth}
+                            violinWidth={violinWidth}
+                            setViolinWidth={setViolinWidth}
+                            t={t}
+                        />
+                    )}
 
                     <div className="stats-viz-grid">
                         {results.image_paths.map((path, index) => {
