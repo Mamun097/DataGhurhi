@@ -4750,7 +4750,6 @@ const AnalysisResults = ({ handleSubmit, user_id, results, testType, columns, la
                 <div className="text-center mt-8">
                     <button
                         onClick={() => {
-                            //reload analysis
                             window.location.reload();
                         }}
                         className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
