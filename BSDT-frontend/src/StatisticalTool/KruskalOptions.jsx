@@ -98,7 +98,7 @@ const KruskalOptions = ({
     useEffect(() => {
         if (pendingRegenerateRef.current && handleSubmit) {
             // Check if all values match what we wanted to set
-            const allValuesMatch = 
+            const allValuesMatch =
                 imageFormat === tempValues.imageFormat &&
                 labelFontSize === tempValues.labelFontSize &&
                 tickFontSize === tempValues.tickFontSize &&
@@ -111,14 +111,14 @@ const KruskalOptions = ({
 
             if (allValuesMatch) {
                 pendingRegenerateRef.current = false;
-                
+
                 const syntheticEvent = {
-                    preventDefault: () => {},
-                    stopPropagation: () => {}
+                    preventDefault: () => { },
+                    stopPropagation: () => { }
                 };
-                
+
                 handleSubmit(syntheticEvent);
-                
+
                 setTimeout(() => {
                     setIsRegenerating(false);
                     setIsOverlayOpen(false);
@@ -183,7 +183,7 @@ const KruskalOptions = ({
             boxWidth: defaultValues.boxWidth,
             violinWidth: defaultValues.violinWidth
         };
-        
+
         setTempValues(resetValues);
         applySettings(resetValues);
 
