@@ -1,6 +1,5 @@
 /* Main styles */
 :root {
-
   --primary-color: #4f46e5;
   --primary-hover: #4338ca;
   --secondary-color: #0ea5e9;
@@ -51,7 +50,7 @@ body {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  padding: 1.5rem 1rem;
+  padding: 0rem 0rem;
 }
 
 /* Typography */
@@ -240,46 +239,6 @@ select.border.border-gray-300.rounded-lg.p-3.w-full {
   transition: all 0.2s ease;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
-
-/* .btn:hover, button.bg-blue-600:hover, button.bg-teal-600:hover {
-  background-color: var(--primary-hover);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-.btn:focus, button.bg-blue-600:focus, button.bg-teal-600:focus {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-}
-
-.btn:active, button.bg-blue-600:active, button.bg-teal-600:active {
-  transform: translateY(0);
-}
-
-.btn:disabled, button.bg-blue-600:disabled, button.bg-teal-600:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-button.bg-blue-600 {
-  background-color: var(--primary-color);
-  font-size: 0.875rem;
-  padding: 0.5rem 1rem;
-}
-
-button.bg-blue-600:hover {
-  background-color: var(--primary-hover);
-}
-
-button.bg-teal-600 {
-  background-color: var(--secondary-color);
-}
-
-button.bg-teal-600:hover {
-  background-color: var(--secondary-hover);
-} */
-
 
 svg {
   width: 1rem;
