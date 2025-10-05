@@ -33,7 +33,6 @@ const KruskalOptions = ({
     const [hasChanges, setHasChanges] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [showResetButton, setShowResetButton] = useState(true);
-    const [forceShowFooter, setForceShowFooter] = useState(false);
     const pendingRegenerateRef = useRef(false);
 
     // Store temporary values
@@ -86,13 +85,21 @@ const KruskalOptions = ({
         flare: 'Warm diverging palette - emphasizes extremes'
     };
 
-    // Check if any values have changed from defaults
+    // Check if any values have changed from current props
     useEffect(() => {
-        const changed = Object.keys(defaultValues).some(
-            key => String(tempValues[key]) !== String(defaultValues[key])
-        );
+        const changed = 
+            String(tempValues.imageFormat) !== String(imageFormat) ||
+            String(tempValues.labelFontSize) !== String(labelFontSize) ||
+            String(tempValues.tickFontSize) !== String(tickFontSize) ||
+            String(tempValues.imageQuality) !== String(imageQuality) ||
+            String(tempValues.imageSize) !== String(imageSize) ||
+            String(tempValues.colorPalette) !== String(colorPalette) ||
+            String(tempValues.barWidth) !== String(barWidth) ||
+            String(tempValues.boxWidth) !== String(boxWidth) ||
+            String(tempValues.violinWidth) !== String(violinWidth);
+        
         setHasChanges(changed);
-    }, [tempValues]);
+    }, [tempValues, imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth]);
 
     // Effect to handle regeneration after props are updated
     useEffect(() => {
@@ -146,7 +153,6 @@ const KruskalOptions = ({
         setIsOverlayOpen(true);
         // Reset the showResetButton state when overlay opens
         setShowResetButton(true);
-        setForceShowFooter(false);
     };
 
     const applySettings = (values) => {
@@ -185,15 +191,15 @@ const KruskalOptions = ({
         };
 
         setTempValues(resetValues);
-        applySettings(resetValues);
 
-        // For first time analysis, close overlay
+        // For first time analysis, apply settings and close overlay
         if (isFirstTimeAnalysis) {
+            applySettings(resetValues);
             setIsOverlayOpen(false);
         } else {
-            // For regeneration, hide reset button but keep footer visible
-            setShowResetButton(false);
-            setForceShowFooter(true);
+            // For regeneration, just update temp values
+            // User needs to click Generate Again to apply and regenerate
+            setShowResetButton(true); // Keep the reset button visible
         }
     };
 
@@ -215,11 +221,41 @@ const KruskalOptions = ({
             return;
         }
 
+        // Always allow regeneration, even if values haven't changed
         setIsRegenerating(true);
         pendingRegenerateRef.current = true;
 
         // Apply all settings
         applySettings(tempValues);
+        
+        // If values are the same, we need to force regeneration
+        const allValuesMatch =
+            imageFormat === tempValues.imageFormat &&
+            labelFontSize === tempValues.labelFontSize &&
+            tickFontSize === tempValues.tickFontSize &&
+            imageQuality === tempValues.imageQuality &&
+            imageSize === tempValues.imageSize &&
+            colorPalette === tempValues.colorPalette &&
+            barWidth === tempValues.barWidth &&
+            boxWidth === tempValues.boxWidth &&
+            violinWidth === tempValues.violinWidth;
+
+        // If all values already match, trigger regeneration immediately
+        if (allValuesMatch) {
+            pendingRegenerateRef.current = false;
+            
+            const syntheticEvent = {
+                preventDefault: () => { },
+                stopPropagation: () => { }
+            };
+
+            handleSubmit(syntheticEvent);
+
+            setTimeout(() => {
+                setIsRegenerating(false);
+                setIsOverlayOpen(false);
+            }, 500);
+        }
     };
 
     return (
@@ -408,50 +444,48 @@ const KruskalOptions = ({
                             </div>
                         </div>
 
-                        {/* Action Buttons - Show only if changes made */}
-                        {hasChanges && (
-                            <div className="overlay-footer">
-                                {showResetButton && (
-                                    <button
-                                        type="button"
-                                        className="btn-secondary"
-                                        onClick={handleKeepDefault}
-                                    >
-                                        {t.keepDefault || 'Reset to Default'}
-                                    </button>
-                                )}
-                                {isFirstTimeAnalysis ? (
-                                    <button
-                                        type="button"
-                                        className="btn-primary"
-                                        onClick={handleSave}
-                                    >
-                                        {t.save || 'Apply Changes'}
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        className="btn-primary"
-                                        onClick={handleRegenerate}
-                                        disabled={isRegenerating}
-                                    >
-                                        {isRegenerating ? (
-                                            <>
-                                                <span className="spinner"></span>
-                                                {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg className="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                                </svg>
-                                                {t.generateAgain || (language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again')}
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                            </div>
-                        )}
+                        {/* Action Buttons - Always visible */}
+                        <div className="overlay-footer">
+                            {showResetButton && (
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={handleKeepDefault}
+                                >
+                                    {t.keepDefault || 'Reset to Default'}
+                                </button>
+                            )}
+                            {isFirstTimeAnalysis ? (
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={handleSave}
+                                >
+                                    {t.save || 'Apply Changes'}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn-primary"
+                                    onClick={handleRegenerate}
+                                    disabled={isRegenerating}
+                                >
+                                    {isRegenerating ? (
+                                        <>
+                                            <span className="spinner"></span>
+                                            {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                            </svg>
+                                            {t.generateAgain || (language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again')}
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </>
             )}
