@@ -589,10 +589,10 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         tick_font_size  = 18
         img_quality     = 100
         width, height   = 1280, 720
-        palette         = 'husl'
-        bar_width       = 0.5
-        box_width       = 0.5
-        violin_width    = 0.5
+        palette         = 'bright'
+        bar_width       = 0.4
+        box_width       = 0.4
+        violin_width    = 0.4
     else:
         def _int(name, default):
             try: return int(request.POST.get(name, default))
@@ -611,10 +611,10 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         except Exception:
             width, height = 1280, 720
 
-        palette      = request.POST.get('palette', 'husl') or 'husl'
-        bar_width    = _float('bar_width', 0.5)
-        box_width    = _float('box_width', 0.5)
-        violin_width = _float('violin_width', 0.5)
+        palette      = request.POST.get('palette', 'bright') or 'bright'
+        bar_width    = _float('bar_width', 0.4)
+        box_width    = _float('box_width', 0.4)
+        violin_width = _float('violin_width', 0.4)
 
     
     media_root = settings.MEDIA_ROOT

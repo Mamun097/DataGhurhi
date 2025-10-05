@@ -42,10 +42,10 @@ const KruskalOptions = ({
         tickFontSize: tickFontSize || 18,
         imageQuality: imageQuality || 100,
         imageSize: imageSize || '1280x720',
-        colorPalette: colorPalette || 'husl',
-        barWidth: barWidth || 0.5,
-        boxWidth: boxWidth || 0.5,
-        violinWidth: violinWidth || 0.5
+        colorPalette: colorPalette || 'bright',
+        barWidth: barWidth || 0.4,
+        boxWidth: boxWidth || 0.4,
+        violinWidth: violinWidth || 0.4
     });
 
     // Default values to compare against
@@ -55,10 +55,10 @@ const KruskalOptions = ({
         tickFontSize: 18,
         imageQuality: 100,
         imageSize: '1280x720',
-        colorPalette: 'husl',
-        barWidth: 0.5,
-        boxWidth: 0.5,
-        violinWidth: 0.5
+        colorPalette: 'bright',
+        barWidth: 0.4,
+        boxWidth: 0.4,
+        violinWidth: 0.4
     };
 
     // Color palette descriptions
@@ -87,7 +87,7 @@ const KruskalOptions = ({
 
     // Check if any values have changed from current props
     useEffect(() => {
-        const changed = 
+        const changed =
             String(tempValues.imageFormat) !== String(imageFormat) ||
             String(tempValues.labelFontSize) !== String(labelFontSize) ||
             String(tempValues.tickFontSize) !== String(tickFontSize) ||
@@ -97,7 +97,7 @@ const KruskalOptions = ({
             String(tempValues.barWidth) !== String(barWidth) ||
             String(tempValues.boxWidth) !== String(boxWidth) ||
             String(tempValues.violinWidth) !== String(violinWidth);
-        
+
         setHasChanges(changed);
     }, [tempValues, imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth]);
 
@@ -219,7 +219,7 @@ const KruskalOptions = ({
         pendingRegenerateRef.current = true;
 
         applySettings(tempValues);
-        
+
         const allValuesMatch =
             imageFormat === tempValues.imageFormat &&
             labelFontSize === tempValues.labelFontSize &&
@@ -233,7 +233,7 @@ const KruskalOptions = ({
 
         if (allValuesMatch) {
             pendingRegenerateRef.current = false;
-            
+
             const syntheticEvent = {
                 preventDefault: () => { },
                 stopPropagation: () => { }
