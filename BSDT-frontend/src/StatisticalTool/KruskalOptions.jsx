@@ -129,7 +129,7 @@ const KruskalOptions = ({
                 setTimeout(() => {
                     setIsRegenerating(false);
                     setIsOverlayOpen(false);
-                }, 500);
+                }, 3000);
             }
         }
     }, [imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, tempValues, handleSubmit]);
@@ -151,12 +151,10 @@ const KruskalOptions = ({
         };
         setTempValues(initialValues);
         setIsOverlayOpen(true);
-        // Reset the showResetButton state when overlay opens
         setShowResetButton(true);
     };
 
     const applySettings = (values) => {
-        // Apply settings immediately and synchronously
         if (setUseDefaultSettings) setUseDefaultSettings(false);
         if (setImageFormat) setImageFormat(values.imageFormat);
         if (setLabelFontSize) setLabelFontSize(values.labelFontSize);
@@ -177,7 +175,6 @@ const KruskalOptions = ({
     const handleKeepDefault = () => {
         if (setUseDefaultSettings) setUseDefaultSettings(false);
 
-        // Reset temp values to defaults
         const resetValues = {
             imageFormat: defaultValues.imageFormat,
             labelFontSize: defaultValues.labelFontSize,
@@ -192,14 +189,11 @@ const KruskalOptions = ({
 
         setTempValues(resetValues);
 
-        // For first time analysis, apply settings and close overlay
         if (isFirstTimeAnalysis) {
             applySettings(resetValues);
             setIsOverlayOpen(false);
         } else {
-            // For regeneration, just update temp values
-            // User needs to click Generate Again to apply and regenerate
-            setShowResetButton(true); // Keep the reset button visible
+            setShowResetButton(true);
         }
     };
 
@@ -221,14 +215,11 @@ const KruskalOptions = ({
             return;
         }
 
-        // Always allow regeneration, even if values haven't changed
         setIsRegenerating(true);
         pendingRegenerateRef.current = true;
 
-        // Apply all settings
         applySettings(tempValues);
         
-        // If values are the same, we need to force regeneration
         const allValuesMatch =
             imageFormat === tempValues.imageFormat &&
             labelFontSize === tempValues.labelFontSize &&
@@ -240,7 +231,6 @@ const KruskalOptions = ({
             boxWidth === tempValues.boxWidth &&
             violinWidth === tempValues.violinWidth;
 
-        // If all values already match, trigger regeneration immediately
         if (allValuesMatch) {
             pendingRegenerateRef.current = false;
             
@@ -288,7 +278,6 @@ const KruskalOptions = ({
                         </div>
 
                         <div className="overlay-content">
-                            {/* Image Format Section */}
                             <div className="settings-section">
                                 <h4 className="section-title">{t.imageFormatSection || 'Image Format'}</h4>
                                 <div className="form-group">
@@ -333,7 +322,6 @@ const KruskalOptions = ({
                                 </div>
                             </div>
 
-                            {/* Typography Section */}
                             <div className="settings-section">
                                 <h4 className="section-title">{t.typographySection || 'Typography'}</h4>
                                 <div className="form-group">
@@ -357,7 +345,6 @@ const KruskalOptions = ({
                                 </div>
                             </div>
 
-                            {/* Visual Styling Section */}
                             <div className="settings-section">
                                 <h4 className="section-title">{t.visualStylingSection || 'Visual Styling'}</h4>
                                 <div className="form-group">
@@ -444,7 +431,6 @@ const KruskalOptions = ({
                             </div>
                         </div>
 
-                        {/* Action Buttons - Always visible */}
                         <div className="overlay-footer">
                             {showResetButton && (
                                 <button
@@ -470,19 +456,13 @@ const KruskalOptions = ({
                                     onClick={handleRegenerate}
                                     disabled={isRegenerating}
                                 >
-                                    {isRegenerating ? (
-                                        <>
-                                            <span className="spinner"></span>
-                                            {language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...'}
-                                        </>
-                                    ) : (
-                                        <>
-                                            <svg className="inline-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                            </svg>
-                                            {t.generateAgain || (language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again')}
-                                        </>
-                                    )}
+                                    <span style={{ position: 'relative', width: '16px', height: '16px', display: 'inline-block', flexShrink: 0 }}>
+                                        <span className="spinner" style={{ position: 'absolute', top: 0, left: 0, visibility: isRegenerating ? 'visible' : 'hidden' }}></span>
+                                        <svg className="inline-icon" style={{ position: 'absolute', top: 0, left: 0, visibility: isRegenerating ? 'hidden' : 'visible' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </span>
+                                    <span>{isRegenerating ? (language === 'bn' ? 'পুনরায় তৈরি করা হচ্ছে...' : 'Regenerating...') : (t.generateAgain || (language === 'bn' ? 'পুনরায় তৈরি করুন' : 'Generate Again'))}</span>
                                 </button>
                             )}
                         </div>

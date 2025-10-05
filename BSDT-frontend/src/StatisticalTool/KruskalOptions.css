@@ -38,8 +38,8 @@
     border: none;
     padding: 0.625rem 1.25rem;
     border-radius: 6px;
-    font-size: 0.875rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
@@ -232,6 +232,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    min-height: 38px;
+    line-height: 1.5;
 }
 
 .btn-primary {
@@ -265,6 +267,7 @@
     width: 16px;
     height: 16px;
     display: inline-block;
+    flex-shrink: 0;
 }
 
 .spinner {
@@ -275,6 +278,7 @@
     border-radius: 50%;
     border-top-color: white;
     animation: spin 0.6s linear infinite;
+    flex-shrink: 0;
 }
 
 @keyframes spin {
