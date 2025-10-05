@@ -637,9 +637,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     def map_digits(s: str) -> str:
         return s.translate(digit_map_bn) if language == 'bn' else s
 
-    # -----------------------------
-    # 4) Bengali font setup (with fallback)
-    # -----------------------------
+
     font_path = os.path.join(getattr(settings, 'BASE_DIR', ''), 'NotoSansBengali-Regular.ttf')
 
     def get_pil_font(size: int) -> ImageFont.FreeTypeFont:
@@ -712,7 +710,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         base_path = os.path.join(plots_dir, base_filename)
         final_path = os.path.join(plots_dir, final_filename)
 
-        plt.tight_layout(pad=0)
+        plt.tight_layout(pad=1)
         fig.savefig(base_path, bbox_inches='tight', dpi=300, format='PNG')
         plt.close(fig)
 
@@ -787,11 +785,13 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
             s = f"{v:.0f}"
         yt_labels.append(map_digits(s))
     ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
+    #grid lines
+    ax1.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0) 
 
     count_path = create_labeled_plot(
         fig1, ax1,
         title=f"{col1} group sizes",
-        xlabel=col1, ylabel="Count",
+        xlabel=col1, ylabel=col2,
         base_filename="count_base.png",
         final_filename=f"countplot.{img_format}"
     )
@@ -803,6 +803,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     ax2.set_xticklabels(cat_labels, fontproperties=tick_prop)
     yt2 = ax2.get_yticks()
     ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in yt2], fontproperties=tick_prop)
+    ax2.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0)
 
     box_path = create_labeled_plot(
         fig2, ax2,
@@ -819,6 +820,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     ax3.set_xticklabels(cat_labels, fontproperties=tick_prop)
     yt3 = ax3.get_yticks()
     ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in yt3], fontproperties=tick_prop)
+    ax3.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0)
 
     violin_path = create_labeled_plot(
         fig3, ax3,
@@ -4993,7 +4995,7 @@ def remove_duplicates(request):
         # --- Load Excel ---
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet_name in df:
                     df = df[sheet_name]
                 else:
@@ -5080,7 +5082,7 @@ def handle_missing_api(request):
         source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet_name in df:
                     df = df[sheet_name]
                 else:
@@ -5174,7 +5176,7 @@ def outliers_summary_api(request):
 
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet in df:
                     df = df[sheet]
                 else:
@@ -5265,7 +5267,7 @@ def handle_outliers_api(request):
 
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet in df:
                     df = df[sheet]
                 else:
@@ -5345,7 +5347,7 @@ def rank_categorical_column_api(request):
 
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet in df:
                     df = df[sheet]
                 else:
@@ -5693,7 +5695,7 @@ def group_data_api(request):
 
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path,engine='openpyxl', sheet_name=[])
+                df= pd.read_excel(source_path,engine='openpyxl', sheet_name=None)
                 if sheet in df:
                     df = df[sheet]
                 else:
@@ -5783,7 +5785,7 @@ def generate_unique_id_column_api(request):
 
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name=[])
+                df = pd.read_excel(source_path, sheet_name=None)
                 if sheet in df:
                     df = df[sheet]
                 else:
