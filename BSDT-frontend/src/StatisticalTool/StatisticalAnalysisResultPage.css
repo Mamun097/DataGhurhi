@@ -26,19 +26,21 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
+    background: transparent;
+    color: #10b981;
     font-weight: 600;
     font-size: 14px;
     padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
+    border: 2px solid #10b981;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+    box-shadow: none;
 }
 
 .stats-save-btn:hover {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
     transform: translateY(-2px);
     box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
 }

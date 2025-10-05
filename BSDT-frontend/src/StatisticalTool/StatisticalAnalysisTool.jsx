@@ -489,10 +489,10 @@ const StatisticalAnalysisTool = () => {
     const [tickFontSize, setTickFontSize] = useState(18);
     const [imageQuality, setImageQuality] = useState(100);
     const [imageSize, setImageSize] = useState('1280x720');
-    const [colorPalette, setColorPalette] = useState('husl');
-    const [barWidth, setBarWidth] = useState(0.5);
-    const [boxWidth, setBoxWidth] = useState(0.5);
-    const [violinWidth, setViolinWidth] = useState(0.5);
+    const [colorPalette, setColorPalette] = useState('bright');
+    const [barWidth, setBarWidth] = useState(0.4);
+    const [boxWidth, setBoxWidth] = useState(0.4);
+    const [violinWidth, setViolinWidth] = useState(0.4);
     const [detailsModalVisible, setDetailsModalVisible] = useState(false);
     //
     const [histogramBins, setHistogramBins] = useState(30);
@@ -4721,25 +4721,31 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         </div>
     );
 
-    return (
+return (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
             <div className="bg-gray-700 text-white p-4 font-semibold">
-                < p className="text-black inline">
+                <p className="text-black inline">
                     {language === 'bn' ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
                 </p>
-
             </div>
             <div className="p-6">
                 <div className="analysis-container">
                     {renderResults()}
                 </div>
 
-                <div className="text-center mt-8">
+                <div style={{
+                    padding: '1rem 0',
+                    display: 'flex',
+                    gap: '1rem',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    marginTop: '2rem'
+                }}>
                     <button
                         onClick={() => {
                             if (!results || !columns || !testType) {
                                 alert(language === 'বাংলা'
-                                    ? 'রিপোর্ট যুক্ত করার জন্য সম্পূর্ণ বিশ্লেষণ প্রয়োজন'
+                                    ? 'রিপোর্ট যুক্ত করার জন্য সম্পূর্ণ বিশ্লেষণ প্রয়োজন'
                                     : 'Analysis must be completed before adding to report'
                                 );
                                 return;
@@ -4782,17 +4788,16 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                                 alert(language === 'বাংলা' ? 'রিপোর্ট যুক্ত করা যায়নি' : 'Failed to add to report');
                             }
                         }}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-black font-medium py-2 px-4 rounded-lg shadow transition duration-200 transform hover:-translate-y-1 ml-4"
+                        className="stats-save-btn"
                     >
                         {language === 'বাংলা' ? 'রিপোর্টে যুক্ত করুন' : 'Add to Report'}
                     </button>
-                </div>
-                <div className="text-center mt-8">
+
                     <button
                         onClick={() => {
                             window.location.reload();
                         }}
-                        className="bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-6 rounded-lg shadow transition duration-200 transform hover:-translate-y-1"
+                        className="stats-save-btn"
                     >
                         {language === 'bn' ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
                     </button>
