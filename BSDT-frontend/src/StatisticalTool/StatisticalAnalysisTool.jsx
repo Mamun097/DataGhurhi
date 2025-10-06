@@ -493,6 +493,7 @@ const StatisticalAnalysisTool = () => {
     const [barWidth, setBarWidth] = useState(0.4);
     const [boxWidth, setBoxWidth] = useState(0.4);
     const [violinWidth, setViolinWidth] = useState(0.4);
+    const [showGrid, setShowGrid] = useState(true);
     const [detailsModalVisible, setDetailsModalVisible] = useState(false);
     //
     const [histogramBins, setHistogramBins] = useState(30);
@@ -698,6 +699,7 @@ const StatisticalAnalysisTool = () => {
                 formData.append('image_size', imageSize);
                 formData.append('palette', colorPalette);
                 formData.append('bar_width', barWidth.toString());
+                formData.append('show_grid', showGrid ? 'true' : 'false');
 
                 if (['kruskal', 'mannwhitney'].includes(testType)) {
                     formData.append('box_width', boxWidth.toString());
@@ -1411,6 +1413,8 @@ const StatisticalAnalysisTool = () => {
                                                             setBoxWidth={setBoxWidth}
                                                             violinWidth={violinWidth}
                                                             setViolinWidth={setViolinWidth}
+                                                            showGrid={showGrid}
+                                                            setShowGrid={setShowGrid}
                                                             t={t}
                                                         />
                                                     )}
@@ -2083,6 +2087,8 @@ const StatisticalAnalysisTool = () => {
                                     setBoxWidth={setBoxWidth}
                                     violinWidth={violinWidth}
                                     setViolinWidth={setViolinWidth}
+                                    showGrid={showGrid}
+                                    setShowGrid={setShowGrid}
 
                                     t={t}
                                     filename={fileName}
@@ -2100,7 +2106,7 @@ const StatisticalAnalysisTool = () => {
 };
 
 // Component for rendering analysis results
-const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, t, filename }) => {
+const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, showGrid, setShowGrid, t, filename }) => {
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2375,6 +2381,8 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                                 setBoxWidth={setBoxWidth}
                                 violinWidth={violinWidth}
                                 setViolinWidth={setViolinWidth}
+                                showGrid={showGrid}
+                                setShowGrid={setShowGrid}
                                 t={t}
                             />
                         )}
@@ -2407,6 +2415,8 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                             setBoxWidth={setBoxWidth}
                             violinWidth={violinWidth}
                             setViolinWidth={setViolinWidth}
+                            showGrid={showGrid}
+                            setShowGrid={setShowGrid}
                             t={t}
                         />
                     )}
