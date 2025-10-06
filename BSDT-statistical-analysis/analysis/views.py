@@ -772,7 +772,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
 
     # 9a) Count plot (group sizes)
     fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    counts = work[col1].value_counts().reindex(categories).fillna(0).astype(int)
+    counts = work[col1].value_counts().reindex(categories).fillna(0).astype(int)    
     sns.barplot(x=[str(c) for c in categories], y=counts.values, ax=ax1, width=bar_width, palette=palette)
     ax1.set_xticklabels(cat_labels, fontproperties=tick_prop)
     # y ticks (map to digits if bn)
@@ -786,7 +786,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         yt_labels.append(map_digits(s))
     ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
     #grid lines
-    ax1.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0) 
+    ax1.set_axisbelow(True)  # ensures grid is drawn behind bars
+    ax1.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)    
 
     count_path = create_labeled_plot(
         fig1, ax1,
@@ -803,7 +804,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     ax2.set_xticklabels(cat_labels, fontproperties=tick_prop)
     yt2 = ax2.get_yticks()
     ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in yt2], fontproperties=tick_prop)
-    ax2.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0)
+    ax2.set_axisbelow(True)
+    ax2.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
 
     box_path = create_labeled_plot(
         fig2, ax2,
@@ -820,7 +822,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     ax3.set_xticklabels(cat_labels, fontproperties=tick_prop)
     yt3 = ax3.get_yticks()
     ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in yt3], fontproperties=tick_prop)
-    ax3.grid(True, linestyle='--', linewidth=1.75 , alpha=1.0)
+    ax3.set_axisbelow(True)
+    ax3.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
 
     violin_path = create_labeled_plot(
         fig3, ax3,
