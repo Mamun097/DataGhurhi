@@ -593,6 +593,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         bar_width       = 0.4
         box_width       = 0.4
         violin_width    = 0.4
+        show_grid       = True
     else:
         def _int(name, default):
             try: return int(request.POST.get(name, default))
@@ -615,6 +616,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         bar_width    = _float('bar_width', 0.4)
         box_width    = _float('box_width', 0.4)
         violin_width = _float('violin_width', 0.4)
+        show_grid    = request.POST.get('show_grid', 'true').lower() in ('true', '1', 'yes')
 
     
     media_root = settings.MEDIA_ROOT
@@ -796,7 +798,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
     #grid lines
     ax1.set_axisbelow(True)  # ensures grid is drawn behind bars
-    ax1.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)    
+    if show_grid:
+        ax1.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
 
     count_path = create_labeled_plot(
         fig1, ax1,
@@ -814,7 +817,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     yt2 = ax2.get_yticks()
     ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in yt2], fontproperties=tick_prop)
     ax2.set_axisbelow(True)
-    ax2.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
+    if show_grid:
+        ax2.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
 
     box_path = create_labeled_plot(
         fig2, ax2,
@@ -832,7 +836,8 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     yt3 = ax3.get_yticks()
     ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in yt3], fontproperties=tick_prop)
     ax3.set_axisbelow(True)
-    ax3.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
+    if show_grid:
+        ax3.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
 
     violin_path = create_labeled_plot(
         fig3, ax3,
