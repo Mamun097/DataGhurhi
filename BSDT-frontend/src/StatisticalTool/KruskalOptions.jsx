@@ -27,6 +27,8 @@ const KruskalOptions = ({
     setBoxWidth,
     violinWidth,
     setViolinWidth,
+    showGrid,
+    setShowGrid,
     t
 }) => {
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
@@ -45,7 +47,8 @@ const KruskalOptions = ({
         colorPalette: colorPalette || 'bright',
         barWidth: barWidth || 0.4,
         boxWidth: boxWidth || 0.4,
-        violinWidth: violinWidth || 0.4
+        violinWidth: violinWidth || 0.4,
+        showGrid: showGrid !== undefined ? showGrid : true
     });
 
     // Default values to compare against
@@ -58,7 +61,8 @@ const KruskalOptions = ({
         colorPalette: 'bright',
         barWidth: 0.4,
         boxWidth: 0.4,
-        violinWidth: 0.4
+        violinWidth: 0.4,
+        showGrid: true
     };
 
     // Color palette descriptions
@@ -96,10 +100,11 @@ const KruskalOptions = ({
             String(tempValues.colorPalette) !== String(colorPalette) ||
             String(tempValues.barWidth) !== String(barWidth) ||
             String(tempValues.boxWidth) !== String(boxWidth) ||
-            String(tempValues.violinWidth) !== String(violinWidth);
+            String(tempValues.violinWidth) !== String(violinWidth) ||
+            Boolean(tempValues.showGrid) !== Boolean(showGrid);
 
         setHasChanges(changed);
-    }, [tempValues, imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth]);
+    }, [tempValues, imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, showGrid]);
 
     // Effect to handle regeneration after props are updated
     useEffect(() => {
@@ -114,7 +119,8 @@ const KruskalOptions = ({
                 colorPalette === tempValues.colorPalette &&
                 barWidth === tempValues.barWidth &&
                 boxWidth === tempValues.boxWidth &&
-                violinWidth === tempValues.violinWidth;
+                violinWidth === tempValues.violinWidth &&
+                showGrid === tempValues.showGrid;
 
             if (allValuesMatch) {
                 pendingRegenerateRef.current = false;
@@ -132,7 +138,7 @@ const KruskalOptions = ({
                 }, 3000);
             }
         }
-    }, [imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, tempValues, handleSubmit]);
+    }, [imageFormat, labelFontSize, tickFontSize, imageQuality, imageSize, colorPalette, barWidth, boxWidth, violinWidth, showGrid, tempValues, handleSubmit]);
 
     // Initialize temp values when overlay opens
     const openOverlay = (e) => {
@@ -147,7 +153,8 @@ const KruskalOptions = ({
             colorPalette: colorPalette || defaultValues.colorPalette,
             barWidth: barWidth || defaultValues.barWidth,
             boxWidth: boxWidth || defaultValues.boxWidth,
-            violinWidth: violinWidth || defaultValues.violinWidth
+            violinWidth: violinWidth || defaultValues.violinWidth,
+            showGrid: showGrid !== undefined ? showGrid : defaultValues.showGrid
         };
         setTempValues(initialValues);
         setIsOverlayOpen(true);
@@ -165,6 +172,7 @@ const KruskalOptions = ({
         if (setBarWidth) setBarWidth(values.barWidth);
         if (setBoxWidth) setBoxWidth(values.boxWidth);
         if (setViolinWidth) setViolinWidth(values.violinWidth);
+        if (setShowGrid) setShowGrid(values.showGrid);
     };
 
     const handleSave = () => {
@@ -184,7 +192,8 @@ const KruskalOptions = ({
             colorPalette: defaultValues.colorPalette,
             barWidth: defaultValues.barWidth,
             boxWidth: defaultValues.boxWidth,
-            violinWidth: defaultValues.violinWidth
+            violinWidth: defaultValues.violinWidth,
+            showGrid: defaultValues.showGrid
         };
 
         setTempValues(resetValues);
@@ -229,7 +238,8 @@ const KruskalOptions = ({
             colorPalette === tempValues.colorPalette &&
             barWidth === tempValues.barWidth &&
             boxWidth === tempValues.boxWidth &&
-            violinWidth === tempValues.violinWidth;
+            violinWidth === tempValues.violinWidth &&
+            showGrid === tempValues.showGrid;
 
         if (allValuesMatch) {
             pendingRegenerateRef.current = false;
@@ -427,6 +437,21 @@ const KruskalOptions = ({
                                         value={tempValues.violinWidth}
                                         onChange={(e) => handleTempChange('violinWidth', Number(e.target.value))}
                                     />
+                                </div>
+
+                                <div className="form-group">
+                                    <div className="checkbox-wrapper">
+                                        <input
+                                            type="checkbox"
+                                            id="showGrid"
+                                            className="form-checkbox"
+                                            checked={tempValues.showGrid}
+                                            onChange={(e) => handleTempChange('showGrid', e.target.checked)}
+                                        />
+                                        <label htmlFor="showGrid" className="checkbox-label">
+                                            {t.showGrid || 'Show Grid Lines'}
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
