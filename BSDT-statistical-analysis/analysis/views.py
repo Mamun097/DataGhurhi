@@ -554,14 +554,10 @@ except Exception:  # pragma: no cover
 
 
 def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
-    
-
-   
     print(f"[Kruskal] cols: {col1}(group) | {col2}(value)")
     if col1 not in df.columns or col2 not in df.columns:
         return JsonResponse({'success': False, 'error': 'Invalid column names.'})
 
-    
     try:
         language   = request.POST.get('language', 'en').lower()
         img_format = request.POST.get('format', 'png').lower()
@@ -574,7 +570,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     if img_format not in ('png', 'jpg', 'jpeg', 'pdf', 'tiff'):
         img_format = 'png'
 
-    
     pil_fmt = {
         'png': 'PNG',
         'jpg': 'JPEG',
@@ -623,9 +618,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     plots_dir  = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
     os.makedirs(plots_dir, exist_ok=True)
 
-    
     translator = Translator() if (Translator is not None and language == 'bn') else None
-
     digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
 
     def translate(text: str) -> str:
@@ -639,11 +632,9 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     def map_digits(s: str) -> str:
         return s.translate(digit_map_bn) if language == 'bn' else s
 
-
     font_path = os.path.join(getattr(settings, 'BASE_DIR', ''), 'NotoSansBengali-Regular.ttf')
 
     def get_pil_font(size: int) -> ImageFont.FreeTypeFont:
-       
         try:
             if language == 'bn' and os.path.exists(font_path):
                 return ImageFont.truetype(font_path, size=size)
@@ -670,7 +661,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     if language == 'bn' and os.path.exists(font_path):
         tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
 
-    
     work = df[[col1, col2]].copy()
     work = work.dropna(subset=[col1, col2])
     print(f"[Kruskal] after dropna: {len(work)} rows")
@@ -690,7 +680,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         if not pd.api.types.is_numeric_dtype(work[col2]):
             return JsonResponse({'success': False, 'error': f'"{col2}" must be numeric for Kruskal–Wallis.'})
 
-    
     groups = [work.loc[work[col1] == g, col2].values for g in categories]
     if any(len(g) == 0 for g in groups):
         return JsonResponse({'success': False, 'error': 'Each group must contain at least one observation.'})
@@ -768,17 +757,14 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         # Paste centered on canvas
         canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
 
-
         # Save final in requested format
         canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
         print(f"[Kruskal] saved: {final_path}")
 
         return f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}" 
 
-   
     cat_labels = [map_digits(translate(str(c))) for c in categories]
 
-   
     image_paths = []
 
     # 9a) Count plot (group sizes)
@@ -848,7 +834,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     )
     image_paths.append(violin_path)
 
-    
     stat_out = stat
     p_out    = p_value
     if language == 'bn':
@@ -2796,12 +2781,17 @@ def process_cross_tabulation(request, df, selected_columns, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+def create_plot(fig, ax, title, xlabel, ylabel, base, final):
+            # Format tick labels first
+            xt = [format_tick(x) for x in ax.get_xticks()]
+            yt = [format_tick]
 def process_eda_distribution(request, df, col, user_id):
     import os
     import numpy as np
     import seaborn as sns
     import matplotlib.pyplot as plt
     import matplotlib.font_manager as fm
+    import matplotlib
     from googletrans import Translator
     from PIL import Image, ImageDraw, ImageFont
     from django.conf import settings
@@ -2815,98 +2805,141 @@ def process_eda_distribution(request, df, col, user_id):
 
         font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
         digit_map = str.maketrans('0123456789','০১২৩৪৫৬৭৮৯')
-        translator = Translator()
+        translator = Translator() if language == 'bn' else None
 
         def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
+            if language == 'bn' and translator is not None:
+                try:
+                    return translator.translate(text, dest='bn').text
+                except Exception:
+                    return text
+            return text
 
         def map_digits(txt):
             return txt.translate(digit_map) if language == 'bn' else txt
 
         def format_tick(x):
             s = f"{x:.4f}".rstrip('0').rstrip('.')
-            return map_digits(translate(s))
+            return map_digits(s)
 
         use_default = request.POST.get('use_default', 'true') == 'true'
         if not use_default:
             dpi = int(request.POST.get('image_quality', 300))
             width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
-            label_font_size = int(request.POST.get('label_font_size', 50))
-            caption_font_size = int(request.POST.get('caption_font_size', 50))
-            tick_font_size = int(request.POST.get('tick_font_size', 12))
-            hist_color = request.POST.get('hist_color', 'blue')
-            kde_color = request.POST.get('kde_color', 'green')
-            dist_color = request.POST.get('dist_color', 'purple')
+            label_font_size = int(request.POST.get('label_font_size', 80))
+            caption_font_size = int(request.POST.get('caption_font_size', 80))
+            tick_font_size = int(request.POST.get('tick_font_size', 20))
+            hist_color = request.POST.get('hist_color', '#3b82f6')
+            kde_color = request.POST.get('kde_color', '#ef4444')
+            dist_color = request.POST.get('dist_color', '#06b6d4')
+            show_grid = request.POST.get('show_grid', 'true').lower() in ('true', '1', 'yes')
         else:
             dpi = 300
-            width, height = 800, 600
-            label_font_size = 50
-            caption_font_size = 50
-            tick_font_size = 12
-            hist_color, kde_color, dist_color = 'blue', 'green', 'purple'
+            width, height = 1280, 720
+            label_font_size = 80
+            caption_font_size = 80
+            tick_font_size = 20
+            hist_color, kde_color, dist_color = '#3b82f6', '#ef4444', '#06b6d4'
+            show_grid = True
 
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            label_font = ImageFont.truetype(font_path, size=label_font_size)
-            caption_font = ImageFont.truetype(font_path, size=caption_font_size)
+        # Font setup for matplotlib
+        try:
+            if language == 'bn' and os.path.exists(font_path):
+                fm.fontManager.addfont(font_path)
+                bengali_font_name = fm.FontProperties(fname=font_path).get_name()
+                matplotlib.rcParams['font.family'] = bengali_font_name
+            else:
+                matplotlib.rcParams['font.family'] = 'DejaVu Sans'
+        except Exception as e:
+            print(f"[EDA Distribution] Matplotlib font setup warning: {e}")
+
+        # Font setup for PIL and ticks
+        def get_pil_font(size: int):
+            try:
+                if language == 'bn' and os.path.exists(font_path):
+                    return ImageFont.truetype(font_path, size=size)
+                djv_path = fm.findfont('DejaVu Sans', fallback_to_default=True)
+                if os.path.exists(djv_path):
+                    return ImageFont.truetype(djv_path, size=size)
+            except Exception:
+                pass
+            return ImageFont.load_default()
+
+        label_font = get_pil_font(label_font_size)
+        caption_font = get_pil_font(caption_font_size)
+        
+        tick_prop = fm.FontProperties(size=tick_font_size)
+        if language == 'bn' and os.path.exists(font_path):
             tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-            if language == 'bn':
-                plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-        else:
-            label_font = caption_font = ImageFont.load_default()
-            tick_prop = fm.FontProperties(size=tick_font_size)
 
         if col not in df.columns or not np.issubdtype(df[col].dtype, np.number):
             return JsonResponse({'success': False, 'error': translate('Selected column is not numeric.')})
 
         def create_plot(fig, ax, title, xlabel, ylabel, base, final):
+            # Format tick labels
+            xt = [format_tick(x) for x in ax.get_xticks()]
+            yt = [format_tick(y) for y in ax.get_yticks()]
+            ax.set_xticklabels(xt, fontproperties=tick_prop)
+            ax.set_yticklabels(yt, fontproperties=tick_prop)
+            
+            # Remove matplotlib labels
+            ax.set_title('')
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            
+            plt.tight_layout(pad=1)
+            fig.savefig(base, bbox_inches='tight', dpi=300, format='PNG')
+            plt.close(fig)
+
+            # Prepare strings
             T = map_digits(translate(title))
             X = map_digits(translate(xlabel))
             Y = map_digits(translate(ylabel))
 
-            xt = [format_tick(x) for x in ax.get_xticks()]
-            yt = [format_tick(y) for y in ax.get_yticks()]
-            ax.set_xticklabels(xt, fontproperties=tick_prop, rotation=45)
-            ax.set_yticklabels(yt, fontproperties=tick_prop)
-            ax.set_title(''); ax.set_xlabel(''); ax.set_ylabel('')
-            plt.tight_layout()
-            fig.savefig(base, dpi=dpi)
-            plt.close(fig)
+            # Measure text with proper padding for descenders
+            tx0, ty0, tx1, ty1 = caption_font.getbbox(T)
+            th = ty1 - ty0
+            xx0, xy0, xx1, xy1 = label_font.getbbox(X)
+            xh = xy1 - xy0
+            yx0, yy0, yx1, yy1 = label_font.getbbox(Y)
+            yw, yh = yx1 - yx0, yy1 - yy0
 
+            # Padding (left must fit rotated Y label height)
+            pad = max(label_font_size // 2, 10)
+            lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
+
+            # Load base image
             img = Image.open(base).convert('RGB')
             bw, bh = img.size
-
-            bbox_Y = label_font.getbbox(Y)
-            text_w = bbox_Y[2] - bbox_Y[0]
-            text_h = bbox_Y[3] - bbox_Y[1]
-            pad = 20
-            Yimg = Image.new('RGBA', (text_w+pad*2, text_h+pad*2), (255,255,255,0))
-            d2 = ImageDraw.Draw(Yimg)
-            d2.text((pad, pad), Y, font=label_font, fill='black')
-            Yrot = Yimg.rotate(90, expand=True)
-
-            extra_left = Yrot.width + 20
-            extra_top = caption_font_size + 20
-            extra_bottom = label_font_size + 50
-            new_bw = bw + extra_left
-            new_bh = bh + extra_top + extra_bottom
-            canvas = Image.new('RGB', (new_bw, new_bh), 'white')
-            canvas.paste(img, (extra_left, extra_top))
+            
+            # Compose canvas
+            W, H = bw + lm + rm, bh + tm + bm
+            canvas = Image.new('RGB', (W, H), 'white')
+            canvas.paste(img, (lm, tm))
             draw = ImageDraw.Draw(canvas)
 
-            bbox_T = caption_font.getbbox(T)
-            wT = bbox_T[2] - bbox_T[0]
-            draw.text((extra_left+(bw-wT)//2, 10), T, font=caption_font, fill='black')
+            # Helper for centering
+            def center_h(txt, fnt, total_w):
+                return (total_w - int(draw.textlength(txt, font=fnt))) // 2
 
-            bbox_X = label_font.getbbox(X)
-            wX = bbox_X[2] - bbox_X[0]
-            draw.text((extra_left+(bw-wX)//2, extra_top+bh+(extra_bottom-20)//2), X, font=label_font, fill='black')
+            # Title (top center)
+            tx = center_h(T, caption_font, W)
+            draw.text((tx, (tm - th) // 2), T, font=caption_font, fill='black')
 
-            y_x = (extra_left - Yrot.width)//2
-            y_y = extra_top + (bh - Yrot.height)//2
-            canvas.paste(Yrot, (y_x, y_y), Yrot)
+            # X-axis label (bottom center)
+            xx = center_h(X, label_font, W)
+            draw.text((xx, tm + bh + (bm - xh) // 2), X, font=label_font, fill='black')
 
-            canvas.save(final, format=pil_format)
+            # Y-axis label (rotated)
+            baseline_pad = int(label_font_size * 0.25)
+            Yimg = Image.new('RGBA', (yw, yh + baseline_pad), (255, 255, 255, 0))
+            d2 = ImageDraw.Draw(Yimg)
+            d2.text((0, baseline_pad // 2), Y, font=label_font, fill='black')
+            Yrot = Yimg.rotate(90, expand=True)
+            canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
+
+            # Save final with high quality
+            canvas.save(final, format=pil_format, quality=100, dpi=(300, 300), optimize=True)
             return final
 
         plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
@@ -2915,23 +2948,35 @@ def process_eda_distribution(request, df, col, user_id):
 
         # Histogram
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.histplot(df[col], ax=ax, color=hist_color)
+        ax.set_axisbelow(True)
+        if show_grid:
+            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
+        sns.histplot(df[col], ax=ax, color=hist_color, edgecolor='white', linewidth=1.2, alpha=1.0)
+        hist_base = os.path.join(plot_dir, 'hist_base.png')
         hist_path = os.path.join(plot_dir, f'histogram_{col}.{file_format}')
-        create_plot(fig, ax, f'Histogram of {col}', col, 'Count', 'hist_base.png', hist_path)
+        create_plot(fig, ax, f'Histogram of {col}', col, 'Count', hist_base, hist_path)
         image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'histogram_{col}.{file_format}'))
 
         # KDE
         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.kdeplot(df[col], ax=ax, fill=True, color=kde_color)
+        ax.set_axisbelow(True)
+        if show_grid:
+            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
+        sns.kdeplot(df[col], ax=ax, fill=True, color=kde_color, linewidth=2.5, alpha=0.98)
+        kde_base = os.path.join(plot_dir, 'kde_base.png')
         kde_path = os.path.join(plot_dir, f'kde_{col}.{file_format}')
-        create_plot(fig, ax, f'KDE Plot of {col}', col, 'Density', 'kde_base.png', kde_path)
+        create_plot(fig, ax, f'KDE Plot of {col}', col, 'Density', kde_base, kde_path)
         image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'kde_{col}.{file_format}'))
 
         # Distribution
-        g = sns.displot(df[col], kde=True, color=dist_color)
-        fig = g.fig; ax = fig.axes[0]
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        ax.set_axisbelow(True)
+        if show_grid:
+            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
+        sns.histplot(df[col], kde=True, color=dist_color, ax=ax, edgecolor='white', linewidth=1.2, alpha=0.9, line_kws={'color': 'black', 'linewidth': 2.5})
+        dist_base = os.path.join(plot_dir, 'dist_base.png')
         dist_path = os.path.join(plot_dir, f'distribution_{col}.{file_format}')
-        create_plot(fig, ax, f'Distribution of {col}', col, 'Frequency', 'dist_base.png', dist_path)
+        create_plot(fig, ax, f'Distribution of {col}', col, 'Frequency', dist_base, dist_path)
         image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'distribution_{col}.{file_format}'))
 
         return JsonResponse({ 
