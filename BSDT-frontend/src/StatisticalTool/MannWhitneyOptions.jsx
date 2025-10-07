@@ -27,25 +27,17 @@ const MannWhitneyOptions = ({
     setBoxWidth,
     violinWidth,
     setViolinWidth,
+    showGrid,
+    setShowGrid,
     t
 }) => {
     const [isOverlayOpen, setIsOverlayOpen] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
     const [isRegenerating, setIsRegenerating] = useState(false);
     const [showResetButton, setShowResetButton] = useState(true);
     const pendingRegenerateRef = useRef(false);
 
-    const [tempValues, setTempValues] = useState({
-        imageFormat: imageFormat || "png",
-        labelFontSize: labelFontSize || 86,
-        tickFontSize: tickFontSize || 18,
-        imageQuality: imageQuality || 100,
-        imageSize: imageSize || "1280x720",
-        colorPalette: colorPalette || "bright",
-        barWidth: barWidth || 0.4,
-        boxWidth: boxWidth || 0.4,
-        violinWidth: violinWidth || 0.4
-    });
-
+    // ------------------ DEFAULT VALUES ------------------
     const defaultValues = {
         imageFormat: "png",
         labelFontSize: 86,
@@ -55,9 +47,25 @@ const MannWhitneyOptions = ({
         colorPalette: "bright",
         barWidth: 0.4,
         boxWidth: 0.4,
-        violinWidth: 0.4
+        violinWidth: 0.4,
+        showGrid: true
     };
 
+    // ------------------ TEMPORARY VALUES ------------------
+    const [tempValues, setTempValues] = useState({
+        imageFormat: imageFormat || "png",
+        labelFontSize: labelFontSize || 86,
+        tickFontSize: tickFontSize || 18,
+        imageQuality: imageQuality || 100,
+        imageSize: imageSize || "1280x720",
+        colorPalette: colorPalette || "bright",
+        barWidth: barWidth || 0.4,
+        boxWidth: boxWidth || 0.4,
+        violinWidth: violinWidth || 0.4,
+        showGrid: showGrid !== undefined ? showGrid : true
+    });
+
+    // ------------------ PALETTE DESCRIPTIONS ------------------
     const paletteDescriptions = {
         deep: "Rich, saturated colors - ideal for presentations and reports",
         muted: "Softer, desaturated colors - easy on the eyes",
@@ -81,34 +89,103 @@ const MannWhitneyOptions = ({
         flare: "Warm diverging palette - emphasizes extremes"
     };
 
+    // ------------------ CHANGE DETECTION ------------------
+    useEffect(() => {
+        const changed =
+            String(tempValues.imageFormat) !== String(imageFormat) ||
+            String(tempValues.labelFontSize) !== String(labelFontSize) ||
+            String(tempValues.tickFontSize) !== String(tickFontSize) ||
+            String(tempValues.imageQuality) !== String(imageQuality) ||
+            String(tempValues.imageSize) !== String(imageSize) ||
+            String(tempValues.colorPalette) !== String(colorPalette) ||
+            String(tempValues.barWidth) !== String(barWidth) ||
+            String(tempValues.boxWidth) !== String(boxWidth) ||
+            String(tempValues.violinWidth) !== String(violinWidth) ||
+            Boolean(tempValues.showGrid) !== Boolean(showGrid);
+
+        setHasChanges(changed);
+    }, [
+        tempValues,
+        imageFormat,
+        labelFontSize,
+        tickFontSize,
+        imageQuality,
+        imageSize,
+        colorPalette,
+        barWidth,
+        boxWidth,
+        violinWidth,
+        showGrid
+    ]);
+
+    // ------------------ REGENERATION HANDLER ------------------
+    useEffect(() => {
+        if (pendingRegenerateRef.current && handleSubmit) {
+            const allValuesMatch =
+                imageFormat === tempValues.imageFormat &&
+                labelFontSize === tempValues.labelFontSize &&
+                tickFontSize === tempValues.tickFontSize &&
+                imageQuality === tempValues.imageQuality &&
+                imageSize === tempValues.imageSize &&
+                colorPalette === tempValues.colorPalette &&
+                barWidth === tempValues.barWidth &&
+                boxWidth === tempValues.boxWidth &&
+                violinWidth === tempValues.violinWidth &&
+                showGrid === tempValues.showGrid;
+
+            if (allValuesMatch) {
+                pendingRegenerateRef.current = false;
+
+                const syntheticEvent = {
+                    preventDefault: () => {},
+                    stopPropagation: () => {}
+                };
+
+                handleSubmit(syntheticEvent);
+
+                setTimeout(() => {
+                    setIsRegenerating(false);
+                    setIsOverlayOpen(false);
+                }, 3000);
+            }
+        }
+    }, [
+        imageFormat,
+        labelFontSize,
+        tickFontSize,
+        imageQuality,
+        imageSize,
+        colorPalette,
+        barWidth,
+        boxWidth,
+        violinWidth,
+        showGrid,
+        tempValues,
+        handleSubmit
+    ]);
+
+    // ------------------ HELPERS ------------------
     const openOverlay = (e) => {
         e.preventDefault();
-        const initialValues = {
-            imageFormat: imageFormat || defaultValues.imageFormat,
-            labelFontSize: labelFontSize || defaultValues.labelFontSize,
-            tickFontSize: tickFontSize || defaultValues.tickFontSize,
-            imageQuality: imageQuality || defaultValues.imageQuality,
-            imageSize: imageSize || defaultValues.imageSize,
-            colorPalette: colorPalette || defaultValues.colorPalette,
-            barWidth: barWidth || defaultValues.barWidth,
-            boxWidth: boxWidth || defaultValues.boxWidth,
-            violinWidth: violinWidth || defaultValues.violinWidth
-        };
+        e.stopPropagation();
+        const initialValues = { ...defaultValues, ...tempValues };
         setTempValues(initialValues);
         setIsOverlayOpen(true);
+        setShowResetButton(true);
     };
 
     const applySettings = (values) => {
         if (setUseDefaultSettings) setUseDefaultSettings(false);
-        setImageFormat(values.imageFormat);
-        setLabelFontSize(values.labelFontSize);
-        setTickFontSize(values.tickFontSize);
-        setImageQuality(values.imageQuality);
-        setImageSize(values.imageSize);
-        setColorPalette(values.colorPalette);
-        setBarWidth(values.barWidth);
-        setBoxWidth(values.boxWidth);
-        setViolinWidth(values.violinWidth);
+        if (setImageFormat) setImageFormat(values.imageFormat);
+        if (setLabelFontSize) setLabelFontSize(values.labelFontSize);
+        if (setTickFontSize) setTickFontSize(values.tickFontSize);
+        if (setImageQuality) setImageQuality(values.imageQuality);
+        if (setImageSize) setImageSize(values.imageSize);
+        if (setColorPalette) setColorPalette(values.colorPalette);
+        if (setBarWidth) setBarWidth(values.barWidth);
+        if (setBoxWidth) setBoxWidth(values.boxWidth);
+        if (setViolinWidth) setViolinWidth(values.violinWidth);
+        if (setShowGrid) setShowGrid(values.showGrid);
     };
 
     const handleSave = () => {
@@ -117,9 +194,9 @@ const MannWhitneyOptions = ({
     };
 
     const handleKeepDefault = () => {
-        if (setUseDefaultSettings) setUseDefaultSettings(false);
-        applySettings(defaultValues);
-        setTempValues(defaultValues);
+        const resetValues = { ...defaultValues };
+        applySettings(resetValues);
+        setTempValues(resetValues);
         if (isFirstTimeAnalysis) {
             setIsOverlayOpen(false);
         } else {
@@ -136,24 +213,39 @@ const MannWhitneyOptions = ({
 
     const handleRegenerate = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         if (!handleSubmit) return;
-
         setIsRegenerating(true);
         pendingRegenerateRef.current = true;
         applySettings(tempValues);
 
-        const syntheticEvent = {
-            preventDefault: () => {},
-            stopPropagation: () => {}
-        };
+        const allValuesMatch =
+            imageFormat === tempValues.imageFormat &&
+            labelFontSize === tempValues.labelFontSize &&
+            tickFontSize === tempValues.tickFontSize &&
+            imageQuality === tempValues.imageQuality &&
+            imageSize === tempValues.imageSize &&
+            colorPalette === tempValues.colorPalette &&
+            barWidth === tempValues.barWidth &&
+            boxWidth === tempValues.boxWidth &&
+            violinWidth === tempValues.violinWidth &&
+            showGrid === tempValues.showGrid;
 
-        handleSubmit(syntheticEvent);
-        setTimeout(() => {
-            setIsRegenerating(false);
-            setIsOverlayOpen(false);
-        }, 500);
+        if (allValuesMatch) {
+            pendingRegenerateRef.current = false;
+            const syntheticEvent = {
+                preventDefault: () => {},
+                stopPropagation: () => {}
+            };
+            handleSubmit(syntheticEvent);
+            setTimeout(() => {
+                setIsRegenerating(false);
+                setIsOverlayOpen(false);
+            }, 500);
+        }
     };
 
+    // ------------------ RENDER ------------------
     return (
         <div className="mannwhitney-options-container">
             <div className="customize-link-wrapper">
@@ -176,7 +268,7 @@ const MannWhitneyOptions = ({
                         <div className="overlay-header">
                             <h3 className="overlay-title">
                                 {t.customSettings ||
-                                    "Mann-Whitney Plot Customization"}
+                                    "Mann–Whitney Plot Customization Settings"}
                             </h3>
                             <button
                                 type="button"
@@ -191,7 +283,7 @@ const MannWhitneyOptions = ({
                             {/* Image Settings */}
                             <div className="settings-section">
                                 <h4 className="section-title">
-                                    {t.imageFormatSection || "Image Settings"}
+                                    {t.imageFormatSection || "Image Format"}
                                 </h4>
                                 <div className="form-group">
                                     <label className="form-label">
@@ -216,7 +308,7 @@ const MannWhitneyOptions = ({
 
                                 <div className="form-group">
                                     <label className="form-label">
-                                        {t.imageQuality || "Image Quality (1–100)"}
+                                        {t.imageQuality || "Image Quality"} (1–100)
                                     </label>
                                     <input
                                         type="number"
@@ -295,7 +387,7 @@ const MannWhitneyOptions = ({
                                 </div>
                             </div>
 
-                            {/* Visuals */}
+                            {/* Visual Styling */}
                             <div className="settings-section">
                                 <h4 className="section-title">
                                     {t.visualStylingSection || "Visual Styling"}
@@ -315,28 +407,49 @@ const MannWhitneyOptions = ({
                                         }
                                         className="form-select"
                                     >
-                                        {Object.keys(paletteDescriptions).map(
-                                            (key) => (
-                                                <option key={key} value={key}>
-                                                    {key}
-                                                </option>
-                                            )
-                                        )}
+                                        <optgroup label="Qualitative">
+                                            <option value="deep">Deep</option>
+                                            <option value="muted">Muted</option>
+                                            <option value="pastel">Pastel</option>
+                                            <option value="bright">Bright</option>
+                                            <option value="dark">Dark</option>
+                                            <option value="Set2">Set2</option>
+                                            <option value="Set3">Set3</option>
+                                            <option value="Paired">Paired</option>
+                                            <option value="tab10">Tableau 10</option>
+                                            <option value="tab20">Tableau 20</option>
+                                            <option value="husl">HUSL</option>
+                                            <option value="hls">HLS</option>
+                                        </optgroup>
+                                        <optgroup label="Sequential">
+                                            <option value="viridis">Viridis</option>
+                                            <option value="plasma">Plasma</option>
+                                            <option value="magma">Magma</option>
+                                            <option value="rocket">Rocket</option>
+                                            <option value="mako">Mako</option>
+                                        </optgroup>
+                                        <optgroup label="Diverging">
+                                            <option value="flare">Flare</option>
+                                        </optgroup>
+                                        <optgroup label="Others">
+                                            <option value="colorblind">
+                                                Colorblind
+                                            </option>
+                                            <option value="cividis">Cividis</option>
+                                        </optgroup>
                                     </select>
                                     {tempValues.colorPalette && (
                                         <p className="palette-description">
-                                            {
-                                                paletteDescriptions[
-                                                    tempValues.colorPalette
-                                                ]
-                                            }
+                                            {paletteDescriptions[
+                                                tempValues.colorPalette
+                                            ]}
                                         </p>
                                     )}
                                 </div>
 
                                 <div className="form-group">
                                     <label className="form-label">
-                                        {t.barWidth || "Bar Width (0.1–1.0)"}
+                                        {t.barWidth || "Bar Width"} (0.1–1.0)
                                     </label>
                                     <input
                                         type="number"
@@ -352,6 +465,69 @@ const MannWhitneyOptions = ({
                                             )
                                         }
                                     />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        {t.boxWidth || "Box Width"} (0.1–1.0)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        max="1.0"
+                                        className="form-input"
+                                        value={tempValues.boxWidth}
+                                        onChange={(e) =>
+                                            handleTempChange(
+                                                "boxWidth",
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">
+                                        {t.violinWidth || "Violin Width"} (0.1–1.0)
+                                    </label>
+                                    <input
+                                        type="number"
+                                        step="0.1"
+                                        min="0.1"
+                                        max="1.0"
+                                        className="form-input"
+                                        value={tempValues.violinWidth}
+                                        onChange={(e) =>
+                                            handleTempChange(
+                                                "violinWidth",
+                                                Number(e.target.value)
+                                            )
+                                        }
+                                    />
+                                </div>
+
+                                <div className="form-group">
+                                    <div className="checkbox-wrapper">
+                                        <input
+                                            type="checkbox"
+                                            id="showGrid"
+                                            className="form-checkbox"
+                                            checked={tempValues.showGrid}
+                                            onChange={(e) =>
+                                                handleTempChange(
+                                                    "showGrid",
+                                                    e.target.checked
+                                                )
+                                            }
+                                        />
+                                        <label
+                                            htmlFor="showGrid"
+                                            className="checkbox-label"
+                                        >
+                                            {t.showGrid || "Show Grid Lines"}
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -383,7 +559,58 @@ const MannWhitneyOptions = ({
                                     onClick={handleRegenerate}
                                     disabled={isRegenerating}
                                 >
-                                    {isRegenerating ? "Regenerating..." : "Generate Again"}
+                                    <span
+                                        style={{
+                                            position: "relative",
+                                            width: "16px",
+                                            height: "16px",
+                                            display: "inline-block",
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        <span
+                                            className="spinner"
+                                            style={{
+                                                position: "absolute",
+                                                top: 0,
+                                                left: 0,
+                                                visibility: isRegenerating
+                                                    ? "visible"
+                                                    : "hidden"
+                                            }}
+                                        ></span>
+                                        <svg
+                                            className="inline-icon"
+                                            style={{
+                                                position: "absolute",
+                                                top: 0,
+                                                left: 0,
+                                                visibility: isRegenerating
+                                                    ? "hidden"
+                                                    : "visible"
+                                            }}
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                                            />
+                                        </svg>
+                                    </span>
+                                    <span>
+                                        {isRegenerating
+                                            ? language === "বাংলা"
+                                                ? "পুনরায় তৈরি করা হচ্ছে..."
+                                                : "Regenerating..."
+                                            : t.generateAgain ||
+                                              (language === "বাংলা"
+                                                  ? "পুনরায় তৈরি করুন"
+                                                  : "Generate Again")}
+                                    </span>
                                 </button>
                             )}
                         </div>
