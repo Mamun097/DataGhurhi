@@ -26,6 +26,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import OrdinalEncoder
 from .forms import AnalysisForm
 from scipy.stats import shapiro, anderson
+from matplotlib.patches import Patch
 
 def infer_type(s, thresh=10):
     if pd.api.types.is_numeric_dtype(s):
@@ -340,7 +341,7 @@ def analyze_data_api(request):
                 language = body.get('language', 'en')
                 file_format = body.get('format', 'png')
                 image_width = body.get('image_width')
-                image_height = body.get('image_height')
+                image_height = body.get('image_height') 
             else:
                 test_type = request.POST.get('test_type', '')
                 col1 = request.POST.get('column1', '')
@@ -377,7 +378,7 @@ def analyze_data_api(request):
                     categories = encoder.categories_[i]  # Use the fitted encoder's categories_
                     ordinal_mappings[col] = {idx: cat for idx, cat in enumerate(categories)}
 
-                # print(ordinal_mappings)
+                print(ordinal_mappings)
 
 
             
@@ -470,7 +471,7 @@ def analyze_data_api(request):
             # New Code for Pie Chart
             elif test_type == 'eda_pie':
                 col = request.POST.get('column1')
-                return process_pie_chart(request, df, col)
+                return process_pie_chart(request, df, col, user_id,ordinal_mappings)
 
 
             elif test_type == 'eda_basics':
@@ -508,7 +509,7 @@ def analyze_data_api(request):
             elif test_type == 'bar_chart':
                 col = request.POST.get('column1')
                 orientation = request.POST.get('orientation', 'vertical')
-                return process_bar_chart_test(request, df, col, user_id, orientation)
+                return process_bar_chart_test(request, df, col, user_id, orientation, ordinal_mappings)
             
 
             return render(request, 'analysis/results.html', {
@@ -2984,18 +2985,8 @@ def process_eda_swarm_plot(request, df, col_cat, col_num, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_pie_chart(request, df, col):
-    from django.http import JsonResponse
-    import os, math, re
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    from matplotlib.patches import Patch
-    from PIL import Image
-    from googletrans import Translator
-    import numpy as np
-    import pandas as pd 
-    from django.conf import settings
-
+def process_pie_chart(request, df, col,user_id,ordinal_mappings):
+    import re 
     try:
         # --- Params ---
         language = request.POST.get('language', 'en')
@@ -3035,9 +3026,12 @@ def process_pie_chart(request, df, col):
 
         # --- Treat column as categorical always ---
         series = df[col].astype(str).fillna('NaN')
-        counts = series.value_counts(dropna=False)
-        # FIX: Convert index to strings explicitly like Python code
-        labels_raw = counts.index.tolist()
+        counts = df[col].value_counts() 
+        # labels_data = counts.index.tolist()  
+        labels_raw= [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
+ 
+        print(labels_raw) 
+
         sizes = counts.values
 
         # --- Too many categories check ---
@@ -3149,7 +3143,7 @@ def process_pie_chart(request, df, col):
             return cleaned[:100]  # max 100 chars to avoid OS limits
 
         filename = f"pie_{safe_filename(col)}.{fmt}"
-        plots_dir = os.path.join(settings.MEDIA_ROOT, 'plots')
+        plots_dir =  os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
         os.makedirs(plots_dir, exist_ok=True)
         out_path = os.path.join(plots_dir, filename)
 
@@ -4468,7 +4462,7 @@ def save_plot(plt, filename, user_id):
         return None
 
 
-def process_bar_chart_test(request, df, col, user_id, orientation="vertical"):
+def process_bar_chart_test(request, df, col, user_id, orientation, ordinal_mappings):
     import os, re, math
     import numpy as np
     import pandas as pd
@@ -4545,7 +4539,7 @@ def process_bar_chart_test(request, df, col, user_id, orientation="vertical"):
             return JsonResponse({"success": False, "error": f"Column {col} not found"})
 
         counts = df[col].fillna("NaN").value_counts(dropna=False).sort_index()
-        labels_raw = counts.index.tolist()
+        labels_raw = [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
         values = counts.values
         labels_display = [map_digits(translate(str(x))) for x in labels_raw]
 
