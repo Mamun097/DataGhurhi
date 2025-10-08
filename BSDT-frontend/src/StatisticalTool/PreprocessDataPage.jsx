@@ -6,6 +6,7 @@ import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
 import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 import { useLocation } from 'react-router-dom'; // Import useLocation to access state
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
@@ -57,7 +58,7 @@ const PreprocessDataPage = () => {
     if (!userId) return;
 
     // Now fetch only when userId is set
-    fetch('http://103.94.135.115:8001/api/preview-data/', {
+    fetch('http://127.0.0.1:8000/api/preview-data/', {
       method: 'GET',
       headers: {
         'userID': userId,
@@ -88,7 +89,7 @@ const PreprocessDataPage = () => {
 
     if (selectedOption === 'handle_outliers') {
       console.log("entered");
-      fetch('http://103.94.135.115:8001/api/outliers-summary/', {
+      fetch('http://127.0.0.1:8000/api/outliers-summary/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -151,8 +152,9 @@ const PreprocessDataPage = () => {
         <h1 className="text-3xl font-bold text-center text-blue-700 mb-8"> Data Preprocessing</h1>
 
         <div className="flex justify-between items-start mb-6 px-2 flex-wrap gap-4">
-          {/* Preprocessing Menu + Analyze Button */}
-          <div className="flex flex-col gap-2">
+          {/* Preprocessing Menu + others */}
+          <div className="flex flex-col gap-4">
+           <div className="flex items-center gap-4">
             <select
               value={selectedOption}
               onChange={(e) => setSelectedOption(e.target.value)}
@@ -171,7 +173,7 @@ const PreprocessDataPage = () => {
 
             <button
               className="bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg shadow"
-              onClick={() => {
+        onClick={() => {
                 console.log(sessionStorage.getItem("fileURL"));
                 if (!selectedOption) {
                   alert("Please select a preprocessing option first.");
@@ -185,7 +187,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/delete-columns/', {
+                  fetch('http://127.0.0.1:8000/api/delete-columns/', {
                     method: 'POST',
                     headers: {
                       'userID': userId, // Include user ID in headers
@@ -213,7 +215,7 @@ const PreprocessDataPage = () => {
 
                 // Option 2: Remove Duplicate Rows
                 else if (selectedOption === 'remove_duplicates') {
-                  fetch('http://103.94.135.115:8001/api/find-duplicates/', {
+                  fetch('http://127.0.0.1:8000/api/find-duplicates/', {
                     method: 'POST',
                     headers: {
                       'userID': userId,
@@ -246,7 +248,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/handle-missing/', {
+                  fetch('http://127.0.0.1:8000/api/handle-missing/', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
@@ -282,7 +284,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/handle-outliers/', {
+                  fetch('http://127.0.0.1:8000/api/handle-outliers/', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
@@ -313,7 +315,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/rank-column/', {
+                  fetch('http://127.0.0.1:8000/api/rank-column/', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json'
@@ -352,7 +354,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/split-column/', {
+                  fetch('http://127.0.0.1:8000/api/split-column/', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -392,7 +394,7 @@ const PreprocessDataPage = () => {
                     return;
                   }
 
-                  fetch('http://103.94.135.115:8001/api/group-data/', {
+                  fetch('http://127.0.0.1:8000/api/group-data/', {
                     method: 'POST',
                     headers: {
                       'userID': userId, // Include user ID in headers
@@ -409,7 +411,7 @@ const PreprocessDataPage = () => {
                         sessionStorage.setItem("fileURL", result.file_url || '');
                         alert("Grouped data saved successfully!");
                         const link = document.createElement('a');
-                        link.href = `http://103.94.135.115:8001${result.download_url}`;
+                        link.href = `http://127.0.0.1:8000${result.download_url}`;
                         link.setAttribute('download', '');
                         document.body.appendChild(link);
                         link.click();
@@ -421,7 +423,7 @@ const PreprocessDataPage = () => {
                 }
 
                 else if (selectedOption === 'generate_id') {
-                  fetch('http://103.94.135.115:8001/api/generate-unique-id/', {
+                  fetch('http://127.0.0.1:8000/api/generate-unique-id/', {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',
@@ -449,51 +451,73 @@ const PreprocessDataPage = () => {
               Preprocess
             </button>
           </div>
-
-          {/* Download Button on the Right */}
-          <div className="ml-auto gap-4 flex flex-wrap items-center">
-            <button
-              className="bg-green-500 hover:bg-green-600 text-white  font-medium py-2 px-4 rounded-lg shadow"
-              onClick={() => {
-                if (data.length === 0) {
-                  alert("No data available to download.");
-                  return;
-                }
-                downloadAsExcel(data, filename);
-              }}
-            >
-              Download Data as Excel
-            </button>
-            <button
-              className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
-              onClick={() => {
-                if (data.length === 0) {
-                  alert("No data available to visualize.");
-                  return;
-                }
-                window.location.href = '/visualization';
-              }}
-            >
-              Visualize Data
-            </button>
-            <button
-              className="bg-green-500 hover:bg-green-600 text-white font-medium  py-2 px-4 rounded-lg shadow"
-              onClick={async () => {
-                if (data.length === 0) {
-                  alert("No preprocessed data available to analyze.");
-                  return;
-                }
-                // 3. Store session flag and redirect
-                sessionStorage.setItem("preprocessed", "true");
-                sessionStorage.setItem("file_name", 'preprocess_' + filename);
-                //alert(sessionStorage.getItem("fileURL"))
-                window.location.href = "/analysis";
-              }}
-            >
-              Analyze Data
-            </button>
           </div>
-        </div>
+
+
+  <div className="flex justify-end flex">
+    {/* Three-Dot Menu Button */}
+    <div
+      className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full cursor-pointer relative"
+      onClick={() => {
+        const menu = document.getElementById("ellipseMenu");
+        menu.classList.toggle("hidden");
+      }}
+    >
+      <span className="text-white text-3xl">...</span> {/* Three dots icon */}
+    </div>
+
+    {/* Ellipse Menu Items */}
+    <div
+      id="ellipseMenu"
+      className="hidden absolute bottom-5 right-5 flex flex-col gap-0 items-start"
+    >
+      <button
+      
+        className="bg-white text-green font-medium py-2 px-4 rounded-lg shadow flex items-center gap-2"
+        onClick={() => {
+          if (data.length === 0) {
+            alert("No data available to download.");
+            return;
+          }
+          downloadAsExcel(data, filename);
+        }}
+      >
+
+       <i class="bi bi-download"></i> Download Data as Excel
+      </button>
+      <button
+        className="bg-white text-green font-medium py-2 px-4 rounded-lg shadow flex items-center gap-2"
+        onClick={() => {
+          if (data.length === 0) {
+            alert("No data available to visualize.");
+            return;
+          }
+          window.location.href = '/visualization';
+        }}
+      >
+         <i className="bi bi-eye me-1"></i> {/* Visualization Icon */}
+        Visualize Data
+      </button>
+      <button
+        className="bg-white text-green font-medium py-2 px-4 rounded-lg shadow flex items-center gap-2"
+        onClick={async () => {
+          if (data.length === 0) {
+            alert("No preprocessed data available to analyze.");
+            return;
+          }
+          // Store session flag and redirect
+          sessionStorage.setItem("preprocessed", "true");
+          sessionStorage.setItem("file_name", 'preprocess_' + filename);
+          window.location.href = "/analysis";
+        }}
+      >
+        <i className="bi bi-graph-up"></i> {/* Analyze Icon */}
+        Analyze Data
+      </button>
+    </div>
+  </div>
+</div>
+
 
         {/*Conditional delete column selector goes here */}
         {selectedOption === 'delete_column' && (
@@ -851,7 +875,7 @@ const PreprocessDataPage = () => {
         )}
 
         <PreviewTable
-          workbookUrl={`http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`}
+          workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`}
           columns={columns}
           duplicateIndices={duplicateIndices}
           setData={setData}
