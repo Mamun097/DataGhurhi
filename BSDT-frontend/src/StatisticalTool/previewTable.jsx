@@ -94,6 +94,10 @@ const PreviewTable = ({
   const [renamingId, setRenamingId] = useState(null);
   const [renameValue, setRenameValue] = useState("");
   const [selectedDuplicates, setSelectedDuplicates] = useState([]);
+  const [replaceIndex, setReplaceIndex] = useState(0); // Track the index of the next match
+  const [totalMatches, setTotalMatches] = useState(0); // Track the total number of matches
+  const [matches, setMatches] = useState([]);
+
 
   const activeSheet = sheets[activeSheetIndex];
 
@@ -224,48 +228,71 @@ const PreviewTable = ({
 
   // Column definitions for the active sheet
   const columnDefs = useMemo(() => {
-    const cols = (activeSheet?.columns || []).map((col) => ({
-      headerName: col,
-      field: col,
-      editable: true,
-      sortable: true,
-      resizable: true,
-      filter: true,
-      headerClass: "custom-header",
-      cellStyle: (params) => {
-        const dfRowIndex = params.rowIndex - HEADER_ROWS;
-        const isOutlier = selectedOption === "handle_outliers" && outlierCellMap?.[dfRowIndex]?.[col];
-        const isDuplicate = selectedOption === "remove_duplicates" && duplicateIndices.includes(dfRowIndex);
-        return {
-          backgroundColor: isOutlier ? "#865b56ff" : isDuplicate ? "#b19539ff" : "white",
-          color: isOutlier ? "red" : "black",
-          borderRight: "1px solid #ccc",
-          borderBottom: "1px solid #ccc",
-        };
-      },
-    }));
-
-    const defs = [rowNumberColDef, ...cols];
-
-    if (selectedOption === "remove_duplicates") {
-      defs.splice(1, 0, {
-        headerName: "Remove?",
-        field: "__remove__",
-        width: 100,
-        checkboxSelection: true,
-        headerCheckboxSelection: true,
-        headerCheckboxSelectionFilteredOnly: true,
+      const cols = (activeSheet?.columns || []).map((col) => ({
+        headerName: col,
+        field: col,
+        editable: true,
+        sortable: true,
+        resizable: true,
+        filter: true,
         headerClass: "custom-header",
-        sortable: false,
-        filter: false,
-        editable: false,
-        suppressMenu: true,
-        pinned: "left",
-      });
-    }
+        cellStyle: (params) => {
+          const dfRowIndex = params.rowIndex - HEADER_ROWS;
+          const isOutlier = selectedOption === "handle_outliers" && outlierCellMap?.[dfRowIndex]?.[col];
+          const isDuplicate = selectedOption === "remove_duplicates" && duplicateIndices.includes(dfRowIndex);
+          const isMatchingText = findText && String(params.value).toLowerCase().includes(findText.toLowerCase());
 
-    return defs;
-  }, [activeSheet, outlierCellMap, duplicateIndices, selectedOption, rowNumberColDef]);
+          return {
+            backgroundColor: isOutlier
+              ? "#865b56ff"
+              : isDuplicate
+              ? "#b19539ff"
+              : isMatchingText
+              ? "#ffeb3b" // Highlight color (yellow)
+              : "white",
+            color: isOutlier ? "red" : "black",
+            borderRight: "1px solid #ccc",
+            borderBottom: "1px solid #ccc",
+          };
+        },
+        cellRenderer: (params) => {
+          if (!findText || typeof params.value !== "string") return params.value;
+
+          // Create a regular expression for finding the text (case-insensitive)
+          const regex = new RegExp(findText, "gi");
+
+          // Wrap the matching text in a <span> with a custom class
+          const highlightedText = params.value.replace(
+            regex,
+            (match) => `<span style="background-color: yellow; font-weight: bold;">${match}</span>`
+          );
+
+          return <span dangerouslySetInnerHTML={{ __html: highlightedText }} />;
+        },
+      }));
+
+      const defs = [rowNumberColDef, ...cols];
+
+      if (selectedOption === "remove_duplicates") {
+        defs.splice(1, 0, {
+          headerName: "Remove?",
+          field: "__remove__",
+          width: 100,
+          checkboxSelection: true,
+          headerCheckboxSelection: true,
+          headerCheckboxSelectionFilteredOnly: true,
+          headerClass: "custom-header",
+          sortable: false,
+          filter: false,
+          editable: false,
+          suppressMenu: true,
+          pinned: "left",
+        });
+      }
+
+      return defs;
+    }, [activeSheet, outlierCellMap, duplicateIndices, selectedOption, rowNumberColDef, findText]);
+
 
   useEffect(() => {
   if (activeSheet?.name) {
@@ -326,9 +353,25 @@ const PreviewTable = ({
     setRenamingId(null);
   };
 
-  // Find & Replace (active sheet only)
+  // Find all matches and update the matches list
+  const findMatches = () => {
+    const allMatches = [];
+    activeSheet?.data.forEach((row, rowIndex) => {
+      activeSheet.columns.forEach((col) => {
+        if (typeof row[col] === "string" && row[col].toLowerCase().includes(findText.toLowerCase())) {
+          allMatches.push({ rowIndex, col });
+        }
+      });
+    });
+    setMatches(allMatches);
+    setTotalMatches(allMatches.length);
+  };
+
+  // Handle Find and Replace All
   const handleFindReplace = () => {
     if (!findText) return;
+
+    // Replace all occurrences of findText with replaceText
     setSheets((prev) => {
       const updated = [...prev];
       const sh = updated[activeSheetIndex];
@@ -340,10 +383,68 @@ const PreviewTable = ({
         return r;
       });
       updated[activeSheetIndex] = { ...sh, data: newData };
-      setData?.(newData);
       return updated;
     });
+
+    // Reset the index after replacing all and recalculate matches
+    setReplaceIndex(0);
+    findMatches();
   };
+
+  // Handle Replace Next (focus on the next cell that will be replaced)
+  const handleReplaceNext = () => {
+    if (!findText || matches.length === 0) return;
+
+    // Get the current match
+    const match = matches[replaceIndex];
+
+    // Replace the text in the matching cell
+    const updatedData = [...activeSheet.data];
+    updatedData[match.rowIndex][match.col] = updatedData[match.rowIndex][match.col].replace(
+      new RegExp(findText, "gi"),
+      replaceText
+    );
+
+    // Update the sheet data
+    setSheets((prev) => {
+      const updatedSheet = { ...prev[activeSheetIndex], data: updatedData };
+      const updatedSheets = [...prev];
+      updatedSheets[activeSheetIndex] = updatedSheet;
+      return updatedSheets;
+    });
+
+    // Move to the next match (loop back to the first match if it's the last one)
+    const nextIndex = (replaceIndex + 1) % matches.length;
+    setReplaceIndex(nextIndex);
+
+    // Focus on the replaced cell after it is updated
+    gridApi.ensureIndexVisible(match.rowIndex); // Make sure the row is visible
+
+    // Ensure we are focusing the exact cell to be changed
+    setTimeout(() => {
+      const cellRenderer = gridApi.getCellRendererInstances({
+        rowIndex: match.rowIndex,
+        column: match.col,
+      })[0];
+      if (cellRenderer) {
+        // Focus on the cell (make sure the cell is fully rendered)
+        const cellGui = cellRenderer.getGui();
+        if (cellGui) {
+          cellGui.focus();
+        }
+      }
+    }, 100); // A small delay to allow the grid to render first
+  };
+
+  // Run findMatches when findText changes
+  useEffect(() => {
+    if (findText) {
+      findMatches();
+    } else {
+      setTotalMatches(0);
+      setMatches([]);
+    }
+  }, [findText, activeSheet?.data]);
 
   // Send selections to backend for duplicate removal (active sheet only)
   const confirmAndRemove = (mode) => {
@@ -353,7 +454,7 @@ const PreviewTable = ({
 
     if (!window.confirm(msg)) return;
 
-    fetch("http://103.94.135.115:8001/api/remove-duplicates/", {
+    fetch("http://127.0.0.0:8000/api/remove-duplicates/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -403,15 +504,46 @@ const PreviewTable = ({
           <button onClick={() => setIsPreviewModalOpen(false)} className="absolute top-3 right-3 text-gray-500 hover:text-black text-xl font-bold">✖</button>
         )}
 
-        {/* Controls */}
+         {/* Controls */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
-          <input type="text" placeholder="Find" value={findText} onChange={(e) => setFindText(e.target.value)} className="border p-2 rounded" />
-          <input type="text" placeholder="Replace" value={replaceText} onChange={(e) => setReplaceText(e.target.value)} className="border p-2 rounded" />
-          <button onClick={handleFindReplace} className="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600">Replace</button>
-          {workbookFile == null && workbookUrl == null && !multiSheetData && (
-            <span className="text-xs text-gray-500">Tip: pass <code>workbookFile</code>, <code>workbookUrl</code>, or <code>multiSheetData</code> to load multiple tabs.</span>
+          <div className="flex gap-2">
+          <input
+            type="text"
+            placeholder="Find"
+            value={findText}
+            onChange={(e) => setFindText(e.target.value)}
+            className="border p-2 rounded"
+          />
+          <input
+            type="text"
+            placeholder="Replace"
+            value={replaceText}
+            onChange={(e) => setReplaceText(e.target.value)}
+            className="border p-2 rounded"
+          />
+          </div>
+          <button
+            onClick={handleReplaceNext}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Replace Next
+          </button>
+          <button
+            onClick={handleFindReplace}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Replace All
+          </button>
+
+
+          {/* Display the number of matches */}
+          {totalMatches > 0 && (
+            <span className="text-sm text-gray-500">
+              {`Found ${totalMatches} match${totalMatches > 1 ? "es" : ""}`}
+            </span>
           )}
         </div>
+
 
         {/* Sheet Tabs */}
         <div className="flex items-center mb-2 border-b overflow-x-auto gap-1 py-1">
@@ -444,33 +576,31 @@ const PreviewTable = ({
         {/* AG Grid Table */}
         <div className="ag-theme-alpine" style={{ height: "70vh", width: "100%" }}>
           <AgGridReact
-          rowData={activeSheet?.data || []}
-          columnDefs={columnDefs}
-          rowSelection={selectedOption === "remove_duplicates" ? "multiple" : undefined}
-          getRowSelectable={(params) => params.node.rowIndex >= HEADER_ROWS}
-          onSelectionChanged={(params) => {
-            const dfPositions = params.api
-              .getSelectedNodes()
-              .map((n) => n.rowIndex - HEADER_ROWS) // grid index -> DF index
-              .filter((i) => i >= 0);
-            setSelectedDuplicates(dfPositions);
-          }}
-          animateRows={true}
-          onGridReady={onGridReady}
-          onCellValueChanged={onCellValueChanged}
-          defaultColDef={{
-            flex: 1,
-            minWidth: 80,
-            editable: true,
-            resizable: true,
-            sortable: true,
-            filter: true,
-  }}
-  suppressCopySingleCellRanges={false}
-/>
-
+            rowData={activeSheet?.data || []}
+            columnDefs={columnDefs}
+            rowSelection={selectedOption === "remove_duplicates" ? "multiple" : undefined}
+            getRowSelectable={(params) => params.node.rowIndex >= HEADER_ROWS}
+            onSelectionChanged={(params) => {
+              const dfPositions = params.api
+                .getSelectedNodes()
+                .map((n) => n.rowIndex - HEADER_ROWS) // grid index -> DF index
+                .filter((i) => i >= 0);
+              setSelectedDuplicates(dfPositions);
+            }}
+            animateRows={true}
+            onGridReady={(params) => setGridApi(params.api)}
+            onCellValueChanged={onCellValueChanged}
+            defaultColDef={{
+              flex: 1,
+              minWidth: 80,
+              editable: true,
+              resizable: true,
+              sortable: true,
+              filter: true,
+            }}
+            suppressCopySingleCellRanges={false}
+          />
         </div>
-
         {selectedOption === "remove_duplicates" && (
           <div className="flex gap-4 mt-3">
             <button className="px-4 py-2 bg-red-500 text-white rounded-lg" onClick={() => confirmAndRemove("all")}>Remove All Duplicates</button>
