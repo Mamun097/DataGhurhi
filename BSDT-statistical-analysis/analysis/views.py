@@ -554,113 +554,39 @@ except Exception:  # pragma: no cover
 
 
 def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+    """
+    Performs Kruskal-Wallis H-test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col1: Column name for grouping variable (categorical)
+        col2: Column name for value variable (numeric)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for plotting
+    """
     print(f"[Kruskal] cols: {col1}(group) | {col2}(value)")
+    
+    # Validate column names
     if col1 not in df.columns or col2 not in df.columns:
-        return JsonResponse({'success': False, 'error': 'Invalid column names.'})
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
 
+    # Extract language preference
     try:
-        language   = request.POST.get('language', 'en').lower()
-        img_format = request.POST.get('format', 'png').lower()
-        use_default = request.POST.get('use_default', 'true') == 'true'
+        language = request.POST.get('language', 'en').lower()
     except Exception:
-        language, img_format, use_default = 'en', 'png', True
-
+        language = 'en'
+    
     if language not in ('en', 'bn'):
         language = 'en'
-    if img_format not in ('png', 'jpg', 'jpeg', 'pdf', 'tiff'):
-        img_format = 'png'
 
-    pil_fmt = {
-        'png': 'PNG',
-        'jpg': 'JPEG',
-        'jpeg': 'JPEG',
-        'pdf': 'PDF',
-        'tiff': 'TIFF'
-    }.get(img_format, 'PNG')
-
-    # Plot params
-    if use_default:
-        label_font_size = 86
-        tick_font_size  = 18
-        img_quality     = 100
-        width, height   = 1280, 720
-        palette         = 'bright'
-        bar_width       = 0.4
-        box_width       = 0.4
-        violin_width    = 0.4
-        show_grid       = True
-    else:
-        def _int(name, default):
-            try: return int(request.POST.get(name, default))
-            except Exception: return default
-        def _float(name, default):
-            try: return float(request.POST.get(name, default))
-            except Exception: return default
-
-        label_font_size = _int('label_font_size', 86)
-        tick_font_size  = _int('tick_font_size', 18)
-        img_quality     = _int('image_quality', 100)
-
-        size_input = request.POST.get('image_size', '1280x720')
-        try:
-            width, height = map(int, size_input.lower().split('x'))
-        except Exception:
-            width, height = 1280, 720
-
-        palette      = request.POST.get('palette', 'bright') or 'bright'
-        bar_width    = _float('bar_width', 0.4)
-        box_width    = _float('box_width', 0.4)
-        violin_width = _float('violin_width', 0.4)
-        show_grid    = request.POST.get('show_grid', 'true').lower() in ('true', '1', 'yes')
-
-    
-    media_root = settings.MEDIA_ROOT
-    plots_dir  = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
-    os.makedirs(plots_dir, exist_ok=True)
-
-    translator = Translator() if (Translator is not None and language == 'bn') else None
-    digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-
-    def translate(text: str) -> str:
-        if language == 'bn' and translator is not None:
-            try:
-                return translator.translate(text, dest='bn').text
-            except Exception:
-                return text
-        return text
-
-    def map_digits(s: str) -> str:
-        return s.translate(digit_map_bn) if language == 'bn' else s
-
-    font_path = os.path.join(getattr(settings, 'BASE_DIR', ''), 'NotoSansBengali-Regular.ttf')
-
-    def get_pil_font(size: int) -> ImageFont.FreeTypeFont:
-        try:
-            if language == 'bn' and os.path.exists(font_path):
-                return ImageFont.truetype(font_path, size=size)
-            djv_path = fm.findfont('DejaVu Sans', fallback_to_default=True)
-            if os.path.exists(djv_path):
-                return ImageFont.truetype(djv_path, size=size)
-        except Exception:
-            pass
-        return ImageFont.load_default()
-
-    # For Matplotlib tick labels: prefer same font family if available
-    try:
-        if language == 'bn' and os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-            matplotlib.rcParams['font.family'] = bengali_font_name
-        else:
-            # Use DejaVu Sans to maximize glyph coverage
-            matplotlib.rcParams['font.family'] = 'DejaVu Sans'
-    except Exception as e:
-        print(f"[Kruskal] Matplotlib font setup warning: {e}")
-
-    tick_prop = fm.FontProperties(size=tick_font_size)
-    if language == 'bn' and os.path.exists(font_path):
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-
+    # Prepare working dataset
     work = df[[col1, col2]].copy()
     work = work.dropna(subset=[col1, col2])
     print(f"[Kruskal] after dropna: {len(work)} rows")
@@ -670,183 +596,88 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         work[col1] = work[col1].astype('category')
 
     categories = list(work[col1].cat.categories)
+    
     if len(categories) < 2:
-        return JsonResponse({'success': False, 'error': 'Need at least 2 groups in the factor column for Kruskal–Wallis.'})
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 groups in the factor column for Kruskal–Wallis.'
+        })
 
     # Ensure value column is numeric
     if not pd.api.types.is_numeric_dtype(work[col2]):
         work[col2] = pd.to_numeric(work[col2], errors='coerce')
         work = work.dropna(subset=[col2])
+        
         if not pd.api.types.is_numeric_dtype(work[col2]):
-            return JsonResponse({'success': False, 'error': f'"{col2}" must be numeric for Kruskal–Wallis.'})
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col2}" must be numeric for Kruskal–Wallis.'
+            })
 
+    # Prepare groups for statistical test
     groups = [work.loc[work[col1] == g, col2].values for g in categories]
+    
     if any(len(g) == 0 for g in groups):
-        return JsonResponse({'success': False, 'error': 'Each group must contain at least one observation.'})
+        return JsonResponse({
+            'success': False, 
+            'error': 'Each group must contain at least one observation.'
+        })
 
+    # Perform Kruskal-Wallis H-test
     try:
         stat, p_value = stats.kruskal(*groups)
-        print(f"[Kruskal] result: H={stat}, p={p_value}")
+        print(f"[Kruskal] result: H={stat:.6f}, p={p_value:.6g}")
     except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error in Kruskal–Wallis test: {e}'})
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Kruskal–Wallis test: {e}'
+        })
 
-    def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
+    # Prepare data for frontend plotting
+    plot_data = []
+    
+    for category in categories:
+        category_data = work.loc[work[col1] == category, col2].values
         
-        # Remove mpl labels (we draw them with PIL)
-        ax.set_title('')
-        ax.set_xlabel('')
-        ax.set_ylabel('')
+        # Calculate statistics for each group
+        # IMPORTANT: Convert all numpy types to Python native types for JSON serialization
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data],  # Convert numpy array to list of floats
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
 
-        # Save high-res base image (PNG) without labels
-        base_path = os.path.join(plots_dir, base_filename)
-        final_path = os.path.join(plots_dir, final_filename)
-
-        plt.tight_layout(pad=1)
-        fig.savefig(base_path, bbox_inches='tight', dpi=300, format='PNG')
-        plt.close(fig)
-
-        # Prepare strings
-        T = map_digits(translate(title))
-        X = map_digits(translate(xlabel))
-        Y = map_digits(translate(ylabel))
-
-        # Fonts
-        label_font = get_pil_font(label_font_size)
-
-        # Measure text
-        tx0, ty0, tx1, ty1 = label_font.getbbox(T); th = ty1 - ty0
-        xx0, xy0, xx1, xy1 = label_font.getbbox(X); xh = xy1 - xy0
-        yx0, yy0, yx1, yy1 = label_font.getbbox(Y); yw, yh = yx1 - yx0, yy1 - yy0
-
-        # Padding (left must fit rotated Y label height)
-        pad = max(label_font_size // 2, 10)
-        lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
-
-        # Compose canvas
-        base_img = Image.open(base_path).convert("RGB")
-        bw, bh = base_img.size
-        W, H = bw + lm + rm, bh + tm + bm
-        canvas = Image.new("RGB", (W, H), "white")
-        canvas.paste(base_img, (lm, tm))
-        draw = ImageDraw.Draw(canvas)
-
-        # center helper
-        def center_h(txt, fnt, total_w):
-            return (total_w - int(draw.textlength(txt, font=fnt))) // 2
-
-        # Title (top center)
-        tx = center_h(T, label_font, W)
-        draw.text((tx, (tm - th) // 2), T, font=label_font, fill="black")
-
-        # X-axis (bottom center)
-        xx = center_h(X, label_font, W)
-        draw.text((xx, tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
-
-        # Y-axis (rotated)
-        # Add padding below baseline to prevent clipping (especially for y, g, p, q)
-        baseline_pad = int(label_font_size * 0.25)
-
-        # Expand height a bit before drawing
-        Yimg = Image.new("RGBA", (yw, yh + baseline_pad), (255, 255, 255, 0))
-        d2 = ImageDraw.Draw(Yimg)
-        d2.text((0, baseline_pad // 2), Y, font=label_font, fill="black")
-
-        # Rotate safely
-        Yrot = Yimg.rotate(90, expand=True)
-
-        # Paste centered on canvas
-        canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-
-        # Save final in requested format
-        canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
-        print(f"[Kruskal] saved: {final_path}")
-
-        return f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}" 
-
-    cat_labels = [map_digits(translate(str(c))) for c in categories]
-
-    image_paths = []
-
-    # 9a) Count plot (group sizes)
-    fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    counts = work[col1].value_counts().reindex(categories).fillna(0).astype(int)    
-    sns.barplot(x=[str(c) for c in categories], y=counts.values, ax=ax1, width=bar_width, palette=palette)
-    ax1.set_xticklabels(cat_labels, fontproperties=tick_prop)
-    # y ticks (map to digits if bn)
-    yt = ax1.get_yticks()
-    yt_labels = []
-    for v in yt:
-        if abs(v - int(round(v))) < 1e-6:
-            s = f"{int(round(v))}"
-        else:
-            s = f"{v:.0f}"
-        yt_labels.append(map_digits(s))
-    ax1.set_yticklabels(yt_labels, fontproperties=tick_prop)
-    #grid lines
-    ax1.set_axisbelow(True)  # ensures grid is drawn behind bars
-    if show_grid:
-        ax1.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-
-    count_path = create_labeled_plot(
-        fig1, ax1,
-        title=f"{col1} group sizes",
-        xlabel=col1, ylabel=col2,
-        base_filename="count_base.png",
-        final_filename=f"countplot.{img_format}"
-    )
-    image_paths.append(count_path)
-
-    # 9b) Box plot of col2 by col1
-    fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    sns.boxplot(x=work[col1], y=work[col2], ax=ax2, width=box_width, palette=palette, order=categories)
-    ax2.set_xticklabels(cat_labels, fontproperties=tick_prop)
-    yt2 = ax2.get_yticks()
-    ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in yt2], fontproperties=tick_prop)
-    ax2.set_axisbelow(True)
-    if show_grid:
-        ax2.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-
-    box_path = create_labeled_plot(
-        fig2, ax2,
-        title=f"Boxplot of {col2} by {col1}",
-        xlabel=col1, ylabel=col2,
-        base_filename="box_base.png",
-        final_filename=f"boxplot.{img_format}"
-    )
-    image_paths.append(box_path)
-
-    # 9c) Violin plot of col2 by col1
-    fig3, ax3 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    sns.violinplot(x=work[col1], y=work[col2], ax=ax3, width=violin_width, palette=palette, order=categories, cut=0)
-    ax3.set_xticklabels(cat_labels, fontproperties=tick_prop)
-    yt3 = ax3.get_yticks()
-    ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in yt3], fontproperties=tick_prop)
-    ax3.set_axisbelow(True)
-    if show_grid:
-        ax3.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-
-    violin_path = create_labeled_plot(
-        fig3, ax3,
-        title=f"Violin plot of {col2} by {col1}",
-        xlabel=col1, ylabel=col2,
-        base_filename="violin_base.png",
-        final_filename=f"violinplot.{img_format}"
-    )
-    image_paths.append(violin_path)
-
-    stat_out = stat
-    p_out    = p_value
-    if language == 'bn':
-        stat_out = map_digits(f"{stat:.6g}")
-        p_out    = map_digits(f"{p_value:.6g}")
-
-    return JsonResponse({
-        'test': 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট',
-        'statistic': stat_out,
-        'p_value': p_out,
+    # Prepare response with localized labels
+    test_name = 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট'
+    
+    response_data = {
         'success': True,
-        'image_paths': image_paths
-    })
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),
+        'p_value': float(p_value),
+        'degrees_of_freedom': int(len(categories) - 1),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'column_names': {
+            'group': str(col1),
+            'value': str(col2)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05
+        }
+    }
+    return JsonResponse(response_data)
 
 def process_mannwhitney_test(request, df, col1, col2, user_id):
     import os
