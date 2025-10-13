@@ -769,20 +769,17 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
     const getDimensions = (dimensionString) => {
         const [width, height] = dimensionString.split('x').map(Number);
 
-        const maxWidth = window.innerWidth - 100;
-        const maxHeight = window.innerHeight - 300;
-
         let finalWidth = width;
-        let finalHeight = height;
+        let finalHeight = height-100;
 
-        if (width > maxWidth || height > maxHeight) {
-            const scaleX = maxWidth / width;
-            const scaleY = maxHeight / height;
-            const scale = Math.min(scaleX, scaleY);
+        // if (width > maxWidth || height > maxHeight) {
+        //     const scaleX = maxWidth / width;
+        //     const scaleY = maxHeight / height;
+        //     const scale = Math.min(scaleX, scaleY);
 
-            finalWidth = Math.floor(width * scale);
-            finalHeight = Math.floor(height * scale);
-        }
+        //     finalWidth = Math.floor(width * scale);
+        //     finalHeight = Math.floor(height * scale);
+        // }
 
         return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
