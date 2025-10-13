@@ -8,3 +8,14 @@
 8. If screen doesn't support the dimension, reduce it keeping same ratio
 9. Include Orientation (Vertical/Horizontal, default is vertical)
 10. The bars in group size plot and mean value plot is rounded (border radius not 0). Make it sharp (border radius=0)
+
+
+*Font style                     OK
+*3x2 spaces                     NOT POSSIBLE
+*Bar border                     OK
+*Graph border                   NOT POSSIBLE
+*Download                       OK
+*Dimension Debug
+*Cross button
+*Default settings
+*x and y axis values B/I/U      NOT POSSIBLE
