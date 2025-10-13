@@ -371,6 +371,85 @@
     transform: translateY(0);
 }
 
+/* Text Style Buttons */
+.text-style-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.style-btn {
+    width: 32px;
+    height: 32px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #6b7280;
+    transition: all 0.2s;
+    padding: 0;
+}
+
+.style-btn:hover {
+    border-color: #3b82f6;
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.style-btn.active {
+    border-color: #3b82f6;
+    background: #3b82f6;
+    color: white;
+}
+
+.style-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.style-btn strong,
+.style-btn em,
+.style-btn u {
+    font-size: 14px;
+    display: block;
+}
+
+/* Compact Color Picker */
+.color-picker-compact {
+    width: 40px;
+    height: 38px;
+    border: 1.5px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    padding: 2px;
+    background: white;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.color-picker-compact:hover {
+    border-color: #3b82f6;
+    transform: scale(1.05);
+}
+
+.color-picker-compact:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Category Label Row */
+.category-label-row {
+    margin-bottom: 12px;
+}
+
+.category-label-row:last-child {
+    margin-bottom: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .customization-overlay {
@@ -387,6 +466,21 @@
 
     .customization-content {
         padding: 20px;
+    }
+
+    .text-style-buttons {
+        flex-wrap: wrap;
+    }
+    
+    .style-btn {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+    
+    .color-picker-compact {
+        width: 36px;
+        height: 36px;
     }
 }
 
@@ -430,4 +524,15 @@ button:focus-visible {
     white-space: nowrap;
     z-index: 1001;
     margin-top: 8px;
+}
+
+/* Ensure proper spacing in setting rows */
+.setting-row .setting-group {
+    flex: 1;
+    min-width: 0;
+}
+
+/* Better alignment for inline elements */
+.setting-group > div[style*="display: flex"] {
+    width: 100%;
 }

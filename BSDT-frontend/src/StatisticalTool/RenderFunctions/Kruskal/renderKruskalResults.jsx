@@ -7,17 +7,30 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
     
     return {
-        dimensions: '1280x720',
+        dimensions: '800x600',
         captionOn: false,
         captionText: '',
+        captionSize: 16,
+        captionBold: false,
+        captionItalic: false,
+        captionUnderline: false,
         xAxisTitle: 'Groups',
         yAxisTitle: 'Values',
         xAxisTitleSize: 14,
         yAxisTitleSize: 14,
+        xAxisTitleBold: false,
+        xAxisTitleItalic: false,
+        xAxisTitleUnderline: false,
+        yAxisTitleBold: false,
+        yAxisTitleItalic: false,
+        yAxisTitleUnderline: false,
         xAxisTickSize: 12,
         yAxisTickSize: 12,
+        yAxisMin: 'auto',
+        yAxisMax: 'auto',
         gridOn: true,
         gridStyle: '3 3',
+        gridColor: 'gray',
         gridOpacity: 1,
         borderOn: false,
         dataLabelsOn: true,
@@ -43,14 +56,18 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         caption: language === 'বাংলা' ? 'ক্যাপশন' : 'Caption',
         captionOn: language === 'বাংলা' ? 'ক্যাপশন চালু' : 'Caption On',
         captionText: language === 'বাংলা' ? 'ক্যাপশন টেক্সট' : 'Caption Text',
+        captionSize: language === 'বাংলা' ? 'ক্যাপশন আকার' : 'Caption Size',
         xAxisTitle: language === 'বাংলা' ? 'X অক্ষের শিরোনাম' : 'X-Axis Title',
         yAxisTitle: language === 'বাংলা' ? 'Y অক্ষের শিরোনাম' : 'Y-Axis Title',
         xAxisTitleSize: language === 'বাংলা' ? 'X অক্ষ শিরোনাম আকার' : 'X-Axis Title Size',
         yAxisTitleSize: language === 'বাংলা' ? 'Y অক্ষ শিরোনাম আকার' : 'Y-Axis Title Size',
         xAxisTickSize: language === 'বাংলা' ? 'X অক্ষ টিক আকার' : 'X-Axis Tick Size',
         yAxisTickSize: language === 'বাংলা' ? 'Y অক্ষ টিক আকার' : 'Y-Axis Tick Size',
+        yAxisMin: language === 'বাংলা' ? 'Y অক্ষ ন্যূনতম' : 'Y-Axis Min',
+        yAxisMax: language === 'বাংলা' ? 'Y অক্ষ সর্বোচ্চ' : 'Y-Axis Max',
         gridOn: language === 'বাংলা' ? 'গ্রিড চালু' : 'Grid On',
         gridStyle: language === 'বাংলা' ? 'গ্রিড স্টাইল' : 'Grid Style',
+        gridColor: language === 'বাংলা' ? 'গ্রিড রং' : 'Grid Color',
         gridOpacity: language === 'বাংলা' ? 'গ্রিড স্বচ্ছতা' : 'Grid Opacity',
         borderOn: language === 'বাংলা' ? 'বর্ডার চালু' : 'Border On',
         dataLabelsOn: language === 'বাংলা' ? 'ডেটা লেবেল চালু' : 'Data Labels On',
@@ -62,6 +79,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         categoryColors: language === 'বাংলা' ? 'ক্যাটাগরি রং' : 'Category Colors',
         close: language === 'বাংলা' ? 'বন্ধ করুন' : 'Close',
         reset: language === 'বাংলা' ? 'রিসেট' : 'Reset',
+        auto: language === 'বাংলা' ? 'স্বয়ংক্রিয়' : 'Auto',
     };
 
     const gridStyles = [
@@ -143,16 +161,56 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         </div>
 
                         {settings.captionOn && (
-                            <div className="setting-group">
-                                <label className="setting-label">{t.captionText}</label>
-                                <input
-                                    type="text"
-                                    className="setting-input"
-                                    value={settings.captionText}
-                                    onChange={(e) => handleChange('captionText', e.target.value)}
-                                    placeholder="Enter caption text..."
-                                />
-                            </div>
+                            <>
+                                <div className="setting-group">
+                                    <label className="setting-label">{t.captionText}</label>
+                                    <input
+                                        type="text"
+                                        className="setting-input"
+                                        value={settings.captionText}
+                                        onChange={(e) => handleChange('captionText', e.target.value)}
+                                        placeholder="Enter caption text..."
+                                    />
+                                </div>
+                                <div className="setting-row">
+                                    <div className="setting-group" style={{ flex: '0 0 50%' }}>
+                                        <label className="setting-label">{t.captionSize}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.captionSize}
+                                            onChange={(e) => handleChange('captionSize', parseInt(e.target.value))}
+                                            min="10"
+                                            max="48"
+                                        />
+                                    </div>
+                                    <div className="setting-group" style={{ flex: '0 0 50%', display: 'flex', alignItems: 'flex-end' }}>
+                                        <div className="text-style-buttons">
+                                            <button
+                                                className={`style-btn ${settings.captionBold ? 'active' : ''}`}
+                                                onClick={() => handleChange('captionBold', !settings.captionBold)}
+                                                title="Bold"
+                                            >
+                                                <strong>B</strong>
+                                            </button>
+                                            <button
+                                                className={`style-btn ${settings.captionItalic ? 'active' : ''}`}
+                                                onClick={() => handleChange('captionItalic', !settings.captionItalic)}
+                                                title="Italic"
+                                            >
+                                                <em>I</em>
+                                            </button>
+                                            <button
+                                                className={`style-btn ${settings.captionUnderline ? 'active' : ''}`}
+                                                onClick={() => handleChange('captionUnderline', !settings.captionUnderline)}
+                                                title="Underline"
+                                            >
+                                                <u>U</u>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
                         )}
                     </div>
 
@@ -162,22 +220,74 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         
                         <div className="setting-group">
                             <label className="setting-label">{t.xAxisTitle}</label>
-                            <input
-                                type="text"
-                                className="setting-input"
-                                value={settings.xAxisTitle}
-                                onChange={(e) => handleChange('xAxisTitle', e.target.value)}
-                            />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    type="text"
+                                    className="setting-input"
+                                    value={settings.xAxisTitle}
+                                    onChange={(e) => handleChange('xAxisTitle', e.target.value)}
+                                    style={{ flex: 1 }}
+                                />
+                                <div className="text-style-buttons">
+                                    <button
+                                        className={`style-btn ${settings.xAxisTitleBold ? 'active' : ''}`}
+                                        onClick={() => handleChange('xAxisTitleBold', !settings.xAxisTitleBold)}
+                                        title="Bold"
+                                    >
+                                        <strong>B</strong>
+                                    </button>
+                                    <button
+                                        className={`style-btn ${settings.xAxisTitleItalic ? 'active' : ''}`}
+                                        onClick={() => handleChange('xAxisTitleItalic', !settings.xAxisTitleItalic)}
+                                        title="Italic"
+                                    >
+                                        <em>I</em>
+                                    </button>
+                                    <button
+                                        className={`style-btn ${settings.xAxisTitleUnderline ? 'active' : ''}`}
+                                        onClick={() => handleChange('xAxisTitleUnderline', !settings.xAxisTitleUnderline)}
+                                        title="Underline"
+                                    >
+                                        <u>U</u>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="setting-group">
                             <label className="setting-label">{t.yAxisTitle}</label>
-                            <input
-                                type="text"
-                                className="setting-input"
-                                value={settings.yAxisTitle}
-                                onChange={(e) => handleChange('yAxisTitle', e.target.value)}
-                            />
+                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                                <input
+                                    type="text"
+                                    className="setting-input"
+                                    value={settings.yAxisTitle}
+                                    onChange={(e) => handleChange('yAxisTitle', e.target.value)}
+                                    style={{ flex: 1 }}
+                                />
+                                <div className="text-style-buttons">
+                                    <button
+                                        className={`style-btn ${settings.yAxisTitleBold ? 'active' : ''}`}
+                                        onClick={() => handleChange('yAxisTitleBold', !settings.yAxisTitleBold)}
+                                        title="Bold"
+                                    >
+                                        <strong>B</strong>
+                                    </button>
+                                    <button
+                                        className={`style-btn ${settings.yAxisTitleItalic ? 'active' : ''}`}
+                                        onClick={() => handleChange('yAxisTitleItalic', !settings.yAxisTitleItalic)}
+                                        title="Italic"
+                                    >
+                                        <em>I</em>
+                                    </button>
+                                    <button
+                                        className={`style-btn ${settings.yAxisTitleUnderline ? 'active' : ''}`}
+                                        onClick={() => handleChange('yAxisTitleUnderline', !settings.yAxisTitleUnderline)}
+                                        title="Underline"
+                                    >
+                                        <u>U</u>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="setting-row">
@@ -231,6 +341,30 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 />
                             </div>
                         </div>
+
+                        <div className="setting-row">
+                            <div className="setting-group">
+                                <label className="setting-label">{t.yAxisMin}</label>
+                                <input
+                                    type="text"
+                                    className="setting-input"
+                                    value={settings.yAxisMin}
+                                    onChange={(e) => handleChange('yAxisMin', e.target.value)}
+                                    placeholder={t.auto}
+                                />
+                            </div>
+
+                            <div className="setting-group">
+                                <label className="setting-label">{t.yAxisMax}</label>
+                                <input
+                                    type="text"
+                                    className="setting-input"
+                                    value={settings.yAxisMax}
+                                    onChange={(e) => handleChange('yAxisMax', e.target.value)}
+                                    placeholder={t.auto}
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Grid Settings */}
@@ -250,17 +384,31 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         {settings.gridOn && (
                             <>
-                                <div className="setting-group">
-                                    <label className="setting-label">{t.gridStyle}</label>
-                                    <select 
-                                        className="setting-select"
-                                        value={settings.gridStyle}
-                                        onChange={(e) => handleChange('gridStyle', e.target.value)}
-                                    >
-                                        {gridStyles.map(style => (
-                                            <option key={style.value} value={style.value}>{style.label}</option>
-                                        ))}
-                                    </select>
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.gridStyle}</label>
+                                        <select 
+                                            className="setting-select"
+                                            value={settings.gridStyle}
+                                            onChange={(e) => handleChange('gridStyle', e.target.value)}
+                                        >
+                                            {gridStyles.map(style => (
+                                                <option key={style.value} value={style.value}>{style.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.gridColor}</label>
+                                        <select 
+                                            className="setting-select"
+                                            value={settings.gridColor}
+                                            onChange={(e) => handleChange('gridColor', e.target.value)}
+                                        >
+                                            <option value="gray">Gray</option>
+                                            <option value="black">Black</option>
+                                        </select>
+                                    </div>
                                 </div>
 
                                 <div className="setting-group">
@@ -329,36 +477,22 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     <div className="customization-section">
                         <h4 className="section-title">{t.categoryLabels}</h4>
                         {settings.categoryLabels.map((label, index) => (
-                            <div key={index} className="setting-group">
+                            <div key={index} className="setting-group category-label-row">
                                 <label className="setting-label">Category {index + 1}</label>
-                                <input
-                                    type="text"
-                                    className="setting-input"
-                                    value={label}
-                                    onChange={(e) => handleCategoryLabelChange(index, e.target.value)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Category Colors */}
-                    <div className="customization-section">
-                        <h4 className="section-title">{t.categoryColors}</h4>
-                        {settings.categoryColors.map((color, index) => (
-                            <div key={index} className="setting-group color-picker-group">
-                                <label className="setting-label">{settings.categoryLabels[index]}</label>
-                                <div className="color-picker-wrapper">
-                                    <input
-                                        type="color"
-                                        className="color-picker"
-                                        value={color}
-                                        onChange={(e) => handleCategoryColorChange(index, e.target.value)}
-                                    />
+                                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <input
                                         type="text"
-                                        className="color-input"
-                                        value={color}
+                                        className="setting-input"
+                                        value={label}
+                                        onChange={(e) => handleCategoryLabelChange(index, e.target.value)}
+                                        style={{ flex: 1 }}
+                                    />
+                                    <input
+                                        type="color"
+                                        className="color-picker-compact"
+                                        value={settings.categoryColors[index]}
                                         onChange={(e) => handleCategoryColorChange(index, e.target.value)}
+                                        title="Choose color"
                                     />
                                 </div>
                             </div>
@@ -391,15 +525,12 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return text.toString().split('').map(char => digitMapBn[char] || char).join('');
     };
 
-    // Use parent state
     const activeTab = kruskalActiveTab;
     const setActiveTab = setKruskalActiveTab;
 
-    // State for customization overlay
     const [overlayOpen, setOverlayOpen] = React.useState(false);
     const [currentPlotType, setCurrentPlotType] = React.useState('Count');
 
-    // Initialize settings for each plot type
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
@@ -416,7 +547,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         getDefaultSettings('Violin', categoryCount, categoryNames)
     );
 
-    // Update category labels when data changes
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);
@@ -451,7 +581,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         }
     };
 
-    // Loading state
     if (!results || !results.plot_data) {
         return (
             <div className="stats-loading">
@@ -509,7 +638,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
     const groupColumn = results.column_names?.group || columns?.[0] || 'Group';
     const valueColumn = results.column_names?.value || columns?.[1] || 'Value';
 
-    // Custom tooltip
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
@@ -534,10 +662,57 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const getDimensions = (dimensionString) => {
         const [width, height] = dimensionString.split('x').map(Number);
-        return { width, height };
+        
+        const maxWidth = window.innerWidth - 100;
+        const maxHeight = window.innerHeight - 300;
+        
+        let finalWidth = width;
+        let finalHeight = height;
+        
+        if (width > maxWidth || height > maxHeight) {
+            const scaleX = maxWidth / width;
+            const scaleY = maxHeight / height;
+            const scale = Math.min(scaleX, scaleY);
+            
+            finalWidth = Math.floor(width * scale);
+            finalHeight = Math.floor(height * scale);
+        }
+        
+        return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
 
-    // Render Count Chart
+    const getTextStyle = (bold, italic, underline) => {
+        return {
+            fontWeight: bold ? 'bold' : 'normal',
+            fontStyle: italic ? 'italic' : 'normal',
+            textDecoration: underline ? 'underline' : 'none'
+        };
+    };
+
+    const getCaptionStyle = (settings) => {
+        return {
+            fontSize: settings.captionSize,
+            ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline),
+            fill: '#374151',
+            textAnchor: 'middle'
+        };
+    };
+
+    const getYAxisDomain = (settings, data, dataKey) => {
+        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+            const min = parseFloat(settings.yAxisMin);
+            const max = parseFloat(settings.yAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                return [min, max];
+            }
+        }
+        return ['auto', 'auto'];
+    };
+
+    const getGridStroke = (gridColor) => {
+        return gridColor === 'black' ? '#000000' : '#e5e7eb';
+    };
+
     const renderCountChart = () => {
         const settings = countSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -547,6 +722,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             count: group.count,
             fill: settings.categoryColors[idx]
         }));
+
+        const yDomain = getYAxisDomain(settings, data, 'count');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -560,13 +737,18 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 <ResponsiveContainer width="100%" height={height}>
                     <BarChart 
                         data={data} 
-                        margin={{ top: 40, right: 30, left: 60, bottom: 80 }}
+                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
+                        {settings.captionOn && (
+                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
+                                {settings.captionText}
+                            </text>
+                        )}
                         {settings.gridOn && (
                             <CartesianGrid 
                                 strokeDasharray={settings.gridStyle} 
-                                stroke="#e5e7eb" 
+                                stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
@@ -580,22 +762,32 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.xAxisTitle, 
                                 position: 'insideBottom', 
                                 offset: -20,
-                                style: { fontSize: settings.xAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.xAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
+                                }
                             }}
+                            axisLine={{ strokeWidth: 2 }}
                         />
                         <YAxis 
+                            domain={yDomain}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
                             label={{ 
                                 value: settings.yAxisTitle, 
                                 angle: -90, 
                                 position: 'insideLeft',
-                                style: { fontSize: settings.yAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.yAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
+                                }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar 
                             dataKey="count" 
-                            radius={[8, 8, 0, 0]}
+                            radius={[0, 0, 0, 0]}
                             barSize={settings.elementWidth * 100}
                             label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontWeight: 'bold' } : false}
                         >
@@ -605,16 +797,10 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </Bar>
                     </BarChart>
                 </ResponsiveContainer>
-                {settings.captionOn && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginTop: '10px' }}>
-                        {settings.captionText}
-                    </p>
-                )}
             </div>
         );
     };
 
-    // Render Mean Chart
     const renderMeanChart = () => {
         const settings = meanSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -625,6 +811,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             std: parseFloat(group.std.toFixed(2)),
             fill: settings.categoryColors[idx]
         }));
+
+        const yDomain = getYAxisDomain(settings, data, 'mean');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -638,13 +826,18 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 <ResponsiveContainer width="100%" height={height}>
                     <ComposedChart 
                         data={data} 
-                        margin={{ top: 40, right: 30, left: 60, bottom: 80 }}
+                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
+                        {settings.captionOn && (
+                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
+                                {settings.captionText}
+                            </text>
+                        )}
                         {settings.gridOn && (
                             <CartesianGrid 
                                 strokeDasharray={settings.gridStyle} 
-                                stroke="#e5e7eb" 
+                                stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
@@ -658,22 +851,32 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.xAxisTitle, 
                                 position: 'insideBottom', 
                                 offset: -20,
-                                style: { fontSize: settings.xAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.xAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
+                                }
                             }}
+                            axisLine={{ strokeWidth: 2 }}
                         />
                         <YAxis 
+                            domain={yDomain}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
                             label={{ 
                                 value: settings.yAxisTitle, 
                                 angle: -90, 
                                 position: 'insideLeft',
-                                style: { fontSize: settings.yAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.yAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
+                                }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Bar 
                             dataKey="mean" 
-                            radius={[8, 8, 0, 0]}
+                            radius={[0, 0, 0, 0]}
                             barSize={settings.elementWidth * 100}
                             label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontSize: 11 } : false}
                         >
@@ -684,16 +887,10 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </Bar>
                     </ComposedChart>
                 </ResponsiveContainer>
-                {settings.captionOn && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginTop: '10px' }}>
-                        {settings.captionText}
-                    </p>
-                )}
             </div>
         );
     };
 
-    // Box Plot Component (similar structure with customization)
     const CustomBoxPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         const scatterData = [];
@@ -709,19 +906,33 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             );
         });
 
-        const globalMin = Math.min(...data.map(d => d.min));
-        const globalMax = Math.max(...data.map(d => d.max));
-        const range = globalMax - globalMin;
-        const padding = range * 0.1;
+        let yDomainMin, yDomainMax;
+        
+        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+            const min = parseFloat(settings.yAxisMin);
+            const max = parseFloat(settings.yAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                yDomainMin = min;
+                yDomainMax = max;
+            }
+        }
+        
+        if (yDomainMin === undefined || yDomainMax === undefined) {
+            const globalMin = Math.min(...data.map(d => d.min));
+            const globalMax = Math.max(...data.map(d => d.max));
+            const range = globalMax - globalMin;
+            const padding = range * 0.1;
 
-        const rawMin = globalMin - padding;
-        const rawMax = globalMax + padding;
-        const niceRange = rawMax - rawMin;
-        const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
-        const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
+            const rawMin = globalMin - padding;
+            const rawMax = globalMax + padding;
+            const niceRange = rawMax - rawMin;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
+            const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
 
-        const yDomainMin = Math.floor(rawMin / niceTick) * niceTick;
-        const yDomainMax = Math.ceil(rawMax / niceTick) * niceTick;
+            yDomainMin = Math.floor(rawMin / niceTick) * niceTick;
+            yDomainMax = Math.ceil(rawMax / niceTick) * niceTick;
+        }
+
         const yDomain = [yDomainMin, yDomainMax];
 
         const CustomBoxShape = (props) => {
@@ -782,13 +993,18 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
                     <ScatterChart 
-                        margin={{ top: 40, right: 30, left: 60, bottom: 80 }}
+                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
+                        {settings.captionOn && (
+                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
+                                {settings.captionText}
+                            </text>
+                        )}
                         {settings.gridOn && (
                             <CartesianGrid 
                                 strokeDasharray={settings.gridStyle} 
-                                stroke="#e5e7eb" 
+                                stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
@@ -806,8 +1022,13 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.xAxisTitle, 
                                 position: 'insideBottom', 
                                 offset: -20,
-                                style: { fontSize: settings.xAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.xAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
+                                }
                             }}
+                            axisLine={{ strokeWidth: 2 }}
                         />
                         <YAxis
                             type="number"
@@ -819,7 +1040,11 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.yAxisTitle, 
                                 angle: -90, 
                                 position: 'insideLeft',
-                                style: { fontSize: settings.yAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.yAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
+                                }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
@@ -848,35 +1073,41 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </div>
                     </div>
                 )}
-
-                {settings.captionOn && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginTop: '10px' }}>
-                        {settings.captionText}
-                    </p>
-                )}
             </div>
         );
     };
 
-    // Violin Plot Component (similar structure with customization)
     const CustomViolinPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         const numPoints = 100;
         const violinWidth = settings.elementWidth;
 
-        const globalMin = Math.min(...data.map(d => d.min));
-        const globalMax = Math.max(...data.map(d => d.max));
-        const range = globalMax - globalMin;
-        const padding = range * 0.1;
+        let yMin, yMax;
+        
+        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+            const min = parseFloat(settings.yAxisMin);
+            const max = parseFloat(settings.yAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                yMin = min;
+                yMax = max;
+            }
+        }
+        
+        if (yMin === undefined || yMax === undefined) {
+            const globalMin = Math.min(...data.map(d => d.min));
+            const globalMax = Math.max(...data.map(d => d.max));
+            const range = globalMax - globalMin;
+            const padding = range * 0.1;
 
-        const rawMin = globalMin - padding;
-        const rawMax = globalMax + padding;
-        const niceRange = rawMax - rawMin;
-        const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
-        const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
+            const rawMin = globalMin - padding;
+            const rawMax = globalMax + padding;
+            const niceRange = rawMax - rawMin;
+            const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
+            const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
 
-        const yMin = Math.floor(rawMin / niceTick) * niceTick;
-        const yMax = Math.ceil(rawMax / niceTick) * niceTick;
+            yMin = Math.floor(rawMin / niceTick) * niceTick;
+            yMax = Math.ceil(rawMax / niceTick) * niceTick;
+        }
 
         const allViolinPoints = [];
 
@@ -991,13 +1222,18 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
                     <ScatterChart 
-                        margin={{ top: 40, right: 30, left: 60, bottom: 80 }}
+                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
+                        {settings.captionOn && (
+                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
+                                {settings.captionText}
+                            </text>
+                        )}
                         {settings.gridOn && (
                             <CartesianGrid 
                                 strokeDasharray={settings.gridStyle} 
-                                stroke="#e5e7eb" 
+                                stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
@@ -1015,8 +1251,13 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.xAxisTitle, 
                                 position: 'insideBottom', 
                                 offset: -20,
-                                style: { fontSize: settings.xAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.xAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
+                                }
                             }}
+                            axisLine={{ strokeWidth: 2 }}
                         />
                         <YAxis
                             type="number"
@@ -1028,28 +1269,32 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 value: settings.yAxisTitle, 
                                 angle: -90, 
                                 position: 'insideLeft',
-                                style: { fontSize: settings.yAxisTitleSize, fill: '#374151' }
+                                style: { 
+                                    fontSize: settings.yAxisTitleSize, 
+                                    fill: '#374151',
+                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
+                                }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Scatter data={scatterData} shape={<CustomViolinShape />} />
                     </ScatterChart>
                 </ResponsiveContainer>
-                {settings.captionOn && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginTop: '10px' }}>
-                        {settings.captionText}
-                    </p>
-                )}
-                {!settings.captionOn && (
-                    <p style={{ textAlign: 'center', color: '#6b7280', fontSize: '14px', marginTop: '10px' }}>
-                        {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
-                    </p>
+
+                {settings.dataLabelsOn && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
+                        </h4>
+                        <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
+                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
+                        </p>
+                    </div>
                 )}
             </div>
         );
     };
 
-    // Prepare data for Box and Violin plots
     const boxChartData = plotData.map((group, idx) => ({
         name: boxSettings.categoryLabels[idx],
         min: parseFloat(group.min.toFixed(2)),
@@ -1143,7 +1388,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.groupSizes}</button>
+                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.count}</button>
                     <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{t.meanPlot}</button>
                     <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
                     <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{t.violinPlot}</button>
@@ -1176,7 +1421,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 </div>
             </div>
 
-            {/* Customization Overlay */}
             <CustomizationOverlay
                 isOpen={overlayOpen}
                 onClose={() => setOverlayOpen(false)}
@@ -1186,7 +1430,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 language={language}
             />
 
-            {/* Inline styles for customize button */}
             <style jsx="true">{`
                 .customize-btn {
                     position: absolute;
