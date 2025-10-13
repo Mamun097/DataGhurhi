@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
 import './CustomizationOverlay.css';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 // Utility function to get default settings for each plot type
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
@@ -8,6 +10,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
 
     return {
         dimensions: '800x600',
+        fontFamily: 'Times New Roman',
         captionOn: false,
         captionText: '',
         captionSize: 16,
@@ -33,12 +36,27 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         gridColor: 'gray',
         gridOpacity: 1,
         borderOn: false,
+        barBorderOn: false,
         dataLabelsOn: true,
+        errorBarsOn: true,
         elementWidth: plotType === 'Violin' ? 0.3 : 0.6,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
     };
 };
+
+const fontFamilyOptions = [
+    { value: 'Times New Roman', label: 'Times New Roman' },
+    { value: 'Arial', label: 'Arial' },
+    { value: 'Helvetica', label: 'Helvetica' },
+    { value: 'Georgia', label: 'Georgia' },
+    { value: 'Verdana', label: 'Verdana' },
+    { value: 'Courier New', label: 'Courier New' },
+    { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+    { value: 'Palatino', label: 'Palatino' },
+    { value: 'Garamond', label: 'Garamond' },
+    { value: 'Comic Sans MS', label: 'Comic Sans MS' }
+];
 
 // Customization Overlay Component
 const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsChange, language }) => {
@@ -47,6 +65,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
     const t = {
         customization: language === 'বাংলা' ? 'কাস্টমাইজেশন' : 'Customization',
         general: language === 'বাংলা' ? 'সাধারণ সেটিংস' : 'General Settings',
+        fontFamily: language === 'বাংলা' ? 'ফন্ট স্টাইল' : 'Font Style',
         axes: language === 'বাংলা' ? 'অক্ষ সেটিংস' : 'Axes Settings',
         grid: language === 'বাংলা' ? 'গ্রিড সেটিংস' : 'Grid Settings',
         appearance: language === 'বাংলা' ? 'চেহারা' : 'Appearance',
@@ -69,8 +88,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         gridStyle: language === 'বাংলা' ? 'গ্রিড স্টাইল' : 'Grid Style',
         gridColor: language === 'বাংলা' ? 'গ্রিড রং' : 'Grid Color',
         gridOpacity: language === 'বাংলা' ? 'গ্রিড স্বচ্ছতা' : 'Grid Opacity',
-        borderOn: language === 'বাংলা' ? 'বর্ডার চালু' : 'Border On',
+        borderOn: language === 'বাংলা' ? 'বর্ডার চালু' : 'Image Border On',
+        barBorderOn: language === 'বাংলা' ? 'বার বর্ডার চালু' : 'Bar Border On',
         dataLabelsOn: language === 'বাংলা' ? 'ডেটা লেবেল চালু' : 'Data Labels On',
+        errorBarsOn: language === 'বাংলা' ? 'এরর বার চালু' : 'Error Bars On',
         width: language === 'বাংলা' ? 'প্রস্থ' : 'Width',
         barWidth: language === 'বাংলা' ? 'বার প্রস্থ' : 'Bar Width',
         boxWidth: language === 'বাংলা' ? 'বক্স প্রস্থ' : 'Box Width',
@@ -145,6 +166,19 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             >
                                 {dimensions.map(dim => (
                                     <option key={dim.value} value={dim.value}>{dim.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="setting-group">
+                            <label className="setting-label">{t.fontFamily}</label>
+                            <select
+                                className="setting-select"
+                                value={settings.fontFamily}
+                                onChange={(e) => handleChange('fontFamily', e.target.value)}
+                            >
+                                {fontFamilyOptions.map(font => (
+                                    <option key={font.value} value={font.value}>{font.label}</option>
                                 ))}
                             </select>
                         </div>
@@ -443,6 +477,19 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </label>
                         </div>
 
+                        {(plotType === 'Count' || plotType === 'Mean') && (
+                            <div className="setting-group">
+                                <label className="setting-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.barBorderOn}
+                                        onChange={(e) => handleChange('barBorderOn', e.target.checked)}
+                                    />
+                                    <span>{t.barBorderOn}</span>
+                                </label>
+                            </div>
+                        )}
+
                         <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
@@ -453,6 +500,19 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 <span>{t.dataLabelsOn}</span>
                             </label>
                         </div>
+
+                        {plotType === 'Mean' && (
+                            <div className="setting-group">
+                                <label className="setting-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.errorBarsOn}
+                                        onChange={(e) => handleChange('errorBarsOn', e.target.checked)}
+                                    />
+                                    <span>{t.errorBarsOn}</span>
+                                </label>
+                            </div>
+                        )}
 
                         <div className="setting-group">
                             <label className="setting-label">
@@ -530,6 +590,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const [overlayOpen, setOverlayOpen] = React.useState(false);
     const [currentPlotType, setCurrentPlotType] = React.useState('Count');
+    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
+    const chartRef = React.useRef(null);
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
@@ -578,6 +640,50 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             case 'Mean': setMeanSettings(settings); break;
             case 'Box': setBoxSettings(settings); break;
             case 'Violin': setViolinSettings(settings); break;
+        }
+    };
+
+    const handleDownload = async (format) => {
+        setDownloadMenuOpen(false);
+        
+        if (!chartRef.current) {
+            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            return;
+        }
+
+        try {
+            const canvas = await html2canvas(chartRef.current, {
+                scale: 3,
+                backgroundColor: '#ffffff',
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+            });
+
+            if (format === 'pdf') {
+                const imgWidth = canvas.width;
+                const imgHeight = canvas.height;
+                const pdf = new jsPDF({
+                    orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+                    unit: 'px',
+                    format: [imgWidth, imgHeight]
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+                pdf.save(`${activeTab}_plot.pdf`);
+            } else {
+                const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                const imgData = canvas.toDataURL(mimeType, 1.0);
+                
+                const link = document.createElement('a');
+                link.download = `${activeTab}_plot.${format}`;
+                link.href = imgData;
+                link.click();
+            }
+        } catch (error) {
+            console.error('Download error:', error);
+            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
         }
     };
 
@@ -681,18 +787,19 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
 
-    const getTextStyle = (bold, italic, underline) => {
+    const getTextStyle = (bold, italic, underline, fontFamily) => {
         return {
             fontWeight: bold ? 'bold' : 'normal',
             fontStyle: italic ? 'italic' : 'normal',
-            textDecoration: underline ? 'underline' : 'none'
+            textDecoration: underline ? 'underline' : 'none',
+            fontFamily: fontFamily
         };
     };
 
     const getCaptionStyle = (settings) => {
         return {
             fontSize: settings.captionSize,
-            ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline),
+            ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline, settings.fontFamily),
             fill: '#374151',
             textAnchor: 'middle'
         };
@@ -714,9 +821,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
     };
 
     const getXAxisLabelOffset = (tickSize, angle = -45) => {
-        // Base offset calculation
-        // For 12px ticks at -45°, offset should be around -20
-        // Formula: -(tickSize * 1.5 + 5)
         return -(tickSize * 1.5 + 5);
     };
 
@@ -734,76 +838,108 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
-                <button className="customize-btn" onClick={() => openCustomization('Count')}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                    </svg>
-                    Customize
-                </button>
-                <ResponsiveContainer width="100%" height={height}>
-                    <BarChart
-                        data={data}
-                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                        style={settings.borderOn ? { border: '2px solid black' } : {}}
-                    >
-                        {settings.captionOn && (
-                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
-                                {settings.captionText}
-                            </text>
-                        )}
-                        {settings.gridOn && (
-                            <CartesianGrid
-                                strokeDasharray={settings.gridStyle}
-                                stroke={getGridStroke(settings.gridColor)}
-                                strokeOpacity={settings.gridOpacity}
-                            />
-                        )}
-                        <XAxis
-                            dataKey="name"
-                            angle={-45}
-                            textAnchor="end"
-                            height={40}
-                            tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{
-                                value: settings.xAxisTitle,
-                                position: 'insideBottom',
-                                offset: getXAxisLabelOffset(settings.xAxisTickSize),  // Dynamic offset,
-                                style: {
-                                    fontSize: settings.xAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
-                                }
-                            }}
-                            axisLine={{ strokeWidth: 2 }}
-                        />
-                        <YAxis
-                            domain={yDomain}
-                            tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            label={{
-                                value: settings.yAxisTitle,
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: {
-                                    fontSize: settings.yAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
-                                }
-                            }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar
-                            dataKey="count"
-                            radius={[0, 0, 0, 0]}
-                            barSize={settings.elementWidth * 100}
-                            label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontWeight: 'bold' } : false}
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button className="customize-btn" onClick={() => openCustomization('Count')}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                        Customize
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button 
+                            className="customize-btn" 
+                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
                         >
-                            {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Download
+                        </button>
+                        {downloadMenuOpen && (
+                            <div className="download-menu">
+                                <button onClick={() => handleDownload('png')}>PNG</button>
+                                <button onClick={() => handleDownload('jpg')}>JPG</button>
+                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div ref={chartRef}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <BarChart
+                            data={data}
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            style={settings.borderOn ? { border: '2px solid black' } : {}}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                dataKey="name"
+                                angle={-45}
+                                textAnchor="end"
+                                height={40}
+                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.xAxisTitle,
+                                    position: 'insideBottom',
+                                    offset: getXAxisLabelOffset(settings.xAxisTickSize),
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
+                            />
+                            <YAxis
+                                domain={yDomain}
+                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.yAxisTitle,
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar
+                                dataKey="count"
+                                radius={[0, 0, 0, 0]}
+                                barSize={settings.elementWidth * 100}
+                                label={settings.dataLabelsOn ? {
+                                    position: 'top',
+                                    fill: '#1f2937',
+                                    fontFamily: settings.fontFamily
+                                } : false}
+                            >
+                                {data.map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${index}`}
+                                        fill={entry.fill}
+                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
+                                        strokeWidth={settings.barBorderOn ? 1 : 0}
+                                    />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
         );
     };
@@ -823,77 +959,111 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
-                <button className="customize-btn" onClick={() => openCustomization('Mean')}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                    </svg>
-                    Customize
-                </button>
-                <ResponsiveContainer width="100%" height={height}>
-                    <ComposedChart
-                        data={data}
-                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                        style={settings.borderOn ? { border: '2px solid black' } : {}}
-                    >
-                        {settings.captionOn && (
-                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
-                                {settings.captionText}
-                            </text>
-                        )}
-                        {settings.gridOn && (
-                            <CartesianGrid
-                                strokeDasharray={settings.gridStyle}
-                                stroke={getGridStroke(settings.gridColor)}
-                                strokeOpacity={settings.gridOpacity}
-                            />
-                        )}
-                        <XAxis
-                            dataKey="name"
-                            angle={-45}
-                            textAnchor="end"
-                            height={40}
-                            tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{
-                                value: settings.xAxisTitle,
-                                position: 'insideBottom',
-                                offset: getXAxisLabelOffset(settings.xAxisTickSize),  // Dynamic offset
-                                style: {
-                                    fontSize: settings.xAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
-                                }
-                            }}
-                            axisLine={{ strokeWidth: 2 }}
-                        />
-                        <YAxis
-                            domain={yDomain}
-                            tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            label={{
-                                value: settings.yAxisTitle,
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: {
-                                    fontSize: settings.yAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
-                                }
-                            }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar
-                            dataKey="mean"
-                            radius={[0, 0, 0, 0]}
-                            barSize={settings.elementWidth * 100}
-                            label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontSize: 11 } : false}
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button className="customize-btn" onClick={() => openCustomization('Mean')}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                        Customize
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button 
+                            className="customize-btn" 
+                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
                         >
-                            {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                            ))}
-                            <ErrorBar dataKey="std" width={4} strokeWidth={2} stroke="#374151" />
-                        </Bar>
-                    </ComposedChart>
-                </ResponsiveContainer>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Download
+                        </button>
+                        {downloadMenuOpen && (
+                            <div className="download-menu">
+                                <button onClick={() => handleDownload('png')}>PNG</button>
+                                <button onClick={() => handleDownload('jpg')}>JPG</button>
+                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div ref={chartRef}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <ComposedChart
+                            data={data}
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            style={settings.borderOn ? { border: '2px solid black' } : {}}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                dataKey="name"
+                                angle={-45}
+                                textAnchor="end"
+                                height={40}
+                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.xAxisTitle,
+                                    position: 'insideBottom',
+                                    offset: getXAxisLabelOffset(settings.xAxisTickSize),
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
+                            />
+                            <YAxis
+                                domain={yDomain}
+                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.yAxisTitle,
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Bar
+                                dataKey="mean"
+                                radius={[0, 0, 0, 0]}
+                                barSize={settings.elementWidth * 100}
+                                label={settings.dataLabelsOn ? {
+                                    position: 'top',
+                                    fill: '#1f2937',
+                                    fontFamily: settings.fontFamily
+                                } : false}
+                            >
+                                {data.map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${index}`}
+                                        fill={entry.fill}
+                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
+                                        strokeWidth={settings.barBorderOn ? 1 : 0}
+                                    />
+                                ))}
+                                {settings.errorBarsOn && (
+                                    <ErrorBar dataKey="std" width={4} strokeWidth={2} stroke="#374151" />
+                                )}
+                            </Bar>
+                        </ComposedChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
         );
     };
@@ -991,73 +1161,96 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
-                <button className="customize-btn" onClick={() => openCustomization('Box')}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                    </svg>
-                    Customize
-                </button>
-                <ResponsiveContainer width="100%" height={height}>
-                    <ScatterChart
-                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                        style={settings.borderOn ? { border: '2px solid black' } : {}}
-                    >
-                        {settings.captionOn && (
-                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
-                                {settings.captionText}
-                            </text>
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button className="customize-btn" onClick={() => openCustomization('Box')}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                        Customize
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button 
+                            className="customize-btn" 
+                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Download
+                        </button>
+                        {downloadMenuOpen && (
+                            <div className="download-menu">
+                                <button onClick={() => handleDownload('png')}>PNG</button>
+                                <button onClick={() => handleDownload('jpg')}>JPG</button>
+                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                            </div>
                         )}
-                        {settings.gridOn && (
-                            <CartesianGrid
-                                strokeDasharray={settings.gridStyle}
-                                stroke={getGridStroke(settings.gridColor)}
-                                strokeOpacity={settings.gridOpacity}
+                    </div>
+                </div>
+                <div ref={chartRef}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <ScatterChart
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            style={settings.borderOn ? { border: '2px solid black' } : {}}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                type="number"
+                                dataKey="x"
+                                domain={[-0.5, data.length - 0.5]}
+                                ticks={data.map((_, idx) => idx)}
+                                tickFormatter={(value) => data[value]?.name || ''}
+                                angle={-45}
+                                textAnchor="end"
+                                height={40}
+                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.xAxisTitle,
+                                    position: 'insideBottom',
+                                    offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
                             />
-                        )}
-                        <XAxis
-                            type="number"
-                            dataKey="x"
-                            domain={[-0.5, data.length - 0.5]}
-                            ticks={data.map((_, idx) => idx)}
-                            tickFormatter={(value) => data[value]?.name || ''}
-                            angle={-45}
-                            textAnchor="end"
-                            height={40}
-                            tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{
-                                value: settings.xAxisTitle,
-                                position: 'insideBottom',
-                                offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),  // Dynamic offset
-                                style: {
-                                    fontSize: settings.xAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
-                                }
-                            }}
-                            axisLine={{ strokeWidth: 2 }}
-                        />
-                        <YAxis
-                            type="number"
-                            dataKey="y"
-                            domain={yDomain}
-                            tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
-                            label={{
-                                value: settings.yAxisTitle,
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: {
-                                    fontSize: settings.yAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
-                                }
-                            }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Scatter data={scatterData} shape={<CustomBoxShape />} />
-                    </ScatterChart>
-                </ResponsiveContainer>
+                            <YAxis
+                                type="number"
+                                dataKey="y"
+                                domain={yDomain}
+                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                label={{
+                                    value: settings.yAxisTitle,
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Scatter data={scatterData} shape={<CustomBoxShape />} />
+                        </ScatterChart>
+                    </ResponsiveContainer>
+                </div>
 
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
@@ -1220,73 +1413,96 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
-                <button className="customize-btn" onClick={() => openCustomization('Violin')}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                    </svg>
-                    Customize
-                </button>
-                <ResponsiveContainer width="100%" height={height}>
-                    <ScatterChart
-                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                        style={settings.borderOn ? { border: '2px solid black' } : {}}
-                    >
-                        {settings.captionOn && (
-                            <text x="50%" y="25" style={getCaptionStyle(settings)}>
-                                {settings.captionText}
-                            </text>
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button className="customize-btn" onClick={() => openCustomization('Violin')}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                        Customize
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button 
+                            className="customize-btn" 
+                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                            </svg>
+                            Download
+                        </button>
+                        {downloadMenuOpen && (
+                            <div className="download-menu">
+                                <button onClick={() => handleDownload('png')}>PNG</button>
+                                <button onClick={() => handleDownload('jpg')}>JPG</button>
+                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                            </div>
                         )}
-                        {settings.gridOn && (
-                            <CartesianGrid
-                                strokeDasharray={settings.gridStyle}
-                                stroke={getGridStroke(settings.gridColor)}
-                                strokeOpacity={settings.gridOpacity}
+                    </div>
+                </div>
+                <div ref={chartRef}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <ScatterChart
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            style={settings.borderOn ? { border: '2px solid black' } : {}}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                type="number"
+                                dataKey="x"
+                                domain={[-0.5, data.length - 0.5]}
+                                ticks={data.map((_, idx) => idx)}
+                                tickFormatter={(value) => data[value]?.name || ''}
+                                angle={-45}
+                                textAnchor="end"
+                                height={40}
+                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.xAxisTitle,
+                                    position: 'insideBottom',
+                                    offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
                             />
-                        )}
-                        <XAxis
-                            type="number"
-                            dataKey="x"
-                            domain={[-0.5, data.length - 0.5]}
-                            ticks={data.map((_, idx) => idx)}
-                            tickFormatter={(value) => data[value]?.name || ''}
-                            angle={-45}
-                            textAnchor="end"
-                            height={40}
-                            tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{
-                                value: settings.xAxisTitle,
-                                position: 'insideBottom',
-                                offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),  // Dynamic offset
-                                style: {
-                                    fontSize: settings.xAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
-                                }
-                            }}
-                            axisLine={{ strokeWidth: 2 }}
-                        />
-                        <YAxis
-                            type="number"
-                            dataKey="y"
-                            domain={[yMin, yMax]}
-                            tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
-                            label={{
-                                value: settings.yAxisTitle,
-                                angle: -90,
-                                position: 'insideLeft',
-                                style: {
-                                    fontSize: settings.yAxisTitleSize,
-                                    fill: '#374151',
-                                    ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
-                                }
-                            }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Scatter data={scatterData} shape={<CustomViolinShape />} />
-                    </ScatterChart>
-                </ResponsiveContainer>
+                            <YAxis
+                                type="number"
+                                dataKey="y"
+                                domain={[yMin, yMax]}
+                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                label={{
+                                    value: settings.yAxisTitle,
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    }
+                                }}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Scatter data={scatterData} shape={<CustomViolinShape />} />
+                        </ScatterChart>
+                    </ResponsiveContainer>
+                </div>
 
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
@@ -1439,9 +1655,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
             <style jsx="true">{`
                 .customize-btn {
-                    position: absolute;
-                    top: 10px;
-                    right: 10px;
                     background: white;
                     border: 2px solid #e5e7eb;
                     border-radius: 8px;
@@ -1453,7 +1666,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     font-size: 14px;
                     color: #374151;
                     transition: all 0.2s;
-                    z-index: 10;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
                 }
 
@@ -1467,6 +1679,42 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
                 .customize-btn svg {
                     flex-shrink: 0;
+                }
+
+                .download-menu {
+                    position: absolute;
+                    top: 100%;
+                    right: 0;
+                    margin-top: 8px;
+                    background: white;
+                    border: 2px solid #e5e7eb;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    overflow: hidden;
+                    z-index: 100;
+                    min-width: 120px;
+                }
+
+                .download-menu button {
+                    width: 100%;
+                    padding: 10px 16px;
+                    border: none;
+                    background: white;
+                    color: #374151;
+                    font-size: 14px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    text-align: left;
+                    transition: all 0.2s;
+                }
+
+                .download-menu button:hover {
+                    background: #f3f4f6;
+                    color: #3b82f6;
+                }
+
+                .download-menu button:not(:last-child) {
+                    border-bottom: 1px solid #e5e7eb;
                 }
             `}</style>
         </div>
