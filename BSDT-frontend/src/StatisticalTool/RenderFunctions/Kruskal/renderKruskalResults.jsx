@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import {BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
 import './CustomizationOverlay.css';
 
 // Utility function to get default settings for each plot type
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
-    
+
     return {
         dimensions: '800x600',
         captionOn: false,
@@ -135,10 +135,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* General Settings */}
                     <div className="customization-section">
                         <h4 className="section-title">{t.general}</h4>
-                        
+
                         <div className="setting-group">
                             <label className="setting-label">{t.dimensions}</label>
-                            <select 
+                            <select
                                 className="setting-select"
                                 value={settings.dimensions}
                                 onChange={(e) => handleChange('dimensions', e.target.value)}
@@ -173,7 +173,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     />
                                 </div>
                                 <div className="setting-row">
-                                    <div className="setting-group" style={{ flex: '0 0 50%' }}>
+                                    <div className="setting-group" style={{ flex: '0 0 75%' }}>
                                         <label className="setting-label">{t.captionSize}</label>
                                         <input
                                             type="number"
@@ -184,7 +184,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             max="48"
                                         />
                                     </div>
-                                    <div className="setting-group" style={{ flex: '0 0 50%', display: 'flex', alignItems: 'flex-end' }}>
+                                    <div className="setting-group" style={{ flex: '0 0 25%', display: 'flex', flexDirection: 'column', marginTop: '30px', alignItems: 'flex-start' }}>
                                         <div className="text-style-buttons">
                                             <button
                                                 className={`style-btn ${settings.captionBold ? 'active' : ''}`}
@@ -217,7 +217,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Axes Settings */}
                     <div className="customization-section">
                         <h4 className="section-title">{t.axes}</h4>
-                        
+
                         <div className="setting-group">
                             <label className="setting-label">{t.xAxisTitle}</label>
                             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -370,7 +370,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Grid Settings */}
                     <div className="customization-section">
                         <h4 className="section-title">{t.grid}</h4>
-                        
+
                         <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
@@ -387,7 +387,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 <div className="setting-row">
                                     <div className="setting-group">
                                         <label className="setting-label">{t.gridStyle}</label>
-                                        <select 
+                                        <select
                                             className="setting-select"
                                             value={settings.gridStyle}
                                             onChange={(e) => handleChange('gridStyle', e.target.value)}
@@ -400,7 +400,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                     <div className="setting-group">
                                         <label className="setting-label">{t.gridColor}</label>
-                                        <select 
+                                        <select
                                             className="setting-select"
                                             value={settings.gridColor}
                                             onChange={(e) => handleChange('gridColor', e.target.value)}
@@ -431,7 +431,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Appearance Settings */}
                     <div className="customization-section">
                         <h4 className="section-title">{t.appearance}</h4>
-                        
+
                         <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
@@ -456,9 +456,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         <div className="setting-group">
                             <label className="setting-label">
-                                {plotType === 'Count' ? t.barWidth : 
-                                 plotType === 'Mean' ? t.barWidth :
-                                 plotType === 'Box' ? t.boxWidth : t.violinWidth}
+                                {plotType === 'Count' ? t.barWidth :
+                                    plotType === 'Mean' ? t.barWidth :
+                                        plotType === 'Box' ? t.boxWidth : t.violinWidth}
                             </label>
                             <input
                                 type="range"
@@ -662,22 +662,22 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const getDimensions = (dimensionString) => {
         const [width, height] = dimensionString.split('x').map(Number);
-        
+
         const maxWidth = window.innerWidth - 100;
         const maxHeight = window.innerHeight - 300;
-        
+
         let finalWidth = width;
         let finalHeight = height;
-        
+
         if (width > maxWidth || height > maxHeight) {
             const scaleX = maxWidth / width;
             const scaleY = maxHeight / height;
             const scale = Math.min(scaleX, scaleY);
-            
+
             finalWidth = Math.floor(width * scale);
             finalHeight = Math.floor(height * scale);
         }
-        
+
         return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
 
@@ -713,10 +713,17 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
 
+    const getXAxisLabelOffset = (tickSize, angle = -45) => {
+        // Base offset calculation
+        // For 12px ticks at -45°, offset should be around -20
+        // Formula: -(tickSize * 1.5 + 5)
+        return -(tickSize * 1.5 + 5);
+    };
+
     const renderCountChart = () => {
         const settings = countSettings;
         const { height } = getDimensions(settings.dimensions);
-        
+
         const data = plotData.map((group, idx) => ({
             name: settings.categoryLabels[idx],
             count: group.count,
@@ -735,9 +742,9 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     Customize
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
-                    <BarChart 
-                        data={data} 
-                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
+                    <BarChart
+                        data={data}
+                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
                         {settings.captionOn && (
@@ -746,47 +753,47 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             </text>
                         )}
                         {settings.gridOn && (
-                            <CartesianGrid 
-                                strokeDasharray={settings.gridStyle} 
+                            <CartesianGrid
+                                strokeDasharray={settings.gridStyle}
                                 stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
-                        <XAxis 
-                            dataKey="name" 
-                            angle={-45} 
-                            textAnchor="end" 
-                            height={80}
+                        <XAxis
+                            dataKey="name"
+                            angle={-45}
+                            textAnchor="end"
+                            height={40}
                             tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{ 
-                                value: settings.xAxisTitle, 
-                                position: 'insideBottom', 
-                                offset: -20,
-                                style: { 
-                                    fontSize: settings.xAxisTitleSize, 
+                            label={{
+                                value: settings.xAxisTitle,
+                                position: 'insideBottom',
+                                offset: getXAxisLabelOffset(settings.xAxisTickSize),  // Dynamic offset,
+                                style: {
+                                    fontSize: settings.xAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
                                 }
                             }}
                             axisLine={{ strokeWidth: 2 }}
                         />
-                        <YAxis 
+                        <YAxis
                             domain={yDomain}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            label={{ 
-                                value: settings.yAxisTitle, 
-                                angle: -90, 
+                            label={{
+                                value: settings.yAxisTitle,
+                                angle: -90,
                                 position: 'insideLeft',
-                                style: { 
-                                    fontSize: settings.yAxisTitleSize, 
+                                style: {
+                                    fontSize: settings.yAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
                                 }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar 
-                            dataKey="count" 
+                        <Bar
+                            dataKey="count"
                             radius={[0, 0, 0, 0]}
                             barSize={settings.elementWidth * 100}
                             label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontWeight: 'bold' } : false}
@@ -804,7 +811,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
     const renderMeanChart = () => {
         const settings = meanSettings;
         const { height } = getDimensions(settings.dimensions);
-        
+
         const data = plotData.map((group, idx) => ({
             name: settings.categoryLabels[idx],
             mean: parseFloat(group.mean.toFixed(2)),
@@ -824,9 +831,9 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     Customize
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
-                    <ComposedChart 
-                        data={data} 
-                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
+                    <ComposedChart
+                        data={data}
+                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
                         {settings.captionOn && (
@@ -835,47 +842,47 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             </text>
                         )}
                         {settings.gridOn && (
-                            <CartesianGrid 
-                                strokeDasharray={settings.gridStyle} 
+                            <CartesianGrid
+                                strokeDasharray={settings.gridStyle}
                                 stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
                         )}
-                        <XAxis 
-                            dataKey="name" 
-                            angle={-45} 
-                            textAnchor="end" 
-                            height={80}
+                        <XAxis
+                            dataKey="name"
+                            angle={-45}
+                            textAnchor="end"
+                            height={40}
                             tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{ 
-                                value: settings.xAxisTitle, 
-                                position: 'insideBottom', 
-                                offset: -20,
-                                style: { 
-                                    fontSize: settings.xAxisTitleSize, 
+                            label={{
+                                value: settings.xAxisTitle,
+                                position: 'insideBottom',
+                                offset: getXAxisLabelOffset(settings.xAxisTickSize),  // Dynamic offset
+                                style: {
+                                    fontSize: settings.xAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
                                 }
                             }}
                             axisLine={{ strokeWidth: 2 }}
                         />
-                        <YAxis 
+                        <YAxis
                             domain={yDomain}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
-                            label={{ 
-                                value: settings.yAxisTitle, 
-                                angle: -90, 
+                            label={{
+                                value: settings.yAxisTitle,
+                                angle: -90,
                                 position: 'insideLeft',
-                                style: { 
-                                    fontSize: settings.yAxisTitleSize, 
+                                style: {
+                                    fontSize: settings.yAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
                                 }
                             }}
                         />
                         <Tooltip content={<CustomTooltip />} />
-                        <Bar 
-                            dataKey="mean" 
+                        <Bar
+                            dataKey="mean"
                             radius={[0, 0, 0, 0]}
                             barSize={settings.elementWidth * 100}
                             label={settings.dataLabelsOn ? { position: 'top', fill: '#1f2937', fontSize: 11 } : false}
@@ -907,7 +914,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         });
 
         let yDomainMin, yDomainMax;
-        
+
         if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
             const min = parseFloat(settings.yAxisMin);
             const max = parseFloat(settings.yAxisMax);
@@ -916,7 +923,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 yDomainMax = max;
             }
         }
-        
+
         if (yDomainMin === undefined || yDomainMax === undefined) {
             const globalMin = Math.min(...data.map(d => d.min));
             const globalMax = Math.max(...data.map(d => d.max));
@@ -992,8 +999,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     Customize
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
-                    <ScatterChart 
-                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
+                    <ScatterChart
+                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
                         {settings.captionOn && (
@@ -1002,8 +1009,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             </text>
                         )}
                         {settings.gridOn && (
-                            <CartesianGrid 
-                                strokeDasharray={settings.gridStyle} 
+                            <CartesianGrid
+                                strokeDasharray={settings.gridStyle}
                                 stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
@@ -1016,14 +1023,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             tickFormatter={(value) => data[value]?.name || ''}
                             angle={-45}
                             textAnchor="end"
-                            height={80}
+                            height={40}
                             tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{ 
-                                value: settings.xAxisTitle, 
-                                position: 'insideBottom', 
-                                offset: -20,
-                                style: { 
-                                    fontSize: settings.xAxisTitleSize, 
+                            label={{
+                                value: settings.xAxisTitle,
+                                position: 'insideBottom',
+                                offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),  // Dynamic offset
+                                style: {
+                                    fontSize: settings.xAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
                                 }
@@ -1036,12 +1043,12 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             domain={yDomain}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
                             tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
-                            label={{ 
-                                value: settings.yAxisTitle, 
-                                angle: -90, 
+                            label={{
+                                value: settings.yAxisTitle,
+                                angle: -90,
                                 position: 'insideLeft',
-                                style: { 
-                                    fontSize: settings.yAxisTitleSize, 
+                                style: {
+                                    fontSize: settings.yAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
                                 }
@@ -1083,7 +1090,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         const violinWidth = settings.elementWidth;
 
         let yMin, yMax;
-        
+
         if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
             const min = parseFloat(settings.yAxisMin);
             const max = parseFloat(settings.yAxisMax);
@@ -1092,7 +1099,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 yMax = max;
             }
         }
-        
+
         if (yMin === undefined || yMax === undefined) {
             const globalMin = Math.min(...data.map(d => d.min));
             const globalMax = Math.max(...data.map(d => d.max));
@@ -1221,8 +1228,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     Customize
                 </button>
                 <ResponsiveContainer width="100%" height={height}>
-                    <ScatterChart 
-                        margin={{ top: settings.captionOn ? 60 : 40, right: 30, left: 60, bottom: 80 }}
+                    <ScatterChart
+                        margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                         style={settings.borderOn ? { border: '2px solid black' } : {}}
                     >
                         {settings.captionOn && (
@@ -1231,8 +1238,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             </text>
                         )}
                         {settings.gridOn && (
-                            <CartesianGrid 
-                                strokeDasharray={settings.gridStyle} 
+                            <CartesianGrid
+                                strokeDasharray={settings.gridStyle}
                                 stroke={getGridStroke(settings.gridColor)}
                                 strokeOpacity={settings.gridOpacity}
                             />
@@ -1245,14 +1252,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             tickFormatter={(value) => data[value]?.name || ''}
                             angle={-45}
                             textAnchor="end"
-                            height={80}
+                            height={40}
                             tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize }}
-                            label={{ 
-                                value: settings.xAxisTitle, 
-                                position: 'insideBottom', 
-                                offset: -20,
-                                style: { 
-                                    fontSize: settings.xAxisTitleSize, 
+                            label={{
+                                value: settings.xAxisTitle,
+                                position: 'insideBottom',
+                                offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),  // Dynamic offset
+                                style: {
+                                    fontSize: settings.xAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline)
                                 }
@@ -1265,12 +1272,12 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             domain={[yMin, yMax]}
                             tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize }}
                             tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
-                            label={{ 
-                                value: settings.yAxisTitle, 
-                                angle: -90, 
+                            label={{
+                                value: settings.yAxisTitle,
+                                angle: -90,
                                 position: 'insideLeft',
-                                style: { 
-                                    fontSize: settings.yAxisTitleSize, 
+                                style: {
+                                    fontSize: settings.yAxisTitleSize,
                                     fill: '#374151',
                                     ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline)
                                 }
