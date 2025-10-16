@@ -17,7 +17,7 @@ import BarChartOptions from './BarChartOptions';
 import EDASwarmOptions from './EDASwarmOptions';
 import FZTOptions from './FZTOptions';
 import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
-import KruskalOptions from './KruskalOptions';
+// import KruskalOptions from './PlotCustomizers/KruskalOptions';
 import LinearRegressionOptions from './LinearRegressionOptions';
 import MannWhitneyOptions from './MannWhitneyOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
@@ -33,6 +33,8 @@ import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 import * as XLSX from "xlsx";
+
+import renderKruskalResults from './RenderFunctions/Kruskal/renderKruskalResults';
 
 
 const translations = {
@@ -524,9 +526,9 @@ const StatisticalAnalysisTool = () => {
     const [selectedColumns, setSelectedColumns] = useState([]);
     const [extraColumns, setExtraColumns] = useState([]);
     const [swarmColor, setSwarmColor] = useState('orange');
-    const [histColor, setHistColor] = useState('blue');
-    const [kdeColor, setKdeColor] = useState('green');
-    const [distColor, setDistColor] = useState('purple');
+    const [histColor, setHistColor] = useState('#3b82f6');
+    const [kdeColor, setKdeColor] = useState('#ef4444');
+    const [distColor, setDistColor] = useState('#06b6d4');
 
     // Network graph options
     const [nodeColor, setNodeColor] = useState('#AED6F1');
@@ -811,6 +813,7 @@ const StatisticalAnalysisTool = () => {
         })
             .then(res => res.json())
             .then(data => {
+                console.log("Analysis response:", data);
                 // Add timestamp to force image reload
                 setResults({ ...data, _timestamp: Date.now() });
                 setIsAnalyzing(false);
@@ -1385,40 +1388,6 @@ const StatisticalAnalysisTool = () => {
                                                         </div>
                                                     )}
 
-
-
-                                                    {testType === 'kruskal' && (
-                                                        <KruskalOptions
-                                                            isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            boxWidth={boxWidth}
-                                                            setBoxWidth={setBoxWidth}
-                                                            violinWidth={violinWidth}
-                                                            setViolinWidth={setViolinWidth}
-                                                            showGrid={showGrid}
-                                                            setShowGrid={setShowGrid}
-                                                            t={t}
-                                                        />
-                                                    )}
-
                                                     {testType === 'mannwhitney' && (
                                                         <MannWhitneyOptions
                                                             language={language}
@@ -1767,6 +1736,8 @@ const StatisticalAnalysisTool = () => {
 
                                                     {testType === 'eda_distribution' && (
                                                         <EDADistributionsOptions
+                                                            isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
                                                             language={language}
                                                             setLanguage={setLanguage}
                                                             imageFormat={imageFormat}
@@ -1787,6 +1758,8 @@ const StatisticalAnalysisTool = () => {
                                                             setKdeColor={setKdeColor}
                                                             distColor={distColor}
                                                             setDistColor={setDistColor}
+                                                            showGrid={showGrid}
+                                                            setShowGrid={setShowGrid}
                                                             t={t}
                                                         />
                                                     )}
@@ -2089,6 +2062,12 @@ const StatisticalAnalysisTool = () => {
                                     setViolinWidth={setViolinWidth}
                                     showGrid={showGrid}
                                     setShowGrid={setShowGrid}
+                                    histColor={histColor}
+                                    setHistColor={setHistColor}
+                                    kdeColor={kdeColor}
+                                    setKdeColor={setKdeColor}
+                                    distColor={distColor}
+                                    setDistColor={setDistColor}
 
                                     t={t}
                                     filename={fileName}
@@ -2106,12 +2085,19 @@ const StatisticalAnalysisTool = () => {
 };
 
 // Component for rendering analysis results
-const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, showGrid, setShowGrid, t, filename }) => {
+const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, showGrid, setShowGrid, histColor, setHistColor, kdeColor, setKdeColor, distColor, setDistColor, t, filename }) => {
+
+    const [kruskalActiveTab, setKruskalActiveTab] = useState('count');
 
     // For rendering different results based on test type
     const renderResults = () => {
         if (testType === 'kruskal') {
-            return renderKruskalResults();
+            return renderKruskalResults(
+                kruskalActiveTab,
+                setKruskalActiveTab,
+                results,
+                language
+            );
         } else if (testType === 'wilcoxon') {
             return renderWilcoxonResults();
         } else if (testType === 'mannwhitney') {
@@ -2180,313 +2166,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                 );
         }
     };
-
-    // Special renderer for Kruskal-Wallis results with language support
-    const renderKruskalResults = () => {
-    const mapDigitIfBengali = (text) => {
-        if (language !== 'বাংলা') return text;
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
-    if (!results) {
-        return (
-            <div className="stats-loading">
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-            </div>
-        );
-    }
-
-    const cacheBuster = results._timestamp || Date.now();
-
-    const handleSaveResult = async () => {
-        console.log('Saving result...');
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image_paths: results.image_paths,
-                    user_id: user_id,
-                    test_name: testType,
-                    filename: filename,
-                }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Result saved successfully:', data);
-            } else {
-                console.error('Error saving result:', response.statusText);
-            }
-        } catch (error) {
-            console.error('Error saving result:', error);
-        }
-    };
-
-    return (
-        <div className="stats-results-container stats-fade-in">
-            {/* Header Section */}
-            <div className="stats-header">
-                <h2 className="stats-title">{t.kruskalTitle}</h2>
-                <button onClick={handleSaveResult} className="stats-save-btn">
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    >
-                        <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                        <polyline points="17 21 17 13 7 13 7 21" />
-                        <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
-                </button>
-            </div>
-
-            {/* Compact Results Table */}
-            <div className="stats-results-table-wrapper">
-                <table className="stats-results-table">
-                    <thead>
-                        <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {/* Columns Row */}
-                        {columns && columns[0] && (
-                            <tr>
-                                <td className="stats-table-label">
-                                    {language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}
-                                </td>
-                                <td className="stats-table-value">
-                                    {columns[0]}
-                                    {columns[1] && ` ${language === 'বাংলা' ? 'এবং' : 'and'} ${columns[1]}`}
-                                </td>
-                            </tr>
-                        )}
-                        
-                        {/* Test Statistic Row */}
-                        {results?.statistic !== undefined && (
-                            <tr>
-                                <td className="stats-table-label">{t.testStatistic}</td>
-                                <td className="stats-table-value stats-numeric">
-                                    {mapDigitIfBengali(results.statistic.toFixed(4))}
-                                </td>
-                            </tr>
-                        )}
-                        
-                        {/* P-Value Row */}
-                        {results?.p_value !== undefined && (
-                            <tr>
-                                <td className="stats-table-label">{t.pValue}</td>
-                                <td className="stats-table-value stats-numeric">
-                                    {mapDigitIfBengali(results.p_value.toFixed(6))}
-                                </td>
-                            </tr>
-                        )}
-                        
-                        {/* Conclusion Row */}
-                        {results?.p_value !== undefined && (
-                            <tr className="stats-conclusion-row">
-                                <td className="stats-table-label">
-                                    {language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}
-                                </td>
-                                <td className="stats-table-value">
-                                    <div className="stats-conclusion-inline">
-                                        {results.p_value < 0.05 ? (
-                                            <>
-                                                <svg
-                                                    className="stats-conclusion-icon"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="#059669"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                                <span className="stats-conclusion-text significant">
-                                                    {t.significant}
-                                                </span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <svg
-                                                    className="stats-conclusion-icon"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="#dc2626"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                    />
-                                                </svg>
-                                                <span className="stats-conclusion-text not-significant">
-                                                    {t.notSignificant}
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Visualizations Section */}
-            {results.image_paths && results.image_paths.length > 0 && (
-                <div className="stats-viz-section">
-                    
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h3 className="stats-viz-header" style={{ margin: 0 }}>
-                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-
-                        {!isFirstTimeAnalysis && (
-                            <KruskalOptions
-                                isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                handleSubmit={handleSubmit}
-                                language={language}
-                                setLanguage={setLanguage}
-                                imageFormat={imageFormat}
-                                setImageFormat={setImageFormat}
-                                useDefaultSettings={useDefaultSettings}
-                                setUseDefaultSettings={setUseDefaultSettings}
-                                labelFontSize={labelFontSize}
-                                setLabelFontSize={setLabelFontSize}
-                                tickFontSize={tickFontSize}
-                                setTickFontSize={setTickFontSize}
-                                imageQuality={imageQuality}
-                                setImageQuality={setImageQuality}
-                                imageSize={imageSize}
-                                setImageSize={setImageSize}
-                                colorPalette={colorPalette}
-                                setColorPalette={setColorPalette}
-                                barWidth={barWidth}
-                                setBarWidth={setBarWidth}
-                                boxWidth={boxWidth}
-                                setBoxWidth={setBoxWidth}
-                                violinWidth={violinWidth}
-                                setViolinWidth={setViolinWidth}
-                                showGrid={showGrid}
-                                setShowGrid={setShowGrid}
-                                t={t}
-                            />
-                        )}
-                    </div>
-
-                    {isFirstTimeAnalysis && (
-                        <KruskalOptions
-                            isFirstTimeAnalysis={isFirstTimeAnalysis}
-                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                            handleSubmit={handleSubmit}
-                            language={language}
-                            setLanguage={setLanguage}
-                            imageFormat={imageFormat}
-                            setImageFormat={setImageFormat}
-                            useDefaultSettings={useDefaultSettings}
-                            setUseDefaultSettings={setUseDefaultSettings}
-                            labelFontSize={labelFontSize}
-                            setLabelFontSize={setLabelFontSize}
-                            tickFontSize={tickFontSize}
-                            setTickFontSize={setTickFontSize}
-                            imageQuality={imageQuality}
-                            setImageQuality={setImageQuality}
-                            imageSize={imageSize}
-                            setImageSize={setImageSize}
-                            colorPalette={colorPalette}
-                            setColorPalette={setColorPalette}
-                            barWidth={barWidth}
-                            setBarWidth={setBarWidth}
-                            boxWidth={boxWidth}
-                            setBoxWidth={setBoxWidth}
-                            violinWidth={violinWidth}
-                            setViolinWidth={setViolinWidth}
-                            showGrid={showGrid}
-                            setShowGrid={setShowGrid}
-                            t={t}
-                        />
-                    )}
-
-                    <div className="stats-viz-grid">
-                        {results.image_paths.map((path, index) => {
-                            const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
-
-                            const handleDownload = async () => {
-                                try {
-                                    const response = await fetch(imageUrl);
-                                    const blob = await response.blob();
-                                    const url = window.URL.createObjectURL(blob);
-                                    const link = document.createElement('a');
-                                    link.href = url;
-
-                                    const filename = path.split('/').pop() ||
-                                        `${t.kruskalTitle}_visualization_${index + 1}.png`;
-                                    link.download = filename;
-
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(url);
-                                } catch (error) {
-                                    console.error('Download failed:', error);
-                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                }
-                            };
-
-                            return (
-                                <div key={`${index}-${cacheBuster}`} className="stats-image-card">
-                                    <div className="stats-image-wrapper">
-                                        <img
-                                            src={imageUrl}
-                                            alt={`${t.kruskalTitle} visualization ${index + 1}`}
-                                            className="stats-image"
-                                        />
-                                        <button
-                                            onClick={handleDownload}
-                                            className="stats-download-btn"
-                                            title={language === 'বাংলা'
-                                                ? `ছবি ${index + 1} ডাউনলোড করুন`
-                                                : `Download Image ${index + 1}`}
-                                            aria-label={language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
-                                        >
-                                            <svg
-                                                className="stats-download-icon"
-                                                fill="none"
-                                                viewBox="0 0 24 24"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-        </div>
-    );
-};
 
     const renderMannWhitneyResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -4047,81 +3726,239 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         };
 
         if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+            return (
+                <div className="stats-loading">
+                    <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                </div>
+            );
         }
 
+        const cacheBuster = results._timestamp || Date.now();
+
+        const handleSaveResult = async () => {
+            console.log('Saving Distribution result...');
+            try {
+                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image_paths: results.image_paths,
+                        user_id: user_id,
+                        test_name: testType,
+                        filename: filename,
+                    }),
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Result saved successfully:', data);
+                } else {
+                    console.error('Error saving result:', response.statusText);
+                }
+            } catch (error) {
+                console.error('Error saving result:', error);
+            }
+        };
+
         return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn'
-                        ? 'ডিস্ট্রিবিউশন প্লট – হিস্টোগ্রাম + KDE'
-                        : 'Distribution Plot – Histogram + KDE'}
-                </h2>
+            <div className="stats-results-container stats-fade-in">
+                {/* Header Section */}
+                <div className="stats-header">
+                    <h2 className="stats-title">
+                        {language === 'bn'
+                            ? 'ডিস্ট্রিবিউশন প্লট – হিস্টোগ্রাম + KDE'
+                            : 'Distribution Plot – Histogram + KDE'}
+                    </h2>
+                    <button onClick={handleSaveResult} className="stats-save-btn">
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        {language === 'bn' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    </button>
+                </div>
 
-                {columns && columns[0] && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Analyzed column:'}</strong>{' '}
-                        {columns[0]}
-                    </p>
-                )}
+                {/* Compact Results Table */}
+                <div className="stats-results-table-wrapper">
+                    <table className="stats-results-table">
+                        <thead>
+                            <tr>
+                                <th>{language === 'bn' ? 'বিবরণ' : 'Description'}</th>
+                                <th>{language === 'bn' ? 'মান' : 'Value'}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {/* Columns Row */}
+                            {columns && columns[0] && (
+                                <tr>
+                                    <td className="stats-table-label">
+                                        {language === 'bn' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column'}
+                                    </td>
+                                    <td className="stats-table-value">
+                                        {columns[0]}
+                                    </td>
+                                </tr>
+                            )}
 
+                            {/* Analysis Type Row */}
+                            <tr>
+                                <td className="stats-table-label">
+                                    {language === 'bn' ? 'বিশ্লেষণের ধরন' : 'Analysis Type'}
+                                </td>
+                                <td className="stats-table-value">
+                                    {language === 'bn' ? 'বিতরণ বিশ্লেষণ (হিস্টোগ্রাম ও KDE)' : 'Distribution Analysis (Histogram & KDE)'}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Visualizations Section */}
                 {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <img
-                                        src={`http://127.0.0.1:8000/${path}`}
-                                        alt={`EDA Distribution plot ${index + 1}`}
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                if (!response.ok) throw new Error('Network response was not ok');
-                                                const blob = await response.blob();
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement('a');
-                                                const filename = path.split('/').pop() || `eda_distribution_plot_${index + 1}.png`;
-                                                link.href = url;
-                                                link.download = filename;
-                                                document.body.appendChild(link);
-                                                link.click();
-                                                document.body.removeChild(link);
-                                                window.URL.revokeObjectURL(url);
-                                            } catch (error) {
-                                                console.error('Download failed:', error);
-                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                            }
-                                        }}
-                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    <div className="stats-viz-section">
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h3 className="stats-viz-header" style={{ margin: 0 }}>
+                                {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                            </h3>
+
+                            {!isFirstTimeAnalysis && (
+                                <EDADistributionsOptions
+                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                                    handleSubmit={handleSubmit}
+                                    language={language}
+                                    setLanguage={setLanguage}
+                                    imageFormat={imageFormat}
+                                    setImageFormat={setImageFormat}
+                                    useDefaultSettings={useDefaultSettings}
+                                    setUseDefaultSettings={setUseDefaultSettings}
+                                    labelFontSize={labelFontSize}
+                                    setLabelFontSize={setLabelFontSize}
+                                    tickFontSize={tickFontSize}
+                                    setTickFontSize={setTickFontSize}
+                                    imageQuality={imageQuality}
+                                    setImageQuality={setImageQuality}
+                                    imageSize={imageSize}
+                                    setImageSize={setImageSize}
+                                    histColor={histColor}
+                                    setHistColor={setHistColor}
+                                    kdeColor={kdeColor}
+                                    setKdeColor={setKdeColor}
+                                    distColor={distColor}
+                                    setDistColor={setDistColor}
+                                    showGrid={showGrid}
+                                    setShowGrid={setShowGrid}
+                                    t={t}
+                                />
+                            )}
+                        </div>
+
+                        {isFirstTimeAnalysis && (
+                            <EDADistributionsOptions
+                                isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                                handleSubmit={handleSubmit}
+                                language={language}
+                                setLanguage={setLanguage}
+                                imageFormat={imageFormat}
+                                setImageFormat={setImageFormat}
+                                useDefaultSettings={useDefaultSettings}
+                                setUseDefaultSettings={setUseDefaultSettings}
+                                labelFontSize={labelFontSize}
+                                setLabelFontSize={setLabelFontSize}
+                                tickFontSize={tickFontSize}
+                                setTickFontSize={setTickFontSize}
+                                imageQuality={imageQuality}
+                                setImageQuality={setImageQuality}
+                                imageSize={imageSize}
+                                setImageSize={setImageSize}
+                                histColor={histColor}
+                                setHistColor={setHistColor}
+                                kdeColor={kdeColor}
+                                setKdeColor={setKdeColor}
+                                distColor={distColor}
+                                setDistColor={setDistColor}
+                                showGrid={showGrid}
+                                setShowGrid={setShowGrid}
+                                t={t}
+                            />
+                        )}
+
+                        <div className="stats-viz-grid">
+                            {results.image_paths.map((path, index) => {
+                                const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
+
+                                const handleDownload = async () => {
+                                    try {
+                                        const response = await fetch(imageUrl);
+                                        const blob = await response.blob();
+                                        const url = window.URL.createObjectURL(blob);
+                                        const link = document.createElement('a');
+                                        link.href = url;
+
+                                        const filename = path.split('/').pop() ||
+                                            `distribution_visualization_${index + 1}.png`;
+                                        link.download = filename;
+
+                                        document.body.appendChild(link);
+                                        link.click();
+                                        document.body.removeChild(link);
+                                        window.URL.revokeObjectURL(url);
+                                    } catch (error) {
+                                        console.error('Download failed:', error);
+                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
+                                    }
+                                };
+
+                                return (
+                                    <div key={`${index}-${cacheBuster}`} className="stats-image-card">
+                                        <div className="stats-image-wrapper">
+                                            <img
+                                                src={imageUrl}
+                                                alt={`Distribution visualization ${index + 1}`}
+                                                className="stats-image"
                                             />
-                                        </svg>
-                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                    </button>
-                                </div>
-                            ))}
+                                            <button
+                                                onClick={handleDownload}
+                                                className="stats-download-btn"
+                                                title={language === 'bn'
+                                                    ? `ছবি ${index + 1} ডাউনলোড করুন`
+                                                    : `Download Image ${index + 1}`}
+                                                aria-label={language === 'bn' ? 'ডাউনলোড' : 'Download'}
+                                            >
+                                                <svg
+                                                    className="stats-download-icon"
+                                                    fill="none"
+                                                    viewBox="0 0 24 24"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <path
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                                                    />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 )}
-            </>
+            </div>
         );
     };
 
@@ -4303,165 +4140,165 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     };
 
     const renderEDABasicsResults = () => {
-    const mapDigitIfBengali = (text) => {
-        if (language !== 'bn') return text;
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
-    if (!results) {
-        return (
-            <div className="stats-loading">
-                <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-            </div>
-        );
-    }
-
-    const renderTitle = (key) => {
-        const titles = {
-            count: language === 'bn' ? 'গণনা' : 'Count',
-            min: language === 'bn' ? 'সর্বনিম্ন' : 'Min',
-            max: language === 'bn' ? 'সর্বোচ্চ' : 'Max',
-            range: language === 'bn' ? 'পরিসর' : 'Range',
-            iqr: language === 'bn' ? 'IQR' : 'IQR',
-            outliers: language === 'bn' ? 'আউটলাইয়ার সংখ্যা' : 'Outliers',
-            mean: language === 'bn' ? 'গড়' : 'Mean',
-            median: language === 'bn' ? 'মিডিয়ান' : 'Median',
-            mode: language === 'bn' ? 'মোড' : 'Mode',
-            variance: language === 'bn' ? 'চর বৈচিত্র্য' : 'Variance',
-            std: language === 'bn' ? 'স্ট্যান্ডার্ড ডেভিয়েশন' : 'Std Dev',
-            mad: language === 'bn' ? 'ম্যাড' : 'MAD',
-            skew: language === 'bn' ? 'স্কিউনেস' : 'Skewness',
-            kurt: language === 'bn' ? 'কার্টোসিস' : 'Kurtosis',
-            cv: language === 'bn' ? 'CV' : 'Coeff. of Variation',
+        const mapDigitIfBengali = (text) => {
+            if (language !== 'bn') return text;
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
         };
-        return titles[key] || key;
-    };
 
-    const renderWideTable = (title, statKeys) => {
-        const columns = Object.keys(results[statKeys[0]] || {});
-        if (columns.length === 0) return null;
+        if (!results) {
+            return (
+                <div className="stats-loading">
+                    <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                </div>
+            );
+        }
 
-        return (
-            <div className="eda-table-section">
-                <h3 className="eda-table-title">{title}</h3>
-                <div className="stats-results-table-wrapper">
-                    <div className="eda-table-scroll">
-                        <table className="stats-results-table eda-wide-table">
-                            <thead>
-                                <tr>
-                                    <th className="eda-column-header">
-                                        {language === 'bn' ? 'কলাম' : 'Column'}
-                                    </th>
-                                    {statKeys.map((statKey, idx) => (
-                                        <th key={idx} className="eda-stat-header">
-                                            {renderTitle(statKey)}
+        const renderTitle = (key) => {
+            const titles = {
+                count: language === 'bn' ? 'গণনা' : 'Count',
+                min: language === 'bn' ? 'সর্বনিম্ন' : 'Min',
+                max: language === 'bn' ? 'সর্বোচ্চ' : 'Max',
+                range: language === 'bn' ? 'পরিসর' : 'Range',
+                iqr: language === 'bn' ? 'IQR' : 'IQR',
+                outliers: language === 'bn' ? 'আউটলাইয়ার সংখ্যা' : 'Outliers',
+                mean: language === 'bn' ? 'গড়' : 'Mean',
+                median: language === 'bn' ? 'মিডিয়ান' : 'Median',
+                mode: language === 'bn' ? 'মোড' : 'Mode',
+                variance: language === 'bn' ? 'চর বৈচিত্র্য' : 'Variance',
+                std: language === 'bn' ? 'স্ট্যান্ডার্ড ডেভিয়েশন' : 'Std Dev',
+                mad: language === 'bn' ? 'ম্যাড' : 'MAD',
+                skew: language === 'bn' ? 'স্কিউনেস' : 'Skewness',
+                kurt: language === 'bn' ? 'কার্টোসিস' : 'Kurtosis',
+                cv: language === 'bn' ? 'CV' : 'Coeff. of Variation',
+            };
+            return titles[key] || key;
+        };
+
+        const renderWideTable = (title, statKeys) => {
+            const columns = Object.keys(results[statKeys[0]] || {});
+            if (columns.length === 0) return null;
+
+            return (
+                <div className="eda-table-section">
+                    <h3 className="eda-table-title">{title}</h3>
+                    <div className="stats-results-table-wrapper">
+                        <div className="eda-table-scroll">
+                            <table className="stats-results-table eda-wide-table">
+                                <thead>
+                                    <tr>
+                                        <th className="eda-column-header">
+                                            {language === 'bn' ? 'কলাম' : 'Column'}
                                         </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {columns.map((col, i) => (
-                                    <tr key={i}>
-                                        <td className="stats-table-label eda-column-cell">
-                                            {col}
-                                        </td>
                                         {statKeys.map((statKey, idx) => (
-                                            <td key={idx} className="stats-table-value stats-numeric eda-value-cell">
-                                                {results[statKey]?.[col] !== undefined 
-                                                    ? mapDigitIfBengali(
-                                                        typeof results[statKey][col] === 'number' 
-                                                            ? results[statKey][col].toFixed(4)
-                                                            : results[statKey][col]
-                                                    )
-                                                    : "-"}
-                                            </td>
+                                            <th key={idx} className="eda-stat-header">
+                                                {renderTitle(statKey)}
+                                            </th>
                                         ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {columns.map((col, i) => (
+                                        <tr key={i}>
+                                            <td className="stats-table-label eda-column-cell">
+                                                {col}
+                                            </td>
+                                            {statKeys.map((statKey, idx) => (
+                                                <td key={idx} className="stats-table-value stats-numeric eda-value-cell">
+                                                    {results[statKey]?.[col] !== undefined
+                                                        ? mapDigitIfBengali(
+                                                            typeof results[statKey][col] === 'number'
+                                                                ? results[statKey][col].toFixed(4)
+                                                                : results[statKey][col]
+                                                        )
+                                                        : "-"}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
+            );
+        };
+
+        return (
+            <div className="stats-results-container stats-fade-in">
+                {/* Header Section */}
+                <div className="stats-header">
+                    <h2 className="stats-title">
+                        {language === 'bn' ? 'মৌলিক EDA বিশ্লেষণ' : 'Basic EDA Summary'}
+                    </h2>
+                </div>
+
+                {/* Dataset Info Card */}
+                {results.info && (
+                    <div className="eda-info-card">
+                        <h3 className="eda-info-title">
+                            {language === 'bn' ? 'ডেটাসেট তথ্য' : 'Dataset Info'}
+                        </h3>
+                        <div className="stats-results-table-wrapper">
+                            <table className="stats-results-table">
+                                <tbody>
+                                    <tr>
+                                        <td className="stats-table-label">
+                                            {language === 'bn' ? 'মোট সারি' : 'Total Rows'}
+                                        </td>
+                                        <td className="stats-table-value stats-numeric">
+                                            {mapDigitIfBengali(results.info.rows)}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td className="stats-table-label">
+                                            {language === 'bn' ? 'মোট কলাম' : 'Total Columns'}
+                                        </td>
+                                        <td className="stats-table-value stats-numeric">
+                                            {mapDigitIfBengali(results.info.columns)}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td className="stats-table-label">
+                                            {language === 'bn' ? 'পুনরাবৃত্ত সারি' : 'Duplicate Rows'}
+                                        </td>
+                                        <td className="stats-table-value stats-numeric">
+                                            {mapDigitIfBengali(results.info.duplicates)}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td className="stats-table-label">
+                                            {language === 'bn' ? 'মেমোরি ব্যবহার' : 'Memory Usage'}
+                                        </td>
+                                        <td className="stats-table-value stats-numeric">
+                                            {mapDigitIfBengali(results.info.memory)} {language === 'bn' ? 'কিলোবাইট' : 'KB'}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
+
+                {/* Table 1: Count, Min, Max, Range, IQR, Outliers */}
+                {renderWideTable(
+                    language === 'bn' ? 'টেবিল ১: পরিসংখ্যান এবং বিস্তার' : 'Table 1: Count, Min, Max, Range, IQR, Outliers',
+                    ['count', 'min', 'max', 'range', 'iqr', 'outliers']
+                )}
+
+                {/* Table 2: Central Tendency & Dispersion */}
+                {renderWideTable(
+                    language === 'bn' ? 'টেবিল ২: কেন্দ্রীয় প্রবণতা এবং বিক্ষিপ্ততা' : 'Table 2: Central Tendency & Dispersion',
+                    ['mean', 'median', 'mode', 'variance', 'std']
+                )}
+
+                {/* Table 3: MAD, Skewness, Kurtosis, CV */}
+                {renderWideTable(
+                    language === 'bn' ? 'টেবিল ৩: ম্যাড, স্কিউনেস, কার্টোসিস, সিভি' : 'Table 3: MAD, Skewness, Kurtosis, CV',
+                    ['mad', 'skew', 'kurt', 'cv']
+                )}
             </div>
         );
     };
-
-    return (
-        <div className="stats-results-container stats-fade-in">
-            {/* Header Section */}
-            <div className="stats-header">
-                <h2 className="stats-title">
-                    {language === 'bn' ? 'মৌলিক EDA বিশ্লেষণ' : 'Basic EDA Summary'}
-                </h2>
-            </div>
-
-            {/* Dataset Info Card */}
-            {results.info && (
-                <div className="eda-info-card">
-                    <h3 className="eda-info-title">
-                        {language === 'bn' ? 'ডেটাসেট তথ্য' : 'Dataset Info'}
-                    </h3>
-                    <div className="stats-results-table-wrapper">
-                        <table className="stats-results-table">
-                            <tbody>
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'bn' ? 'মোট সারি' : 'Total Rows'}
-                                    </td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.info.rows)}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'bn' ? 'মোট কলাম' : 'Total Columns'}
-                                    </td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.info.columns)}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'bn' ? 'পুনরাবৃত্ত সারি' : 'Duplicate Rows'}
-                                    </td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.info.duplicates)}
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'bn' ? 'মেমোরি ব্যবহার' : 'Memory Usage'}
-                                    </td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.info.memory)} {language === 'bn' ? 'কিলোবাইট' : 'KB'}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {/* Table 1: Count, Min, Max, Range, IQR, Outliers */}
-            {renderWideTable(
-                language === 'bn' ? 'টেবিল ১: পরিসংখ্যান এবং বিস্তার' : 'Table 1: Count, Min, Max, Range, IQR, Outliers',
-                ['count', 'min', 'max', 'range', 'iqr', 'outliers']
-            )}
-
-            {/* Table 2: Central Tendency & Dispersion */}
-            {renderWideTable(
-                language === 'bn' ? 'টেবিল ২: কেন্দ্রীয় প্রবণতা এবং বিক্ষিপ্ততা' : 'Table 2: Central Tendency & Dispersion',
-                ['mean', 'median', 'mode', 'variance', 'std']
-            )}
-
-            {/* Table 3: MAD, Skewness, Kurtosis, CV */}
-            {renderWideTable(
-                language === 'bn' ? 'টেবিল ৩: ম্যাড, স্কিউনেস, কার্টোসিস, সিভি' : 'Table 3: MAD, Skewness, Kurtosis, CV',
-                ['mad', 'skew', 'kurt', 'cv']
-            )}
-        </div>
-    );
-};
 
     const renderSimilarityResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -5122,7 +4959,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         </div>
     );
 
-return (
+    return (
         <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
             <div className="bg-gray-700 text-white p-4 font-semibold">
                 <p className="text-black inline">

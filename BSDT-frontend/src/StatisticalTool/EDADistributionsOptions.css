@@ -1,4 +1,4 @@
-.options-container {
+.eda-options-container {
     margin-top: 1rem;
     border-top: 1px solid #e5e7eb;
     padding-top: 1rem;
@@ -197,18 +197,6 @@
     color: #9ca3af;
 }
 
-.palette-description {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
-    color: #6b7280;
-    line-height: 1.4;
-    font-style: italic;
-    padding: 0.5rem 0.75rem;
-    background-color: #f9fafb;
-    border-left: 3px solid #2563eb;
-    border-radius: 4px;
-}
-
 .checkbox-wrapper {
     display: flex;
     align-items: center;
@@ -261,6 +249,106 @@
     height: 18px;
     display: flex !important;
     align-items: center !important;
+}
+
+/* Color Picker Styles */
+.color-picker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+}
+
+.predefined-colors {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.5rem;
+}
+
+.color-swatch {
+    width: 100%;
+    aspect-ratio: 1;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.color-swatch:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.color-swatch.selected {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.color-swatch.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.custom-color-wrapper {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    padding-top: 0.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.custom-color-input {
+    width: 60px;
+    height: 42px;
+    border: 2px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.custom-color-input:hover {
+    border-color: #2563eb;
+}
+
+.custom-color-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.color-text-input {
+    flex: 1;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    color: #111827;
+    background-color: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.color-text-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.color-text-input::placeholder {
+    color: #9ca3af;
 }
 
 .overlay-footer {
@@ -345,7 +433,6 @@
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
@@ -355,12 +442,12 @@
     from {
         transform: translateX(100%);
     }
-
     to {
         transform: translateX(0);
     }
 }
 
+/* Responsive Design */
 @media (max-width: 640px) {
     .overlay-panel {
         max-width: 100%;
@@ -385,8 +472,23 @@
     .customize-button-wrapper {
         justify-content: center !important;
     }
+
+    .predefined-colors {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .custom-color-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .custom-color-input {
+        width: 100%;
+        height: 50px;
+    }
 }
 
+/* Scrollbar Styling */
 .overlay-content::-webkit-scrollbar {
     width: 8px;
 }
@@ -402,4 +504,64 @@
 
 .overlay-content::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
+}
+
+/* Additional refinements for color picker */
+.color-picker-container label {
+    margin-bottom: 0;
+}
+
+.predefined-colors + .custom-color-wrapper {
+    margin-top: 0.25rem;
+}
+
+/* Ensure proper spacing in settings sections */
+.settings-section .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Improve readability of section titles */
+.section-title {
+    font-size: 0.875rem !important;
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+/* Enhanced color swatch accessibility */
+.color-swatch:focus {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.color-swatch:active {
+    transform: scale(0.95);
+}
+
+/* Improve form input appearance */
+.form-input:disabled,
+.form-select:disabled {
+    background-color: #f3f4f6;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Better visual hierarchy */
+.form-group + .form-group {
+    margin-top: 1rem;
+}
+
+/* Smooth transitions */
+* {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Print styles */
+@media print {
+    .overlay-backdrop,
+    .overlay-panel {
+        display: none !important;
+    }
 }
