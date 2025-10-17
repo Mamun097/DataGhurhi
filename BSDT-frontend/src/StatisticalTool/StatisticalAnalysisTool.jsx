@@ -34,7 +34,7 @@ import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 import * as XLSX from "xlsx";
 
-import renderKruskalResults from './RenderFunctions/Kruskal/renderKruskalResults';
+import renderKruskalResults from './RenderFunctions/renderKruskalResults';
 
 
 const translations = {
