@@ -30,6 +30,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         gridColor: language === 'বাংলা' ? 'গ্রিড রং' : 'Grid Color',
         gridOpacity: language === 'বাংলা' ? 'গ্রিড স্বচ্ছতা' : 'Grid Opacity',
         borderOn: language === 'বাংলা' ? 'বর্ডার চালু' : 'Image Border On',
+        plotBorderOn: language === 'বাংলা' ? 'প্লট বর্ডার চালু' : 'Plot Border On',
         barBorderOn: language === 'বাংলা' ? 'বার বর্ডার চালু' : 'Bar Border On',
         dataLabelsOn: language === 'বাংলা' ? 'ডেটা লেবেল চালু' : 'Data Labels On',
         errorBarsOn: language === 'বাংলা' ? 'এরর বার চালু' : 'Error Bars On',
@@ -42,6 +43,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         close: language === 'বাংলা' ? 'বন্ধ করুন' : 'Close',
         reset: language === 'বাংলা' ? 'রিসেট' : 'Reset',
         auto: language === 'বাংলা' ? 'স্বয়ংক্রিয়' : 'Auto',
+        captionTopMargin: language === 'বাংলা' ? 'ক্যাপশন উপরের মার্জিন' : 'Caption Top Margin',
+        xAxisBottomMargin: language === 'বাংলা' ? 'X অক্ষ নিচের মার্জিন' : 'X-Axis Bottom Margin',
+        yAxisLeftMargin: language === 'বাংলা' ? 'Y অক্ষ বামের মার্জিন' : 'Y-Axis Left Margin',
     };
 
     const gridStyles = [
@@ -139,27 +143,15 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             <>
                                 <div className="setting-group">
                                     <label className="setting-label">{t.captionText}</label>
-                                    <input
-                                        type="text"
-                                        className="setting-input"
-                                        value={settings.captionText}
-                                        onChange={(e) => handleChange('captionText', e.target.value)}
-                                        placeholder="Enter caption text..."
-                                    />
-                                </div>
-                                <div className="setting-row">
-                                    <div className="setting-group" style={{ flex: '0 0 75%' }}>
-                                        <label className="setting-label">{t.captionSize}</label>
+                                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <input
-                                            type="number"
+                                            type="text"
                                             className="setting-input"
-                                            value={settings.captionSize}
-                                            onChange={(e) => handleChange('captionSize', parseInt(e.target.value))}
-                                            min="10"
-                                            max="48"
+                                            value={settings.captionText}
+                                            onChange={(e) => handleChange('captionText', e.target.value)}
+                                            placeholder="Enter caption text..."
+                                            style={{ flex: 1 }}
                                         />
-                                    </div>
-                                    <div className="setting-group" style={{ flex: '0 0 25%', display: 'flex', flexDirection: 'column', marginTop: '30px', alignItems: 'flex-start' }}>
                                         <div className="text-style-buttons">
                                             <button
                                                 className={`style-btn ${settings.captionBold ? 'active' : ''}`}
@@ -183,6 +175,30 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                                 <u>U</u>
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.captionSize}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.captionSize}
+                                            onChange={(e) => handleChange('captionSize', parseInt(e.target.value))}
+                                            min="10"
+                                            max="48"
+                                        />
+                                    </div>
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.captionTopMargin}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.captionTopMargin}
+                                            onChange={(e) => handleChange('captionTopMargin', parseInt(e.target.value))}
+                                            min="10"
+                                            max="100"
+                                        />
                                     </div>
                                 </div>
                             </>
@@ -319,6 +335,32 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         <div className="setting-row">
                             <div className="setting-group">
+                                <label className="setting-label">{t.xAxisBottomMargin}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.xAxisBottomMargin}
+                                    onChange={(e) => handleChange('xAxisBottomMargin', parseInt(e.target.value))}
+                                    min="-100"
+                                    max="0"
+                                />
+                            </div>
+
+                            <div className="setting-group">
+                                <label className="setting-label">{t.yAxisLeftMargin}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.yAxisLeftMargin}
+                                    onChange={(e) => handleChange('yAxisLeftMargin', parseInt(e.target.value))}
+                                    min="-50"
+                                    max="50"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="setting-row">
+                            <div className="setting-group">
                                 <label className="setting-label">{t.yAxisMin}</label>
                                 <input
                                     type="text"
@@ -415,6 +457,17 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     onChange={(e) => handleChange('borderOn', e.target.checked)}
                                 />
                                 <span>{t.borderOn}</span>
+                            </label>
+                        </div>
+
+                        <div className="setting-group">
+                            <label className="setting-checkbox-label">
+                                <input
+                                    type="checkbox"
+                                    checked={settings.plotBorderOn}
+                                    onChange={(e) => handleChange('plotBorderOn', e.target.checked)}
+                                />
+                                <span>{t.plotBorderOn}</span>
                             </label>
                         </div>
 

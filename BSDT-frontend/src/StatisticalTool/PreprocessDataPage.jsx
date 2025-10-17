@@ -6,7 +6,7 @@ import './StatisticalAnalysisTool.css';
 import PreviewTable from './previewTable';
 import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 import { useLocation } from 'react-router-dom'; // Import useLocation to access state
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+// import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
 const PreprocessDataPage = () => {
   const [data, setData] = useState([]);
