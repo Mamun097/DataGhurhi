@@ -680,251 +680,580 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     }
     return JsonResponse(response_data)
 
-def process_mannwhitney_test(request, df, col1, col2, user_id):
-    import os
-    import matplotlib
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    import seaborn as sns
+
+def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+    """
+    Performs Mann-Whitney U test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    """
+    from django.http import JsonResponse
+    from scipy.stats import mannwhitneyu, rankdata
     import numpy as np
     import pandas as pd
-    from PIL import Image, ImageDraw, ImageFont
-    from scipy.stats import mannwhitneyu, rankdata
-    from django.conf import settings
-    from django.http import JsonResponse
 
+    print(f"[MannWhitney] cols: {col1} | {col2}")
+
+    # Basic column validation only
+    if col1 not in df.columns or col2 not in df.columns:
+        return JsonResponse({'success': False, 'error': 'Invalid column names.'})
+
+    # Language detection
     try:
-        from googletrans import Translator
+        language = request.POST.get('language', 'en').lower()
     except Exception:
-        Translator = None
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
 
+    # Prepare working dataset - NO DATA CONVERSION like old backend
+    work = df[[col1, col2]].copy()
+    work = work.dropna(subset=[col1, col2])
+    print(f"[MannWhitney] after dropna: {len(work)} rows")
+
+    # Convert to categorical like old backend (for consistent behavior)
+    work[col1] = work[col1].astype('category')
+    work[col2] = work[col2].astype('category')
+    
+    categories = list(work[col1].cat.categories)
+    print(f"[MannWhitney] categories: {categories}")
+
+    # Use category codes for statistical test (EXACTLY like old backend)
+    group1_codes = work[col1].cat.codes
+    group2_codes = work[col2].cat.codes
+
+    # Perform Mann-Whitney U test (EXACTLY like old backend)
     try:
-        # ---------------- Parameters ----------------
-        language = request.POST.get("language", "en").lower()
-        img_format = request.POST.get("format", "png").lower()
-        use_default = request.POST.get("use_default", "true") == "true"
-
-        if language not in ("en", "bn"):
-            language = "en"
-        if img_format not in ("png", "jpg", "jpeg", "pdf", "tiff"):
-            img_format = "png"
-
-        pil_fmt = {
-            "png": "PNG",
-            "jpg": "JPEG",
-            "jpeg": "JPEG",
-            "pdf": "PDF",
-            "tiff": "TIFF",
-        }[img_format]
-
-        # ---------------- Plot params ----------------
-        if use_default:
-            label_font_size = 86
-            tick_font_size = 18
-            img_quality = 100
-            width, height = 1280, 720
-            palette = "bright"
-            box_width = 0.4
-            violin_width = 0.4
-            rank_bar_width = 0.4
-            show_grid = True
-        else:
-            def _int(name, default):
-                try:
-                    return int(request.POST.get(name, default))
-                except Exception:
-                    return default
-
-            def _float(name, default):
-                try:
-                    return float(request.POST.get(name, default))
-                except Exception:
-                    return default
-
-            label_font_size = _int("label_font_size", 86)
-            tick_font_size = _int("tick_font_size", 18)
-            img_quality = _int("image_quality", 100)
-
-            try:
-                width, height = map(int, request.POST.get("image_size", "1280x720").split("x"))
-            except Exception:
-                width, height = 1280, 720
-
-            palette = request.POST.get("palette", "bright") or "bright"
-            box_width = _float("box_width", 0.4)
-            violin_width = _float("violin_width", 0.4)
-            rank_bar_width = _float("rank_bar_width", 0.4)
-            show_grid = request.POST.get("show_grid", "true").lower() in ("true", "1", "yes")
-
-        # ---------------- File paths ----------------
-        media_root = settings.MEDIA_ROOT
-        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
-        os.makedirs(plots_dir, exist_ok=True)
-
-        # ---------------- Translation ----------------
-        translator = Translator() if (Translator is not None and language == "bn") else None
-        digit_map_bn = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
-
-        def translate(txt):
-            if language == "bn" and translator is not None:
-                try:
-                    return translator.translate(txt, dest="bn").text
-                except Exception:
-                    return txt
-            return txt
-
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == "bn" else s
-
-        # ---------------- Fonts ----------------
-        font_path = os.path.join(settings.BASE_DIR, "NotoSansBengali-Regular.ttf")
-
-        def get_pil_font(size):
-            try:
-                if language == "bn" and os.path.exists(font_path):
-                    return ImageFont.truetype(font_path, size=size)
-                djv_path = fm.findfont("DejaVu Sans", fallback_to_default=True)
-                return ImageFont.truetype(djv_path, size=size)
-            except Exception:
-                return ImageFont.load_default()
-
-        try:
-            if language == "bn" and os.path.exists(font_path):
-                fm.fontManager.addfont(font_path)
-                bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-                matplotlib.rcParams["font.family"] = bengali_font_name
-            else:
-                matplotlib.rcParams["font.family"] = "DejaVu Sans"
-        except Exception as e:
-            print(f"[MannWhitney] Matplotlib font setup warning: {e}")
-
-        tick_prop = fm.FontProperties(size=tick_font_size)
-        if language == "bn" and os.path.exists(font_path):
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-
-        # ---------------- Mann–Whitney U Test ----------------
-        x = df[col1].dropna()
-        y = df[col2].dropna()
-        if len(x) < 2 or len(y) < 2:
-            return JsonResponse({"success": False, "error": "Both groups must have at least 2 observations."})
-
-        stat, p_value = mannwhitneyu(x, y, alternative="two-sided")
-        print(f"[MannWhitney] U={stat}, p={p_value}")
-
-        # ---------------- Helper for PIL overlay ----------------
-        def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
-            ax.set_title("")
-            ax.set_xlabel("")
-            ax.set_ylabel("")
-            base_path = os.path.join(plots_dir, base_filename)
-            final_path = os.path.join(plots_dir, final_filename)
-            plt.tight_layout(pad=1)
-            fig.savefig(base_path, bbox_inches="tight", dpi=300, format="PNG")
-            plt.close(fig)
-
-            T = map_digits(translate(title))
-            X = map_digits(translate(xlabel))
-            Y = map_digits(translate(ylabel))
-
-            label_font = get_pil_font(label_font_size)
-            tx0, ty0, tx1, ty1 = label_font.getbbox(T); th = ty1 - ty0
-            xx0, xy0, xx1, xy1 = label_font.getbbox(X); xh = xy1 - xy0
-            yx0, yy0, yx1, yy1 = label_font.getbbox(Y); yw, yh = yx1 - yx0, yy1 - yy0
-
-            pad = max(label_font_size // 2, 10)
-            lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
-
-            base_img = Image.open(base_path).convert("RGB")
-            bw, bh = base_img.size
-            W, H = bw + lm + rm, bh + tm + bm
-            canvas = Image.new("RGB", (W, H), "white")
-            canvas.paste(base_img, (lm, tm))
-            draw = ImageDraw.Draw(canvas)
-
-            def center_h(txt, fnt, total_w):
-                return (total_w - int(draw.textlength(txt, font=fnt))) // 2
-
-            # Draw texts
-            draw.text((center_h(T, label_font, W), (tm - th) // 2), T, font=label_font, fill="black")
-            draw.text((center_h(X, label_font, W), tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
-
-            # Add padding below baseline to prevent clipping (especially for y, g, p, q)
-            baseline_pad = int(label_font_size * 0.25)
-            Yimg = Image.new("RGBA", (yw, yh + baseline_pad), (255, 255, 255, 0))
-            d2 = ImageDraw.Draw(Yimg)
-            d2.text((0, baseline_pad // 2), Y, font=label_font, fill="black")
-            Yrot = Yimg.rotate(90, expand=True)
-            canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-
-            canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
-            return f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
-
-        # ---------------- Plots ----------------
-        image_paths = []
-        sns.set_theme(style="whitegrid", palette=palette)
-
-        # 1️⃣ Boxplot
-        fig1, ax1 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.boxplot(data=[x, y], ax=ax1, width=box_width, palette=palette)
-        ax1.set_xticklabels([map_digits(translate(col1)), map_digits(translate(col2))], fontproperties=tick_prop)
-        ax1.set_yticklabels([map_digits(f"{v:.2f}") for v in ax1.get_yticks()], fontproperties=tick_prop)
-        ax1.set_axisbelow(True)
-        if show_grid:
-            ax1.grid(True, linestyle=":", linewidth=1.75, alpha=1.0)
-        else:
-            ax1.grid(False)
-        box_path = create_labeled_plot(fig1, ax1, f"Boxplot of {col2} vs {col1}", "Groups", col2,
-                                       "mann_box_base.png", f"mannwhitney_boxplot.{img_format}")
-        image_paths.append(box_path)
-
-        # 2️⃣ Violin
-        fig2, ax2 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.violinplot(data=[x, y], ax=ax2, width=violin_width, palette=palette)
-        ax2.set_xticklabels([map_digits(translate(col1)), map_digits(translate(col2))], fontproperties=tick_prop)
-        ax2.set_yticklabels([map_digits(f"{v:.2f}") for v in ax2.get_yticks()], fontproperties=tick_prop)
-        ax2.set_axisbelow(True)
-        if show_grid:
-            ax2.grid(True, linestyle=":", linewidth=1.75, alpha=1.0)
-        else:
-            ax2.grid(False)
-        violin_path = create_labeled_plot(fig2, ax2, f"Violin plot of {col2} vs {col1}", "Groups", col2,
-                                          "mann_violin_base.png", f"mannwhitney_violinplot.{img_format}")
-        image_paths.append(violin_path)
-
-        # 3️⃣ Rank bar
-        ranks = rankdata(np.concatenate([x, y]))
-        groups = np.array([0]*len(x) + [1]*len(y))
-        rdf = pd.DataFrame({"group": groups, "rank": ranks})
-        avg_rank = rdf.groupby("group")["rank"].mean()
-        fig3, ax3 = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.barplot(x=["Group 1", "Group 2"], y=avg_rank.values, ax=ax3, width=rank_bar_width, palette=palette)
-        ax3.set_xticklabels([map_digits(translate(col1)), map_digits(translate(col2))], fontproperties=tick_prop)
-        ax3.set_yticklabels([map_digits(f"{v:.2f}") for v in ax3.get_yticks()], fontproperties=tick_prop)
-        ax3.set_axisbelow(True)
-        if show_grid:
-            ax3.grid(True, linestyle=":", linewidth=1.75, alpha=1.0)
-        else:
-            ax3.grid(False)
-        rank_path = create_labeled_plot(fig3, ax3, "Average Rank by Group", "Groups",
-                                        translate("Average Rank"), "mann_rank_base.png",
-                                        f"mannwhitney_rankplot.{img_format}")
-        image_paths.append(rank_path)
-
-        # ---------------- Response ----------------
-        stat_out = map_digits(f"{stat:.6g}") if language == "bn" else stat
-        p_out = map_digits(f"{p_value:.6g}") if language == "bn" else p_value
-        test_name = "Mann–Whitney U Test" if language == "en" else "ম্যান–হুইটনি ইউ টেস্ট"
-
+        stat, p_value = mannwhitneyu(group1_codes, group2_codes, alternative='two-sided')
+        print(f"[MannWhitney] result: U={stat:.6f}, p={p_value:.6g}")
+    except Exception as e:
         return JsonResponse({
-            "test": test_name,
-            "statistic": stat_out,
-            "p_value": p_out,
-            "success": True,
-            "image_paths": image_paths,
+            'success': False,
+            'error': f'Error performing Mann–Whitney U test: {e}'
         })
 
+    # Calculate ranks for rank plot (EXACTLY like old backend)
+    all_numeric = work[col2].cat.codes.astype(float)
+    ranks = rankdata(all_numeric)
+
+    # Prepare plot_data for frontend
+    plot_data = []
+    
+    for i, category in enumerate(categories):
+        category_mask = work[col1] == category
+        category_values = work.loc[category_mask, col2]
+        numeric_values = category_values.cat.codes.astype(float)
+        category_ranks = ranks[category_mask]
+        
+        plot_data.append({
+            'category': str(category),
+            'values': numeric_values.tolist(),
+            'count': int(len(category_values)),
+            'mean': float(numeric_values.mean()),
+            'median': float(numeric_values.median()),
+            'std': float(numeric_values.std()),
+            'min': float(numeric_values.min()),
+            'max': float(numeric_values.max()),
+            'q25': float(numeric_values.quantile(0.25)),
+            'q75': float(numeric_values.quantile(0.75)),
+            'mean_rank': float(category_ranks.mean())
+        })
+
+    # Prepare response with localized labels
+    test_name = 'Mann-Whitney U Test' if language == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),
+        'p_value': float(p_value),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'column_names': {
+            'group': str(col1),
+            'value': str(col2)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05
+        }
+    }
+
+    print(f"[MannWhitney] returning success with {len(plot_data)} groups")
+    return JsonResponse(response_data)
+
+def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+    """
+    Performs Wilcoxon Signed-Rank test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col1: Column name for first sample
+        col2: Column name for second sample (paired data)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for plotting
+    """
+    print(f"[Wilcoxon] cols: {col1} | {col2}")
+    
+    # Validate column names
+    if col1 not in df.columns or col2 not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col1, col2]].copy()
+    work = work.dropna(subset=[col1, col2])
+    print(f"[Wilcoxon] after dropna: {len(work)} rows")
+
+    # Ensure columns are numeric
+    for col in [col1, col2]:
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            work[col] = pd.to_numeric(work[col], errors='coerce')
+    
+    work = work.dropna(subset=[col1, col2])
+    
+    if len(work) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 paired observations for Wilcoxon test.'
+        })
+
+    sample1 = work[col1].values
+    sample2 = work[col2].values
+    differences = sample1 - sample2
+
+    # Perform Wilcoxon Signed-Rank test
+    try:
+        stat, p_value = stats.wilcoxon(sample1, sample2)
+        print(f"[Wilcoxon] result: statistic={stat:.6f}, p={p_value:.6g}")
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Wilcoxon test: {e}'
+        })
+
+    # Prepare data for frontend plotting
+    plot_data = {
+        'sample1': {
+            'name': str(col1),
+            'values': [float(x) for x in sample1],
+            'count': int(len(sample1)),
+            'mean': float(np.mean(sample1)),
+            'median': float(np.median(sample1)),
+            'std': float(np.std(sample1)),
+            'min': float(np.min(sample1)),
+            'max': float(np.max(sample1))
+        },
+        'sample2': {
+            'name': str(col2),
+            'values': [float(x) for x in sample2],
+            'count': int(len(sample2)),
+            'mean': float(np.mean(sample2)),
+            'median': float(np.median(sample2)),
+            'std': float(np.std(sample2)),
+            'min': float(np.min(sample2)),
+            'max': float(np.max(sample2))
+        },
+        'differences': {
+            'values': [float(x) for x in differences],
+            'count': int(len(differences)),
+            'mean': float(np.mean(differences)),
+            'median': float(np.median(differences)),
+            'std': float(np.std(differences)),
+            'min': float(np.min(differences)),
+            'max': float(np.max(differences)),
+            'q25': float(np.percentile(differences, 25)),
+            'q75': float(np.percentile(differences, 75))
+        }
+    }
+
+    # Prepare Q-Q plot data for differences
+    try:
+        (osm, osr), (slope, intercept, r) = stats.probplot(differences, dist="norm")
+        qq_data = {
+            'theoretical_quantiles': [float(x) for x in osm],
+            'ordered_values': [float(x) for x in osr],
+            'slope': float(slope),
+            'intercept': float(intercept),
+            'r_squared': float(r**2)
+        }
+    except Exception as e:
+        print(f"[Wilcoxon] Q-Q plot data generation warning: {e}")
+        qq_data = {
+            'theoretical_quantiles': [],
+            'ordered_values': [],
+            'slope': 0,
+            'intercept': 0,
+            'r_squared': 0
+        }
+
+    # Prepare response with localized labels
+    test_name = 'Wilcoxon Signed-Rank Test' if language == 'en' else 'উইলকক্সন সাইনড র‍্যাঙ্ক টেস্ট'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),
+        'p_value': float(p_value),
+        'total_pairs': int(len(work)),
+        'column_names': {
+            'sample1': str(col1),
+            'sample2': str(col2)
+        },
+        'plot_data': plot_data,
+        'qq_data': qq_data,
+        'metadata': {
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05,
+            'test_type': 'paired'
+        }
+    }
+    return JsonResponse(response_data)
+
+def process_anova_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+    """
+    Performs One-Way ANOVA test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col1: Column name for grouping variable (categorical)
+        col2: Column name for value variable (numeric)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for plotting
+    """
+    print(f"[ANOVA] cols: {col1}(group) | {col2}(value)")
+    
+    # Validate column names
+    if col1 not in df.columns or col2 not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col1, col2]].copy()
+    work = work.dropna(subset=[col1, col2])
+    print(f"[ANOVA] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col1]):
+        work[col1] = work[col1].astype('category')
+
+    categories = list(work[col1].cat.categories)
+    
+    if len(categories) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 groups in the factor column for ANOVA.'
+        })
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col2]):
+        work[col2] = pd.to_numeric(work[col2], errors='coerce')
+        work = work.dropna(subset=[col2])
+        
+        if not pd.api.types.is_numeric_dtype(work[col2]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col2}" must be numeric for ANOVA.'
+            })
+
+    # Prepare groups for statistical test
+    groups = [work.loc[work[col1] == g, col2].values for g in categories]
+    
+    if any(len(g) == 0 for g in groups):
+        return JsonResponse({
+            'success': False, 
+            'error': 'Each group must contain at least one observation.'
+        })
+
+    # Perform One-Way ANOVA
+    try:
+        from scipy import stats
+        f_statistic, p_value = stats.f_oneway(*groups)
+        print(f"[ANOVA] result: F={f_statistic:.6f}, p={p_value:.6g}")
+        
+        # Calculate additional ANOVA statistics manually
+        overall_mean = np.mean(work[col2])
+        n_groups = len(categories)
+        n_total = len(work)
+        
+        # Sum of Squares Between (SSB)
+        ss_between = 0
+        for i, group in enumerate(groups):
+            group_mean = np.mean(group)
+            group_size = len(group)
+            ss_between += group_size * (group_mean - overall_mean) ** 2
+        
+        # Sum of Squares Within (SSW)
+        ss_within = 0
+        for i, group in enumerate(groups):
+            group_mean = np.mean(group)
+            ss_within += np.sum((group - group_mean) ** 2)
+        
+        # Degrees of freedom
+        df_between = n_groups - 1
+        df_within = n_total - n_groups
+        
+        # Mean Squares
+        ms_between = ss_between / df_between
+        ms_within = ss_within / df_within
+        
+        # F-statistic (should match scipy's calculation)
+        f_statistic_calc = ms_between / ms_within
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in ANOVA test: {e}'
+        })
+
+    # Prepare data for frontend plotting
+    plot_data = []
+    
+    for category in categories:
+        category_data = work.loc[work[col1] == category, col2].values
+        
+        # Calculate statistics for each group
+        # IMPORTANT: Convert all numpy types to Python native types for JSON serialization
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data],  # Convert numpy array to list of floats
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
+
+    # Prepare response with localized labels
+    test_name = 'One-Way ANOVA' if language == 'en' else 'এক-মুখী এনোভা'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'f_statistic': float(f_statistic),
+        'p_value': float(p_value),
+        'df_between': int(df_between),
+        'df_within': int(df_within),
+        'sum_squares_between': float(ss_between),
+        'sum_squares_within': float(ss_within),
+        'mean_square_between': float(ms_between),
+        'mean_square_within': float(ms_within),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'column_names': {
+            'group': str(col1),
+            'value': str(col2)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate: str, col_outcome: str, user_id: str):
+    """
+    Performs ANCOVA test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col_group: Column name for grouping variable (categorical)
+        col_covariate: Column name for covariate variable (numeric)
+        col_outcome: Column name for outcome variable (numeric)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for plotting
+    """
+    print(f"[ANCOVA] cols: {col_group}(group) | {col_covariate}(covariate) | {col_outcome}(outcome)")
+    
+    # Validate column names
+    if col_group not in df.columns or col_covariate not in df.columns or col_outcome not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col_group, col_covariate, col_outcome]].copy()
+    work = work.dropna(subset=[col_group, col_covariate, col_outcome])
+    print(f"[ANCOVA] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col_group]):
+        work[col_group] = work[col_group].astype('category')
+
+    categories = list(work[col_group].cat.categories)
+    
+    if len(categories) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 groups in the factor column for ANCOVA.'
+        })
+
+    # Ensure covariate and outcome columns are numeric
+    for col, col_name in [(col_covariate, "covariate"), (col_outcome, "outcome")]:
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            work[col] = pd.to_numeric(work[col], errors='coerce')
+            work = work.dropna(subset=[col])
+            
+            if not pd.api.types.is_numeric_dtype(work[col]):
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'"{col}" must be numeric for ANCOVA.'
+                })
+
+    # Check if we have enough data points
+    if len(work) < len(categories) * 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Not enough data points for ANCOVA analysis.'
+        })
+
+    # Perform ANCOVA using statsmodels
+    try:
+        import statsmodels.api as sm
+        import statsmodels.formula.api as smf
+        
+        # ANCOVA model: outcome ~ covariate + group
+        formula = f"{col_outcome} ~ {col_covariate} + C({col_group})"
+        ancova_model = smf.ols(formula, data=work).fit()
+        ancova_table = sm.stats.anova_lm(ancova_model, typ=2)
+        
+        print(f"[ANCOVA] ANCOVA table:\n{ancova_table}")
+        
+        # Extract key statistics
+        f_statistic_group = ancova_table.loc[f'C({col_group})', 'F']
+        p_value_group = ancova_table.loc[f'C({col_group})', 'PR(>F)']
+        f_statistic_covariate = ancova_table.loc[col_covariate, 'F']
+        p_value_covariate = ancova_table.loc[col_covariate, 'PR(>F)']
+        
+        print(f"[ANCOVA] Group effect: F={f_statistic_group:.6f}, p={p_value_group:.6g}")
+        print(f"[ANCOVA] Covariate effect: F={f_statistic_covariate:.6f}, p={p_value_covariate:.6g}")
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in ANCOVA analysis: {e}'
+        })
+
+    # Prepare data for frontend plotting
+    plot_data = []
+    
+    for category in categories:
+        category_data = work.loc[work[col_group] == category]
+        
+        # Get residuals and fitted values for this category
+        category_indices = category_data.index
+        residuals = [ancova_model.resid[i] for i in category_indices]
+        fitted_values = [ancova_model.fittedvalues[i] for i in category_indices]
+        
+        # Calculate statistics for each group
+        # IMPORTANT: Convert all numpy types to Python native types for JSON serialization
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data[col_outcome].values],  # Outcome values
+            'covariate_values': [float(x) for x in category_data[col_covariate].values],  # Covariate values
+            'count': int(len(category_data)),
+            'mean_outcome': float(np.mean(category_data[col_outcome])),
+            'mean_covariate': float(np.mean(category_data[col_covariate])),
+            'std_outcome': float(np.std(category_data[col_outcome])),
+            'std_covariate': float(np.std(category_data[col_covariate])),
+            'min_outcome': float(np.min(category_data[col_outcome])),
+            'max_outcome': float(np.max(category_data[col_outcome])),
+            'min_covariate': float(np.min(category_data[col_covariate])),
+            'max_covariate': float(np.max(category_data[col_covariate])),
+            'q25_outcome': float(np.percentile(category_data[col_outcome], 25)),
+            'q75_outcome': float(np.percentile(category_data[col_outcome], 75)),
+            'median_outcome': float(np.median(category_data[col_outcome])),
+            # Add residuals and fitted values for residual plots
+            'residuals': [float(x) for x in residuals],
+            'fitted_values': [float(x) for x in fitted_values]
+        })
+
+    # Prepare response with localized labels
+    test_name = 'ANCOVA' if language == 'en' else 'এনকোভা'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'f_statistic_group': float(f_statistic_group),
+        'p_value_group': float(p_value_group),
+        'f_statistic_covariate': float(f_statistic_covariate),
+        'p_value_covariate': float(p_value_covariate),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'column_names': {
+            'group': str(col_group),
+            'covariate': str(col_covariate),
+            'outcome': str(col_outcome)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant_group': bool(p_value_group < 0.05),
+            'significant_covariate': bool(p_value_covariate < 0.05),
+            'alpha': 0.05,
+            'r_squared': float(ancova_model.rsquared),
+            'adj_r_squared': float(ancova_model.rsquared_adj)
+        }
+    }
+    
+    return JsonResponse(response_data)
+
 
 def process_pearson_test(request, df, selected_columns, user_id):
     
@@ -1251,6 +1580,7 @@ def process_spearman_test(request, df, selected_columns, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
+
 def process_shapiro_test(request, df, col1, user_id):
     
     from scipy.stats import shapiro, norm
@@ -1378,236 +1708,6 @@ def process_shapiro_test(request, df, col1, user_id):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
-def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
-    print(f"[Wilcoxon] cols: {col1} | {col2}")
-    if col1 not in df.columns or col2 not in df.columns:
-        return JsonResponse({'success': False, 'error': 'Invalid column names.'})
-
-    # --- Parameters ---
-    try:
-        language   = request.POST.get('language', 'en').lower()
-        img_format = request.POST.get('format', 'png').lower()
-        use_default = request.POST.get('use_default', 'true') == 'true'
-    except Exception:
-        language, img_format, use_default = 'en', 'png', True
-
-    if language not in ('en', 'bn'):
-        language = 'en'
-    if img_format not in ('png', 'jpg', 'jpeg', 'pdf', 'tiff'):
-        img_format = 'png'
-
-    pil_fmt = {
-        'png': 'PNG', 'jpg': 'JPEG', 'jpeg': 'JPEG',
-        'pdf': 'PDF', 'tiff': 'TIFF'
-    }.get(img_format, 'PNG')
-
-    # Plot params
-    if use_default:
-        label_font_size = 72
-        tick_font_size  = 18
-        img_quality     = 100
-        width, height   = 1280, 720
-        palette         = 'deep'
-        hist_bins       = 30
-        alpha_val       = 0.7
-    else:
-        def _int(name, default):
-            try: return int(request.POST.get(name, default))
-            except Exception: return default
-        def _float(name, default):
-            try: return float(request.POST.get(name, default))
-            except Exception: return default
-
-        label_font_size = _int('label_font_size', 72)
-        tick_font_size  = _int('tick_font_size', 18)
-        img_quality     = _int('image_quality', 100)
-
-        size_input = request.POST.get('image_size', '1280x720')
-        try:
-            width, height = map(int, size_input.lower().split('x'))
-        except Exception:
-            width, height = 1280, 720
-
-        palette   = request.POST.get('palette', 'deep') or 'deep'
-        hist_bins = _int('bins', 30)
-        alpha_val = _float('alpha', 0.7)
-
-    # --- Paths ---
-    media_root = settings.MEDIA_ROOT
-    plots_dir  = os.path.join(media_root, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
-    os.makedirs(plots_dir, exist_ok=True)
-
-    # --- Translation + Font ---
-    translator = Translator() if (Translator is not None and language == 'bn') else None
-    digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-
-    def translate(text: str) -> str:
-        if language == 'bn' and translator is not None:
-            try:
-                return translator.translate(text, dest='bn').text
-            except Exception:
-                return text
-        return text
-
-    def map_digits(s: str) -> str:
-        return s.translate(digit_map_bn) if language == 'bn' else s
-
-    font_path = os.path.join(getattr(settings, 'BASE_DIR', ''), 'NotoSansBengali-Regular.ttf')
-
-    def get_pil_font(size: int) -> ImageFont.FreeTypeFont:
-        try:
-            if language == 'bn' and os.path.exists(font_path):
-                return ImageFont.truetype(font_path, size=size)
-            djv_path = fm.findfont('DejaVu Sans', fallback_to_default=True)
-            if os.path.exists(djv_path):
-                return ImageFont.truetype(djv_path, size=size)
-        except Exception:
-            pass
-        return ImageFont.load_default()
-
-    try:
-        if language == 'bn' and os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-            matplotlib.rcParams['font.family'] = bengali_font_name
-        else:
-            matplotlib.rcParams['font.family'] = 'DejaVu Sans'
-    except Exception as e:
-        print(f"[Wilcoxon] Matplotlib font setup warning: {e}")
-
-    tick_prop = fm.FontProperties(size=tick_font_size)
-    if language == 'bn' and os.path.exists(font_path):
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-
-    # --- Data Prep ---
-    work = df[[col1, col2]].dropna()
-    if work.empty:
-        return JsonResponse({'success': False, 'error': 'No valid paired data found'})
-
-    sample1 = work[col1].astype(float)
-    sample2 = work[col2].astype(float)
-    differences = sample1 - sample2
-
-    try:
-        stat, p_value = stats.wilcoxon(sample1, sample2)
-        print(f"[Wilcoxon] result: stat={stat}, p={p_value}")
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': f'Error in Wilcoxon test: {e}'})
-
-    # --- Helper: PIL labeling ---
-    def create_labeled_plot(fig, ax, title, xlabel, ylabel, base_filename, final_filename):
-        ax.set_title('')
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-
-        base_path = os.path.join(plots_dir, base_filename)
-        final_path = os.path.join(plots_dir, final_filename)
-
-        plt.tight_layout(pad=1)
-        fig.savefig(base_path, bbox_inches='tight', dpi=300, format='PNG')
-        plt.close(fig)
-
-        T = map_digits(translate(title))
-        X = map_digits(translate(xlabel))
-        Y = map_digits(translate(ylabel))
-
-        label_font = get_pil_font(label_font_size)
-
-        tx0, ty0, tx1, ty1 = label_font.getbbox(T); th = ty1 - ty0
-        xx0, xy0, xx1, xy1 = label_font.getbbox(X); xh = xy1 - xy0
-        yx0, yy0, yx1, yy1 = label_font.getbbox(Y); yw, yh = yx1 - yx0, yy1 - yy0
-
-        pad = max(label_font_size // 2, 10)
-        lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
-
-        base_img = Image.open(base_path).convert("RGB")
-        bw, bh = base_img.size
-        W, H = bw + lm + rm, bh + tm + bm
-        canvas = Image.new("RGB", (W, H), "white")
-        canvas.paste(base_img, (lm, tm))
-        draw = ImageDraw.Draw(canvas)
-
-        def center_h(txt, fnt, total_w):
-            return (total_w - int(draw.textlength(txt, font=fnt))) // 2
-
-        draw.text((center_h(T, label_font, W), (tm - th) // 2), T, font=label_font, fill="black")
-        draw.text((center_h(X, label_font, W), tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
-
-        Yimg = Image.new("RGBA", (yw, yh), (255, 255, 255, 0))
-        d2 = ImageDraw.Draw(Yimg)
-        d2.text((0, 0), Y, font=label_font, fill="black")
-        Yrot = Yimg.rotate(90, expand=True)
-        canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-
-        canvas.save(final_path, format=pil_fmt, quality=img_quality, dpi=(300, 300), optimize=True)
-        return f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{final_filename}"
-
-    # --- Visualizations ---
-    image_paths = []
-
-    # 1) Histogram of differences
-    fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    ax1.hist(differences, bins=hist_bins, alpha=alpha_val,
-             color=sns.color_palette(palette)[0], edgecolor='black')
-    ax1.axvline(x=0, color='red', linestyle='--', linewidth=2)
-    ax1.set_axisbelow(True); ax1.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
-    image_paths.append(create_labeled_plot(
-        fig1, ax1, f"Distribution of Differences ({col1} vs {col2})",
-        "Differences", "Frequency",
-        "wilcoxon_hist_base.png", f"wilcoxon_hist.{img_format}"
-    ))
-
-    # 2) Scatter plot Before vs After
-    fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    ax2.scatter(sample1, sample2, alpha=alpha_val,
-                color=sns.color_palette(palette)[1], s=50)
-    mn, mx = min(sample1.min(), sample2.min()), max(sample1.max(), sample2.max())
-    ax2.plot([mn, mx], [mn, mx], 'r--', linewidth=2)
-    ax2.set_axisbelow(True); ax2.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
-    image_paths.append(create_labeled_plot(
-        fig2, ax2, f"Before vs After ({col1} vs {col2})",
-        col1, col2,
-        "wilcoxon_scatter_base.png", f"wilcoxon_scatter.{img_format}"
-    ))
-
-    # 3) Q-Q Plot
-    fig3, ax3 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    stats.probplot(differences, dist="norm", plot=ax3)
-    ax3.set_axisbelow(True); ax3.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
-    image_paths.append(create_labeled_plot(
-        fig3, ax3, "Q-Q Plot of Differences (Normality Check)",
-        "Theoretical Quantiles", "Sample Quantiles",
-        "wilcoxon_qq_base.png", f"wilcoxon_qq.{img_format}"
-    ))
-
-    # 4) Boxplot of differences
-    fig4, ax4 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-    bp = ax4.boxplot(differences, patch_artist=True, vert=True)
-    bp['boxes'][0].set_facecolor(sns.color_palette(palette)[0])
-    bp['boxes'][0].set_alpha(alpha_val)
-    ax4.axhline(y=0, color='red', linestyle='--', linewidth=2)
-    ax4.set_xticklabels([''], fontproperties=tick_prop)
-    ax4.set_axisbelow(True); ax4.grid(True, linestyle=':', linewidth=1.75, alpha=0.8)
-    image_paths.append(create_labeled_plot(
-        fig4, ax4, f"Box Plot of Differences ({col1} vs {col2})",
-        col1, "Differences",
-        "wilcoxon_box_base.png", f"wilcoxon_box.{img_format}"
-    ))
-
-    # --- Output ---
-    stat_out, p_out = stat, p_value
-    if language == 'bn':
-        stat_out = map_digits(f"{stat:.6g}")
-        p_out    = map_digits(f"{p_value:.6g}")
-
-    return JsonResponse({
-        'test': 'Wilcoxon Signed Rank Test' if language == 'en' else 'উইলকক্সন সাইনড র‍্যাঙ্ক টেস্ট',
-        'statistic': stat_out,
-        'p_value': p_out,
-        'success': True,
-        'image_paths': image_paths
-    })
 
 def process_linear_regression_test(request, df, col1, col2, user_id):
     
@@ -1767,328 +1867,6 @@ def process_linear_regression_test(request, df, col1, col2, user_id):
         result['image_paths'] = [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'regression_plot.{file_format}')]
 
         return JsonResponse(result)
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_anova_test(request, df, col1, col2, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib.font_manager as fm
-    from PIL import Image, ImageDraw, ImageFont
-    from statsmodels.formula.api import ols
-    import statsmodels.api as sm
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
-
-    try:
-        # Language & format
-        language = request.POST.get('language', 'en')
-        img_format = request.POST.get('format', 'png').lower()
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        image_quality = int(request.POST.get('image_quality', 90))
-
-        # Plot style settings
-        if use_default:
-            axis_label_size = 36
-            tick_label_size = 16
-            box_color = 'steelblue'
-            median_color = 'red'
-        else:
-            axis_label_size = int(request.POST.get('label_font_size', 36))
-            tick_label_size = int(request.POST.get('tick_font_size', 16))
-            box_color = request.POST.get('box_color', 'steelblue')
-            median_color = request.POST.get('median_color', 'red')
-
-        # Font
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        if language == 'bn' and os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            font_name = fm.FontProperties(fname=font_path).get_name()
-            plt.rcParams['font.family'] = font_name
-        title_font = ImageFont.truetype(font_path, size=axis_label_size)
-        xlabel_font = ImageFont.truetype(font_path, size=axis_label_size)
-        ylabel_font = ImageFont.truetype(font_path, size=axis_label_size)
-        tick_font = ImageFont.truetype(font_path, size=tick_label_size)
-
-        # Translator
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text): return translator.translate(text, dest='bn').text if language == 'bn' else text
-        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
-
-        # Translate column names if in Bangla mode
-        col1_display = translate(col1)
-        col2_display = translate(col2)
-
-        # ANOVA using typ=2
-        formula = f"{col2} ~ C({col1})"
-        model = ols(formula, data=df).fit()
-        anova_table = sm.stats.anova_lm(model, typ=2)
-        print(f"ANOVA table:\n{anova_table}")
-
-        # Fix PR(>F) formatting
-        anova_table['PR(>F)'] = anova_table['PR(>F)'].apply(lambda p: f"{p:.6e}" if not np.isnan(p) else 'NaN')
-        anova_table['F'] = anova_table['F'].apply(lambda f: round(f, 6) if not np.isnan(f) else 'NaN')
-        anova_table['sum_sq'] = anova_table['sum_sq'].apply(lambda s: round(s, 6))
-        anova_table['df'] = anova_table['df'].apply(lambda d: round(d, 1))
-
-
-
-        if language == 'bn':
-            anova_table.index = [translate(str(idx)) for idx in anova_table.index]
-            anova_table.columns = [translate(str(col)) for col in anova_table.columns]
-            anova_table = anova_table.applymap(lambda x: map_digits(str(x)))
-        print(anova_table)
-
-        result = {
-            'test': 'ANOVA' if language == 'en' else 'এনওভিএ',
-            'anova_table': f"""
-                <div style='display: flex; justify-content: center; margin-top: 10px;'>
-                    {anova_table.to_html(classes='table table-striped', border=1)}
-                </div>
-            """,
-            'success': True
-        }
-
-        # Plot
-        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-        sns.boxplot(x=col1, y=col2, data=df, palette=[box_color], medianprops=dict(color=median_color), ax=ax)
-        ax.grid(True)
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        ax.set_title("")
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
-        plt.tight_layout(pad=0.5)
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_path = os.path.join(plots_dir, f"anova_base.{img_format}")
-        fig.savefig(base_path, format=img_format.upper(), bbox_inches='tight')
-        plt.close(fig)
-
-        # Overlay with PIL
-        canvas = Image.open(base_path).convert('RGB')
-        bw, bh = canvas.size
-        pad = 70  # increased pad
-        title_txt = translate(f"ANOVA: {col2} by {col1}")
-        xlabel_txt = col1_display
-        ylabel_txt = col2_display
-        xt_vals = [str(g) for g in df[col1].unique()]
-        yt_vals = np.linspace(df[col2].min(), df[col2].max(), num=5)
-
-        draw = ImageDraw.Draw(canvas)
-        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
-        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
-        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
-
-        left_margin = yw + pad
-        right_margin = pad + 100
-        top_margin = th + pad
-        bottom_margin = xh + pad
-
-        W = left_margin + bw + right_margin
-        H = top_margin + bh + bottom_margin
-        final_canvas = Image.new("RGB", (W, H), 'white')
-        final_canvas.paste(canvas, (left_margin, top_margin))
-
-        draw = ImageDraw.Draw(final_canvas)
-        draw.text(((W - tw)//2, 0), title_txt, font=title_font, fill='black')
-        draw.text((left_margin + (bw - xw)//2, top_margin + bh + pad//2), xlabel_txt, font=xlabel_font, fill='black')
-
-        Yimg = Image.new('RGBA', (yw, yh), (255,255,255,0))
-        Ydraw = ImageDraw.Draw(Yimg)
-        Ydraw.text((0,0), ylabel_txt, font=ylabel_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        y_x = (left_margin - Yrot.width)//2
-        y_y = top_margin + (bh - Yrot.height)//2
-        final_canvas.paste(Yrot, (y_x, y_y), Yrot)
-
-        for i, lab in enumerate(xt_vals):
-            fx = left_margin + bw * (i + 0.5) / len(xt_vals)
-            fy = top_margin + bh + pad / 3
-            draw.text((fx - draw.textlength(lab, font=tick_font)/2, fy), map_digits(lab), font=tick_font, fill='black')
-
-        for yt in yt_vals:
-            frac = (yt - yt_vals.min()) / (yt_vals.max() - yt_vals.min())
-            fy = top_margin + bh - frac * bh
-            fx = left_margin - pad // 2 - draw.textlength(f"{yt:.2f}", font=tick_font)
-            draw.text((fx, fy - tick_label_size/2), map_digits(f"{yt:.2f}"), font=tick_font, fill='black')
-
-        final_path = os.path.join(plots_dir, f"anova_plot.{img_format}")
-        final_canvas.save(final_path, format=img_format.upper(), quality=image_quality)
-        result['image_paths'] = [os.path.join(settings.MEDIA_URL, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots', f"anova_plot.{img_format}")]
-
-        return JsonResponse(result)
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_ancova_test(request, df, col_group, col_covariate, col_outcome, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib.font_manager as fm
-    from PIL import Image, ImageDraw, ImageFont
-    import statsmodels.api as sm
-    import statsmodels.formula.api as smf
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
-
-    try:
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        image_quality = int(request.POST.get('image_quality', 90))
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-
-        def translate(text):
-            try:
-                return translator.translate(text, dest='bn').text if language == 'bn' else text
-            except:
-                return text
-
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
-
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            font_name = fm.FontProperties(fname=font_path).get_name()
-            plt.rcParams['font.family'] = font_name
-            tick_prop = fm.FontProperties(fname=font_path, size=16)
-            title_font = ImageFont.truetype(font_path, size=36)
-            xlabel_font = ImageFont.truetype(font_path, size=36)
-            ylabel_font = ImageFont.truetype(font_path, size=36)
-            legend_font = ImageFont.truetype(font_path, size=16)
-        else:
-            tick_prop = fm.FontProperties(size=16)
-            title_font = xlabel_font = ylabel_font = legend_font = ImageFont.load_default()
-
-        df[col_group] = df[col_group].astype(str)
-
-        # Corrected ANCOVA model: outcome ~ covariate + group
-        formula = f"{col_outcome} ~ {col_covariate} + C({col_group})"
-        ancova_model = smf.ols(formula, data=df).fit()
-        ancova_table = sm.stats.anova_lm(ancova_model, typ=2)
-
-        ancova_table = ancova_table.copy()
-        ancova_table['PR(>F)'] = ancova_table['PR(>F)'].apply(
-            lambda p: f"{p:.6e}" if not np.isnan(p) else 'NaN')
-        ancova_table['F'] = ancova_table['F'].apply(lambda f: round(f, 6) if not np.isnan(f) else 'NaN')
-        ancova_table['sum_sq'] = ancova_table['sum_sq'].apply(lambda s: round(s, 6))
-        ancova_table['df'] = ancova_table['df'].apply(lambda d: round(d, 1))
-
-        if language == 'bn':
-            ancova_table.index = [translate(str(idx)) for idx in ancova_table.index]
-            ancova_table.columns = [translate(str(col)) for col in ancova_table.columns]
-            ancova_table = ancova_table.applymap(lambda x: map_digits(str(x)))
-
-        table_html = f"""
-            <div style='display: flex; justify-content: center; margin-top: 10px;'>
-                {ancova_table.to_html(classes='table table-striped', border=1)}
-            </div>
-        """
-
-        groups = list(df[col_group].unique())
-        palette = sns.color_palette('Set2', n_colors=len(groups))
-        dot_colors = [tuple(int(255 * c) for c in color) for color in palette]
-        line_colors = dot_colors.copy()
-
-        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-        for i, group in enumerate(groups):
-            group_df = df[df[col_group] == group]
-            ax.scatter(group_df[col_covariate], group_df[col_outcome], s=50, color=palette[i], alpha=0.7,
-                       label=f"{group} points")
-            sns.regplot(x=col_covariate, y=col_outcome, data=group_df, ax=ax, scatter=False, ci=None,
-                        line_kws={'linewidth': 2, 'color': palette[i], 'linestyle': 'solid', 'label': f"{group} fit"})
-
-        ax.grid(True)
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        ax.set_title('')
-        ax.set_xticklabels([map_digits(f"{t:.2f}") for t in ax.get_xticks()], fontproperties=tick_prop)
-        ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
-        plt.tight_layout(pad=0)
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_path = os.path.join(plots_dir, f'ancova_base.{file_format}')
-        final_path = os.path.join(plots_dir, f'ancova_plot.{file_format}')
-        fig.savefig(base_path, format=file_format.upper())
-        plt.close(fig)
-
-        canvas = Image.open(base_path).convert('RGB')
-        bw, bh = canvas.size
-        pad = 50
-        title_txt = translate(f"ANCOVA: {col_outcome} by {col_group} with {col_covariate} control")
-        xlabel_txt = translate(f"Covariate ({col_covariate})")
-        ylabel_txt = translate(f"Outcome ({col_outcome})")
-
-        draw = ImageDraw.Draw(canvas)
-        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
-        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
-        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
-
-        left_margin = yw + pad
-        right_margin = 250
-        top_margin = th + pad
-        bottom_margin = xh + pad
-        W = left_margin + bw + right_margin
-        H = top_margin + bh + bottom_margin
-        final_img = Image.new("RGB", (W, H), "white")
-        final_img.paste(canvas, (left_margin, top_margin))
-
-        draw = ImageDraw.Draw(final_img)
-        draw.text(((W - tw) // 2, 0), title_txt, font=title_font, fill='black')
-        draw.text((left_margin + (bw - xw) // 2, top_margin + bh + pad // 2), xlabel_txt, font=xlabel_font, fill='black')
-
-        Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0))
-        Ydraw = ImageDraw.Draw(Yimg)
-        Ydraw.text((0, 0), ylabel_txt, font=ylabel_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        y_x = (left_margin - Yrot.width) // 2
-        y_y = top_margin + (bh - Yrot.height) // 2
-        final_img.paste(Yrot, (y_x, y_y), Yrot)
-
-        draw = ImageDraw.Draw(final_img)
-        legend_x = left_margin + bw + 10
-        legend_y = top_margin + 10
-        symbol_size = 6
-        line_len = 20
-
-        for i, grp in enumerate(groups):
-            col = dot_colors[i]
-            draw.ellipse((legend_x, legend_y, legend_x + symbol_size, legend_y + symbol_size), fill=col)
-            lbl = translate(f"{grp} points")
-            draw.text((legend_x + symbol_size + 5, legend_y), lbl, font=legend_font, fill='black')
-            legend_y += 20
-
-        legend_y += 10
-        for i, grp in enumerate(groups):
-            col = line_colors[i]
-            y_mid = legend_y + symbol_size // 2
-            draw.line((legend_x, y_mid, legend_x + line_len, y_mid), fill=col, width=2)
-            lbl = translate(f"{grp} fit")
-            draw.text((legend_x + line_len + 5, legend_y), lbl, font=legend_font, fill='black')
-            legend_y += 20
-
-        final_img.save(final_path, format=file_format.upper(), quality=image_quality)
-
-        return JsonResponse({
-            'success': True,
-            'test': translate('ANCOVA'),
-            'table_html': table_html,
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'ancova_plot.{file_format}')],
-            'columns': [col_group, col_covariate, col_outcome]
-        })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
