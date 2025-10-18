@@ -4,9 +4,9 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import AncovaOptions from './AncovaOptions';
+// import AncovaOptions from './AncovaOptions';
 import AndersonDarlingOptions from './AndersonDarlingOptions';
-import AnovaOptions from './AnovaOptions';
+// import AnovaOptions from './AnovaOptions';
 import ChiSquareOptions from './ChiSquareOptions';
 import CramerVOptions from './CramerVOptions';
 import CrossTabulationOptions from './CrossTabulationOptions';
@@ -19,7 +19,7 @@ import FZTOptions from './FZTOptions';
 import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
 // import KruskalOptions from './PlotCustomizers/KruskalOptions';
 import LinearRegressionOptions from './LinearRegressionOptions';
-import MannWhitneyOptions from './MannWhitneyOptions';
+// import MannWhitneyOptions from './MannWhitneyOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
 import PearsonOptions from './PearsonOptions';
 import ShapiroWilkOptions from './ShapiroWilkOptions';
@@ -28,13 +28,17 @@ import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
 import './StatisticalAnalysisTool.css';
 import './StatisticalAnalysisResultPage.css';
-import WilcoxonOptions from './WilcoxonOptions';
+// import WilcoxonOptions from './WilcoxonOptions';
 import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 import * as XLSX from "xlsx";
 
 import renderKruskalResults from './RenderFunctions/renderKruskalResults';
+import renderMannWhitneyResults from './RenderFunctions/renderMannWhitneyResults';
+import renderWilcoxonResults from './RenderFunctions/renderWilcoxonResults';
+import renderAnovaResults from './RenderFunctions/renderAnovaResults';
+import renderAncovaResults from './RenderFunctions/renderAncovaResults';
 
 
 const translations = {
@@ -1388,33 +1392,6 @@ const StatisticalAnalysisTool = () => {
                                                         </div>
                                                     )}
 
-                                                    {testType === 'mannwhitney' && (
-                                                        <MannWhitneyOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            boxWidth={boxWidth}
-                                                            setBoxWidth={setBoxWidth}
-                                                            violinWidth={violinWidth}
-                                                            setViolinWidth={setViolinWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
 
                                                     {testType === 'pearson' && (
                                                         <PearsonOptions
@@ -1492,34 +1469,6 @@ const StatisticalAnalysisTool = () => {
                                                         />
                                                     )}
 
-                                                    {testType === 'wilcoxon' && (
-                                                        <WilcoxonOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            boxWidth={boxWidth}
-                                                            setBoxWidth={setBoxWidth}
-                                                            violinWidth={violinWidth}
-                                                            setViolinWidth={setViolinWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
                                                     {testType === 'linear_regression' && (
                                                         <LinearRegressionOptions
                                                             language={language}
@@ -1556,60 +1505,6 @@ const StatisticalAnalysisTool = () => {
                                                             setDotColor={setDotColor}
                                                             dotWidth={dotWidth}
                                                             setDotWidth={setDotWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'anova' && (
-                                                        <AnovaOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            boxColor={boxColor}
-                                                            setBoxColor={setBoxColor}
-                                                            medianColor={medianColor}
-                                                            setMedianColor={setMedianColor}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'ancova' && (
-                                                        <AncovaOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            dotColor={dotColor}
-                                                            setDotColor={setDotColor}
-                                                            lineColor={lineColor}
-                                                            setLineColor={setLineColor}
-                                                            lineStyle={lineStyle}
-                                                            setLineStyle={setLineStyle}
-                                                            dotWidth={dotWidth}
-                                                            setDotWidth={setDotWidth}
-                                                            lineWidth={lineWidth}
-                                                            setLineWidth={setLineWidth}
                                                             t={t}
                                                         />
                                                     )}
@@ -1805,7 +1700,6 @@ const StatisticalAnalysisTool = () => {
                                                             t={t}
                                                         />
                                                     )}
-
 
                                                     {testType === 'bar_chart' && (
                                                         <BarChartOptions
@@ -2088,6 +1982,10 @@ const StatisticalAnalysisTool = () => {
 const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, showGrid, setShowGrid, histColor, setHistColor, kdeColor, setKdeColor, distColor, setDistColor, t, filename }) => {
 
     const [kruskalActiveTab, setKruskalActiveTab] = useState('count');
+    const [mannWhitneyActiveTab, setMannWhitneyActiveTab] = useState('box');
+    const [wilcoxonActiveTab, setWilcoxonActiveTab] = useState('histogram');
+    const [anovaActiveTab, setAnovaActiveTab] = useState('count');   
+    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');    
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2098,10 +1996,34 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                 results,
                 language
             );
-        } else if (testType === 'wilcoxon') {
-            return renderWilcoxonResults();
         } else if (testType === 'mannwhitney') {
-            return renderMannWhitneyResults();
+            return renderMannWhitneyResults(
+                mannWhitneyActiveTab,
+                setMannWhitneyActiveTab,
+                results,
+                language
+            );
+        } else if (testType === 'wilcoxon') {
+            return renderWilcoxonResults(
+                wilcoxonActiveTab,
+                setWilcoxonActiveTab,
+                results,
+                language
+            );         
+        } else if (testType === 'anova') {
+            return renderAnovaResults(
+                anovaActiveTab,
+                setAnovaActiveTab,
+                results,
+                language
+            );       
+        } else if (testType === 'ancova') {
+            return renderAncovaResults(
+                ancovaActiveTab,
+                setAncovaActiveTab,
+                results,
+                language,
+            );            
         } else if (testType === 'shapiro') {
             return renderShapiroResults();
         } else if (testType === 'spearman') {
@@ -2110,10 +2032,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
             return renderPearsonResults();
         } else if (testType === 'linear_regression') {
             return renderLinearRegressionResults();
-        } else if (testType === 'anova') {
-            return renderAnovaResults();
-        } else if (testType === 'ancova') {
-            return renderAncovaResults();
         } else if (testType === 'kolmogorov') {
             return renderKolmogorovResults();
         } else if (testType === 'anderson') {
@@ -2167,572 +2085,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         }
     };
 
-    const renderMannWhitneyResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'বাংলা') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return (
-                <div className="stats-loading">
-                    <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-                </div>
-            );
-        }
-
-        const cacheBuster = results._timestamp || Date.now();
-
-        const handleSaveResult = async () => {
-            console.log('Saving Mann–Whitney result...');
-            try {
-                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image_paths: results.image_paths,
-                        user_id,
-                        test_name: testType,
-                        filename,
-                    }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Result saved successfully:', data);
-                } else {
-                    console.error('Error saving result:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error saving result:', error);
-            }
-        };
-
-        return (
-            <div className="stats-results-container stats-fade-in">
-                {/* Header Section */}
-                <div className="stats-header">
-                    <h2 className="stats-title">{t.mannwhitneyTitle}</h2>
-                    <button onClick={handleSaveResult} className="stats-save-btn">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
-                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                            <polyline points="17 21 17 13 7 13 7 21" />
-                            <polyline points="7 3 7 8 15 8" />
-                        </svg>
-                        {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
-                    </button>
-                </div>
-
-                {/* Compact Results Table */}
-                <div className="stats-results-table-wrapper">
-                    <table className="stats-results-table">
-                        <thead>
-                            <tr>
-                                <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                                <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* Columns Row */}
-                            {columns && columns[0] && (
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}
-                                    </td>
-                                    <td className="stats-table-value">
-                                        {columns[0]}
-                                        {columns[1] && ` ${language === 'বাংলা' ? 'এবং' : 'and'} ${columns[1]}`}
-                                    </td>
-                                </tr>
-                            )}
-
-                            {/* Test Statistic Row */}
-                            {results?.statistic !== undefined && (
-                                <tr>
-                                    <td className="stats-table-label">{t.testStatistic}</td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.statistic.toFixed(4))}
-                                    </td>
-                                </tr>
-                            )}
-
-                            {/* P-Value Row */}
-                            {results?.p_value !== undefined && (
-                                <tr>
-                                    <td className="stats-table-label">{t.pValue}</td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.p_value.toFixed(6))}
-                                    </td>
-                                </tr>
-                            )}
-
-                            {/* Conclusion Row */}
-                            {results?.p_value !== undefined && (
-                                <tr className="stats-conclusion-row">
-                                    <td className="stats-table-label">
-                                        {language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}
-                                    </td>
-                                    <td className="stats-table-value">
-                                        <div className="stats-conclusion-inline">
-                                            {results.p_value < 0.05 ? (
-                                                <>
-                                                    <svg
-                                                        className="stats-conclusion-icon"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="#059669"
-                                                        strokeWidth="2"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                        />
-                                                    </svg>
-                                                    <span className="stats-conclusion-text significant">
-                                                        {t.significant}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg
-                                                        className="stats-conclusion-icon"
-                                                        fill="none"
-                                                        viewBox="0 0 24 24"
-                                                        stroke="#dc2626"
-                                                        strokeWidth="2"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                        />
-                                                    </svg>
-                                                    <span className="stats-conclusion-text not-significant">
-                                                        {t.notSignificant}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Visualizations Section */}
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="stats-viz-section">
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                marginBottom: "1rem",
-                            }}
-                        >
-                            <h3 className="stats-viz-header" style={{ margin: 0 }}>
-                                {language === "বাংলা" ? "ভিজ্যুয়ালাইজেশন" : "Visualizations"}
-                            </h3>
-
-                            {!isFirstTimeAnalysis && (
-                                <MannWhitneyOptions
-                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                    handleSubmit={handleSubmit}
-                                    language={language}
-                                    setLanguage={setLanguage}
-                                    imageFormat={imageFormat}
-                                    setImageFormat={setImageFormat}
-                                    useDefaultSettings={useDefaultSettings}
-                                    setUseDefaultSettings={setUseDefaultSettings}
-                                    labelFontSize={labelFontSize}
-                                    setLabelFontSize={setLabelFontSize}
-                                    tickFontSize={tickFontSize}
-                                    setTickFontSize={setTickFontSize}
-                                    imageQuality={imageQuality}
-                                    setImageQuality={setImageQuality}
-                                    imageSize={imageSize}
-                                    setImageSize={setImageSize}
-                                    colorPalette={colorPalette}
-                                    setColorPalette={setColorPalette}
-                                    barWidth={barWidth}
-                                    setBarWidth={setBarWidth}
-                                    boxWidth={boxWidth}
-                                    setBoxWidth={setBoxWidth}
-                                    violinWidth={violinWidth}
-                                    setViolinWidth={setViolinWidth}
-                                    showGrid={showGrid}
-                                    setShowGrid={setShowGrid}
-                                    t={t}
-                                />
-                            )}
-                        </div>
-
-                        {isFirstTimeAnalysis && (
-                            <MannWhitneyOptions
-                                isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                handleSubmit={handleSubmit}
-                                language={language}
-                                setLanguage={setLanguage}
-                                imageFormat={imageFormat}
-                                setImageFormat={setImageFormat}
-                                useDefaultSettings={useDefaultSettings}
-                                setUseDefaultSettings={setUseDefaultSettings}
-                                labelFontSize={labelFontSize}
-                                setLabelFontSize={setLabelFontSize}
-                                tickFontSize={tickFontSize}
-                                setTickFontSize={setTickFontSize}
-                                imageQuality={imageQuality}
-                                setImageQuality={setImageQuality}
-                                imageSize={imageSize}
-                                setImageSize={setImageSize}
-                                colorPalette={colorPalette}
-                                setColorPalette={setColorPalette}
-                                barWidth={barWidth}
-                                setBarWidth={setBarWidth}
-                                boxWidth={boxWidth}
-                                setBoxWidth={setBoxWidth}
-                                violinWidth={violinWidth}
-                                setViolinWidth={setViolinWidth}
-                                showGrid={showGrid}
-                                setShowGrid={setShowGrid}
-                                t={t}
-                            />
-                        )}
-
-                        <div className="stats-viz-grid">
-                            {results.image_paths.map((path, index) => {
-                                const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
-
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(imageUrl);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement("a");
-                                        link.href = url;
-                                        link.download =
-                                            path.split("/").pop() ||
-                                            `mannwhitney_visualization_${index + 1}.png`;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error("Download failed:", error);
-                                        alert(
-                                            language === "বাংলা"
-                                                ? "ডাউনলোড ব্যর্থ হয়েছে"
-                                                : "Download failed"
-                                        );
-                                    }
-                                };
-
-                                return (
-                                    <div key={`${index}-${cacheBuster}`} className="stats-image-card">
-                                        <div className="stats-image-wrapper">
-                                            <img
-                                                src={imageUrl}
-                                                alt={`${t.mannwhitneyTitle} visualization ${index + 1}`}
-                                                className="stats-image"
-                                            />
-                                            <button
-                                                onClick={handleDownload}
-                                                className="stats-download-btn"
-                                                title={
-                                                    language === "বাংলা"
-                                                        ? `ছবি ${index + 1} ডাউনলোড করুন`
-                                                        : `Download Image ${index + 1}`
-                                                }
-                                            >
-                                                <svg
-                                                    className="stats-download-icon"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const renderWilcoxonResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'বাংলা') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return (
-                <div className="stats-loading">
-                    <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-                </div>
-            );
-        }
-
-        const cacheBuster = results._timestamp || Date.now();
-
-        const handleSaveResult = async () => {
-            try {
-                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        image_paths: results.image_paths,
-                        user_id: user_id,
-                        test_name: testType,
-                        filename: filename,
-                    }),
-                });
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Result saved successfully:', data);
-                } else {
-                    console.error('Error saving result:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error saving result:', error);
-            }
-        };
-
-        return (
-            <div className="stats-results-container stats-fade-in">
-                {/* Header Section */}
-                <div className="stats-header">
-                    <h2 className="stats-title">{t.wilcoxonTitle}</h2>
-                    <button onClick={handleSaveResult} className="stats-save-btn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2">
-                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-                            <polyline points="17 21 17 13 7 13 7 21"/>
-                            <polyline points="7 3 7 8 15 8"/>
-                        </svg>
-                        {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
-                    </button>
-                </div>
-
-                {/* Results Table */}
-                <div className="stats-results-table-wrapper">
-                    <table className="stats-results-table">
-                        <thead>
-                            <tr>
-                                <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                                <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {columns && columns[0] && (
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}
-                                    </td>
-                                    <td className="stats-table-value">
-                                        {columns[0]}
-                                        {columns[1] && ` ${language === 'বাংলা' ? 'এবং' : 'and'} ${columns[1]}`}
-                                    </td>
-                                </tr>
-                            )}
-                            {results?.statistic !== undefined && (
-                                <tr>
-                                    <td className="stats-table-label">{t.testStatistic}</td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.statistic.toFixed(4))}
-                                    </td>
-                                </tr>
-                            )}
-                            {results?.p_value !== undefined && (
-                                <tr>
-                                    <td className="stats-table-label">{t.pValue}</td>
-                                    <td className="stats-table-value stats-numeric">
-                                        {mapDigitIfBengali(results.p_value.toFixed(6))}
-                                    </td>
-                                </tr>
-                            )}
-                            {results?.p_value !== undefined && (
-                                <tr className="stats-conclusion-row">
-                                    <td className="stats-table-label">
-                                        {language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}
-                                    </td>
-                                    <td className="stats-table-value">
-                                        <div className="stats-conclusion-inline">
-                                            {results.p_value < 0.05 ? (
-                                                <>
-                                                    <svg className="stats-conclusion-icon" fill="none"
-                                                        viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round"
-                                                            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span className="stats-conclusion-text significant">
-                                                        {t.significant}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg className="stats-conclusion-icon" fill="none"
-                                                        viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
-                                                        <path strokeLinecap="round" strokeLinejoin="round"
-                                                            d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <span className="stats-conclusion-text not-significant">
-                                                        {t.notSignificant}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Visualizations Section */}
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="stats-viz-section">
-                        
-                        {/* Header + Options Panel */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between',
-                                    alignItems: 'center', marginBottom: '1rem' }}>
-                            <h3 className="stats-viz-header" style={{ margin: 0 }}>
-                                {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                            </h3>
-
-                            {!isFirstTimeAnalysis && (
-                                <WilcoxonOptions
-                                    language={language}
-                                    setLanguage={setLanguage}
-                                    imageFormat={imageFormat}
-                                    setImageFormat={setImageFormat}
-                                    useDefaultSettings={useDefaultSettings}
-                                    setUseDefaultSettings={setUseDefaultSettings}
-                                    labelFontSize={labelFontSize}
-                                    setLabelFontSize={setLabelFontSize}
-                                    tickFontSize={tickFontSize}
-                                    setTickFontSize={setTickFontSize}
-                                    imageQuality={imageQuality}
-                                    setImageQuality={setImageQuality}
-                                    imageSize={imageSize}
-                                    setImageSize={setImageSize}
-                                    colorPalette={colorPalette}
-                                    setColorPalette={setColorPalette}
-                                    barWidth={barWidth}
-                                    setBarWidth={setBarWidth}
-                                    boxWidth={boxWidth}
-                                    setBoxWidth={setBoxWidth}
-                                    violinWidth={violinWidth}
-                                    setViolinWidth={setViolinWidth}
-                                    t={t}
-                                />
-                            )}
-                        </div>
-
-                        {isFirstTimeAnalysis && (
-                            <WilcoxonOptions
-                                language={language}
-                                setLanguage={setLanguage}
-                                imageFormat={imageFormat}
-                                setImageFormat={setImageFormat}
-                                useDefaultSettings={useDefaultSettings}
-                                setUseDefaultSettings={setUseDefaultSettings}
-                                labelFontSize={labelFontSize}
-                                setLabelFontSize={setLabelFontSize}
-                                tickFontSize={tickFontSize}
-                                setTickFontSize={setTickFontSize}
-                                imageQuality={imageQuality}
-                                setImageQuality={setImageQuality}
-                                imageSize={imageSize}
-                                setImageSize={setImageSize}
-                                colorPalette={colorPalette}
-                                setColorPalette={setColorPalette}
-                                barWidth={barWidth}
-                                setBarWidth={setBarWidth}
-                                boxWidth={boxWidth}
-                                setBoxWidth={setBoxWidth}
-                                violinWidth={violinWidth}
-                                setViolinWidth={setViolinWidth}
-                                t={t}
-                            />
-                        )}
-
-                        {/* Viz Grid */}
-                        <div className="stats-viz-grid">
-                            {results.image_paths.map((path, index) => {
-                                const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
-
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(imageUrl);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        link.href = url;
-                                        const filename = path.split('/').pop() ||
-                                            `${t.wilcoxonTitle}_visualization_${index + 1}.png`;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                };
-
-                                return (
-                                    <div key={`${index}-${cacheBuster}`} className="stats-image-card">
-                                        <div className="stats-image-wrapper">
-                                            <img
-                                                src={imageUrl}
-                                                alt={`${t.wilcoxonTitle} visualization ${index + 1}`}
-                                                className="stats-image"
-                                            />
-                                            <button onClick={handleDownload}
-                                                    className="stats-download-btn"
-                                                    title={language === 'বাংলা'
-                                                        ? `ছবি ${index + 1} ডাউনলোড করুন`
-                                                        : `Download Image ${index + 1}`}
-                                                    aria-label={language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}>
-                                                <svg className="stats-download-icon" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                    <path strokeLinecap="round" strokeLinejoin="round"
-                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
     
     const renderShapiroResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -3102,182 +2454,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                     </div>
                 )}
 
-            </>
-        );
-    };
-
-    const renderAnovaResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">{t.anovaTitle}</h2>
-
-                {columns && columns[0] && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong> {columns[0]}
-                        {columns[1] && ` ${language === 'bn' ? 'এবং' : 'and'} ${columns[1]}`}
-                    </p>
-                )}
-
-                {results?.anova_table && (
-                    <div className="mb-6">
-                        <h3 className="text-xl font-semibold mb-2">{language === 'bn' ? 'ANOVA টেবিল' : 'ANOVA Table'}</h3>
-                        <div
-                            className="overflow-x-auto"
-                            dangerouslySetInnerHTML={{ __html: results.anova_table }}
-                        />
-
-                    </div>
-                )}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <img
-                                        src={`http://127.0.0.1:8000/${path}`}
-                                        alt={`${t.anovaTitle} visualization ${index + 1}`}
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                const blob = await response.blob();
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement('a');
-                                                const filename = path.split('/').pop() || `${t.anovaTitle}_visualization_${index + 1}.png`;
-                                                link.href = url;
-                                                link.download = filename;
-                                                document.body.appendChild(link);
-                                                link.click();
-                                                document.body.removeChild(link);
-                                                window.URL.revokeObjectURL(url);
-                                            } catch (error) {
-                                                console.error('Download failed:', error);
-                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                            }
-                                        }}
-                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const renderAncovaResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {t.tests.ancova || "ANCOVA Test"}
-                </h2>
-
-                {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
-                    </p>
-                )}
-
-                {results.table_html && (
-                    <div
-                        className="bg-white rounded-lg shadow-md p-4 my-4 overflow-x-auto"
-                        dangerouslySetInnerHTML={{ __html: results.table_html }}
-                    />
-                )}
-
-                {results.image_paths?.[0] && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
-                                alt="ANCOVA Plot"
-                                className="w-full h-auto object-contain"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = results.image_paths[0].split('/').pop() || 'ancova_plot.png';
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                }}
-                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                            >
-                                <svg
-                                    className="w-4 h-4 mr-1"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                            </button>
-                        </div>
-                    </div>
-                )}
             </>
         );
     };
