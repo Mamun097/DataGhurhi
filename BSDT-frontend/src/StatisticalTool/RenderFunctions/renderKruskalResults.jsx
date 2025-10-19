@@ -30,7 +30,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         xAxisTickSize: 18,
         yAxisTickSize: 18,
         xAxisBottomMargin: -25,  // ADD THIS LINE (calculated from getXAxisLabelOffset)
-        yAxisLeftMargin: 0,  // ADD THIS LINE
+        yAxisLeftMargin: 10,  // ADD THIS LINE
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
