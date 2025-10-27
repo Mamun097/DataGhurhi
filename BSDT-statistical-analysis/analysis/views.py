@@ -490,6 +490,21 @@ def analyze_data_api(request):
                 print("Selected columns for Chi-Square www :", selected_columns )
                 return process_chi_square(request, df, selected_columns, user_id)
 
+                # categorical_mappings = {}  
+
+                # for col in selected_columns:
+                #     if df[col].dtype == 'object' or pd.api.types.is_categorical_dtype(df[col]):
+                #         df[col], mapping = pd.factorize(df[col])
+                #         categorical_mappings[col] = {i: val for i, val in enumerate(mapping)}
+                #         print(f"Converted column '{col}': {categorical_mappings[col]}")
+
+                # print("Categorical mappings:", categorical_mappings)
+                # selected_columns = [col for col in [col1, col2, col3] if col]
+                # print(f"Selected columns for Chi-Square www : {selected_columns}")
+                
+                # # Pass the mappings to the function
+                # return process_chi_square(request, df, selected_columns, user_id, categorical_mappings)
+
             elif test_type == 'cramers_heatmap':
                 selected_columns = []
                 for key in request.POST:
@@ -3181,80 +3196,387 @@ def process_similarity(request, df, user_id):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
-def process_chi_square(request, df, selected_columns, user_id):
-    from scipy.stats import chi2_contingency
+# def process_chi_square(request, df, selected_columns, user_id):
+#     from scipy.stats import chi2_contingency
    
 
+#     try:
+#         # ── 1) Inputs ──────────────────────────────────────────────────────
+#         lang = (request.POST.get("language", "en") or "en").lower()
+#         is_bn = (lang == "bn")
+#         palette = request.POST.get("palette", "viridis")
+#         image_size = request.POST.get("image_size", "800x600")
+#         try:
+#             width, height = map(int, image_size.lower().split("x"))
+#         except Exception:
+#             width, height = 800, 600
+
+#         # Variables to analyze
+#         vars_list = selected_columns or []
+#         if len(vars_list) < 2:
+#             return JsonResponse({'success': False, 'error': 'Please select at least two categorical variables.'})
+#         # ── 2) Paths & fonts 
+#         plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+#         os.makedirs(plots_dir, exist_ok=True)
+#         uid = str(uuid.uuid4())[:8]
+
+#         # Try Bengali font (safe fallback if missing)
+#         font_path = os.path.join(getattr(settings, "BASE_DIR", ""), 'NotoSansBengali-Regular.ttf')
+#         try:
+#             fm.fontManager.addfont(font_path)
+#             bn_font_name = fm.FontProperties(fname=font_path).get_name()
+#             mpl.rcParams['font.family'] = bn_font_name if is_bn else mpl.rcParams.get('font.family', 'sans-serif')
+#         except Exception:
+#             pass
+#         # PIL font for title
+#         try:
+#             title_font = ImageFont.truetype(font_path, 50  if width >= 800 else 42)
+#         except Exception:
+#             title_font = ImageFont.load_default()
+
+#         # Bengali digit mapping for any overlay text
+#         digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+#         def map_digits(s):
+#             if not is_bn: return s
+#             return str(s).translate(digit_map_bn)
+
+#         # ── 3) Core helpers ────────────────────────────────────────────────
+#         def fnum(x):
+#             if x is None or (isinstance(x, float) and np.isnan(x)): return None
+#             try: return float(x)
+#             except Exception: return None
+
+#         def inum(x):
+#             if x is None or (isinstance(x, float) and np.isnan(x)): return None
+#             try: return int(x)
+#             except Exception:
+#                 try: return int(float(x))
+#                 except Exception: return None
+
+#         def chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True):
+#             s1, s2 = df[a], df[b]
+#             if include_na_as_category:
+#                 s1, s2 = s1.fillna("__NA__"), s2.fillna("__NA__")
+#             elif dropna:
+#                 m = s1.notna() & s2.notna()
+#                 s1, s2 = s1[m], s2[m] 
+#             ct = pd.crosstab(s1, s2, dropna=False)
+#             if ct.shape[0] == 0 or ct.shape[1] == 0:
+#                 return dict(n=0, chi2=np.nan, dof=np.nan, p=np.nan)
+#             yates = yates_for_2x2 and (ct.shape[0] == 2 and ct.shape[1] == 2)
+#             chi2, p, dof, _ = chi2_contingency(ct, correction=yates)
+#             return dict(n=int(ct.values.sum()), chi2=float(chi2), dof=int(dof), p=float(p))
+
+#         def fdr_bh(pvals):
+#             p = np.asarray(pvals, float)
+#             n = p.size
+#             order = np.argsort(p)
+#             ranked = p[order]
+#             adj = np.empty(n, float)
+#             cm = 1.0
+#             for i in range(n-1, -1, -1):
+#                 cm = min(cm, ranked[i] * n / (i+1))
+#                 adj[i] = cm
+#             out = np.empty(n, float)
+#             out[order] = np.minimum(adj, 1.0)
+#             return out
+
+        
+#         def one_block(anchor, do_fdr=True):
+#             others = [c for c in vars_list if c != anchor]
+#             rows = []
+#             for o in others:
+#                 r = chi2_one(anchor, o, dropna=True, include_na_as_category=False, yates_for_2x2=True)
+#                 rows.append({
+#                     "variable1": anchor,
+#                     "variable2": o,
+#                     "chi2": fnum(r["chi2"]),
+#                     "p_value": fnum(r["p"]),
+#                     "dof": inum(r["dof"]),
+#                     "n": inum(r["n"]),
+#                 })
+
+#             if do_fdr and any(row["p_value"] is not None for row in rows):
+#                 ps = np.array([row["p_value"] if row["p_value"] is not None else np.nan for row in rows], float)
+#                 mask = ~np.isnan(ps)
+#                 padj = np.full(len(rows), np.nan, float)
+#                 if mask.any():
+#                     padj[mask] = fdr_bh(ps[mask])
+#                 for i, row in enumerate(rows):
+#                     row["_p_adj_tmp"] = float(padj[i]) if not np.isnan(padj[i]) else None
+#                 rows.sort(key=lambda r: (r["_p_adj_tmp"] is None, r["_p_adj_tmp"] if r["_p_adj_tmp"] is not None else 1.0))
+#                 for row in rows:
+#                     row.pop("_p_adj_tmp", None)
+#             else:
+#                 rows.sort(key=lambda r: (r["p_value"] is None, r["p_value"] if r["p_value"] is not None else 1.0))
+#             return rows
+
+#         blocks, summary_rows = [], []
+#         for anchor in vars_list:
+#             block_rows = one_block(anchor, do_fdr=True)
+#             blocks.append({"anchor": anchor, "rows": block_rows})
+#             summary_rows.extend(block_rows)
+
+        
+#         n = len(vars_list)
+#         P = np.ones((n, n), dtype=float)
+#         for i, a in enumerate(vars_list):
+#             for j in range(i+1, n):
+#                 b = vars_list[j]
+#                 res = chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True)
+#                 P[i, j] = P[j, i] = res["p"] if res["p"] is not None else 1.0
+#         np.fill_diagonal(P, 1.0)
+
+        
+
+#         fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+#         sns.heatmap(
+#             P,
+#             vmin=0, vmax=1,
+#             cmap="coolwarm",
+#             annot=np.round(P, 2),
+#             fmt=".2f",
+#             square=True,
+#             linewidths=0.75,
+#             linecolor="white",
+#             cbar_kws={"label": "p-value"}
+#         )
+#         ax.set_xticks(np.arange(n) + 0.5)
+#         ax.set_yticks(np.arange(n) + 0.5)
+#         ax.set_xticklabels(vars_list, rotation=45, ha="right", fontsize=10)
+#         ax.set_yticklabels(vars_list, rotation=0, fontsize=10)
+#         ax.set_xlabel("")
+#         ax.set_ylabel("")
+#         plt.tight_layout()
+
+#         base_name = f"chi2_pairwise_heatmap_base_{uid}.png"
+#         final_name = f"chi2_pairwise_heatmap_{uid}.png"
+#         base_path = os.path.join(plots_dir, base_name)
+#         final_path = os.path.join(plots_dir, final_name)
+#         plt.savefig(base_path, dpi=300, bbox_inches="tight")
+#         plt.close(fig)
+
+        
+#         base_img = Image.open(base_path).convert("RGB")
+#         bw, bh = base_img.size
+#         pad = 16
+#         title_text = ("p-value pairwise chi-square heatmap"
+#                     if lang != "bn"
+#                     else "p-value জোড়াভিত্তিক কাই-স্কয়ার হিটম্যাপ")
+#         try:
+#             title_font = ImageFont.truetype(font_path, 50 if width >= 800 else 28)
+#         except Exception:
+#             title_font = ImageFont.load_default()
+
+        
+#         # measure
+#         try:
+#             tx0, ty0, tx1, ty1 = title_font.getbbox(title_text)
+#             th = ty1 - ty0
+#             tw = tx1 - tx0
+#         except Exception:
+#             th, tw = 40, 400
+
+#         top_margin = th + 2*pad
+#         canvas = Image.new("RGB", (bw, bh + top_margin), "white")
+#         canvas.paste(base_img, (0, top_margin))
+#         draw2 = ImageDraw.Draw(canvas)
+#         tx = max(0, (bw - tw) // 2)
+#         ty = max(0, (top_margin - th) // 2)
+#         draw2.text((tx, ty), title_text, fill="black", font=title_font)
+#         canvas.save(final_path, format="PNG")
+#         try:
+#             os.remove(base_path)
+#         except Exception:
+#             pass
+
+#         # Public URL for React
+#         base_url = os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+#         heatmap_url = os.path.join(base_url, final_name)
+
+
+#         # ── 6) Table columns for React ─────────────────────────────────────
+#         if is_bn:
+#             table_columns = [
+#                 {"key": "variable1", "label": "ভেরিয়েবল ১"},
+#                 {"key": "variable2", "label": "ভেরিয়েবল ২"},
+#                 {"key": "chi2",      "label": "কাই-স্কয়ার পরিসংখ্যান"},
+#                 {"key": "p_value",   "label": "পি-মান"},
+#                 {"key": "dof",       "label": "স্বাধীনতার মাত্রা"},
+#                 {"key": "n",         "label": "নমুনা"},
+#             ]
+#         else:
+#             table_columns = [
+#                 {"key": "variable1", "label": "Variable 1"},
+#                 {"key": "variable2", "label": "Variable 2"},
+#                 {"key": "chi2",      "label": "Chi-square statistic"},
+#                 {"key": "p_value",   "label": "P-value"},
+#                 {"key": "dof",       "label": "DoF"},
+#                 {"key": "n",         "label": "N"},
+#             ]
+
+#         # ── 7) Response (no heatmap payload; image URL only) ───────────────
+#         return JsonResponse({
+#             "success": True, 
+#             "variables": vars_list,
+#             "table_columns": table_columns,
+#             "summary_rows": summary_rows,  
+#             "blocks": blocks,             
+#             "image_path": heatmap_url     
+#         })
+
+#     except Exception as e:
+#         return JsonResponse({"success": False, "error": str(e)})
+
+
+def process_chi_square(request, df, selected_columns, user_id):
+    from scipy.stats import chi2_contingency
+    import numpy as np
+    import pandas as pd
+    from django.http import JsonResponse
+
     try:
-        # ── 1) Inputs ──────────────────────────────────────────────────────
+        # ── 1) Extract inputs ──────────────────────────────────────────────
         lang = (request.POST.get("language", "en") or "en").lower()
+        if lang not in ('en', 'bn'):
+            lang = 'en'
+        
         is_bn = (lang == "bn")
-        palette = request.POST.get("palette", "viridis")
-        image_size = request.POST.get("image_size", "800x600")
-        try:
-            width, height = map(int, image_size.lower().split("x"))
-        except Exception:
-            width, height = 800, 600
 
         # Variables to analyze
         vars_list = selected_columns or []
         if len(vars_list) < 2:
-            return JsonResponse({'success': False, 'error': 'Please select at least two categorical variables.'})
-        # ── 2) Paths & fonts 
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        uid = str(uuid.uuid4())[:8]
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please select at least two categorical variables.'
+            })
 
-        # Try Bengali font (safe fallback if missing)
-        font_path = os.path.join(getattr(settings, "BASE_DIR", ""), 'NotoSansBengali-Regular.ttf')
-        try:
-            fm.fontManager.addfont(font_path)
-            bn_font_name = fm.FontProperties(fname=font_path).get_name()
-            mpl.rcParams['font.family'] = bn_font_name if is_bn else mpl.rcParams.get('font.family', 'sans-serif')
-        except Exception:
-            pass
-        # PIL font for title
-        try:
-            title_font = ImageFont.truetype(font_path, 50  if width >= 800 else 42)
-        except Exception:
-            title_font = ImageFont.load_default()
+        print(f"[Chi-square] Analyzing {len(vars_list)} variables: {vars_list}")
 
-        # Bengali digit mapping for any overlay text
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def map_digits(s):
-            if not is_bn: return s
-            return str(s).translate(digit_map_bn)
-
-        # ── 3) Core helpers ────────────────────────────────────────────────
+        # ── 2) Core helper functions ───────────────────────────────────────
         def fnum(x):
-            if x is None or (isinstance(x, float) and np.isnan(x)): return None
-            try: return float(x)
-            except Exception: return None
+            """Convert to float, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return float(x)
+            except Exception:
+                return None
 
         def inum(x):
-            if x is None or (isinstance(x, float) and np.isnan(x)): return None
-            try: return int(x)
+            """Convert to int, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return int(x)
             except Exception:
-                try: return int(float(x))
-                except Exception: return None
+                try:
+                    return int(float(x))
+                except Exception:
+                    return None
 
-        def chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True):
-            s1, s2 = df[a], df[b]
+        def chi2_one_pair(var_a, var_b, dropna=True, include_na_as_category=False, yates_for_2x2=True):
+            """
+            Perform chi-square test for one pair of variables.
+            Returns dict with test results and contingency table data.
+            """
+            s1, s2 = df[var_a].copy(), df[var_b].copy()
+            
+            # Handle missing values
             if include_na_as_category:
-                s1, s2 = s1.fillna("__NA__"), s2.fillna("__NA__")
+                s1 = s1.fillna("__NA__")
+                s2 = s2.fillna("__NA__")
             elif dropna:
-                m = s1.notna() & s2.notna()
-                s1, s2 = s1[m], s2[m] 
+                mask = s1.notna() & s2.notna()
+                s1, s2 = s1[mask], s2[mask]
+            
+            # Create contingency table
             ct = pd.crosstab(s1, s2, dropna=False)
+            
             if ct.shape[0] == 0 or ct.shape[1] == 0:
-                return dict(n=0, chi2=np.nan, dof=np.nan, p=np.nan)
+                return {
+                    'n': 0,
+                    'chi2': None,
+                    'dof': None,
+                    'p': None,
+                    'contingency_table': None,
+                    'expected_frequencies': None,
+                    'residuals': None,
+                    'categories_var1': [],
+                    'categories_var2': [],
+                    'var1_categories': [],
+                    'var2_categories': [],
+                    'row_totals': [],
+                    'col_totals': [],
+                    'row_percentages': [],
+                    'col_percentages': []
+                }
+            
+            # Apply Yates' correction for 2x2 tables
             yates = yates_for_2x2 and (ct.shape[0] == 2 and ct.shape[1] == 2)
-            chi2, p, dof, _ = chi2_contingency(ct, correction=yates)
-            return dict(n=int(ct.values.sum()), chi2=float(chi2), dof=int(dof), p=float(p))
+            
+            try:
+                chi2, p, dof, expected = chi2_contingency(ct, correction=yates)
+            except Exception as e:
+                print(f"[Chi-square] Error in chi2_contingency: {e}")
+                return {
+                    'n': 0,
+                    'chi2': None,
+                    'dof': None,
+                    'p': None,
+                    'contingency_table': None,
+                    'expected_frequencies': None,
+                    'residuals': None,
+                    'categories_var1': [],
+                    'categories_var2': [],
+                    'var1_categories': [],
+                    'var2_categories': [],
+                    'row_totals': [],
+                    'col_totals': [],
+                    'row_percentages': [],
+                    'col_percentages': []
+                }
+            
+            # Calculate standardized residuals
+            residuals = (ct.values - expected) / np.sqrt(expected + 1e-10)  # Add small value to avoid division by zero
+            
+            # Get category names (convert to string for JSON serialization)
+            categories_var1 = [str(c) for c in ct.index.tolist()]
+            categories_var2 = [str(c) for c in ct.columns.tolist()]
+            
+            # Calculate row and column totals
+            row_totals = ct.sum(axis=1).tolist()
+            col_totals = ct.sum(axis=0).tolist()
+            
+            # Calculate percentages
+            row_percentages = (ct.div(ct.sum(axis=1), axis=0) * 100).values.tolist()
+            col_percentages = (ct.div(ct.sum(axis=0), axis=1) * 100).values.tolist()
+            
+            # Convert to Python native types for JSON serialization
+            return {
+                'n': int(ct.values.sum()),
+                'chi2': float(chi2),
+                'dof': int(dof),
+                'p': float(p),
+                'contingency_table': [[int(val) if not np.isnan(val) else 0 for val in row] for row in ct.values.tolist()],
+                'expected_frequencies': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in expected.tolist()],
+                'residuals': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in residuals.tolist()],
+                'categories_var1': categories_var1,
+                'categories_var2': categories_var2,
+                'var1_categories': categories_var1,  # Duplicate for backward compatibility
+                'var2_categories': categories_var2,  # Duplicate for backward compatibility
+                'row_totals': [int(val) for val in row_totals],
+                'col_totals': [int(val) for val in col_totals],
+                'row_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in row_percentages],
+                'col_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in col_percentages]
+            }
 
         def fdr_bh(pvals):
+            """Benjamini-Hochberg FDR correction"""
             p = np.asarray(pvals, float)
             n = p.size
+            if n == 0:
+                return np.array([])
             order = np.argsort(p)
             ranked = p[order]
             adj = np.empty(n, float)
@@ -3266,152 +3588,236 @@ def process_chi_square(request, df, selected_columns, user_id):
             out[order] = np.minimum(adj, 1.0)
             return out
 
+        # ── 3) Compute all pairwise tests ──────────────────────────────────
+        n_vars = len(vars_list)
+        pairwise_results = []
+        all_p_values = []
         
-        def one_block(anchor, do_fdr=True):
-            others = [c for c in vars_list if c != anchor]
-            rows = []
-            for o in others:
-                r = chi2_one(anchor, o, dropna=True, include_na_as_category=False, yates_for_2x2=True)
-                rows.append({
-                    "variable1": anchor,
-                    "variable2": o,
-                    "chi2": fnum(r["chi2"]),
-                    "p_value": fnum(r["p"]),
-                    "dof": inum(r["dof"]),
-                    "n": inum(r["n"]),
+        for i in range(n_vars):
+            for j in range(i + 1, n_vars):
+                var1 = vars_list[i]
+                var2 = vars_list[j]
+                
+                # print(f"[Chi-square] Testing {var1} vs {var2}")
+                
+                result = chi2_one_pair(
+                    var1, var2,
+                    dropna=True,
+                    include_na_as_category=False,
+                    yates_for_2x2=True
+                )
+                
+                pairwise_results.append({
+                    'variable1': str(var1),
+                    'variable2': str(var2),
+                    'chi2': fnum(result['chi2']),
+                    'p_value': fnum(result['p']),
+                    'dof': inum(result['dof']),
+                    'n': inum(result['n']),
+                    'contingency_table': result['contingency_table'],
+                    'expected_frequencies': result['expected_frequencies'],
+                    'residuals': result['residuals'],
+                    'categories_var1': result['categories_var1'],
+                    'categories_var2': result['categories_var2'],
+                    'var1_categories': result['var1_categories'],  # For Stacked Bar & Mosaic plots
+                    'var2_categories': result['var2_categories'],  # For Stacked Bar & Mosaic plots
+                    'row_totals': result['row_totals'],
+                    'col_totals': result['col_totals'],
+                    'row_percentages': result['row_percentages'],
+                    'col_percentages': result['col_percentages']
                 })
+                
+                if result['p'] is not None:
+                    all_p_values.append(result['p'])
+                else:
+                    all_p_values.append(np.nan)
 
-            if do_fdr and any(row["p_value"] is not None for row in rows):
-                ps = np.array([row["p_value"] if row["p_value"] is not None else np.nan for row in rows], float)
-                mask = ~np.isnan(ps)
-                padj = np.full(len(rows), np.nan, float)
-                if mask.any():
-                    padj[mask] = fdr_bh(ps[mask])
-                for i, row in enumerate(rows):
-                    row["_p_adj_tmp"] = float(padj[i]) if not np.isnan(padj[i]) else None
-                rows.sort(key=lambda r: (r["_p_adj_tmp"] is None, r["_p_adj_tmp"] if r["_p_adj_tmp"] is not None else 1.0))
-                for row in rows:
-                    row.pop("_p_adj_tmp", None)
-            else:
-                rows.sort(key=lambda r: (r["p_value"] is None, r["p_value"] if r["p_value"] is not None else 1.0))
-            return rows
+        print(f"[Chi-square] Completed {len(pairwise_results)} pairwise tests")
 
-        blocks, summary_rows = [], []
-        for anchor in vars_list:
-            block_rows = one_block(anchor, do_fdr=True)
-            blocks.append({"anchor": anchor, "rows": block_rows})
-            summary_rows.extend(block_rows)
-
+        # ── 4) Apply FDR correction ────────────────────────────────────────
+        p_array = np.array(all_p_values, dtype=float)
+        mask = ~np.isnan(p_array)
         
-        n = len(vars_list)
-        P = np.ones((n, n), dtype=float)
-        for i, a in enumerate(vars_list):
-            for j in range(i+1, n):
-                b = vars_list[j]
-                res = chi2_one(a, b, dropna=True, include_na_as_category=False, yates_for_2x2=True)
-                P[i, j] = P[j, i] = res["p"] if res["p"] is not None else 1.0
-        np.fill_diagonal(P, 1.0)
+        if mask.any():
+            adjusted_p = np.full(len(pairwise_results), np.nan, dtype=float)
+            adjusted_p[mask] = fdr_bh(p_array[mask])
+            
+            for i, result in enumerate(pairwise_results):
+                result['p_adjusted'] = float(adjusted_p[i]) if not np.isnan(adjusted_p[i]) else None
+        else:
+            for result in pairwise_results:
+                result['p_adjusted'] = None
 
-        
-
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.heatmap(
-            P,
-            vmin=0, vmax=1,
-            cmap="coolwarm",
-            annot=np.round(P, 2),
-            fmt=".2f",
-            square=True,
-            linewidths=0.75,
-            linecolor="white",
-            cbar_kws={"label": "p-value"}
+        # Sort by p-value (ascending)
+        pairwise_results.sort(
+            key=lambda r: (r['p_value'] is None, r['p_value'] if r['p_value'] is not None else 1.0)
         )
-        ax.set_xticks(np.arange(n) + 0.5)
-        ax.set_yticks(np.arange(n) + 0.5)
-        ax.set_xticklabels(vars_list, rotation=45, ha="right", fontsize=10)
-        ax.set_yticklabels(vars_list, rotation=0, fontsize=10)
-        ax.set_xlabel("")
-        ax.set_ylabel("")
-        plt.tight_layout()
 
-        base_name = f"chi2_pairwise_heatmap_base_{uid}.png"
-        final_name = f"chi2_pairwise_heatmap_{uid}.png"
-        base_path = os.path.join(plots_dir, base_name)
-        final_path = os.path.join(plots_dir, final_name)
-        plt.savefig(base_path, dpi=300, bbox_inches="tight")
-        plt.close(fig)
-
+        # ── 5) Create p-value matrix for heatmap ───────────────────────────
+        p_matrix = np.ones((n_vars, n_vars), dtype=float)
+        chi2_matrix = np.zeros((n_vars, n_vars), dtype=float)
+        p_adjusted_matrix = np.ones((n_vars, n_vars), dtype=float)
         
-        base_img = Image.open(base_path).convert("RGB")
-        bw, bh = base_img.size
-        pad = 16
-        title_text = ("p-value pairwise chi-square heatmap"
-                    if lang != "bn"
-                    else "p-value জোড়াভিত্তিক কাই-স্কয়ার হিটম্যাপ")
-        try:
-            title_font = ImageFont.truetype(font_path, 50 if width >= 800 else 28)
-        except Exception:
-            title_font = ImageFont.load_default()
-
+        for result in pairwise_results:
+            i = vars_list.index(result['variable1'])
+            j = vars_list.index(result['variable2'])
+            
+            p_val = result['p_value'] if result['p_value'] is not None else 1.0
+            p_matrix[i, j] = p_val
+            p_matrix[j, i] = p_val
+            
+            chi2_val = result['chi2'] if result['chi2'] is not None else 0.0
+            chi2_matrix[i, j] = chi2_val
+            chi2_matrix[j, i] = chi2_val
+            
+            p_adj_val = result['p_adjusted'] if result['p_adjusted'] is not None else 1.0
+            p_adjusted_matrix[i, j] = p_adj_val
+            p_adjusted_matrix[j, i] = p_adj_val
         
-        # measure
-        try:
-            tx0, ty0, tx1, ty1 = title_font.getbbox(title_text)
-            th = ty1 - ty0
-            tw = tx1 - tx0
-        except Exception:
-            th, tw = 40, 400
+        np.fill_diagonal(p_matrix, 1.0)
+        np.fill_diagonal(chi2_matrix, 0.0)
+        np.fill_diagonal(p_adjusted_matrix, 1.0)
 
-        top_margin = th + 2*pad
-        canvas = Image.new("RGB", (bw, bh + top_margin), "white")
-        canvas.paste(base_img, (0, top_margin))
-        draw2 = ImageDraw.Draw(canvas)
-        tx = max(0, (bw - tw) // 2)
-        ty = max(0, (top_margin - th) // 2)
-        draw2.text((tx, ty), title_text, fill="black", font=title_font)
-        canvas.save(final_path, format="PNG")
-        try:
-            os.remove(base_path)
-        except Exception:
-            pass
+        # ── 6) Prepare variable-level statistics ──────────────────────────
+        variable_stats = []
+        
+        for var in vars_list:
+            col_data = df[var].dropna()
+            value_counts = col_data.value_counts()
+            
+            variable_stats.append({
+                'variable': str(var),
+                'n_categories': int(len(value_counts)),
+                'n_observations': int(len(col_data)),
+                'n_missing': int(df[var].isna().sum()),
+                'categories': [str(c) for c in value_counts.index.tolist()],
+                'frequencies': [int(f) for f in value_counts.values.tolist()],
+                'percentages': [float(p) for p in (value_counts / len(col_data) * 100).values.tolist()]
+            })
 
-        # Public URL for React
-        base_url = os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        heatmap_url = os.path.join(base_url, final_name)
+        # ── 7) Create blocks (one anchor variable at a time) ──────────────
+        blocks = []
+        
+        for anchor in vars_list:
+            block_results = []
+            
+            for result in pairwise_results:
+                if result['variable1'] == anchor:
+                    block_results.append(result)
+                elif result['variable2'] == anchor:
+                    # Swap variables so anchor is always first
+                    swapped_result = {
+                        'variable1': result['variable2'],
+                        'variable2': result['variable1'],
+                        'chi2': result['chi2'],
+                        'p_value': result['p_value'],
+                        'p_adjusted': result['p_adjusted'],
+                        'dof': result['dof'],
+                        'n': result['n'],
+                        'contingency_table': result['contingency_table'],
+                        'expected_frequencies': result['expected_frequencies'],
+                        'residuals': result['residuals'],
+                        'categories_var1': result['categories_var2'],
+                        'categories_var2': result['categories_var1'],
+                        'var1_categories': result['var2_categories'],
+                        'var2_categories': result['var1_categories'],
+                        'row_totals': result['col_totals'],
+                        'col_totals': result['row_totals'],
+                        'row_percentages': result['col_percentages'],
+                        'col_percentages': result['row_percentages']
+                    }
+                    block_results.append(swapped_result)
+            
+            blocks.append({
+                'anchor': str(anchor),
+                'results': block_results
+            })
 
-
-        # ── 6) Table columns for React ─────────────────────────────────────
+        # ── 8) Prepare table columns for frontend ─────────────────────────
         if is_bn:
             table_columns = [
                 {"key": "variable1", "label": "ভেরিয়েবল ১"},
                 {"key": "variable2", "label": "ভেরিয়েবল ২"},
-                {"key": "chi2",      "label": "কাই-স্কয়ার পরিসংখ্যান"},
-                {"key": "p_value",   "label": "পি-মান"},
-                {"key": "dof",       "label": "স্বাধীনতার মাত্রা"},
-                {"key": "n",         "label": "নমুনা"},
+                {"key": "chi2", "label": "কাই-স্কয়ার পরিসংখ্যান"},
+                {"key": "p_value", "label": "পি-মান"},
+                {"key": "p_adjusted", "label": "সমন্বিত পি-মান"},
+                {"key": "dof", "label": "স্বাধীনতার মাত্রা"},
+                {"key": "n", "label": "নমুনা"},
             ]
         else:
             table_columns = [
                 {"key": "variable1", "label": "Variable 1"},
                 {"key": "variable2", "label": "Variable 2"},
-                {"key": "chi2",      "label": "Chi-square statistic"},
-                {"key": "p_value",   "label": "P-value"},
-                {"key": "dof",       "label": "DoF"},
-                {"key": "n",         "label": "N"},
+                {"key": "chi2", "label": "Chi² Statistic"},
+                {"key": "p_value", "label": "P-value"},
+                {"key": "p_adjusted", "label": "Adjusted P-value"},
+                {"key": "dof", "label": "DoF"},
+                {"key": "n", "label": "N"},
             ]
 
-        # ── 7) Response (no heatmap payload; image URL only) ───────────────
-        return JsonResponse({
-            "success": True, 
-            "variables": vars_list,
-            "table_columns": table_columns,
-            "summary_rows": summary_rows,  
-            "blocks": blocks,             
-            "image_path": heatmap_url     
-        })
+        # ── 9) Prepare plot data for visualizations ───────────────────────
+        # Prepare data for heatmap and other plots
+        plot_data = []
+        for i, var1 in enumerate(vars_list):
+            for j, var2 in enumerate(vars_list):
+                if i != j:
+                    # Find the corresponding result
+                    result = None
+                    for r in pairwise_results:
+                        if (r['variable1'] == var1 and r['variable2'] == var2) or \
+                           (r['variable1'] == var2 and r['variable2'] == var1):
+                            result = r
+                            break
+                    
+                    if result:
+                        plot_data.append({
+                            'category': f"{var1}",
+                            'variable': f"{var2}",
+                            'p_value': result['p_value'],
+                            'chi2': result['chi2'],
+                            'p_adjusted': result['p_adjusted']
+                        })
+
+        # ── 10) Prepare final response ─────────────────────────────────────
+        test_name = 'Chi-square Test of Independence' if lang == 'en' else 'কাই-স্কয়ার স্বাধীনতা পরীক্ষা'
+        
+        response_data = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'n_variables': int(n_vars),
+            'n_comparisons': int(len(pairwise_results)),
+            'variables': [str(v) for v in vars_list],
+            'variable_stats': variable_stats,
+            'pairwise_results': pairwise_results,
+            'blocks': blocks,
+            'p_value_matrix': [[float(val) for val in row] for row in p_matrix.tolist()],
+            'chi2_matrix': [[float(val) for val in row] for row in chi2_matrix.tolist()],
+            'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
+            'plot_data': plot_data,
+            'table_columns': table_columns,
+            'metadata': {
+                'fdr_correction': 'Benjamini-Hochberg',
+                'yates_correction': True,
+                'alpha': 0.05,
+                'total_observations': int(len(df))
+            }
+        }
+
+        print(f"[Chi-square] Response prepared successfully with {len(pairwise_results)} comparisons")
+        return JsonResponse(response_data)
 
     except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
+        import traceback
+        error_msg = str(e)
+        traceback_msg = traceback.format_exc()
+        print(f"[Chi-square] Error: {error_msg}")
+        print(f"[Chi-square] Traceback: {traceback_msg}")
+        return JsonResponse({
+            'success': False, 
+            'error': error_msg,
+            'traceback': traceback_msg
+        })
 
 def process_cramers_heatmap(request, selected_columns, df, user_id):
     
