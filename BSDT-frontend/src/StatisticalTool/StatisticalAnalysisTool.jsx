@@ -34,7 +34,7 @@ import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 import * as XLSX from "xlsx";
 
-import renderKruskalResults from './RenderFunctions/renderKruskalResults';
+import renderKruskalResults from './RenderFunctions/RenderKruskal/renderKruskalResults';
 import renderChiSquareResults from './RenderFunctions/RenderChiSquare/renderChiSquareResults';
 import CustomizationOverlay from './RenderFunctions/CustomizationOverlay/CustomizationOverlay';
 import renderMannWhitneyResults from './RenderFunctions/renderMannWhitneyResults';

@@ -544,20 +544,20 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             />
                                         </div> */}
 
-                                {plotType!='Grouped Bar' && (
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.legendPosition}
-                                        onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                    >
-                                        <option value="right">{language === 'বাংলা' ? 'ডান' : 'Right'}</option>
-                                        <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
-                                    </select>
-                                </div>)}
+                                {(plotType != 'Grouped Bar' || plotType!='Stacked Bar') && (
+                                    <div className="setting-group">
+                                        <label className="setting-label">
+                                            {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
+                                        </label>
+                                        <select
+                                            className="setting-select"
+                                            value={settings.legendPosition}
+                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
+                                        >
+                                            <option value="right">{language === 'বাংলা' ? 'ডান' : 'Right'}</option>
+                                            <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
+                                        </select>
+                                    </div>)}
                             </>
                         )}
 
@@ -599,16 +599,16 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </div>)}
 
                         {plotType === 'Heatmap' &&
-                        (<div className="setting-group">
-                            <label className="setting-checkbox-label">
-                                <input
-                                    type="checkbox"
-                                    checked={settings.cellBorderOn}
-                                    onChange={(e) => handleChange('cellBorderOn', e.target.checked)}
-                                />
-                                <span>{language === 'বাংলা' ? 'সেল বর্ডার চালু' : 'Cell Border On'}</span>
-                            </label>
-                        </div>)}
+                            (<div className="setting-group">
+                                <label className="setting-checkbox-label">
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.cellBorderOn}
+                                        onChange={(e) => handleChange('cellBorderOn', e.target.checked)}
+                                    />
+                                    <span>{language === 'বাংলা' ? 'সেল বর্ডার চালু' : 'Cell Border On'}</span>
+                                </label>
+                            </div>)}
 
                         {settings.cellBorderOn && (
                             <>
@@ -825,7 +825,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {plotType === 'Stacked Bar' && (
                         <>
                             {/* Stack Mode Selection */}
-                            <div className="customization-section">
+                            {/* <div className="customization-section">
                                 <h4 className="section-title">
                                     {language === 'বাংলা' ? 'স্ট্যাক মোড' : 'Stack Mode'}
                                 </h4>
@@ -869,7 +869,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             : 'Percentage mode shows proportional distribution'}
                                     </p>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Color Scheme Selection */}
                             <div className="customization-section">
@@ -989,7 +989,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </div>
 
                             {/* Bar Settings */}
-                            <div className="customization-section">
+                            {/* <div className="customization-section">
                                 <h4 className="section-title">
                                     {language === 'বাংলা' ? 'বার সেটিংস' : 'Bar Settings'}
                                 </h4>
@@ -1025,10 +1025,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     />
                                     <span className="range-value">{settings.animationDuration}ms</span>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Baseline Settings */}
-                            <div className="customization-section">
+                            {/* <div className="customization-section">
                                 <h4 className="section-title">
                                     {language === 'বাংলা' ? 'বেসলাইন সেটিংস' : 'Baseline Settings'}
                                 </h4>
@@ -1082,10 +1082,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         </div>
                                     </>
                                 )}
-                            </div>
+                            </div> */}
 
                             {/* Grid Customization */}
-                            <div className="customization-section">
+                            {/* <div className="customization-section">
                                 <h4 className="section-title">
                                     {language === 'বাংলা' ? 'গ্রিড কাস্টমাইজেশন' : 'Grid Customization'}
                                 </h4>
@@ -1111,7 +1111,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         <span>{language === 'বাংলা' ? 'উল্লম্ব গ্রিড' : 'Vertical Grid'}</span>
                                     </label>
                                 </div>
-                            </div>
+                            </div> */}
 
                             {/* Variable Pair Selection */}
                             <div className="customization-section">
@@ -1146,13 +1146,13 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     }}>
                                         {language === 'বাংলা'
                                             ? 'স্বয়ংক্রিয় মোড প্রথম উল্লেখযোগ্য জোড়া নির্বাচন করে'
-                                            : 'Auto mode selects the first significant pair'}
+                                            : '★ indicates significant pairs (p < 0.05). Auto mode selects the first significant pair.'}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Legend Customization */}
-                            <div className="customization-section">
+                            {/* <div className="customization-section">
                                 <h4 className="section-title">
                                     {language === 'বাংলা' ? 'লেজেন্ড কাস্টমাইজেশন' : 'Legend Customization'}
                                 </h4>
@@ -1185,7 +1185,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         />
                                     </div>
                                 )}
-                            </div>
+                            </div> */}
                         </>
                     )}
 

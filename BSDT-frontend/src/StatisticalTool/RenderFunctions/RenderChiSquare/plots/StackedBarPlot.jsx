@@ -1,16 +1,16 @@
 import React, { useState, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 
-const StackedBarPlot = ({ 
-    results, 
-    language, 
-    settings: propSettings, 
-    onSettingsChange, 
-    openCustomization, 
-    handleDownload, 
-    downloadMenuOpen, 
-    setDownloadMenuOpen, 
-    chartRef 
+const StackedBarPlot = ({
+    results,
+    language,
+    settings: propSettings,
+    onSettingsChange,
+    openCustomization,
+    handleDownload,
+    downloadMenuOpen,
+    setDownloadMenuOpen,
+    chartRef
 }) => {
     const t = (en, bn) => (language === 'bn' ? bn : en);
 
@@ -52,18 +52,20 @@ const StackedBarPlot = ({
             plotBorderOn: false,
             barBorderOn: false,
             dataLabelsOn: true,
-            labelType: 'percentage', // 'percentage', 'count', 'both'
+            labelType: 'percentage',
             labelSize: 11,
             labelColor: 'white',
             labelBold: true,
+            barWidth: 0.7,
             elementWidth: 0.7,
             legendOn: true,
-            legendPosition: 'right', // 'right', 'bottom', 'top'
+            legendPosition: 'right',
             legendTitle: 'Categories',
             colorScheme: 'categorical',
             categoryColors: defaultColors,
-            orientation: 'vertical', // 'vertical', 'horizontal'
-            stackMode: 'percentage', // 'percentage', 'count'
+            variableLabels: [],
+            orientation: 'vertical',
+            stackMode: 'percentage',
             showBaseline: true,
             baselineColor: '#1f2937',
             baselineWidth: 2,
@@ -84,25 +86,21 @@ const StackedBarPlot = ({
             return { data: [], categories: [] };
         }
 
-        // Use selected pair or first significant pair or first pair
         let selectedResult;
         if (settings.selectedPair) {
             selectedResult = results.pairwise_results.find(
                 r => `${r.variable1}-${r.variable2}` === settings.selectedPair
             );
         }
-        
+
         if (!selectedResult) {
-            selectedResult = results.pairwise_results.find(r => r.p_value < 0.05) 
+            selectedResult = results.pairwise_results.find(r => r.p_value < 0.05)
                 || results.pairwise_results[0];
         }
 
-        // Mock data structure - replace with actual contingency table from backend
-        // In real implementation, get from selectedResult.contingency_table
         const var1Categories = selectedResult.var1_categories || ['Category A', 'Category B', 'Category C', 'Category D'];
         const var2Categories = selectedResult.var2_categories || ['Type 1', 'Type 2', 'Type 3'];
-        
-        // Mock contingency table - replace with actual data
+
         const contingencyTable = selectedResult.contingency_table || [
             [45, 30, 25],
             [35, 40, 25],
@@ -110,24 +108,28 @@ const StackedBarPlot = ({
             [40, 35, 25]
         ];
 
-        // Calculate data for stacked bars
-        const chartData = var1Categories.map((category, i) => {
+        // Use custom variable labels if available
+        const displayVar1Categories = settings.variableLabels && settings.variableLabels.length >= var1Categories.length
+            ? settings.variableLabels.slice(0, var1Categories.length)
+            : var1Categories;
+
+        const chartData = displayVar1Categories.map((category, i) => {
             const row = contingencyTable[i];
             const rowTotal = row.reduce((a, b) => a + b, 0);
-            
+
             const dataPoint = { name: category };
-            
+
             if (settings.stackMode === 'percentage') {
                 var2Categories.forEach((cat, j) => {
                     dataPoint[cat] = rowTotal > 0 ? ((row[j] / rowTotal) * 100) : 0;
-                    dataPoint[`${cat}_count`] = row[j]; // Store count for tooltips
+                    dataPoint[`${cat}_count`] = row[j];
                 });
             } else {
                 var2Categories.forEach((cat, j) => {
                     dataPoint[cat] = row[j];
                 });
             }
-            
+
             return dataPoint;
         });
 
@@ -143,7 +145,6 @@ const StackedBarPlot = ({
 
     const chartData = generateStackedBarData();
 
-    // Color schemes
     const getColorScheme = (scheme) => {
         const schemes = {
             categorical: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'],
@@ -157,8 +158,8 @@ const StackedBarPlot = ({
         return schemes[scheme] || schemes.categorical;
     };
 
-    const colors = settings.colorScheme === 'custom' 
-        ? settings.categoryColors 
+    const colors = settings.colorScheme === 'custom'
+        ? settings.categoryColors
         : getColorScheme(settings.colorScheme);
 
     const getDimensions = (dimensionString) => {
@@ -196,7 +197,6 @@ const StackedBarPlot = ({
 
     const getGridStroke = (gridColor) => gridColor === 'black' ? '#000000' : '#e5e7eb';
 
-    // Enhanced Custom Tooltip
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             const total = payload.reduce((sum, entry) => {
@@ -208,172 +208,158 @@ const StackedBarPlot = ({
 
             return (
                 <div style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                    padding: '20px',
+                    backgroundColor: 'white',
+                    padding: '16px',
                     border: '2px solid #e5e7eb',
-                    borderRadius: '16px',
-                    boxShadow: '0 12px 32px rgba(0,0,0,0.15)',
-                    minWidth: '260px',
-                    backdropFilter: 'blur(10px)'
+                    borderRadius: '12px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    minWidth: '200px',
+                    fontFamily: settings.fontFamily
                 }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginBottom: '16px',
-                        paddingBottom: '12px',
-                        borderBottom: '2px solid #e5e7eb'
+                    <p style={{
+                        margin: '0 0 12px 0',
+                        fontWeight: 'bold',
+                        fontSize: '15px',
+                        color: '#1f2937',
+                        borderBottom: '2px solid #e5e7eb',
+                        paddingBottom: '8px'
                     }}>
-                        <p style={{
-                            margin: 0,
-                            fontWeight: '700',
-                            fontSize: '16px',
-                            color: '#1f2937',
-                            fontFamily: settings.fontFamily
-                        }}>
-                            {label}
-                        </p>
-                        <span style={{
-                            backgroundColor: '#f3f4f6',
-                            padding: '4px 10px',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                            fontWeight: '600',
-                            color: '#6b7280'
-                        }}>
-                            Total: {total}
-                        </span>
-                    </div>
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {payload.reverse().map((entry, index) => {
-                            const count = settings.stackMode === 'percentage' 
-                                ? entry.payload[`${entry.name}_count`]
-                                : entry.value;
-                            const percentage = ((count / total) * 100).toFixed(1);
-                            
-                            return (
-                                <div key={index} style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    gap: '16px',
-                                    padding: '8px 12px',
-                                    backgroundColor: '#f9fafb',
-                                    borderRadius: '10px',
-                                    transition: 'all 0.2s',
-                                    border: '1px solid transparent'
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
-                                        <div style={{
-                                            width: '16px',
-                                            height: '16px',
-                                            backgroundColor: entry.color,
-                                            borderRadius: '4px',
-                                            boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
-                                            border: '2px solid white'
-                                        }} />
-                                        <span style={{ 
-                                            fontSize: '14px', 
-                                            color: '#374151',
-                                            fontWeight: '500',
-                                            fontFamily: settings.fontFamily
-                                        }}>
-                                            {entry.name}
-                                        </span>
-                                    </div>
-                                    <div style={{ 
-                                        display: 'flex', 
-                                        flexDirection: 'column', 
-                                        alignItems: 'flex-end',
-                                        gap: '2px'
-                                    }}>
-                                        <span style={{
-                                            fontWeight: '700',
-                                            color: entry.color,
-                                            fontSize: '15px',
-                                            fontFamily: settings.fontFamily
-                                        }}>
-                                            {count}
-                                        </span>
-                                        <span style={{
-                                            fontSize: '12px',
-                                            color: '#9ca3af',
-                                            fontWeight: '600'
-                                        }}>
-                                            {percentage}%
-                                        </span>
-                                    </div>
+                        {label}
+                    </p>
+                    {payload.reverse().map((entry, index) => {
+                        const count = settings.stackMode === 'percentage'
+                            ? entry.payload[`${entry.name}_count`]
+                            : entry.value;
+                        const percentage = ((count / total) * 100).toFixed(1);
+
+                        return (
+                            <div key={`tooltip-${index}`} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                margin: '8px 0',
+                                gap: '16px'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <div style={{
+                                        width: '12px',
+                                        height: '12px',
+                                        backgroundColor: entry.color,
+                                        borderRadius: '3px'
+                                    }} />
+                                    <span style={{ fontSize: '13px', color: '#6b7280' }}>
+                                        {entry.name}:
+                                    </span>
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                    <span style={{
+                                        fontWeight: '600',
+                                        color: entry.color,
+                                        fontSize: '14px'
+                                    }}>
+                                        {count}
+                                    </span>
+                                    <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                                        ({percentage}%)
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             );
         }
         return null;
     };
 
-    // Enhanced Custom Legend
     const CustomLegend = ({ payload }) => {
-        const positions = {
-            right: { flexDirection: 'column', justifyContent: 'flex-start', padding: '16px 0' },
-            bottom: { flexDirection: 'row', justifyContent: 'center', padding: '20px 0', flexWrap: 'wrap' },
-            top: { flexDirection: 'row', justifyContent: 'center', padding: '0 0 20px 0', flexWrap: 'wrap' }
-        };
+        if (!payload || !Array.isArray(payload) || payload.length === 0) {
+            return null;
+        }
 
+        if (settings.legendPosition === 'right') {
+            return (
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    padding: '16px',
+                    background: '#f9fafb',
+                    borderRadius: '8px',
+                    border: '1px solid #e5e7eb'
+                }}>
+                    {settings.legendTitle && (
+                        <div style={{
+                            fontSize: '14px',
+                            fontWeight: '700',
+                            color: '#1f2937',
+                            marginBottom: '4px',
+                            fontFamily: settings.fontFamily,
+                            borderBottom: '2px solid #e5e7eb',
+                            paddingBottom: '8px'
+                        }}>
+                            {settings.legendTitle}
+                        </div>
+                    )}
+                    {payload.map((entry, index) => (
+                        <div key={`legend-${index}`} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '6px 8px',
+                            background: 'white',
+                            borderRadius: '6px',
+                            border: '1px solid #e5e7eb'
+                        }}>
+                            <div style={{
+                                width: '14px',
+                                height: '14px',
+                                backgroundColor: entry.color,
+                                borderRadius: '3px'
+                            }} />
+                            <span style={{
+                                fontSize: '13px',
+                                color: '#374151',
+                                fontWeight: '500',
+                                fontFamily: settings.fontFamily
+                            }}>
+                                {entry.value}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            );
+        }
+
+        // Bottom or Top position
         return (
             <div style={{
                 display: 'flex',
-                gap: settings.legendPosition === 'right' ? '12px' : '16px',
-                ...positions[settings.legendPosition]
+                justifyContent: 'center',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: '8px 0'
             }}>
-                {settings.legendTitle && settings.legendPosition === 'right' && (
-                    <div style={{
-                        fontWeight: '700',
-                        fontSize: '14px',
-                        color: '#1f2937',
-                        marginBottom: '8px',
-                        fontFamily: settings.fontFamily
-                    }}>
-                        {settings.legendTitle}
-                    </div>
-                )}
                 {payload.map((entry, index) => (
-                    <div key={index} style={{
+                    <div key={`legend-${index}`} style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '10px',
-                        padding: '8px 14px',
-                        background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
-                        borderRadius: '10px',
-                        border: '1.5px solid #e5e7eb',
-                        transition: 'all 0.3s ease',
-                        cursor: 'pointer',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
-                        e.currentTarget.style.borderColor = entry.color;
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.05)';
-                        e.currentTarget.style.borderColor = '#e5e7eb';
+                        gap: '6px',
+                        padding: '4px 10px',
+                        background: '#f9fafb',
+                        borderRadius: '6px',
+                        border: '1px solid #e5e7eb'
                     }}>
                         <div style={{
-                            width: '18px',
-                            height: '18px',
+                            width: '10px',
+                            height: '10px',
                             backgroundColor: entry.color,
-                            borderRadius: '6px',
-                            boxShadow: `0 3px 8px ${entry.color}40`,
-                            border: '2px solid white'
+                            borderRadius: '2px'
                         }} />
                         <span style={{
-                            fontSize: '13px',
+                            fontSize: '11px',
                             color: '#374151',
-                            fontWeight: '600',
+                            fontWeight: '500',
                             fontFamily: settings.fontFamily
                         }}>
                             {entry.value}
@@ -384,17 +370,13 @@ const StackedBarPlot = ({
         );
     };
 
-    // Custom Label for bars
     const renderCustomLabel = (props) => {
         const { x, y, width, height, value, index, name } = props;
-        
+
         if (!settings.dataLabelsOn || height < 25 || width < 40) {
             return null;
         }
 
-        const radius = settings.barRadius || 0;
-        const isTop = index === chartData.categories.length - 1;
-        
         let labelText = '';
         if (settings.labelType === 'percentage') {
             labelText = `${value.toFixed(1)}%`;
@@ -435,8 +417,7 @@ const StackedBarPlot = ({
                 textAlign: 'center',
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 borderRadius: '16px',
-                color: 'white',
-                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.3)'
+                color: 'white'
             }}>
                 <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: '0 auto 16px' }}>
                     <rect x="3" y="3" width="7" height="7"></rect>
@@ -454,147 +435,70 @@ const StackedBarPlot = ({
         );
     }
 
+    // Calculate chart margins based on settings
+    const getChartMargins = () => {
+        const baseMargin = {
+            top: 30,
+            right: 20,
+            left: 60,
+            bottom: 80
+        };
+
+        if (settings.captionOn) {
+            baseMargin.top += settings.captionTopMargin + settings.captionSize;
+        }
+
+        if (settings.legendOn && settings.legendPosition === 'top') {
+            baseMargin.top += 40;
+        }
+
+        if (settings.legendOn && settings.legendPosition === 'bottom') {
+            baseMargin.bottom += 40;
+        }
+
+        if (settings.legendOn && settings.legendPosition === 'right') {
+            baseMargin.right = 180;
+        }
+
+        return baseMargin;
+    };
+
+    const chartMargins = getChartMargins();
+
     return (
         <div style={{ position: 'relative', width: '100%' }}>
             {/* Control Buttons */}
-            <div style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                display: 'flex',
-                gap: '8px',
-                zIndex: 10
-            }}>
-                <button
-                    onClick={() => openCustomization('stacked')}
-                    style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        color: 'white',
-                        padding: '10px 16px',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                        transition: 'all 0.3s ease',
-                        transform: 'translateY(0)'
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'translateY(-2px)';
-                        e.currentTarget.style.boxShadow = '0 6px 16px rgba(102, 126, 234, 0.5)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'translateY(0)';
-                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.4)';
-                    }}
-                >
+            <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                <button className="customize-btn" onClick={() => openCustomization('stacked')}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                     </svg>
-                    {t('Customize', 'কাস্টমাইজ')}
+                    Customize
                 </button>
                 <div style={{ position: 'relative' }}>
                     <button
+                        className="customize-btn"
                         onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        style={{
-                            background: 'white',
-                            border: '2px solid #e5e7eb',
-                            color: '#374151',
-                            padding: '10px 16px',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            transition: 'all 0.3s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.borderColor = '#3b82f6';
-                            e.currentTarget.style.color = '#3b82f6';
-                            e.currentTarget.style.transform = 'translateY(-2px)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.borderColor = '#e5e7eb';
-                            e.currentTarget.style.color = '#374151';
-                            e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
-                        }}
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        {t('Download', 'ডাউনলোড')}
+                        Download
                     </button>
                     {downloadMenuOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            marginTop: '8px',
-                            background: 'white',
-                            border: '2px solid #e5e7eb',
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                            overflow: 'hidden',
-                            zIndex: 100,
-                            minWidth: '140px'
-                        }}>
-                            {['PNG', 'JPG', 'JPEG', 'PDF'].map((format, idx) => (
-                                <button
-                                    key={format}
-                                    onClick={() => handleDownload(format.toLowerCase())}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 20px',
-                                        border: 'none',
-                                        background: 'white',
-                                        color: '#374151',
-                                        fontSize: '14px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        transition: 'all 0.2s',
-                                        borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none'
-                                    }}
-                                    onMouseEnter={(e) => {
-                                        e.currentTarget.style.background = '#f3f4f6';
-                                        e.currentTarget.style.color = '#3b82f6';
-                                        e.currentTarget.style.paddingLeft = '24px';
-                                    }}
-                                    onMouseLeave={(e) => {
-                                        e.currentTarget.style.background = 'white';
-                                        e.currentTarget.style.color = '#374151';
-                                        e.currentTarget.style.paddingLeft = '20px';
-                                    }}
-                                >
-                                    {format}
-                                </button>
-                            ))}
+                        <div className="download-menu">
+                            <button onClick={() => handleDownload('png')}>PNG</button>
+                            <button onClick={() => handleDownload('jpg')}>JPG</button>
+                            <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                            <button onClick={() => handleDownload('pdf')}>PDF</button>
                         </div>
                     )}
                 </div>
             </div>
 
             {/* Chart Container */}
-            <div
-                ref={chartRef}
-                style={{
-                    position: 'relative',
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
-                }}
-            >
+            <div ref={chartRef} style={{ position: 'relative' }}>
                 {/* Statistics Header */}
                 <div style={{
                     display: 'flex',
@@ -607,18 +511,18 @@ const StackedBarPlot = ({
                     border: '2px solid #bae6fd'
                 }}>
                     <div>
-                        <h4 style={{ 
-                            margin: '0 0 4px 0', 
-                            fontSize: '14px', 
+                        <h4 style={{
+                            margin: '0 0 4px 0',
+                            fontSize: '14px',
                             color: '#0369a1',
                             fontWeight: '600',
                             fontFamily: settings.fontFamily
                         }}>
                             {t('Analyzing', 'বিশ্লেষণ করা হচ্ছে')}: {chartData.variable1} × {chartData.variable2}
                         </h4>
-                        <p style={{ 
-                            margin: 0, 
-                            fontSize: '12px', 
+                        <p style={{
+                            margin: 0,
+                            fontSize: '12px',
                             color: '#0c4a6e',
                             fontFamily: settings.fontFamily
                         }}>
@@ -637,16 +541,16 @@ const StackedBarPlot = ({
                             borderRadius: '10px',
                             border: '2px solid #0ea5e9'
                         }}>
-                            <div style={{ 
-                                fontSize: '18px', 
-                                fontWeight: '700', 
+                            <div style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
                                 color: '#0369a1',
                                 fontFamily: settings.fontFamily
                             }}>
                                 {chartData.chi2.toFixed(2)}
                             </div>
-                            <div style={{ 
-                                fontSize: '11px', 
+                            <div style={{
+                                fontSize: '11px',
                                 color: '#0c4a6e',
                                 fontWeight: '600'
                             }}>
@@ -660,16 +564,16 @@ const StackedBarPlot = ({
                             borderRadius: '10px',
                             border: `2px solid ${chartData.pValue < 0.05 ? '#16a34a' : '#dc2626'}`
                         }}>
-                            <div style={{ 
-                                fontSize: '18px', 
-                                fontWeight: '700', 
+                            <div style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
                                 color: chartData.pValue < 0.05 ? '#15803d' : '#991b1b',
                                 fontFamily: settings.fontFamily
                             }}>
                                 {chartData.pValue.toFixed(4)}
                             </div>
-                            <div style={{ 
-                                fontSize: '11px', 
+                            <div style={{
+                                fontSize: '11px',
                                 color: chartData.pValue < 0.05 ? '#166534' : '#7f1d1d',
                                 fontWeight: '600'
                             }}>
@@ -682,17 +586,12 @@ const StackedBarPlot = ({
                 <ResponsiveContainer width="100%" height={height}>
                     <BarChart
                         data={chartData.data}
-                        margin={{
-                            top: settings.captionOn ? 60 : 40,
-                            right: settings.legendPosition === 'right' ? 140 : 30,
-                            left: 30,
-                            bottom: 60
-                        }}
-                        style={settings.borderOn ? { border: '3px solid #1f2937', borderRadius: '8px' } : {}}
-                        barGap={8}
-                        barCategoryGap="20%"
+                        margin={chartMargins}
+                        style={settings.borderOn ? { border: '2px solid #1f2937' } : {}}
+                        barGap={4}
+                        barCategoryGap={`${(1 - (settings.barWidth || settings.elementWidth)) * 100}%`}
                     >
-                        {settings.captionOn && (
+                        {settings.captionOn && settings.captionText && (
                             <text
                                 x="50%"
                                 y={settings.captionTopMargin}
@@ -702,6 +601,19 @@ const StackedBarPlot = ({
                             </text>
                         )}
 
+                        {settings.legendOn && (
+                            <Legend
+                                content={<CustomLegend />}
+                                verticalAlign={settings.legendPosition === 'bottom' ? 'bottom' : 'top'}
+                                align={settings.legendPosition === 'right' ? 'right' : 'center'}
+                                wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '0px' : undefined,
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '0px' : undefined
+                                }}
+                                layout={settings.legendPosition === 'right' ? 'vertical' : 'horizontal'}
+                            />
+                        )}
+
                         {settings.gridOn && (
                             <CartesianGrid
                                 strokeDasharray={settings.gridStyle}
@@ -709,6 +621,15 @@ const StackedBarPlot = ({
                                 strokeOpacity={settings.gridOpacity}
                                 vertical={settings.showGridVertical}
                                 horizontal={settings.showGridHorizontal}
+                            />
+                        )}
+
+                        {settings.showBaseline && (
+                            <ReferenceLine
+                                y={0}
+                                stroke={settings.baselineColor}
+                                strokeWidth={settings.baselineWidth}
+                                strokeDasharray="0"
                             />
                         )}
 
@@ -731,7 +652,6 @@ const StackedBarPlot = ({
                                 style: {
                                     fontSize: settings.xAxisTitleSize,
                                     fill: '#1f2937',
-                                    fontWeight: '600',
                                     ...getTextStyle(
                                         settings.xAxisTitleBold,
                                         settings.xAxisTitleItalic,
@@ -741,12 +661,12 @@ const StackedBarPlot = ({
                                 }
                             }}
                             axisLine={{
-                                strokeWidth: settings.showBaseline ? settings.baselineWidth : 2,
-                                stroke: settings.showBaseline ? settings.baselineColor : '#9ca3af'
+                                strokeWidth: (settings.plotBorderOn || settings.borderOn) ? 1 : 2,
+                                stroke: (settings.plotBorderOn || settings.borderOn) ? '#000000' : '#9ca3af'
                             }}
                             tickLine={{
                                 stroke: '#9ca3af',
-                                strokeWidth: 2
+                                strokeWidth: 1
                             }}
                         />
 
@@ -766,7 +686,6 @@ const StackedBarPlot = ({
                                 style: {
                                     fontSize: settings.yAxisTitleSize,
                                     fill: '#1f2937',
-                                    fontWeight: '600',
                                     ...getTextStyle(
                                         settings.yAxisTitleBold,
                                         settings.yAxisTitleItalic,
@@ -776,35 +695,17 @@ const StackedBarPlot = ({
                                 }
                             }}
                             axisLine={{
-                                strokeWidth: settings.showBaseline ? settings.baselineWidth : 2,
-                                stroke: settings.showBaseline ? settings.baselineColor : '#9ca3af'
+                                strokeWidth: (settings.plotBorderOn || settings.borderOn) ? 1 : 2,
+                                stroke: (settings.plotBorderOn || settings.borderOn) ? '#000000' : '#9ca3af'
                             }}
                             tickLine={{
                                 stroke: '#9ca3af',
-                                strokeWidth: 2
+                                strokeWidth: 1
                             }}
                             tickFormatter={(value) => settings.stackMode === 'percentage' ? `${value}%` : value}
                         />
 
-                        <Tooltip 
-                            content={<CustomTooltip />} 
-                            cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} 
-                        />
-
-                        {settings.legendOn && (
-                            <Legend
-                                content={<CustomLegend />}
-                                wrapperStyle={{ 
-                                    paddingTop: settings.legendPosition === 'top' ? '0' : '20px',
-                                    paddingBottom: settings.legendPosition === 'bottom' ? '0' : '0'
-                                }}
-                                verticalAlign={
-                                    settings.legendPosition === 'top' ? 'top' : 
-                                    settings.legendPosition === 'bottom' ? 'bottom' : 'middle'
-                                }
-                                align={settings.legendPosition === 'right' ? 'right' : 'center'}
-                            />
-                        )}
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
 
                         {chartData.categories.map((category, index) => (
                             <Bar
@@ -813,127 +714,56 @@ const StackedBarPlot = ({
                                 stackId="stack"
                                 fill={colors[index % colors.length]}
                                 radius={index === chartData.categories.length - 1 ? [settings.barRadius, settings.barRadius, 0, 0] : [0, 0, 0, 0]}
-                                maxBarSize={80 * settings.elementWidth}
+                                maxBarSize={120}
                                 label={renderCustomLabel}
                                 animationDuration={settings.animationDuration}
-                            >
-                                {chartData.data.map((entry, idx) => (
-                                    <Cell
-                                        key={`cell-${idx}`}
-                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
-                                        strokeWidth={settings.barBorderOn ? 2 : 0}
-                                    />
-                                ))}
-                            </Bar>
+                                stroke={settings.barBorderOn ? '#1f2937' : 'none'}
+                                strokeWidth={settings.barBorderOn ? 2 : 0}
+                            />
                         ))}
                     </BarChart>
                 </ResponsiveContainer>
 
-                {/* Plot Border Overlay */}
+                {/* PLOT BORDER OVERLAY */}
                 {settings.plotBorderOn && (
                     <div style={{
                         position: 'absolute',
-                        top: settings.captionOn ? '60px' : '40px',
-                        left: '90px',
-                        right: settings.legendPosition === 'right' ? '170px' : '30px',
-                        bottom: '100px',
-                        borderTop: '3px solid #1f2937',
-                        borderRight: '3px solid #1f2937',
+                        top: `${chartMargins.top}px`,
+                        left: `${chartMargins.left}px`,
+                        right: `${chartMargins.right}px`,
+                        bottom: `${chartMargins.bottom}px`,
+                        borderTop: '1px solid #000000',
+                        borderRight: '1px solid #000000',
                         pointerEvents: 'none',
                         zIndex: 0
                     }} />
                 )}
             </div>
 
-            {/* Enhanced Info Panel */}
+            {/* Info Panel */}
             <div style={{
                 marginTop: '24px',
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '16px'
+                padding: '20px',
+                background: 'linear-gradient(135deg, #f6f8fb 0%, #e9ecf3 100%)',
+                borderRadius: '12px',
+                border: '2px solid #e5e7eb'
             }}>
-                {/* Information Card */}
-                <div style={{
-                    padding: '20px',
-                    background: 'linear-gradient(135deg, #f6f8fb 0%, #e9ecf3 100%)',
-                    borderRadius: '12px',
-                    border: '2px solid #e5e7eb'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <line x1="12" y1="16" x2="12" y2="12"></line>
-                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                        </svg>
-                        <h4 style={{ margin: 0, color: '#1f2937', fontSize: '16px', fontWeight: '600' }}>
-                            {t('Chart Information', 'চার্ট তথ্য')}
-                        </h4>
-                    </div>
-                    <p style={{ margin: 0, color: '#6b7280', fontSize: '14px', lineHeight: '1.6' }}>
-                        {t(
-                            'This stacked bar chart shows the distribution of categories within each variable. Each segment represents the proportion or count of a specific category, making it easy to compare distributions across variables.',
-                            'এই স্ট্যাকড বার চার্ট প্রতিটি ভেরিয়েবলের মধ্যে ক্যাটাগরির বিতরণ দেখায়। প্রতিটি অংশ একটি নির্দিষ্ট ক্যাটাগরির অনুপাত বা গণনা প্রতিনিধিত্ব করে, যা ভেরিয়েবল জুড়ে বিতরণ তুলনা করা সহজ করে তোলে।'
-                        )}
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <h4 style={{ margin: 0, color: '#1f2937', fontSize: '16px', fontWeight: '600', fontFamily: settings.fontFamily }}>
+                        {t('Chart Information', 'চার্ট তথ্য')}
+                    </h4>
                 </div>
-
-                {/* Key Insights Card */}
-                <div style={{
-                    padding: '20px',
-                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-                    borderRadius: '12px',
-                    border: '2px solid #fbbf24'
-                }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                        <h4 style={{ margin: 0, color: '#92400e', fontSize: '16px', fontWeight: '600' }}>
-                            {t('Key Insights', 'মূল অন্তর্দৃষ্টি')}
-                        </h4>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: chartData.pValue < 0.05 ? '#16a34a' : '#dc2626',
-                                borderRadius: '50%'
-                            }} />
-                            <span style={{ fontSize: '13px', color: '#78350f', fontWeight: '500' }}>
-                                {chartData.pValue < 0.05 
-                                    ? t('Significant association detected', 'উল্লেখযোগ্য সম্পর্ক সনাক্ত করা হয়েছে')
-                                    : t('No significant association', 'কোন উল্লেখযোগ্য সম্পর্ক নেই')
-                                }
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: '#3b82f6',
-                                borderRadius: '50%'
-                            }} />
-                            <span style={{ fontSize: '13px', color: '#78350f', fontWeight: '500' }}>
-                                {t(`${chartData.categories.length} categories analyzed`, `${chartData.categories.length}টি ক্যাটাগরি বিশ্লেষণ করা হয়েছে`)}
-                            </span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <div style={{
-                                width: '8px',
-                                height: '8px',
-                                backgroundColor: '#8b5cf6',
-                                borderRadius: '50%'
-                            }} />
-                            <span style={{ fontSize: '13px', color: '#78350f', fontWeight: '500' }}>
-                                {settings.stackMode === 'percentage' 
-                                    ? t('Showing proportional distribution', 'অনুপাতিক বিতরণ দেখানো হচ্ছে')
-                                    : t('Showing absolute counts', 'পরম গণনা দেখানো হচ্ছে')
-                                }
-                            </span>
-                        </div>
-                    </div>
-                </div>
+                <p style={{ margin: 0, color: '#6b7280', fontSize: '14px', lineHeight: '1.6', fontFamily: settings.fontFamily }}>
+                    {t(
+                        'This stacked bar chart shows the distribution of categories within each variable. Each segment represents the proportion or count of a specific category, making it easy to compare distributions across variables.',
+                        'এই স্ট্যাকড বার চার্ট প্রতিটি ভেরিয়েবলের মধ্যে ক্যাটাগরির বিতরণ দেখায়। প্রতিটি অংশ একটি নির্দিষ্ট ক্যাটাগরির অনুপাত বা গণনা প্রতিনিধিত্ব করে, যা ভেরিয়েবল জুড়ে বিতরণ তুলনা করা সহজ করে তোলে।'
+                    )}
+                </p>
             </div>
         </div>
     );
