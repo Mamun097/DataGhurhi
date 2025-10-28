@@ -5,15 +5,8 @@ import MosaicPlot from './plots/MosaicPlot';
 import StackedBarPlot from './plots/StackedBarPlot';
 import GroupedBarPlot from './plots/GroupedBarPlot';
 import ResidualPlot from './plots/ResidualPlot';
-import {
-    mapDigitIfBengali,
-    formatValue,
-    downloadVariableStatsPDF,
-    downloadPairwiseBlockPNG,
-    downloadPairwiseBlockJPG,
-    downloadPairwiseBlockPDF,
-    downloadAllPairwiseBlocksPDF
-} from './utils'; import html2canvas from 'html2canvas';
+import { mapDigitIfBengali, formatValue, downloadBlockPNG, downloadBlockPDF, downloadAllBlocksPDF } from './utils';
+import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import './ChiSquareResults.css';
 
@@ -25,12 +18,10 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
     const [overlayOpen, setOverlayOpen] = useState(false);
     const [currentPlotType, setCurrentPlotType] = useState('detailed');
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
-    const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
-
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -103,7 +94,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             captionBold: false,
             captionItalic: false,
             captionUnderline: false,
-            captionTopMargin: 0,
+            captionTopMargin: 30,
             colorScheme: 'greens',
             showValues: true,
             valueSize: 16,
@@ -128,14 +119,13 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             legendPosition: 'right',
             borderOn: false,
             metricType: 'p_value',
-            // Additional settings for CustomizationOverlay compatibility
             gridOn: false,
             gridStyle: '3 3',
             gridColor: 'gray',
             gridOpacity: 1.0,
             plotBorderOn: false,
             barBorderOn: false,
-            cellSize: results.variables.length < 5 ? 240 / results.variables.length : results.variables.length < 7 ? 50 : 40,
+            cellSize: results.variables.length < 5 ? 240/results.variables.length: results.variables.length < 7 ? 50 : 40,
             errorBarsOn: false,
             elementWidth: 0.8,
             categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
@@ -148,7 +138,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         };
     };
 
-    // Get all unique variables
     const allVariables = new Set();
     results.pairwise_results.forEach(pair => {
         if (pair && pair.variable1 && pair.variable2) {
@@ -199,11 +188,10 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             legendOn: true,
             categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
             categoryColors: defaultColors,
-            variableLabels: allVariables.size > 0 ? Array.from(allVariables) : []
+            variableLabels: allVariables.size > 0 ? Array.from(allVariables):[]
         };
     };
 
-    // Add mosaic settings state
     const getMosaicDefaultSettings = () => {
         const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -243,7 +231,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             marginLeft: 100,
             marginRight: 150,
             spacingBetweenVariables: 20,
-            // Compatibility fields
             gridOn: false,
             plotBorderOn: false,
             barBorderOn: false,
@@ -278,7 +265,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             captionUnderline: false,
             captionTopMargin: 30,
             xAxisTitle: 'Variables',
-            yAxisTitle: 'Proportion (%)',
+            yAxisTitle: 'Chi-Square Statistic',
             xAxisTitleSize: 16,
             yAxisTitleSize: 16,
             xAxisTitleBold: false,
@@ -291,8 +278,8 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             yAxisTickSize: 14,
             xAxisBottomMargin: -50,
             yAxisLeftMargin: 0,
-            yAxisMin: '0',
-            yAxisMax: '100',
+            yAxisMin: '',
+            yAxisMax: '',
             gridOn: true,
             gridStyle: '3 3',
             gridColor: 'gray',
@@ -301,53 +288,30 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             plotBorderOn: false,
             barBorderOn: false,
             dataLabelsOn: true,
-            labelType: 'percentage',
-            labelSize: 11,
-            labelColor: 'white',
-            labelBold: true,
-            barWidth: 0.7,
-            elementWidth: 0.7,
+            elementWidth: 0.8,
             legendOn: true,
-            legendPosition: 'top',
-            legendTitle: 'Categories',
-            colorScheme: 'categorical',
-            categoryColors: defaultColors,
-            variableLabels: [],
-            orientation: 'vertical',
-            stackMode: 'percentage',
-            showBaseline: true,
-            baselineColor: '#1f2937',
-            baselineWidth: 2,
-            selectedPair: null,
-            animationDuration: 500,
-            barRadius: 0,
-            showGridHorizontal: true,
-            showGridVertical: false,
-            categoryLabels: []
+            categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
+            categoryColors: defaultColors
         };
     };
-    // 2. ADD states for grouped bar and mosaic settings
-
 
     const [heatmapSettings, setHeatmapSettings] = useState(getHeatmapDefaultSettings());
     const [groupedBarSettings, setGroupedBarSettings] = useState(getGroupedBarDefaultSettings());
     const [mosaicSettings, setMosaicSettings] = useState(getMosaicDefaultSettings());
     const [stackedBarSettings, setStackedBarSettings] = useState(getStackedBarDefaultSettings());
 
-    // 3. UPDATE setCurrentSettings function to include grouped bar case
     const setCurrentSettings = (settings) => {
         switch (currentPlotType) {
             case 'heatmap':
                 setHeatmapSettings(settings);
                 break;
-            case 'grouped':  // ADD THIS CASE
+            case 'grouped':
                 setGroupedBarSettings(settings);
                 break;
-            case 'mosaic':  // ADD THIS CASE
+            case 'mosaic':
                 setMosaicSettings(settings);
                 break;
-
-            case 'stacked':  // ADD THIS CASE
+            case 'stacked':
                 setStackedBarSettings(settings);
                 break;
             default:
@@ -363,11 +327,9 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
     const fmt = (v, digits = 6) => formatValue(v, digits, language);
     const mapDigit = (text) => mapDigitIfBengali(text, language);
 
-    // Calculate significant associations
     const significantCount = results.pairwise_results ? results.pairwise_results.filter(r => r.p_value < 0.05).length : 0;
     const totalComparisons = results.n_comparisons || 0;
 
-    // Generate insight message
     const getInsightMessage = () => {
         const significanceRate = totalComparisons > 0 ? (significantCount / totalComparisons * 100).toFixed(1) : 0;
 
@@ -390,7 +352,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         }
     };
 
-    // Add this inside your component
     const [isSticky, setIsSticky] = useState(false);
     const [containerWidth, setContainerWidth] = useState('auto');
     const tabContainerRef = useRef(null);
@@ -412,23 +373,12 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         };
 
         window.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll); // Also update on resize
+        window.addEventListener('resize', handleScroll);
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
             window.removeEventListener('resize', handleScroll);
         };
-    }, []);
-
-    useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (!event.target.closest('.block-actions')) {
-                setBlockDownloadMenus({});
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     return (
@@ -437,7 +387,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                 {t('Chi-Square Test Results', 'কাই-স্কয়ার পরীক্ষার ফলাফল')}
             </h2>
 
-            {/* Summary Statistics Table */}
             <div className="stats-results-table-wrapper">
                 <table className="stats-results-table">
                     <thead>
@@ -500,13 +449,11 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                 </table>
             </div>
 
-            {/* Tabbed Section */}
             <div className="stats-viz-section">
                 <h3 className="stats-viz-header">
                     {t('Detailed Analysis & Visualizations', 'বিস্তারিত বিশ্লেষণ এবং ভিজ্যুয়ালাইজেশন')}
                 </h3>
 
-                {/* Tab Navigation */}
                 <div
                     ref={tabContainerRef}
                     className="stats-tab-container"
@@ -536,71 +483,20 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                         {t('Heatmap', 'হিটম্যাপ')}
                     </button>
                     <button
-                        className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('mosaic')}
-                    >
-                        {t('Mosaic Plot', 'মোজাইক প্লট')}
-                    </button>
-
-                    <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
                         {t('Grouped Bar', 'গ্রুপড বার')}
                     </button>
-
-                    <button
-                        className={`stats-tab ${activeTab === 'stacked' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('stacked')}
-                    >
-                        {t('Stacked Bar', 'স্ট্যাকড বার')}
-                    </button>
-
-                    {/* <button
-                        className={`stats-tab ${activeTab === 'residual' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('residual')}
-                    >
-                        {t('Residual Plot', 'রেসিডুয়াল প্লট')}
-                    </button> */}
                 </div>
 
-                {/* Detailed Analysis Tab */}
                 {activeTab === 'detailed' && (
                     <div className="stats-plot-wrapper active">
-                        {/* Variable Statistics Section */}
                         {results.variable_stats && results.variable_stats.length > 0 && (
                             <div className="variable-stats-section">
-                                <div style={{
-                                    marginBottom: '20px'
-                                }}>
-                                    <div style={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        marginBottom: '10px'
-                                    }}>
-                                        <h4 className="section-title" style={{
-                                            marginBottom: '0',
-                                            borderBottom: 'none'
-                                        }}>
-                                            {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
-                                        </h4>
-                                        <button
-                                            className="customize-btn"
-                                            onClick={() => downloadVariableStatsPDF(results, language)}
-                                        >
-                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                                            </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
-                                        </button>
-                                    </div>
-                                    <div style={{
-                                        height: '2px',
-                                        backgroundColor: '#046060',
-                                        width: '100%'
-                                    }}></div>
-                                </div>
+                                <h4 className="section-title">
+                                    {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
+                                </h4>
 
                                 <div className="variable-stats-grid">
                                     {results.variable_stats.map((varStat, idx) => (
@@ -654,48 +550,32 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                             </div>
                         )}
 
-                        {/* Pairwise Comparisons Section */}
                         {results.blocks && results.blocks.length > 0 && (
                             <div>
-                                <div style={{ marginBottom: '20px' }}>
-                                    <div className="pairwise-header">
-                                        <div>
-                                            <h4 className="section-title" style={{
-                                                marginBottom: '0',
-                                                borderBottom: 'none'
-                                            }}>
-                                                {t('Pairwise Comparisons', 'জোড়াভিত্তিক তুলনা')}
-                                            </h4>
-                                            <p className="section-description">
-                                                {t('Detailed chi-square test results for each variable pair',
-                                                    'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত কাই-স্কয়ার পরীক্ষার ফলাফল')}
-                                            </p>
-                                        </div>
-                                        <button
-                                            className="customize-btn" onClick={() => downloadAllPairwiseBlocksPDF(results, blockRefs)}
-                                        >
-                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                                            </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
-                                        </button>
+                                <div className="pairwise-header">
+                                    <div>
+                                        <h4 className="section-title">
+                                            {t('Pairwise Comparisons', 'জোড়াভিত্তিক তুলনা')}
+                                        </h4>
+                                        <p className="section-description">
+                                            {t('Detailed chi-square test results for each variable pair',
+                                                'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত কাই-স্কয়ার পরীক্ষার ফলাফল')}
+                                        </p>
                                     </div>
-                                    <div style={{
-                                        height: '2px',
-                                        backgroundColor: '#046060',
-                                        width: '100%',
-                                        marginTop: '10px'
-                                    }}></div>
+                                    <button
+                                        onClick={() => downloadAllBlocksPDF(results, blockRefs)}
+                                        className="export-all-btn"
+                                    >
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                        </svg>
+                                        {t('Export All Tables', 'সব টেবিল রপ্তানি করুন')}
+                                    </button>
                                 </div>
 
                                 <div className="blocks-grid">
                                     {results.blocks.map((block, i) => (
-                                        <div
-                                            key={i}
-                                            className="block-card"
-                                            ref={(el) => { blockRefs.current[block.anchor] = el; }}
-                                        >
-                                            {/* Card Header */}
+                                        <div key={i} className="block-card">
                                             <div
                                                 ref={(el) => { blockRefs.current[block.anchor] = el; }}
                                                 className="block-header"
@@ -721,72 +601,20 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                     </div>
 
                                                     <div className="block-actions">
-                                                        <div style={{ position: 'relative' }}>
-                                                            <button className="customize-btn" onClick={() => setBlockDownloadMenus(prev => ({
-                                                                ...prev,
-                                                                [block.anchor]: !prev[block.anchor]
-                                                            }))}
-                                                            >
-                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                                                                </svg>
-                                                                {/* {t('Download', 'ডাউনলোড')} */}
-                                                            </button>
-
-                                                            {blockDownloadMenus[block.anchor] && (
-                                                                <div style={{
-                                                                    position: 'absolute',
-                                                                    top: '100%',
-                                                                    right: 0,
-                                                                    marginTop: '8px',
-                                                                    background: 'white',
-                                                                    border: '2px solid #e5e7eb',
-                                                                    borderRadius: '12px',
-                                                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                                                                    overflow: 'hidden',
-                                                                    zIndex: 100,
-                                                                    minWidth: '120px'
-                                                                }}>
-                                                                    {[
-                                                                        { label: 'PNG', handler: () => downloadPairwiseBlockPNG(block.anchor, blockRefs) },
-                                                                        { label: 'JPG', handler: () => downloadPairwiseBlockJPG(block.anchor, blockRefs) },
-                                                                        { label: 'JPEG', handler: () => downloadPairwiseBlockJPG(block.anchor, blockRefs) },
-                                                                        { label: 'PDF', handler: () => downloadPairwiseBlockPDF(block.anchor, blockRefs) }
-                                                                    ].map((format, idx) => (
-                                                                        <button
-                                                                            key={format.label}
-                                                                            onClick={() => {
-                                                                                format.handler();
-                                                                                setBlockDownloadMenus(prev => ({ ...prev, [block.anchor]: false }));
-                                                                            }}
-                                                                            style={{
-                                                                                width: '100%',
-                                                                                padding: '10px 16px',
-                                                                                border: 'none',
-                                                                                background: 'white',
-                                                                                color: '#374151',
-                                                                                fontSize: '13px',
-                                                                                fontWeight: '500',
-                                                                                cursor: 'pointer',
-                                                                                textAlign: 'left',
-                                                                                transition: 'all 0.2s',
-                                                                                borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none'
-                                                                            }}
-                                                                            onMouseEnter={(e) => {
-                                                                                e.currentTarget.style.background = '#f9fafb';
-                                                                                e.currentTarget.style.paddingLeft = '20px';
-                                                                            }}
-                                                                            onMouseLeave={(e) => {
-                                                                                e.currentTarget.style.background = 'white';
-                                                                                e.currentTarget.style.paddingLeft = '16px';
-                                                                            }}
-                                                                        >
-                                                                            {format.label}
-                                                                        </button>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                        </div>
+                                                        <button
+                                                            onClick={() => downloadBlockPNG(block.anchor, blockRefs)}
+                                                            className="block-action-btn"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                                <polyline points="14 2 14 8 20 8"></polyline>
+                                                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                                                <polyline points="10 9 9 9 8 9"></polyline>
+                                                            </svg>
+                                                            PDF
+                                                        </button>
                                                     </div>
                                                 </div>
 
@@ -803,7 +631,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                 </div>
                                             </div>
 
-                                            {/* Table Content */}
                                             <div className="block-table-container">
                                                 <div className="block-table-scroll">
                                                     <table className="block-table">
@@ -851,7 +678,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                 </div>
                                             </div>
 
-                                            {/* Footer */}
                                             <div className="block-footer">
                                                 <div className="block-stats">
                                                     <div className="block-stat-item">
@@ -865,136 +691,14 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                     <div className="block-stat-item">
                                                         <div className="status-dot"></div>
                                                         <span>
-                                                            {t('Not Significant', 'অ-উল্লেখযোগ্য')}: <strong>
-                                                                {mapDigit(block.results.filter(r => r.p_value >= 0.05).length)}
-                                                            </strong>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="block-total">
-                                                    {t('Total comparisons', 'মোট তুলনা')}: {mapDigit(block.results.length)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Heatmap Tab */}
-                {activeTab === 'heatmap' && (
-                    <div className="stats-plot-wrapper active">
-                        <HeatmapPlot
-                            results={results}
-                            language={language}
-                            settings={heatmapSettings}
-                            onSettingsChange={setHeatmapSettings}
-                            openCustomization={openCustomization}
-                            handleDownload={handleDownload}
-                            downloadMenuOpen={downloadMenuOpen}
-                            setDownloadMenuOpen={setDownloadMenuOpen}
-                            chartRef={chartRef}
-                        />
-                    </div>
-                )}
-
-                {/* Other Plot Tabs */}
-                {activeTab === 'mosaic' && (
-                    <div className="stats-plot-wrapper active">
-                        <MosaicPlot
-                            results={results}
-                            language={language}
-                            settings={mosaicSettings}
-                            onSettingsChange={setMosaicSettings}
-                            openCustomization={openCustomization}
-                            handleDownload={handleDownload}
-                            downloadMenuOpen={downloadMenuOpen}
-                            setDownloadMenuOpen={setDownloadMenuOpen}
-                            chartRef={chartRef}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'stacked' && (
-                    <div className="stats-plot-wrapper active">
-                        <StackedBarPlot
-                            results={results}
-                            language={language}
-                            settings={stackedBarSettings}
-                            onSettingsChange={setStackedBarSettings}
-                            openCustomization={openCustomization}
-                            handleDownload={handleDownload}
-                            downloadMenuOpen={downloadMenuOpen}
-                            setDownloadMenuOpen={setDownloadMenuOpen}
-                            chartRef={chartRef}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'grouped' && (
-                    <div className="stats-plot-wrapper active">
-                        <GroupedBarPlot
-                            results={results}
-                            language={language}
-                            settings={groupedBarSettings}
-                            onSettingsChange={setGroupedBarSettings}
-                            openCustomization={openCustomization}
-                            handleDownload={handleDownload}
-                            downloadMenuOpen={downloadMenuOpen}
-                            setDownloadMenuOpen={setDownloadMenuOpen}
-                            chartRef={chartRef}
-                        />
-                    </div>
-                )}
-
-                {activeTab === 'residual' && (
-                    <div className="stats-plot-wrapper active">
-                        <ResidualPlot language={language} />
-                    </div>
-                )}
-
-
-                <CustomizationOverlay
-                    isOpen={overlayOpen}
-                    onClose={() => setOverlayOpen(false)}
-                    plotType={
-                        currentPlotType === 'heatmap' ? 'Heatmap' :
-                            currentPlotType === 'grouped' ? 'Grouped Bar' :
-                                currentPlotType === 'mosaic' ? 'Mosaic' :
-                                    currentPlotType === 'stacked' ? 'Stacked Bar' :  // ADD THIS
-                                        'Heatmap'
-                    }
-                    settings={
-                        currentPlotType === 'heatmap' ? heatmapSettings :
-                            currentPlotType === 'grouped' ? groupedBarSettings :
-                                currentPlotType === 'mosaic' ? mosaicSettings :
-                                    currentPlotType === 'stacked' ? stackedBarSettings :  // ADD THIS
-                                        heatmapSettings
-                    }
-                    onSettingsChange={
-                        currentPlotType === 'heatmap' ? setHeatmapSettings :
-                            currentPlotType === 'grouped' ? setGroupedBarSettings :
-                                currentPlotType === 'mosaic' ? setMosaicSettings :
-                                    currentPlotType === 'stacked' ? setStackedBarSettings :  // ADD THIS
-                                        setHeatmapSettings
-                    }
-                    language={language === 'bn' ? 'বাংলা' : 'English'}
-                    fontFamilyOptions={fontFamilyOptions}
-                    getDefaultSettings={() =>
-                        currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :
-                            currentPlotType === 'grouped' ? getGroupedBarDefaultSettings() :
-                                currentPlotType === 'mosaic' ? getMosaicDefaultSettings() :
-                                    currentPlotType === 'stacked' ? getStackedBarDefaultSettings() :  // ADD THIS
-                                        getHeatmapDefaultSettings()
-                    }
-                    results={results}
-                />
-
-            </div>
-        </>
-    );
-}
-
-export default renderChiSquareResults;
+                                                            {t('Not Significant', 'অ-উল্লেখয="21 15 16 10 5 21"></polyline>
+                                                            </svg>
+                                                            PNG
+                                                        </button>
+                                                        <button
+                                                            onClick={() => downloadBlockPDF(block.anchor, blockRefs)}
+                                                            className="block-action-btn"
+                                                        >
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                                                <polyline points
