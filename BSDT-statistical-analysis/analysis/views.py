@@ -3509,7 +3509,8 @@ def process_chi_square(request, df, selected_columns, user_id):
                     'row_totals': [],
                     'col_totals': [],
                     'row_percentages': [],
-                    'col_percentages': []
+                    'col_percentages': [],
+                    'stacked_data': []
                 }
             
             # Apply Yates' correction for 2x2 tables
@@ -3534,7 +3535,8 @@ def process_chi_square(request, df, selected_columns, user_id):
                     'row_totals': [],
                     'col_totals': [],
                     'row_percentages': [],
-                    'col_percentages': []
+                    'col_percentages': [],
+                    'stacked_data': []
                 }
             
             # Calculate standardized residuals
@@ -3552,6 +3554,25 @@ def process_chi_square(request, df, selected_columns, user_id):
             row_percentages = (ct.div(ct.sum(axis=1), axis=0) * 100).values.tolist()
             col_percentages = (ct.div(ct.sum(axis=0), axis=1) * 100).values.tolist()
             
+            # Prepare data for stacked bar chart (rows of var1, columns of var2)
+            stacked_data = []
+            for i, cat1 in enumerate(categories_var1):
+                row_data = {
+                    'category': str(cat1),  # This will be the x-axis
+                    'total': int(row_totals[i])
+                }
+                
+                # Add both count and percentage for each category of var2
+                for j, cat2 in enumerate(categories_var2):
+                    count = int(ct.values[i][j])
+                    percentage = float(row_percentages[i][j]) if not np.isnan(row_percentages[i][j]) else 0.0
+                    
+                    # Store both count and percentage with consistent naming
+                    row_data[str(cat2)] = percentage  # This is what Recharts uses for bar height (percentage)
+                    row_data[f'{cat2}_count'] = count  # This is the actual count
+                
+                stacked_data.append(row_data)
+            
             # Convert to Python native types for JSON serialization
             return {
                 'n': int(ct.values.sum()),
@@ -3568,7 +3589,8 @@ def process_chi_square(request, df, selected_columns, user_id):
                 'row_totals': [int(val) for val in row_totals],
                 'col_totals': [int(val) for val in col_totals],
                 'row_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in row_percentages],
-                'col_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in col_percentages]
+                'col_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in col_percentages],
+                'stacked_data': stacked_data  # New field for easy Recharts integration
             }
 
         def fdr_bh(pvals):
@@ -3696,6 +3718,7 @@ def process_chi_square(request, df, selected_columns, user_id):
             })
 
         # ── 7) Create blocks (one anchor variable at a time) ──────────────
+        # ── 7) Create blocks (one anchor variable at a time) ──────────────
         blocks = []
         
         for anchor in vars_list:
@@ -3706,6 +3729,7 @@ def process_chi_square(request, df, selected_columns, user_id):
                     block_results.append(result)
                 elif result['variable2'] == anchor:
                     # Swap variables so anchor is always first
+                    # IMPORTANT: Must transpose contingency table and expected frequencies
                     swapped_result = {
                         'variable1': result['variable2'],
                         'variable2': result['variable1'],
@@ -3714,17 +3738,26 @@ def process_chi_square(request, df, selected_columns, user_id):
                         'p_adjusted': result['p_adjusted'],
                         'dof': result['dof'],
                         'n': result['n'],
-                        'contingency_table': result['contingency_table'],
-                        'expected_frequencies': result['expected_frequencies'],
-                        'residuals': result['residuals'],
+                        # Transpose the tables
+                        'contingency_table': [[result['contingency_table'][j][i] for j in range(len(result['contingency_table']))] 
+                                             for i in range(len(result['contingency_table'][0]))] if result['contingency_table'] else None,
+                        'expected_frequencies': [[result['expected_frequencies'][j][i] for j in range(len(result['expected_frequencies']))] 
+                                                for i in range(len(result['expected_frequencies'][0]))] if result['expected_frequencies'] else None,
+                        'residuals': [[result['residuals'][j][i] for j in range(len(result['residuals']))] 
+                                     for i in range(len(result['residuals'][0]))] if result['residuals'] else None,
+                        # Swap categories
                         'categories_var1': result['categories_var2'],
                         'categories_var2': result['categories_var1'],
                         'var1_categories': result['var2_categories'],
                         'var2_categories': result['var1_categories'],
+                        # Swap totals
                         'row_totals': result['col_totals'],
                         'col_totals': result['row_totals'],
-                        'row_percentages': result['col_percentages'],
-                        'col_percentages': result['row_percentages']
+                        # Transpose percentages
+                        'row_percentages': [[result['col_percentages'][j][i] for j in range(len(result['col_percentages']))] 
+                                           for i in range(len(result['col_percentages'][0]))] if result['col_percentages'] else None,
+                        'col_percentages': [[result['row_percentages'][j][i] for j in range(len(result['row_percentages']))] 
+                                           for i in range(len(result['row_percentages'][0]))] if result['row_percentages'] else None,
                     }
                     block_results.append(swapped_result)
             
@@ -3732,6 +3765,7 @@ def process_chi_square(request, df, selected_columns, user_id):
                 'anchor': str(anchor),
                 'results': block_results
             })
+
 
         # ── 8) Prepare table columns for frontend ─────────────────────────
         if is_bn:
