@@ -326,6 +326,9 @@ const StatisticalAnalysisTool = () => {
     const [fileURL, setFileURL] = useState('');
     const userId = localStorage.getItem("user_id");
 
+    const [showColumnMenu, setShowColumnMenu] = useState(false);
+    const [tempSelectedColumns, setTempSelectedColumns] = useState([]);
+
     // Generate Again Functionality
     const [isFirstTimeAnalysis, setIsFirstTimeAnalysis] = useState(true);
     useEffect(() => {
@@ -569,6 +572,13 @@ const StatisticalAnalysisTool = () => {
         'bar_chart',
         'similarity',
     ];
+
+    // Add this useEffect to sync tempSelectedColumns when menu opens
+    useEffect(() => {
+        if (showColumnMenu) {
+            setTempSelectedColumns(selectedColumns);
+        }
+    }, [showColumnMenu, selectedColumns]);
 
 
     // Handle file selection async
@@ -1233,71 +1243,335 @@ const StatisticalAnalysisTool = () => {
                                             )}
 
                                             {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
-                                                <div className="mb-6">
-                                                    {/* <label className="block text-gray-700 font-medium mb-2">
-                                                        {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
-                                                    </label> */}
+                                                <div style={{ marginBottom: '2rem' }}>
+                                                    <label style={{
+                                                        display: 'block',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '600',
+                                                        color: '#1f2937',
+                                                        marginBottom: '0.75rem'
+                                                    }}>
+                                                        Select Columns
+                                                    </label>
 
-                                                    {/* Column(s) Big Box Display */}
-                                                    {/* <label className="block text-gray-700 font-medium mb-2">Column(s)</label> */}
-                                                    {/* Column(s) Big Box Display */}
-                                                    <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
-                                                    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px] flex flex-wrap gap-2">
+                                                    {/* Selected Columns Display */}
+                                                    <div style={{
+                                                        border: '2px solid #d1d5db',
+                                                        borderRadius: '0.5rem',
+                                                        padding: '1rem',
+                                                        backgroundColor: '#f9fafb',
+                                                        minHeight: '60px',
+                                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                    }}>
                                                         {selectedColumns.length > 0 ? (
-
-                                                            selectedColumns.map((col, idx) => (
-                                                                <div key={idx} className="tag-chip">
-                                                                    <span>{col}</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="remove-button"
-                                                                        onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                                {selectedColumns.map((col, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '0.5rem',
+                                                                            padding: '0.25rem 0.5rem',
+                                                                            backgroundColor: '#3b82f6',
+                                                                            borderRadius: '0.5rem',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: '600',
+                                                                            color: 'white',
+                                                                            boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
+                                                                        }}
                                                                     >
-                                                                        ×
-                                                                    </button>
-                                                                </div>
-                                                            ))
-
+                                                                        <span>{col}</span>
+                                                                        <button
+                                                                            type="button"
+                                                                            style={{
+                                                                                width: '1.5rem',
+                                                                                height: '1.5rem',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                borderRadius: '50%',
+                                                                                backgroundColor: '#2563eb',
+                                                                                color: 'white',
+                                                                                border: 'none',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '1.25rem',
+                                                                                fontWeight: 'bold',
+                                                                                transition: 'background-color 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                                                                            onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
                                                         ) : (
-                                                            <p className="text-gray-400">No columns selected yet</p>
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'left',
+                                                                justifyContent: 'left',
+                                                                height: '100%',
+                                                                color: '#9ca3af',
+                                                                fontStyle: 'italic',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                No columns selected yet
+                                                            </div>
                                                         )}
                                                     </div>
 
-                                                    {/* Dropdown Below Box */}
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
-                                                        onChange={(e) => {
-                                                            const selected = e.target.value;
-                                                            if (selected && !selectedColumns.includes(selected)) {
-                                                                setSelectedColumns(prev => [...prev, selected]);
-                                                            }
-                                                            e.target.selectedIndex = 0;
-                                                        }}
-                                                        disabled={selectedColumns.length >= columns.length}
-                                                    >
-                                                        <option value="">Select column...</option>
-                                                        {columns
-                                                            .filter(col => !selectedColumns.includes(col))
-                                                            .map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))}
-                                                    </select>
+                                                    {/* Dropdown Menu Button */}
+                                                    <div style={{ marginTop: '1rem', position: 'relative' }}>
+                                                        <button
+                                                            type="button"
+                                                            style={{
+                                                                width: '100%',
+                                                                border: '2px solid #d1d5db',
+                                                                borderRadius: '0.5rem',
+                                                                padding: '1rem',
+                                                                backgroundColor: 'white',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between',
+                                                                cursor: 'pointer',
+                                                                fontSize: '1rem',
+                                                                fontWeight: '500',
+                                                                transition: 'all 0.2s',
+                                                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.backgroundColor = '#eff6ff';
+                                                                e.currentTarget.style.borderColor = '#3b82f6';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'white';
+                                                                e.currentTarget.style.borderColor = '#d1d5db';
+                                                            }}
+                                                            onClick={() => setShowColumnMenu(prev => !prev)}
+                                                        >
+                                                            <span style={{ color: '#374151' }}>Choose columns from list...</span>
+                                                            <span style={{
+                                                                color: '#6b7280',
+                                                                transition: 'transform 0.2s',
+                                                                transform: showColumnMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                display: 'inline-block'
+                                                            }}>
+                                                                ▼
+                                                            </span>
+                                                        </button>
 
-                                                    <p className="text-sm text-gray-500 mt-2">
-                                                        {selectedColumns.length} column(s) selected
-                                                    </p>
+                                                        {/* Dropdown Panel */}
+                                                        {showColumnMenu && (
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                zIndex: 20,
+                                                                bottom: '100%',
+                                                                marginBottom: '0.5rem',
+                                                                width: '100%',
+                                                                border: '2px solid #d1d5db',
+                                                                borderRadius: '0.5rem',
+                                                                backgroundColor: 'white',
+                                                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                                                                overflow: 'hidden'
+                                                            }}>
+                                                                {/* Column List */}
+                                                                <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+                                                                    {columns.map((col, idx) => {
+                                                                        const isSelected = tempSelectedColumns.includes(col);
+                                                                        return (
+                                                                            <div
+                                                                                key={idx}
+                                                                                style={{
+                                                                                    padding: '0.75rem 1rem',
+                                                                                    cursor: 'pointer',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '0.75rem',
+                                                                                    backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                    borderBottom: idx !== columns.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                    transition: 'background-color 0.15s'
+                                                                                }}
+                                                                                onMouseEnter={(e) => {
+                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#bfdbfe' : '#f3f4f6';
+                                                                                }}
+                                                                                onMouseLeave={(e) => {
+                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white';
+                                                                                }}
+                                                                                onClick={() => {
+                                                                                    if (tempSelectedColumns.includes(col)) {
+                                                                                        setTempSelectedColumns(prev => prev.filter(c => c !== col));
+                                                                                    } else {
+                                                                                        setTempSelectedColumns(prev => [...prev, col]);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {/* Checkbox */}
+                                                                                <div style={{
+                                                                                    width: '1.0rem',
+                                                                                    height: '1.0rem',
+                                                                                    borderRadius: '0.25rem',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    flexShrink: 0,
+                                                                                    backgroundColor: isSelected ? '#3b82f6' : 'white',
+                                                                                    border: isSelected ? '2px solid #3b82f6' : '2px solid #9ca3af',
+                                                                                    transition: 'all 0.15s'
+                                                                                }}>
+                                                                                    {isSelected && (
+                                                                                        <svg style={{ width: '1.25rem', height: '1.25rem', color: 'white' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                </div>
+                                                                                {/* Column Name */}
+                                                                                <span style={{
+                                                                                    fontWeight: '600',
+                                                                                    fontSize: '0.9375rem',
+                                                                                    color: isSelected ? '#1e40af' : '#1f2937'
+                                                                                }}>
+                                                                                    {col}
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
 
+                                                                {/* Action Buttons */}
+                                                                <div style={{
+                                                                    borderTop: '1px solid #e5e7eb',
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    gap: '0.5rem',
+                                                                    backgroundColor: 'white'
+                                                                }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            backgroundColor: '#10b981',
+                                                                            color: 'white',
+                                                                            borderRadius: '0.375rem',
+                                                                            padding: '0.5rem 1rem',
+                                                                            border: 'none',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.875rem',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s',
+                                                                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#059669';
+                                                                            e.currentTarget.style.boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.1)';
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#10b981';
+                                                                            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setSelectedColumns(tempSelectedColumns);
+                                                                            setShowColumnMenu(false);
+                                                                        }}
+                                                                    >
+                                                                        ✓ Apply
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            backgroundColor: '#e5e7eb',
+                                                                            color: '#1f2937',
+                                                                            borderRadius: '0.375rem',
+                                                                            padding: '0.5rem 1rem',
+                                                                            border: '1px solid #d1d5db',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.875rem',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#d1d5db';
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#e5e7eb';
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setTempSelectedColumns(selectedColumns);
+                                                                            setShowColumnMenu(false);
+                                                                        }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Selection Counter */}
+                                                    <div style={{
+                                                        marginTop: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        padding: '0 0.25rem'
+                                                    }}>
+                                                        <p style={{
+                                                            fontSize: '0.875rem',
+                                                            color: '#374151',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <span style={{
+                                                                    width: '0.5rem',
+                                                                    height: '0.5rem',
+                                                                    backgroundColor: '#3b82f6',
+                                                                    borderRadius: '50%'
+                                                                }}></span>
+                                                                {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''} selected
+                                                            </span>
+                                                        </p>
+                                                        {selectedColumns.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                style={{
+                                                                    fontSize: '0.875rem',
+                                                                    color: '#dc2626',
+                                                                    fontWeight: '600',
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'color 0.2s'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.color = '#991b1b';
+                                                                    e.currentTarget.style.textDecoration = 'underline';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.color = '#dc2626';
+                                                                    e.currentTarget.style.textDecoration = 'none';
+                                                                }}
+                                                                onClick={() => {
+                                                                    setSelectedColumns([]);
+                                                                    setTempSelectedColumns([]);
+                                                                }}
+                                                            >
+                                                                Clear all
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
+
 
                                             {testType !== 'eda_basics' && (
                                                 <div className="mb-6">
                                                     {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
-                                                    {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+                                                    {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
                                                         <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
                                                             {t.selectVariables}
                                                         </h5>
-                                                    )}
+                                                    )} */}
 
                                                     {/* Now the rest of the logic stays the same — dropdowns, requiredFields, etc. */}
                                                     {!['spearman', 'pearson', 'cross_tabulation', 'network_graph', 'cramers_heatmap', 'chi_square'].includes(testType) && (
@@ -1767,7 +2041,7 @@ const StatisticalAnalysisTool = () => {
                                                         />
                                                     )}
 
-                                                    {testType === 'chi_square' && (
+                                                    {/* {testType === 'chi_square' && (
                                                         <ChiSquareOptions
                                                             language={language}
                                                             setLanguage={setLanguage}
@@ -1787,7 +2061,7 @@ const StatisticalAnalysisTool = () => {
                                                             setColorPalette={setColorPalette}
                                                             t={t}
                                                         />
-                                                    )}
+                                                    )} */}
 
                                                     {testType === 'cramers_heatmap' && (
                                                         <CramerVOptions
@@ -1987,8 +2261,8 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     const [chiSquareActiveTab, setChiSquareActiveTab] = useState('detailed');
     const [mannWhitneyActiveTab, setMannWhitneyActiveTab] = useState('box');
     const [wilcoxonActiveTab, setWilcoxonActiveTab] = useState('histogram');
-    const [anovaActiveTab, setAnovaActiveTab] = useState('count');   
-    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');    
+    const [anovaActiveTab, setAnovaActiveTab] = useState('count');
+    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2012,21 +2286,21 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                 setWilcoxonActiveTab,
                 results,
                 language
-            );         
+            );
         } else if (testType === 'anova') {
             return renderAnovaResults(
                 anovaActiveTab,
                 setAnovaActiveTab,
                 results,
                 language
-            );       
+            );
         } else if (testType === 'ancova') {
             return renderAncovaResults(
                 ancovaActiveTab,
                 setAncovaActiveTab,
                 results,
                 language,
-            );            
+            );
         } else if (testType === 'shapiro') {
             return renderShapiroResults();
         } else if (testType === 'spearman') {
@@ -2088,7 +2362,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         }
     };
 
-    
+
     const renderShapiroResults = () => {
         const mapDigitIfBengali = (text) => {
             if (language !== 'বাংলা') return text;
@@ -3807,8 +4081,8 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
 
     return (
         <div className=" rounded-lg  overflow-hidden"
-        style={{boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '2rem'}}>
-        
+            style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '2rem' }}>
+
 
             {/* <div className="bg-gray-700 text-white p-4 font-semibold">
                 <p className="text-black inline">
