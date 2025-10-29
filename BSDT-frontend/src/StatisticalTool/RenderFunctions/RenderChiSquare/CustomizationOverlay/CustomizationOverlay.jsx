@@ -135,6 +135,39 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             )}
 
+                        {(
+                            <div className="setting-group">
+                                <label className="setting-label">
+                                    {language === 'বাংলা' ? 'প্রদর্শনের জন্য জোড়া' : 'Variable Pair to Display'}
+                                </label>
+                                <select
+                                    className="setting-select"
+                                    value={settings.selectedPair || ''}
+                                    onChange={(e) => handleChange('selectedPair', e.target.value || null)}
+                                >
+                                    <option value="">
+                                        {language === 'বাংলা' ? 'স্বয়ংক্রিয় (প্রথম উল্লেখযোগ্য)' : 'Auto (First Significant)'}
+                                    </option>
+                                    {results?.pairwise_results?.map((pair, idx) => (
+                                        <option key={idx} value={`${pair.variable1}-${pair.variable2}`}>
+                                            {pair.variable1} × {pair.variable2}
+                                            {pair.p_value < 0.05 ? ' ★' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                                <p style={{
+                                    fontSize: '12px',
+                                    color: '#6b7280',
+                                    marginTop: '8px',
+                                    fontStyle: 'italic'
+                                }}>
+                                    {language === 'বাংলা'
+                                        ? 'স্বয়ংক্রিয় মোড প্রথম উল্লেখযোগ্য জোড়া নির্বাচন করে'
+                                        : '★ indicates significant pairs (p < 0.05). Auto mode selects the first significant pair.'}
+                                </p>
+                            </div>
+                        )}
+
                         {plotType !== 'Heatmap' &&
                             (<div className="setting-group">
                                 <label className="setting-label">{t.dimensions}</label>
@@ -442,7 +475,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     </div>
 
                     {/* Grid Settings */}
-                    {plotType !== 'Heatmap' && (
+                    {(plotType === 'Grouped Bar' || plotType==='Stacked Bar') && (
                         <div className="customization-section">
                             <h4 className="section-title">{t.grid}</h4>
 
@@ -508,6 +541,48 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     <div className="customization-section">
                         <h4 className="section-title">{t.appearance}</h4>
 
+                        {plotType === 'Stacked Bar' && (
+                            <div className="setting-group">
+                                <label className="setting-label">
+                                    {language === 'বাংলা' ? 'রঙের প্যালেট' : 'Color Palette'}
+                                </label>
+                                <select
+                                    className="setting-select"
+                                    value={settings.colorScheme}
+                                    onChange={(e) => handleChange('colorScheme', e.target.value)}
+                                >
+                                    <option value="categorical">Categorical</option>
+                                    <option value="pastel">Pastel</option>
+                                    <option value="vibrant">Vibrant</option>
+                                    <option value="professional">Professional</option>
+                                    <option value="ocean">Ocean</option>
+                                    <option value="sunset">Sunset</option>
+                                    <option value="earth">Earth</option>
+                                    <option value="custom">Custom</option>
+                                </select>
+                            </div>
+                        )}
+
+                        {plotType === 'Stacked Bar' && settings.colorScheme === 'custom' && (
+                            <div className="setting-group">
+                                <label className="setting-label">
+                                    {language === 'বাংলা' ? 'কাস্টম রং' : 'Custom Colors'}
+                                </label>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                                    {settings.categoryColors.slice(0, 8).map((color, index) => (
+                                        <input
+                                            key={index}
+                                            type="color"
+                                            className="color-picker-compact"
+                                            value={color}
+                                            onChange={(e) => handleCategoryColorChange(index, e.target.value)}
+                                            title={`Color ${index + 1}`}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
@@ -532,19 +607,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         {settings.legendOn && (
                             <>
-                                {/* <div className="setting-group">
-                                            <label className="setting-label">
-                                                {language === 'বাংলা' ? 'লেজেন্ড শিরোনাম' : 'Legend Title'}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="setting-input"
-                                                value={settings.legendTitle}
-                                                onChange={(e) => handleChange('legendTitle', e.target.value)}
-                                            />
-                                        </div> */}
-
-                                {(plotType != 'Grouped Bar' || plotType!='Stacked Bar') && (
+                                {plotType === 'Heatmap' && (
                                     <div className="setting-group">
                                         <label className="setting-label">
                                             {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
@@ -558,10 +621,30 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
                                         </select>
                                     </div>)}
+
+                                {plotType === 'Stacked Bar' &&
+                                    (
+                                        <div className="setting-group">
+                                            <label className="setting-label">
+                                                {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
+                                            </label>
+                                            <select
+                                                className="setting-select"
+                                                value={settings.legendPosition}
+                                                onChange={(e) => handleChange('legendPosition', e.target.value)}
+                                            >
+                                                {/* <option value="right">{language === 'বাংলা' ? 'ডান' : 'Right'}</option> */}
+                                                <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
+                                                <option value="top">{language === 'বাংলা' ? 'উপরে' : 'Top'}</option>
+                                            </select>
+                                        </div>
+                                    )
+
+                                }
                             </>
                         )}
 
-                        {plotType !== 'Heatmap' &&
+                        {plotType === 'Grouped Bar' &&
                             (<div className="setting-group">
                                 <label className="setting-checkbox-label">
                                     <input
@@ -573,20 +656,8 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </label>
                             </div>)}
 
-                        {/* {(plotType === 'Grouped Bar') && (
-                            <div className="setting-group">
-                                <label className="setting-checkbox-label">
-                                    <input
-                                        type="checkbox"
-                                        checked={settings.barBorderOn}
-                                        onChange={(e) => handleChange('barBorderOn', e.target.checked)}
-                                    />
-                                    <span>{t.barBorderOn}</span>
-                                </label>
-                            </div>
-                        )} */}
 
-                        {plotType != 'Heatmap' &&
+                        {(plotType === 'Grouped Bar' || plotType==='Stacked Bar') &&
                             (<div className="setting-group">
                                 <label className="setting-checkbox-label">
                                     <input
@@ -677,25 +748,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <span className="range-value">{settings.cellSize.toFixed(2)}</span>
                             </div>)}
-
-                        {/* {plotType != 'Heatmap' &&
-                            (<div className="setting-group">
-                                <label className="setting-label">
-                                    {plotType === 'Grouped Bar' ? t.barWidth :
-                                        plotType === 'Mean' ? t.barWidth :
-                                            plotType === 'Box' ? t.boxWidth : t.violinWidth}
-                                </label>
-                                <input
-                                    type="range"
-                                    className="setting-range"
-                                    value={settings.barWidth}
-                                    onChange={(e) => handleChange('barWidth', parseFloat(e.target.value))}
-                                    min="0.1"
-                                    max="1"
-                                    step="0.05"
-                                />
-
-                            </div>)} */}
                     </div>
 
 
@@ -768,430 +820,12 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
                                 )}
                             </div>
-
-
-                            {/* Legend Settings */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'লেজেন্ড' : 'Legend'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.legendOn}
-                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড চালু' : 'Legend On'}</span>
-                                    </label>
-                                </div>
-
-                                {settings.legendOn && (
-                                    <>
-                                        <div className="setting-group">
-                                            <label className="setting-label">
-                                                {language === 'বাংলা' ? 'লেজেন্ড শিরোনাম' : 'Legend Title'}
-                                            </label>
-                                            <input
-                                                type="text"
-                                                className="setting-input"
-                                                value={settings.legendTitle}
-                                                onChange={(e) => handleChange('legendTitle', e.target.value)}
-                                            />
-                                        </div>
-
-                                        <div className="setting-group">
-                                            <label className="setting-label">
-                                                {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
-                                            </label>
-                                            <select
-                                                className="setting-select"
-                                                value={settings.legendPosition}
-                                                onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                            >
-                                                <option value="right">{language === 'বাংলা' ? 'ডান' : 'Right'}</option>
-                                                <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
-                                            </select>
-                                        </div>
-                                    </>
-                                )}
-                            </div> */}
-                        </>
-                    )}
-
-
-                    {/* Stacked Bar specific settings */}
-                    {plotType === 'Stacked Bar' && (
-                        <>
-                            {/* Stack Mode Selection */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'স্ট্যাক মোড' : 'Stack Mode'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'প্রদর্শন মোড' : 'Display Mode'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.stackMode}
-                                        onChange={(e) => {
-                                            handleChange('stackMode', e.target.value);
-                                            // Auto-update Y-axis based on mode
-                                            if (e.target.value === 'percentage') {
-                                                handleChange('yAxisTitle', 'Proportion (%)');
-                                                handleChange('yAxisMin', '0');
-                                                handleChange('yAxisMax', '100');
-                                            } else {
-                                                handleChange('yAxisTitle', 'Count');
-                                                handleChange('yAxisMin', '');
-                                                handleChange('yAxisMax', '');
-                                            }
-                                        }}
-                                    >
-                                        <option value="percentage">
-                                            {language === 'বাংলা' ? 'শতাংশ (%)' : 'Percentage (%)'}
-                                        </option>
-                                        <option value="count">
-                                            {language === 'বাংলা' ? 'গণনা' : 'Count'}
-                                        </option>
-                                    </select>
-                                    <p style={{
-                                        fontSize: '12px',
-                                        color: '#6b7280',
-                                        marginTop: '8px',
-                                        fontStyle: 'italic'
-                                    }}>
-                                        {language === 'বাংলা'
-                                            ? 'শতাংশ মোড অনুপাতিক বিতরণ দেখায়'
-                                            : 'Percentage mode shows proportional distribution'}
-                                    </p>
-                                </div>
-                            </div> */}
-
-                            {/* Color Scheme Selection */}
-                            <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'রঙের স্কিম' : 'Color Scheme'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'রঙের প্যালেট' : 'Color Palette'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.colorScheme}
-                                        onChange={(e) => handleChange('colorScheme', e.target.value)}
-                                    >
-                                        <option value="categorical">Categorical</option>
-                                        <option value="pastel">Pastel</option>
-                                        <option value="vibrant">Vibrant</option>
-                                        <option value="professional">Professional</option>
-                                        <option value="ocean">Ocean</option>
-                                        <option value="sunset">Sunset</option>
-                                        <option value="earth">Earth</option>
-                                        <option value="custom">Custom</option>
-                                    </select>
-                                </div>
-
-                                {settings.colorScheme === 'custom' && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">
-                                            {language === 'বাংলা' ? 'কাস্টম রং' : 'Custom Colors'}
-                                        </label>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                                            {settings.categoryColors.slice(0, 8).map((color, index) => (
-                                                <input
-                                                    key={index}
-                                                    type="color"
-                                                    className="color-picker-compact"
-                                                    value={color}
-                                                    onChange={(e) => handleCategoryColorChange(index, e.target.value)}
-                                                    title={`Color ${index + 1}`}
-                                                />
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Label Settings */}
-                            <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'লেবেল সেটিংস' : 'Label Settings'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'লেবেল টাইপ' : 'Label Type'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.labelType}
-                                        onChange={(e) => handleChange('labelType', e.target.value)}
-                                    >
-                                        <option value="percentage">
-                                            {language === 'বাংলা' ? 'শতাংশ' : 'Percentage'}
-                                        </option>
-                                        <option value="count">
-                                            {language === 'বাংলা' ? 'গণনা' : 'Count'}
-                                        </option>
-                                        <option value="both">
-                                            {language === 'বাংলা' ? 'উভয়' : 'Both'}
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">
-                                            {language === 'বাংলা' ? 'লেবেল আকার' : 'Label Size'}
-                                        </label>
-                                        <input
-                                            type="number"
-                                            className="setting-input"
-                                            value={settings.labelSize}
-                                            onChange={(e) => handleChange('labelSize', parseInt(e.target.value))}
-                                            min="8"
-                                            max="18"
-                                        />
-                                    </div>
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">
-                                            {language === 'বাংলা' ? 'লেবেল রং' : 'Label Color'}
-                                        </label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.labelColor}
-                                            onChange={(e) => handleChange('labelColor', e.target.value)}
-                                        >
-                                            <option value="white">White</option>
-                                            <option value="black">Black</option>
-                                            <option value="#1f2937">Dark Gray</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.labelBold}
-                                            onChange={(e) => handleChange('labelBold', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'বোল্ড লেবেল' : 'Bold Labels'}</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Bar Settings */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'বার সেটিংস' : 'Bar Settings'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'বার রেডিয়াস (গোলাকার কোণ)' : 'Bar Radius (Rounded Corners)'}
-                                    </label>
-                                    <input
-                                        type="range"
-                                        className="setting-range"
-                                        value={settings.barRadius}
-                                        onChange={(e) => handleChange('barRadius', parseInt(e.target.value))}
-                                        min="0"
-                                        max="20"
-                                        step="1"
-                                    />
-                                    <span className="range-value">{settings.barRadius}px</span>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'অ্যানিমেশন সময়কাল' : 'Animation Duration'}
-                                    </label>
-                                    <input
-                                        type="range"
-                                        className="setting-range"
-                                        value={settings.animationDuration}
-                                        onChange={(e) => handleChange('animationDuration', parseInt(e.target.value))}
-                                        min="0"
-                                        max="2000"
-                                        step="100"
-                                    />
-                                    <span className="range-value">{settings.animationDuration}ms</span>
-                                </div>
-                            </div> */}
-
-                            {/* Baseline Settings */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'বেসলাইন সেটিংস' : 'Baseline Settings'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showBaseline}
-                                            onChange={(e) => handleChange('showBaseline', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'বেসলাইন দেখান' : 'Show Baseline'}</span>
-                                    </label>
-                                </div>
-
-                                {settings.showBaseline && (
-                                    <>
-                                        <div className="setting-group">
-                                            <label className="setting-label">
-                                                {language === 'বাংলা' ? 'বেসলাইন রং' : 'Baseline Color'}
-                                            </label>
-                                            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                                <input
-                                                    type="color"
-                                                    className="color-picker-compact"
-                                                    value={settings.baselineColor}
-                                                    onChange={(e) => handleChange('baselineColor', e.target.value)}
-                                                />
-                                                <input
-                                                    type="text"
-                                                    className="setting-input"
-                                                    value={settings.baselineColor}
-                                                    onChange={(e) => handleChange('baselineColor', e.target.value)}
-                                                    style={{ flex: 1 }}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="setting-group">
-                                            <label className="setting-label">
-                                                {language === 'বাংলা' ? 'বেসলাইন প্রস্থ' : 'Baseline Width'}
-                                            </label>
-                                            <input
-                                                type="number"
-                                                className="setting-input"
-                                                value={settings.baselineWidth}
-                                                onChange={(e) => handleChange('baselineWidth', parseInt(e.target.value))}
-                                                min="1"
-                                                max="5"
-                                            />
-                                        </div>
-                                    </>
-                                )}
-                            </div> */}
-
-                            {/* Grid Customization */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'গ্রিড কাস্টমাইজেশন' : 'Grid Customization'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showGridHorizontal}
-                                            onChange={(e) => handleChange('showGridHorizontal', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'অনুভূমিক গ্রিড' : 'Horizontal Grid'}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showGridVertical}
-                                            onChange={(e) => handleChange('showGridVertical', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'উল্লম্ব গ্রিড' : 'Vertical Grid'}</span>
-                                    </label>
-                                </div>
-                            </div> */}
-
-                            {/* Variable Pair Selection */}
-                            <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'ভেরিয়েবল জোড়া নির্বাচন' : 'Variable Pair Selection'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'প্রদর্শনের জন্য জোড়া' : 'Pair to Display'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.selectedPair || ''}
-                                        onChange={(e) => handleChange('selectedPair', e.target.value || null)}
-                                    >
-                                        <option value="">
-                                            {language === 'বাংলা' ? 'স্বয়ংক্রিয় (প্রথম উল্লেখযোগ্য)' : 'Auto (First Significant)'}
-                                        </option>
-                                        {results?.pairwise_results?.map((pair, idx) => (
-                                            <option key={idx} value={`${pair.variable1}-${pair.variable2}`}>
-                                                {pair.variable1} × {pair.variable2}
-                                                {pair.p_value < 0.05 ? ' ★' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <p style={{
-                                        fontSize: '12px',
-                                        color: '#6b7280',
-                                        marginTop: '8px',
-                                        fontStyle: 'italic'
-                                    }}>
-                                        {language === 'বাংলা'
-                                            ? 'স্বয়ংক্রিয় মোড প্রথম উল্লেখযোগ্য জোড়া নির্বাচন করে'
-                                            : '★ indicates significant pairs (p < 0.05). Auto mode selects the first significant pair.'}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Legend Customization */}
-                            {/* <div className="customization-section">
-                                <h4 className="section-title">
-                                    {language === 'বাংলা' ? 'লেজেন্ড কাস্টমাইজেশন' : 'Legend Customization'}
-                                </h4>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">
-                                        {language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}
-                                    </label>
-                                    <select
-                                        className="setting-select"
-                                        value={settings.legendPosition}
-                                        onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                    >
-                                        <option value="right">{language === 'বাংলা' ? 'ডান' : 'Right'}</option>
-                                        <option value="bottom">{language === 'বাংলা' ? 'নিচে' : 'Bottom'}</option>
-                                        <option value="top">{language === 'বাংলা' ? 'উপরে' : 'Top'}</option>
-                                    </select>
-                                </div>
-
-                                {settings.legendPosition === 'right' && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">
-                                            {language === 'বাংলা' ? 'লেজেন্ড শিরোনাম' : 'Legend Title'}
-                                        </label>
-                                        <input
-                                            type="text"
-                                            className="setting-input"
-                                            value={settings.legendTitle}
-                                            onChange={(e) => handleChange('legendTitle', e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                            </div> */}
                         </>
                     )}
 
                     {/* Variable Labels */}
 
-                    {plotType != 'Heatmap' &&
+                    {plotType === 'Grouped Bar' &&
                         (<div className="customization-section">
                             <h4 className="section-title">{t.variableLabels}</h4>
                             {settings.variableLabels?.map((label, index) => (
