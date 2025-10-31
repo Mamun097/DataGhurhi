@@ -198,10 +198,10 @@ const navigate = useNavigate();
               ></textarea>
             </div>
 
-            <div className="visibility-section">
+            <div className="crt-visibility-section">
               <label>{getLabel("Visibility", "visibility")}</label>
-              <div className="visibility-options">
-                <div className="visibility-option">
+              <div className="crt-visibility-options">
+                <div className="crt-visibility-option">
                   <input
                     type="radio"
                     id="private"
@@ -210,7 +210,7 @@ const navigate = useNavigate();
                     checked={formData.privacy_mode === "private"}
                     onChange={handleChange}
                   />
-                  <FaLock className="visibility-icon" />
+                  <FaLock className="crt-visibility-icon" />
                   <label htmlFor="private">
                     {getLabel("Private", "private")}
                   </label>
@@ -225,7 +225,7 @@ const navigate = useNavigate();
                     checked={formData.privacy_mode === "public"}
                     onChange={handleChange}
                   />
-                  <MdPublic className="visibility-icon" />
+                  <MdPublic className="crt-visibility-icon" />
                   <label htmlFor="public">{getLabel("Public", "public")}</label>
                 </div>
               </div>
@@ -236,13 +236,14 @@ const navigate = useNavigate();
                 )}
               </div>
             </div>
-
-            <button type="submit" className="submit-btn">
+<div > 
+            <button type="submit" className="submit-btn" >
               {getLabel("Create Project", "submit")}
             </button>
             <button type="button" className="cancel-btn" onClick={() => navigate("/dashboard?tab=projects")}>
               {getLabel("Cancel", "cancel")}
             </button>
+            </div>
           </form>
         </div>
         <ToastContainer position="top-center" autoClose={4000} />

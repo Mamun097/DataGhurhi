@@ -516,6 +516,553 @@
     background: #f3f4f6 !important;
 }
 
+/* saved folder */
+
+/* Divider with Or */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background-color: #d1d5db; 
+}
+
+.divider span {
+  margin: 0 0.5rem;
+  font-weight: 500;
+  color: #6b7280; 
+}
+
+/* Saved Folder Button */
+.saved-folder-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #3a7a4d; 
+  color: #ffffff;
+  font-weight: 600;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+ border:none;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.saved-folder-btn:hover {
+  background-color: #c0cbe3; 
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+
+/* analysis page */
+.an-container {
+  width: 100%;
+  min-height: 100vh;
+  background: #f9fafb;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+.an-wrapper {
+  max-width: 1100px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ---------- Header ---------- */
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-title {
+  font-size: 2.8rem;
+  font-weight: 600;
+  color: #0e5b19;
+}
+
+/* ---------- Centering and Card ---------- */
+.content-center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.form-wrapper {
+  width: 100%;
+  max-width: 850px;
+}
+
+/* ---------- Error Box ---------- */
+.error-box {
+  background: #fee2e2;
+  border-left: 4px solid #ef4444;
+  color: #b91c1c;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.error-icon svg {
+  width: 24px;
+  height: 24px;
+  color: #b91c1c;
+}
+
+/* ---------- Card Layout ---------- */
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #d3d8df;
+  color: #042316;
+  padding: 0.75rem 1.25rem;
+  font-weight: 600;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-icon {
+  width: 20px;
+  height: 20px;
+  color: #256749;
+}
+
+.header-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem;
+}
+
+/* ---------- Buttons ---------- */
+.an-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.an-btn.small {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.an-btn.large {
+  padding: 0.9rem 1.5rem;
+  font-size: 1.05rem;
+}
+
+.an-btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+.an-btn-primary:hover {
+  background: #2563eb;
+}
+
+.an-btn-success {
+  background: #10b981;
+  color: white;
+}
+.an-btn-success:hover {
+  background: #059669;
+}
+
+.an-btn-purple {
+  background: #8b5cf6;
+  color: white;
+}
+.btn-purple:hover {
+  background: #7c3aed;
+}
+
+.an-btn-outline {
+  border: 1.5px solid #cbd5e1;
+  background: #38a782;
+  color: #f9fcff;
+}
+.an-btn-outline:hover {
+  background: #52ad39d6;
+}
+
+/* ---------- Card Body ---------- */
+.card-body {
+  padding: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #9ba1a9;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.file-info {
+  background: #dcfce7;
+  color: #0b8138;
+  text-align: center;
+  padding: 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* ---------- Upload Section ---------- */
+.upload-box {
+  background: #ffffff;
+  border: 2px dashed #9ca3af;
+  border-radius: 8px;
+  text-align: center;
+  padding: 1.2rem;
+  cursor: pointer;
+  transition: background 0.25s, border-color 0.25s;
+}
+
+.upload-box:hover {
+  background: #d1d5db;
+}
+
+.upload-box.loading {
+  border-color: #60a5fa;
+}
+
+.upload-box.success {
+  border-color: #86ccb2;
+}
+
+.upload-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 0.5rem;
+  color: #4b5563;
+}
+
+.upload-box.success .upload-icon {
+  color: #1e9e29;
+}
+
+.hidden-input {
+  display: none;
+}
+
+/* ---------- Divider ---------- */
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem 0;
+  gap: 0.75rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #d1d5db;
+}
+.center{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Loading Spinner ---------- */
+.status-line {
+  margin-top: 0.75rem;
+  color: #0e4f16;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #2563eb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.spinner.small {
+  width: 14px;
+  height: 14px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------- Form Controls ---------- */
+.form-label {
+  display: block;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.form-select {
+  width: 100%;
+  min-height: 50px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.6rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.form-select:focus {
+  border-color: #2e823b;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.1);
+}
+
+/* ---------- Buttons & Layouts ---------- */
+.action-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.submit-section {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+/* ---------- Results Placeholder ---------- */
+.results-wrapper {
+  margin-top: 2rem;
+  text-align: center;
+  color: #4b5563;
+}
+
+/* ---------- Modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal-content {
+  background: #fff;
+  border-radius: 10px;
+  padding: 1.5rem 1.75rem;
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 1rem;
+  border: none;
+  background: transparent;
+  font-size: 1.5rem;
+  color: #374151;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.modal-close:hover {
+  color: #1f2937;
+}
+
+.modal-body {
+  margin-top: 1.25rem;
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+/* ---------- Test Description Section ---------- */
+.test-description-hint {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 0.5rem;
+}
+
+.test-description-box {
+  margin-top: 0.75rem;
+  background: #f3f4f6;
+  color: #374151;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  text-align: left;
+}
+
+.test-description-title {
+  display: block;
+  color: #1f2937;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.test-description-text {
+  font-size: 0.85rem;
+  color: #4b5563;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.test-details-link {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.8rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.test-details-link:hover {
+  color: #1d4ed8;
+}
+
+/* ---------- Tag Selection ---------- */
+.tag-container {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  background: #fff;
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tag-chip {
+  display: flex;
+  align-items: center;
+  background: #e0e7ff;
+  color: #1e3a8a;
+  padding: 0.25rem 0.5rem;
+  border-radius: 5px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.tag-chip:hover {
+  background: #c7d2fe;
+}
+
+.remove-button {
+  background: transparent;
+  border: none;
+  color: #1e3a8a;
+  margin-left: 4px;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.remove-button:hover {
+  color: #1d4ed8;
+}
+
+.tag-placeholder {
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+
+.tag-counter {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* ---------- Form Section ---------- */
+.form-section {
+  margin-top: 1.25rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.6rem;
+  font-size: 1rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-input:focus {
+  border-color: #0d5015;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* ---------- Inline Icon ---------- */
+.icon-inline {
+  width: 20px;
+  height: 20px;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+/* ---------- Spinner Small (for button) ---------- */
+.spinner.small {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #cbd5e1;
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  margin-right: 6px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+}
+
+
 /* ==================== Print Styles ==================== */
 @media print {
     .stats-header {

@@ -543,7 +543,7 @@ const SurveyForm = ({
           <>
             <button
               onClick={() => setShowShareModal(true)}
-              className="btn btn-outline-info btn-sm me-2"
+              className="btn btn-outline-info btn-sm me-2" 
               title="Share survey link"
             >
               <i className="bi bi-share"></i> {getLabel("Survey Link")}

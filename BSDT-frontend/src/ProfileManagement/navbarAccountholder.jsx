@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Avatar, Menu, MenuItem, IconButton } from "@mui/material";
 import { IoPersonCircle } from "react-icons/io5";
+
 import {
   FaHome,
   FaSignOutAlt,
@@ -12,6 +13,8 @@ import {
   FaSearch,
   FaChartBar,
 } from "react-icons/fa";
+import { FaLock } from "react-icons/fa";
+
 
 import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 import "./navbarAcholder.css";
@@ -55,6 +58,7 @@ const NavbarAcholder = ({
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1200);
   const navigate = useNavigate();
+  const token = localStorage.getItem("token");
   const open = Boolean(anchorEl);
 
   const labelsToTranslate = [
@@ -73,7 +77,7 @@ const NavbarAcholder = ({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
+      
         const res = await apiClient.get("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -162,24 +166,7 @@ const NavbarAcholder = ({
         {/* Search + Language inline */}
 
         {/* Language Switch now inline with search */}
-        <div className="NavbarAcholderLangSwitchInline">
-          <label className="NavbarAcholderSwitch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="NavbarAcholderSlider"></span>
-          </label>
-          <div className="NavbarAcholderLangLabels">
-            <span className={language === "English" ? "LangActive" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "LangActive" : ""}>
-              বাংলা
-            </span>
-          </div>
-        </div>
+        
 
         <div className="NavbarAcholderSearchSection">
           <select
@@ -209,9 +196,29 @@ const NavbarAcholder = ({
               onClick={handleSearch}
             />
           </div>
+          
+          </div>
+          <div className="NavbarAcholderLangSwitchInline">
+          <label className="NavbarAcholderSwitch">
+            <input
+              type="checkbox"
+              onChange={toggleLanguage}
+              checked={language === "বাংলা"}
+            />
+            <span className="NavbarAcholderSlider"></span>
+          </label>
+          <div className="NavbarAcholderLangLabels">
+            <span className={language === "English" ? "LangActive" : ""}>
+              English
+            </span>
+            <span className={language === "বাংলা" ? "LangActive" : ""}>
+              বাংলা
+            </span>
+          </div>
+        </div>
 
           {/* NAVIGATION MENU */}
-          <ul
+          {/* <ul
             className={`NavbarAcholderNavList ${
               isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
             }`}
@@ -219,35 +226,12 @@ const NavbarAcholder = ({
             <li onClick={() => isMobile && setMenuOpen(false)}>
               <a href="/dashboard">
                 <FaHome className="NavbarAcholderIcon" />
-                <span>{getLabel("Home")}</span>
+                
               </a>
             </li>
 
-            <li onClick={() => isMobile && setMenuOpen(false)}>
-              <a href="/about">
-                <FaInfoCircle className="NavbarAcholderIcon" />
-                <span>{getLabel("About")}</span>
-              </a>
-            </li>
-
-            <li onClick={() => isMobile && setMenuOpen(false)}>
-              <a href="/faq">
-                <FaQuestionCircle className="NavbarAcholderIcon" />
-                <span>{getLabel("FAQ")}</span>
-              </a>
-            </li>
-
-            {!isAdmin && userType !== "admin" && (
-              <li onClick={() => isMobile && setMenuOpen(false)}>
-                <a href="/analysis">
-                  <FaChartBar className="NavbarAcholderIcon" />
-                  <span>
-                    {language === "English" ? "Analysis" : "বিশ্লেষণ"}
-                  </span>
-                </a>
-              </li>
-            )}
-          </ul>
+       
+          </ul> */}
           {/* Profile dropdown always last */}
 
           <div className="NavbarAcholderProfile">
@@ -266,10 +250,10 @@ const NavbarAcholder = ({
               <div className="NavbarAcholderUserName">
                 {name?.trim().split(" ").slice(-1)[0] || "User"}
               </div>
-            </div>
-
-            <Menu
-              anchorEl={anchorEl}
+            
+    
+          <Menu
+           anchorEl={anchorEl}
               open={open}
               onClose={() => setAnchorEl(null)}
               onClick={() => setAnchorEl(null)}
@@ -279,29 +263,62 @@ const NavbarAcholder = ({
                   mt: 1.5,
                   borderRadius: "12px",
                   filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
+                  minWidth: 180,
                 },
               }}
             >
-              <MenuItem onClick={() => (window.location.href = "/dashboard")}>
-                <IoPersonCircle style={{ marginRight: "8px" }} />
-                {getLabel("Go to Profile")}
-              </MenuItem>
-              <MenuItem onClick={logOut}>
-                <FaSignOutAlt style={{ marginRight: "8px" }} />
-                {getLabel("Logout")}
-              </MenuItem>
-            </Menu>
+        {token && (
+          <>
+            {/* Go to Profile */}
+            <MenuItem onClick={() => (window.location.href = "/edit-profile")}>
+              <IoPersonCircle style={{ marginRight: "8px" }} />
+              {getLabel("Profile")}
+            </MenuItem>
+
+            {/* Security */}
+            <MenuItem onClick={() => (window.location.href = "/security-settings")}>
+              <FaLock style={{ marginRight: "8px" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {getLabel("Security")}
+              </span>
+            </MenuItem>
+            {/* Divider */}
+            <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
+</>
+)}
+
+
+    
+
+            {/* About */}
+            <MenuItem onClick={() => (window.location.href = "/about")}>
+              <FaInfoCircle style={{ marginRight: "8px" }} />
+              {getLabel("About")}
+            </MenuItem>
+
+            {/* FAQ */}
+            <MenuItem onClick={() => (window.location.href = "/faq")}>
+              <FaQuestionCircle style={{ marginRight: "8px" }} />
+              {getLabel("FAQ")}
+            </MenuItem>
+
+        {token && (
+          <>
+            {/* Divider */}
+            <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
+
+            {/* Logout */}
+            <MenuItem onClick={logOut}>
+              <FaSignOutAlt style={{ marginRight: "8px" }} />
+              {getLabel("Logout")}
+            </MenuItem>
+              </>
+        )}
+          </Menu>
+
+    
           </div>
         </div>
-
-        {isMobile && (
-          <button
-            className="NavbarAcholderHamburger"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            ☰
-          </button>
-        )}
       </div>
     </motion.nav>
   );
