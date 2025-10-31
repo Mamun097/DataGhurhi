@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend, Cell } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -17,8 +17,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         captionItalic: false,
         captionUnderline: false,
         captionTopMargin: 30,
-        xAxisTitle: 'Covariate',
-        yAxisTitle: 'Outcome',
+        xAxisTitle: 'Independent Variable',
+        yAxisTitle: 'Dependent Variable',
         xAxisTitleSize: 20,
         yAxisTitleSize: 20,
         xAxisTitleBold: false,
@@ -41,7 +41,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         gridOpacity: 1,
         borderOn: false,
         plotBorderOn: false,
+        barBorderOn: false,
         dataLabelsOn: true,
+        errorBarsOn: true,
         elementWidth: 0.8,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
@@ -55,7 +57,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             ...baseSettings,
             showScatterPoints: true,
             showRegressionLines: true,
-            showReferenceLine: false,
+            showReferenceLine: true,
             showCriticalValues: true,
             scatterSize: 6,
             scatterOpacity: 0.7,
@@ -69,7 +71,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     } else if (plotType === 'Residual') {
         return {
             ...baseSettings,
-            xAxisTitle: 'Covariate',
+            xAxisTitle: 'Independent Variable',
             yAxisTitle: 'Residuals',
             showScatterPoints: true,
             showReferenceLine: true,
@@ -97,7 +99,7 @@ const fontFamilyOptions = [
     { value: 'Garamond', label: 'Garamond' },
 ];
 
-const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, language, user_id, testType, filename, columns) => {
+const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegressionActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
         if (language !== 'বাংলা') return text;
@@ -109,31 +111,28 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         return text.toString().split('').map(char => digitMapBn[char] || char).join('');
     };
 
-    const activeTab = ancovaActiveTab;
-    const setActiveTab = setAncovaActiveTab;
+    const activeTab = linearRegressionActiveTab;
+    const setActiveTab = setLinearRegressionActiveTab;
 
     const [overlayOpen, setOverlayOpen] = React.useState(false);
     const [currentPlotType, setCurrentPlotType] = React.useState('Scatter');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
 
-    const categoryNames = results.plot_data?.map(d => d.category) || [];
-    const categoryCount = categoryNames.length;
-
     const [scatterSettings, setScatterSettings] = React.useState(
-        getDefaultSettings('Scatter', categoryCount, categoryNames)
+        getDefaultSettings('Scatter', results.data_points?.length || 0)
     );
     const [residualSettings, setResidualSettings] = React.useState(
-        getDefaultSettings('Residual', categoryCount, categoryNames)
+        getDefaultSettings('Residual', results.data_points?.length || 0)
     );
 
     React.useEffect(() => {
-        if (results.plot_data && results.plot_data.length > 0) {
-            const labels = results.plot_data.map(d => d.category);
-            setScatterSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setResidualSettings(prev => ({ ...prev, categoryLabels: labels }));
+        if (results.data_points && results.data_points.length > 0) {
+            // Update settings when data is available
+            setScatterSettings(prev => ({ ...prev }));
+            setResidualSettings(prev => ({ ...prev }));
         }
-    }, [results.plot_data]);
+    }, [results.data_points]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -199,7 +198,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         }
     };
 
-    if (!results || !results.plot_data) {
+    if (!results || !results.data_points) {
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
@@ -239,15 +238,22 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     };
 
     const t = {
-        fStatistic: language === 'বাংলা' ? 'এফ-পরিসংখ্যান' : 'F-Statistic',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য প্রভাব পাওয়া গেছে (p < 0.05)' : 'Significant effect found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য প্রভাব নেই (p ≥ 0.05)' : 'No significant effect (p ≥ 0.05)',
-        ancovaTitle: language === 'বাংলা' ? 'এনকোভা (ANCOVA)' : 'ANCOVA (Analysis of Covariance)',
+        linearRegressionTitle: language === 'বাংলা' ? 'লিনিয়ার রিগ্রেশন' : 'Linear Regression',
+        independentVariable: language === 'বাংলা' ? 'স্বাধীন চলক' : 'Independent Variable',
+        dependentVariable: language === 'বাংলা' ? 'নির্ভরশীল চলক' : 'Dependent Variable',
+        intercept: language === 'বাংলা' ? 'ইন্টারসেপ্ট' : 'Intercept',
+        coefficient: language === 'বাংলা' ? 'সহগ' : 'Coefficient',
+        rSquared: language === 'বাংলা' ? 'আর-স্কোয়ার্ড' : 'R-Squared',
+        adjustedRSquared: language === 'বাংলা' ? 'সমন্বিত আর-স্কোয়ার্ড' : 'Adjusted R-Squared',
+        meanSquaredError: language === 'বাংলা' ? 'গড় বর্গ ত্রুটি' : 'Mean Squared Error',
+        equation: language === 'বাংলা' ? 'সমীকরণ' : 'Equation',
         scatterPlot: language === 'বাংলা' ? 'স্ক্যাটার প্লট' : 'Scatter Plot',
-        residualPlot: language === 'বাংলা' ? 'রেসিডুয়াল প্লট' : 'Residual Plot',
-        groupEffect: language === 'বাংলা' ? 'গ্রুপ প্রভাব' : 'Group Effect',
-        covariateEffect: language === 'বাংলা' ? 'কোভ্যারিয়েট প্রভাব' : 'Covariate Effect'
+        residualPlot: language === 'বাংলা' ? 'অবশিষ্ট প্লট' : 'Residual Plot',
+        regressionLine: language === 'বাংলা' ? 'রিগ্রেশন লাইন' : 'Regression Line',
+        confidenceInterval: language === 'বাংলা' ? 'কনফিডেন্স ইন্টারভাল' : 'Confidence Interval',
+        predictionInterval: language === 'বাংলা' ? 'প্রেডিকশন ইন্টারভাল' : 'Prediction Interval',
+        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য সম্পর্ক' : 'Significant relationship',
+        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য সম্পর্ক নেই' : 'No significant relationship'
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -261,7 +267,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {payload[0]?.payload?.group ? `${language === 'বাংলা' ? 'গ্রুপ' : 'Group'}: ${payload[0].payload.group}` : ''}
+                        {payload[0]?.payload?.x !== undefined ? `${t.independentVariable}: ${payload[0].payload.x}` : ''}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
@@ -310,6 +316,24 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         return ['auto', 'auto'];
     };
 
+    const getAxisDomain = (settings, data, dataKey, axisType) => {
+        if (axisType === 'y' && settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+            const min = parseFloat(settings.yAxisMin);
+            const max = parseFloat(settings.yAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                return [min, max];
+            }
+        }
+        if (axisType === 'x' && settings.xAxisMin !== 'auto' && settings.xAxisMin !== '' && settings.xAxisMax !== 'auto' && settings.xAxisMax !== '') {
+            const min = parseFloat(settings.xAxisMin);
+            const max = parseFloat(settings.xAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                return [min, max];
+            }
+        }
+        return ['auto', 'auto'];
+    };
+
     const getGridStroke = (gridColor) => {
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
@@ -322,64 +346,63 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         }
     };
 
-    // Prepare scatter plot data with groups - USE NEW DATA STRUCTURE
-    const scatterData = results.data_points || [];
-    
-    // Group data by category for coloring
-    const groupedData = {};
-    scatterData.forEach(point => {
-        if (!groupedData[point.group]) {
-            groupedData[point.group] = [];
-        }
-        groupedData[point.group].push(point);
-    });
+    // Prepare scatter plot data
+    const scatterData = results.data_points?.map(point => ({
+        x: point.x,
+        y: point.y,
+        predicted: point.predicted,
+        residual: point.residual
+    })) || [];
 
-    // Prepare regression lines for each group - USE NEW DATA STRUCTURE
-    const regressionLines = results.regression_lines || {};
+    // Prepare regression line data
+    const regressionLineData = results.regression_line || [];
+
 
     const renderScatterChart = () => {
         const settings = scatterSettings;
         const { height } = getDimensions(settings.dimensions);
         
-        const yDomain = getYAxisDomain(settings, scatterData, 'y');
+        // Use the Wilcoxon-style plot_data if available, otherwise fallback to original data_points
+        const plotData = results.plot_data || {};
+        const sample1 = plotData.sample1?.values || results.data_points?.map(p => p.x) || [];
+        const sample2 = plotData.sample2?.values || results.data_points?.map(p => p.y) || [];
+        
+        const scatterData = sample1.map((val, index) => ({
+            x: val,
+            y: sample2[index],
+            pair: index + 1
+        }));
 
-        // Group scatter data by group for tooltips
-        const groupedScatterData = {};
-        scatterData.forEach(point => {
-            if (!groupedScatterData[point.group]) {
-                groupedScatterData[point.group] = [];
+        // Use backend regression data (from plot_data.regression or fallback to main results)
+        const regressionData = plotData.regression || {
+            slope: results.coefficient,
+            intercept: results.intercept,
+            r_squared: results.r_squared
+        };
+        
+        const minX = Math.min(...scatterData.map(p => p.x));
+        const maxX = Math.max(...scatterData.map(p => p.x));
+        
+        const regressionLine = [
+            { 
+                x: minX, 
+                y: regressionData.slope * minX + regressionData.intercept 
+            },
+            { 
+                x: maxX, 
+                y: regressionData.slope * maxX + regressionData.intercept 
             }
-            groupedScatterData[point.group].push(point);
-        });
+        ];
 
-        // Prepare regression line data in proper format for Recharts
-        const regressionLineComponents = [];
-        Object.keys(regressionLines).forEach((groupName, groupIndex) => {
-            const lineData = regressionLines[groupName];
-            if (!lineData) return;
-            
-            // Convert regression line data to proper format
-            const regressionData = lineData.x_range.map((x, i) => ({
-                x: x,
-                y: lineData.y_range[i],
-                group: groupName,
-                type: 'regression'
-            }));
-            
-            regressionLineComponents.push(
-                <Line
-                    key={`regression-${groupName}`}
-                    name={`${groupName} Regression`}
-                    data={regressionData}
-                    dataKey="y"
-                    stroke={settings.categoryColors[groupIndex % settings.categoryColors.length]}
-                    strokeWidth={settings.lineWidth || 2}
-                    dot={false}
-                    isAnimationActive={false}
-                    connectNulls={true}
-                />
-            );
-        });
+        // Reference line (y = x) - same as Wilcoxon
+        const minVal = Math.min(minX, Math.min(...scatterData.map(p => p.y)));
+        const maxVal = Math.max(maxX, Math.max(...scatterData.map(p => p.y)));
+        const referenceLine = [
+            { x: minVal, y: minVal },
+            { x: maxVal, y: maxVal }
+        ];
+
+        const yDomain = getYAxisDomain(settings, scatterData, 'y');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -466,33 +489,57 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
-                            {/* Regression Lines - Show before scatter points so they're behind */}
-                            {settings.showRegressionLines && regressionLineComponents}
-                            
-                            {/* Scatter Points - Show last so they're on top */}
-                            {settings.showScatterPoints && Object.keys(groupedScatterData).map((groupName, groupIndex) => (
+                            {/* Scatter Points with CUSTOM SHAPE - Like Wilcoxon */}
+                            {settings.showScatterPoints && (
                                 <Scatter
-                                    key={groupName}
-                                    name={groupName}
-                                    data={groupedScatterData[groupName]}
-                                    fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                    name="Data Points"
+                                    data={scatterData}
+                                    fill={settings.scatterColor || settings.categoryColors[0]}
                                     fillOpacity={settings.scatterOpacity}
                                     shape={(props) => {
-                                        const { cx, cy } = props;
+                                        const { cx, cy, payload } = props;
                                         return (
                                             <circle
                                                 cx={cx}
                                                 cy={cy}
                                                 r={settings.scatterSize / 2}  
-                                                fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                                fill={settings.scatterColor || settings.categoryColors[0]}
                                                 fillOpacity={settings.scatterOpacity}
                                             />
                                         );
                                     }}
                                 />
-                            ))}
+                            )}
                             
-                            {settings.legendOn && <Legend />}
+                            {/* Regression Line */}
+                            {settings.showRegressionLines && (
+                                <Line
+                                    name="Regression Line"
+                                    type="linear"
+                                    dataKey="y"
+                                    data={regressionLine}
+                                    stroke={settings.qqLineColor || '#ef4444'}
+                                    strokeWidth={settings.lineWidth || 2}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            )}
+                            
+                            {/* Reference Line (y = x) */}
+                            {settings.showReferenceLine && (
+                                <Line
+                                    name="Reference Line"
+                                    type="linear"
+                                    dataKey="y"
+                                    data={referenceLine}
+                                    stroke={settings.referenceLineColor || '#dc2626'}
+                                    strokeWidth={settings.referenceLineWidth || 2}
+                                    strokeDasharray={settings.referenceLineStyle === 'dashed' ? '5 5' : 
+                                                settings.referenceLineStyle === 'dotted' ? '2 2' : '0'}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            )}
                         </ComposedChart>
                     </ResponsiveContainer>
 
@@ -512,119 +559,71 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                     )}
                 </div>
 
-                {/* Regression Equations Display */}
-                {settings.showCriticalValues && Object.keys(regressionLines).length > 0 && (
+                {/* Critical Values Display - Same as Wilcoxon */}
+                {settings.showCriticalValues && results.critical_values && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'গ্রুপ রিগ্রেশন সমীকরণ' : 'Group Regression Equations'}
-                        </h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
-                            {Object.keys(regressionLines).map((groupName, groupIndex) => {
-                                const lineData = regressionLines[groupName];
-                                if (!lineData) return null;
-                                
-                                return (
-                                    <div key={groupName} style={{ 
-                                        padding: '12px', 
-                                        background: 'white', 
-                                        borderRadius: '8px', 
-                                        borderLeft: `4px solid ${settings.categoryColors[groupIndex % settings.categoryColors.length]}` 
-                                    }}>
-                                        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                            {groupName}
-                                        </div>
-                                        <div style={{ fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>
-                                            y = {lineData.slope.toFixed(4)}x {lineData.intercept >= 0 ? '+' : ''} {lineData.intercept.toFixed(4)}
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                                            R² = {calculateRSquared(groupedScatterData[groupName], lineData).toFixed(4)}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-
-                {/* ANCOVA Statistics Display */}
-                {settings.showCriticalValues && (
-                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'এনকোভা পরিসংখ্যান' : 'ANCOVA Statistics'}
+                            {language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Values'}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {t.groupEffect}
+                                    {language === 'বাংলা' ? 'নিম্ন সীমা' : 'Lower Bound'}
                                 </div>
-                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    F = {results.f_statistic_group?.toFixed(4)}, p = {results.p_value_group?.toFixed(6)}
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.lower?.toFixed(4)}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {t.covariateEffect}
+                                    {language === 'বাংলা' ? 'গড় পার্থক্য' : 'Mean Difference'}
                                 </div>
-                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    F = {results.f_statistic_covariate?.toFixed(4)}, p = {results.p_value_covariate?.toFixed(6)}
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.mean_difference?.toFixed(4)}
                                 </div>
                             </div>
-                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    R²
+                                    {language === 'বাংলা' ? 'উচ্চ সীমা' : 'Upper Bound'}
                                 </div>
-                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    {results.metadata?.r_squared?.toFixed(4)}
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.upper?.toFixed(4)}
                                 </div>
                             </div>
                         </div>
+                        {regressionData.r_squared && (
+                            <div style={{ marginTop: '12px', padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'রিগ্রেশন R²' : 'Regression R²'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {regressionData.r_squared.toFixed(4)}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
         );
     };
 
-    // Helper function to calculate R-squared for each group
-    const calculateRSquared = (data, regressionLine) => {
-        if (!data || data.length === 0) return 0;
-        
-        const yValues = data.map(point => point.y);
-        const yMean = yValues.reduce((sum, val) => sum + val, 0) / yValues.length;
-        
-        const totalSumOfSquares = yValues.reduce((sum, val) => sum + Math.pow(val - yMean, 2), 0);
-        const residualSumOfSquares = data.reduce((sum, point) => {
-            const predicted = regressionLine.slope * point.x + regressionLine.intercept;
-            return sum + Math.pow(point.y - predicted, 2);
-        }, 0);
-        
-        return totalSumOfSquares === 0 ? 0 : 1 - (residualSumOfSquares / totalSumOfSquares);
-    };
 
     const renderResidualPlot = () => {
         const settings = residualSettings;
         const { height } = getDimensions(settings.dimensions);
 
-        // Use residual data from backend - USE NEW DATA STRUCTURE
+        // Use residual data from backend or calculate from data_points
         const residualData = results.residual_data ? 
             results.residual_data.independent.map((x, index) => ({
                 x: x,
                 y: results.residual_data.values[index],
-                group: scatterData[index]?.group || 'Unknown'
+                fitted: results.residual_data.fitted[index]
             })) : 
-            scatterData.map(point => ({
+            results.data_points?.map(point => ({
                 x: point.x,
                 y: point.residual,
-                group: point.group
+                fitted: point.predicted
             })) || [];
-
-        // Group residual data
-        const groupedResidualData = {};
-        residualData.forEach(point => {
-            if (!groupedResidualData[point.group]) {
-                groupedResidualData[point.group] = [];
-            }
-            groupedResidualData[point.group].push(point);
-        });
 
         // Create zero reference line data
         const minX = Math.min(...residualData.map(d => d.x));
@@ -666,7 +665,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ComposedChart  
-                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -737,30 +736,27 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                 />
                             )}
                             
-                            {/* Residual Points by Group */}
-                            {settings.showScatterPoints && Object.keys(groupedResidualData).map((groupName, groupIndex) => (
+                            {/* Residual Points */}
+                            {settings.showScatterPoints && (
                                 <Scatter
-                                    key={groupName}
-                                    name={`${groupName} Residuals`}
-                                    data={groupedResidualData[groupName]}
-                                    fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                    name={language === 'বাংলা' ? 'অবশিষ্ট' : 'Residuals'}
+                                    data={residualData}
+                                    fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
                                     shape={(props) => {
-                                        const { cx, cy } = props;
+                                        const { cx, cy, payload } = props;
                                         return (
                                             <circle
                                                 cx={cx}
                                                 cy={cy}
                                                 r={settings.scatterSize / 2}  
-                                                fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                                fill={settings.scatterColor || '#3b82f6'}
                                                 fillOpacity={settings.scatterOpacity || 0.7}
                                             />
                                         );
                                     }}
                                 />
-                            ))}
-                            
-                            {settings.legendOn && <Legend />}
+                            )}
                         </ComposedChart>
                     </ResponsiveContainer>
 
@@ -781,7 +777,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 </div>
 
                 {/* Residual Statistics Display */}
-                {settings.showCriticalValues && results.residual_data && (
+                {settings.showCriticalValues && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
                             {language === 'বাংলা' ? 'অবশিষ্ট পরিসংখ্যান' : 'Residual Statistics'}
@@ -792,7 +788,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                     {language === 'বাংলা' ? 'গড় অবশিষ্ট' : 'Mean Residual'}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.residual_data.statistics?.mean?.toFixed(4) || '0.0000'}
+                                    {results.critical_values?.mean_difference?.toFixed(4) || '0.0000'}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
@@ -800,7 +796,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                     {language === 'বাংলা' ? 'অবশিষ্ট এসডি' : 'Residual SD'}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.residual_data.statistics?.std?.toFixed(4)}
+                                    {results.root_mean_squared_error?.toFixed(4)}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
@@ -808,7 +804,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                     {language === 'বাংলা' ? 'অবশিষ্ট পরিসীমা' : 'Residual Range'}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.residual_data.statistics?.min?.toFixed(4)} to {results.residual_data.statistics?.max?.toFixed(4)}
+                                    {results.critical_values?.lower?.toFixed(4)} to {results.critical_values?.upper?.toFixed(4)}
                                 </div>
                             </div>
                         </div>
@@ -821,7 +817,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.ancovaTitle}</h2>
+                <h2 className="stats-title">{t.linearRegressionTitle}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
@@ -843,43 +839,41 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                     <tbody>
                         <tr>
                             <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">
-                                {results.column_names?.group} ({language === 'বাংলা' ? 'গ্রুপ' : 'group'}), 
-                                {results.column_names?.covariate} ({language === 'বাংলা' ? 'কোভ্যারিয়েট' : 'covariate'}), 
-                                {results.column_names?.outcome} ({language === 'বাংলা' ? 'আউটকাম' : 'outcome'})
-                            </td>
+                            <td className="stats-table-value">{results.column_names?.independent || columns?.[0]} {language === 'বাংলা' ? 'এবং' : 'and'} {results.column_names?.dependent || columns?.[1]}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
+                            <td className="stats-table-label">{t.intercept}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.intercept?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
+                            <td className="stats-table-label">{t.coefficient}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.coefficient?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.groupEffect}</td>
-                            <td className="stats-table-value stats-numeric">
-                                F = {mapDigitIfBengali(results.f_statistic_group?.toFixed(4))}, 
-                                p = {mapDigitIfBengali(results.p_value_group?.toFixed(6))}
-                            </td>
+                            <td className="stats-table-label">{t.rSquared}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.covariateEffect}</td>
-                            <td className="stats-table-value stats-numeric">
-                                F = {mapDigitIfBengali(results.f_statistic_covariate?.toFixed(4))}, 
-                                p = {mapDigitIfBengali(results.p_value_covariate?.toFixed(6))}
-                            </td>
+                            <td className="stats-table-label">{t.adjustedRSquared}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.adjusted_r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">R²</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.metadata?.r_squared?.toFixed(4))}</td>
+                            <td className="stats-table-label">{t.meanSquaredError}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.mean_squared_error?.toFixed(4))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপ প্রভাব সিদ্ধান্ত' : 'Group Effect Conclusion'}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'সমীকরণ' : 'Equation'}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
-                                    {results.p_value_group < 0.05 ? (
+                                    y = {mapDigitIfBengali(results.coefficient?.toFixed(4))}x {results.intercept >= 0 ? '+' : ''} {mapDigitIfBengali(results.intercept?.toFixed(4))}
+                                </div>
+                            </td>
+                        </tr>
+                        <tr className="stats-conclusion-row">
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-value">
+                                <div className="stats-conclusion-inline">
+                                    {results.significant ? (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -934,6 +928,17 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />
+
+            <CustomizationOverlay
+                isOpen={overlayOpen}
+                onClose={() => setOverlayOpen(false)}
+                plotType={currentPlotType}
+                settings={getCurrentSettings()}
+                onSettingsChange={setCurrentSettings}
+                language={language}
+                fontFamilyOptions={fontFamilyOptions}
+                getDefaultSettings={getDefaultSettings}
+            />            
 
             <style jsx="true">{`
                 .customize-btn {
@@ -1003,4 +1008,4 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     );
 };
 
-export default renderAncovaResults;
+export default renderLinearRegressionResults;
