@@ -953,7 +953,7 @@ const StatisticalAnalysisTool = () => {
             <div className="content-center">
                 <div className="form-wrapper">
                     {/* Error Message */}
-                    {errorMessage && (
+                    {/* {errorMessage && (
                         <div className="error-box">
                             <div className="error-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor">
@@ -966,7 +966,7 @@ const StatisticalAnalysisTool = () => {
                             </div>
                             <div className="error-text">{errorMessage}</div>
                         </div>
-                    )}
+                    )} */}
 
                     {!results ? (
                         <div className="card">
@@ -984,12 +984,6 @@ const StatisticalAnalysisTool = () => {
                                 </div>
                                 <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
                                     {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
-                                </button>
-                            </div>
-
-                            <div className="header-actions">
-                                <button onClick={resetForm} className="an-btn an-btn-success small">
-                                    Reset File
                                 </button>
                             </div>
 
@@ -1085,280 +1079,338 @@ const StatisticalAnalysisTool = () => {
                                     </div>
 
                                     <style jsx>{`
-.upload-folder-container {
-    display: flex;
-    align-items: stretch;
-    gap: 0;
-    width: 100%;
-}
+                                        .upload-folder-container {
+                                            display: flex;
+                                            align-items: stretch;
+                                            gap: 0;
+                                            width: 100%;
+                                        }
 
-.action-box {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-height: 120px;
-    background-color: #ffffff;
-}
+                                        .action-box {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            justify-content: center;
+                                            padding: 1.5rem;
+                                            border: 2px solid #e2e8f0;
+                                            border-radius: 12px;
+                                            cursor: pointer;
+                                            transition: all 0.3s ease;
+                                            min-height: 120px;
+                                            background-color: #ffffff;
+                                        }
 
-.action-box:hover {
-    border-color: #4bb77d;
-    background-color: #f7fafc;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
-}
+                                        .action-box:hover {
+                                            border-color: #4bb77d;
+                                            background-color: #f7fafc;
+                                            transform: translateY(-2px);
+                                            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+                                        }
 
-.upload-box.loading {
-    border-color: #4bb77d;
-    background-color: #ebf8ff;
-}
+                                        .upload-box.loading {
+                                            border-color: #4bb77d;
+                                            background-color: #ebf8ff;
+                                        }
 
-.upload-box.success {
-    border-color: #48bb78;
-    background-color: #f0fff4;
-}
+                                        .upload-box.success {
+                                            border-color: #48bb78;
+                                            background-color: #f0fff4;
+                                        }
 
-.upload-box.success .action-icon {
-    color: #48bb78;
-}
+                                        .upload-box.success .action-icon {
+                                            color: #48bb78;
+                                        }
 
-.action-icon {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 0.75rem;
-    color: #4a5568;
-    transition: all 0.3s ease;
-}
+                                        .action-icon {
+                                            width: 48px;
+                                            height: 48px;
+                                            margin-bottom: 0.75rem;
+                                            color: #4a5568;
+                                            transition: all 0.3s ease;
+                                        }
 
-.upload-box .action-icon {
-    color: #4bb77d;
-}
+                                        .upload-box .action-icon {
+                                            color: #4bb77d;
+                                        }
 
-.folder-box .action-icon {
-    color: #4bb77d;
-}
+                                        .folder-box .action-icon {
+                                            color: #4bb77d;
+                                        }
 
-.action-box:hover .action-icon {
-    transform: scale(1.1);
-}
+                                        .action-box:hover .action-icon {
+                                            transform: scale(1.1);
+                                        }
 
-.action-text {
-    margin: 0;
-    color: #2d3748;
-    font-size: 1rem;
-    font-weight: 500;
-    text-align: center;
-}
+                                        .action-text {
+                                            margin: 0;
+                                            color: #2d3748;
+                                            font-size: 1rem;
+                                            font-weight: 500;
+                                            text-align: center;
+                                        }
 
-.vertical-divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 1.5rem;
-    position: relative;
-}
+                                        .vertical-divider {
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            padding: 0 1.5rem;
+                                            position: relative;
+                                        }
 
-.vertical-divider::before {
-    content: '';
-    position: absolute;
-    left: 50%;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background-color: #e2e8f0;
-    transform: translateX(-50%);
-}
+                                        .vertical-divider::before {
+                                            content: '';
+                                            position: absolute;
+                                            left: 50%;
+                                            top: 0;
+                                            bottom: 0;
+                                            width: 1px;
+                                            background-color: #e2e8f0;
+                                            transform: translateX(-50%);
+                                        }
 
-.vertical-divider span {
-    background-color: white;
-    padding: 0.5rem;
-    color: #a0aec0;
-    font-size: 0.875rem;
-    font-weight: 500;
-    position: relative;
-    z-index: 1;
-}
+                                        .vertical-divider span {
+                                            background-color: white;
+                                            padding: 0.5rem;
+                                            color: #a0aec0;
+                                            font-size: 0.875rem;
+                                            font-weight: 500;
+                                            position: relative;
+                                            z-index: 1;
+                                        }
 
-.hidden-input {
-    display: none;
-}
+                                        .hidden-input {
+                                            display: none;
+                                        }
 
-.file-info-box {
-    display: flex;
-    align-items: center;
-    padding: 1.5rem;
-    border: 2px solid #48bb78;
-    border-radius: 12px;
-    background-color: #f0fff4;
-    gap: 1rem;
-}
+                                        .file-info-box {
+                                            display: flex;
+                                            align-items: center;
+                                            padding: 1.5rem;
+                                            border: 2px solid #48bb78;
+                                            border-radius: 12px;
+                                            background-color: #f0fff4;
+                                            gap: 1rem;
+                                        }
 
-.file-icon {
-    width: 48px;
-    height: 48px;
-    color: #48bb78;
-    flex-shrink: 0;
-}
+                                        .file-icon {
+                                            width: 48px;
+                                            height: 48px;
+                                            color: #48bb78;
+                                            flex-shrink: 0;
+                                        }
 
-.file-details {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
+                                        .file-details {
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 0.25rem;
+                                        }
 
-.file-label {
-    font-size: 0.875rem;
-    color: #2d3748;
-}
+                                        .file-label {
+                                            font-size: 0.875rem;
+                                            color: #2d3748;
+                                        }
 
-.file-name {
-    font-size: 1rem;
-    color: #1a202c;
-    font-weight: 600;
-}
+                                        .file-name {
+                                            font-size: 1rem;
+                                            color: #1a202c;
+                                            font-weight: 600;
+                                        }
 
-/* Mobile View - Show only icons */
-@media (max-width: 768px) {
-    .upload-folder-container {
-        gap: 1rem;
-    }
+                                        /* Mobile View - Show only icons */
+                                        @media (max-width: 768px) {
+                                            .upload-folder-container {
+                                                gap: 1rem;
+                                            }
 
-    .action-box {
-        padding: 1.5rem 1rem;
-        min-height: 150px;
-    }
+                                            .action-box {
+                                                padding: 1.5rem 1rem;
+                                                min-height: 150px;
+                                            }
 
-    .action-icon {
-        width: 48px;
-        height: 48px;
-        margin-bottom: 0;
-    }
+                                            .action-icon {
+                                                width: 48px;
+                                                height: 48px;
+                                                margin-bottom: 0;
+                                            }
 
-    .action-text {
-        display: none;
-    }
+                                            .action-text {
+                                                display: none;
+                                            }
 
-    .vertical-divider {
-        padding: 0 0.75rem;
-    }
+                                            .vertical-divider {
+                                                padding: 0 0.75rem;
+                                            }
 
-    .vertical-divider span {
-        font-size: 0.75rem;
-        padding: 0.25rem 0.5rem;
-    }
-}
+                                            .vertical-divider span {
+                                                font-size: 0.75rem;
+                                                padding: 0.25rem 0.5rem;
+                                            }
+                                        }
 
-@media (max-width: 480px) {
-    .action-box {
-        padding: 1rem 0.5rem;
-        min-height: 120px;
-    }
+                                        @media (max-width: 480px) {
+                                            .action-box {
+                                                padding: 1rem 0.5rem;
+                                                min-height: 120px;
+                                            }
 
-    .action-icon {
-        width: 40px;
-        height: 40px;
-    }
+                                            .action-icon {
+                                                width: 40px;
+                                                height: 40px;
+                                            }
 
-    .vertical-divider {
-        padding: 0 0.5rem;
-    }
-}
-`}</style>
+                                            .vertical-divider {
+                                                padding: 0 0.5rem;
+                                            }
+                                        }
+                                    `}</style>
 
-                                    <div className="action-buttons">
-                                        <button type="button" className="an-btn an-btn-primary" onClick={handlePreviewClick}>
-                                            {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="an-btn an-btn-purple"
-                                            onClick={() => {
-                                                const path = "/preprocess";
-                                                navigate(path, { state: { userId: userId, filename: fileName } });
-                                            }}
-                                        >
-                                            {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
-                                        </button>
-                                    </div>
+                                    {(isPreprocessed || isSurveyData || file) ?
+                                        (<div style={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'center',
+                                            gap: '10px',
+                                            margin: '-70px 0',
+                                            marginBottom: '50px',
+                                        }}>
+                                            <div className="action-buttons" style={{
+                                                display: 'flex',
+                                                gap: '12px',
+                                                justifyContent: 'right'
+                                            }}>
+                                                <button
+                                                    type="button"
+                                                    className="customize-btn"
+                                                    onClick={handlePreviewClick}
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                        <circle cx="12" cy="12" r="3"></circle>
+                                                    </svg>
+                                                    {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
+                                                </button>
 
-                                    <div className="form-section">
-                                        <h5 className="section-title">{t.selectTest}</h5>
-                                        <label className="form-label">{t.testType}</label>
-                                        <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
-                                            <option value="" disabled>
-                                                {t.selectPrompt}
-                                            </option>
-                                            <optgroup label={t.testGroups.eda}>
-                                                <option value="eda_basics">{t.tests.eda_basics}</option>
-                                                <option value="eda_distribution">{t.tests.eda_distribution}</option>
-                                                <option value="eda_swarm">{t.tests.eda_swarm}</option>
-                                                <option value="eda_pie">{t.tests.eda_pie}</option>
-                                                <option value="bar_chart">{t.tests.bar_chart}</option>
-                                                <option value="similarity">{t.tests.similarity}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.nonParametric}>
-                                                <option value="kruskal">{t.tests.kruskal}</option>
-                                                <option value="mannwhitney">{t.tests.mannwhitney}</option>
-                                                <option value="wilcoxon">{t.tests.wilcoxon}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.correlation}>
-                                                <option value="pearson">{t.tests.pearson}</option>
-                                                <option value="spearman">{t.tests.spearman}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.parametric}>
-                                                <option value="fzt">{t.tests.fzt}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.regression}>
-                                                <option value="linear_regression">{t.tests.linear_regression}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.anova}>
-                                                <option value="anova">{t.tests.anova}</option>
-                                                <option value="ancova">{t.tests.ancova}</option>
-                                            </optgroup>
-                                            <optgroup label={t.testGroups.other}>
-                                                <option value="shapiro">{t.tests.shapiro}</option>
-                                                <option value="kolmogorov">{t.tests.kolmogorov}</option>
-                                                <option value="anderson">{t.tests.anderson}</option>
-                                                <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
-                                                <option value="chi_square">{t.tests.chi_square}</option>
-                                                <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
-                                                <option value="network_graph">{t.tests.network_graph}</option>
-                                            </optgroup>
-                                        </select>
+                                                <button
+                                                    type="button"
+                                                    className="customize-btn"
+                                                    onClick={() => {
+                                                        const path = "/preprocess";
+                                                        navigate(path, { state: { userId: userId, filename: fileName } });
+                                                    }}
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
+                                                    </svg>
+                                                    {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
+                                                </button>
 
-                                        <div className="test-description-hint">{t.selectPrompt}</div>
-
-                                        {testType && t.descriptions[testType] && (
-                                            <div className="test-description-box">
-                                                <strong className="test-description-title">
-                                                    {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
-                                                </strong>
-
-                                                <div className="test-description-text">{t.descriptions[testType]}</div>
-
-                                                {!testsWithoutDetails.includes(testType) && (
-                                                    <div>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setDetailsModalVisible(true)}
-                                                            className="test-details-link"
-                                                        >
-                                                            {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
-                                                        </button>
-                                                    </div>
-                                                )}
+                                                <button
+                                                    onClick={resetForm}
+                                                    className="customize-btn"
+                                                >
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                        <path d="M21 3v5h-5"></path>
+                                                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                        <path d="M3 21v-5h5"></path>
+                                                    </svg>
+                                                    Reset File
+                                                </button>
                                             </div>
-                                        )}
 
-                                    </div>
+                                            {/* Dotted horizontal line */}
+                                            <div style={{
+                                                width: '100%',
+                                                borderBottom: '2px dotted #ddd',
+                                                margin: '0 auto'
+                                            }}></div>
+                                        </div>
 
-                                    {testType === "bar_chart" && (
+
+
+
+                                        ) : null}
+                                        <style jsx>{`
+                                            .customize-btn:hover {
+                                                background-color: rgba(34, 197, 94, 0.1); /* Light green background */
+                                                border-color: #22c55e; /* Green border */
+                                                color: #16a34a; /* Green text */
+                                        `}</style>
+
+                                    {(isPreprocessed || isSurveyData || file) ? (
+                                        <div className="form-section">
+                                            <h5 className="section-title">{t.selectTest}</h5>
+                                            <label className="form-label">{t.testType}</label>
+                                            <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+                                                <option value="" disabled>
+                                                    {t.selectPrompt}
+                                                </option>
+                                                <optgroup label={t.testGroups.eda}>
+                                                    <option value="eda_basics">{t.tests.eda_basics}</option>
+                                                    <option value="eda_distribution">{t.tests.eda_distribution}</option>
+                                                    <option value="eda_swarm">{t.tests.eda_swarm}</option>
+                                                    <option value="eda_pie">{t.tests.eda_pie}</option>
+                                                    <option value="bar_chart">{t.tests.bar_chart}</option>
+                                                    <option value="similarity">{t.tests.similarity}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.nonParametric}>
+                                                    <option value="kruskal">{t.tests.kruskal}</option>
+                                                    <option value="mannwhitney">{t.tests.mannwhitney}</option>
+                                                    <option value="wilcoxon">{t.tests.wilcoxon}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.correlation}>
+                                                    <option value="pearson">{t.tests.pearson}</option>
+                                                    <option value="spearman">{t.tests.spearman}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.parametric}>
+                                                    <option value="fzt">{t.tests.fzt}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.regression}>
+                                                    <option value="linear_regression">{t.tests.linear_regression}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.anova}>
+                                                    <option value="anova">{t.tests.anova}</option>
+                                                    <option value="ancova">{t.tests.ancova}</option>
+                                                </optgroup>
+                                                <optgroup label={t.testGroups.other}>
+                                                    <option value="shapiro">{t.tests.shapiro}</option>
+                                                    <option value="kolmogorov">{t.tests.kolmogorov}</option>
+                                                    <option value="anderson">{t.tests.anderson}</option>
+                                                    <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
+                                                    <option value="chi_square">{t.tests.chi_square}</option>
+                                                    <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                                    <option value="network_graph">{t.tests.network_graph}</option>
+                                                </optgroup>
+                                            </select>
+
+                                            <div className="test-description-hint">{t.selectPrompt}</div>
+
+                                            {testType && t.descriptions[testType] && (
+                                                <div className="test-description-box">
+                                                    <strong className="test-description-title">
+                                                        {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
+                                                    </strong>
+
+                                                    <div className="test-description-text">{t.descriptions[testType]}</div>
+
+                                                    {!testsWithoutDetails.includes(testType) && (
+                                                        <div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setDetailsModalVisible(true)}
+                                                                className="test-details-link"
+                                                            >
+                                                                {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                        </div>) : null}
+
+                                    {(isPreprocessed || isSurveyData || file) && testType === "bar_chart" ? (
                                         <div className="form-group">
                                             <label className="form-label">
                                                 {language === "bn"
@@ -1378,16 +1430,17 @@ const StatisticalAnalysisTool = () => {
                                                 </option>
                                             </select>
                                         </div>
-                                    )}
+                                    ) : null}
 
-                                    {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
+                                    {(isPreprocessed || isSurveyData || file) && (testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
                                         <div style={{ marginBottom: '2rem' }}>
                                             <label style={{
                                                 display: 'block',
                                                 fontSize: '0.875rem',
                                                 fontWeight: '600',
                                                 color: '#1f2937',
-                                                marginBottom: '0.75rem'
+                                                marginBottom: '0.75rem',
+                                                marginTop: '-20px'
                                             }}>
                                                 Select Columns
                                             </label>
@@ -1702,7 +1755,7 @@ const StatisticalAnalysisTool = () => {
                                     )}
 
 
-                                    {testType !== 'eda_basics' && (
+                                    {(isPreprocessed || isSurveyData || file) && testType !== 'eda_basics' && (
                                         <div className="mb-6">
                                             {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
                                             {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
@@ -2279,44 +2332,45 @@ const StatisticalAnalysisTool = () => {
                                         </div>
                                     )}
 
-                                    <div className="submit-section">
-                                        <button
-                                            type="submit"
-                                            className="an-btn an-btn-primary large"
-                                            disabled={
-                                                isAnalyzing ||
-                                                !file ||
-                                                !column1 ||
-                                                (requiredFields.col2 && !column2) ||
-                                                (requiredFields.col3 && !column3)
-                                            }
-                                        >
-                                            {isAnalyzing ? (
-                                                <>
-                                                    <div className="spinner small"></div>
-                                                    {t.analyzing}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <svg
-                                                        className="icon-inline"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                        />
-                                                    </svg>
-                                                    {t.analyzeButton}
-                                                </>
-
-                                            )}
-                                        </button>
-                                    </div>
+                                    {(isPreprocessed || isSurveyData || file) && (
+                                        <div className="submit-section" style={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            margin: '20px 0'
+                                        }}>
+                                            <button
+                                                type="submit"
+                                                className="customize-btn"
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    fontSize: '16px',
+                                                    fontWeight: '700'
+                                                }}
+                                                disabled={
+                                                    isAnalyzing ||
+                                                    !file ||
+                                                    !column1 ||
+                                                    (requiredFields.col2 && !column2) ||
+                                                    (requiredFields.col3 && !column3)
+                                                }
+                                            >
+                                                {isAnalyzing ? (
+                                                    <>
+                                                        <div className="spinner small"></div>
+                                                        {t.analyzing}
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                                                            </svg>
+                                                        {t.analyzeButton}
+                                                    </>
+                                                )}
+                                            </button>
+                                        </div>)}
                                 </form>
 
                                 {detailsModalVisible && (
