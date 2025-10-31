@@ -53,35 +53,35 @@
 }
 
 /* Visibility Options */
-.visibility-section {
+.crt-visibility-section {
   margin-top: 10px;
 }
 
-.visibility-section label {
-  font-weight: 600;
+.crt-visibility-section label {
+  
   display: block;
   margin-bottom: 8px;
 }
 
-.visibility-options {
+.crt-visibility-options {
   display: flex;
-  gap: 20px;
+  gap: 10px;
   margin-top: 8px;
 }
 
-.visibility-option {
+.crt-visibility-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
   font-size: 14px;
 }
 
-.visibility-option input {
+.crt-visibility-option input {
   accent-color: #0b5b06;
 }
 
-.visibility-icon {
-  font-size: 20px;
+.crt-visibility-icon {
+  font-size: 70px;
   color: #007e2e;
   transition: color 0.3s;
 }
@@ -94,9 +94,21 @@
 
 /* Submit Button */
 .submit-btn {
-  padding: 12px 20px;
+  padding: 5px 10px;
   font-size: 16px;
   background-color: #35a840;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  margin-right: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.cancel-btn {
+  padding: 10px 15px;
+  font-size: 16px;
+  background-color: #eee9e9;
   color: white;
   border: none;
   border-radius: 8px;

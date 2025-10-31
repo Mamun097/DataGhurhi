@@ -10,9 +10,9 @@
   display: flex;
   flex-direction: row;
   /* gap: 24px; */
-  /* padding: 32px; */
+  padding-top: 80px;
   /* background: #f9fbfc; */
-  margin-top: 100px;
+
   background: linear-gradient(90deg, #c8efdc 30%, #d8ebe7 30%);
 }
 .edit-left,

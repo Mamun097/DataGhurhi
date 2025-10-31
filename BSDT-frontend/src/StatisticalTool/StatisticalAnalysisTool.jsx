@@ -26,7 +26,7 @@ import ShapiroWilkOptions from './ShapiroWilkOptions';
 import SimilarityOptions from './SimilarityOptions';
 import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
-import './StatisticalAnalysisTool.css';
+//import './StatisticalAnalysisTool.css';
 import './StatisticalAnalysisResultPage.css';
 // import WilcoxonOptions from './WilcoxonOptions';
 import apiClient from '../api';
@@ -48,7 +48,7 @@ const translations = {
         title: "Statistical Analysis Tool",
         subtitle: "Upload your Excel file and run various statistical tests on your data",
         formTitle: "Data Analysis Form",
-        uploadLabel: "Upload Your Data",
+        uploadLabel: "Upload Your Data or Use Previously Saved File",
         preprocessedLabel: "Preprocessed File",
         surveyLabel: "Survey Data File",
         dropFile: "Drag & drop your Excel file or click to browse",
@@ -933,466 +933,382 @@ const StatisticalAnalysisTool = () => {
 
 
     return (
-        <div className="bg-gray-100 font-sans min-h-screen">
-            <div className="container mx-auto py-8 px-4">
-                <NavbarAcholder language={language} setLanguage={setLanguage} />
+       
 
+                        <div className="an-wrapper">
+                        <header className="page-header">
+                            <h1 className="page-title">{t.title}</h1>
+                        </header>
 
-                <div className="container mx-auto py-10 px-4 relative">
-                    <header className="text-center mb-8">
-                        <h1 className="text-4xl font-bold text-blue-600 mb-3">{t.title}</h1>
-                    </header>
-
-                    <div className="flex flex-col items-center">
-                        <div className="w-full max-w-4xl">
+                        <div className="content-center">
+                            <div className="form-wrapper">
+                            {/* Error Message */}
                             {errorMessage && (
-                                <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded">
-                                    <div className="flex">
-                                        <div className="py-1">
-                                            <svg className="w-6 h-6 mr-4" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                                            </svg>
-                                        </div>
-                                        <div>{errorMessage}</div>
-                                    </div>
+                                <div className="error-box">
+                                <div className="error-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                    <path
+                                        fillRule="evenodd"
+                                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                        clipRule="evenodd"
+                                    />
+                                    </svg>
+                                </div>
+                                <div className="error-text">{errorMessage}</div>
                                 </div>
                             )}
+
                             {!results ? (
-                                <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-                                    <div className="bg-gray-700 text-white p-4 font-semibold">
-                                        <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                        </svg>
-                                        <span className="text-black">{t.formTitle}</span>
-
-                                        <button
-                                            onClick={() => navigate('/report')}
-                                            className="ml-3 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                        >
-                                            {language === 'বাংলা' ? 'রিপোর্ট দেখুন' : 'Show Report'}
-                                        </button>
-
+                                <div className="card">
+                                <div className="card-header">
+                                    <div className="header-left">
+                                    <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                        <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                        />
+                                    </svg>
+                                    <span>{t.formTitle}</span>
                                     </div>
-                                    <div className="flex justify-end px-4 pt-4">
-                                        <button
-                                            onClick={resetForm}
-                                            className="bg-green-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg shadow transition duration-200"
+                                    <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
+                                    {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
+                                    </button>
+                                </div>
+
+                                <div className="header-actions">
+                                    <button onClick={resetForm} className="an-btn an-btn-success small">
+                                    Reset File
+                                    </button>
+                                </div>
+
+                                <div className="card-body">
+                                    <form onSubmit={handleSubmit}>
+                                    <div className="form-section">
+                                        <h5 className="section-title">
+                                        {isPreprocessed
+                                            ? t.preprocessedLabel
+                                            : isSurveyData
+                                            ? t.surveyLabel
+                                            : t.uploadLabel}
+                                        </h5>
+
+                                        {(isPreprocessed || isSurveyData) ? (
+                                        <div className="file-info">
+                                            {(isPreprocessed ? "Preprocessed file" : "Survey file")}{" "}
+                                            <strong>{fileName}</strong> loaded automatically.
+                                        </div>
+                                        ) : (
+                                        <div
+                                            ref={uploadContainerRef}
+                                            className={`upload-box ${
+                                            uploadStatus === "loading"
+                                                ? "loading"
+                                                : uploadStatus === "success"
+                                                ? "success"
+                                                : ""
+                                            }`}
+                                            onClick={() => fileInputRef.current.click()}
                                         >
-                                            Reset File
+                                            <svg className="upload-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                            {uploadStatus === "success" ? (
+                                                <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            ) : (
+                                                <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                />
+                                            )}
+                                            </svg>
+                                            <p id="fileName">{file ? fileName : t.dropFile}</p>
+                                            <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden-input"
+                                            accept=".xls,.xlsx"
+                                            onClick={(e) => (e.target.value = null)}
+                                            onChange={handleFileChange}
+                                            />
+                                        </div>
+                                        )}
+
+                                        <div className="divider">
+                                        <span>Or</span>
+                                        </div>
+
+                                        <div className="center">
+                                        <button onClick={() => navigate("/saved-files")} className="an-btn an-btn-outline">
+                                            Go to Saved Folder
+                                        </button>
+                                        </div>
+
+                                        {uploadStatus === "loading" && (
+                                        <div className="status-line">
+                                            <div className="spinner" />
+                                            {t.processing}
+                                        </div>
+                                        )}
+                                    </div>
+
+                                    <div className="action-buttons">
+                                        <button type="button" className="an-btn an-btn-primary" onClick={handlePreviewClick}>
+                                        {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
+                                        </button>
+                                        <button
+                                        type="button"
+                                        className="an-btn an-btn-purple"
+                                        onClick={() => {
+                                            const path = "/preprocess";
+                                            navigate(path, { state: { userId: userId, filename: fileName } });
+                                        }}
+                                        >
+                                        {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
                                         </button>
                                     </div>
 
-                                    <div className="p-6">
-                                        <form onSubmit={handleSubmit}>
+                                    <div className="form-section">
+                                        <h5 className="section-title">{t.selectTest}</h5>
+                                        <label className="form-label">{t.testType}</label>
+                                        <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+                                        <option value="" disabled>
+                                            {t.selectPrompt}
+                                        </option>
+                                        <optgroup label={t.testGroups.eda}>
+                                            <option value="eda_basics">{t.tests.eda_basics}</option>
+                                            <option value="eda_distribution">{t.tests.eda_distribution}</option>
+                                            <option value="eda_swarm">{t.tests.eda_swarm}</option>
+                                            <option value="eda_pie">{t.tests.eda_pie}</option>
+                                            <option value="bar_chart">{t.tests.bar_chart}</option>
+                                            <option value="similarity">{t.tests.similarity}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.nonParametric}>
+                                            <option value="kruskal">{t.tests.kruskal}</option>
+                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>
+                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.correlation}>
+                                            <option value="pearson">{t.tests.pearson}</option>
+                                            <option value="spearman">{t.tests.spearman}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.parametric}>
+                                            <option value="fzt">{t.tests.fzt}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.regression}>
+                                            <option value="linear_regression">{t.tests.linear_regression}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.anova}>
+                                            <option value="anova">{t.tests.anova}</option>
+                                            <option value="ancova">{t.tests.ancova}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.other}>
+                                            <option value="shapiro">{t.tests.shapiro}</option>
+                                            <option value="kolmogorov">{t.tests.kolmogorov}</option>
+                                            <option value="anderson">{t.tests.anderson}</option>
+                                            <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
+                                            <option value="chi_square">{t.tests.chi_square}</option>
+                                            <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                            <option value="network_graph">{t.tests.network_graph}</option>
+                                        </optgroup>
+                                        </select>
 
+                                                <div className="test-description-hint">{t.selectPrompt}</div>
 
-                                            <div className="mb-6">
-                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
-                                                    {isPreprocessed
-                                                        ? t.preprocessedLabel
-                                                        : isSurveyData
-                                                            ? t.surveyLabel
-                                                            : t.uploadLabel}
+                                                {testType && t.descriptions[testType] && (
+                                                <div className="test-description-box">
+                                                    <strong className="test-description-title">
+                                                    {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
+                                                    </strong>
 
-                                                </h5>
+                                                    <div className="test-description-text">{t.descriptions[testType]}</div>
 
-                                                {(isPreprocessed || isSurveyData) ? (
-                                                    <div className="bg-green-100 text-green-700 p-4 rounded text-center shadow">
-                                                        {(isPreprocessed ? "Preprocessed file" : "Survey file")}{" "}
-                                                        <strong>{fileName}</strong> loaded automatically.
-                                                    </div>
-                                                ) : (
-                                                    <div
-                                                        ref={uploadContainerRef}
-                                                        className={`bg-gray-200 rounded-lg p-6 text-center border-2 border-dashed ${uploadStatus === "loading"
-                                                            ? "border-blue-400"
-                                                            : uploadStatus === "success"
-                                                                ? "border-green-400"
-                                                                : "border-gray-400"
-                                                            } transition-all duration-300 cursor-pointer hover:bg-gray-300`}
-                                                        onClick={() => fileInputRef.current.click()}
-                                                    >
-                                                        <svg
-                                                            className={`mx-auto h-12 w-12 mb-3 ${uploadStatus === "success" ? "text-green-500" : "text-gray-600"
-                                                                }`}
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            viewBox="0 0 24 24"
-                                                        >
-                                                            {uploadStatus === "success" ? (
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                                />
-                                                            ) : (
-                                                                <path
-                                                                    strokeLinecap="round"
-                                                                    strokeLinejoin="round"
-                                                                    strokeWidth="2"
-                                                                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                                />
-                                                            )}
-                                                        </svg>
-                                                        <p id="fileName" className="mb-2">
-                                                            {file ? fileName : t.dropFile}
-                                                        </p>
-                                                        <input
-                                                            ref={fileInputRef}
-                                                            type="file"
-                                                            className="hidden"
-                                                            accept=".xls,.xlsx"
-                                                            onClick={(e) => (e.target.value = null)}
-                                                            onChange={handleFileChange}
-                                                        />
-                                                    </div>
-                                                )}
-
-                                                {uploadStatus === "loading" && (
-                                                    <div className="text-center mt-4 text-blue-600">
-                                                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                                                        {t.processing}
-                                                    </div>
-                                                )}
-
-                                            </div>
-                                            {/* Preview & Suggestion Buttons */}
-                                            <div className="flex justify-end gap-4 mt-6">
-
-                                                {/* 
-                                                    <button
+                                                    {!testsWithoutDetails.includes(testType) && (
+                                                    <div>
+                                                        <button
                                                         type="button"
-                                                        className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                        onClick={handleSuggestionClick}
-                                                    >
-                                                        {language === 'bn' ? 'পরীক্ষার পরামর্শ' : 'Test Suggestion'}
-                                                    </button> */}
-                                            </div>
-                                            {isPreviewModalOpen && (
-                                                <>
-                                                    <PreviewTable workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
-                                                </>
-
-                                            )}
-                                            {/* {isSuggestionModalOpen && (
-                                                <div >
-                                                    <TestSuggestionsModal setIsSuggestionModalOpen={setIsSuggestionModalOpen} language={language} />
-                                                </div>
-                                            )} */}
-
-                                            <div className="flex justify-end gap-4 mt-4 mb-4">
-                                                <button
-                                                    type="button"
-                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                    onClick={handlePreviewClick}
-                                                >
-                                                    {language === 'bn' ? 'ডেটা প্রিভিউ' : 'Preview Data'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    className="bg-purple-500 hover:bg-purple-600 text-white font-medium py-2 px-4 rounded-lg shadow transition duration-200"
-                                                    onClick={() => {
-                                                        console.log("User ID:", userId);
-                                                        const path = "/preprocess";
-                                                        navigate(path, { state: { userId: userId, filename: fileName } });
-                                                    }}
-                                                >
-                                                    {language === 'bn' ? 'ডেটা প্রিপ্রসেস করুন' : 'Preprocess Data'}
-                                                </button>
-                                            </div>
-
-
-                                            <div className="flex justify-end gap-4 mb-6">
-                                                {/* <button
-                                            type="button"
-                                           onClick={() => {
-                                                    console.log("analyze by test");
-                                                    setTestanalyze(!testanalyze);
-                                                    }}
-
-                                            className="bg-blue-600 text-black px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                                        >
-                                            {language === 'bn' ? 'পরীক্ষা পছন্দ অনুযায়ী বিশ্লেষণ' : 'Analyze by Test Choice'}
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                    console.log("analyze by column");
-                                                    setColumnanalyze(!columnanalyze);
-                                                    }} 
-                                            className="bg-green-600 text-black px-4 py-2 rounded-lg hover:bg-green-700 transition"
-                                        >
-                                            {language === 'bn' ? 'কলাম অনুযায়ী বিশ্লেষণ' : 'Analyze by Column'}
-                                        </button> */}
-                                            </div>
-
-
-                                            {/* {testanalyze && ( */}
-                                            {/* <> */}
-                                            <div className="mb-6">
-                                                <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">{t.selectTest}</h5>
-                                                <div className="mb-4">
-                                                    <label className="block text-gray-700 font-medium mb-2">
-                                                        <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                                        </svg>
-                                                        {t.testType}
-                                                    </label>
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                        value={testType}
-                                                        onChange={(e) => setTestType(e.target.value)}
-                                                    >
-                                                        <option value="" disabled>{t.selectPrompt}</option>
-                                                        <optgroup label={t.testGroups.eda}>
-                                                            <option value="eda_basics">{t.tests.eda_basics}</option>
-                                                            <option value="eda_distribution">{t.tests.eda_distribution}</option>
-                                                            <option value="eda_swarm">{t.tests.eda_swarm}</option>
-                                                            <option value="eda_pie">{t.tests.eda_pie}</option>
-                                                            <option value="bar_chart">{t.tests.bar_chart}</option>
-                                                            <option value="similarity">{t.tests.similarity}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.nonParametric}>
-                                                            <option value="kruskal">{t.tests.kruskal}</option>
-                                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>
-                                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.correlation}>
-                                                            <option value="pearson">{t.tests.pearson}</option>
-                                                            <option value="spearman">{t.tests.spearman}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.parametric}>
-                                                            <option value="fzt">{t.tests.fzt}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.regression}>
-                                                            <option value="linear_regression">{t.tests.linear_regression}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.anova}>
-                                                            <option value="anova">{t.tests.anova}</option>
-                                                            <option value="ancova">{t.tests.ancova}</option>
-                                                        </optgroup>
-                                                        <optgroup label={t.testGroups.other}>
-                                                            <option value="shapiro">{t.tests.shapiro}</option>
-                                                            <option value="kolmogorov">{t.tests.kolmogorov}</option>
-                                                            <option value="anderson">{t.tests.anderson}</option>
-                                                            <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
-                                                            <option value="chi_square">{t.tests.chi_square}</option>
-                                                            <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
-                                                            <option value="network_graph">{t.tests.network_graph}</option>
-                                                        </optgroup>
-                                                    </select>
-
-                                                    <div className="text-sm text-gray-600 mt-2">{t.selectPrompt}</div>
-
-                                                    {testType && t.descriptions[testType] && (
-                                                        <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
-
-                                                            <strong className="block text-gray-800 mb-1">
-                                                                {language === 'bn' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
-                                                            </strong>
-
-                                                            {/* Description */}
-                                                            <div className="text-xs text-gray-600 mb-2">
-                                                                {t.descriptions[testType]}
-                                                            </div>
-
-                                                            {/* Button on new line */}
-
-                                                            {!testsWithoutDetails.includes(testType) && (
-                                                                <div>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setDetailsModalVisible(true)}
-                                                                        className="text-blue-600 text-xs underline hover:text-blue-800"
-                                                                    >
-                                                                        {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
-                                                                    </button>
-                                                                </div>
-                                                            )}
-
-                                                        </div>
-                                                    )}
-
-                                                </div>
-                                            </div>
-                                            {testType === "bar_chart" && (
-                                                <div className="mb-4">
-                                                    <label className="block mb-2 font-medium">
-                                                        {language === 'bn' ? 'বার চার্ট টাইপ নির্বাচন করুন:' : 'Select bar chart type:'}
-                                                    </label>
-                                                    <select
-                                                        value={barChartType}
-                                                        onChange={(e) => setBarChartType(e.target.value)}
-                                                        className="border rounded-md p-2 w-full"
-                                                    >
-                                                        <option value="vertical">{language === 'bn' ? 'উল্লম্ব (Vertical)' : 'Vertical'}</option>
-                                                        <option value="horizontal">{language === 'bn' ? 'অনুভূমিক (Horizontal)' : 'Horizontal'}</option>
-                                                    </select>
-                                                </div>
-                                            )}
-
-                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
-                                                <div className="mb-6">
-                                                    {/* <label className="block text-gray-700 font-medium mb-2">
-                                                        {testType === 'cross_tabulation' ? 'Pick number of Columns' : 'Heatmap Size'}
-                                                    </label> */}
-
-                                                    {/* Column(s) Big Box Display */}
-                                                    {/* <label className="block text-gray-700 font-medium mb-2">Column(s)</label> */}
-                                                    {/* Column(s) Big Box Display */}
-                                                    <label className="block text-gray-700 font-medium mb-2">Column(s)</label>
-                                                    <div className="border border-gray-300 rounded-lg p-3 bg-white min-h-[48px] flex flex-wrap gap-2">
-                                                        {selectedColumns.length > 0 ? (
-
-                                                            selectedColumns.map((col, idx) => (
-                                                                <div key={idx} className="tag-chip">
-                                                                    <span>{col}</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="remove-button"
-                                                                        onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
-                                                                    >
-                                                                        ×
-                                                                    </button>
-                                                                </div>
-                                                            ))
-
-                                                        ) : (
-                                                            <p className="text-gray-400">No columns selected yet</p>
-                                                        )}
+                                                        onClick={() => setDetailsModalVisible(true)}
+                                                        className="test-details-link"
+                                                        >
+                                                        {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
+                                                        </button>
                                                     </div>
-
-                                                    {/* Dropdown Below Box */}
-                                                    <select
-                                                        className="border border-gray-300 rounded-lg p-3 mt-2 w-full"
-                                                        onChange={(e) => {
-                                                            const selected = e.target.value;
-                                                            if (selected && !selectedColumns.includes(selected)) {
-                                                                setSelectedColumns(prev => [...prev, selected]);
-                                                            }
-                                                            e.target.selectedIndex = 0;
-                                                        }}
-                                                        disabled={selectedColumns.length >= columns.length}
-                                                    >
-                                                        <option value="">Select column...</option>
-                                                        {columns
-                                                            .filter(col => !selectedColumns.includes(col))
-                                                            .map((col, idx) => (
-                                                                <option key={idx} value={col}>{col}</option>
-                                                            ))}
-                                                    </select>
-
-                                                    <p className="text-sm text-gray-500 mt-2">
-                                                        {selectedColumns.length} column(s) selected
-                                                    </p>
-
+                                                    )}
                                                 </div>
+                                                )}
+
+                                     </div>
+                                                                
+                                            {testType === "bar_chart" && (
+                                            <div className="form-group">
+                                                <label className="form-label">
+                                                {language === "bn"
+                                                    ? "বার চার্ট টাইপ নির্বাচন করুন:"
+                                                    : "Select bar chart type:"}
+                                                </label>
+                                                <select
+                                                value={barChartType}
+                                                onChange={(e) => setBarChartType(e.target.value)}
+                                                className="form-select"
+                                                >
+                                                <option value="vertical">
+                                                    {language === "bn" ? "উল্লম্ব (Vertical)" : "Vertical"}
+                                                </option>
+                                                <option value="horizontal">
+                                                    {language === "bn" ? "অনুভূমিক (Horizontal)" : "Horizontal"}
+                                                </option>
+                                                </select>
+                                            </div>
+                                            )}
+                                            {["pearson", "network_graph", "spearman", "cross_tabulation", "chi_square", "cramers_heatmap"].includes(testType) && (
+                                            <div className="form-group">
+                                                <label className="form-label">Column(s)</label>
+                                                <div className="tag-container">
+                                                {selectedColumns.length > 0 ? (
+                                                    selectedColumns.map((col, idx) => (
+                                                    <div key={idx} className="tag-chip">
+                                                        <span>{col}</span>
+                                                        <button
+                                                        type="button"
+                                                        className="remove-button"
+                                                        onClick={() =>
+                                                            setSelectedColumns((prev) => prev.filter((c) => c !== col))
+                                                        }
+                                                        >
+                                                        ×
+                                                        </button>
+                                                    </div>
+                                                    ))
+                                                ) : (
+                                                    <p className="tag-placeholder">No columns selected yet</p>
+                                                )}
+                                                </div>
+
+                                                <select
+                                                className="form-select mt-2"
+                                                onChange={(e) => {
+                                                    const selected = e.target.value;
+                                                    if (selected && !selectedColumns.includes(selected)) {
+                                                    setSelectedColumns((prev) => [...prev, selected]);
+                                                    }
+                                                    e.target.selectedIndex = 0;
+                                                }}
+                                                disabled={selectedColumns.length >= columns.length}
+                                                >
+                                                <option value="">Select column...</option>
+                                                {columns
+                                                    .filter((col) => !selectedColumns.includes(col))
+                                                    .map((col, idx) => (
+                                                    <option key={idx} value={col}>
+                                                        {col}
+                                                    </option>
+                                                    ))}
+                                                </select>
+
+                                                <p className="tag-counter">{selectedColumns.length} column(s) selected</p>
+                                            </div>
                                             )}
 
-                                            {testType !== 'eda_basics' && (
-                                                <div className="mb-6">
-                                                    {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
-                                                    {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
-                                                        <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
-                                                            {t.selectVariables}
-                                                        </h5>
-                                                    )}
 
-                                                    {/* Now the rest of the logic stays the same — dropdowns, requiredFields, etc. */}
-                                                    {!['spearman', 'pearson', 'cross_tabulation', 'network_graph', 'cramers_heatmap', 'chi_square'].includes(testType) && (
-                                                        <div className="mb-4">
-                                                            <label className="block text-gray-700 font-medium mb-2">
-                                                                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                                </svg>
-                                                                {(testType === 'kolmogorov' || testType === 'anderson' || testType === 'shapiro' || testType === 'eda_distribution')
-                                                                    ? (language === 'bn' ? 'একটি সংখ্যাগত কলাম নির্বাচন করুন' : 'Pick a Numerical Column')
-                                                                    : t.column1}
-                                                            </label>
-                                                            <select
-                                                                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                value={column1}
-                                                                onChange={(e) => setColumn1(e.target.value)}
-                                                                disabled={columns.length === 0}
-                                                            >
-                                                                {columns.length === 0 ? (
-                                                                    <option value="">-- Upload a file first --</option>
-                                                                ) : (
-                                                                    columns.map((col, idx) => (
-                                                                        <option key={idx} value={col}>{col}</option>
-                                                                    ))
-                                                                )}
-                                                            </select>
-                                                        </div>
-                                                    )}
+                                                                                        {testType !== "eda_basics" && (
+                                            <div className="form-section">
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph"].includes(testType) && (
+                                                <h5 className="section-title">{t.selectVariables}</h5>
+                                                )}
 
-
-                                                    {requiredFields.col2 && (
-                                                        <div className="mb-4">
-                                                            <label className="block text-gray-700 font-medium mb-2">
-                                                                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                                </svg>
-                                                                {t.column2}
-                                                            </label>
-                                                            <select
-                                                                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                value={column2}
-                                                                onChange={(e) => setColumn2(e.target.value)}
-                                                                disabled={columns.length === 0}
-                                                            >
-                                                                <option value="">-- Select a column --</option>
-                                                                {columns.map((col, idx) => (
-                                                                    <option key={idx} value={col}>{col}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
+                                                <div className="form-group">
+                                                    <label className="form-label">
+                                                    {(testType === "kolmogorov" ||
+                                                        testType === "anderson" ||
+                                                        testType === "shapiro" ||
+                                                        testType === "eda_distribution")
+                                                        ? language === "bn"
+                                                        ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
+                                                        : "Pick a Numerical Column"
+                                                        : t.column1}
+                                                    </label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column1}
+                                                    onChange={(e) => setColumn1(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    {columns.length === 0 ? (
+                                                        <option value="">-- Upload a file first --</option>
+                                                    ) : (
+                                                        columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                            {col}
+                                                        </option>
+                                                        ))
                                                     )}
+                                                    </select>
+                                                </div>
+                                                )}
 
-                                                    {requiredFields.col3 && (
-                                                        <div className="mb-4">
-                                                            <label className="block text-gray-700 font-medium mb-2">
-                                                                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                                </svg>
-                                                                {t.column3}
-                                                            </label>
-                                                            <select
-                                                                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                value={column3}
-                                                                onChange={(e) => setColumn3(e.target.value)}
-                                                                disabled={columns.length === 0}
-                                                            >
-                                                                <option value="">-- Select a column --</option>
-                                                                {columns.map((col, idx) => (
-                                                                    <option key={idx} value={col}>{col}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                    )}
+                                                {requiredFields.col2 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column2}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column2}
+                                                    onChange={(e) => setColumn2(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
 
-                                                    {requiredFields.col4 && (
-                                                        <div className="mb-4">
-                                                            <label className="block text-gray-700 font-medium mb-2">
-                                                                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                                </svg>
-                                                                {t.column4}
-                                                            </label>
-                                                            <select
-                                                                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                value={column4}
-                                                                onChange={(e) => setColumn4(e.target.value)}
-                                                                disabled={columns.length === 0}
-                                                            >
-                                                                <option value="">-- Select a column --</option>
-                                                                {columns.map((col, idx) => (
-                                                                    <option key={idx} value={col}>{col}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                    )}
+                                                {requiredFields.col3 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column3}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column3}
+                                                    onChange={(e) => setColumn3(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
+
+                                                {requiredFields.col4 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column4}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column4}
+                                                    onChange={(e) => setColumn4(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
 
 
                                                     {testType === 'pearson' && (
@@ -1841,87 +1757,97 @@ const StatisticalAnalysisTool = () => {
 
 
                                                     {requiredFields.col5 && (
-                                                        <div className="mb-4">
-                                                            <label className="block text-gray-700 font-medium mb-2">
-                                                                <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-                                                                </svg>
-                                                                {t.column5}
-                                                            </label>
-                                                            <select
-                                                                className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                value={column5}
-                                                                onChange={(e) => setColumn5(e.target.value)}
-                                                                disabled={columns.length === 0}
-                                                            >
-                                                                <option value="">-- Select a column --</option>
-                                                                {columns.map((col, idx) => (
-                                                                    <option key={idx} value={col}>{col}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.column5}</label>
+                                                        <select
+                                                        className="form-select"
+                                                        value={column5}
+                                                        onChange={(e) => setColumn5(e.target.value)}
+                                                        disabled={columns.length === 0}
+                                                        >
+                                                        <option value="">-- Select a column --</option>
+                                                        {columns.map((col, idx) => (
+                                                            <option key={idx} value={col}>
+                                                            {col}
+                                                            </option>
+                                                        ))}
+                                                        </select>
+                                                    </div>
                                                     )}
                                                 </div>
-                                            )}
+                                                )}
 
-                                            {requiredFields.refValue && (
-                                                <div className="mb-6">
-                                                    <label className="block text-gray-700 font-medium mb-2">
-                                                        <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                                        </svg>
-                                                        {t.referenceValue}
-                                                    </label>
+                                                {requiredFields.refValue && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.referenceValue}</label>
                                                     <input
-                                                        type="number"
-                                                        className="border border-gray-300 rounded-lg p-3 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                        value={referenceValue}
-                                                        onChange={(e) => setReferenceValue(parseFloat(e.target.value))}
-                                                        step="0.01"
+                                                    type="number"
+                                                    className="form-input"
+                                                    value={referenceValue}
+                                                    onChange={(e) => setReferenceValue(parseFloat(e.target.value))}
+                                                    step="0.01"
                                                     />
                                                 </div>
-                                            )}
+                                                )}
 
-                                            <div className="text-center mt-6">
+                                                                                            <div className="submit-section">
                                                 <button
                                                     type="submit"
-                                                    className="bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-6 rounded-lg shadow transitiozn duration-200 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                    disabled={isAnalyzing || !file || !column1 || (requiredFields.col2 && !column2) || (requiredFields.col3 && !column3)}
+                                                    className="an-btn an-btn-primary large"
+                                                    disabled={
+                                                    isAnalyzing ||
+                                                    !file ||
+                                                    !column1 ||
+                                                    (requiredFields.col2 && !column2) ||
+                                                    (requiredFields.col3 && !column3)
+                                                    }
                                                 >
                                                     {isAnalyzing ? (
-                                                        <>
-                                                            <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                                            {t.analyzing}
-                                                        </>
+                                                    <>
+                                                        <div className="spinner small"></div>
+                                                        {t.analyzing}
+                                                    </>
                                                     ) : (
                                                         <>
-                                                            <svg className="inline-block w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                                            </svg>
-                                                            {t.analyzeButton}
-                                                        </>
+                                                        <svg
+                                                        className="icon-inline"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                                        />
+                                                        </svg>
+                                                        {t.analyzeButton}
+                                                    </>
+
                                                     )}
                                                 </button>
                                             </div>
                                         </form>
 
-                                        {detailsModalVisible && (
-                                            <div className="modal-overlay">
-                                                <div className="modal-content">
-                                                    <button
-                                                        className="modal-close"
-                                                        onClick={() => setDetailsModalVisible(false)}
-                                                    >
-                                                        &times;
-                                                    </button>
-                                                    <h2>{t.tests[testType]}</h2>
-                                                    <pre className="modal-body text-left whitespace-pre-line leading-relaxed font-sans text-sm md:text-base">
-                                                        {statTestDetails[language]?.[testType] || (
-                                                            language === 'bn' ? 'এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।' : 'No details available.'
-                                                        )}
-                                                    </pre>
-                                                </div>
-                                            </div>
+                                    {detailsModalVisible && (
+                                    <div className="modal-overlay">
+                                        <div className="modal-content">
+                                        <button
+                                            className="modal-close"
+                                            onClick={() => setDetailsModalVisible(false)}
+                                        >
+                                            &times;
+                                        </button>
+                                        <h2>{t.tests[testType]}</h2>
+                                        <pre className="modal-body">
+                                            {statTestDetails[language]?.[testType] ||
+                                            (language === "bn"
+                                                ? "এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।"
+                                                : "No details available.")}
+                                        </pre>
+                                        </div>
+                                    </div>
                                         )}
                                     </div>
                                 </div>
@@ -1975,8 +1901,8 @@ const StatisticalAnalysisTool = () => {
                     </div>
 
                 </div>
-            </div>
-        </div>
+           
+      
     );
 };
 

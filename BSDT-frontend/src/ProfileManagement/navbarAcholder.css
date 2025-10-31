@@ -2,35 +2,35 @@
    NAVBAR CONTAINER
 =========================== */
 .NavbarAcholderContainer {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  background: linear-gradient(90deg, #08c294, #38a782);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #cbf0cd, #38a782, #cbf0cd);
   color: white;
   font-family: "Segoe UI", sans-serif;
-  padding: 1rem 2rem;
-  /* box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3); */
+  padding: 8px 20px;
   z-index: 1000;
-  /* border-radius: 0 0 12px 12px;
-  gap:0.5rem; */
+  border-radius: 0 0 8px 8px;
+  position: fixed; 
+  top: 0; 
+  left: 0;
+  width: 100%; 
 }
-/* ===========================
-   TOP SECTION
-=========================== */
+
 .NavbarAcholderTopSection {
   display: grid;
-  grid-template-areas: "logo lang search nav";
-  grid-template-columns: 12% 10% 115% 10%;
+  grid-template-areas: "logo search lang nav";
+  grid-template-columns: 12% 100% 15% 5%;
   align-items: center;
   gap: 1rem;
   width: 70%;
   flex-wrap: nowrap; 
 }
+body {
+  margin: 0;
+  padding: 0;
+}
 
-/* ===========================
-   LOGO SECTION
-=========================== */
 .NavbarAcholderLogoSection {
   grid-area: logo;
   display: flex;
@@ -44,7 +44,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: white;
+  color: rgb(24, 116, 55);
   background: none;
   font-weight: bold;
   font-size: 1rem;
@@ -54,24 +54,19 @@
 .NavbarAcholderLogoItem img {
   width: 3rem;
   height: 3rem;
+  cursor: pointer;
   object-fit: contain;
   background: none;
 }
 
 
 
-/* ===========================
-   SEARCH + LANGUAGE SECTION
-=========================== */
 
 
-/* ===========================
-   LANGUAGE SWITCH
-=========================== */
 .NavbarAcholderLangSwitchInline {
   grid-area: lang;
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* Changed to column */
   align-items: center;
   gap: 0.4rem;
   flex-shrink: 0;
@@ -79,7 +74,6 @@
 
 .NavbarAcholderSwitch { 
   position: relative;
-  display: inline-block;
   width: 50px;
   height: 24px;
 }
@@ -103,7 +97,7 @@
 }
 
 .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider {
- background-color: #4caf50;
+  background-color: #4caf50;
 }
 
 .NavbarAcholderSlider::before {
@@ -121,9 +115,10 @@
 .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider::before {
   transform: translateX(22px);
 }
-.NavbarAcholderLangLabels{
-    display: flex;
-  flex-direction: row;
+
+.NavbarAcholderLangLabels {
+  display: flex;
+  flex-direction: row; /* Make the labels stack vertically */
   align-items: center;
   font-size: 0.85rem;
   gap: 0.2rem;
@@ -131,9 +126,18 @@
 }
 
 .NavbarAcholderLangLabels span {
-    opacity: 0.9;
-   transition: 0.3s ease;
+  opacity: 0.9;
+  transition: 0.3s ease;
 }
+
+/* Optional: Add responsiveness for smaller screens */
+@media (max-width: 460px) {
+  .NavbarAcholderLangSwitchInline {
+    flex-direction: column; /* Ensure the entire container stays vertical */
+  }
+  
+}
+
 
 .LangActive {
   font-weight: bold;
@@ -144,10 +148,10 @@
  grid-area: search;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   width: 100%;
   max-width: none;
-  flex-grow: 1;
+  flex-grow: 0.7;
 }
 
 /* Search Filter */
@@ -178,6 +182,7 @@
   color: #000;
   font-size: 0.9rem;
   max-width: auto;
+  
 }
 
 .NavbarAcholderSearchIcon {
@@ -187,9 +192,7 @@
   cursor: pointer;
 }
 
-/* ===========================
-   NAVIGATION MENU
-=========================== */
+/*    NAVIGATION MENU  */
 .NavbarAcholderNavList {
   grid-area: nav;
   display: flex;
@@ -240,7 +243,7 @@
 .NavbarAcholderUserName {
   font-weight: 500;
   font-size: 0.95rem;
-  color: #ffffff;
+  color: #163e1f;
   text-align: center;
 }
 
@@ -267,17 +270,7 @@
    RESPONSIVE BEHAVIOR
 =========================== */
 @media (max-width: 1200px) {
-  .NavbarAcholderTopSection{
-    display: grid;
-    grid-template-areas:
-      "hamburger logo lang"
-      "search search search";
-    grid-template-columns: 30% 30% 30%;
-    column-gap: 0.5rem;
-    row-gap: 0.5rem;
-    align-items: center;
-    width: 100%;
-  }
+ 
    .NavbarAcholderSearchSection {
     grid-area: search;
     display: flex;
@@ -293,37 +286,57 @@
   .NavbarAcholderSearchFilter {
     font-size: 0.75rem;
   }
- 
 
-
-
-
-  .NavbarAcholderNavList {
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    right: 1rem;
-    background: linear-gradient(90deg, #08c294, #38a782);
-    border-radius: 12px;
-    padding: 0.75rem 1rem;
-    display: none;
-    gap: 0.5rem;
-    width: 200px;
-    margin-left: 0; /* reset for mobile */
-  }
-
-  .NavbarAcholderHamburger {
-    grid-area: hamburger;
-    display: block;
-    font-size: 1.5rem;
-    color: white;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 0.4rem 1rem;
-    border-radius: 8px;
-    border: none;
-    cursor: pointer;
-  }
+  
     .NavbarAcholderUserName {
     display: none;
   }
+}
+@media (max-width:460px) {
+ .NavbarAcholderTopSection {
+    display: grid;
+    grid-template-areas:
+      "logo lang  nav  "
+      "search search search";
+
+    grid-template-columns: 30% 40% 30%;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0 0.8rem;
+  }
+
+  /* Make search input smaller */
+  .NavbarAcholderSearchInput {
+    font-size: 0.7rem;
+  }
+
+  .NavbarAcholderSearchFilter {
+    font-size: 0.7rem;
+  }
+  
+
+ 
+
+  /* Navigation menu stacked */
+  .NavbarAcholderNavList {
+    grid-area: nav;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.2rem;
+    margin-left: auto;
+  }
+
+  .NavbarAcholderLogoItem {
+    font-size:1rem;
+    align-content: left;
+  }
+
+  .NavbarAcholderLogoItem img {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  
+  
 }
