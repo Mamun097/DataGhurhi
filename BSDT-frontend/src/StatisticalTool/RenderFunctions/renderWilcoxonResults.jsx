@@ -1,33 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter, LineChart, Line, AreaChart, Area } from 'recharts';
+import { 
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+    Cell, ComposedChart, ErrorBar, ScatterChart, Scatter, LineChart, Line, 
+    AreaChart, Area, Legend  // ADD LEGEND HERE
+} from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
+
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-    return {
+    const baseSettings = {
         dimensions: '800x600',
         fontFamily: 'Times New Roman',
         captionOn: false,
         captionText: '',
-        captionSize: 18,
+        captionSize: 22,
         captionBold: false,
         captionItalic: false,
         captionUnderline: false,
+        captionTopMargin: 30,
         xAxisTitle: 'Groups',
         yAxisTitle: 'Values',
-        xAxisTitleSize: 16,
-        yAxisTitleSize: 16,
+        xAxisTitleSize: 20,
+        yAxisTitleSize: 20,
         xAxisTitleBold: false,
         xAxisTitleItalic: false,
         xAxisTitleUnderline: false,
         yAxisTitleBold: false,
         yAxisTitleItalic: false,
         yAxisTitleUnderline: false,
-        xAxisTickSize: 14,
-        yAxisTickSize: 14,
+        xAxisTickSize: 18,
+        yAxisTickSize: 18,
+        xAxisBottomMargin: -25,
+        yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0, 
+        yAxisTitleOffset: 0,        
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -35,6 +45,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         gridColor: 'gray',
         gridOpacity: 1,
         borderOn: false,
+        plotBorderOn: false,
         barBorderOn: false,
         dataLabelsOn: true,
         errorBarsOn: true,
@@ -43,11 +54,51 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
         // Wilcoxon specific settings
         histogramBins: 30,
-        scatterOpacity: 0.7,
-        qqLineColor: '#ef4444',
-        referenceLineColor: '#dc2626'
+        legendOn: true, 
+        legendPosition: 'top'
     };
+
+    // Add plot-specific settings
+    if (plotType === 'Scatter') {
+        return {
+            ...baseSettings,
+            showScatterPoints: true,
+            showRegressionLines: true,
+            showReferenceLine: true,
+            showCriticalValues: true,
+            scatterSize: 6,
+            scatterOpacity: 0.7,
+            scatterColor: '#3b82f6',
+            qqLineColor: '#ef4444',
+            referenceLineColor: '#dc2626',
+            referenceLineWidth: 2,
+            referenceLineStyle: 'dashed',
+            lineWidth: 2,
+            legendOn: true
+        };
+    } else if (plotType === 'QQ') {
+        return {
+            ...baseSettings,
+            showScatterPoints: true,
+            showReferenceLine: true,
+            showCriticalValues: true,
+            showConfidenceBand: true,
+            scatterSize: 6,
+            scatterOpacity: 0.7,
+            scatterColor: '#3b82f6',
+            referenceLineColor: '#ef4444',
+            referenceLineWidth: 2,
+            referenceLineStyle: 'solid',
+            confidenceBandColor: '#d1d5db',
+            confidenceBandOpacity: 0.3,
+            showConfidenceBand: true,            
+            legendOn: true
+        };
+    }
+
+    return baseSettings;
 };
+
 
 const fontFamilyOptions = [
     { value: 'Times New Roman', label: 'Times New Roman' },
@@ -82,16 +133,16 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
     const chartRef = React.useRef(null);
 
     const [histogramSettings, setHistogramSettings] = React.useState(
-        getDefaultSettings('Histogram', 2, ['Differences'])
+        getDefaultSettings('Histogram', 1, ['Differences'])
     );
     const [scatterSettings, setScatterSettings] = React.useState(
         getDefaultSettings('Scatter', 2, [results?.plot_data?.sample1?.name || 'Sample1', results?.plot_data?.sample2?.name || 'Sample2'])
     );
     const [qqSettings, setQqSettings] = React.useState(
-        getDefaultSettings('QQ', 2, ['Q-Q Plot'])
+        getDefaultSettings('QQ', 1, ['Q-Q Plot'])
     );
     const [boxSettings, setBoxSettings] = React.useState(
-        getDefaultSettings('Box', 2, ['Differences'])
+        getDefaultSettings('Box', 1, ['Differences'])
     );
 
     React.useEffect(() => {
@@ -230,6 +281,11 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
     };
 
     const plotData = results.plot_data || {};
+    const qqData = plotData.qq_lines || {}; // NEW: Access QQ lines data
+    const scatterLines = plotData.scatter_lines || {}; // NEW: Access scatter lines data
+
+    // Update metadata access
+    const normalityTest = results.metadata?.normality_test || qqData.normality_test || {};    
     const sample1Column = results.column_names?.sample1 || columns?.[0] || 'Sample 1';
     const sample2Column = results.column_names?.sample2 || columns?.[1] || 'Sample 2';
 
@@ -302,7 +358,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         const differences = plotData.differences?.values || [];
         const binCount = settings.histogramBins || 30;
         
-        // Create histogram data
+        // Create histogram data with rounded values
         const minVal = Math.min(...differences);
         const maxVal = Math.max(...differences);
         const binWidth = (maxVal - minVal) / binCount;
@@ -313,12 +369,14 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             const binEnd = binStart + binWidth;
             const count = differences.filter(val => val >= binStart && val < binEnd).length;
             histogramData.push({
-                bin: `${binStart.toFixed(2)}-${binEnd.toFixed(2)}`,
-                midPoint: (binStart + binEnd) / 2,
+                bin: `${binStart.toFixed(1)}-${binEnd.toFixed(1)}`,
+                midPoint: parseFloat(((binStart + binEnd) / 2).toFixed(1)),
                 count: count,
                 frequency: count
             });
         }
+
+        const yDomain = getYAxisDomain(settings, histogramData, 'frequency');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -347,7 +405,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <BarChart
                             data={histogramData}
@@ -355,7 +413,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -368,57 +426,81 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             )}
                             <XAxis
                                 dataKey="midPoint"
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: -10,
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                domain={yDomain}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Bar
                                 dataKey="frequency"
-                                fill={settings.categoryColors[0]}
-                                radius={[2, 2, 0, 0]}
+                                radius={[0, 0, 0, 0]}
                                 barSize={settings.elementWidth * 100}
-                            />
-                            <Line
-                                type="monotone"
-                                dataKey={null}
-                                stroke="none"
-                            />
+                                style={{ transform: 'translateY(-1px)' }}
+                                label={settings.dataLabelsOn ? {
+                                    position: 'top',
+                                    fill: '#1f2937',
+                                    fontFamily: settings.fontFamily,
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => value > 0 ? value : '' // Only show label if frequency > 0
+                                } : false}
+                            >
+                                {histogramData.map((entry, index) => (
+                                    <Cell
+                                        key={`cell-${index}`}
+                                        fill={settings.histogramColor || settings.categoryColors[0]}
+                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
+                                        strokeWidth={settings.barBorderOn ? 1 : 0}
+                                        fillOpacity={settings.histogramOpacity || 0.7}
+                                    />
+                                ))}
+                            </Bar>
                         </BarChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
-                {/* Reference line at zero */}
-                <div style={{
-                    position: 'absolute',
-                    left: '10%',
-                    right: '10%',
-                    top: `calc(${height/2}px + 30px)`,
-                    height: '2px',
-                    backgroundColor: settings.referenceLineColor || '#dc2626',
-                    pointerEvents: 'none',
-                    zIndex: 5
-                }} />
             </div>
         );
     };
@@ -436,9 +518,31 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             pair: index + 1
         }));
 
-        const allValues = [...sample1, ...sample2];
-        const minVal = Math.min(...allValues);
-        const maxVal = Math.max(...allValues);
+        // Use backend regression data
+        const regressionData = plotData.regression || {};
+        const minX = Math.min(...scatterData.map(p => p.x));
+        const maxX = Math.max(...scatterData.map(p => p.x));
+        
+        const regressionLine = [
+            { 
+                x: minX, 
+                y: regressionData.slope * minX + regressionData.intercept 
+            },
+            { 
+                x: maxX, 
+                y: regressionData.slope * maxX + regressionData.intercept 
+            }
+        ];
+
+        // Reference line (y = x)
+        const minVal = Math.min(minX, Math.min(...scatterData.map(p => p.y)));
+        const maxVal = Math.max(maxX, Math.max(...scatterData.map(p => p.y)));
+        const referenceLine = [
+            { x: minVal, y: minVal },
+            { x: maxVal, y: maxVal }
+        ];
+
+        const yDomain = getYAxisDomain(settings, scatterData, 'y');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -467,14 +571,14 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <ScatterChart
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                        <ComposedChart  
+                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -488,53 +592,157 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <XAxis
                                 type="number"
                                 dataKey="x"
-                                domain={[minVal, maxVal]}
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: -10,
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 type="number"
                                 dataKey="y"
-                                domain={[minVal, maxVal]}
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                domain={yDomain}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            <Scatter
-                                data={scatterData}
-                                fill={settings.categoryColors[0]}
-                                opacity={settings.scatterOpacity}
-                            />
-                            <Line
-                                type="linear"
-                                dataKey="y"
-                                data={[{x: minVal, y: minVal}, {x: maxVal, y: maxVal}]}
-                                stroke={settings.referenceLineColor || '#dc2626'}
-                                strokeWidth={2}
-                                strokeDasharray="5 5"
-                                dot={false}
-                            />
-                        </ScatterChart>
+                            
+                            {/* FIX: Scatter Points with CUSTOM SHAPE - Like Anderson-Darling */}
+                            {settings.showScatterPoints && (
+                                <Scatter
+                                    name="Data Points"
+                                    data={scatterData}
+                                    fill={settings.scatterColor || settings.categoryColors[0]}
+                                    fillOpacity={settings.scatterOpacity}
+                                    shape={(props) => {
+                                        const { cx, cy, payload } = props;
+                                        return (
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={settings.scatterSize / 2}  
+                                                fill={settings.scatterColor || settings.categoryColors[0]}
+                                                fillOpacity={settings.scatterOpacity}
+                                            />
+                                        );
+                                    }}
+                                />
+                            )}
+                            
+                            {/* Regression Line */}
+                            {settings.showRegressionLines && (
+                                <Line
+                                    name="Regression Line"
+                                    type="linear"
+                                    dataKey="y"
+                                    data={regressionLine}
+                                    stroke={settings.qqLineColor || '#ef4444'}
+                                    strokeWidth={settings.lineWidth || 2}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            )}
+                            
+                            {/* Reference Line (y = x) */}
+                            {settings.showReferenceLine && (
+                                <Line
+                                    name="Reference Line"
+                                    type="linear"
+                                    dataKey="y"
+                                    data={referenceLine}
+                                    stroke={settings.referenceLineColor || '#dc2626'}
+                                    strokeWidth={settings.referenceLineWidth || 2}
+                                    strokeDasharray={settings.referenceLineStyle === 'dashed' ? '5 5' : 
+                                                settings.referenceLineStyle === 'dotted' ? '2 2' : '0'}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            )}
+                        </ComposedChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
+
+                {/* Critical Values Display */}
+                {settings.showCriticalValues && results.critical_values && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Values'}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'নিম্ন সীমা' : 'Lower Bound'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.lower?.toFixed(4)}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'গড় পার্থক্য' : 'Mean Difference'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.mean_difference?.toFixed(4)}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'উচ্চ সীমা' : 'Upper Bound'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.critical_values.upper?.toFixed(4)}
+                                </div>
+                            </div>
+                        </div>
+                        {regressionData.r_squared && (
+                            <div style={{ marginTop: '12px', padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'রিগ্রেশন R²' : 'Regression R²'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {regressionData.r_squared.toFixed(4)}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         );
     };
@@ -549,16 +757,29 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         
         const qqPlotData = theoretical.map((th, idx) => ({
             theoretical: th,
-            actual: ordered[idx]
+            actual: ordered[idx],
+            x: th,  // Add x and y for ComposedChart
+            y: ordered[idx]
         }));
 
-        // Line data for perfect normality
+        // Create reference line data
         const minTheoretical = Math.min(...theoretical);
         const maxTheoretical = Math.max(...theoretical);
-        const lineData = [
-            { theoretical: minTheoretical, actual: minTheoretical * qqData.slope + qqData.intercept },
-            { theoretical: maxTheoretical, actual: maxTheoretical * qqData.slope + qqData.intercept }
-        ];
+        
+        const linePoints = [];
+        const numPoints = Math.max(10, theoretical.length);
+        for (let i = 0; i < numPoints; i++) {
+            const th = minTheoretical + (maxTheoretical - minTheoretical) * (i / (numPoints - 1));
+            const actual = th * qqData.slope + qqData.intercept;
+            linePoints.push({
+                theoretical: th,
+                actual: actual,
+                x: th,  // Add x and y for ComposedChart
+                y: actual
+            });
+        }
+
+        const yDomain = getYAxisDomain(settings, qqPlotData, 'actual');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -587,14 +808,14 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <ScatterChart
+                        <ComposedChart  
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -607,50 +828,146 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             )}
                             <XAxis
                                 type="number"
-                                dataKey="theoretical"
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                dataKey="x"
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: 'Theoretical Quantiles',
                                     position: 'insideBottom',
-                                    offset: -10,
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 type="number"
-                                dataKey="actual"
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                dataKey="y"
+                                domain={yDomain}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: 'Sample Quantiles',
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            <Scatter
-                                data={qqPlotData}
-                                fill={settings.categoryColors[0]}
-                            />
-                            <Line
-                                type="linear"
-                                dataKey="actual"
-                                data={lineData}
-                                stroke={settings.qqLineColor || '#ef4444'}
-                                strokeWidth={2}
-                                dot={false}
-                            />
-                        </ScatterChart>
+                            
+                            {/* FIX: Scatter Points with CUSTOM SHAPE */}
+                            {settings.showScatterPoints && (
+                                <Scatter
+                                    name="Data Points"
+                                    data={qqPlotData}
+                                    fill={settings.scatterColor || '#3b82f6'}
+                                    fillOpacity={settings.scatterOpacity || 0.7}
+                                    shape={(props) => {
+                                        const { cx, cy, payload } = props;
+                                        return (
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={settings.scatterSize / 2}  
+                                                fill={settings.scatterColor || '#3b82f6'}
+                                                fillOpacity={settings.scatterOpacity || 0.7}
+                                            />
+                                        );
+                                    }}
+                                />
+                            )}
+                            
+                            {/* FIX: Reference Line */}
+                            {settings.showReferenceLine && linePoints.length > 0 && (
+                                <Line
+                                    name="Reference Line"
+                                    dataKey="y"
+                                    data={linePoints}
+                                    stroke={settings.referenceLineColor || '#ef4444'}
+                                    strokeWidth={settings.referenceLineWidth || 2}
+                                    strokeDasharray={settings.referenceLineStyle === 'dashed' ? '5 5' : 
+                                                settings.referenceLineStyle === 'dotted' ? '2 2' : '0'}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                    connectNulls={true}
+                                />
+                            )}
+                        </ComposedChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
+
+                {/* Critical Values and Normality Test Display */}
+                {settings.showCriticalValues && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'স্বাভাবিকতা পরীক্ষা এবং পরিসংখ্যান' : 'Normality Test and Statistics'}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'শাপিরো-উইল্ক পরীক্ষা' : 'Shapiro-Wilk Test'}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    <div>Statistic: {qqData.shapiro_stat?.toFixed(4)}</div>
+                                    <div>p-value: {qqData.shapiro_p?.toFixed(6)}</div>
+                                    <div style={{ fontWeight: 'bold', color: qqData.shapiro_p > 0.05 ? '#059669' : '#dc2626' }}>
+                                        {qqData.shapiro_p > 0.05 ? 
+                                            (language === 'বাংলা' ? 'স্বাভাবিক বন্টন' : 'Normal Distribution') : 
+                                            (language === 'বাংলা' ? 'অস্বাভাবিক বন্টন' : 'Non-normal Distribution')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'কিউ-কিউ প্লট পরিসংখ্যান' : 'Q-Q Plot Statistics'}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    <div>R²: {qqData.r_squared?.toFixed(4)}</div>
+                                    <div>Slope: {qqData.slope?.toFixed(4)}</div>
+                                    <div>Intercept: {qqData.intercept?.toFixed(4)}</div>
+                                </div>
+                            </div>
+                            {results.critical_values && (
+                                <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                        {language === 'বাংলা' ? 'পার্থক্যের আস্থার ব্যবধান' : 'Difference Confidence Interval'}
+                                    </div>
+                                    <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                        <div>{language === 'বাংলা' ? 'নিম্ন:' : 'Lower:'} {results.critical_values.lower?.toFixed(4)}</div>
+                                        <div>{language === 'বাংলা' ? 'গড়:' : 'Mean:'} {results.critical_values.mean_difference?.toFixed(4)}</div>
+                                        <div>{language === 'বাংলা' ? 'উচ্চ:' : 'Upper:'} {results.critical_values.upper?.toFixed(4)}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
@@ -722,6 +1039,13 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             color: settings.categoryColors[0]
         }];
 
+        // Calculate proper y-axis domain for box plot
+        const padding = Math.abs((differences.max - differences.min) * 0.1);
+        const yDomain = [
+            (differences.min || 0) - padding,
+            (differences.max || 0) + padding
+        ];
+
         return (
             <div style={{ position: 'relative', width: '100%' }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
@@ -749,14 +1073,14 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ScatterChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -775,49 +1099,85 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: -10,
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 type="number"
                                 dataKey="y"
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                domain={yDomain}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Scatter data={scatterData} shape={<CustomBoxShape />} />
                         </ScatterChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
-                {/* Reference line at zero */}
-                <div style={{
-                    position: 'absolute',
-                    left: '10%',
-                    right: '10%',
-                    top: `calc(${height/2}px + 30px)`,
-                    height: '2px',
-                    backgroundColor: settings.referenceLineColor || '#dc2626',
-                    pointerEvents: 'none',
-                    zIndex: 5
-                }} />
+
+                {settings.dataLabelsOn && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            {boxData.map((group, idx) => (
+                                <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
+                                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
+                                        <div>Max: {group.max}</div>
+                                        <div>Q3 (75%): {group.q75}</div>
+                                        <div>Median: {group.median}</div>
+                                        <div>Q1 (25%): {group.q25}</div>
+                                        <div>Min: {group.min}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
 
+
+    
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">

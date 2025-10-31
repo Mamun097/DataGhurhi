@@ -46,6 +46,8 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         captionTopMargin: language === 'বাংলা' ? 'ক্যাপশন উপরের মার্জিন' : 'Caption Top Margin',
         xAxisBottomMargin: language === 'বাংলা' ? 'X অক্ষ নিচের মার্জিন' : 'X-Axis Bottom Margin',
         yAxisLeftMargin: language === 'বাংলা' ? 'Y অক্ষ বামের মার্জিন' : 'Y-Axis Left Margin',
+        xAxisTitleOffset: language === 'বাংলা' ? 'X অক্ষ শিরোনাম অনুভূমিক স্থানান্তর' : 'X-Axis Title Horizontal Offset',
+        yAxisTitleOffset: language === 'বাংলা' ? 'Y অক্ষ শিরোনাম উল্লম্ব স্থানান্তর' : 'Y-Axis Title Vertical Offset'        
     };
 
     const gridStyles = [
@@ -349,6 +351,32 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     onChange={(e) => handleChange('yAxisLeftMargin', parseInt(e.target.value))}
                                     min="-50"
                                     max="50"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="setting-row">
+                            <div className="setting-group">
+                                <label className="setting-label">{t.xAxisTitleOffset}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.xAxisTitleOffset}
+                                    onChange={(e) => handleChange('xAxisTitleOffset', parseInt(e.target.value))}
+                                    min="-200"
+                                    max="200"
+                                />
+                            </div>
+
+                            <div className="setting-group">
+                                <label className="setting-label">{t.yAxisTitleOffset}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.yAxisTitleOffset}
+                                    onChange={(e) => handleChange('yAxisTitleOffset', parseInt(e.target.value))}
+                                    min="-200"
+                                    max="200"
                                 />
                             </div>
                         </div>
