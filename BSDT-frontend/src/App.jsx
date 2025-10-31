@@ -23,6 +23,10 @@ import GroupPreviewPage from "./StatisticalTool/GroupPreviewPage"
 import ForgotPassword from "./AccountManagement/forgotPassword";
 import ReportViewer from "./StatisticalTool/ReportViewer";
 import Data_summary from "./StatisticalTool/visualization";
+import EditProfile from "./ProfileManagement/EditProfile";
+import SecuritySettings from"./ProfileManagement/SecuritySettings";
+import SubscriptionPage from "./ProfileManagement/SubscriptionPage";
+import FileExplorer from "./StatisticalTool/FolderView";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -59,10 +63,14 @@ function App() {
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
             <Route path="/preview" element={<PreviewPage />} />
+            <Route path="/edit-profile" element={<EditProfile />} />
+            <Route path="/security-settings" element={<SecuritySettings />} />
+            <Route path="/subscription" element={<SubscriptionPage />} />
             {/* <Route path="/question-bank" element={<QB />} /> */}
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
             <Route path="/preprocess" element={<PreprocessDataPage />} />
             <Route path="/visualization" element={<Data_summary />} />
+           <Route path="/saved-files" element={<FileExplorer/>} />
 
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
             

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../db";
@@ -16,10 +16,25 @@ import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import ProjectTab from "./components/projectComponent";
+import StatisticalAnalysisTool from "../StatisticalTool/StatisticalAnalysisTool";
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
+import Collab from "./components/collaboration";
 import apiClient from "../api";
-
+import {
+  LayoutDashboard,
+  Package,
+  TicketPercent,
+  User,
+  FolderKanban,
+  Users,
+  FileSpreadsheet,
+  Crown,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  ChartColumn
+} from "lucide-react";
 import CouponManagement from "./AdminComponents/CouponManagement";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -362,6 +377,7 @@ const Dashboard = () => {
         // Set user type and available tokens
         const currentUserType = response.data.user.user_type;
         setUserType(currentUserType);
+        localStorage.setItem("userType", currentUserType);
         setAvailableTokens(response.data.user.available_token || 0);
 
         // Check if user is admin
@@ -513,27 +529,41 @@ const Dashboard = () => {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
+const [collapsed, setCollapsed] = useState(false);
+const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Get tabs based on user type
-  const getTabs = () => {
+ const getTabs = () => {
     if (isAdmin) {
       return [
-        { label: "Dashboard", key: "dashboard" },
-        { label: "Customize Packages", key: "customizepackages" },
-        { label: "Manage Coupons", key: "managecoupons" },
-        { label: "My Profile", key: "editprofile" },
+        { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
+        { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
+        { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
+        { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
       return [
-        { label: "My Profile", key: "editprofile" },
-        { label: "Projects", key: "projects" },
-        { label: "Collaborated Projects", key: "collaboratedprojects" },
-        { label: "Collaborated Surveys", key: "collaboratedsurveys" },
-        { label: "Question Bank", key: "questionbank" },
-        { label: "Premium Packages", key: "premiumpackages" },
+        // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+        { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
+        { label: "Shared with You", key: "shared", icon: <Users size={18} /> },
+        // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
+        { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
+        {label: "Analysis", key: "analysis", icon: <ChartColumn size={18} />},
+        { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
       ];
     }
   };
+
+useEffect(() => {
+  setCollapsed(isMobile);
+}, [isMobile]);
+
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [passwordValues, setPasswordValues] = useState({
     old_password: "",
@@ -583,7 +613,7 @@ const Dashboard = () => {
   };
 
   return (
-    <div>
+   <div style={{ paddingTop: "80px" }}>
       <NavbarAcholder
         language={language}
         setLanguage={setLanguage}
@@ -591,62 +621,79 @@ const Dashboard = () => {
         userType={userType}
       />
 
-      <div
-        className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
-      >
+      <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
         <div className="dashboard-layout">
-          <div className="profile-section">
-            <div className="profile-pic-wrapper">
-              <img
-                src={profilePicUrl || defaultprofile}
-                alt="Profile"
-                className="profile-pic"
-              />
-              <input
-                type="file"
-                id="profileUpload"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "profile")}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="profileUpload" className="edit-profile-pic-btn">
-                📷
-              </label>
-            </div>
-            <h2>{values.user?.name || "Loading..."}</h2>
+      <div
+        className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
+          collapsed ? "collapsed" : ""
+        }`}
+      >
+        {!isMobile && (
+          <div className="sidebar-header">
+            {collapsed ? (
+            
+                <button
+                  className="collapse-btn"
+                  onClick={() => setCollapsed(!collapsed)} 
+                  aria-label="Toggle sidebar"
+                >
+                  <Menu size={20} />
+                </button>
+              ) : (
+            
+                <>
+                  <h2 className="sidebar-header">Dashboard</h2>
+                  <button
+                    className="collapse-btn"
+                    onClick={() => setCollapsed(!collapsed)} 
+                    aria-label="Collapse sidebar"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  </>
+                )}
+          
+          </div>
+        )}
 
-            {/* Admin badge */}
-            {isAdmin && (
-              <div className="admin-badge">
-                <span>👑 Administrator</span>
-              </div>
-            )}
+        {/* Admin Badge */}
+        {!collapsed && isAdmin && !isMobile && (
+          <div className="admin-badge">
+            <span>👑 Administrator</span>
+          </div>
+        )}
 
-            <div className="profile-tabs">
-              <ul>
+            <ul className={`sidebar-list ${isMobile ? "horizontal" : ""}`}>
                 {getTabs().map((tab) => (
                   <li key={tab.key}>
-                    <button
-                      className={activeTab === tab.key ? "active" : ""}
-                      onClick={() => {
-                        if (tab.key === "premiumpackages") {
-                          setShowPremiumModal(true);
-                        } else {
-                          const url = new URL(window.location);
-                          url.searchParams.set("tab", tab.key);
-                          window.history.replaceState({}, "", url);
-                          setActiveTab(tab.key);
-                        }
-                      }}
-                    >
-                      {getLabel(tab.label)}
-                    </button>
+                    <div className="tooltip-container">
+                      <button
+                        className={`sidebar-btn ${activeTab === tab.key ? "active" : ""}`}
+                        onClick={() => {
+                          if (tab.key === "premiumpackages") {
+                            setShowPremiumModal(true);
+                          } else {
+                            const url = new URL(window.location);
+                            url.searchParams.set("tab", tab.key);
+                            window.history.replaceState({}, "", url);
+                            setActiveTab(tab.key);
+                          }
+                        }}
+                      >
+                        <span className="icon">{tab.icon}</span>
+                        {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
+                      </button>
+
+                      {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
+                        <span className="tooltip-text">{tab.label}</span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
 
+          </div>
+    
           <div className="projects-section">
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
@@ -810,7 +857,7 @@ const Dashboard = () => {
                 setProjects={setProjects}
               />
             )}
-            {!isAdmin && activeTab === "collaboratedprojects" && (
+            {/* {!isAdmin && activeTab === "collaboratedprojects" && (
               <CollabProjectTab
                 getLabel={getLabel}
                 collaboratedProjects={collaboratedProjects}
@@ -835,12 +882,32 @@ const Dashboard = () => {
                 //handleReject={handleReject}
                 navigate={navigate}
               />
-            )}
-            {activeTab === "questionbank" && (
+            )} */}
+            {!isAdmin && activeTab === "shared" && (
+              <Collab
+                getLabel={getLabel}
+                collaboratedProjects={collaboratedProjects}
+                showCollabModal={showCollabModal}
+                collabRequests={collabRequests}
+                setShowCollabModal={setShowCollabModal}
+                fetchCollaborationRequests={fetchCollaborationRequests}
+                handleAccept={handleAccept}
+                handleReject={handleReject}
+                navigate={navigate}
+               language={language}
+              />
+              )}
+            {!isAdmin && activeTab === "questionbank" && (
               <div className="question-bank-section">
                 <QB language={language} setLanguage={setLanguage} />
               </div>
             )}
+               {!isAdmin && activeTab === "analysis" && (
+              <div>
+                <StatisticalAnalysisTool />
+              </div>
+            )}
+            
           </div>
         </div>
       </div>

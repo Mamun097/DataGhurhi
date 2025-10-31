@@ -131,7 +131,7 @@ const Index = () => {
       <div className="hide-on-print">
         <NavbarAcholder language={language} setLanguage={setLanguage} />
       </div>
-      <div className="container-fluid bg-white py-10 row justify-content-center">
+      <div className="container-fluid bg-white  row justify-content-center">
         {!submitted && (
           <div className="col-12 col-md-8">
             <SurveyForm
