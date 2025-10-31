@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 
 const StackedBarPlot = ({
     results,
@@ -40,7 +40,7 @@ const StackedBarPlot = ({
             yAxisTitleUnderline: false,
             xAxisTickSize: 14,
             yAxisTickSize: 14,
-            xAxisBottomMargin: -50,
+            xAxisBottomMargin: 0,
             yAxisLeftMargin: 0,
             yAxisMin: '0',
             yAxisMax: '100',
@@ -56,14 +56,12 @@ const StackedBarPlot = ({
             labelSize: 11,
             labelColor: 'white',
             labelBold: true,
-            barWidth: 0.7,
             elementWidth: 0.7,
             legendOn: true,
-            legendPosition: 'right',
+            legendPosition: 'top',
             legendTitle: 'Categories',
             colorScheme: 'categorical',
             categoryColors: defaultColors,
-            variableLabels: [],
             orientation: 'vertical',
             stackMode: 'percentage',
             showBaseline: true,
@@ -108,12 +106,7 @@ const StackedBarPlot = ({
             [40, 35, 25]
         ];
 
-        // Use custom variable labels if available
-        const displayVar1Categories = settings.variableLabels && settings.variableLabels.length >= var1Categories.length
-            ? settings.variableLabels.slice(0, var1Categories.length)
-            : var1Categories;
-
-        const chartData = displayVar1Categories.map((category, i) => {
+        const chartData = var1Categories.map((category, i) => {
             const row = contingencyTable[i];
             const rowTotal = row.reduce((a, b) => a + b, 0);
 
@@ -213,8 +206,7 @@ const StackedBarPlot = ({
                     border: '2px solid #e5e7eb',
                     borderRadius: '12px',
                     boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                    minWidth: '200px',
-                    fontFamily: settings.fontFamily
+                    minWidth: '200px'
                 }}>
                     <p style={{
                         margin: '0 0 12px 0',
@@ -277,68 +269,17 @@ const StackedBarPlot = ({
             return null;
         }
 
-        if (settings.legendPosition === 'right') {
-            return (
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px',
-                    padding: '16px',
-                    background: '#f9fafb',
-                    borderRadius: '8px',
-                    border: '1px solid #e5e7eb'
-                }}>
-                    {settings.legendTitle && (
-                        <div style={{
-                            fontSize: '14px',
-                            fontWeight: '700',
-                            color: '#1f2937',
-                            marginBottom: '4px',
-                            fontFamily: settings.fontFamily,
-                            borderBottom: '2px solid #e5e7eb',
-                            paddingBottom: '8px'
-                        }}>
-                            {settings.legendTitle}
-                        </div>
-                    )}
-                    {payload.map((entry, index) => (
-                        <div key={`legend-${index}`} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            padding: '6px 8px',
-                            background: 'white',
-                            borderRadius: '6px',
-                            border: '1px solid #e5e7eb'
-                        }}>
-                            <div style={{
-                                width: '14px',
-                                height: '14px',
-                                backgroundColor: entry.color,
-                                borderRadius: '3px'
-                            }} />
-                            <span style={{
-                                fontSize: '13px',
-                                color: '#374151',
-                                fontWeight: '500',
-                                fontFamily: settings.fontFamily
-                            }}>
-                                {entry.value}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            );
-        }
+        const isVertical = settings.legendPosition === 'right' || settings.legendPosition === 'left';
 
-        // Bottom or Top position
         return (
             <div style={{
                 display: 'flex',
-                justifyContent: 'center',
-                flexWrap: 'wrap',
+                flexDirection: isVertical ? 'column' : 'row',
+                justifyContent: isVertical ? 'flex-start' : 'center',
+                alignItems: isVertical ? 'flex-start' : 'center',
+                flexWrap: isVertical ? 'nowrap' : 'wrap',
                 gap: '8px',
-                padding: '8px 0'
+                padding: '8px 0',
             }}>
                 {payload.map((entry, index) => (
                     <div key={`legend-${index}`} style={{
@@ -373,19 +314,37 @@ const StackedBarPlot = ({
     const renderCustomLabel = (props) => {
         const { x, y, width, height, value, index, name } = props;
 
-        if (!settings.dataLabelsOn || height < 25 || width < 40) {
+        if (!settings.dataLabelsOn || height < 5 || width < 40) {
             return null;
         }
 
+        const dataPoint = chartData.data?.[index];
+
         let labelText = '';
+
         if (settings.labelType === 'percentage') {
             labelText = `${value.toFixed(1)}%`;
         } else if (settings.labelType === 'count') {
-            const count = props.payload[`${name}_count`] || value;
-            labelText = `${Math.round(count)}`;
+            const countKey = `${name}_count`;
+            const count = dataPoint?.[countKey];
+            if (count !== undefined && count !== null) {
+                labelText = `${Math.round(count)}`;
+            } else {
+                labelText = '0';
+            }
         } else if (settings.labelType === 'both') {
-            const count = props.payload[`${name}_count`] || value;
-            labelText = `${Math.round(count)} (${value.toFixed(1)}%)`;
+            const countKey = `${name}_count`;
+            const count = dataPoint?.[countKey];
+
+            if (count !== undefined && count !== null) {
+                const total = dataPoint?.total || chartData.data.reduce((sum, dp) => {
+                    return sum + (dp[countKey] || 0);
+                }, 0);
+                const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : value.toFixed(1);
+                labelText = `${Math.round(count)} (${percentage}%)`;
+            } else {
+                labelText = `0 (${value.toFixed(1)}%)`;
+            }
         }
 
         return (
@@ -435,40 +394,10 @@ const StackedBarPlot = ({
         );
     }
 
-    // Calculate chart margins based on settings
-    const getChartMargins = () => {
-        const baseMargin = {
-            top: 30,
-            right: 20,
-            left: 60,
-            bottom: 80
-        };
-
-        if (settings.captionOn) {
-            baseMargin.top += settings.captionTopMargin + settings.captionSize;
-        }
-
-        if (settings.legendOn && settings.legendPosition === 'top') {
-            baseMargin.top += 40;
-        }
-
-        if (settings.legendOn && settings.legendPosition === 'bottom') {
-            baseMargin.bottom += 40;
-        }
-
-        if (settings.legendOn && settings.legendPosition === 'right') {
-            baseMargin.right = 180;
-        }
-
-        return baseMargin;
-    };
-
-    const chartMargins = getChartMargins();
-
     return (
         <div style={{ position: 'relative', width: '100%' }}>
             {/* Control Buttons */}
-            <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+            <div style={{ position: 'absolute', top: '130px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
                 <button className="customize-btn" onClick={() => openCustomization('stacked')}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -586,10 +515,15 @@ const StackedBarPlot = ({
                 <ResponsiveContainer width="100%" height={height}>
                     <BarChart
                         data={chartData.data}
-                        margin={chartMargins}
-                        style={settings.borderOn ? { border: '2px solid #1f2937' } : {}}
+                        margin={{
+                            top: settings.captionOn ? 50 : (settings.legendOn ? 40 : 30),
+                            right: 20,
+                            left: 20,
+                            bottom: 50
+                        }}
+                        style={settings.borderOn ? { border: '1px solid #1f2937' } : {}}
                         barGap={4}
-                        barCategoryGap={`${(1 - (settings.barWidth || settings.elementWidth)) * 100}%`}
+                        barCategoryGap="20%"
                     >
                         {settings.captionOn && settings.captionText && (
                             <text
@@ -604,13 +538,14 @@ const StackedBarPlot = ({
                         {settings.legendOn && (
                             <Legend
                                 content={<CustomLegend />}
-                                verticalAlign={settings.legendPosition === 'bottom' ? 'bottom' : 'top'}
-                                align={settings.legendPosition === 'right' ? 'right' : 'center'}
+                                verticalAlign={settings.legendPosition === 'left' || settings.legendPosition === 'right' ? 'middle' : settings.legendPosition}
+                                align={settings.legendPosition === 'left' || settings.legendPosition === 'right' ? settings.legendPosition : 'center'}
                                 wrapperStyle={{
                                     paddingTop: settings.legendPosition === 'top' ? '0px' : undefined,
-                                    paddingBottom: settings.legendPosition === 'bottom' ? '0px' : undefined
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : undefined,
+                                    paddingLeft: settings.legendPosition === 'left' ? '10px' : undefined,
+                                    paddingRight: settings.legendPosition === 'right' ? '10px' : undefined
                                 }}
-                                layout={settings.legendPosition === 'right' ? 'vertical' : 'horizontal'}
                             />
                         )}
 
@@ -621,15 +556,6 @@ const StackedBarPlot = ({
                                 strokeOpacity={settings.gridOpacity}
                                 vertical={settings.showGridVertical}
                                 horizontal={settings.showGridHorizontal}
-                            />
-                        )}
-
-                        {settings.showBaseline && (
-                            <ReferenceLine
-                                y={0}
-                                stroke={settings.baselineColor}
-                                strokeWidth={settings.baselineWidth}
-                                strokeDasharray="0"
                             />
                         )}
 
@@ -714,7 +640,7 @@ const StackedBarPlot = ({
                                 stackId="stack"
                                 fill={colors[index % colors.length]}
                                 radius={index === chartData.categories.length - 1 ? [settings.barRadius, settings.barRadius, 0, 0] : [0, 0, 0, 0]}
-                                maxBarSize={120}
+                                maxBarSize={80 * settings.elementWidth}
                                 label={renderCustomLabel}
                                 animationDuration={settings.animationDuration}
                                 stroke={settings.barBorderOn ? '#1f2937' : 'none'}
@@ -728,10 +654,12 @@ const StackedBarPlot = ({
                 {settings.plotBorderOn && (
                     <div style={{
                         position: 'absolute',
-                        top: `${chartMargins.top}px`,
-                        left: `${chartMargins.left}px`,
-                        right: `${chartMargins.right}px`,
-                        bottom: `${chartMargins.bottom}px`,
+                        top: settings.captionOn && settings.legendOn ? '105px' :
+                            settings.captionOn ? '50px' :
+                                settings.legendOn ? '95px' : '30px',
+                        left: '80px',
+                        right: '20px',
+                        bottom: '130px',
                         borderTop: '1px solid #000000',
                         borderRight: '1px solid #000000',
                         pointerEvents: 'none',
@@ -754,11 +682,11 @@ const StackedBarPlot = ({
                         <line x1="12" y1="16" x2="12" y2="12"></line>
                         <line x1="12" y1="8" x2="12.01" y2="8"></line>
                     </svg>
-                    <h4 style={{ margin: 0, color: '#1f2937', fontSize: '16px', fontWeight: '600', fontFamily: settings.fontFamily }}>
+                    <h4 style={{ margin: 0, color: '#1f2937', fontSize: '16px', fontWeight: '600' }}>
                         {t('Chart Information', 'চার্ট তথ্য')}
                     </h4>
                 </div>
-                <p style={{ margin: 0, color: '#6b7280', fontSize: '14px', lineHeight: '1.6', fontFamily: settings.fontFamily }}>
+                <p style={{ margin: 0, color: '#6b7280', fontSize: '14px', lineHeight: '1.6' }}>
                     {t(
                         'This stacked bar chart shows the distribution of categories within each variable. Each segment represents the proportion or count of a specific category, making it easy to compare distributions across variables.',
                         'এই স্ট্যাকড বার চার্ট প্রতিটি ভেরিয়েবলের মধ্যে ক্যাটাগরির বিতরণ দেখায়। প্রতিটি অংশ একটি নির্দিষ্ট ক্যাটাগরির অনুপাত বা গণনা প্রতিনিধিত্ব করে, যা ভেরিয়েবল জুড়ে বিতরণ তুলনা করা সহজ করে তোলে।'
