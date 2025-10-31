@@ -6201,3 +6201,123 @@ def save_results_api(request):
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+        
+        
+# save edited file
+
+from django.core.files.storage import default_storage
+@csrf_exempt
+def save_edited_excel(request):
+    if request.method == "POST" and request.FILES.get("file"):
+        excel_file = request.FILES["file"]
+        user_id = request.POST.get("user_id")
+        original_path = request.POST.get("original_path")
+        original_path=os.path.join(settings.MEDIA_ROOT, original_path.replace("/media/", ""))
+        replace= request.POST.get("replace_original")
+        # print(replace)
+        # print(excel_file.name) 
+
+        try:
+            if replace== "true": 
+                # print("innn")
+                if original_path and default_storage.exists(original_path):
+                    save_path = original_path
+            else:
+                # fallback to saving in media/edited_excels/
+                save_path = os.path.join(settings.MEDIA_ROOT,  f'ID_{user_id}_uploads/saved_files/', excel_file.name)
+            print(save_path) 
+            os.makedirs(os.path.dirname(save_path), exist_ok=True) 
+
+            # overwrite or create new file
+            with default_storage.open(save_path, "wb+") as destination:
+                for chunk in excel_file.chunks():
+                    destination.write(chunk)
+            
+            print(save_path) 
+
+            return JsonResponse({
+                "success": True,
+                "message": "Excel file replaced successfully.",
+                "saved_path": save_path
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "error": str(e)
+            }, status=500)
+
+    return JsonResponse({"success": False, "error": "Invalid request."}, status=400)
+
+from django.http import FileResponse
+from django.views.decorators.http import require_GET
+from urllib.parse import unquote
+
+@require_GET
+def list_user_files(request):
+    user_id = request.GET.get("user_id")
+    if not user_id:
+        return JsonResponse({"error": "Missing user_id"}, status=400)
+
+    # Optional subfolder navigation
+    subpath = request.GET.get("path", "")
+    subpath = unquote(subpath)
+
+    user_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "saved_files")
+    target_dir = os.path.join(user_dir, subpath)
+
+    if not os.path.exists(target_dir):
+        return JsonResponse({"error": "Folder not found"}, status=404)
+
+    file_list = []
+    for name in os.listdir(target_dir):
+        full_path = os.path.join(target_dir, name)
+        file_type = "folder" if os.path.isdir(full_path) else os.path.splitext(name)[1][1:]
+        file_list.append({
+            "name": name,
+            "type": file_type,
+            "size": os.path.getsize(full_path),
+        })
+
+    return JsonResponse(file_list, safe=False)
+
+
+from django.http import FileResponse, JsonResponse, HttpResponse
+from django.views.decorators.http import require_GET
+from urllib.parse import unquote
+import mimetypes
+import os
+from django.conf import settings
+
+@require_GET
+def serve_user_file(request, filename):
+    user_id = request.GET.get("user_id")
+    if not user_id:
+        return JsonResponse({"error": "Missing user_id"}, status=400)
+
+    subpath = unquote(request.GET.get("path", ""))
+
+    # Sanitize subpath
+    if ".." in subpath or subpath.startswith("/") or "\\" in subpath:
+        return JsonResponse({"error": "Invalid path"}, status=400)
+
+    user_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "saved_files")
+    file_path = os.path.normpath(os.path.join(user_dir, subpath, filename))
+
+    if not file_path.startswith(user_dir):
+        return JsonResponse({"error": "Access denied"}, status=403)
+
+    if not os.path.exists(file_path):
+        return JsonResponse({"error": "File not found"}, status=404)
+
+    mime_type, _ = mimetypes.guess_type(file_path)
+    if not mime_type:
+        mime_type = "application/octet-stream"
+
+  
+    with open(file_path, "rb") as f:
+        response = HttpResponse(f.read(), content_type=mime_type)
+        response["Content-Disposition"] = f'attachment; filename="{os.path.basename(file_path)}"'
+        response["Content-Length"] = os.path.getsize(file_path)
+        response["X-Content-Type-Options"] = "nosniff"
+        return response

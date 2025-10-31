@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import "./login.css";
-import Navbarhome from "../Homepage/navbarhome";
+import NavbarAcholder from  "../ProfileManagement/navbarAccountholder"
 import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -125,7 +125,7 @@ const Login = () => {
 
   return (
     <div className="register-container">
-      <Navbarhome language={language} setLanguage={setLanguage} />
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
         <motion.div
           className="register-box"

@@ -20,6 +20,10 @@ urlpatterns = [
     path('api/group-data/', views.group_data_api, name='group_data_api'),
     path('api/upload-preprocessed/', views.save_preprocessed_file_api, name='save_preprocessed_file_api'),
     path('api/generate-unique-id/', views.generate_unique_id_column_api, name='generate_unique_id_column_api'),
-    path('api/save-results/', views.save_results_api, name='save_results_api')
+    path('api/save-results/', views.save_results_api, name='save_results_api'),
+    path("api/save-edited-excel/", views.save_edited_excel, name="save_edited_excel"),
+    path("files/", views.list_user_files, name="list_user_files"),
+    path("files/<str:filename>/", views.serve_user_file, name="serve_user_file"),
+
 
 ]

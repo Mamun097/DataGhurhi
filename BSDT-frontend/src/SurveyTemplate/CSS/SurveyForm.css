@@ -70,6 +70,9 @@ h1 {
 .ms-2 { /* Note: Bootstrap uses !important for margin utilities sometimes. */
   margin-left: 0.5rem !important;
 }
+.bg-green{
+  background-color:#e9ffe9 
+}
 
 /* General Button Styling (Overrides Bootstrap defaults) */
 .btn {

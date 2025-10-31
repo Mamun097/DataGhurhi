@@ -1,0 +1,287 @@
+/*  Container Adjustments  */
+.background-container {
+  
+  display: flex;
+  justify-content: center;
+  background: #f0faf0;
+}
+
+.profile-wrapper {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2rem;
+  box-sizing: border-box;
+}
+.sec-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2f5e33;
+  text-align: center;
+}
+
+/*Cards Grid for Side-by-Side Layout */
+.security-cards-grid {
+  margin-top: 40px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 1.5rem;
+  align-items: start; /* prevents cards from stretching */
+}
+
+
+.card {
+  width: 100%;
+  border-radius: 12px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+/*  Card Header  */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 1rem 1.5rem;
+  background-color: #e8f3e9;
+  border-bottom: 1px solid #cfe5d2;
+}
+
+.card-header h2,
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2f5e33;
+}
+
+/*  Security Fields  */
+
+.security-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+}
+
+.security-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.security-field label {
+  font-weight: 500;
+  color: #333;
+}
+
+.security-field input,
+.security-field select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.security-field input:focus,
+.security-field select:focus {
+  border-color: #1eab27;
+}
+
+/*  Password Field Wrapper  */
+.sec-password-input-wrapper {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.sec-password-input-wrapper input {
+  width: 100%;
+  padding: 8px calc(2.5rem + 8px) 8px 10px; /* space for toggle button */
+}
+
+.sec-password-input-wrapper .toggle-eye-btn {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 1rem;
+  z-index: 2;
+}
+
+.sec-password-input-wrapper .toggle-eye-btn:hover {
+  color: #1ae81d;
+}
+
+/* Flex wrapper for input + eye button */
+.input-with-eye {
+  position: relative; /* make eye button absolute within input wrapper */
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-eye input {
+  flex: 1;
+  padding: 6px 36px 6px 10px; /* right padding for eye button */
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+}
+
+.input-with-eye input:focus {
+  border-color: #1eab27;
+}
+
+.input-with-eye .toggle-eye-btn {
+  position: absolute;
+  right: 8px; /* align inside the input */
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #555;
+  font-size: 1rem;
+  z-index: 2;
+}
+
+.input-with-eye .toggle-eye-btn:hover {
+  color: #1a73e8;
+}
+
+.save-profile-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.save-profile-btn,
+.confirm-btn,
+.cancel-btn,
+.edit-profile-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.cancel-btn {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.cancel-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.save-profile-btn {
+  background-color: #367131;
+  color: #fff;
+}
+
+.save-profile-btn:hover {
+  background-color: #2b5a29;
+}
+
+/* === Icon Inline Fix === */
+.icon-inline {
+  flex-shrink: 0;
+}
+
+/* ================= Mobile Responsive ================= */
+
+/* Medium screens / Tablet */
+@media (max-width: 768px) {
+  .security-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .security-field input,
+  .security-field select {
+    font-size: 0.95rem;
+    padding: 6px 10px;
+  }
+
+  .sec-password-input-wrapper input {
+    padding: 6px calc(2rem + 6px) 6px 10px;
+  }
+
+  .sec-password-input-wrapper .toggle-eye-btn {
+    right: 8px;
+    font-size: 0.95rem;
+  }
+
+  .save-profile-btn,
+  .cancel-btn,
+  .edit-profile-btn {
+    width: 60%;
+    text-align: center;
+    font-size: 0.95rem;
+  }
+}
+
+/* Small screens / Mobile */
+@media (max-width: 460px) {
+  .background-container {
+    padding: 0.5rem;
+  }
+
+  .profile-wrapper {
+    padding: 1rem;
+  }
+
+  .security-field input,
+  .security-field select {
+    font-size: 0.9rem;
+    width: 100%;
+  }
+
+   .input-with-eye {
+    gap: 4px;
+  }
+
+   .input-with-eye input {
+    padding: 6px 36px 6px 10px; 
+    font-size: 0.9rem;
+  }
+
+  .input-with-eye .toggle-eye-btn {
+   
+    font-size: 0.85rem;
+    background-color: transparent;
+    
+  }
+
+  .save-profile-btn,
+  .cancel-btn,
+  .edit-profile-btn {
+    width: 100%;
+    font-size: 0.9rem;
+  }
+}

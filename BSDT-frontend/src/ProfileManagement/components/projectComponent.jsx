@@ -64,7 +64,7 @@ const ProjectTab = ({
       <h3 className="text-lg font-semibold">
         {getLabel("My Project Folders")}
       </h3>
-      <p
+      {/* <p
         className="text-center mt-1"
         style={{
           color: "#dc2626",
@@ -75,18 +75,26 @@ const ProjectTab = ({
         {getLabel(
           "You must create and manage surveys within your project folders."
         )}{" "}
-      </p>
+      </p> */}
 
       {/* New Project Section */}
-      <div className="new-project-section">
+      {/* <div className="new-project-section">
         <h4>{getLabel("Create a New Project")}</h4>
         <div className="add-project-card" onClick={handleAddProjectClick}>
           <div className="plus-icon">+</div>
         </div>
       </div>
 
-      <hr className="section-divider" />
+       */}
+  <div className="project-header">
+  <button className="create-project-btn" onClick={handleAddProjectClick}>
+    <i className="bi bi-plus"></i> {/* Bootstrap Plus Icon */}
+    {getLabel("Create Project")}
+  </button>
+</div>
 
+
+<hr className="section-divider" />
       {/* Existing Projects */}
       <h4>{getLabel("Existing Projects")}</h4>
       <div className="project-filter-bar">
