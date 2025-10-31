@@ -523,12 +523,12 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     >
                         {t('Heatmap', 'হিটম্যাপ')}
                     </button>
-                    <button
+                    {/* <button
                         className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('mosaic')}
                     >
                         {t('Mosaic Plot', 'মোজাইক প্লট')}
-                    </button>
+                    </button> */}
 
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
