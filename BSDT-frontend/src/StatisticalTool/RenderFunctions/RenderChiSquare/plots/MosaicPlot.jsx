@@ -1,22 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-const MosaicPlot = ({ 
-    results, 
-    language, 
-    settings: propSettings, 
-    onSettingsChange, 
-    openCustomization, 
-    handleDownload, 
-    downloadMenuOpen, 
-    setDownloadMenuOpen, 
-    chartRef 
+const MosaicPlot = ({
+    results,
+    language,
+    settings: propSettings,
+    onSettingsChange,
+    openCustomization,
+    handleDownload,
+    downloadMenuOpen,
+    setDownloadMenuOpen,
+    chartRef
 }) => {
     const t = (en, bn) => (language === 'bn' ? bn : en);
     const canvasRef = useRef(null);
 
     // Default settings
     const getDefaultSettings = () => ({
-        dimensions: '1000x700',
+        dimensions: '800x600',
         fontFamily: 'Times New Roman',
         captionOn: false,
         captionText: '',
@@ -46,14 +46,14 @@ const MosaicPlot = ({
         borderOn: false,
         selectedPair: null,
         categoryColors: [
-            '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
+            '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
             '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
             '#06b6d4', '#84cc16', '#f43f5e', '#a855f7'
         ],
         marginTop: 80,
         marginBottom: 60,
         marginLeft: 100,
-        marginRight: 150,
+        marginRight: 100,
         spacingBetweenVariables: 20
     });
 
@@ -72,19 +72,18 @@ const MosaicPlot = ({
                 r => `${r.variable1}-${r.variable2}` === settings.selectedPair
             );
         }
-        
+
         if (!selectedResult) {
-            selectedResult = results.pairwise_results.find(r => r.p_value < settings.significanceAlpha) 
+            selectedResult = results.pairwise_results.find(r => r.p_value < settings.significanceAlpha)
                 || results.pairwise_results[0];
         }
 
-        // Get contingency table data (you'll need to add this to your results)
-        // For now, I'll create a mock structure - replace with actual data
-        const var1Categories = ['Cat A', 'Cat B', 'Cat C'];
-        const var2Categories = ['Type 1', 'Type 2', 'Type 3'];
-        
-        // Mock contingency table - replace with actual data from results
-        const contingencyTable = [
+        // Get contingency table data
+        const var1Categories = selectedResult.var1_categories || ['Cat A', 'Cat B', 'Cat C'];
+        const var2Categories = selectedResult.var2_categories || ['Type 1', 'Type 2', 'Type 3'];
+
+        // Contingency table
+        const contingencyTable = selectedResult.contingency_table || [
             [45, 30, 25],
             [35, 40, 25],
             [20, 30, 50]
@@ -109,10 +108,10 @@ const MosaicPlot = ({
         if (!data) return null;
 
         const { contingencyTable, var1Categories, var2Categories } = data;
-        
+
         // Calculate totals
         const rowTotals = contingencyTable.map(row => row.reduce((a, b) => a + b, 0));
-        const colTotals = contingencyTable[0].map((_, i) => 
+        const colTotals = contingencyTable[0].map((_, i) =>
             contingencyTable.reduce((sum, row) => sum + row[i], 0)
         );
         const grandTotal = rowTotals.reduce((a, b) => a + b, 0);
@@ -128,7 +127,7 @@ const MosaicPlot = ({
             row.forEach((value, j) => {
                 const colWidth = (colTotals[j] / grandTotal) * width;
                 const cellWidth = (value / rowTotals[i]) * colWidth;
-                
+
                 cells.push({
                     x: currentX,
                     y: currentY,
@@ -176,7 +175,7 @@ const MosaicPlot = ({
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         const { width, height } = getDimensions(settings.dimensions);
-        
+
         canvas.width = width;
         canvas.height = height;
 
@@ -191,8 +190,8 @@ const MosaicPlot = ({
         const layout = calculateMosaicLayout(mosaicData, plotWidth, plotHeight);
         if (!layout) return;
 
-        const colors = settings.colorScheme === 'custom' 
-            ? settings.categoryColors 
+        const colors = settings.colorScheme === 'custom'
+            ? settings.categoryColors
             : getColorScheme(settings.colorScheme);
 
         // Draw caption
@@ -222,24 +221,17 @@ const MosaicPlot = ({
             const baseColor = colors[colorIndex];
 
             // Add slight opacity variation based on row
-            const opacity = 0.7 + (cell.rowIndex * 0.1);
+            const opacity = 0.85 + (cell.rowIndex * 0.05);
             ctx.fillStyle = baseColor + Math.floor(opacity * 255).toString(16).padStart(2, '0');
-            
+
             // Draw cell
             ctx.fillRect(x, y, cell.width, cell.height);
 
-            // Draw border
+            // Draw subtle border
             if (settings.cellBorderOn) {
                 ctx.strokeStyle = settings.cellBorderColor;
                 ctx.lineWidth = settings.cellBorderWidth;
                 ctx.strokeRect(x, y, cell.width, cell.height);
-            }
-
-            // Highlight significant associations
-            if (settings.highlightSignificant && mosaicData.isSignificant && cell.width > 30 && cell.height > 30) {
-                ctx.strokeStyle = '#fbbf24';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(x + 2, y + 2, cell.width - 4, cell.height - 4);
             }
 
             // Draw labels if cell is large enough
@@ -255,24 +247,42 @@ const MosaicPlot = ({
                 // Draw percentage
                 if (settings.showPercentages) {
                     ctx.font = `bold ${settings.percentageSize}px ${settings.fontFamily}`;
-                    ctx.fillStyle = '#1f2937';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 1;
                     ctx.fillText(`${cell.percentage}%`, centerX, centerY + yOffset);
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
                     yOffset += settings.percentageSize + 4;
                 }
 
                 // Draw count
                 if (settings.showCounts) {
                     ctx.font = `${settings.countSize}px ${settings.fontFamily}`;
-                    ctx.fillStyle = '#4b5563';
+                    ctx.fillStyle = '#ffffff';
+                    ctx.globalAlpha = 0.9;
                     ctx.fillText(`(n=${cell.value})`, centerX, centerY + yOffset);
+                    ctx.globalAlpha = 1.0;
                 }
             }
         });
 
+        // Draw plot border frame
+        ctx.strokeStyle = '#9ca3af';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+            settings.marginLeft,
+            settings.marginTop,
+            plotWidth,
+            plotHeight
+        );
+
         // Draw variable labels
         ctx.font = `${settings.variableLabelBold ? 'bold ' : ''}${settings.variableLabelSize}px ${settings.fontFamily}`;
         ctx.fillStyle = '#1f2937';
-        
+
         // Y-axis label (Variable 1)
         ctx.save();
         ctx.translate(30, settings.marginTop + plotHeight / 2);
@@ -287,9 +297,8 @@ const MosaicPlot = ({
 
         // Draw category labels
         ctx.font = `${settings.categoryLabelSize}px ${settings.fontFamily}`;
-        
+
         // Row category labels (left side)
-        let currentY = 0;
         layout.cells.filter((c, i, arr) => arr.findIndex(cell => cell.rowIndex === c.rowIndex) === i)
             .forEach(cell => {
                 const y = settings.marginTop + cell.y + cell.height / 2;
@@ -310,9 +319,9 @@ const MosaicPlot = ({
         uniqueColCells.forEach(cell => {
             const avgX = layout.cells
                 .filter(c => c.colIndex === cell.colIndex)
-                .reduce((sum, c) => sum + c.x + c.width / 2, 0) / 
+                .reduce((sum, c) => sum + c.x + c.width / 2, 0) /
                 layout.cells.filter(c => c.colIndex === cell.colIndex).length;
-            
+
             const x = settings.marginLeft + avgX;
             ctx.save();
             ctx.translate(x, settings.marginTop - 15);
@@ -325,7 +334,7 @@ const MosaicPlot = ({
 
         // Draw legend
         if (settings.legendOn) {
-            const legendX = width - settings.marginRight + 20;
+            const legendX = settings.marginLeft + plotWidth + 30;
             let legendY = settings.marginTop;
 
             ctx.font = `bold ${settings.categoryLabelSize + 2}px ${settings.fontFamily}`;
@@ -336,7 +345,7 @@ const MosaicPlot = ({
 
             mosaicData.var2Categories.forEach((cat, i) => {
                 const color = colors[i % colors.length];
-                
+
                 // Draw color box
                 ctx.fillStyle = color;
                 ctx.fillRect(legendX, legendY, 20, 20);
@@ -359,33 +368,6 @@ const MosaicPlot = ({
             ctx.lineWidth = 3;
             ctx.strokeRect(0, 0, width, height);
         }
-
-        // Draw statistics info box
-        const infoBoxX = settings.marginLeft;
-        const infoBoxY = settings.marginTop - 55;
-        const infoBoxWidth = 250;
-        const infoBoxHeight = 40;
-
-        ctx.fillStyle = mosaicData.isSignificant ? '#dcfce7' : '#fee2e2';
-        ctx.fillRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeight);
-        ctx.strokeStyle = mosaicData.isSignificant ? '#16a34a' : '#dc2626';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(infoBoxX, infoBoxY, infoBoxWidth, infoBoxHeight);
-
-        ctx.font = `bold 11px ${settings.fontFamily}`;
-        ctx.fillStyle = '#1f2937';
-        ctx.textAlign = 'left';
-        ctx.fillText(`χ² = ${mosaicData.chi2.toFixed(3)}`, infoBoxX + 10, infoBoxY + 15);
-        ctx.fillText(`p = ${mosaicData.pValue.toFixed(4)}`, infoBoxX + 10, infoBoxY + 30);
-
-        ctx.font = `bold 10px ${settings.fontFamily}`;
-        ctx.fillStyle = mosaicData.isSignificant ? '#16a34a' : '#dc2626';
-        ctx.textAlign = 'right';
-        ctx.fillText(
-            mosaicData.isSignificant ? 'SIGNIFICANT' : 'NOT SIGNIFICANT',
-            infoBoxX + infoBoxWidth - 10,
-            infoBoxY + 23
-        );
 
     }, [settings, mosaicData]);
 
@@ -419,122 +401,144 @@ const MosaicPlot = ({
     return (
         <div style={{ position: 'relative', width: '100%' }}>
             {/* Control Buttons */}
-            <div style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                display: 'flex',
-                gap: '8px',
-                zIndex: 10
-            }}>
-                <button
-                    onClick={() => openCustomization('mosaic')}
-                    style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        border: 'none',
-                        color: 'white',
-                        padding: '10px 16px',
-                        borderRadius: '10px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.4)',
-                        transition: 'all 0.3s ease'
-                    }}
-                >
+            <div style={{ position: 'absolute', top: '150px', right: '30px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                <button className="customize-btn" onClick={() => openCustomization('mosaic')}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                     </svg>
-                    {t('Customize', 'কাস্টমাইজ')}
+                    Customize
                 </button>
                 <div style={{ position: 'relative' }}>
                     <button
+                        className="customize-btn"
                         onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        style={{
-                            background: 'white',
-                            border: '2px solid #e5e7eb',
-                            color: '#374151',
-                            padding: '10px 16px',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '14px',
-                            fontWeight: '600',
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            transition: 'all 0.3s ease'
-                        }}
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        {t('Download', 'ডাউনলোড')}
+                        Download
                     </button>
                     {downloadMenuOpen && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '100%',
-                            right: 0,
-                            marginTop: '8px',
-                            background: 'white',
-                            border: '2px solid #e5e7eb',
-                            borderRadius: '12px',
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                            overflow: 'hidden',
-                            zIndex: 100,
-                            minWidth: '140px'
-                        }}>
-                            {['PNG', 'JPG', 'JPEG', 'PDF'].map((format, idx) => (
-                                <button
-                                    key={format}
-                                    onClick={() => handleDownload(format.toLowerCase())}
-                                    style={{
-                                        width: '100%',
-                                        padding: '12px 20px',
-                                        border: 'none',
-                                        background: 'white',
-                                        color: '#374151',
-                                        fontSize: '14px',
-                                        fontWeight: '500',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        transition: 'all 0.2s',
-                                        borderBottom: idx < 3 ? '1px solid #f3f4f6' : 'none'
-                                    }}
-                                >
-                                    {format}
-                                </button>
-                            ))}
+                        <div className="download-menu">
+                            <button onClick={() => handleDownload('png')}>PNG</button>
+                            <button onClick={() => handleDownload('jpg')}>JPG</button>
+                            <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                            <button onClick={() => handleDownload('pdf')}>PDF</button>
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Canvas Container */}
-            <div
-                ref={chartRef}
-                style={{
-                    position: 'relative',
-                    background: 'white',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
-                    display: 'inline-block'
-                }}
-            >
-                <canvas
-                    ref={canvasRef}
+            {/* Chart Container with Statistics Header */}
+            <div ref={chartRef} style={{ position: 'relative' }}>
+                {/* Statistics Header */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '20px',
+                    padding: '16px 20px',
+                    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                    borderRadius: '12px',
+                    border: '2px solid #bae6fd'
+                }}>
+                    <div>
+                        <h4 style={{
+                            margin: '0 0 4px 0',
+                            fontSize: '14px',
+                            color: '#0369a1',
+                            fontWeight: '600',
+                            fontFamily: settings.fontFamily
+                        }}>
+                            {t('Analyzing', 'বিশ্লেষণ করা হচ্ছে')}: {mosaicData.variable1} × {mosaicData.variable2}
+                        </h4>
+                        <p style={{
+                            margin: 0,
+                            fontSize: '12px',
+                            color: '#0c4a6e',
+                            fontFamily: settings.fontFamily
+                        }}>
+                            {t('Mosaic representation of categorical associations', 'শ্রেণীগত সংযোগের মোজাইক উপস্থাপনা')}
+                        </p>
+                    </div>
+                    <div style={{
+                        display: 'flex',
+                        gap: '20px',
+                        alignItems: 'center'
+                    }}>
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '8px 16px',
+                            background: 'white',
+                            borderRadius: '10px',
+                            border: '2px solid #0ea5e9'
+                        }}>
+                            <div style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
+                                color: '#0369a1',
+                                fontFamily: settings.fontFamily
+                            }}>
+                                {mosaicData.chi2.toFixed(2)}
+                            </div>
+                            <div style={{
+                                fontSize: '11px',
+                                color: '#0c4a6e',
+                                fontWeight: '600'
+                            }}>
+                                χ² {t('Statistic', 'পরিসংখ্যান')}
+                            </div>
+                        </div>
+                        <div style={{
+                            textAlign: 'center',
+                            padding: '8px 16px',
+                            background: mosaicData.pValue < 0.05 ? '#dcfce7' : '#fee2e2',
+                            borderRadius: '10px',
+                            border: `2px solid ${mosaicData.pValue < 0.05 ? '#16a34a' : '#dc2626'}`
+                        }}>
+                            <div style={{
+                                fontSize: '18px',
+                                fontWeight: '700',
+                                color: mosaicData.pValue < 0.05 ? '#15803d' : '#991b1b',
+                                fontFamily: settings.fontFamily
+                            }}>
+                                {mosaicData.pValue.toFixed(4)}
+                            </div>
+                            <div style={{
+                                fontSize: '11px',
+                                color: mosaicData.pValue < 0.05 ? '#166534' : '#7f1d1d',
+                                fontWeight: '600'
+                            }}>
+                                p-{t('value', 'মান')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Canvas Container */}
+                <div
                     style={{
-                        display: 'block',
-                        maxWidth: '100%',
-                        height: 'auto'
+                        position: 'relative',
+                        background: 'white',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.05)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        width: '100%'
                     }}
-                />
+                >
+                    <canvas
+                        ref={canvasRef}
+                        style={{
+                            display: 'block',
+                            maxWidth: '100%',
+                            height: 'auto'
+                        }}
+                    />
+                </div>
             </div>
 
             {/* Info Panel */}
