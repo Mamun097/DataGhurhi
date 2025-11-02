@@ -124,12 +124,12 @@ const Dashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
   const [availableTokens, setAvailableTokens] = useState(0);
-  const userId= localStorage.getItem("userId");
+  const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     setUserType(localStorage.getItem("userType"));
   }, [userId]);
-  
+
 
   // Admin states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -369,29 +369,29 @@ const Dashboard = () => {
   }, []);
 
   const getuserType = useCallback(async () => {
-    
-         
-        if (userType === "admin") {
-          setIsAdmin(true);
-          setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
-          fetchAdminStats(); // Fetch admin statistics
-        } else {
-          setIsAdmin(false);
-          setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
 
-          // Show ad banner for normal users only once per session
-          
-            // Check if the banner has already been shown in this session
-            const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
-            const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
 
-            if (!bannerAlreadyShown) {
-              setShowAdBanner(true);
-              // Mark banner as shown in this session
-              sessionStorage.setItem(bannerShownKey, "true");
-            }      
+    if (userType === "admin") {
+      setIsAdmin(true);
+      setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
+      fetchAdminStats(); // Fetch admin statistics
+    } else {
+      setIsAdmin(false);
+      setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
+
+      // Show ad banner for normal users only once per session
+
+      // Check if the banner has already been shown in this session
+      const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
+      const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
+
+      if (!bannerAlreadyShown) {
+        setShowAdBanner(true);
+        // Mark banner as shown in this session
+        sessionStorage.setItem(bannerShownKey, "true");
       }
-    
+    }
+
   }, [fetchAdminStats]);
 
   useEffect(() => {
@@ -514,8 +514,8 @@ const Dashboard = () => {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
-const [collapsed, setCollapsed] = useState(false);
-const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [collapsed, setCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -524,7 +524,7 @@ const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   }, []);
 
   // Get tabs based on user type
- const getTabs = () => {
+  const getTabs = () => {
     if (isAdmin) {
       return [
         { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
@@ -539,15 +539,15 @@ const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
         { label: "Shared with You", key: "shared", icon: <Users size={18} /> },
         // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
         { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
-        {label: "Analysis", key: "analysis", icon: <ChartColumn size={18} />},
+        { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
         { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
       ];
     }
   };
 
-useEffect(() => {
-  setCollapsed(isMobile);
-}, [isMobile]);
+  useEffect(() => {
+    setCollapsed(isMobile);
+  }, [isMobile]);
 
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [passwordValues, setPasswordValues] = useState({
@@ -583,7 +583,7 @@ useEffect(() => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      
+
       if (response.data.success) {
         alert("Password updated successfully.");
         setShowPasswordFields(false);
@@ -598,7 +598,7 @@ useEffect(() => {
   };
 
   return (
-   <div style={{ paddingTop: "80px" }}>
+    <div style={{ paddingTop: "80px" }}>
       <NavbarAcholder
         language={language}
         setLanguage={setLanguage}
@@ -608,78 +608,63 @@ useEffect(() => {
 
       <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
         <div className="dashboard-layout">
-      <div
-        className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
-          collapsed ? "collapsed" : ""
-        }`}
-      >
-        {!isMobile && (
-          <div className="sidebar-header">
-            {collapsed ? (
-            
+          <div
+            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${collapsed ? "collapsed" : ""
+              }`}
+          >
+            {!isMobile && (
+              <div className="sidebar-header">
                 <button
-                  className="collapse-btn"
-                  onClick={() => setCollapsed(!collapsed)} 
-                  aria-label="Toggle sidebar"
+                  className={`menu-toggle-btn ${!collapsed ? "active" : ""}`}
+                  onClick={() => setCollapsed(!collapsed)}
+                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
                 >
-                  <Menu size={20} />
+                  <span></span>
+                  <span></span>
+                  <span></span>
                 </button>
-              ) : (
-            
-                <>
-                  <h2 className="sidebar-header">Dashboard</h2>
-                  <button
-                    className="collapse-btn"
-                    onClick={() => setCollapsed(!collapsed)} 
-                    aria-label="Collapse sidebar"
-                  >
-                    <ChevronLeft size={18} />
-                  </button>
-                  </>
-                )}
-          
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Admin Badge */}
-        {!collapsed && isAdmin && !isMobile && (
-          <div className="admin-badge">
-            <span>👑 Administrator</span>
-          </div>
-        )}
+            {/* Admin Badge */}
+            {!collapsed && isAdmin && !isMobile && (
+              <div className="admin-badge">
+                <span>👑 Administrator</span>
+              </div>
+            )}
 
             <ul className={`sidebar-list ${isMobile ? "horizontal" : ""}`}>
-                {getTabs().map((tab) => (
-                  <li key={tab.key}>
-                    <div className="tooltip-container">
-                      <button
-                        className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed? "collapsed":""}`}
-                        onClick={() => {
-                          if (tab.key === "premiumpackages") {
-                            setShowPremiumModal(true);
-                          } else {
-                            const url = new URL(window.location);
-                            url.searchParams.set("tab", tab.key);
-                            window.history.replaceState({}, "", url);
-                            setActiveTab(tab.key);
-                          }
-                        }}
-                      >
-                        <span className="icon">{tab.icon}</span>
-                        {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
-                      </button>
+              {getTabs().map((tab) => (
+                <li key={tab.key}>
+                  <div className="tooltip-container">
+                    <button
+                      className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
+                      onClick={() => {
+                        if (tab.key === "premiumpackages") {
+                          setShowPremiumModal(true);
+                        } else {
+                          const url = new URL(window.location);
+                          url.searchParams.set("tab", tab.key);
+                          window.history.replaceState({}, "", url);
+                          setActiveTab(tab.key);
+                        }
+                      }}
+                    >
+                      <span className="icon">{tab.icon}</span>
+                      {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
+                    </button>
 
-                      {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
-                        <span className="tooltip-text">{tab.label}</span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
+                      <span className="tooltip-text">{tab.label}</span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
 
           </div>
-    
-          <div className="projects-section">
+
+          <div className={`projects-section ${collapsed ? "sidebar-collapsed" : ""}`}>
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
               <AdminDashboardOverview
@@ -771,7 +756,7 @@ useEffect(() => {
                     </div>
                   ))}
                 </div>
-                
+
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
                     {getLabel("Save Changes")}
@@ -879,20 +864,20 @@ useEffect(() => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-               language={language}
+                language={language}
               />
-              )}
+            )}
             {!isAdmin && activeTab === "questionbank" && (
               <div className="question-bank-section">
                 <QB language={language} setLanguage={setLanguage} />
               </div>
             )}
-               {!isAdmin && activeTab === "analysis" && (
+            {!isAdmin && activeTab === "analysis" && (
               <div>
                 <StatisticalAnalysisTool />
               </div>
             )}
-            
+
           </div>
         </div>
       </div>
