@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter, LineChart, Line } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -12,22 +12,27 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         fontFamily: 'Times New Roman',
         captionOn: false,
         captionText: '',
-        captionSize: 18,
+        captionSize: 22,
         captionBold: false,
         captionItalic: false,
         captionUnderline: false,
+        captionTopMargin: 30,
         xAxisTitle: 'Groups',
         yAxisTitle: 'Values',
-        xAxisTitleSize: 16,
-        yAxisTitleSize: 16,
+        xAxisTitleSize: 20,
+        yAxisTitleSize: 20,
         xAxisTitleBold: false,
         xAxisTitleItalic: false,
         xAxisTitleUnderline: false,
         yAxisTitleBold: false,
         yAxisTitleItalic: false,
         yAxisTitleUnderline: false,
-        xAxisTickSize: 14,
-        yAxisTickSize: 14,
+        xAxisTickSize: 18,
+        yAxisTickSize: 18,
+        xAxisBottomMargin: -25,
+        yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0, 
+        yAxisTitleOffset: 0,        
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -35,6 +40,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         gridColor: 'gray',
         gridOpacity: 1,
         borderOn: false,
+        plotBorderOn: false,
         barBorderOn: false,
         dataLabelsOn: true,
         errorBarsOn: true,
@@ -288,10 +294,6 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
 
-    const getXAxisLabelOffset = (tickSize, angle = -45) => {
-        return -(tickSize * 1.5 + 5);
-    };
-
     const CustomBoxPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         const scatterData = [];
@@ -413,14 +415,14 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ScatterChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -440,40 +442,61 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                                 angle={-45}
                                 textAnchor="end"
                                 height={40}
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 type="number"
                                 dataKey="y"
                                 domain={yDomain}
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Scatter data={scatterData} shape={<CustomBoxShape />} />
                         </ScatterChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
 
                 {settings.dataLabelsOn && (
@@ -665,14 +688,14 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ScatterChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -692,40 +715,61 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                                 angle={-45}
                                 textAnchor="end"
                                 height={40}
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: getXAxisLabelOffset(settings.xAxisTickSize, -45),
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 type="number"
                                 dataKey="y"
                                 domain={[yMin, yMax]}
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Scatter data={scatterData} shape={<CustomViolinShape />} />
                         </ScatterChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 1
+                        }} />
+                    )}
                 </div>
 
                 {settings.dataLabelsOn && (
@@ -749,7 +793,6 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         const data = plotData.map((group, idx) => ({
             name: settings.categoryLabels[idx],
             meanRank: group.mean_rank,
-            medianRank: group.median_rank,
             fill: settings.categoryColors[idx]
         }));
 
@@ -785,7 +828,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                         )}
                     </div>
                 </div>
-                <div ref={chartRef}>
+                <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <BarChart
                             data={data}
@@ -793,7 +836,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
-                                <text x="50%" y="30" style={getCaptionStyle(settings)}>
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
                                     {settings.captionText}
                                 </text>
                             )}
@@ -809,42 +852,51 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                                 angle={-45}
                                 textAnchor="end"
                                 height={40}
-                                tick={{ fill: '#6b7280', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: getXAxisLabelOffset(settings.xAxisTickSize),
+                                    offset: settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 domain={yDomain}
-                                tick={{ fill: '#6b7280', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
                                     position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
                                     style: {
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
                             <Bar
                                 dataKey="meanRank"
                                 radius={[0, 0, 0, 0]}
-                                barSize={settings.rankBarWidth * 100}
+                                barSize={settings.elementWidth * 100}
+                                style={{ transform: 'translateY(-1px)' }}
                                 label={settings.dataLabelsOn ? {
                                     position: 'top',
                                     fill: '#1f2937',
-                                    fontFamily: settings.fontFamily
+                                    fontFamily: settings.fontFamily,
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => value.toFixed(1)
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -858,6 +910,21 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
+
+                    {/* PLOT BORDER OVERLAY */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
                 </div>
             </div>
         );

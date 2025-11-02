@@ -447,10 +447,25 @@ def analyze_data_api(request):
                 column = request.POST.get('column')
                 return process_anderson_darling_test(request, df, column, user_id)            
 
-            elif test_type == 'fzt':
-                col_group = request.POST.get('column1')
-                col_value = request.POST.get('column2')
-                return process_fzt_test(request, df, col_group, col_value, user_id)
+            elif test_type == 'f_test':                
+                col_group = request.POST.get('column1')  
+                col_value = request.POST.get('column2')  
+                return process_f_test(request, df, col_group, col_value, user_id)
+            
+            elif test_type == 'z_test':
+                col_group = request.POST.get('column1')  
+                col_value = request.POST.get('column2')                
+                return process_z_test(request, df, col_group, col_value, user_id)  
+            
+            elif test_type == 't_test':
+                col_group = request.POST.get('column1')  
+                col_value = request.POST.get('column2')                
+                return process_t_test(request, df, col_group, col_value, user_id)
+            
+            elif test_type == 'fzt_visualization':
+                col_group = request.POST.get('column1')  
+                col_value = request.POST.get('column2')                
+                return process_fzt_visualization(request, df, col_group, col_value, user_id)
 
             elif test_type == 'cross_tabulation':
                 selected_columns = []
@@ -696,6 +711,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     return JsonResponse(response_data)
 
 
+
 def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
     """
     Performs Mann-Whitney U test and returns analysis results without generating plots.
@@ -706,114 +722,94 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
     import numpy as np
     import pandas as pd
 
-    print(f"[MannWhitney] cols: {col1} | {col2}")
-
-    # Basic column validation only
-    if col1 not in df.columns or col2 not in df.columns:
-        return JsonResponse({'success': False, 'error': 'Invalid column names.'})
-
-    # Language detection
     try:
-        language = request.POST.get('language', 'en').lower()
-    except Exception:
-        language = 'en'
-    
-    if language not in ('en', 'bn'):
-        language = 'en'
+        # --- 1. Setup --- (EXACTLY like old backend)
+        lang = request.POST.get('language', 'en')
+        use_def = request.POST.get('use_default', 'true') == 'true'
 
-    # Prepare working dataset - NO DATA CONVERSION like old backend
-    work = df[[col1, col2]].copy()
-    work = work.dropna(subset=[col1, col2])
-    print(f"[MannWhitney] after dropna: {len(work)} rows")
-
-    # Convert to categorical like old backend (for consistent behavior)
-    work[col1] = work[col1].astype('category')
-    work[col2] = work[col2].astype('category')
-    
-    categories = list(work[col1].cat.categories)
-    print(f"[MannWhitney] categories: {categories}")
-
-    # Use category codes for statistical test (EXACTLY like old backend)
-    group1_codes = work[col1].cat.codes
-    group2_codes = work[col2].cat.codes
-
-    # Perform Mann-Whitney U test (EXACTLY like old backend)
-    try:
-        stat, p_value = mannwhitneyu(group1_codes, group2_codes, alternative='two-sided')
-        print(f"[MannWhitney] result: U={stat:.6f}, p={p_value:.6g}")
-    except Exception as e:
-        return JsonResponse({
-            'success': False,
-            'error': f'Error performing Mann–Whitney U test: {e}'
-        })
-
-    # Calculate ranks for rank plot (EXACTLY like old backend)
-    all_numeric = work[col2].cat.codes.astype(float)
-    ranks = rankdata(all_numeric)
-
-    # Prepare plot_data for frontend
-    plot_data = []
-    
-    for i, category in enumerate(categories):
-        category_mask = work[col1] == category
-        category_values = work.loc[category_mask, col2]
-        numeric_values = category_values.cat.codes.astype(float)
-        category_ranks = ranks[category_mask]
+        # Language setup (like old backend)
+        def translate(text): 
+            # Simplified translation - you can add googletrans if needed
+            if lang == 'bn':
+                # Basic Bengali translations
+                translations = {
+                    'Significant difference': 'উল্লেখযোগ্য পার্থক্য',
+                    'No significant difference': 'কোনো উল্লেখযোগ্য পার্থক্য নেই',
+                    'Average Rank': 'গড় র‍্যাঙ্ক'
+                }
+                return translations.get(text, text)
+            return text
         
-        plot_data.append({
-            'category': str(category),
-            'values': numeric_values.tolist(),
-            'count': int(len(category_values)),
-            'mean': float(numeric_values.mean()),
-            'median': float(numeric_values.median()),
-            'std': float(numeric_values.std()),
-            'min': float(numeric_values.min()),
-            'max': float(numeric_values.max()),
-            'q25': float(numeric_values.quantile(0.25)),
-            'q75': float(numeric_values.quantile(0.75)),
-            'mean_rank': float(category_ranks.mean())
-        })
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def map_digits(s): return s.translate(digit_map_bn) if lang == 'bn' else s
 
-    # Prepare response with localized labels
-    test_name = 'Mann-Whitney U Test' if language == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট'
-    
-    response_data = {
-        'success': True,
-        'test': test_name,
-        'language': language,
-        'statistic': float(stat),
-        'p_value': float(p_value),
-        'n_groups': int(len(categories)),
-        'total_observations': int(len(work)),
-        'column_names': {
-            'group': str(col1),
-            'value': str(col2)
-        },
-        'plot_data': plot_data,
-        'metadata': {
-            'categories': [str(c) for c in categories],
-            'significant': bool(p_value < 0.05),
-            'alpha': 0.05
+        # --- 2. Mann–Whitney U test --- (EXACTLY like old backend)
+        u_stat, p_value = mannwhitneyu(df[col1], df[col2], alternative='two-sided')
+        
+        # --- 3. Category labels --- (EXACTLY like old backend)
+        cats = sorted(df[col1].unique())
+        cat_labels = [map_digits(translate(str(c))) for c in cats] if lang == 'bn' else [str(c) for c in cats]
+
+        # --- 4. Rank calculation --- (EXACTLY like old backend)
+        ranks = rankdata(df[col2].values)
+        rdf = df.copy(); rdf['__rank'] = ranks
+        avg_ranks = rdf.groupby(col1)['__rank'].mean().reset_index()
+
+        # --- 5. Prepare plot data for frontend --- (NEW: instead of generating images)
+        plot_data = []
+        
+        for i, category in enumerate(cats):
+            # Get values for this category (like old backend plots)
+            category_data = df[df[col1] == category][col2]
+            category_values = category_data.values
+            
+            # Calculate statistics (like what would be shown in plots)
+            plot_data.append({
+                'category': str(category),
+                'values': [float(x) for x in category_values],
+                'count': int(len(category_values)),
+                'mean': float(np.mean(category_values)),
+                'median': float(np.median(category_values)),
+                'std': float(np.std(category_values)),
+                'min': float(np.min(category_values)),
+                'max': float(np.max(category_values)),
+                'q25': float(np.percentile(category_values, 25)),
+                'q75': float(np.percentile(category_values, 75)),
+                'mean_rank': float(avg_ranks[avg_ranks[col1] == category]['__rank'].iloc[0])
+            })
+
+        # --- 6. Prepare response --- (Like old backend but with plot_data instead of image_paths)
+        result = {
+            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
+            'statistic': float(u_stat),
+            'p_value': float(p_value),
+            'conclusion': translate('Significant difference' if p_value < 0.05 else 'No significant difference'),
+            'success': True,
+            'n_groups': len(cats),
+            'total_observations': len(df),
+            'column_names': {
+                'group': str(col1),
+                'value': str(col2)
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'categories': [str(c) for c in cats],
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05
+            }
         }
-    }
 
-    print(f"[MannWhitney] returning success with {len(plot_data)} groups")
-    return JsonResponse(response_data)
+        print(f"[MannWhitney] result: U={u_stat:.6f}, p={p_value:.6g}, groups={len(cats)}")
+        return JsonResponse(result)
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
 
 def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
     """
     Performs Wilcoxon Signed-Rank test and returns analysis results without generating plots.
     Frontend will handle visualization using the returned data.
-    
-    Args:
-        request: Django request object
-        df: DataFrame containing the data
-        col1: Column name for first sample
-        col2: Column name for second sample (paired data)
-        user_id: User identifier
-        
-    Returns:
-        JsonResponse with test results and data for plotting
     """
     print(f"[Wilcoxon] cols: {col1} | {col2}")
     
@@ -865,7 +861,116 @@ def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_
             'error': f'Error in Wilcoxon test: {e}'
         })
 
-    # Prepare data for frontend plotting
+    # Calculate regression line data for scatter plot
+    try:
+        # Linear regression for scatter plot
+        slope, intercept, r_value, p_value_reg, std_err = stats.linregress(sample1, sample2)
+        regression_data = {
+            'slope': float(slope),
+            'intercept': float(intercept),
+            'r_squared': float(r_value**2),
+            'p_value': float(p_value_reg)
+        }
+    except Exception as e:
+        print(f"[Wilcoxon] Regression calculation warning: {e}")
+        regression_data = {
+            'slope': 0,
+            'intercept': 0,
+            'r_squared': 0,
+            'p_value': 1.0
+        }
+
+    # Calculate critical values for reference line display
+    try:
+        # For Wilcoxon, calculate critical values based on sample statistics
+        mean_diff = np.mean(differences)
+        std_diff = np.std(differences, ddof=1)
+        n = len(differences)
+        
+        if n > 1:
+            # 95% confidence interval for mean difference
+            t_critical = stats.t.ppf(0.975, n-1)
+            margin_error = t_critical * (std_diff / np.sqrt(n))
+            critical_values = {
+                'lower': float(mean_diff - margin_error),
+                'upper': float(mean_diff + margin_error),
+                'mean_difference': float(mean_diff)
+            }
+        else:
+            critical_values = {
+                'lower': 0,
+                'upper': 0,
+                'mean_difference': 0
+            }
+    except Exception as e:
+        print(f"[Wilcoxon] Critical values calculation warning: {e}")
+        critical_values = {
+            'lower': 0,
+            'upper': 0,
+            'mean_difference': 0
+        }
+
+    # Prepare Q-Q plot data for differences with enhanced data
+    try:
+        (osm, osr), (slope, intercept, r) = stats.probplot(differences, dist="norm")
+        
+        # Calculate confidence intervals for Q-Q plot
+        n = len(osm)
+        if n > 2:
+            # 95% confidence interval for Q-Q line
+            se_slope = slope * np.sqrt((1 - r**2) / (n - 2))
+            t_val = stats.t.ppf(0.975, n - 2)
+            
+            upper_slope = slope + t_val * se_slope
+            lower_slope = slope - t_val * se_slope
+            upper_intercept = intercept + t_val * se_slope * np.std(osm)
+            lower_intercept = intercept - t_val * se_slope * np.std(osm)
+            
+            confidence_intervals = {
+                'upper_slope': float(upper_slope),
+                'lower_slope': float(lower_slope),
+                'upper_intercept': float(upper_intercept),
+                'lower_intercept': float(lower_intercept)
+            }
+        else:
+            confidence_intervals = {
+                'upper_slope': float(slope),
+                'lower_slope': float(slope),
+                'upper_intercept': float(intercept),
+                'lower_intercept': float(intercept)
+            }
+        
+        qq_data = {
+            'theoretical_quantiles': [float(x) for x in osm],
+            'ordered_values': [float(x) for x in osr],
+            'slope': float(slope),
+            'intercept': float(intercept),
+            'r_squared': float(r**2),
+            'confidence_intervals': confidence_intervals,
+            'sample_size': n,
+            'shapiro_stat': float(stats.shapiro(differences)[0]),
+            'shapiro_p': float(stats.shapiro(differences)[1])
+        }
+    except Exception as e:
+        print(f"[Wilcoxon] Q-Q plot data generation warning: {e}")
+        qq_data = {
+            'theoretical_quantiles': [],
+            'ordered_values': [],
+            'slope': 0,
+            'intercept': 0,
+            'r_squared': 0,
+            'confidence_intervals': {
+                'upper_slope': 0,
+                'lower_slope': 0,
+                'upper_intercept': 0,
+                'lower_intercept': 0
+            },
+            'sample_size': 0,
+            'shapiro_stat': 0,
+            'shapiro_p': 1.0
+        }
+
+    # Prepare data for frontend plotting - KEEP THE OLD STRUCTURE
     plot_data = {
         'sample1': {
             'name': str(col1),
@@ -897,28 +1002,10 @@ def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_
             'max': float(np.max(differences)),
             'q25': float(np.percentile(differences, 25)),
             'q75': float(np.percentile(differences, 75))
-        }
+        },
+        # Keep regression data for scatter plot
+        'regression': regression_data
     }
-
-    # Prepare Q-Q plot data for differences
-    try:
-        (osm, osr), (slope, intercept, r) = stats.probplot(differences, dist="norm")
-        qq_data = {
-            'theoretical_quantiles': [float(x) for x in osm],
-            'ordered_values': [float(x) for x in osr],
-            'slope': float(slope),
-            'intercept': float(intercept),
-            'r_squared': float(r**2)
-        }
-    except Exception as e:
-        print(f"[Wilcoxon] Q-Q plot data generation warning: {e}")
-        qq_data = {
-            'theoretical_quantiles': [],
-            'ordered_values': [],
-            'slope': 0,
-            'intercept': 0,
-            'r_squared': 0
-        }
 
     # Prepare response with localized labels
     test_name = 'Wilcoxon Signed-Rank Test' if language == 'en' else 'উইলকক্সন সাইনড র‍্যাঙ্ক টেস্ট'
@@ -929,20 +1016,27 @@ def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_
         'language': language,
         'statistic': float(stat),
         'p_value': float(p_value),
-        'total_pairs': int(len(work)),
+        'total_pairs': int(len(work)),  # This is required by frontend
         'column_names': {
             'sample1': str(col1),
             'sample2': str(col2)
         },
-        'plot_data': plot_data,
-        'qq_data': qq_data,
+        'plot_data': plot_data,  # Frontend expects this
+        'qq_data': qq_data,      # Frontend expects this
+        'critical_values': critical_values,
         'metadata': {
             'significant': bool(p_value < 0.05),
             'alpha': 0.05,
-            'test_type': 'paired'
+            'test_type': 'paired',
+            'normality_test': {
+                'statistic': qq_data.get('shapiro_stat', 0),
+                'p_value': qq_data.get('shapiro_p', 1.0),
+                'normal': qq_data.get('shapiro_p', 1.0) > 0.05
+            }
         }
     }
     return JsonResponse(response_data)
+
 
 def process_anova_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
     """
@@ -1107,6 +1201,7 @@ def process_anova_test(request, df: pd.DataFrame, col1: str, col2: str, user_id:
     
     return JsonResponse(response_data)
 
+
 def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate: str, col_outcome: str, user_id: str):
     """
     Performs ANCOVA test and returns analysis results without generating plots.
@@ -1123,6 +1218,10 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
     Returns:
         JsonResponse with test results and data for plotting
     """
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+    from django.http import JsonResponse
+    
     print(f"[ANCOVA] cols: {col_group}(group) | {col_covariate}(covariate) | {col_outcome}(outcome)")
     
     # Validate column names
@@ -1189,11 +1288,20 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
         
         print(f"[ANCOVA] ANCOVA table:\n{ancova_table}")
         
-        # Extract key statistics
-        f_statistic_group = ancova_table.loc[f'C({col_group})', 'F']
-        p_value_group = ancova_table.loc[f'C({col_group})', 'PR(>F)']
-        f_statistic_covariate = ancova_table.loc[col_covariate, 'F']
-        p_value_covariate = ancova_table.loc[col_covariate, 'PR(>F)']
+        # Extract key statistics with error handling
+        try:
+            f_statistic_group = ancova_table.loc[f'C({col_group})', 'F']
+            p_value_group = ancova_table.loc[f'C({col_group})', 'PR(>F)']
+        except KeyError:
+            f_statistic_group = float('nan')
+            p_value_group = float('nan')
+            
+        try:
+            f_statistic_covariate = ancova_table.loc[col_covariate, 'F']
+            p_value_covariate = ancova_table.loc[col_covariate, 'PR(>F)']
+        except KeyError:
+            f_statistic_covariate = float('nan')
+            p_value_covariate = float('nan')
         
         print(f"[ANCOVA] Group effect: F={f_statistic_group:.6f}, p={p_value_group:.6g}")
         print(f"[ANCOVA] Covariate effect: F={f_statistic_covariate:.6f}, p={p_value_covariate:.6g}")
@@ -1204,8 +1312,13 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
             'error': f'Error in ANCOVA analysis: {e}'
         })
 
-    # Prepare data for frontend plotting
+    # Prepare data for frontend plotting - KEEP OLD STRUCTURE BUT ADD NEW DATA
     plot_data = []
+    data_points = []  # ADD FOR LINEAR REGRESSION STYLE
+    residual_data_points = []  # ADD FOR LINEAR REGRESSION STYLE
+    
+    # Generate separate regression lines for each group
+    regression_lines = {}  # ADD FOR LINEAR REGRESSION STYLE
     
     for category in categories:
         category_data = work.loc[work[col_group] == category]
@@ -1215,12 +1328,54 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
         residuals = [ancova_model.resid[i] for i in category_indices]
         fitted_values = [ancova_model.fittedvalues[i] for i in category_indices]
         
-        # Calculate statistics for each group
-        # IMPORTANT: Convert all numpy types to Python native types for JSON serialization
+        # Calculate regression line for this group (simple linear regression within group)
+        try:
+            X_group = category_data[col_covariate].values.reshape(-1, 1)
+            y_group = category_data[col_outcome].values
+            
+            group_model = LinearRegression()
+            group_model.fit(X_group, y_group)
+            
+            # Generate regression line points
+            x_min_group = float(np.min(X_group))
+            x_max_group = float(np.max(X_group))
+            x_range_group = np.linspace(x_min_group, x_max_group, 50)
+            y_range_group = group_model.predict(x_range_group.reshape(-1, 1))
+            
+            regression_lines[str(category)] = {
+                'x_range': [float(x) for x in x_range_group],
+                'y_range': [float(y) for y in y_range_group],
+                'slope': float(group_model.coef_[0]),
+                'intercept': float(group_model.intercept_)
+            }
+        except Exception as e:
+            print(f"[ANCOVA] Error calculating regression line for group {category}: {e}")
+            regression_lines[str(category)] = None
+
+        # Add data points for scatter plot (NEW FOR LINEAR REGRESSION STYLE)
+        for i in range(len(category_data)):
+            data_points.append({
+                'x': float(category_data[col_covariate].iloc[i]),
+                'y': float(category_data[col_outcome].iloc[i]),
+                'group': str(category),
+                'predicted': float(fitted_values[i]),
+                'residual': float(residuals[i])
+            })
+            
+        # Add residual data points (NEW FOR LINEAR REGRESSION STYLE)
+        for i in range(len(category_data)):
+            residual_data_points.append({
+                'x': float(category_data[col_covariate].iloc[i]),
+                'y': float(residuals[i]),
+                'group': str(category),
+                'fitted': float(fitted_values[i])
+            })
+
+        # Calculate statistics for each group (KEEP OLD STRUCTURE)
         plot_data.append({
             'category': str(category),
-            'values': [float(x) for x in category_data[col_outcome].values],  # Outcome values
-            'covariate_values': [float(x) for x in category_data[col_covariate].values],  # Covariate values
+            'values': [float(x) for x in category_data[col_outcome].values],
+            'covariate_values': [float(x) for x in category_data[col_covariate].values],
             'count': int(len(category_data)),
             'mean_outcome': float(np.mean(category_data[col_outcome])),
             'mean_covariate': float(np.mean(category_data[col_covariate])),
@@ -1233,10 +1388,25 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
             'q25_outcome': float(np.percentile(category_data[col_outcome], 25)),
             'q75_outcome': float(np.percentile(category_data[col_outcome], 75)),
             'median_outcome': float(np.median(category_data[col_outcome])),
-            # Add residuals and fitted values for residual plots
             'residuals': [float(x) for x in residuals],
             'fitted_values': [float(x) for x in fitted_values]
         })
+
+    # Calculate overall residual statistics (NEW FOR LINEAR REGRESSION STYLE)
+    all_residuals = [point['residual'] for point in data_points]
+    if all_residuals:
+        residual_stats = {
+            'mean': float(np.mean(all_residuals)),
+            'std': float(np.std(all_residuals)),
+            'min': float(np.min(all_residuals)),
+            'max': float(np.max(all_residuals)),
+            'q25': float(np.percentile(all_residuals, 25)),
+            'q75': float(np.percentile(all_residuals, 75))
+        }
+    else:
+        residual_stats = {
+            'mean': 0.0, 'std': 0.0, 'min': 0.0, 'max': 0.0, 'q25': 0.0, 'q75': 0.0
+        }
 
     # Prepare response with localized labels
     test_name = 'ANCOVA' if language == 'en' else 'এনকোভা'
@@ -1256,18 +1426,2252 @@ def process_ancova_test(request, df: pd.DataFrame, col_group: str, col_covariate
             'covariate': str(col_covariate),
             'outcome': str(col_outcome)
         },
-        'plot_data': plot_data,
+        'plot_data': plot_data,  # KEEP OLD STRUCTURE
+        # ADD LINEAR REGRESSION-STYLE DATA STRUCTURES
+        'data_points': data_points,
+        'regression_lines': regression_lines,
+        'residual_data': {
+            'values': [point['y'] for point in residual_data_points],
+            'fitted': [point['fitted'] for point in residual_data_points],
+            'independent': [point['x'] for point in residual_data_points],
+            'statistics': residual_stats
+        },
+        'critical_values': {
+            'lower': float(np.percentile(all_residuals, 2.5)) if all_residuals else 0.0,
+            'upper': float(np.percentile(all_residuals, 97.5)) if all_residuals else 0.0,
+            'mean_difference': float(np.mean(all_residuals)) if all_residuals else 0.0
+        },
         'metadata': {
             'categories': [str(c) for c in categories],
-            'significant_group': bool(p_value_group < 0.05),
-            'significant_covariate': bool(p_value_covariate < 0.05),
+            'significant_group': bool(p_value_group < 0.05) if not np.isnan(p_value_group) else False,
+            'significant_covariate': bool(p_value_covariate < 0.05) if not np.isnan(p_value_covariate) else False,
             'alpha': 0.05,
             'r_squared': float(ancova_model.rsquared),
-            'adj_r_squared': float(ancova_model.rsquared_adj)
+            'adj_r_squared': float(ancova_model.rsquared_adj),
+            'test_type': 'ancova'
         }
     }
     
     return JsonResponse(response_data)
+
+
+def process_linear_regression_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+    import numpy as np
+    """
+    Performs linear regression analysis and returns results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col1: Column name for independent variable (predictor)
+        col2: Column name for dependent variable (response)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with regression results and data for plotting
+    """
+    print(f"[Linear Regression] cols: {col1}(independent) | {col2}(dependent)")
+    
+    # Validate column names
+    if col1 not in df.columns or col2 not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col1, col2]].copy()
+    work = work.dropna(subset=[col1, col2])
+    print(f"[Linear Regression] after dropna: {len(work)} rows")
+
+    # Ensure both columns are numeric
+    for col in [col1, col2]:
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            work[col] = pd.to_numeric(work[col], errors='coerce')
+            work = work.dropna(subset=[col])
+            
+            if not pd.api.types.is_numeric_dtype(work[col]):
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'"{col}" must be numeric for linear regression.'
+                })
+
+    # Check for sufficient data
+    if len(work) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 observations for linear regression.'
+        })
+
+    # Prepare data for linear regression
+    X = work[col1].values.reshape(-1, 1)
+    y = work[col2].values
+
+    # Perform linear regression
+    try:
+        from sklearn.linear_model import LinearRegression
+        from sklearn.metrics import r2_score, mean_squared_error
+        import numpy as np
+        
+        model = LinearRegression()
+        model.fit(X, y)
+        y_pred = model.predict(X)
+        
+        # Calculate statistics
+        n = len(y)
+        p = 1  # number of predictors
+        r_squared = r2_score(y, y_pred)
+        adjusted_r_squared = 1 - (1 - r_squared) * (n - 1) / (n - p - 1) if n > p + 1 else r_squared
+        mse = mean_squared_error(y, y_pred)
+        rmse = np.sqrt(mse)
+        
+        # Calculate standard errors and p-values
+        from scipy import stats as scipy_stats
+        X_with_intercept = np.column_stack([np.ones(len(X)), X.reshape(-1)])
+        params = np.append(model.intercept_, model.coef_)
+        
+        # Calculate residuals and standard errors
+        residuals = y - y_pred
+        residual_sum_of_squares = np.sum(residuals**2)
+        degrees_of_freedom = n - X_with_intercept.shape[1]
+        mse_residual = residual_sum_of_squares / degrees_of_freedom
+        
+        # Standard errors of coefficients
+        try:
+            cov_matrix = mse_residual * np.linalg.inv(X_with_intercept.T @ X_with_intercept)
+            standard_errors = np.sqrt(np.diag(cov_matrix))
+            
+            # t-statistics and p-values
+            t_statistics = params / standard_errors
+            p_values = [2 * (1 - scipy_stats.t.cdf(np.abs(t), degrees_of_freedom)) for t in t_statistics]
+        except:
+            # Fallback if matrix inversion fails
+            standard_errors = [np.nan, np.nan]
+            p_values = [np.nan, np.nan]
+        
+        print(f"[Linear Regression] result: R²={r_squared:.6f}, coef={model.coef_[0]:.6f}, intercept={model.intercept_:.6f}")
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in linear regression: {e}'
+        })
+
+    # Prepare data for frontend plotting - KEEP ORIGINAL STRUCTURE
+    data_points = []
+    for i in range(len(X)):
+        data_points.append({
+            'x': float(X[i][0]),
+            'y': float(y[i]),
+            'predicted': float(y_pred[i]),
+            'residual': float(y[i] - y_pred[i])
+        })
+
+    # Generate regression line points for plotting
+    x_min, x_max = float(np.min(X)), float(np.max(X))
+    x_range = np.linspace(x_min, x_max, 100)
+    y_range = model.predict(x_range.reshape(-1, 1))
+    
+    regression_line = []
+    for i in range(len(x_range)):
+        regression_line.append({
+            'x': float(x_range[i]),
+            'y': float(y_range[i])
+        })
+
+    # Calculate confidence intervals (95%)
+    try:
+        from scipy.stats import t
+        t_val = t.ppf(0.975, degrees_of_freedom)  # 95% confidence
+        
+        se_fit = np.sqrt(np.sum((X_with_intercept * (cov_matrix @ X_with_intercept.T).T), axis=1))
+        confidence_intervals = []
+        
+        for i in range(len(x_range)):
+            x_point = np.array([1, x_range[i]])
+            se = np.sqrt(mse_residual * (x_point @ np.linalg.inv(X_with_intercept.T @ X_with_intercept) @ x_point.T))
+            margin = t_val * se
+            confidence_intervals.append({
+                'x': float(x_range[i]),
+                'y_lower': float(y_range[i] - margin),
+                'y_upper': float(y_range[i] + margin)
+            })
+    except:
+        confidence_intervals = []
+
+    # ADD WILCOXON-STYLE PLOT_DATA STRUCTURE FOR SCATTER PLOT
+    plot_data = {
+        'sample1': {
+            'name': str(col1),
+            'values': [float(x[0]) for x in X],
+            'count': int(len(X)),
+            'mean': float(np.mean(X)),
+            'median': float(np.median(X)),
+            'std': float(np.std(X)),
+            'min': float(np.min(X)),
+            'max': float(np.max(X))
+        },
+        'sample2': {
+            'name': str(col2),
+            'values': [float(y_val) for y_val in y],
+            'count': int(len(y)),
+            'mean': float(np.mean(y)),
+            'median': float(np.median(y)),
+            'std': float(np.std(y)),
+            'min': float(np.min(y)),
+            'max': float(np.max(y))
+        },
+        'regression': {
+            'slope': float(model.coef_[0]),
+            'intercept': float(model.intercept_),
+            'r_squared': float(r_squared),
+            'p_value': float(p_values[1]) if len(p_values) > 1 else 1.0
+        }
+    }
+
+    # Prepare response with localized labels
+    test_name = 'Linear Regression' if language == 'en' else 'লিনিয়ার রিগ্রেশন'
+    
+    # Determine significance
+    coef_significant = p_values[1] < 0.05 if not np.isnan(p_values[1]) else False
+    overall_significant = coef_significant
+
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'intercept': float(model.intercept_),
+        'coefficient': float(model.coef_[0]),
+        'r_squared': float(r_squared),
+        'adjusted_r_squared': float(adjusted_r_squared),
+        'mean_squared_error': float(mse),
+        'root_mean_squared_error': float(rmse),
+        'standard_errors': {
+            'intercept': float(standard_errors[0]) if len(standard_errors) > 0 else float('nan'),
+            'coefficient': float(standard_errors[1]) if len(standard_errors) > 1 else float('nan')
+        },
+        'p_values': {
+            'intercept': float(p_values[0]) if len(p_values) > 0 else float('nan'),
+            'coefficient': float(p_values[1]) if len(p_values) > 1 else float('nan')
+        },
+        't_statistics': {
+            'intercept': float(t_statistics[0]) if len(t_statistics) > 0 else float('nan'),
+            'coefficient': float(t_statistics[1]) if len(t_statistics) > 1 else float('nan')
+        },
+        'degrees_of_freedom': int(degrees_of_freedom),
+        'n_observations': int(n),
+        'column_names': {
+            'independent': str(col1),
+            'dependent': str(col2),
+            'sample1': str(col1),  # ADD FOR WILCOXON COMPATIBILITY
+            'sample2': str(col2)   # ADD FOR WILCOXON COMPATIBILITY
+        },
+        'data_points': data_points,
+        'regression_line': regression_line,
+        'confidence_intervals': confidence_intervals,
+        # ADD WILCOXON COMPATIBLE FIELDS
+        'plot_data': plot_data,  # ADD THIS FOR SCATTER PLOT
+        'statistic': float(t_statistics[1]) if len(t_statistics) > 1 else float('nan'),
+        'p_value': float(p_values[1]) if len(p_values) > 1 else float('nan'),
+        'total_pairs': int(n),
+        'critical_values': {
+            'lower': float(np.percentile(residuals, 2.5)),
+            'upper': float(np.percentile(residuals, 97.5)),
+            'mean_difference': float(np.mean(residuals))
+        },
+        # In your process_linear_regression_test function, update the residual_data section:
+        'residual_data': {
+            'values': [float(res) for res in residuals],
+            'fitted': [float(pred) for pred in y_pred],
+            'independent': [float(x[0]) for x in X],
+            'statistics': {
+                'mean': float(np.mean(residuals)),
+                'std': float(np.std(residuals)),
+                'min': float(np.min(residuals)),
+                'max': float(np.max(residuals)),
+                'q25': float(np.percentile(residuals, 25)),
+                'q75': float(np.percentile(residuals, 75))
+            }
+        },        
+        'metadata': {
+            'significant': bool(overall_significant),
+            'coefficient_significant': bool(coef_significant),
+            'alpha': 0.05,
+            'test_type': 'regression'
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_shapiro_test(request, df: pd.DataFrame, col1: str, user_id: str):
+    """
+    Performs Shapiro-Wilk normality test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col1: Column name for the numeric variable to test for normality
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for plotting
+    """
+    print(f"[Shapiro] column: {col1}")
+    
+    # Validate column name
+    if col1 not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column name.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col1]].copy()
+    work = work.dropna(subset=[col1])
+    print(f"[Shapiro] after dropna: {len(work)} rows")
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col1]):
+        work[col1] = pd.to_numeric(work[col1], errors='coerce')
+        work = work.dropna(subset=[col1])
+        
+        if not pd.api.types.is_numeric_dtype(work[col1]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col1}" must be numeric for Shapiro-Wilk test.'
+            })
+
+    # Get the data values
+    data_values = work[col1].values
+    
+    if len(data_values) < 3:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 3 observations for Shapiro-Wilk test.'
+        })
+
+    # Perform Shapiro-Wilk test
+    try:
+        stat, p_value = stats.shapiro(data_values)
+        print(f"[Shapiro] result: W={stat:.6f}, p={p_value:.6g}")
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Shapiro-Wilk test: {e}'
+        })
+
+    # Calculate additional statistics for frontend
+    mean_val = float(np.mean(data_values))
+    std_val = float(np.std(data_values, ddof=1))
+    median_val = float(np.median(data_values))
+    min_val = float(np.min(data_values))
+    max_val = float(np.max(data_values))
+    
+    # Calculate skewness and kurtosis
+    try:
+        skewness_val = float(stats.skew(data_values))
+        kurtosis_val = float(stats.kurtosis(data_values))
+    except:
+        skewness_val = 0.0
+        kurtosis_val = 0.0
+
+    # Prepare Q-Q plot data using scipy.probplot (same as Wilcoxon)
+    try:
+        (osm, osr), (slope, intercept, r) = stats.probplot(data_values, dist="norm")
+        
+        # Calculate confidence intervals for Q-Q plot
+        n = len(osm)
+        if n > 2:
+            # 95% confidence interval for Q-Q line
+            se_slope = slope * np.sqrt((1 - r**2) / (n - 2))
+            t_val = stats.t.ppf(0.975, n - 2)
+            
+            upper_slope = slope + t_val * se_slope
+            lower_slope = slope - t_val * se_slope
+            upper_intercept = intercept + t_val * se_slope * np.std(osm)
+            lower_intercept = intercept - t_val * se_slope * np.std(osm)
+            
+            confidence_intervals = {
+                'upper_slope': float(upper_slope),
+                'lower_slope': float(lower_slope),
+                'upper_intercept': float(upper_intercept),
+                'lower_intercept': float(lower_intercept)
+            }
+        else:
+            confidence_intervals = {
+                'upper_slope': float(slope),
+                'lower_slope': float(slope),
+                'upper_intercept': float(intercept),
+                'lower_intercept': float(intercept)
+            }
+        
+        qq_data = {
+            'theoretical_quantiles': [float(x) for x in osm],
+            'ordered_values': [float(x) for x in osr],
+            'slope': float(slope),
+            'intercept': float(intercept),
+            'r_squared': float(r**2),
+            'confidence_intervals': confidence_intervals,
+            'sample_size': n,
+            'shapiro_stat': float(stat),
+            'shapiro_p': float(p_value)
+        }
+    except Exception as e:
+        print(f"[Shapiro] Q-Q plot data generation warning: {e}")
+        qq_data = {
+            'theoretical_quantiles': [],
+            'ordered_values': [],
+            'slope': 0,
+            'intercept': 0,
+            'r_squared': 0,
+            'confidence_intervals': {
+                'upper_slope': 0,
+                'lower_slope': 0,
+                'upper_intercept': 0,
+                'lower_intercept': 0
+            },
+            'sample_size': 0,
+            'shapiro_stat': float(stat),
+            'shapiro_p': float(p_value)
+        }
+
+    # Prepare data for frontend plotting - FOLLOW WILCOXON STRUCTURE
+    plot_data = {
+        'sample': {
+            'name': str(col1),
+            'values': [float(x) for x in data_values],
+            'count': int(len(data_values)),
+            'mean': float(mean_val),
+            'median': float(median_val),
+            'std': float(std_val),
+            'min': float(min_val),
+            'max': float(max_val),
+            'q25': float(np.percentile(data_values, 25)),
+            'q75': float(np.percentile(data_values, 75))
+        },
+        # Add normal curve data for histogram overlay
+        'normal_curve': {
+            'mean': float(mean_val),
+            'std': float(std_val)
+        }
+    }
+
+    # Prepare response with localized labels - FOLLOW WILCOXON STRUCTURE
+    test_name = 'Shapiro-Wilk Normality Test' if language == 'en' else 'শ্যাপিরো-উইল্ক স্বাভাবিকতা পরীক্ষা'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),
+        'p_value': float(p_value),
+        'n_observations': int(len(data_values)),  # This is required by frontend
+        'column_names': {
+            'sample': str(col1)
+        },
+        'plot_data': plot_data,  # Frontend expects this (same as Wilcoxon)
+        'qq_data': qq_data,      # Frontend expects this (same as Wilcoxon)
+        'descriptive_stats': {
+            'mean': mean_val,
+            'std_dev': std_val,
+            'median': median_val,
+            'min': min_val,
+            'max': max_val,
+            'skewness': skewness_val,
+            'kurtosis': kurtosis_val
+        },
+        'metadata': {
+            'normal': bool(p_value >= 0.05),
+            'alpha': 0.05,
+            'test_type': 'normality',
+            'interpretation': 'Data follows normal distribution (p ≥ 0.05)' if p_value >= 0.05 else 'Data does not follow normal distribution (p < 0.05)'
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_eda_distribution(request, df: pd.DataFrame, col: str, user_id: str):
+    """
+    Performs EDA distribution analysis and returns data for frontend visualization.
+    Frontend will handle histogram, KDE, and distribution plots using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col: Column name for distribution analysis (numeric)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with distribution statistics and data for plotting
+    """
+    import os
+    import numpy as np
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    from scipy import stats
+    from django.http import JsonResponse
+
+    try:
+        language = request.POST.get('language', 'en').lower()
+        if language not in ('en', 'bn'):
+            language = 'en'
+
+        # Extract plot parameters
+        histogram_bins = request.POST.get('histogram_bins', 'auto')
+        kde_bandwidth = request.POST.get('kde_bandwidth', None)
+        
+        # Parse histogram bins
+        if histogram_bins != 'auto' and histogram_bins != '':
+            try:
+                histogram_bins = int(histogram_bins)
+                if histogram_bins <= 0:
+                    histogram_bins = 'auto'
+            except (ValueError, TypeError):
+                histogram_bins = 'auto'
+        
+        # Parse KDE bandwidth
+        if kde_bandwidth and kde_bandwidth not in ['auto', '']:
+            try:
+                kde_bandwidth = float(kde_bandwidth)
+                if kde_bandwidth <= 0:
+                    kde_bandwidth = None
+            except (ValueError, TypeError):
+                kde_bandwidth = None
+
+        # Validate column exists and is numeric
+        if col not in df.columns:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Column "{col}" not found in dataset.'
+            })
+
+        # Prepare working data
+        work = df[[col]].copy()
+        work = work.dropna(subset=[col])
+        
+        # Ensure column is numeric
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            work[col] = pd.to_numeric(work[col], errors='coerce')
+            work = work.dropna(subset=[col])
+            
+            if not pd.api.types.is_numeric_dtype(work[col]):
+                return JsonResponse({
+                    'success': False, 
+                    'error': f'Column "{col}" must be numeric for distribution analysis.'
+                })
+
+        if len(work) == 0:
+            return JsonResponse({
+                'success': False, 
+                'error': 'No valid numeric data available for analysis.'
+            })
+
+        print(f"[EDA Distribution] Valid data points: {len(work)}")
+
+        # Calculate distribution statistics
+        values = work[col].values
+        stats_summary = {
+            'count': int(len(values)),
+            'mean': float(np.mean(values)),
+            'median': float(np.median(values)),
+            'std': float(np.std(values)),
+            'variance': float(np.var(values)),
+            'min': float(np.min(values)),
+            'max': float(np.max(values)),
+            'q25': float(np.percentile(values, 25)),
+            'q75': float(np.percentile(values, 75)),
+            'skewness': float(stats.skew(values)),
+            'kurtosis': float(stats.kurtosis(values))
+        }
+
+        # Generate histogram data (like old backend but return data instead of images)
+        hist_counts, bin_edges = np.histogram(values, bins=histogram_bins)
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        bin_widths = np.diff(bin_edges)
+        
+        histogram_bins_data = []
+        for i in range(len(hist_counts)):
+            histogram_bins_data.append({
+                'x': float(bin_centers[i]),
+                'y': int(hist_counts[i]),
+                'x0': float(bin_edges[i]),
+                'x1': float(bin_edges[i + 1]),
+                'width': float(bin_widths[i]),
+                'count': int(hist_counts[i])
+            })
+
+        hist_data = {
+            'bins': histogram_bins_data,
+            'total_count': int(np.sum(hist_counts)),
+            'bin_count': len(hist_counts),
+            'range': [float(bin_edges[0]), float(bin_edges[-1])],
+            'bins_used': histogram_bins if isinstance(histogram_bins, int) else 'auto'
+        }
+
+        # Generate KDE data (like old backend but return data instead of images)
+        kde = stats.gaussian_kde(values)
+        
+        # Set custom bandwidth if provided
+        if kde_bandwidth is not None:
+            kde.set_bandwidth(kde_bandwidth)
+        
+        data_min = np.min(values)
+        data_max = np.max(values)
+        data_range = data_max - data_min
+        x_points = np.linspace(data_min - 0.1 * data_range, data_max + 0.1 * data_range, 200)
+        y_points = kde(x_points)
+        
+        # Normalize to make it comparable to histogram (like seaborn does)
+        y_points_normalized = y_points * len(values) * (x_points[1] - x_points[0])
+        
+        kde_curve = []
+        for i in range(len(x_points)):
+            kde_curve.append({
+                'x': float(x_points[i]),
+                'y': float(y_points_normalized[i]),
+                'density': float(y_points[i])
+            })
+
+        kde_data = {
+            'curve': kde_curve,
+            'bandwidth': float(kde.factor),
+            'range': [float(x_points[0]), float(x_points[-1])],
+            'peak_density': float(np.max(y_points))
+        }
+
+        # Generate combined distribution data (histogram + KDE)
+        # This mimics seaborn's displot with kde=True
+        distribution_data = {
+            'histogram': hist_data,
+            'kde': kde_data
+        }
+
+        # Prepare response with localized labels
+        test_name = 'EDA: Distribution Analysis' if language == 'en' else 'ইডিএ: বন্টন বিশ্লেষণ'
+        
+        response_data = {
+            'success': True,
+            'test': test_name,
+            'language': language,
+            'column_name': str(col),
+            'statistics': stats_summary,
+            'plot_data': distribution_data,
+            'metadata': {
+                'data_points': int(len(values)),
+                'range': [float(np.min(values)), float(np.max(values))],
+                'iqr': float(np.percentile(values, 75) - np.percentile(values, 25)),
+                'histogram_bins_used': hist_data['bins_used'],
+                'kde_bandwidth_used': kde_data['bandwidth']
+            }
+        }
+        
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        print(f"[EDA Distribution Error] {str(e)}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_eda_swarm_plot(request, df: pd.DataFrame, col_cat: str, col_num: str, user_id: str):
+    """
+    Processes data for Swarm Plot visualization and returns structured data.
+    Frontend will handle the actual plotting using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col_cat: Column name for categorical variable
+        col_num: Column name for numeric variable  
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with swarm plot data and statistics
+    """
+    print(f"[Swarm Plot] cols: {col_cat}(categorical) | {col_num}(numeric)")
+    
+    # Validate column names
+    if col_cat not in df.columns or col_num not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col_cat, col_num]].copy()
+    work = work.dropna(subset=[col_cat, col_num])
+    print(f"[Swarm Plot] after dropna: {len(work)} rows")
+
+    # Ensure categorical column is properly typed
+    if not pd.api.types.is_categorical_dtype(work[col_cat]):
+        work[col_cat] = work[col_cat].astype('category')
+
+    categories = list(work[col_cat].cat.categories)
+    
+    if len(categories) == 0:
+        return JsonResponse({
+            'success': False, 
+            'error': 'No valid categories found in the categorical column.'
+        })
+
+    # Ensure numeric column is properly typed
+    if not pd.api.types.is_numeric_dtype(work[col_num]):
+        work[col_num] = pd.to_numeric(work[col_num], errors='coerce')
+        work = work.dropna(subset=[col_num])
+        
+        if not pd.api.types.is_numeric_dtype(work[col_num]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col_num}" must be numeric for Swarm Plot.'
+            })
+
+    # Prepare swarm plot data for frontend
+    plot_data = []
+    
+    for category in categories:
+        category_data = work.loc[work[col_cat] == category, col_num].values
+        
+        # Calculate statistics for each category
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data],  # Convert numpy array to list of floats
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
+
+    # Calculate overall statistics
+    all_values = work[col_num].values
+    overall_stats = {
+        'total_count': int(len(work)),
+        'global_mean': float(np.mean(all_values)),
+        'global_median': float(np.median(all_values)),
+        'global_std': float(np.std(all_values)),
+        'global_min': float(np.min(all_values)),
+        'global_max': float(np.max(all_values))
+    }
+
+    # Prepare response with localized labels
+    test_name = 'Swarm Plot' if language == 'en' else 'সোয়ার্ম প্লট'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'column_names': {
+            'categorical': str(col_cat),
+            'numeric': str(col_num)
+        },
+        'plot_data': plot_data,
+        'overall_stats': overall_stats,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'n_categories': int(len(categories)),
+            'category_counts': {str(cat): int(len(work[work[col_cat] == cat])) for cat in categories}
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_bar_chart_test(request, df: pd.DataFrame, col: str, user_id: str, orientation: str, ordinal_mappings: dict):
+    """
+    Processes bar chart data and returns statistics for frontend visualization.
+    Frontend will handle the actual plotting using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col: Column name for the categorical variable
+        user_id: User identifier
+        orientation: Chart orientation ('horizontal' or 'vertical')
+        ordinal_mappings: Dictionary for ordinal value mappings
+        
+    Returns:
+        JsonResponse with bar chart data and statistics
+    """
+    print(f"[Bar Chart] Processing column: {col}, orientation: {orientation}")
+    
+    # Validate column name
+    if col not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Column "{col}" not found in dataset.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Validate orientation
+    orientation = orientation if orientation in ('horizontal', 'vertical') else 'vertical'
+
+    # Prepare working data
+    work = df[[col]].copy()
+    work = work.dropna(subset=[col])
+    print(f"[Bar Chart] after dropna: {len(work)} rows")
+
+    # Calculate counts and prepare categories
+    counts = work[col].value_counts(dropna=False).sort_index()
+    
+    if len(counts) == 0:
+        return JsonResponse({
+            'success': False, 
+            'error': 'No data available after cleaning.'
+        })
+
+    # Prepare category labels using ordinal mappings if available
+    categories = []
+    category_data = []
+    
+    for category_idx, count in counts.items():
+        # Use ordinal mapping if available, otherwise use the raw value
+        display_label = ordinal_mappings.get(col, {}).get(str(category_idx), str(category_idx))
+        
+        categories.append(display_label)
+        category_data.append({
+            'category': str(display_label),
+            'count': int(count),
+            'percentage': float((count / len(work)) * 100)
+        })
+
+    # Sort categories by count (descending) for better visualization
+    category_data.sort(key=lambda x: x['count'], reverse=True)
+
+    # Prepare response with localized labels
+    test_name = 'Bar Chart' if language == 'en' else 'বার চার্ট'
+    orientation_label = 'Horizontal' if orientation == 'horizontal' else 'Vertical'
+    orientation_label_bn = 'অনুভূমিক' if orientation == 'horizontal' else 'উল্লম্ব'
+
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'orientation': orientation,
+        'column_name': str(col),
+        'total_observations': int(len(work)),
+        'unique_categories': int(len(categories)),
+        'plot_data': category_data,
+        'statistics': {
+            'max_count': int(max([item['count'] for item in category_data])),
+            'min_count': int(min([item['count'] for item in category_data])),
+            'mean_count': float(np.mean([item['count'] for item in category_data])),
+            'median_count': float(np.median([item['count'] for item in category_data])),
+            'total_count': int(sum([item['count'] for item in category_data]))
+        },
+        'metadata': {
+            'orientation_display': orientation_label if language == 'en' else orientation_label_bn,
+            'categories': [item['category'] for item in category_data],
+            'has_ordinal_mappings': col in ordinal_mappings
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_pie_chart(request, df: pd.DataFrame, col: str, user_id: str, ordinal_mappings: dict):
+    """
+    Processes pie chart data and returns structured results for frontend visualization.
+    Frontend will handle the actual chart rendering.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col: Column name for categorical variable
+        user_id: User identifier
+        ordinal_mappings: Ordinal value mappings
+        
+    Returns:
+        JsonResponse with pie chart data and statistics
+    """
+    print(f"[Pie Chart] Processing column: {col}")
+    
+    # Validate column exists
+    if col not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Column "{col}" not found in dataset.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working data
+    work = df[[col]].copy()
+    work[col] = work[col].astype(str).fillna('NaN')
+    
+    # Apply ordinal mappings if available
+    if col in ordinal_mappings:
+        work[col] = work[col].map(lambda x: ordinal_mappings[col].get(x, x))
+    
+    # Calculate value counts
+    value_counts = work[col].value_counts()
+    categories = value_counts.index.tolist()
+    counts = value_counts.values.tolist()
+    
+    total_observations = sum(counts)
+    
+    # Check for too many categories
+    if len(categories) > 10:
+        warning_msg = (
+            "শ্রেণি সংখ্যা ১০ এর বেশি। পাই চার্ট উপযুক্ত নয়। বার চার্ট ব্যবহার করুন।"
+            if language == 'bn' 
+            else "Too many categories (>10). Pie charts are not suitable. Please try a bar chart instead."
+        )
+        return JsonResponse({
+            'success': False, 
+            'error': warning_msg
+        })
+
+    # Calculate percentages and prepare data for frontend
+    plot_data = []
+    default_colors = [
+        "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
+        "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"
+    ]
+    
+    for i, (category, count) in enumerate(zip(categories, counts)):
+        percentage = (count / total_observations) * 100
+        
+        plot_data.append({
+            'category': str(category),
+            'count': int(count),
+            'percentage': float(percentage),
+            'color': default_colors[i % len(default_colors)],
+            'is_small_slice': percentage < 5.0  # Flag for frontend small slice handling
+        })
+
+    # Sort by count (descending) for better visualization
+    plot_data.sort(key=lambda x: x['count'], reverse=True)
+
+    # Prepare response with localized labels
+    test_name = 'Pie Chart Analysis' if language == 'en' else 'পাই চার্ট বিশ্লেষণ'
+
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'column_name': str(col),
+        'total_observations': int(total_observations),
+        'n_categories': int(len(categories)),
+        'plot_data': plot_data,  # This should be accessible as results.plot_data in frontend
+        'metadata': {
+            'has_small_slices': any(item['is_small_slice'] for item in plot_data),
+            'max_categories_reached': len(categories) >= 10,
+            'most_common_category': plot_data[0]['category'] if plot_data else None,
+            'most_common_percentage': plot_data[0]['percentage'] if plot_data else 0.0
+        }
+    }
+    
+    print(f"[Pie Chart] Response data keys: {list(response_data.keys())}")
+    print(f"[Pie Chart] Plot data length: {len(plot_data)}")
+    
+    return JsonResponse(response_data)
+
+
+''' old backend code of bar chart and pie chart
+def process_bar_chart_test(request, df, col, user_id, orientation, ordinal_mappings):
+    import os, re, math
+    import numpy as np
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+    from django.http import JsonResponse
+    from django.conf import settings
+    from PIL import Image, ImageDraw, ImageFont
+    try:
+        from googletrans import Translator
+    except Exception:
+        class Translator:
+            def translate(self, txt, dest="bn"):
+                class _R:
+                    def __init__(self, t): self.text = t
+                    text = t
+                return _R(txt)
+
+    try:
+        # ---------------- Parameters ----------------
+        language = request.POST.get("language", "en")
+        fmt = request.POST.get("format", "png").lower()
+        fmt = fmt if fmt in ("png", "jpg", "jpeg", "pdf", "tiff") else "png"
+        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}[fmt]
+        orientation = orientation if orientation in ("horizontal", "vertical") else "vertical"
+
+        use_default = request.POST.get("use_default", "true") == "true"
+        if use_default:
+            dpi, width, height = 300, 800, 600
+            label_font_size, caption_font_size, tick_font_size = 15, 50, 16
+            cat_font_size, val_font_size = 44, 10
+            bar_color, theme = "steelblue", "darkgrid"
+        else:
+            dpi = int(request.POST.get("dpi", 300))
+            width, height = map(int, request.POST.get("image_size", "800x600").split("x"))
+            label_font_size = int(request.POST.get("label_font_size", 15))
+            caption_font_size = int(request.POST.get("caption_font_size", 50))
+            tick_font_size = int(request.POST.get("tick_font_size", 16))
+            cat_font_size = int(request.POST.get("cat_font_size", 44))
+            val_font_size = int(request.POST.get("val_font_size", 10))
+            bar_color = request.POST.get("bar_color", "steelblue")
+            theme = request.POST.get("theme", "darkgrid")
+
+        sns.set_theme(style=theme)
+
+        # ---------------- Fonts & Translator ----------------
+        font_path = os.path.join(settings.BASE_DIR, "NotoSansBengali-Regular.ttf")
+        fm.fontManager.addfont(font_path)
+        bengali_font = fm.FontProperties(fname=font_path).get_name()
+        if language == "bn":
+            plt.rcParams["font.family"] = bengali_font
+
+        translator = Translator()
+        digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
+
+        def translate(txt):
+            try:
+                return translator.translate(txt, dest="bn").text if language == "bn" else txt
+            except Exception:
+                return txt
+
+        def map_digits(txt):
+            return txt.translate(digit_map) if language == "bn" else txt
+
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
+        caption_font = ImageFont.truetype(font_path, size=caption_font_size)
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+        cat_font = ImageFont.truetype(font_path, size=cat_font_size)
+        val_font = ImageFont.truetype(font_path, size=val_font_size)
+
+        # ---------------- Data Prep ----------------
+        if col not in df.columns:
+            return JsonResponse({"success": False, "error": f"Column {col} not found"})
+
+        counts = df[col].fillna("NaN").value_counts(dropna=False).sort_index()
+        labels_raw = [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
+        values = counts.values
+        labels_display = [map_digits(translate(str(x))) for x in labels_raw]
+
+        # ---------------- Output Paths ----------------
+        safe_col = re.sub(r"[^\w\-_\.]", "_", col)
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        final_path = os.path.join(plots_dir, f"barchart_{safe_col}.{fmt}")
+
+        # ---------------- Plot ----------------
+        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=dpi)
+
+        if orientation == "vertical":
+            x_idx = np.arange(len(values))
+            bars = ax.bar(x_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
+            ax.set_xticks(x_idx)
+            ax.set_xticklabels(labels_display, fontproperties=tick_prop, rotation=40, ha="right")
+            ax.set_ylabel(map_digits(translate("Count")), fontsize=label_font_size)
+            ax.set_xlabel(map_digits(translate(col)), fontsize=label_font_size)
+
+            max_val = max(values) if len(values) > 0 else 1
+            ax.set_ylim(0, max_val + max_val * 0.25)  # add headroom for labels
+
+            for bar, val in zip(bars, values):
+                ax.text(
+                    bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + (0.05 * max_val),
+                    map_digits(str(val)),
+                    ha="center", va="bottom", fontsize=val_font_size
+                )
+
+        else:
+            y_idx = np.arange(len(values))
+            bars = ax.barh(y_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
+            ax.set_yticks(y_idx)
+            ax.set_yticklabels(labels_display, fontproperties=tick_prop)
+            ax.set_xlabel(map_digits(translate("Count")), fontsize=label_font_size)
+            ax.set_ylabel(map_digits(translate(col)), fontsize=label_font_size)
+
+            max_val = max(values) if len(values) > 0 else 1
+            ax.set_xlim(0, max_val + max_val * 0.25)  # add headroom for labels
+
+            for bar, val in zip(bars, values):
+                ax.text(
+                    bar.get_width() + (0.05 * max_val),
+                    bar.get_y() + bar.get_height() / 2,
+                    map_digits(str(val)),
+                    va="center", ha="left", fontsize=val_font_size
+                )
+
+        
+        title_txt = map_digits(translate(f"Bar Chart of {col}"))
+        
+
+        ax.grid(axis="y" if orientation == "vertical" else "x", linestyle="--", alpha=0.35)
+        plt.tight_layout()
+        fig.savefig(final_path, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+
+        # ---------------- Title Overlay (PIL) ----------------
+        img = Image.open(final_path).convert("RGB")
+        bw, bh = img.size
+
+        # Add extra space above for title (20% of image height, adjust as needed)
+        extra_height = int(bh * 0.15)
+        new_img = Image.new("RGB", (bw, bh + extra_height), "white")
+
+        # Paste original chart lower (shift down)
+        new_img.paste(img, (0, extra_height))
+
+        # Draw title in the new top space
+        draw = ImageDraw.Draw(new_img)
+        title_txt = map_digits(translate(f"Bar Chart of {col}"))
+        tw, th = draw.textbbox((0, 0), title_txt, font=caption_font)[2:]
+        draw.text(((bw - tw) // 2, (extra_height - th) // 2), title_txt, font=caption_font, fill="black")
+
+        # Save final
+        new_img.save(final_path, format=pil_fmt)
+
+        return JsonResponse({
+            "success": True,
+            "test": "Bar Chart",
+            "orientation": orientation,
+            "image_paths": [
+                f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{os.path.basename(final_path)}"
+            ]
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)})
+
+def process_pie_chart(request, df, col,user_id,ordinal_mappings):
+    import re 
+    try:
+        # --- Params ---
+        language = request.POST.get('language', 'en')
+        fmt = request.POST.get('format', 'png').lower()
+        fmt = fmt if fmt in ('png', 'jpg', 'jpeg', 'pdf', 'tiff') else 'png'
+
+        use_default = request.POST.get('use_default', 'true') == 'true'
+        if use_default:
+            dpi, width, height = 300, 900, 650
+        else:
+            dpi = int(request.POST.get('dpi', 300))
+            width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
+
+        # --- Fonts / translator ---
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        try:
+            fm.fontManager.addfont(font_path)
+        except Exception:
+            pass
+        if language == 'bn' and os.path.exists(font_path):
+            plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
+
+        translator = Translator()
+        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        def translate(text): 
+            if language == 'bn':
+                try:
+                    return translator.translate(text, dest='bn').text
+                except Exception:
+                    return text
+            return text
+        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
+
+        # --- Validate col ---
+        if col not in df.columns:
+            return JsonResponse({'success': False, 'error': f"Column {col} not found"})
+
+        # --- Treat column as categorical always ---
+        series = df[col].astype(str).fillna('NaN')
+        counts = df[col].value_counts() 
+        # labels_data = counts.index.tolist()  
+        labels_raw= [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
+ 
+        print(labels_raw) 
+
+        sizes = counts.values
+
+        # --- Too many categories check ---
+        if len(labels_raw) > 10:
+            msg = ("শ্রেণি সংখ্যা ১০ এর বেশি। পাই চার্ট উপযুক্ত নয়। বার চার্ট ব্যবহার করুন।"
+                   if language == 'bn'
+                   else "Too many categories (>10). Pie charts are not suitable. Please try a bar chart instead.")
+            return JsonResponse({'success': False, 'error': msg})
+
+        # --- Colors & figure ---
+        colors = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",
+                  "#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]
+
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(width/100, height/100), dpi=dpi,
+                                       gridspec_kw={'width_ratios': [2, 1]})
+        total = sum(sizes)
+
+        # autopct
+        def make_autopct(values):
+            def my_autopct(pct):
+                text = f"{pct:.1f}%"
+                return map_digits(text) if language == 'bn' else text
+            return my_autopct
+
+        wedges, texts, autotexts = ax1.pie(
+            sizes, labels=None, autopct=make_autopct(sizes),
+            startangle=90, colors=colors[:len(sizes)],
+            wedgeprops=dict(edgecolor='black', linewidth=1.2), radius=1.0
+        )
+        ax1.axis('equal')
+
+        # --- Improved small slice handling ---
+        total = sum(sizes)
+        small_slices = []
+        for i, (wedge, autotext) in enumerate(zip(wedges, autotexts)):
+            try:
+                pct = float(autotext.get_text().replace('%', ''))
+            except Exception:
+                pct = 0.0
+
+            if pct >= 5:
+                autotext.set_color("white")
+                autotext.set_weight("bold")
+            else:
+                ang = (wedge.theta2 + wedge.theta1) / 2.0
+                small_slices.append((i, wedge, autotext, pct, ang))
+
+        # sort by angle
+        small_slices.sort(key=lambda x: x[4])
+        distances = [1.3, 1.5, 1.8, 2.0]
+
+        for idx, (i, wedge, autotext, pct, ang) in enumerate(small_slices):
+            distance_idx = idx % len(distances)
+            label_distance = distances[distance_idx]
+            line_end_distance = label_distance - 0.1
+
+            x = label_distance * math.cos(math.radians(ang))
+            y = label_distance * math.sin(math.radians(ang))
+
+            percentage_text = f"{pct:.1f}%"
+            if language == 'bn':
+                percentage_text = map_digits(percentage_text)
+
+            autotext.set_text(percentage_text)
+            autotext.set_color("black")
+            autotext.set_weight("bold")
+            autotext.set_position((x, y))
+            autotext.set_ha('center')
+            autotext.set_va('center')
+
+            # draw leader line
+            x1 = 1.0 * math.cos(math.radians(ang))
+            y1 = 1.0 * math.sin(math.radians(ang))
+            x2 = line_end_distance * math.cos(math.radians(ang))
+            y2 = line_end_distance * math.sin(math.radians(ang))
+            ax1.plot([x1, x2], [y1, y2], color="black", linewidth=1)
+
+        # Title
+        ax1.set_title(map_digits(translate(f"Pie Chart of {col}")), fontsize=16, pad=20)
+
+        # FIXED: Legend - EXACTLY like the Python code
+        # Create labels_display exactly like in Python code
+        labels_display = [map_digits(translate(str(lab))) for lab in labels_raw]
+
+        legend_elements = []
+        for i, (label, size_val) in enumerate(zip(labels_display, sizes)):
+            percentage = size_val/total*100
+            percentage_text = f'{percentage:.1f}%'
+            if language == 'bn':
+                percentage_text = map_digits(percentage_text)
+
+            legend_text = f"{label} - {percentage_text}"
+            legend_elements.append(Patch(
+                facecolor=colors[i % len(colors)],
+                edgecolor='black', 
+                label=legend_text
+            ))
+
+        ax2.legend(handles=legend_elements, loc='center', frameon=False,
+                fontsize=12, handlelength=1, handleheight=1, handletextpad=0.5)
+        ax2.axis('off')
+
+        plt.tight_layout()
+
+        # --- Safe filename ---
+        def safe_filename(name):
+            # Replace invalid characters with underscore and truncate long names
+            cleaned = re.sub(r'[<>:"/\\|?*]', '_', name)
+            return cleaned[:100]  # max 100 chars to avoid OS limits
+
+        filename = f"pie_{safe_filename(col)}.{fmt}"
+        plots_dir =  os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        out_path = os.path.join(plots_dir, filename)
+
+        plt.savefig(out_path, dpi=dpi, bbox_inches="tight")
+        plt.close(fig)
+
+        return JsonResponse({
+            'success': True,
+            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', filename)],
+            'message': "Pie chart generated successfully",
+            'columns': [col]
+        })
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+'''
+
+
+def process_ks_test(request, df: pd.DataFrame, col: str, user_id: str):
+    """
+    Performs Kolmogorov-Smirnov test and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col: Column name for the numeric variable to test
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for ECDF plotting
+    """
+    from scipy.stats import kstest, norm
+    import numpy as np
+    
+    print(f"[KS Test] column: {col}")
+    
+    # Validate column name
+    if col not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column name.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working data
+    work = df[[col]].copy()
+    work = work.dropna(subset=[col])
+    print(f"[KS Test] after dropna: {len(work)} rows")
+
+    # Ensure column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col]):
+        work[col] = pd.to_numeric(work[col], errors='coerce')
+        work = work.dropna(subset=[col])
+        
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col}" must be numeric for Kolmogorov-Smirnov test.'
+            })
+
+    data_values = work[col].values
+    
+    if len(data_values) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 2 observations for Kolmogorov-Smirnov test.'
+        })
+
+    # Calculate statistics for normal distribution comparison
+    mean_val = float(np.mean(data_values))
+    std_val = float(np.std(data_values, ddof=0))  # population std
+    
+    # Perform Kolmogorov-Smirnov test against normal distribution
+    try:
+        stat, p_value = kstest(data_values, 'norm', args=(mean_val, std_val))
+        print(f"[KS Test] result: D={stat:.6f}, p={p_value:.6g}")
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Kolmogorov-Smirnov test: {e}'
+        })
+
+    # Prepare ECDF data for frontend plotting
+    sorted_data = np.sort(data_values)
+    n = len(sorted_data)
+    ecdf_y = np.arange(1, n + 1) / n
+    
+    # Generate theoretical CDF (normal distribution) for plotting
+    x_min = float(np.min(data_values))
+    x_max = float(np.max(data_values))
+    x_range = x_max - x_min
+    x_theoretical = np.linspace(x_min - 0.1 * x_range, x_max + 0.1 * x_range, 200)
+    cdf_theoretical = norm.cdf(x_theoretical, mean_val, std_val)
+
+    # Prepare plot data
+    plot_data = {
+        'ecdf': {
+            'x': [float(x) for x in sorted_data],  # Convert numpy to native Python types
+            'y': [float(y) for y in ecdf_y]
+        },
+        'cdf': {
+            'x': [float(x) for x in x_theoretical],
+            'y': [float(y) for y in cdf_theoretical]
+        },
+        'statistics': {
+            'mean': mean_val,
+            'std': std_val,
+            'min': float(np.min(data_values)),
+            'max': float(np.max(data_values)),
+            'sample_size': int(n)
+        }
+    }
+
+    # Prepare response with localized labels
+    test_name = 'Kolmogorov-Smirnov Test' if language == 'en' else 'কোলমোগোরভ-স্মিরনভ পরীক্ষা'
+    
+    # Localized interpretations
+    if language == 'bn':
+        interpretation = "স্বাভাবিক বন্টনের সাথে সামঞ্জস্যপূর্ণ (p > 0.05)" if p_value > 0.05 else "স্বাভাবিক বন্টন নয় (p ≤ 0.05)"
+        conclusion = "ডেটা স্বাভাবিক বন্টন অনুসরণ করে" if p_value > 0.05 else "ডেটা স্বাভাবিক বন্টন অনুসরণ করে না"
+    else:
+        interpretation = "Consistent with Normal (p > 0.05)" if p_value > 0.05 else "Not Normal (p ≤ 0.05)"
+        conclusion = "Data follows normal distribution" if p_value > 0.05 else "Data does not follow normal distribution"
+
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),  # KS statistic (D)
+        'p_value': float(p_value),
+        'interpretation': interpretation,
+        'conclusion': conclusion,
+        'column_names': {
+            'variable': str(col)
+        },
+        'plot_data': plot_data,
+        'distribution_parameters': {
+            'mean': mean_val,
+            'std_dev': std_val,
+            'tested_distribution': 'normal'
+        },
+        'metadata': {
+            'sample_size': int(n),
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05,
+            'test_type': 'goodness_of_fit'
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_anderson_darling_test(request, df: pd.DataFrame, col: str, user_id: str):
+    """
+    Performs Anderson-Darling test for normality and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    
+    Args:
+        request: Django request object
+        df: DataFrame containing the data
+        col: Column name for the variable to test (numeric)
+        user_id: User identifier
+        
+    Returns:
+        JsonResponse with test results and data for Q-Q plot
+    """
+
+    from scipy.stats import anderson, norm
+    import numpy as np
+
+    print(f"[Anderson-Darling] Testing column: {col}")
+    
+    # Validate column name
+    if col not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column name.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working data
+    work = df[[col]].copy()
+    work = work.dropna(subset=[col])
+    print(f"[Anderson-Darling] after dropna: {len(work)} rows")
+
+    # Ensure column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col]):
+        work[col] = pd.to_numeric(work[col], errors='coerce')
+        work = work.dropna(subset=[col])
+        
+        if not pd.api.types.is_numeric_dtype(work[col]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col}" must be numeric for Anderson-Darling test.'
+            })
+
+    data = work[col].values
+    
+    if len(data) < 3:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Need at least 3 observations for Anderson-Darling test.'
+        })
+
+    # Perform Anderson-Darling test
+    try:
+        result = anderson(data, dist='norm')
+        stat = result.statistic
+        critical_values = result.critical_values
+        significance_levels = result.significance_level
+        
+        print(f"[Anderson-Darling] result: A²={stat:.6f}")
+        print(f"[Anderson-Darling] critical values: {critical_values}")
+        print(f"[Anderson-Darling] significance levels: {significance_levels}")
+        
+        # Find the critical value at 5% significance level
+        try:
+            crit_idx = list(significance_levels).index(5.0)
+            crit_value = critical_values[crit_idx]
+            sig_level = significance_levels[crit_idx]
+        except ValueError:
+            # Use the first available critical value if 5% not found
+            crit_value = critical_values[0]
+            sig_level = significance_levels[0]
+            
+        is_normal = stat < crit_value
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Anderson-Darling test: {e}'
+        })
+
+    # Prepare Q-Q plot data for frontend
+    n = len(data)
+    prob = (np.arange(1, n + 1) - 0.5) / n
+    sample_quantiles = np.sort(data)
+    
+    # Theoretical quantiles from normal distribution
+    data_mean = np.mean(data)
+    data_std = np.std(data, ddof=0)
+    theoretical_quantiles = norm.ppf(prob, loc=data_mean, scale=data_std)
+    
+    # Reference line (y = x line for perfect normality)
+    ref_min = min(theoretical_quantiles.min(), sample_quantiles.min())
+    ref_max = max(theoretical_quantiles.max(), sample_quantiles.max())
+    reference_line = [ref_min, ref_max]
+
+    # Prepare response with localized labels
+    test_name = 'Anderson-Darling Test' if language == 'en' else 'অ্যান্ডারসন-ডার্লিং পরীক্ষা'
+    
+    if language == 'bn':
+        interpretation = (
+            f"সম্ভাব্য স্বাভাবিক বণ্টন (A² = {stat:.3f} < {crit_value:.3f} {sig_level}% স্তরে)"
+            if is_normal else
+            f"স্বাভাবিক বণ্টন নয় (A² = {stat:.3f} ≥ {crit_value:.3f} {sig_level}% স্তরে)"
+        )
+    else:
+        interpretation = (
+            f"Likely Normal (A² = {stat:.3f} < {crit_value:.3f} at {sig_level}% level)"
+            if is_normal else
+            f"Not Normal (A² = {stat:.3f} ≥ {crit_value:.3f} at {sig_level}% level)"
+        )
+
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(stat),
+        'critical_value': float(crit_value),
+        'significance_level': float(sig_level),
+        'is_normal': bool(is_normal),
+        'interpretation': interpretation,
+        'sample_size': int(n),
+        'column_name': str(col),
+        'descriptive_stats': {
+            'mean': float(data_mean),
+            'std': float(data_std),
+            'min': float(np.min(data)),
+            'max': float(np.max(data)),
+            'median': float(np.median(data))
+        },
+        'qq_plot_data': {
+            'theoretical_quantiles': [float(x) for x in theoretical_quantiles],
+            'sample_quantiles': [float(x) for x in sample_quantiles],
+            'reference_line': [float(x) for x in reference_line]
+        },
+        'critical_values': {
+            'values': [float(x) for x in critical_values],
+            'significance_levels': [float(x) for x in significance_levels]
+        },
+        'metadata': {
+            'test_type': 'normality_test',
+            'distribution': 'normal',
+            'alpha': 0.05
+        }
+    }
+    
+    return JsonResponse(response_data)
+
+
+def process_f_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
+    """
+    Performs F-test for equality of variances - FIXED DATA STRUCTURE
+    """
+    print(f"[F-Test] cols: {col_group}(group) | {col_value}(value)")
+    
+    # Validate column names
+    if col_group not in df.columns or col_value not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col_group, col_value]].copy()
+    work = work.dropna(subset=[col_group, col_value])
+    print(f"[F-Test] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col_group]):
+        work[col_group] = work[col_group].astype('category')
+
+    categories = list(work[col_group].cat.categories)
+    
+    if len(categories) != 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'F-test requires exactly 2 groups.'
+        })
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col_value]):
+        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+        work = work.dropna(subset=[col_value])
+        
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col_value}" must be numeric for F-test.'
+            })
+
+    # Prepare groups for statistical test
+    group1_data = work.loc[work[col_group] == categories[0], col_value].values
+    group2_data = work.loc[work[col_group] == categories[1], col_value].values
+    
+    if len(group1_data) < 2 or len(group2_data) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Each group must contain at least 2 observations for F-test.'
+        })
+
+    # Perform F-test for equality of variances
+    try:
+        # Calculate variances
+        var1 = np.var(group1_data, ddof=1)
+        var2 = np.var(group2_data, ddof=1)
+        
+        # F-statistic (larger variance / smaller variance)
+        if var1 >= var2:
+            F_stat = var1 / var2
+            dfn = len(group1_data) - 1
+            dfd = len(group2_data) - 1
+        else:
+            F_stat = var2 / var1
+            dfn = len(group2_data) - 1
+            dfd = len(group1_data) - 1
+        
+        # Two-tailed p-value
+        p_value = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
+        
+        print(f"[F-Test] result: F={F_stat:.6f}, p={p_value:.6g}, df=({dfn}, {dfd})")
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in F-test: {e}'
+        })
+
+    # Prepare plot data - CRITICAL: This is what frontend needs
+    plot_data = []
+    for i, category in enumerate(categories):
+        category_data = group1_data if i == 0 else group2_data
+        
+        plot_data.append({
+            'category': str(category),
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
+
+    # Prepare variances for response
+    variances = {
+        str(categories[0]): float(np.var(group1_data, ddof=1)),
+        str(categories[1]): float(np.var(group2_data, ddof=1))
+    }
+
+    # Response structure that matches frontend expectations
+    response_data = {
+        'success': True,
+        'test': 'F-Test for Equality of Variances',
+        'language': language,
+        'statistic': float(F_stat),
+        'p_value': float(p_value),
+        'degrees_of_freedom': f"{dfn}, {dfd}",
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'variances': variances,  # Required for table
+        'column_names': {
+            'group': str(col_group),
+            'value': str(col_value)
+        },
+        'plot_data': plot_data,  # REQUIRED - frontend checks this
+        'metadata': {
+            'significant': bool(p_value < 0.05),
+            'test_type': 'f_test'
+        }
+    }
+
+    print(f"[F-Test] Returning {len(plot_data)} plot data items")
+    return JsonResponse(response_data)
+
+
+def process_z_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
+    
+    """
+    Performs Z-test for equality of means and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    """
+    print(f"[Z-Test] cols: {col_group}(group) | {col_value}(value)")
+    
+    # Validate column names
+    if col_group not in df.columns or col_value not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col_group, col_value]].copy()
+    work = work.dropna(subset=[col_group, col_value])
+    print(f"[Z-Test] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col_group]):
+        work[col_group] = work[col_group].astype('category')
+
+    categories = list(work[col_group].cat.categories)
+    
+    if len(categories) != 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Z-test requires exactly 2 groups.'
+        })
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col_value]):
+        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+        work = work.dropna(subset=[col_value])
+        
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col_value}" must be numeric for Z-test.'
+            })
+
+    # Prepare groups for statistical test
+    group1_data = work.loc[work[col_group] == categories[0], col_value].values
+    group2_data = work.loc[work[col_group] == categories[1], col_value].values
+    
+    if len(group1_data) < 2 or len(group2_data) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Each group must contain at least 2 observations for Z-test.'
+        })
+
+    # Perform Z-test for equality of means
+    try:
+        from statsmodels.stats.weightstats import ztest
+        z_stat, p_value = ztest(group1_data, group2_data)
+        
+        print(f"[Z-Test] result: Z={z_stat:.6f}, p={p_value:.6g}")
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in Z-test: {e}'
+        })
+
+    # Prepare data for frontend plotting
+    plot_data = []
+    
+    for i, category in enumerate(categories):
+        if i == 0:
+            category_data = group1_data
+        else:
+            category_data = group2_data
+            
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data],
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'variance': float(np.var(category_data, ddof=1)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
+
+    # Prepare response with localized labels
+    test_name = 'Z-Test for Equality of Means' if language == 'en' else 'জেড-টেস্ট (মানে সমতা)'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(z_stat),
+        'p_value': float(p_value),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'means': {
+            str(categories[0]): float(np.mean(group1_data)),
+            str(categories[1]): float(np.mean(group2_data))
+        },
+        'column_names': {
+            'group': str(col_group),
+            'value': str(col_value)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05,
+            'test_type': 'z_test'
+        }
+    }
+    return JsonResponse(response_data)
+
+
+def process_t_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
+    """
+    Performs Welch's T-test for equality of means and returns analysis results without generating plots.
+    Frontend will handle visualization using the returned data.
+    """
+    print(f"[T-Test] cols: {col_group}(group) | {col_value}(value)")
+    
+    # Validate column names
+    if col_group not in df.columns or col_value not in df.columns:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Invalid column names.'
+        })
+
+    # Extract language preference
+    try:
+        language = request.POST.get('language', 'en').lower()
+    except Exception:
+        language = 'en'
+    
+    if language not in ('en', 'bn'):
+        language = 'en'
+
+    # Prepare working dataset
+    work = df[[col_group, col_value]].copy()
+    work = work.dropna(subset=[col_group, col_value])
+    print(f"[T-Test] after dropna: {len(work)} rows")
+
+    # Ensure grouping column is categorical
+    if not pd.api.types.is_categorical_dtype(work[col_group]):
+        work[col_group] = work[col_group].astype('category')
+
+    categories = list(work[col_group].cat.categories)
+    
+    if len(categories) != 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'T-test requires exactly 2 groups.'
+        })
+
+    # Ensure value column is numeric
+    if not pd.api.types.is_numeric_dtype(work[col_value]):
+        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+        work = work.dropna(subset=[col_value])
+        
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            return JsonResponse({
+                'success': False, 
+                'error': f'"{col_value}" must be numeric for T-test.'
+            })
+
+    # Prepare groups for statistical test
+    group1_data = work.loc[work[col_group] == categories[0], col_value].values
+    group2_data = work.loc[work[col_group] == categories[1], col_value].values
+    
+    if len(group1_data) < 2 or len(group2_data) < 2:
+        return JsonResponse({
+            'success': False, 
+            'error': 'Each group must contain at least 2 observations for T-test.'
+        })
+
+    # Perform Welch's T-test (does not assume equal variances)
+    try:
+        t_stat, p_value = stats.ttest_ind(group1_data, group2_data, equal_var=False)
+        
+        # Calculate Welch-Satterthwaite degrees of freedom
+        v1 = np.var(group1_data, ddof=1)
+        v2 = np.var(group2_data, ddof=1)
+        n1 = len(group1_data)
+        n2 = len(group2_data)
+        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+        
+        print(f"[T-Test] result: t={t_stat:.6f}, p={p_value:.6g}, df={welch_df:.2f}")
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in T-test: {e}'
+        })
+
+    # Prepare data for frontend plotting
+    plot_data = []
+    
+    for i, category in enumerate(categories):
+        if i == 0:
+            category_data = group1_data
+        else:
+            category_data = group2_data
+            
+        plot_data.append({
+            'category': str(category),
+            'values': [float(x) for x in category_data],
+            'count': int(len(category_data)),
+            'mean': float(np.mean(category_data)),
+            'median': float(np.median(category_data)),
+            'std': float(np.std(category_data)),
+            'variance': float(np.var(category_data, ddof=1)),
+            'min': float(np.min(category_data)),
+            'max': float(np.max(category_data)),
+            'q25': float(np.percentile(category_data, 25)),
+            'q75': float(np.percentile(category_data, 75))
+        })
+
+    # Prepare response with localized labels
+    test_name = "Welch's T-Test for Equality of Means" if language == 'en' else 'টি-টেস্ট (মানে সমতা)'
+    
+    response_data = {
+        'success': True,
+        'test': test_name,
+        'language': language,
+        'statistic': float(t_stat),
+        'p_value': float(p_value),
+        'degrees_of_freedom': float(welch_df),
+        'n_groups': int(len(categories)),
+        'total_observations': int(len(work)),
+        'means': {
+            str(categories[0]): float(np.mean(group1_data)),
+            str(categories[1]): float(np.mean(group2_data))
+        },
+        'variances': {
+            str(categories[0]): float(np.var(group1_data, ddof=1)),
+            str(categories[1]): float(np.var(group2_data, ddof=1))
+        },
+        'column_names': {
+            'group': str(col_group),
+            'value': str(col_value)
+        },
+        'plot_data': plot_data,
+        'metadata': {
+            'categories': [str(c) for c in categories],
+            'significant': bool(p_value < 0.05),
+            'alpha': 0.05,
+            'test_type': 't_test'
+        }
+    }
+    return JsonResponse(response_data)
+
+
+def process_fzt_visualization(request, df, col_group, col_value, user_id):
+    """
+    Returns ALL THREE test results + combined visualization data
+    """
+    try:
+        # Extract language preference
+        language = request.POST.get('language', 'en').lower()
+        if language not in ('en', 'bn'):
+            language = 'en'
+
+        # Extract plot parameters for histogram and KDE
+        histogram_bins = request.POST.get('histogram_bins', 'auto')
+        kde_bandwidth = request.POST.get('kde_bandwidth', None)
+        
+        # Parse histogram bins
+        if histogram_bins != 'auto' and histogram_bins != '':
+            try:
+                histogram_bins = int(histogram_bins)
+                if histogram_bins <= 0:
+                    histogram_bins = 'auto'
+            except (ValueError, TypeError):
+                histogram_bins = 'auto'
+        
+        # Parse KDE bandwidth
+        if kde_bandwidth and kde_bandwidth not in ['auto', '']:
+            try:
+                kde_bandwidth = float(kde_bandwidth)
+                if kde_bandwidth <= 0:
+                    kde_bandwidth = None
+            except (ValueError, TypeError):
+                kde_bandwidth = None
+
+        # Prepare working dataset
+        work = df[[col_group, col_value]].copy()
+        work = work.dropna(subset=[col_group, col_value])
+        
+        # Ensure grouping column is categorical and value is numeric
+        if not pd.api.types.is_categorical_dtype(work[col_group]):
+            work[col_group] = work[col_group].astype('category')
+            
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+            work = work.dropna(subset=[col_value])
+
+        categories = list(work[col_group].cat.categories)
+        
+        if len(categories) != 2:
+            return JsonResponse({
+                'success': False, 
+                'error': 'F/Z/T analysis requires exactly 2 groups.'
+            })
+
+        # Prepare groups
+        group1_data = work.loc[work[col_group] == categories[0], col_value].values
+        group2_data = work.loc[work[col_group] == categories[1], col_value].values
+
+        # Perform all three tests using existing logic
+        # F-Test
+        var1 = np.var(group1_data, ddof=1)
+        var2 = np.var(group2_data, ddof=1)
+        if var1 >= var2:
+            F_stat = var1 / var2
+            dfn = len(group1_data) - 1
+            dfd = len(group2_data) - 1
+        else:
+            F_stat = var2 / var1
+            dfn = len(group2_data) - 1
+            dfd = len(group1_data) - 1
+        pF = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
+
+        # Z-Test
+        from statsmodels.stats.weightstats import ztest
+        z_stat, pZ = ztest(group1_data, group2_data)
+
+        # T-Test
+        t_stat, pT = stats.ttest_ind(group1_data, group2_data, equal_var=False)
+        v1 = np.var(group1_data, ddof=1)
+        v2 = np.var(group2_data, ddof=1)
+        n1, n2 = len(group1_data), len(group2_data)
+        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+
+        # Prepare plot data for each group (similar to distribution plot)
+        plot_data = []
+        for i, category in enumerate(categories):
+            category_data = group1_data if i == 0 else group2_data
+            plot_data.append({
+                'category': str(category),
+                'values': [float(x) for x in category_data],
+                'count': int(len(category_data)),
+                'mean': float(np.mean(category_data)),
+                'median': float(np.median(category_data)),
+                'std': float(np.std(category_data)),
+                'variance': float(np.var(category_data, ddof=1)),
+                'min': float(np.min(category_data)),
+                'max': float(np.max(category_data)),
+                'q25': float(np.percentile(category_data, 25)),
+                'q75': float(np.percentile(category_data, 75))
+            })
+
+        # Generate distribution plot data for each group (like EDA distribution)
+        distribution_data = {}
+        
+        for i, category in enumerate(categories):
+            category_data = group1_data if i == 0 else group2_data
+            
+            # Generate histogram data
+            hist_counts, bin_edges = np.histogram(category_data, bins=histogram_bins)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+            bin_widths = np.diff(bin_edges)
+            
+            histogram_bins_data = []
+            for j in range(len(hist_counts)):
+                histogram_bins_data.append({
+                    'x': float(bin_centers[j]),
+                    'y': int(hist_counts[j]),
+                    'x0': float(bin_edges[j]),
+                    'x1': float(bin_edges[j + 1]),
+                    'width': float(bin_widths[j]),
+                    'count': int(hist_counts[j])
+                })
+
+            hist_data = {
+                'bins': histogram_bins_data,
+                'total_count': int(np.sum(hist_counts)),
+                'bin_count': len(hist_counts),
+                'range': [float(bin_edges[0]), float(bin_edges[-1])],
+                'bins_used': histogram_bins if isinstance(histogram_bins, int) else 'auto'
+            }
+
+            # Generate KDE data
+            kde = stats.gaussian_kde(category_data)
+            
+            # Set custom bandwidth if provided
+            if kde_bandwidth is not None:
+                kde.set_bandwidth(kde_bandwidth)
+            
+            data_min = np.min(category_data)
+            data_max = np.max(category_data)
+            data_range = data_max - data_min
+            x_points = np.linspace(data_min - 0.1 * data_range, data_max + 0.1 * data_range, 200)
+            y_points = kde(x_points)
+            
+            # Normalize to make it comparable to histogram (like seaborn does)
+            y_points_normalized = y_points * len(category_data) * (x_points[1] - x_points[0])
+            
+            kde_curve = []
+            for j in range(len(x_points)):
+                kde_curve.append({
+                    'x': float(x_points[j]),
+                    'y': float(y_points_normalized[j]),
+                    'density': float(y_points[j])
+                })
+
+            kde_data = {
+                'curve': kde_curve,
+                'bandwidth': float(kde.factor),
+                'range': [float(x_points[0]), float(x_points[-1])],
+                'peak_density': float(np.max(y_points))
+            }
+
+            # Store distribution data for this group
+            distribution_data[f'group{i+1}'] = {
+                'histogram': hist_data,
+                'kde': kde_data,
+                'category': str(category)
+            }
+
+        return JsonResponse({
+            'success': True,
+            'test': 'F/Z/T Combined Analysis',
+            'language': language,
+            'f_test': {
+                'statistic': float(F_stat),
+                'p_value': float(pF),
+                'degrees_of_freedom': f"{dfn}, {dfd}"
+            },
+            'z_test': {
+                'statistic': float(z_stat),
+                'p_value': float(pZ)
+            },
+            't_test': {
+                'statistic': float(t_stat),
+                'p_value': float(pT),
+                'degrees_of_freedom': float(welch_df)
+            },
+            'plot_data': plot_data,
+            'distribution_data': distribution_data,  # Changed from combined_histogram_data
+            'column_names': {
+                'group': str(col_group),
+                'value': str(col_value)
+            },
+            'n_groups': int(len(categories)),
+            'total_observations': int(len(work)),
+            'metadata': {
+                'categories': [str(c) for c in categories],
+                'test_type': 'fzt_visualization',
+                'has_all_tests': True,
+                'histogram_bins_used': histogram_bins if isinstance(histogram_bins, int) else 'auto'
+            }
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            'success': False, 
+            'error': f'Error in F/Z/T analysis: {str(e)}'
+        })
+
+
 
 
 def process_pearson_test(request, df, selected_columns, user_id):
@@ -1596,731 +4000,6 @@ def process_spearman_test(request, df, selected_columns, user_id):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def process_shapiro_test(request, df, col1, user_id):
-    
-    from scipy.stats import shapiro, norm
-    import re
-
-    try:
-        # --- Request parameters ---
-        language = request.POST.get('language', 'en')
-        img_format = request.POST.get('format', 'png')
-        use_default = request.POST.get('use_default', 'true') == 'true'
-
-        # --- Translator & digit mapper ---
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
-
-        if not pd.api.types.is_numeric_dtype(df[col1]):
-            return JsonResponse({
-                'success': False,
-                'error': translate("Please select a numerical column for Shapiro-Wilk test.")
-            })
-
-        # --- Font and Paths ---
-        media_root = settings.MEDIA_ROOT
-        plots_dir = os.path.join(media_root, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-
-        # --- Plot customization ---
-        if use_default:
-            label_font_size, tick_font_size = 36, 16
-            img_quality = 90
-            width, height = 800, 600
-            bins = 30
-            bar_color = 'steelblue'
-            line_color = 'red'
-            line_style = '-'
-        else:
-            label_font_size = int(request.POST.get('label_font_size', 36))
-            tick_font_size = int(request.POST.get('tick_font_size', 16))
-            img_quality = int(request.POST.get('image_quality', 90))
-            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
-            bins = int(request.POST.get('bins', 30))
-            bar_color = request.POST.get('bar_color', 'steelblue')
-            line_color = request.POST.get('line_color', 'red')
-            style_input = request.POST.get('line_style', 'solid')
-            line_style = {'solid': '-', 'dashed': '--', 'dotted': ':'}.get(style_input, '-')
-
-        if language == 'bn' and os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            font_name = fm.FontProperties(fname=font_path).get_name()
-            plt.rcParams['font.family'] = font_name
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-        else:
-            tick_prop = fm.FontProperties(size=tick_font_size)
-
-        label_font = ImageFont.truetype(font_path, size=label_font_size)
-
-        # --- Perform test ---
-        data = df[col1].dropna()
-        stat, p_value = shapiro(data)
-        p_str = map_digits(f"{p_value:.4f}")
-        interpretation = translate("Likely Normal (p > 0.05)") if p_value > 0.05 else translate("Likely Not Normal (p ≤ 0.05)")
-
-        # --- Plot ---
-        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.histplot(data, kde=True, bins=bins, stat='density', color=bar_color, ax=ax)
-        x_vals = np.linspace(data.mean() - 4 * data.std(), data.mean() + 4 * data.std(), 200)
-        ax.plot(x_vals, norm.pdf(x_vals, data.mean(), data.std()), color=line_color, linestyle=line_style)
-
-        ax.set_title('')
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        ax.set_xticklabels([map_digits(f"{val:.0f}") for val in ax.get_xticks()], fontproperties=tick_prop)
-        ax.set_yticklabels([map_digits(f"{val:.2f}") for val in ax.get_yticks()], fontproperties=tick_prop)
-        plt.tight_layout(pad=0)
-
-        # --- Save base plot ---
-        safe_col_name = re.sub(r'[\\/*?:"<>|]', "_", col1)
-        base_name = f"shapiro_{safe_col_name.replace(' ', '_')}"
-        base_path = os.path.join(plots_dir, base_name + '.png')
-        fig.savefig(base_path, dpi=300)
-        plt.close(fig)
-
-        # --- PIL overlay ---
-        img = Image.open(base_path).convert("RGB")
-        bw, bh = img.size
-        pad = label_font_size // 2
-        xlabel = translate(col1)
-        ylabel = translate("Density")
-        title = translate(f"Normality Check of {col1}")
-
-        x_w, x_h = label_font.getbbox(xlabel)[2:]
-        y_w, y_h = label_font.getbbox(ylabel)[2:]
-        t_w, t_h = label_font.getbbox(title)[2:]
-
-        canvas = Image.new('RGB', (bw + y_h + pad * 2, bh + x_h + pad * 2 + t_h + pad), 'white')
-        canvas.paste(img, (y_h + pad, pad + t_h + pad))
-        draw = ImageDraw.Draw(canvas)
-
-        # Title
-        draw.text(((canvas.width - t_w) // 2, pad), title, font=label_font, fill='black')
-        # X-label
-        draw.text(((canvas.width - x_w) // 2, pad + t_h + pad + bh), xlabel, font=label_font, fill='black')
-        # Y-label rotated
-        y_img = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
-        ImageDraw.Draw(y_img).text((0, 0), ylabel, font=label_font, fill='black')
-        y_rot = y_img.rotate(90, expand=True)
-        canvas.paste(y_rot, ((y_h - y_rot.width) // 2, pad + t_h + pad + (bh - y_rot.height) // 2), y_rot)
-
-        final_path = os.path.join(plots_dir, base_name + '.' + img_format)
-        canvas.save(final_path, format=img_format.upper(), quality=img_quality)
-
-        return JsonResponse({
-            'success': True,
-            'test': translate("Shapiro-Wilk Test"),
-            'statistic': float(stat),
-            'p_value': float(p_value),
-            'interpretation': interpretation,
-            'image_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_linear_regression_test(request, df, col1, col2, user_id):
-    
-    
-    from sklearn.linear_model import LinearRegression
-    from sklearn.metrics import r2_score, mean_squared_error
-    
-   
-
-    try:
-        # Handle options from request
-        lang = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        use_default = request.POST.get('use_default', 'true') == 'true'
-
-        # Plot settings
-        if use_default:
-            axis_label_size = 36
-            tick_label_size = 16
-            legend_font_size = 16
-            line_color = 'red'
-            line_style = '-'
-            image_quality = 90
-            dot_width = 5
-            line_width = 2
-            dot_color = 'blue'
-        else:
-            axis_label_size = int(request.POST.get('label_font_size', 36))
-            tick_label_size = int(request.POST.get('tick_label_size', 16))
-            legend_font_size = int(request.POST.get('legend_font_size', 16))
-            line_color = request.POST.get('line_color', 'red')
-            line_style = request.POST.get('line_style', '-')
-            image_quality = int(request.POST.get('image_quality', 90))
-            dot_width = int(request.POST.get('dot_width', 5))
-            line_width = int(request.POST.get('line_width', 2))
-            dot_color = request.POST.get('dot_color', 'blue')
-
-        # Setup font and translator
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-
-        def translate(text):
-            return translator.translate(text, dest='bn').text if lang == 'bn' else text
-
-        def map_digits(s):
-            return s.translate(digit_map_bn) if lang == 'bn' else s
-
-        # Font config
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_label_size) if lang == 'bn' else fm.FontProperties(size=tick_label_size)
-            title_font = ImageFont.truetype(font_path, size=axis_label_size)
-            xlabel_font = ImageFont.truetype(font_path, size=axis_label_size)
-            ylabel_font = ImageFont.truetype(font_path, size=axis_label_size)
-            legend_font = ImageFont.truetype(font_path, size=legend_font_size)
-        else:
-            tick_prop = fm.FontProperties(size=tick_label_size)
-            title_font = xlabel_font = ylabel_font = legend_font = ImageFont.load_default()
-
-        # Linear Regression
-        X = df[[col1]]
-        y = df[col2]
-        model = LinearRegression().fit(X, y)
-        y_pred = model.predict(X)
-
-        # Metrics
-        intercept = model.intercept_
-        coef = model.coef_[0]
-        r2 = r2_score(y, y_pred)
-        mse = mean_squared_error(y, y_pred)
-
-        # Round and localize
-        def format_metric(value, decimals):
-            return f"{value:.{decimals}f}" if lang == 'en' else map_digits(f"{value:.{decimals}f}")
-
-        result = {
-            'test': 'Linear Regression' if lang == 'en' else 'লিনিয়ার রিগ্রেশন',
-            'intercept': format_metric(intercept, 2),
-            'coefficient': format_metric(coef, 2),
-            'r2_score': format_metric(r2, 3),
-            'mse': format_metric(mse, 3),
-            'success': True
-        }
-
-        # Plot
-        fig, ax = plt.subplots(figsize=(8, 6), dpi=100)
-        ax.scatter(X, y, s=dot_width, color=dot_color, alpha=0.7)
-        ax.plot(X, y_pred, color=line_color, linestyle=line_style, linewidth=line_width)
-        ax.set_xticks(ax.get_xticks())
-        ax.set_xticklabels([map_digits(f"{t:.0f}") for t in ax.get_xticks()], fontproperties=tick_prop)
-        ax.set_yticks(ax.get_yticks())
-        ax.set_yticklabels([map_digits(f"{t:.2f}") for t in ax.get_yticks()], fontproperties=tick_prop)
-        plt.tight_layout(pad=0)
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_path = os.path.join(plots_dir, f'regression_base.{file_format}')
-        fig.savefig(base_path, format=file_format.upper())
-        plt.close(fig)
-
-        # PIL overlay
-        canvas = Image.open(base_path).convert('RGB')
-        bw, bh = canvas.size
-        pad = 50
-        title_txt = translate(f"Linear Regression: {col2} vs {col1}")
-        xlabel_txt = translate(col1)
-        ylabel_txt = translate(col2)
-        legend_items = [
-            (translate('Data Points'), 'dot', dot_color),
-            (translate('Regression Line'), 'line', line_color)
-        ]
-
-        draw = ImageDraw.Draw(canvas)
-        _, _, tw, th = draw.textbbox((0, 0), title_txt, font=title_font)
-        _, _, xw, xh = draw.textbbox((0, 0), xlabel_txt, font=xlabel_font)
-        _, _, yw, yh = draw.textbbox((0, 0), ylabel_txt, font=ylabel_font)
-
-        left_margin = yw + pad
-        legend_text_max = max(draw.textlength(item[0], font=legend_font) for item in legend_items)
-        legend_height = (legend_font_size + 10) * len(legend_items)
-        legend_width = 20 + 10 + legend_text_max
-        right_margin = legend_width + pad
-        top_margin = th + pad
-        bottom_margin = xh + pad
-
-        W = left_margin + bw + right_margin
-        H = max(top_margin + bh + bottom_margin, top_margin + legend_height + pad)
-        new_canvas = Image.new('RGB', (int(W), int(H)), 'white')
-        new_canvas.paste(canvas, (left_margin, top_margin))
-
-        draw = ImageDraw.Draw(new_canvas)
-        draw.text(((W - tw) // 2, 0), title_txt, font=title_font, fill='black')
-        draw.text((left_margin + (bw - xw) // 2, top_margin + bh + (bottom_margin - xh) // 2), xlabel_txt, font=xlabel_font, fill='black')
-
-        Yimg = Image.new('RGBA', (yw, yh), (255, 255, 255, 0))
-        Ydraw = ImageDraw.Draw(Yimg)
-        Ydraw.text((0, 0), ylabel_txt, font=ylabel_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        y_x = (left_margin - Yrot.width) // 2
-        y_y = top_margin + (bh - Yrot.height) // 2
-        new_canvas.paste(Yrot, (y_x, y_y), Yrot)
-
-        lx = left_margin + bw + pad
-        ly = top_margin
-        for label, style, color in legend_items:
-            if style == 'dot':
-                draw.ellipse((lx, ly + 5, lx + dot_width, ly + 5 + dot_width), fill=color)
-            else:
-                y_mid = ly + legend_font_size // 2
-                draw.line((lx, y_mid, lx + 20, y_mid), fill=color, width=line_width)
-            draw.text((lx + 30, ly), label, font=legend_font, fill='black')
-            ly += legend_font_size + 10
-
-        final_path = os.path.join(plots_dir, f'regression_plot.{file_format}')
-        new_canvas.save(final_path, format=file_format.upper(), quality=image_quality)
-        result['image_paths'] = [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'regression_plot.{file_format}')]
-
-        return JsonResponse(result)
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_ks_test(request, df, col, user_id):
-    
-    from scipy.stats import kstest, norm    
-    import re
-
-    try:
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        image_quality = int(request.POST.get('image_quality', 90))
-        label_font_size = int(request.POST.get('label_font_size', 36))
-        tick_font_size = int(request.POST.get('tick_font_size', 16))
-        width = int(request.POST.get('image_width', 800))
-        height = int(request.POST.get('image_height', 600))
-        ecdf_color = request.POST.get('ecdf_color', 'steelblue')
-        cdf_color = request.POST.get('cdf_color', 'red')
-        line_style = request.POST.get('line_style', 'solid')
-        style_map = {'solid': '-', 'dashed': '--', 'dotted': ':'}
-        line_style = style_map.get(line_style, '-')
-
-        if not pd.api.types.is_numeric_dtype(df[col]):
-            return JsonResponse({
-                'success': False,
-                'error': "Please pick a numerical column for Kolmogorov-Smirnov test."
-            })
-
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-            label_font = ImageFont.truetype(font_path, size=label_font_size)
-        else:
-            tick_prop = fm.FontProperties(size=tick_font_size)
-            label_font = ImageFont.load_default()
-
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
-
-        data = df[col].dropna()
-        mean_, std_ = np.mean(data), np.std(data, ddof=0)
-        stat, p_value = kstest(data, 'norm', args=(mean_, std_))
-        p_str = map_digits(f"{p_value:.4f}")
-        interpretation = translate("Consistent with Normal (p > 0.05)") if p_value > 0.05 else translate("Not Normal (p ≤ 0.05)")
-
-        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.ecdfplot(data=data, ax=ax, marker='.', linestyle=line_style, color=ecdf_color, linewidth=1.5)
-        x_vals = np.linspace(data.min(), data.max(), 200)
-        ax.plot(x_vals, norm.cdf(x_vals, mean_, std_), color=cdf_color, linestyle=line_style, linewidth=2)
-
-        ax.set_title('')
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        if ax.get_legend():
-            ax.get_legend().remove()
-
-        ax.set_xticklabels([
-            map_digits(f"{val:.0f}") for val in ax.get_xticks()
-        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_xticks()], fontproperties=tick_prop)
-
-        ax.set_yticklabels([
-            map_digits(f"{val:.2f}") for val in ax.get_yticks()
-        ] if language == 'bn' else [f"{val:.2f}" for val in ax.get_yticks()], fontproperties=tick_prop)
-
-        plt.tight_layout(pad=0)
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_path = os.path.join(plots_dir, f'ks_base.{file_format}')
-        safe_col_name = re.sub(r'[\\/*?:"<>|]', "_", col)
-        final_path = os.path.join(plots_dir, f'ks_{safe_col_name.replace(" ", "_")}.{file_format}')
-        fig.savefig(base_path, dpi=fig.dpi, format=file_format.upper())
-        plt.close(fig)
-
-        canvas_img = Image.open(base_path).convert('RGB')
-        bw, bh = canvas_img.size
-        pad = label_font_size // 2
-        xlabel = translate(col)
-        ylabel = translate('Cumulative Probability')
-        x_w, x_h = label_font.getbbox(xlabel)[2:4]
-        y_w, y_h = label_font.getbbox(ylabel)[2:4]
-
-        left = y_h + pad
-        top = pad
-        right = pad
-        bottom = x_h + pad
-        W = bw + left + right
-        H = bh + top + bottom
-
-        canvas = Image.new('RGB', (W, H), 'white')
-        canvas.paste(canvas_img, (left, top))
-        draw = ImageDraw.Draw(canvas)
-
-        def center_h(text, font, width):
-            return (width - int(draw.textlength(text, font=font))) // 2
-
-        xx = center_h(xlabel, label_font, W)
-        draw.text((xx, top + bh + (bottom - x_h) // 2), xlabel, font=label_font, fill='black')
-
-        Yimg = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
-        Ydraw = ImageDraw.Draw(Yimg)
-        Ydraw.text((0, 0), ylabel, font=label_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        canvas.paste(Yrot, ((left - Yrot.width) // 2, top + (bh - Yrot.height) // 2), Yrot)
-
-        canvas.save(final_path, format=file_format.upper(), quality=image_quality)
-
-        return JsonResponse({
-            'success': True,
-            'test': translate('Kolmogorov–Smirnov Test'),
-            'p_value': p_str,
-            'interpretation': interpretation,
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
-            'columns': [col]
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_anderson_darling_test(request, df, col, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from scipy.stats import anderson, norm
-    from PIL import Image, ImageDraw, ImageFont
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
-    import re
-
-    try:
-        # Get settings
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        image_quality = int(request.POST.get('image_quality', 90))
-        label_font_size = int(request.POST.get('label_font_size', 36))
-        tick_font_size = int(request.POST.get('tick_font_size', 16))
-        width = int(request.POST.get('image_width', 800))
-        height = int(request.POST.get('image_height', 600))
-        scatter_color = request.POST.get('scatter_color', 'steelblue')
-        line_color = request.POST.get('line_color', 'red')
-        style_input = request.POST.get('line_style', 'solid')
-        line_style = {'solid': '-', 'dashed': '--', 'dotted': ':'}.get(style_input, '-')
-
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-            label_font = ImageFont.truetype(font_path, size=label_font_size)
-        else:
-            tick_prop = fm.FontProperties(size=tick_font_size)
-            label_font = ImageFont.load_default()
-
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
-
-        # Anderson–Darling test
-        data = df[col].dropna().to_numpy()
-        result = anderson(data, dist='norm')
-        stat = result.statistic
-        try:
-            crit_idx = list(result.significance_level).index(5.0)
-            crit_value = result.critical_values[crit_idx]
-            sig_level = result.significance_level[crit_idx]
-        except ValueError:
-            crit_value = result.critical_values[0]
-            sig_level = result.significance_level[0]
-
-        interpretation = (
-            translate(f"Likely Normal (A² = {stat:.3f} < {crit_value:.3f} at {sig_level}% )")
-            if stat < crit_value else
-            translate(f"Not Normal (A² = {stat:.3f} ≥ {crit_value:.3f} at {sig_level}% )")
-        )
-
-        stat_str = map_digits(f"{stat:.3f}")
-
-        # Q–Q plot
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        n = len(data)
-        prob = (np.arange(1, n+1) - 0.5) / n
-        theor_q = norm.ppf(prob, loc=np.mean(data), scale=np.std(data, ddof=0))
-        sample_q = np.sort(data)
-        ax.scatter(theor_q, sample_q, color=scatter_color, s=30)
-        lims = [min(theor_q.min(), sample_q.min()), max(theor_q.max(), sample_q.max())]
-        ax.plot(lims, lims, color=line_color, linestyle=line_style, linewidth=2)
-
-        ax.set_title('')
-        ax.set_xlabel('')
-        ax.set_ylabel('')
-        if ax.get_legend():
-            ax.get_legend().remove()
-
-        ax.set_xticklabels([
-            map_digits(f"{val:.0f}") for val in ax.get_xticks()
-        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_xticks()], fontproperties=tick_prop)
-
-        ax.set_yticklabels([
-            map_digits(f"{val:.0f}") for val in ax.get_yticks()
-        ] if language == 'bn' else [f"{val:.0f}" for val in ax.get_yticks()], fontproperties=tick_prop)
-
-        plt.tight_layout(pad=0)
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-
-        base_path = os.path.join(plots_dir, f'ad_base.{file_format}')
-        col = re.sub(r'[\\/*?:"<>|]', "_", col)
-        final_path = os.path.join(plots_dir, f'ad_{col.replace(" ", "_")}.{file_format}')
-        fig.savefig(base_path, format=file_format.upper(), dpi=fig.dpi)
-        plt.close(fig)
-
-        # Add axis labels with PIL
-        canvas_img = Image.open(base_path).convert('RGB')
-        bw, bh = canvas_img.size
-        pad = label_font_size // 2
-
-        xlabel = translate('Theoretical Quantiles')
-        ylabel = translate('Sample Quantiles')
-        x_w, x_h = label_font.getbbox(xlabel)[2:4]
-        y_w, y_h = label_font.getbbox(ylabel)[2:4]
-
-        left = y_h + pad
-        top = pad
-        right = pad
-        bottom = x_h + pad
-        W = bw + left + right
-        H = bh + top + bottom
-
-        canvas = Image.new('RGB', (W, H), 'white')
-        canvas.paste(canvas_img, (left, top))
-        draw = ImageDraw.Draw(canvas)
-
-        def center_h(text, font, width):
-            return (width - int(draw.textlength(text, font=font))) // 2
-
-        xx = center_h(xlabel, label_font, W)
-        draw.text((xx, top + bh + (bottom - x_h) // 2), xlabel, font=label_font, fill='black')
-
-        Yimg = Image.new('RGBA', (y_w, y_h), (255, 255, 255, 0))
-        Ydraw = ImageDraw.Draw(Yimg)
-        Ydraw.text((0, 0), ylabel, font=label_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-        canvas.paste(Yrot, ((left - Yrot.width) // 2, top + (bh - Yrot.height) // 2), Yrot)
-
-        canvas.save(final_path, format=file_format.upper(), quality=image_quality)
-
-        return JsonResponse({
-            'success': True,
-            'test': translate('Anderson–Darling Test'),
-            'a_stat': stat_str,
-            'interpretation': interpretation,
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
-            'columns': [col]
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_fzt_test(request, df, col_group, col_value, user_id):
-    import os
-    import numpy as np
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import matplotlib.font_manager as fm
-    from PIL import Image, ImageDraw, ImageFont
-    from scipy import stats
-    from scipy.stats import f as f_dist, t as t_dist, norm as norm_dist
-    from statsmodels.stats.weightstats import ztest
-    from sklearn.preprocessing import OrdinalEncoder
-    from django.conf import settings
-    from django.http import JsonResponse
-    from googletrans import Translator
-
-    try:
-        # === Language and Formatting ===
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf') else file_format
-
-        # === Font setup ===
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        digit_map_bn = str.maketrans('0123456789','০১২৩৪৫৬৭৮৯')
-        translator = Translator()
-
-        def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
-
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
-
-        # === Custom Style Settings ===
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        if not use_default:
-            bins = int(request.POST.get('bins', 30))
-            dist_lw = int(request.POST.get('line_width', 2))
-            dist_ls = request.POST.get('line_style', 'solid')
-            f_curve_color = request.POST.get('f_curve_color', 'blue')
-            f_line_color = request.POST.get('f_line_color', 'red')
-            z_curve_color = request.POST.get('z_curve_color', 'green')
-            z_line_color = request.POST.get('z_line_color', 'orange')
-            t_curve_color = request.POST.get('t_curve_color', 'purple')
-            t_line_color = request.POST.get('t_line_color', 'brown')
-            hist1_color = request.POST.get('hist1_color', 'red')
-            hist2_color = request.POST.get('hist2_color', 'orange')
-            image_dpi = int(request.POST.get('image_quality', 100))
-            tick_font_size = int(request.POST.get('tick_font_size', 14))
-            label_font_size = int(request.POST.get('label_font_size', 24))
-            fig_w, fig_h = 6, 4
-        else:
-            bins, dist_lw, dist_ls = 30, 2, 'solid'
-            f_curve_color, f_line_color = 'blue', 'red'
-            z_curve_color, z_line_color = 'gray', 'green'
-            t_curve_color, t_line_color = 'gray', 'purple'
-            hist1_color, hist2_color = 'red', 'orange'
-            image_dpi, tick_font_size, label_font_size = 100, 14, 24
-            fig_w, fig_h = 6, 4
-
-        # === Font configuration ===
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            pil_font = ImageFont.truetype(font_path, label_font_size)
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-        else:
-            pil_font = ImageFont.load_default()
-            tick_prop = fm.FontProperties(size=tick_font_size)
-
-        # === Preprocessing ===
-        cats = df.select_dtypes(include=['object']).columns
-        if len(cats) > 0:
-            df[cats] = OrdinalEncoder().fit_transform(df[cats])
-
-        groups = df[col_group].dropna().unique().tolist()
-        data = {g: df[df[col_group] == g][col_value].dropna().values for g in groups}
-        if len(groups) != 2:
-            return JsonResponse({'success': False, 'error': translate("You must select exactly 2 groups.")})
-
-        a1, a2 = data[groups[0]], data[groups[1]]
-        n1, n2 = len(a1), len(a2)
-        v1, v2 = a1.var(ddof=1), a2.var(ddof=1)
-
-        # === Statistics ===
-        F = v1/v2
-        dfn, dfd = n1-1, n2-1
-        pF = 2 * min(stats.f.cdf(F, dfn, dfd), 1 - stats.f.cdf(F, dfn, dfd))
-        z_stat, pZ = ztest(a1, a2)
-        t_stat, pT = stats.ttest_ind(a1, a2, equal_var=False)
-        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
-
-        stats_table = f"""
-        <table class='table table-bordered'>
-            <thead><tr><th>Test</th><th>Stat</th><th>p-value</th><th>df</th></tr></thead>
-            <tbody>
-                <tr><td>F-test</td><td>{F:.4f}</td><td>{pF:.4g}</td><td>{dfn}, {dfd}</td></tr>
-                <tr><td>Z-test</td><td>{z_stat:.4f}</td><td>{pZ:.4g}</td><td>-</td></tr>
-                <tr><td>Welch T-test</td><td>{t_stat:.4f}</td><td>{pT:.4g}</td><td>{welch_df:.1f}</td></tr>
-            </tbody>
-        </table>"""
-
-        def prep_ax():
-            ax = plt.gca()
-            ax.set_xlabel(ax.get_xlabel(), fontsize=label_font_size)
-            ax.set_ylabel(ax.get_ylabel(), fontsize=label_font_size)
-            ax.set_xticklabels([map_digits(f"{x:.2f}") for x in ax.get_xticks()], fontproperties=tick_prop)
-            ax.set_yticklabels([map_digits(f"{y:.2f}") for y in ax.get_yticks()], fontproperties=tick_prop)
-            ax.grid(True)
-
-        plots = []
-        plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plot_dir, exist_ok=True)
-
-        def save_plot(filename, title, xlabel, ylabel):
-            plt.title(translate(title), fontsize=label_font_size)
-            plt.xlabel(translate(xlabel), fontsize=label_font_size)
-            plt.ylabel(translate(ylabel), fontsize=label_font_size)
-            prep_ax()
-            full = os.path.join(plot_dir, filename + '.' + file_format)
-            plt.savefig(full, dpi=image_dpi, bbox_inches='tight')
-            plt.close()
-            plots.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', filename + '.' + file_format))
-
-        plt.figure(figsize=(fig_w, fig_h)) 
-        x = np.linspace(0, max(f_dist.ppf(0.99, dfn, dfd), F*2), 300)
-        plt.plot(x, f_dist.pdf(x, dfn, dfd), linewidth=dist_lw, linestyle=dist_ls, color=f_curve_color)
-        plt.axvline(F, color=f_line_color, linestyle='--', linewidth=dist_lw)
-        save_plot("f_dist", "F-Distribution vs Observed F", "F value", "Density")
-
-        plt.figure(figsize=(fig_w, fig_h))
-        x_z = np.linspace(norm_dist.ppf(0.001), norm_dist.ppf(0.999), 300)
-        plt.plot(x_z, norm_dist.pdf(x_z), linewidth=dist_lw, linestyle=dist_ls, color=z_curve_color)
-        plt.axvline(z_stat, color=z_line_color, linestyle='--', linewidth=dist_lw)
-        save_plot("z_dist", "Standard Normal vs Observed Z", "Z value", "Density")
-
-        plt.figure(figsize=(fig_w, fig_h))
-        x_t = np.linspace(t_dist.ppf(0.001, welch_df), t_dist.ppf(0.999, welch_df), 300)
-        plt.plot(x_t, t_dist.pdf(x_t, welch_df), linewidth=dist_lw, linestyle=dist_ls, color=t_curve_color)
-        plt.axvline(t_stat, color=t_line_color, linestyle='--', linewidth=dist_lw)
-        save_plot("t_dist", "T-Distribution vs Observed T", "T value", "Density")
-
-        plt.figure(figsize=(fig_w, fig_h))
-        lbl1 = map_digits(translate(str(groups[0])))
-        lbl2 = map_digits(translate(str(groups[1])))
-        sns.histplot(a1, bins=bins, kde=True, stat='density', label=lbl1, color=hist1_color, alpha=0.5)
-        sns.histplot(a2, bins=bins, kde=True, stat='density', label=lbl2, color=hist2_color, alpha=0.5)
-        plt.legend(prop=tick_prop)
-        save_plot("hist_kde", "Histogram + KDE", col_value, "Density")
-
-        return JsonResponse({
-            'success': True,
-            'test': translate("F/Z/T Tests"),
-            'table_html': stats_table,
-            'image_paths': plots,
-            'columns': [col_group, col_value],
-            'statistic': {
-                'F': round(F, 6),
-                'F_p': round(pF, 6),
-                'Z': round(z_stat, 6),
-                'Z_p': round(pZ, 6),
-                'T': round(t_stat, 6),
-                'T_p': round(pT, 6),
-                'T_df': round(welch_df, 1),
-            },
-            'p_value': min(pF, pZ, pT),
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 def process_cross_tabulation(request, df, selected_columns, user_id):
     from django.http import JsonResponse
@@ -2500,520 +4179,7 @@ def create_plot(fig, ax, title, xlabel, ylabel, base, final):
             # Format tick labels first
             xt = [format_tick(x) for x in ax.get_xticks()]
             yt = [format_tick]
-def process_eda_distribution(request, df, col, user_id):
-    import os
-    import numpy as np
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    import matplotlib
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
-    from django.conf import settings
-    from django.http import JsonResponse
 
-    try:
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf','tiff') else file_format
-        pil_format = {'png':'PNG','jpg':'JPEG','jpeg':'JPEG','pdf':'PDF','tiff':'TIFF'}[file_format]
-
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        digit_map = str.maketrans('0123456789','০১২৩৪৫৬৭৮৯')
-        translator = Translator() if language == 'bn' else None
-
-        def translate(text):
-            if language == 'bn' and translator is not None:
-                try:
-                    return translator.translate(text, dest='bn').text
-                except Exception:
-                    return text
-            return text
-
-        def map_digits(txt):
-            return txt.translate(digit_map) if language == 'bn' else txt
-
-        def format_tick(x):
-            s = f"{x:.4f}".rstrip('0').rstrip('.')
-            return map_digits(s)
-
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        if not use_default:
-            dpi = int(request.POST.get('image_quality', 300))
-            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
-            label_font_size = int(request.POST.get('label_font_size', 80))
-            caption_font_size = int(request.POST.get('caption_font_size', 80))
-            tick_font_size = int(request.POST.get('tick_font_size', 20))
-            hist_color = request.POST.get('hist_color', '#3b82f6')
-            kde_color = request.POST.get('kde_color', '#ef4444')
-            dist_color = request.POST.get('dist_color', '#06b6d4')
-            show_grid = request.POST.get('show_grid', 'true').lower() in ('true', '1', 'yes')
-        else:
-            dpi = 300
-            width, height = 1280, 720
-            label_font_size = 80
-            caption_font_size = 80
-            tick_font_size = 20
-            hist_color, kde_color, dist_color = '#3b82f6', '#ef4444', '#06b6d4'
-            show_grid = True
-
-        # Font setup for matplotlib
-        try:
-            if language == 'bn' and os.path.exists(font_path):
-                fm.fontManager.addfont(font_path)
-                bengali_font_name = fm.FontProperties(fname=font_path).get_name()
-                matplotlib.rcParams['font.family'] = bengali_font_name
-            else:
-                matplotlib.rcParams['font.family'] = 'DejaVu Sans'
-        except Exception as e:
-            print(f"[EDA Distribution] Matplotlib font setup warning: {e}")
-
-        # Font setup for PIL and ticks
-        def get_pil_font(size: int):
-            try:
-                if language == 'bn' and os.path.exists(font_path):
-                    return ImageFont.truetype(font_path, size=size)
-                djv_path = fm.findfont('DejaVu Sans', fallback_to_default=True)
-                if os.path.exists(djv_path):
-                    return ImageFont.truetype(djv_path, size=size)
-            except Exception:
-                pass
-            return ImageFont.load_default()
-
-        label_font = get_pil_font(label_font_size)
-        caption_font = get_pil_font(caption_font_size)
-        
-        tick_prop = fm.FontProperties(size=tick_font_size)
-        if language == 'bn' and os.path.exists(font_path):
-            tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-
-        if col not in df.columns or not np.issubdtype(df[col].dtype, np.number):
-            return JsonResponse({'success': False, 'error': translate('Selected column is not numeric.')})
-
-        def create_plot(fig, ax, title, xlabel, ylabel, base, final):
-            # Format tick labels
-            xt = [format_tick(x) for x in ax.get_xticks()]
-            yt = [format_tick(y) for y in ax.get_yticks()]
-            ax.set_xticklabels(xt, fontproperties=tick_prop)
-            ax.set_yticklabels(yt, fontproperties=tick_prop)
-            
-            # Remove matplotlib labels
-            ax.set_title('')
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-            
-            plt.tight_layout(pad=1)
-            fig.savefig(base, bbox_inches='tight', dpi=300, format='PNG')
-            plt.close(fig)
-
-            # Prepare strings
-            T = map_digits(translate(title))
-            X = map_digits(translate(xlabel))
-            Y = map_digits(translate(ylabel))
-
-            # Measure text with proper padding for descenders
-            tx0, ty0, tx1, ty1 = caption_font.getbbox(T)
-            th = ty1 - ty0
-            xx0, xy0, xx1, xy1 = label_font.getbbox(X)
-            xh = xy1 - xy0
-            yx0, yy0, yx1, yy1 = label_font.getbbox(Y)
-            yw, yh = yx1 - yx0, yy1 - yy0
-
-            # Padding (left must fit rotated Y label height)
-            pad = max(label_font_size // 2, 10)
-            lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
-
-            # Load base image
-            img = Image.open(base).convert('RGB')
-            bw, bh = img.size
-            
-            # Compose canvas
-            W, H = bw + lm + rm, bh + tm + bm
-            canvas = Image.new('RGB', (W, H), 'white')
-            canvas.paste(img, (lm, tm))
-            draw = ImageDraw.Draw(canvas)
-
-            # Helper for centering
-            def center_h(txt, fnt, total_w):
-                return (total_w - int(draw.textlength(txt, font=fnt))) // 2
-
-            # Title (top center)
-            tx = center_h(T, caption_font, W)
-            draw.text((tx, (tm - th) // 2), T, font=caption_font, fill='black')
-
-            # X-axis label (bottom center)
-            xx = center_h(X, label_font, W)
-            draw.text((xx, tm + bh + (bm - xh) // 2), X, font=label_font, fill='black')
-
-            # Y-axis label (rotated)
-            baseline_pad = int(label_font_size * 0.25)
-            Yimg = Image.new('RGBA', (yw, yh + baseline_pad), (255, 255, 255, 0))
-            d2 = ImageDraw.Draw(Yimg)
-            d2.text((0, baseline_pad // 2), Y, font=label_font, fill='black')
-            Yrot = Yimg.rotate(90, expand=True)
-            canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-
-            # Save final with high quality
-            canvas.save(final, format=pil_format, quality=100, dpi=(300, 300), optimize=True)
-            return final
-
-        plot_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plot_dir, exist_ok=True)
-        image_paths = []
-
-        # Histogram
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        ax.set_axisbelow(True)
-        if show_grid:
-            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-        sns.histplot(df[col], ax=ax, color=hist_color, edgecolor='white', linewidth=1.2, alpha=1.0)
-        hist_base = os.path.join(plot_dir, 'hist_base.png')
-        hist_path = os.path.join(plot_dir, f'histogram_{col}.{file_format}')
-        create_plot(fig, ax, f'Histogram of {col}', col, 'Count', hist_base, hist_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'histogram_{col}.{file_format}'))
-
-        # KDE
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        ax.set_axisbelow(True)
-        if show_grid:
-            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-        sns.kdeplot(df[col], ax=ax, fill=True, color=kde_color, linewidth=2.5, alpha=0.98)
-        kde_base = os.path.join(plot_dir, 'kde_base.png')
-        kde_path = os.path.join(plot_dir, f'kde_{col}.{file_format}')
-        create_plot(fig, ax, f'KDE Plot of {col}', col, 'Density', kde_base, kde_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'kde_{col}.{file_format}'))
-
-        # Distribution
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        ax.set_axisbelow(True)
-        if show_grid:
-            ax.grid(True, linestyle=':', linewidth=1.75, alpha=1.0)
-        sns.histplot(df[col], kde=True, color=dist_color, ax=ax, edgecolor='white', linewidth=1.2, alpha=0.9, line_kws={'color': 'black', 'linewidth': 2.5})
-        dist_base = os.path.join(plot_dir, 'dist_base.png')
-        dist_path = os.path.join(plot_dir, f'distribution_{col}.{file_format}')
-        create_plot(fig, ax, f'Distribution of {col}', col, 'Frequency', dist_base, dist_path)
-        image_paths.append(os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', f'distribution_{col}.{file_format}'))
-
-        return JsonResponse({ 
-            'success': True,
-            'test': translate("EDA: Distribution Plots"),
-            'columns': [col],
-            'image_paths': image_paths
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_eda_swarm_plot(request, df, col_cat, col_num, user_id):
-    import os
-    import numpy as np
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    from PIL import Image, ImageDraw, ImageFont
-    from googletrans import Translator
-    from django.conf import settings
-    from django.http import JsonResponse
-
-    try:
-        language = request.POST.get('language', 'en')
-        file_format = request.POST.get('format', 'png')
-        file_format = 'png' if file_format not in ('png','jpg','jpeg','pdf','tiff') else file_format
-        pil_fmt = file_format.upper() if file_format != 'jpg' else 'JPEG'
-
-        # === Translator & Font Setup ===
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        translator = Translator()
-        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-
-        def translate(txt):
-            return translator.translate(txt, dest='bn').text if language == 'bn' else txt
-
-        def map_digits(txt):
-            return txt.translate(digit_map) if language == 'bn' else txt
-
-        def format_tick(x):
-            s = f"{x:.4f}".rstrip('0').rstrip('.')
-            return map_digits(translate(s))
-
-        # === Custom Settings ===
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        if not use_default:
-            dpi = int(request.POST.get('image_quality', 300))
-            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
-            default_label_size = int(request.POST.get('label_font_size', 50))
-            default_caption_size = default_label_size
-            default_tick_size = int(request.POST.get('tick_font_size', 12))
-            swarm_color = request.POST.get('swarm_color', 'orange')
-        else:
-            dpi, width, height = 300, 800, 600
-            default_label_size = default_caption_size = 50
-            default_tick_size = 12
-            swarm_color = 'orange'
-
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            pil_font = ImageFont.truetype(font_path, default_label_size)
-            caption_font = ImageFont.truetype(font_path, default_caption_size)
-            tick_prop = fm.FontProperties(fname=font_path, size=default_tick_size)
-            if language == 'bn':
-                plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-        else:
-            pil_font = caption_font = ImageFont.load_default()
-            tick_prop = fm.FontProperties(size=default_tick_size)
-
-        # === Plot ===
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.swarmplot(x=col_cat, y=col_num, data=df, color=swarm_color, ax=ax)
-
-        xt = [format_tick(x) for x in ax.get_xticks()]
-        yt = [format_tick(y) for y in ax.get_yticks()]
-        ax.set_xticklabels(xt, fontproperties=tick_prop, rotation=45)
-        ax.set_yticklabels(yt, fontproperties=tick_prop)
-        ax.set_title(''); ax.set_xlabel(''); ax.set_ylabel('')
-
-        title = f"Swarm Plot of {col_num} by {col_cat}"
-        xlabel = col_cat
-        ylabel = col_num
-
-        # Save base image
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        base_path = os.path.join(plots_dir, 'swarm_base.' + file_format)
-        final_path = os.path.join(plots_dir, 'swarm_final.' + file_format)
-
-        plt.tight_layout()
-        fig.savefig(base_path, dpi=dpi)
-        plt.close(fig)
-
-        # === Draw Labels ===
-        T = map_digits(translate(title))
-        X = map_digits(translate(xlabel))
-        Y = map_digits(translate(ylabel))
-
-        img = Image.open(base_path).convert('RGB')
-        bw0, bh0 = img.size
-
-        bbox_Y = pil_font.getbbox(Y)
-        text_w = bbox_Y[2] - bbox_Y[0]
-        text_h = bbox_Y[3] - bbox_Y[1]
-        pad = 20
-        Yimg = Image.new('RGBA', (text_w+pad*2, text_h+pad*2), (255,255,255,0))
-        d2 = ImageDraw.Draw(Yimg)
-        d2.text((pad, pad), Y, font=pil_font, fill='black')
-        Yrot = Yimg.rotate(90, expand=True)
-
-        extra_left = Yrot.width + 20
-        extra_top = default_caption_size + 20
-        extra_bottom = default_label_size + 20
-        new_bw = bw0 + extra_left
-        new_bh = bh0 + extra_top + extra_bottom
-
-        canvas = Image.new('RGB', (new_bw, new_bh), 'white')
-        canvas.paste(img, (extra_left, extra_top))
-        draw = ImageDraw.Draw(canvas)
-
-        # Title
-        bbox_T = caption_font.getbbox(T)
-        wT = bbox_T[2] - bbox_T[0]
-        draw.text((extra_left+(bw0-wT)//2, 10), T, font=caption_font, fill='black')
-
-        # X-label
-        bbox_X = pil_font.getbbox(X)
-        wX = bbox_X[2] - bbox_X[0]
-        draw.text((extra_left+(bw0-wX)//2, extra_top+bh0+10), X, font=pil_font, fill='black')
-
-        # Y-label
-        y_x = (extra_left - Yrot.width)//2
-        y_y = extra_top + (bh0 - Yrot.height)//2
-        canvas.paste(Yrot, (y_x, y_y), Yrot)
-
-        canvas.save(final_path, format=pil_fmt)
-
-        return JsonResponse({
-            'success': True,
-            'test': translate("Swarm Plot"),
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads',  'plots', 'swarm_final.' + file_format)],
-            'columns': [col_cat, col_num],
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
-
-def process_pie_chart(request, df, col,user_id,ordinal_mappings):
-    import re 
-    try:
-        # --- Params ---
-        language = request.POST.get('language', 'en')
-        fmt = request.POST.get('format', 'png').lower()
-        fmt = fmt if fmt in ('png', 'jpg', 'jpeg', 'pdf', 'tiff') else 'png'
-
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        if use_default:
-            dpi, width, height = 300, 900, 650
-        else:
-            dpi = int(request.POST.get('dpi', 300))
-            width, height = map(int, request.POST.get('image_size', '900x650').split('x'))
-
-        # --- Fonts / translator ---
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        try:
-            fm.fontManager.addfont(font_path)
-        except Exception:
-            pass
-        if language == 'bn' and os.path.exists(font_path):
-            plt.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text): 
-            if language == 'bn':
-                try:
-                    return translator.translate(text, dest='bn').text
-                except Exception:
-                    return text
-            return text
-        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
-
-        # --- Validate col ---
-        if col not in df.columns:
-            return JsonResponse({'success': False, 'error': f"Column {col} not found"})
-
-        # --- Treat column as categorical always ---
-        series = df[col].astype(str).fillna('NaN')
-        counts = df[col].value_counts() 
-        # labels_data = counts.index.tolist()  
-        labels_raw= [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
- 
-        print(labels_raw) 
-
-        sizes = counts.values
-
-        # --- Too many categories check ---
-        if len(labels_raw) > 10:
-            msg = ("শ্রেণি সংখ্যা ১০ এর বেশি। পাই চার্ট উপযুক্ত নয়। বার চার্ট ব্যবহার করুন।"
-                   if language == 'bn'
-                   else "Too many categories (>10). Pie charts are not suitable. Please try a bar chart instead.")
-            return JsonResponse({'success': False, 'error': msg})
-
-        # --- Colors & figure ---
-        colors = ["#1f77b4","#ff7f0e","#2ca02c","#d62728","#9467bd",
-                  "#8c564b","#e377c2","#7f7f7f","#bcbd22","#17becf"]
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(width/100, height/100), dpi=dpi,
-                                       gridspec_kw={'width_ratios': [2, 1]})
-        total = sum(sizes)
-
-        # autopct
-        def make_autopct(values):
-            def my_autopct(pct):
-                text = f"{pct:.1f}%"
-                return map_digits(text) if language == 'bn' else text
-            return my_autopct
-
-        wedges, texts, autotexts = ax1.pie(
-            sizes, labels=None, autopct=make_autopct(sizes),
-            startangle=90, colors=colors[:len(sizes)],
-            wedgeprops=dict(edgecolor='black', linewidth=1.2), radius=1.0
-        )
-        ax1.axis('equal')
-
-        # --- Improved small slice handling ---
-        total = sum(sizes)
-        small_slices = []
-        for i, (wedge, autotext) in enumerate(zip(wedges, autotexts)):
-            try:
-                pct = float(autotext.get_text().replace('%', ''))
-            except Exception:
-                pct = 0.0
-
-            if pct >= 5:
-                autotext.set_color("white")
-                autotext.set_weight("bold")
-            else:
-                ang = (wedge.theta2 + wedge.theta1) / 2.0
-                small_slices.append((i, wedge, autotext, pct, ang))
-
-        # sort by angle
-        small_slices.sort(key=lambda x: x[4])
-        distances = [1.3, 1.5, 1.8, 2.0]
-
-        for idx, (i, wedge, autotext, pct, ang) in enumerate(small_slices):
-            distance_idx = idx % len(distances)
-            label_distance = distances[distance_idx]
-            line_end_distance = label_distance - 0.1
-
-            x = label_distance * math.cos(math.radians(ang))
-            y = label_distance * math.sin(math.radians(ang))
-
-            percentage_text = f"{pct:.1f}%"
-            if language == 'bn':
-                percentage_text = map_digits(percentage_text)
-
-            autotext.set_text(percentage_text)
-            autotext.set_color("black")
-            autotext.set_weight("bold")
-            autotext.set_position((x, y))
-            autotext.set_ha('center')
-            autotext.set_va('center')
-
-            # draw leader line
-            x1 = 1.0 * math.cos(math.radians(ang))
-            y1 = 1.0 * math.sin(math.radians(ang))
-            x2 = line_end_distance * math.cos(math.radians(ang))
-            y2 = line_end_distance * math.sin(math.radians(ang))
-            ax1.plot([x1, x2], [y1, y2], color="black", linewidth=1)
-
-        # Title
-        ax1.set_title(map_digits(translate(f"Pie Chart of {col}")), fontsize=16, pad=20)
-
-        # FIXED: Legend - EXACTLY like the Python code
-        # Create labels_display exactly like in Python code
-        labels_display = [map_digits(translate(str(lab))) for lab in labels_raw]
-
-        legend_elements = []
-        for i, (label, size_val) in enumerate(zip(labels_display, sizes)):
-            percentage = size_val/total*100
-            percentage_text = f'{percentage:.1f}%'
-            if language == 'bn':
-                percentage_text = map_digits(percentage_text)
-
-            legend_text = f"{label} - {percentage_text}"
-            legend_elements.append(Patch(
-                facecolor=colors[i % len(colors)],
-                edgecolor='black', 
-                label=legend_text
-            ))
-
-        ax2.legend(handles=legend_elements, loc='center', frameon=False,
-                fontsize=12, handlelength=1, handleheight=1, handletextpad=0.5)
-        ax2.axis('off')
-
-        plt.tight_layout()
-
-        # --- Safe filename ---
-        def safe_filename(name):
-            # Replace invalid characters with underscore and truncate long names
-            cleaned = re.sub(r'[<>:"/\\|?*]', '_', name)
-            return cleaned[:100]  # max 100 chars to avoid OS limits
-
-        filename = f"pie_{safe_filename(col)}.{fmt}"
-        plots_dir =  os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        out_path = os.path.join(plots_dir, filename)
-
-        plt.savefig(out_path, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-
-        return JsonResponse({
-            'success': True,
-            'image_paths': [os.path.join(settings.MEDIA_URL, 'plots', filename)],
-            'message': "Pie chart generated successfully",
-            'columns': [col]
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 def process_eda_basics(request, df, user_id):
     import numpy as np
@@ -4739,176 +5905,6 @@ def save_plot(plt, filename, user_id):
     except Exception as e:
         print(f"Failed to save plot: {filename}. Error: {e}")
         return None
-
-
-def process_bar_chart_test(request, df, col, user_id, orientation, ordinal_mappings):
-    import os, re, math
-    import numpy as np
-    import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib.font_manager as fm
-    from django.http import JsonResponse
-    from django.conf import settings
-    from PIL import Image, ImageDraw, ImageFont
-    try:
-        from googletrans import Translator
-    except Exception:
-        class Translator:
-            def translate(self, txt, dest="bn"):
-                class _R:
-                    def __init__(self, t): self.text = t
-                    text = t
-                return _R(txt)
-
-    try:
-        # ---------------- Parameters ----------------
-        language = request.POST.get("language", "en")
-        fmt = request.POST.get("format", "png").lower()
-        fmt = fmt if fmt in ("png", "jpg", "jpeg", "pdf", "tiff") else "png"
-        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}[fmt]
-        orientation = orientation if orientation in ("horizontal", "vertical") else "vertical"
-
-        use_default = request.POST.get("use_default", "true") == "true"
-        if use_default:
-            dpi, width, height = 300, 800, 600
-            label_font_size, caption_font_size, tick_font_size = 15, 50, 16
-            cat_font_size, val_font_size = 44, 10
-            bar_color, theme = "steelblue", "darkgrid"
-        else:
-            dpi = int(request.POST.get("dpi", 300))
-            width, height = map(int, request.POST.get("image_size", "800x600").split("x"))
-            label_font_size = int(request.POST.get("label_font_size", 15))
-            caption_font_size = int(request.POST.get("caption_font_size", 50))
-            tick_font_size = int(request.POST.get("tick_font_size", 16))
-            cat_font_size = int(request.POST.get("cat_font_size", 44))
-            val_font_size = int(request.POST.get("val_font_size", 10))
-            bar_color = request.POST.get("bar_color", "steelblue")
-            theme = request.POST.get("theme", "darkgrid")
-
-        sns.set_theme(style=theme)
-
-        # ---------------- Fonts & Translator ----------------
-        font_path = os.path.join(settings.BASE_DIR, "NotoSansBengali-Regular.ttf")
-        fm.fontManager.addfont(font_path)
-        bengali_font = fm.FontProperties(fname=font_path).get_name()
-        if language == "bn":
-            plt.rcParams["font.family"] = bengali_font
-
-        translator = Translator()
-        digit_map = str.maketrans("0123456789", "০১২৩৪৫৬৭৮৯")
-
-        def translate(txt):
-            try:
-                return translator.translate(txt, dest="bn").text if language == "bn" else txt
-            except Exception:
-                return txt
-
-        def map_digits(txt):
-            return txt.translate(digit_map) if language == "bn" else txt
-
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size)
-        caption_font = ImageFont.truetype(font_path, size=caption_font_size)
-        label_font = ImageFont.truetype(font_path, size=label_font_size)
-        cat_font = ImageFont.truetype(font_path, size=cat_font_size)
-        val_font = ImageFont.truetype(font_path, size=val_font_size)
-
-        # ---------------- Data Prep ----------------
-        if col not in df.columns:
-            return JsonResponse({"success": False, "error": f"Column {col} not found"})
-
-        counts = df[col].fillna("NaN").value_counts(dropna=False).sort_index()
-        labels_raw = [ordinal_mappings.get(col, {}).get(idx, str(idx)) for idx in counts.index]  
-        values = counts.values
-        labels_display = [map_digits(translate(str(x))) for x in labels_raw]
-
-        # ---------------- Output Paths ----------------
-        safe_col = re.sub(r"[^\w\-_\.]", "_", col)
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads", "plots")
-        os.makedirs(plots_dir, exist_ok=True)
-        final_path = os.path.join(plots_dir, f"barchart_{safe_col}.{fmt}")
-
-        # ---------------- Plot ----------------
-        fig, ax = plt.subplots(figsize=(width / 100, height / 100), dpi=dpi)
-
-        if orientation == "vertical":
-            x_idx = np.arange(len(values))
-            bars = ax.bar(x_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
-            ax.set_xticks(x_idx)
-            ax.set_xticklabels(labels_display, fontproperties=tick_prop, rotation=40, ha="right")
-            ax.set_ylabel(map_digits(translate("Count")), fontsize=label_font_size)
-            ax.set_xlabel(map_digits(translate(col)), fontsize=label_font_size)
-
-            max_val = max(values) if len(values) > 0 else 1
-            ax.set_ylim(0, max_val + max_val * 0.25)  # add headroom for labels
-
-            for bar, val in zip(bars, values):
-                ax.text(
-                    bar.get_x() + bar.get_width() / 2,
-                    bar.get_height() + (0.05 * max_val),
-                    map_digits(str(val)),
-                    ha="center", va="bottom", fontsize=val_font_size
-                )
-
-        else:
-            y_idx = np.arange(len(values))
-            bars = ax.barh(y_idx, values, color=bar_color, edgecolor="black", linewidth=1.0)
-            ax.set_yticks(y_idx)
-            ax.set_yticklabels(labels_display, fontproperties=tick_prop)
-            ax.set_xlabel(map_digits(translate("Count")), fontsize=label_font_size)
-            ax.set_ylabel(map_digits(translate(col)), fontsize=label_font_size)
-
-            max_val = max(values) if len(values) > 0 else 1
-            ax.set_xlim(0, max_val + max_val * 0.25)  # add headroom for labels
-
-            for bar, val in zip(bars, values):
-                ax.text(
-                    bar.get_width() + (0.05 * max_val),
-                    bar.get_y() + bar.get_height() / 2,
-                    map_digits(str(val)),
-                    va="center", ha="left", fontsize=val_font_size
-                )
-
-        
-        title_txt = map_digits(translate(f"Bar Chart of {col}"))
-        
-
-        ax.grid(axis="y" if orientation == "vertical" else "x", linestyle="--", alpha=0.35)
-        plt.tight_layout()
-        fig.savefig(final_path, dpi=dpi, bbox_inches="tight")
-        plt.close(fig)
-
-        # ---------------- Title Overlay (PIL) ----------------
-        img = Image.open(final_path).convert("RGB")
-        bw, bh = img.size
-
-        # Add extra space above for title (20% of image height, adjust as needed)
-        extra_height = int(bh * 0.15)
-        new_img = Image.new("RGB", (bw, bh + extra_height), "white")
-
-        # Paste original chart lower (shift down)
-        new_img.paste(img, (0, extra_height))
-
-        # Draw title in the new top space
-        draw = ImageDraw.Draw(new_img)
-        title_txt = map_digits(translate(f"Bar Chart of {col}"))
-        tw, th = draw.textbbox((0, 0), title_txt, font=caption_font)[2:]
-        draw.text(((bw - tw) // 2, (extra_height - th) // 2), title_txt, font=caption_font, fill="black")
-
-        # Save final
-        new_img.save(final_path, format=pil_fmt)
-
-        return JsonResponse({
-            "success": True,
-            "test": "Bar Chart",
-            "orientation": orientation,
-            "image_paths": [
-                f"{settings.MEDIA_URL}ID_{user_id}_uploads/temporary_uploads/plots/{os.path.basename(final_path)}"
-            ]
-        })
-
-    except Exception as e:
-        return JsonResponse({"success": False, "error": str(e)})
 
 
 @csrf_exempt
