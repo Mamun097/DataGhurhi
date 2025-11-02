@@ -4,31 +4,18 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-// import AncovaOptions from './AncovaOptions';
-import AndersonDarlingOptions from './AndersonDarlingOptions';
-// import AnovaOptions from './AnovaOptions';
-import ChiSquareOptions from './ChiSquareOptions';
+// import ChiSquareOptions from './ChiSquareOptions';
 import CramerVOptions from './CramerVOptions';
 import CrossTabulationOptions from './CrossTabulationOptions';
 import EDABasicsOptions from './EDABasicsOptions';
-import EDADistributionsOptions from './EDADistributionsOptions';
-import PieChartOptions from './PieChartOptions';
-import BarChartOptions from './BarChartOptions';
-import EDASwarmOptions from './EDASwarmOptions';
-import FZTOptions from './FZTOptions';
-import KolmogorovSmirnovOptions from './KolmogorovSmirnovOptions';
 // import KruskalOptions from './PlotCustomizers/KruskalOptions';
-import LinearRegressionOptions from './LinearRegressionOptions';
-// import MannWhitneyOptions from './MannWhitneyOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
 import PearsonOptions from './PearsonOptions';
-import ShapiroWilkOptions from './ShapiroWilkOptions';
 import SimilarityOptions from './SimilarityOptions';
 import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
 //import './StatisticalAnalysisTool.css';
 import './StatisticalAnalysisResultPage.css';
-// import WilcoxonOptions from './WilcoxonOptions';
 import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
@@ -36,12 +23,24 @@ import * as XLSX from "xlsx";
 
 import renderKruskalResults from './RenderFunctions/RenderKruskal/renderKruskalResults';
 import renderChiSquareResults from './RenderFunctions/RenderChiSquare/renderChiSquareResults';
-import CustomizationOverlay from './RenderFunctions/CustomizationOverlay/CustomizationOverlay';
 import renderMannWhitneyResults from './RenderFunctions/renderMannWhitneyResults';
 import renderWilcoxonResults from './RenderFunctions/renderWilcoxonResults';
 import renderAnovaResults from './RenderFunctions/renderAnovaResults';
 import renderAncovaResults from './RenderFunctions/renderAncovaResults';
-
+import renderLinearRegressionResults from './RenderFunctions/renderLinearRegressionResults';
+import renderShapiroResults from './RenderFunctions/renderShapiroResults';
+import renderEDADistributionResults from './RenderFunctions/renderEDADistributionResults';
+import renderEDASwarmResults from './RenderFunctions/renderEDASwarmResults';
+import renderBarChartResults from './RenderFunctions/renderBarChartResults';
+import renderPieChartResults from './RenderFunctions/renderPieChartResults';
+import renderKolmogorovResults from './RenderFunctions/renderKolmogorovResults';
+import renderAndersonDarlingResults from './RenderFunctions/renderAndersonDarlingResults';
+import {
+    renderF_TestResults,
+    renderZ_TestResults, 
+    renderT_TestResults,
+    renderFZT_TestResults
+} from './RenderFunctions/renderFZT_TestResults';
 
 const translations = {
     English: {
@@ -72,11 +71,6 @@ const translations = {
             similarity: "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
             pearson: "Pearson Correlation",
             spearman: "Spearman Rank Correlation",
-            ttest_ind: "Independent Samples t-test",
-            ttest_paired: "Paired Samples t-test",
-            ttest_onesample: "One-Sample t-test",
-            ztest: "Z-test",
-            ftest: "F-test",
             mannwhitney: "Mann-Whitney U Test",
             kruskal: "Kruskal-Wallis H-test",
             wilcoxon: "Wilcoxon Signed-Rank Test",
@@ -89,7 +83,10 @@ const translations = {
             chi_square: "Chi-Square Test",
             cramers_heatmap: "Cramér's V Heatmap",
             network_graph: "Network Graph",
-            fzt: "F / Z / T Test",
+            f_test: "F-Test (Variance Comparison)",
+            z_test: "Z-Test (Mean Comparison)",
+            t_test: "T-Test (Mean Comparison)", 
+            fzt_visualization: "F/Z/T Combined Visualization",            
             cross_tabulation: "Cross Tabulation",
 
         },
@@ -102,11 +99,6 @@ const translations = {
             similarity: "Measures how similar or different two numeric columns are using statistical and geometric metrics.",
             pearson: "Measures the strength and direction of the linear relationship between two continuous variables.",
             spearman: "A non-parametric test that assesses how well the relationship between two variables can be described using a monotonic function.",
-            ttest_ind: "Compares the means of two independent groups to determine if they are statistically different.",
-            ttest_paired: "Compares the means of two related groups to determine if there is a statistically significant difference.",
-            ttest_onesample: "Tests whether the mean of a single group is different from a known or hypothesized population mean.",
-            ztest: "Tests whether the means of two groups are different when the population variance is known.",
-            ftest: "Compares the variances of two populations to test if they are significantly different.",
             mannwhitney: "A non-parametric test used to determine whether there is a difference between two independent groups.",
             kruskal: "A non-parametric test used to compare three or more independent groups to find significant differences.",
             wilcoxon: "A non-parametric test used to compare two related samples to assess whether their population mean ranks differ.",
@@ -116,7 +108,10 @@ const translations = {
             shapiro: "Tests whether a sample comes from a normally distributed population.",
             kolmogorov: "A non-parametric test used to compare a sample distribution to a reference normal distribution.",
             anderson: "A statistical test that evaluates whether a sample comes from a specific distribution, most commonly the normal distribution.",
-            fzt: "Performs three statistical tests: F-test for variance comparison, Z-test for mean difference using normal distribution, and Welch’s t-test for unequal variances.",
+            f_test: "Compares variances between two groups using F-distribution.",
+            z_test: "Tests difference between means using normal distribution.",
+            t_test: "Tests difference between means using t-distribution (unequal variances).",
+            fzt_visualization: "Combined data visualizations for all three tests with histogram+KDE comparison.",            
             cross_tabulation: "Summarizes the relationship between two or more categorical variables using frequency tables and heatmaps.",
             chi_square: "Tests the association between categorical variables using observed and expected frequencies.",
             cramers_heatmap: "Visual representation of Cramér's V association strength between categorical variables.",
@@ -189,11 +184,6 @@ const translations = {
             similarity: "সাদৃশ্য ও দূরত্ব – কসাইন, ইউক্লিডীয়, পিয়ার্সন ইত্যাদি",
             pearson: "পিয়ারসন করেলেশন",
             spearman: "স্পিয়ারম্যান র‍্যাঙ্ক করেলেশন",
-            ttest_ind: "ইনডিপেনডেন্ট স্যাম্পলস টি-টেস্ট",
-            ttest_paired: "পেয়ার্ড স্যাম্পলস টি-টেস্ট",
-            ttest_onesample: "ওয়ান-স্যাম্পল টি-টেস্ট",
-            ztest: "z-টেস্ট",
-            ftest: "f-টেস্ট",
             mannwhitney: "ম্যান-হুইটনি ইউ টেস্ট",
             kruskal: "ক্রুসকাল-ওয়ালিস এইচ-টেস্ট",
             wilcoxon: "উইলকক্সন সাইনড-র‍্যাঙ্ক টেস্ট",
@@ -203,7 +193,10 @@ const translations = {
             shapiro: "শাপিরো-উইলক নর্মালিটি পরীক্ষা",
             kolmogorov: "কলমোগোরভ–স্মিরনভ পরীক্ষা",
             anderson: "আন্ডারসন–ডার্লিং টেস্ট",
-            fzt: "F / Z / T পরীক্ষা",
+            f_test: "এফ-টেস্ট (ভ্যারিয়েন্স তুলনা)",
+            z_test: "জেড-টেস্ট (গড় তুলনা)",
+            t_test: "টি-টেস্ট (গড় তুলনা)", 
+            fzt_visualization: "এফ/জেড/টি সম্মিলিত ভিজ্যুয়ালাইজেশন",
             cross_tabulation: "ক্রস ট্যাবুলেশন",
             chi_square: "কাই-স্কয়ার টেস্ট",
             cramers_heatmap: "ক্র্যামের ভি হিটম্যাপ",
@@ -218,11 +211,6 @@ const translations = {
             similarity: "দুইটি সংখ্যাগত কলামের মধ্যে সাদৃশ্য বা পার্থক্য পরিমাপ করে পরিসংখ্যানিক ও জ্যামিতিক পদ্ধতিতে।",
             pearson: "দুইটি ধারাবাহিক ভেরিয়েবলের মধ্যে রৈখিক সম্পর্কের শক্তি ও দিক পরিমাপ করে।",
             spearman: "দুইটি ভেরিয়েবলের মধ্যে একঘাত সম্পর্ক আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
-            ttest_ind: "দুটি স্বাধীন গ্রুপের গড় মানে উল্লেখযোগ্য পার্থক্য আছে কিনা তা নির্ধারণ করে।",
-            ttest_paired: "একই গ্রুপের দুটি সম্পর্কযুক্ত অবস্থার গড়ের মধ্যে পার্থক্য আছে কিনা তা যাচাই করে।",
-            ttest_onesample: "একটি গ্রুপের গড় কোনো নির্দিষ্ট মানের সাথে পার্থক্যপূর্ণ কিনা তা নির্ধারণ করে।",
-            ztest: "দুটি গোষ্ঠীর গড়ে পার্থক্য আছে কিনা তা যাচাই করে যখন জনসংখ্যার বৈচিত্র্য জানা থাকে।",
-            ftest: "দুটি গোষ্ঠীর বৈচিত্র্যের মধ্যে পার্থক্য আছে কিনা তা পরীক্ষা করে।",
             mannwhitney: "দুটি স্বাধীন গোষ্ঠীর মধ্যে পার্থক্য আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
             kruskal: "তিন বা ততোধিক স্বাধীন গোষ্ঠীর মধ্যে উল্লেখযোগ্য পার্থক্য আছে কিনা তা নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
             wilcoxon: "দুটি সম্পর্কযুক্ত নমুনার মধ্যকার পার্থক্য নির্ধারণে ব্যবহৃত একটি নন-প্যারামেট্রিক পরীক্ষা।",
@@ -232,7 +220,10 @@ const translations = {
             shapiro: "একটি নমুনা সাধারণ বন্টন থেকে এসেছে কিনা তা নির্ধারণ করে।",
             kolmogorov: "একটি নন-প্যারামেট্রিক পরীক্ষা যা একটি নমুনার বন্টনকে একটি আদর্শ স্বাভাবিক বন্টনের সাথে তুলনা করে।",
             anderson: "একটি পরিসংখ্যানগত পরীক্ষা যা একটি নমুনা নির্দিষ্ট বণ্টন থেকে এসেছে কিনা তা যাচাই করে, সাধারণত স্বাভাবিক বণ্টনের জন্য ব্যবহৃত হয়।",
-            fzt: "তিনটি পরিসংখ্যানিক পরীক্ষা পরিচালনা করে: ভ্যারিয়েন্স তুলনার জন্য F-টেস্ট, গড়ের পার্থক্যের জন্য Z-টেস্ট এবং অসম ভ্যারিয়েন্সের জন্য Welch’s t-টেস্ট।",
+            f_test: "দুইটি গ্রুপের ভ্যারিয়েন্স তুলনা করে এফ-বন্টন ব্যবহার করে।",
+            z_test: "গড়ের পার্থক্য পরীক্ষা করে সাধারণ বন্টন ব্যবহার করে।",
+            t_test: "গড়ের পার্থক্য পরীক্ষা করে টি-বন্টন ব্যবহার করে (অসম ভ্যারিয়েন্স)।",
+            fzt_visualization: "তিনটি পরীক্ষার জন্য সম্মিলিত ডেটা ভিজ্যুয়ালাইজেশন সাথে হিস্টোগ্রাম+কেডিই তুলনা।",
             cross_tabulation: "দুই বা ততোধিক শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক সারাংশ আকারে প্রদর্শন করে, ফ্রিকোয়েন্সি টেবিল ও হিটম্যাপ ব্যবহার করে।",
             chi_square: "বিভিন্ন শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক নির্ধারণ করে।",
             cramers_heatmap: "Cramér's V ব্যবহার করে শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যকার সম্পর্কের দৃঢ়তা চিত্রায়িত করে।",
@@ -801,9 +792,6 @@ const StatisticalAnalysisTool = () => {
                 if (testType === 'eda_swarm') {
                     formData.append('swarm_color', swarmColor);
                 }
-                if (testType === 'bar_chart') {
-                    formData.append('orientation', barChartType); // "vertical" | "horizontal"
-                }
 
             }
 
@@ -1088,9 +1076,8 @@ const StatisticalAnalysisTool = () => {
                                         <h5 className="section-title">{t.selectTest}</h5>
                                         <label className="form-label">{t.testType}</label>
                                         <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
-                                        <option value="" disabled>
-                                            {t.selectPrompt}
-                                        </option>
+
+                                        <option value="" disabled>{t.selectPrompt}</option>
                                         <optgroup label={t.testGroups.eda}>
                                             <option value="eda_basics">{t.tests.eda_basics}</option>
                                             <option value="eda_distribution">{t.tests.eda_distribution}</option>
@@ -1109,7 +1096,10 @@ const StatisticalAnalysisTool = () => {
                                             <option value="spearman">{t.tests.spearman}</option>
                                         </optgroup>
                                         <optgroup label={t.testGroups.parametric}>
-                                            <option value="fzt">{t.tests.fzt}</option>
+                                            <option value="f_test">{t.tests.f_test}</option>
+                                            <option value="z_test">{t.tests.z_test}</option>
+                                            <option value="t_test">{t.tests.t_test}</option>
+                                            <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
                                         </optgroup>
                                         <optgroup label={t.testGroups.regression}>
                                             <option value="linear_regression">{t.tests.linear_regression}</option>
@@ -1155,28 +1145,6 @@ const StatisticalAnalysisTool = () => {
 
                                      </div>
                                                                 
-                                            {testType === "bar_chart" && (
-                                            <div className="form-group">
-                                                <label className="form-label">
-                                                {language === "bn"
-                                                    ? "বার চার্ট টাইপ নির্বাচন করুন:"
-                                                    : "Select bar chart type:"}
-                                                </label>
-                                                <select
-                                                value={barChartType}
-                                                onChange={(e) => setBarChartType(e.target.value)}
-                                                className="form-select"
-                                                >
-                                                <option value="vertical">
-                                                    {language === "bn" ? "উল্লম্ব (Vertical)" : "Vertical"}
-                                                </option>
-                                                <option value="horizontal">
-                                                    {language === "bn" ? "অনুভূমিক (Horizontal)" : "Horizontal"}
-                                                </option>
-                                                </select>
-                                            </div>
-                                            )}
-
                                             {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
                                                 <div style={{ marginBottom: '2rem' }}>
                                                     <label style={{
@@ -1645,170 +1613,6 @@ const StatisticalAnalysisTool = () => {
                                                         />
                                                     )}
 
-                                                    {testType === 'shapiro' && (
-                                                        <ShapiroWilkOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            boxWidth={boxWidth}
-                                                            setBoxWidth={setBoxWidth}
-                                                            violinWidth={violinWidth}
-                                                            setViolinWidth={setViolinWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'linear_regression' && (
-                                                        <LinearRegressionOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            boxWidth={boxWidth}
-                                                            setBoxWidth={setBoxWidth}
-                                                            violinWidth={violinWidth}
-                                                            setViolinWidth={setViolinWidth}
-                                                            legendFontSize={legendFontSize}
-                                                            setLegendFontSize={setLegendFontSize}
-                                                            lineColor={lineColor}
-                                                            setLineColor={setLineColor}
-                                                            lineStyle={lineStyle}
-                                                            setLineStyle={setLineStyle}
-                                                            lineWidth={lineWidth}
-                                                            setLineWidth={setLineWidth}
-                                                            dotColor={dotColor}
-                                                            setDotColor={setDotColor}
-                                                            dotWidth={dotWidth}
-                                                            setDotWidth={setDotWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'kolmogorov' && (
-                                                        <KolmogorovSmirnovOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            ecdfColor={dotColor}            // reuse dotColor for ECDF
-                                                            setEcdfColor={setDotColor}
-                                                            cdfColor={lineColor}            // reuse lineColor for CDF
-                                                            setCdfColor={setLineColor}
-                                                            lineStyle={lineStyle}
-                                                            setLineStyle={setLineStyle}
-                                                            t={t}
-                                                            selectedColumn={column1}
-                                                            setSelectedColumn={setColumn1}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'anderson' && (
-                                                        <AndersonDarlingOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            scatterColor={dotColor}         // reuse dotColor for scatter
-                                                            setScatterColor={setDotColor}
-                                                            lineColor={lineColor}
-                                                            setLineColor={setLineColor}
-                                                            lineStyle={lineStyle}
-                                                            setLineStyle={setLineStyle}
-                                                            selectedColumn={column1}
-                                                            setSelectedColumn={setColumn1}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'fzt' && (
-                                                        <FZTOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            lineWidth={lineWidth}
-                                                            setLineWidth={setLineWidth}
-                                                            lineStyle={lineStyle}
-                                                            setLineStyle={setLineStyle}
-                                                            fCurveColor={fCurveColor}
-                                                            setFCurveColor={setFCurveColor}
-                                                            fLineColor={fLineColor}
-                                                            setFLineColor={setFLineColor}
-                                                            zCurveColor={zCurveColor}
-                                                            setZCurveColor={setZCurveColor}
-                                                            zLineColor={zLineColor}
-                                                            setZLineColor={setZLineColor}
-                                                            tCurveColor={tCurveColor}
-                                                            setTCurveColor={setTCurveColor}
-                                                            tLineColor={tLineColor}
-                                                            setTLineColor={setTLineColor}
-                                                            hist1Color={hist1Color}
-                                                            setHist1Color={setHist1Color}
-                                                            hist2Color={hist2Color}
-                                                            setHist2Color={setHist2Color}
-                                                            t={t}
-                                                        />
-                                                    )}
-
                                                     {testType === 'cross_tabulation' && (
                                                         <CrossTabulationOptions
                                                             language={language}
@@ -1829,102 +1633,6 @@ const StatisticalAnalysisTool = () => {
                                                             setColorPalette={setColorPalette}
                                                             barWidth={barWidth}
                                                             setBarWidth={setBarWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'eda_distribution' && (
-                                                        <EDADistributionsOptions
-                                                            isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            histColor={histColor}
-                                                            setHistColor={setHistColor}
-                                                            kdeColor={kdeColor}
-                                                            setKdeColor={setKdeColor}
-                                                            distColor={distColor}
-                                                            setDistColor={setDistColor}
-                                                            showGrid={showGrid}
-                                                            setShowGrid={setShowGrid}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'eda_swarm' && (
-                                                        <EDASwarmOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            swarmColor={swarmColor}
-                                                            setSwarmColor={setSwarmColor}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'eda_pie' && (
-                                                        <PieChartOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'bar_chart' && (
-                                                        <BarChartOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            barColor={barColor}
-                                                            setBarColor={setBarColor}
-                                                            barChartType={barChartType}
-                                                            setBarChartType={setBarChartType}
                                                             t={t}
                                                         />
                                                     )}
@@ -2199,8 +1907,20 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     const [chiSquareActiveTab, setChiSquareActiveTab] = useState('detailed');
     const [mannWhitneyActiveTab, setMannWhitneyActiveTab] = useState('box');
     const [wilcoxonActiveTab, setWilcoxonActiveTab] = useState('histogram');
-    const [anovaActiveTab, setAnovaActiveTab] = useState('count');
-    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');
+    const [anovaActiveTab, setAnovaActiveTab] = useState('count');   
+    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');    
+    const [linearRegressionActiveTab, setLinearRegressionActiveTab] = useState('scatter');
+    const [shapiroActiveTab, setShapiroActiveTab] = useState('histogram');    
+    const [edaDistributionActiveTab, setEdaDistributionActiveTab] = useState('histogram');
+    const [edaSwarmActiveTab, setEDASwarmActiveTab] = useState('swarm');
+    const [barChartActiveTab, setBarChartActiveTab] = useState('vertical');
+    const [pieActiveTab, setPieActiveTab] = useState('pie');
+    const [kolmogorovActiveTab, setKolmogorovActiveTab] = useState('ecdf');   
+    const [andersonActiveTab, setAndersonActiveTab] = useState('qq'); 
+    const [fTestActiveTab, setFTestActiveTab] = useState('count');
+    const [zTestActiveTab, setZTestActiveTab] = useState('count');
+    const [tTestActiveTab, setTTestActiveTab] = useState('count');
+    const [fztTestActiveTab, setFZTTestActiveTab] = useState('count');
 
     // For rendering different results based on test type
     const renderResults = () => {
@@ -2239,28 +1959,96 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                 results,
                 language,
             );
+        } else if (testType === 'linear_regression') {
+            return renderLinearRegressionResults(
+                linearRegressionActiveTab,
+                setLinearRegressionActiveTab,
+                results,
+                language
+            );                
         } else if (testType === 'shapiro') {
-            return renderShapiroResults();
+            return renderShapiroResults(
+                shapiroActiveTab,
+                setShapiroActiveTab,
+                results,
+                language
+            );   
+        } else if (testType === 'eda_swarm') {
+            return renderEDASwarmResults(
+                edaSwarmActiveTab,
+                setEDASwarmActiveTab,
+                results,
+                language
+            );           
+        } else if (testType === 'eda_distribution') { 
+            return renderEDADistributionResults(
+                edaDistributionActiveTab,
+                setEdaDistributionActiveTab,
+                results,
+                language
+            );
+        } else if (testType === 'bar_chart') {
+            return renderBarChartResults(
+                barChartActiveTab,
+                setBarChartActiveTab,
+                results,
+                language
+            );         
+        } else if (testType === 'eda_pie') {
+            return renderPieChartResults(
+                pieActiveTab,
+                setPieActiveTab,
+                results,
+                language
+            );
+        } else if (testType === 'kolmogorov') {
+            return renderKolmogorovResults(
+                kolmogorovActiveTab,
+                setKolmogorovActiveTab,
+                results,
+                language
+            );
+        } else if (testType === 'anderson') {
+            return renderAndersonDarlingResults(
+                andersonActiveTab,
+                setAndersonActiveTab,
+                results,
+                language
+            );        
+    } else if (testType === 'f_test') {
+        return renderF_TestResults(
+            fTestActiveTab,
+            setFTestActiveTab,
+            results,
+            language
+        );
+    } else if (testType === 'z_test') {
+        return renderZ_TestResults(
+            zTestActiveTab,
+            setZTestActiveTab,
+            results,
+            language
+        );
+    } else if (testType === 't_test') {
+        return renderT_TestResults(
+            tTestActiveTab,
+            setTTestActiveTab,
+            results,
+            language
+        );
+    } else if (testType === 'fzt_visualization') {
+        return renderFZT_TestResults(
+            fztTestActiveTab,
+            setFZTTestActiveTab,
+            results,
+            language
+        );                        
         } else if (testType === 'spearman') {
             return renderSpearmanResults();
         } else if (testType === 'pearson') {
             return renderPearsonResults();
-        } else if (testType === 'linear_regression') {
-            return renderLinearRegressionResults();
-        } else if (testType === 'kolmogorov') {
-            return renderKolmogorovResults();
-        } else if (testType === 'anderson') {
-            return renderAndersonDarlingResults();
-        } else if (testType === 'fzt') {
-            return renderFZTResults();
         } else if (testType === 'cross_tabulation') {
             return renderCrossTabulationResults();
-        } else if (testType === 'eda_distribution') {
-            return renderEDADistributionResults();
-        } else if (testType === 'eda_swarm') {
-            return renderEDASwarmResults();
-        } else if (testType === 'eda_pie') {  // New Code For Pie Chart
-            return renderPieChartResults();
         } else if (testType === 'eda_basics') {
             return renderEDABasicsResults();
         } else if (testType === 'similarity') {
@@ -2271,8 +2059,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
             return renderCramerVResults();
         } else if (testType === 'network_graph') {
             return renderNetworkGraphResults();
-        } else if (testType === 'bar_chart') {
-            return renderBarChartResults();
         }
 
         switch (testType) {
@@ -2300,113 +2086,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         }
     };
 
-
-    const renderShapiroResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'বাংলা') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        //  NEW: Handle backend error (non-numeric column)
-        if (results.success === false && results.error) {
-            return (
-                <p className="text-red-600 font-semibold">
-                    {results.error}
-                </p>
-            );
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {t.tests.shapiro || 'Shapiro-Wilk Normality Test'}
-                </h2>
-
-                {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
-                        {columns[0]}
-                    </p>
-                )}
-
-                {results.interpretation && (
-                    <p className="mb-3">
-                        <strong>{language === 'বাংলা' ? 'মূল্যায়ন:' : 'Interpretation:'}</strong>{' '}
-                        {results.interpretation}
-                    </p>
-                )}
-
-                <p className="mb-3">
-                    <strong>{language === 'বাংলা' ? 'p-মান:' : 'p-value:'}</strong>{' '}
-                    {mapDigitIfBengali(results.p_value?.toFixed(4))}
-                </p>
-
-                <p className="mb-3">
-                    <strong>{language === 'বাংলা' ? 'পরিসংখ্যান মান:' : 'Test statistic:'}</strong>{' '}
-                    {mapDigitIfBengali(results.statistic?.toFixed(4))}
-                </p>
-
-                {results.image_path && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <div className="relative">
-                                <img
-                                    src={`http://127.0.0.1:8000/${results.image_path}`}
-                                    alt="Shapiro-Wilk visualization"
-                                    className="w-full h-auto object-contain"
-                                />
-                                <button
-                                    onClick={async () => {
-                                        try {
-                                            const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
-                                            const blob = await response.blob();
-                                            const url = window.URL.createObjectURL(blob);
-                                            const link = document.createElement('a');
-                                            const filename = results.image_path.split('/').pop() || 'shapiro_visualization.png';
-                                            link.href = url;
-                                            link.download = filename;
-                                            document.body.appendChild(link);
-                                            link.click();
-                                            document.body.removeChild(link);
-                                            window.URL.revokeObjectURL(url);
-                                        } catch (error) {
-                                            console.error('Download failed:', error);
-                                            alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                        }
-                                    }}
-                                    className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                    title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                >
-                                    <svg
-                                        className="w-4 h-4 mr-1"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth="2"
-                                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                        />
-                                    </svg>
-                                    {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
-                                </button>
-                            </div>
-
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
 
     const renderSpearmanResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -2572,429 +2251,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         );
     };
 
-    const renderLinearRegressionResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {t.tests.linear_regression || "Linear Regression"}
-                </h2>
-
-                {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'bn' ? ' এবং ' : ' and ')}
-                    </p>
-                )}
-
-                <p className="mb-3">
-                    <strong>{language === 'bn' ? 'ইন্টারসেপ্ট:' : 'Intercept:'}</strong>{' '}
-                    {results.intercept !== undefined ? mapDigitIfBengali(results.intercept) : '—'}
-                </p>
-
-                <p className="mb-3">
-                    <strong>{language === 'bn' ? 'কোইফিশিয়েন্ট:' : 'Coefficient:'}</strong>{' '}
-                    {results.coefficient !== undefined ? mapDigitIfBengali(results.coefficient) : '—'}
-                </p>
-
-                <p className="mb-3">
-                    <strong>{language === 'bn' ? 'আর-স্কোয়ারড মান (R²):' : 'R-squared (R²):'}</strong>{' '}
-                    {results.r2_score !== undefined ? mapDigitIfBengali(results.r2_score) : '—'}
-                </p>
-
-                <p className="mb-3">
-                    <strong>{language === 'bn' ? 'গড় স্কোয়ার্ড ত্রুটি (MSE):' : 'Mean Squared Error (MSE):'}</strong>{' '}
-                    {results.mse !== undefined ? mapDigitIfBengali(results.mse) : '—'}
-                </p>
-
-                {results.image_paths?.[0] && (
-
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
-                                alt="Linear Regression Plot"
-                                className="w-full h-auto object-contain"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = results.image_paths[0].split('/').pop() || 'linear_regression_plot.png';
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                }}
-                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                            >
-                                <svg
-                                    className="w-4 h-4 mr-1"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                            </button>
-
-                        </div>
-                    </div>
-                )}
-
-            </>
-        );
-    };
-
-    const renderKolmogorovResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {t.tests.kolmogorov || "Kolmogorov–Smirnov Test"}
-                </h2>
-
-                {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
-                        {columns[0]}
-                    </p>
-                )}
-
-                {results.p_value && (
-                    <p className="mb-3">
-                        <strong>p-value:</strong> {results.p_value}
-                    </p>
-                )}
-
-                {results.interpretation && (
-                    <p className="mb-4 text-blue-700 font-semibold">
-                        {results.interpretation}
-                    </p>
-                )}
-
-                {results.image_paths?.[0] && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
-                                alt="K–S Plot"
-                                className="w-full h-auto object-contain"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = results.image_paths[0].split('/').pop() || 'ancova_plot.png';
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                }}
-                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                            >
-                                <svg
-                                    className="w-4 h-4 mr-1"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                            </button>
-
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const renderAndersonDarlingResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {t.tests.anderson || "Anderson–Darling Test"}
-                </h2>
-
-                {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষণকৃত কলাম:' : 'Column analyzed:'}</strong>{' '}
-                        {columns[0]}
-                    </p>
-                )}
-
-                {results.a_stat && (
-                    <p className="mb-3">
-                        <strong>A²:</strong> {results.a_stat}
-                    </p>
-                )}
-
-                {results.interpretation && (
-                    <p className="mb-4 text-blue-700 font-semibold">
-                        {results.interpretation}
-                    </p>
-                )}
-
-                {results.image_paths?.[0] && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="bg-white rounded-lg shadow-md p-4">
-                            <img
-                                src={`http://127.0.0.1:8000/${results.image_paths[0]}`}
-                                alt="Anderson–Darling Plot"
-                                className="w-full h-auto object-contain"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_paths[0]}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = results.image_paths[0].split('/').pop() || 'anderson_darling_plot.png';
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                }}
-                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                            >
-                                <svg
-                                    className="w-4 h-4 mr-1"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const renderFZTResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? 'F / Z / T পরীক্ষার ফলাফল' : 'F / Z / T Test Results'}
-                </h2>
-
-                {columns && columns.length === 2 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
-                        {columns[0]} {language === 'bn' ? 'এবং' : 'and'} {columns[1]}
-                    </p>
-                )}
-
-
-                {results?.statistic && (
-                    <>
-                        {results.statistic.F !== undefined && (
-                            <p className="mb-2">
-                                <strong>F:</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.F.toFixed(4))}{" "}
-                                &nbsp;&nbsp;&nbsp;
-                                <strong>p(F):</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.F_p?.toFixed(6))}
-                            </p>
-                        )}
-
-                        {results.statistic.Z !== undefined && (
-                            <p className="mb-2">
-                                <strong>Z:</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.Z.toFixed(4))}{" "}
-                                &nbsp;&nbsp;&nbsp;
-                                <strong>p(Z):</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.Z_p?.toFixed(6))}
-                            </p>
-                        )}
-
-                        {results.statistic.T !== undefined && (
-                            <p className="mb-2">
-                                <strong>T:</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.T.toFixed(4))}{" "}
-                                &nbsp;&nbsp;&nbsp;
-                                <strong>p(T):</strong>{" "}
-                                {mapDigitIfBengali(results.statistic.T_p?.toFixed(6))}
-                                {results.statistic.T_df !== undefined && (
-                                    <>
-                                        {" "}
-                                        &nbsp;&nbsp;&nbsp;
-                                        <strong>df:</strong>{" "}
-                                        {mapDigitIfBengali(results.statistic.T_df?.toFixed(1))}
-                                    </>
-                                )}
-                            </p>
-                        )}
-                    </>
-                )}
-
-
-                {results?.p_value !== undefined && (
-                    <p className="mb-4">
-                        <strong>{language === 'bn' ? 'সিদ্ধান্ত:' : 'Conclusion'}:</strong>
-                        {results.p_value < 0.05 ? (
-                            <span className="text-green-600 font-medium ml-2">
-                                {language === 'bn' ? 'গুরুত্বপূর্ণ পার্থক্য পাওয়া গেছে' : 'Significant difference found'}
-                            </span>
-                        ) : (
-                            <span className="text-red-600 font-medium ml-2">
-                                {language === 'bn' ? 'গুরুত্বপূর্ণ পার্থক্য পাওয়া যায়নি' : 'No significant difference found'}
-                            </span>
-                        )}
-                    </p>
-                )}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <img
-                                        src={`http://127.0.0.1:8000/${path}`}
-                                        alt={`FZT visualization ${index + 1}`}
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                const blob = await response.blob();
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement('a');
-                                                const filename = path.split('/').pop() || `fzt_visualization_${index + 1}.png`;
-                                                link.href = url;
-                                                link.download = filename;
-                                                document.body.appendChild(link);
-                                                link.click();
-                                                document.body.removeChild(link);
-                                                window.URL.revokeObjectURL(url);
-                                            } catch (error) {
-                                                console.error('Download failed:', error);
-                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                            }
-                                        }}
-                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
     const renderCrossTabulationResults = () => {
         const mapDigitIfBengali = (text) => {
             if (language !== 'bn') return text;
@@ -3106,426 +2362,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                     </div>
                 )}
 
-            </>
-        );
-    };
-
-    const renderEDADistributionResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return (
-                <div className="stats-loading">
-                    <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-                </div>
-            );
-        }
-
-        const cacheBuster = results._timestamp || Date.now();
-
-        const handleSaveResult = async () => {
-            console.log('Saving Distribution result...');
-            try {
-                const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        image_paths: results.image_paths,
-                        user_id: user_id,
-                        test_name: testType,
-                        filename: filename,
-                    }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Result saved successfully:', data);
-                } else {
-                    console.error('Error saving result:', response.statusText);
-                }
-            } catch (error) {
-                console.error('Error saving result:', error);
-            }
-        };
-
-        return (
-            <div className="stats-results-container stats-fade-in">
-                {/* Header Section */}
-                <div className="stats-header">
-                    <h2 className="stats-title">
-                        {language === 'bn'
-                            ? 'ডিস্ট্রিবিউশন প্লট – হিস্টোগ্রাম + KDE'
-                            : 'Distribution Plot – Histogram + KDE'}
-                    </h2>
-                    <button onClick={handleSaveResult} className="stats-save-btn">
-                        <svg
-                            width="20"
-                            height="20"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
-                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                            <polyline points="17 21 17 13 7 13 7 21" />
-                            <polyline points="7 3 7 8 15 8" />
-                        </svg>
-                        {language === 'bn' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
-                    </button>
-                </div>
-
-                {/* Compact Results Table */}
-                <div className="stats-results-table-wrapper">
-                    <table className="stats-results-table">
-                        <thead>
-                            <tr>
-                                <th>{language === 'bn' ? 'বিবরণ' : 'Description'}</th>
-                                <th>{language === 'bn' ? 'মান' : 'Value'}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {/* Columns Row */}
-                            {columns && columns[0] && (
-                                <tr>
-                                    <td className="stats-table-label">
-                                        {language === 'bn' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column'}
-                                    </td>
-                                    <td className="stats-table-value">
-                                        {columns[0]}
-                                    </td>
-                                </tr>
-                            )}
-
-                            {/* Analysis Type Row */}
-                            <tr>
-                                <td className="stats-table-label">
-                                    {language === 'bn' ? 'বিশ্লেষণের ধরন' : 'Analysis Type'}
-                                </td>
-                                <td className="stats-table-value">
-                                    {language === 'bn' ? 'বিতরণ বিশ্লেষণ (হিস্টোগ্রাম ও KDE)' : 'Distribution Analysis (Histogram & KDE)'}
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Visualizations Section */}
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="stats-viz-section">
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                            <h3 className="stats-viz-header" style={{ margin: 0 }}>
-                                {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                            </h3>
-
-                            {!isFirstTimeAnalysis && (
-                                <EDADistributionsOptions
-                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                    handleSubmit={handleSubmit}
-                                    language={language}
-                                    setLanguage={setLanguage}
-                                    imageFormat={imageFormat}
-                                    setImageFormat={setImageFormat}
-                                    useDefaultSettings={useDefaultSettings}
-                                    setUseDefaultSettings={setUseDefaultSettings}
-                                    labelFontSize={labelFontSize}
-                                    setLabelFontSize={setLabelFontSize}
-                                    tickFontSize={tickFontSize}
-                                    setTickFontSize={setTickFontSize}
-                                    imageQuality={imageQuality}
-                                    setImageQuality={setImageQuality}
-                                    imageSize={imageSize}
-                                    setImageSize={setImageSize}
-                                    histColor={histColor}
-                                    setHistColor={setHistColor}
-                                    kdeColor={kdeColor}
-                                    setKdeColor={setKdeColor}
-                                    distColor={distColor}
-                                    setDistColor={setDistColor}
-                                    showGrid={showGrid}
-                                    setShowGrid={setShowGrid}
-                                    t={t}
-                                />
-                            )}
-                        </div>
-
-                        {isFirstTimeAnalysis && (
-                            <EDADistributionsOptions
-                                isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                handleSubmit={handleSubmit}
-                                language={language}
-                                setLanguage={setLanguage}
-                                imageFormat={imageFormat}
-                                setImageFormat={setImageFormat}
-                                useDefaultSettings={useDefaultSettings}
-                                setUseDefaultSettings={setUseDefaultSettings}
-                                labelFontSize={labelFontSize}
-                                setLabelFontSize={setLabelFontSize}
-                                tickFontSize={tickFontSize}
-                                setTickFontSize={setTickFontSize}
-                                imageQuality={imageQuality}
-                                setImageQuality={setImageQuality}
-                                imageSize={imageSize}
-                                setImageSize={setImageSize}
-                                histColor={histColor}
-                                setHistColor={setHistColor}
-                                kdeColor={kdeColor}
-                                setKdeColor={setKdeColor}
-                                distColor={distColor}
-                                setDistColor={setDistColor}
-                                showGrid={showGrid}
-                                setShowGrid={setShowGrid}
-                                t={t}
-                            />
-                        )}
-
-                        <div className="stats-viz-grid">
-                            {results.image_paths.map((path, index) => {
-                                const imageUrl = `http://127.0.0.1:8000/${path}?t=${cacheBuster}`;
-
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(imageUrl);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        link.href = url;
-
-                                        const filename = path.split('/').pop() ||
-                                            `distribution_visualization_${index + 1}.png`;
-                                        link.download = filename;
-
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                };
-
-                                return (
-                                    <div key={`${index}-${cacheBuster}`} className="stats-image-card">
-                                        <div className="stats-image-wrapper">
-                                            <img
-                                                src={imageUrl}
-                                                alt={`Distribution visualization ${index + 1}`}
-                                                className="stats-image"
-                                            />
-                                            <button
-                                                onClick={handleDownload}
-                                                className="stats-download-btn"
-                                                title={language === 'bn'
-                                                    ? `ছবি ${index + 1} ডাউনলোড করুন`
-                                                    : `Download Image ${index + 1}`}
-                                                aria-label={language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                            >
-                                                <svg
-                                                    className="stats-download-icon"
-                                                    fill="none"
-                                                    viewBox="0 0 24 24"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                >
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                                                    />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const renderEDASwarmResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? 'স্বর্ম প্লট বিশ্লেষণ' : 'Swarm Plot Analysis'}
-                </h2>
-
-                {columns && columns.length >= 2 && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
-                        {columns.map((col, i) =>
-                            `${mapDigitIfBengali(col)}${i < columns.length - 1 ? ', ' : ''}`
-                        )}
-                    </p>
-                )}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <img
-                                        src={`http://127.0.0.1:8000/${path}`}
-                                        alt={`Swarm Plot ${index + 1}`}
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    <button
-                                        onClick={async () => {
-                                            try {
-                                                const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                if (!response.ok) throw new Error('Network response was not ok');
-                                                const blob = await response.blob();
-                                                const url = window.URL.createObjectURL(blob);
-                                                const link = document.createElement('a');
-                                                const filename = path.split('/').pop() || `swarm_plot_${index + 1}.png`;
-                                                link.href = url;
-                                                link.download = filename;
-                                                document.body.appendChild(link);
-                                                link.click();
-                                                document.body.removeChild(link);
-                                                window.URL.revokeObjectURL(url);
-                                            } catch (error) {
-                                                console.error('Download failed:', error);
-                                                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                            }
-                                        }}
-                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                        title={language === 'bn' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const renderPieChartResults = () => {
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        // 🛠 Handle backend error
-        if (results.success === false) {
-            return (
-                <p className="text-red-600">
-                    {results.error}
-                </p>
-            );
-        }
-
-        const handleDownload = async (path, index) => {
-            try {
-                const response = await fetch(`http://127.0.0.1:8000${path}`);
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-
-                // filename → fallback if not in path
-                const filename = path.split('/').pop() || `pie_chart_${index + 1}.png`;
-                link.download = filename;
-
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
-            } catch (error) {
-                console.error('Download failed:', error);
-                alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-            }
-        };
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? 'পাই চার্ট' : 'Pie Chart'}
-                </h2>
-
-                {results.columns && results.columns[0] && (
-                    <p className="mb-3">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Column analyzed:'}</strong> {results.columns[0]}
-                    </p>
-                )}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4 relative">
-                                    <img
-                                        src={`http://127.0.0.1:8000${path}`}
-                                        alt={`Pie chart visualization ${index + 1}`}
-                                        className="w-full h-auto object-contain"
-                                    />
-                                    <button
-                                        onClick={() => handleDownload(path, index)}
-                                        className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                        title={language === 'bn'
-                                            ? `ছবি ${index + 1} ডাউনলোড করুন`
-                                            : `Download Image ${index + 1}`}
-                                    >
-                                        <svg
-                                            className="w-4 h-4 mr-1"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            viewBox="0 0 24 24"
-                                        >
-                                            <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                            />
-                                        </svg>
-                                        {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
             </>
         );
     };
@@ -3896,112 +2732,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                                 </svg>
                                 {language === 'bn' ? 'ডাউনলোড' : 'Download'}
                             </button>
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const [barChartType, setBarChartType] = useState("vertical");
-    const renderBarChartResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== "বাংলা") return text;
-            return text.toString().split("").map(char => digitMapBn[char] || char).join("");
-        };
-
-        if (!results) {
-            return <p>{language === "বাংলা" ? "ফলাফল লোড হচ্ছে..." : "Loading results..."}</p>;
-        }
-
-        const handleSaveResult = async () => {
-            try {
-                const response = await fetch("http://127.0.0.1:8000/api/save-results/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        image_paths: results.image_paths,
-                        user_id: user_id,
-                        test_name: "Bar Chart",
-                        filename: filename,
-                    }),
-                });
-                if (!response.ok) throw new Error("Save failed");
-            } catch (error) {
-                console.error(error);
-                alert(language === "বাংলা" ? "সংরক্ষণ ব্যর্থ হয়েছে" : "Save failed");
-            }
-        };
-
-        return (
-            <>
-                <div className="relative mb-4">
-                    <h2 className="text-2xl font-bold">
-                        {language === "বাংলা" ? "বার চার্ট" : "Bar Chart"}
-                    </h2>
-                    <button
-                        onClick={handleSaveResult}
-                        className="absolute top-0 right-0 bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-md shadow-md"
-                    >
-                        {language === "বাংলা" ? "ফলাফল সংরক্ষণ করুন" : "Save Result"}
-                    </button>
-                </div>
-
-                {columns && columns[0] && (
-                    <p className="mb-3">
-                        <strong>{language === "বাংলা" ? "বিশ্লেষিত কলাম:" : "Column analyzed:"}</strong> {columns[0]}
-                    </p>
-                )}
-
-                <p className="mb-3">
-                    <strong>{language === "বাংলা" ? "বার চার্ট টাইপ:" : "Chart type:"}</strong>{" "}
-                    {results.orientation === "vertical"
-                        ? (language === "বাংলা" ? "উল্লম্ব" : "Vertical")
-                        : (language === "বাংলা" ? "অনুভূমিক" : "Horizontal")}
-                </p>
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === "বাংলা" ? "ভিজ্যুয়ালাইজেশন" : "Visualizations"}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => {
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement("a");
-                                        link.href = url;
-                                        link.download = path.split("/").pop() || `barchart_${index + 1}.png`;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (err) {
-                                        alert(language === "বাংলা" ? "ডাউনলোড ব্যর্থ হয়েছে" : "Download failed");
-                                    }
-                                };
-
-                                return (
-                                    <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                        <div className="relative">
-                                            <img
-                                                src={`http://127.0.0.1:8000/${path}`}
-                                                alt={`Bar chart visualization ${index + 1}`}
-                                                className="w-full h-auto object-contain"
-                                            />
-                                            <button
-                                                onClick={handleDownload}
-                                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-md flex items-center text-sm"
-                                            >
-                                                {language === "বাংলা" ? "ডাউনলোড" : "Download"}
-                                            </button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
                         </div>
                     </div>
                 )}
