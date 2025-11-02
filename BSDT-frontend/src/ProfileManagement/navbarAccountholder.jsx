@@ -168,37 +168,33 @@ const NavbarAcholder = ({
         {/* Language Switch now inline with search */}
         
 
-        <div className="NavbarAcholderSearchSection">
-          <select
-            className="NavbarAcholderSearchFilter"
-            value={searchFilter}
-            onChange={(e) => setSearchFilter(e.target.value)}
-          >
-            <option value="all">{getLabel("All")}</option>
-            <option value="project">{getLabel("Project")}</option>
-            <option value="survey">{getLabel("Survey")}</option>
-            <option value="account">{getLabel("Account")}</option>
-          </select>
+          <div className="NavbarAcholderSearchWrapper">
+            <div className="NavbarAcholderSearchSection">
+              <select
+                className="NavbarAcholderSearchFilter"
+                value={searchFilter}
+                onChange={(e) => setSearchFilter(e.target.value)}
+              >
+                <option value="all">{getLabel("All")}</option>
+                <option value="project">{getLabel("Project")}</option>
+                <option value="survey">{getLabel("Survey")}</option>
+                <option value="account">{getLabel("Account")}</option>
+              </select>
 
-          <div className="NavbarAcholderSearchBox">
-            <input
-              type="text"
-              placeholder={getLabel(
-                "Search for projects, surveys, accounts..."
-              )}
-              className="NavbarAcholderSearchInput"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <FaSearch
-              className="NavbarAcholderSearchIcon"
-              onClick={handleSearch}
-            />
+              <div className="NavbarAcholderSearchBox">
+                <input
+                  type="text"
+                  placeholder={getLabel("Search for projects, surveys, accounts...")}
+                  className="NavbarAcholderSearchInput"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                />
+                <FaSearch className="NavbarAcholderSearchIcon" onClick={handleSearch} />
+              </div>
+            </div>
           </div>
-          
-          </div>
-          <div className="NavbarAcholderLangSwitchInline">
+          <div className="NavbarAcholderLangSwitchInline" >
           <label className="NavbarAcholderSwitch">
             <input
               type="checkbox"

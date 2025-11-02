@@ -753,13 +753,13 @@
   display: inline-flex;
   align-items: center;
   padding: 8px 16px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 500;
   border: 1px solid;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  margin: 8px 0;
+  margin: 8px 8px;
   text-decoration: none;
   min-height: 36px;
 }
@@ -770,13 +770,14 @@
 }
 
 .autogen-button.eligible {
-  border-color: #007bff;
-  background-color: #007bff;
-  color: white;
+  border-color:  #25856f;
+
+  background-color: #ffffff;
+  color: #25856f;
 }
 
 .autogen-button.eligible:hover:not(:disabled) {
-  background-color: #1d8b37;
+  background-color: #25856f;
   border-color: #007bff;
   color: white;
   transform: translateY(-2px);

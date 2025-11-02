@@ -124,6 +124,12 @@ const Dashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
   const [availableTokens, setAvailableTokens] = useState(0);
+  const userId= localStorage.getItem("userId");
+
+  useEffect(() => {
+    setUserType(localStorage.getItem("userType"));
+  }, [userId]);
+  
 
   // Admin states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -362,26 +368,10 @@ const Dashboard = () => {
     }
   }, []);
 
-  const getProfile = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await apiClient.get("/api/profile", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      console.log("Profile response:", response.data);
-      if (response.status === 200) {
-        setValues(response.data);
-        setProfilePicUrl(response.data.user.image);
-        setEditedValues(response.data.user);
-
-        // Set user type and available tokens
-        const currentUserType = response.data.user.user_type;
-        setUserType(currentUserType);
-        localStorage.setItem("userType", currentUserType);
-        setAvailableTokens(response.data.user.available_token || 0);
-
-        // Check if user is admin
-        if (currentUserType === "admin") {
+  const getuserType = useCallback(async () => {
+    
+         
+        if (userType === "admin") {
           setIsAdmin(true);
           setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
           fetchAdminStats(); // Fetch admin statistics
@@ -390,7 +380,7 @@ const Dashboard = () => {
           setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
 
           // Show ad banner for normal users only once per session
-          if (currentUserType === "normal") {
+          
             // Check if the banner has already been shown in this session
             const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
             const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
@@ -399,19 +389,14 @@ const Dashboard = () => {
               setShowAdBanner(true);
               // Mark banner as shown in this session
               sessionStorage.setItem(bannerShownKey, "true");
-            }
-          }
-        }
-        localStorage.setItem("userId", response.data.user.user_id);
+            }      
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    
   }, [fetchAdminStats]);
 
   useEffect(() => {
-    getProfile();
-  }, [getProfile]);
+    getuserType
+  }, [userId]);
 
   const toggleEdit = () => setIsEditing(!isEditing);
 
@@ -530,10 +515,10 @@ const Dashboard = () => {
     }
   }, []);
 const [collapsed, setCollapsed] = useState(false);
-const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -668,7 +653,7 @@ useEffect(() => {
                   <li key={tab.key}>
                     <div className="tooltip-container">
                       <button
-                        className={`sidebar-btn ${activeTab === tab.key ? "active" : ""}`}
+                        className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed? "collapsed":""}`}
                         onClick={() => {
                           if (tab.key === "premiumpackages") {
                             setShowPremiumModal(true);
