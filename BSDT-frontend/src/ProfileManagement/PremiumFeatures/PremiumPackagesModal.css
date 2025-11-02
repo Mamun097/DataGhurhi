@@ -48,7 +48,7 @@
 }
 
 .modal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4bb77d, #046060);
     color: white;
     padding: 30px;
     border-radius: 20px 20px 0 0;
@@ -75,15 +75,15 @@
     top: 50%;
     right: 25px;
     transform: translateY(-50%);
-    background: #e74c3c;
+    background: white!important;
     border: 2px solid rgba(255, 255, 255, 0.3);
-    color: white;
+    color: #e74c3c!important;
     font-size: 20px;
     font-weight: bold;
     cursor: pointer;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    border-radius: 50% !important;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -141,7 +141,7 @@
 .showcase-icon {
     font-size: 32px;
     color: white;
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #4bb77d, #046060)!important;
     border-radius: 50%;
     width: 50px;
     height: 50px;
@@ -686,7 +686,7 @@
 }
 .subscription-details span {
     background: #e3f2fd;
-    color: #1976d2;
+    color: #4bb77d;
     padding: 4px 8px;
     border-radius: 15px;
     font-size: 12px;
