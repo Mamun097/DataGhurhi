@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -7,7 +7,7 @@ import jsPDF from 'jspdf';
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
-    return {
+    const baseSettings = {
         dimensions: '800x600',
         fontFamily: 'Times New Roman',
         captionOn: false,
@@ -17,8 +17,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         captionItalic: false,
         captionUnderline: false,
         captionTopMargin: 30,
-        xAxisTitle: 'Groups',
-        yAxisTitle: 'Values',
+        xAxisTitle: 'Covariate',
+        yAxisTitle: 'Outcome',
         xAxisTitleSize: 20,
         yAxisTitleSize: 20,
         xAxisTitleBold: false,
@@ -31,6 +31,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         yAxisTickSize: 18,
         xAxisBottomMargin: -25,
         yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0, 
+        yAxisTitleOffset: 0,        
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -39,13 +41,48 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         gridOpacity: 1,
         borderOn: false,
         plotBorderOn: false,
-        barBorderOn: false,
         dataLabelsOn: true,
-        errorBarsOn: true,
-        elementWidth: plotType === 'Violin' ? 0.4 : 0.8,
+        elementWidth: 0.8,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
-        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
+        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
+        legendOn: true, 
+        legendPosition: 'top'
     };
+
+    // Add plot-specific settings
+    if (plotType === 'Scatter') {
+        return {
+            ...baseSettings,
+            showScatterPoints: true,
+            showRegressionLines: true,
+            showReferenceLine: false,
+            showCriticalValues: true,
+            scatterSize: 6,
+            scatterOpacity: 0.7,
+            scatterColor: '#3b82f6',
+            qqLineColor: '#ef4444',
+            referenceLineColor: '#dc2626',
+            referenceLineWidth: 2,
+            referenceLineStyle: 'dashed',
+            lineWidth: 2
+        };
+    } else if (plotType === 'Residual') {
+        return {
+            ...baseSettings,
+            xAxisTitle: 'Covariate',
+            yAxisTitle: 'Residuals',
+            showScatterPoints: true,
+            showReferenceLine: true,
+            scatterSize: 6,
+            scatterOpacity: 0.7,
+            scatterColor: '#3b82f6',
+            referenceLineColor: '#ef4444',
+            referenceLineWidth: 2,
+            referenceLineStyle: 'solid'
+        };
+    }
+
+    return baseSettings;
 };
 
 const fontFamilyOptions = [
@@ -60,49 +97,41 @@ const fontFamilyOptions = [
     { value: 'Garamond', label: 'Garamond' },
 ];
 
-const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language, user_id, testType, filename, columns) => {
+const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
         if (language !== 'বাংলা') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
+            '.': '.', '-': '-'
         };
         return text.toString().split('').map(char => digitMapBn[char] || char).join('');
     };
 
-    const activeTab = anovaActiveTab;
-    const setActiveTab = setAnovaActiveTab;
+    const activeTab = ancovaActiveTab;
+    const setActiveTab = setAncovaActiveTab;
 
     const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Count');
+    const [currentPlotType, setCurrentPlotType] = React.useState('Scatter');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
-    const [countSettings, setCountSettings] = React.useState(
-        getDefaultSettings('Count', categoryCount, categoryNames)
+    const [scatterSettings, setScatterSettings] = React.useState(
+        getDefaultSettings('Scatter', categoryCount, categoryNames)
     );
-    const [meanSettings, setMeanSettings] = React.useState(
-        getDefaultSettings('Mean', categoryCount, categoryNames)
-    );
-    const [boxSettings, setBoxSettings] = React.useState(
-        getDefaultSettings('Box', categoryCount, categoryNames)
-    );
-    const [violinSettings, setViolinSettings] = React.useState(
-        getDefaultSettings('Violin', categoryCount, categoryNames)
+    const [residualSettings, setResidualSettings] = React.useState(
+        getDefaultSettings('Residual', categoryCount, categoryNames)
     );
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);
-            setCountSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setMeanSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setBoxSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setViolinSettings(prev => ({ ...prev, categoryLabels: labels }));
+            setScatterSettings(prev => ({ ...prev, categoryLabels: labels }));
+            setResidualSettings(prev => ({ ...prev, categoryLabels: labels }));
         }
     }, [results.plot_data]);
 
@@ -113,20 +142,16 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
 
     const getCurrentSettings = () => {
         switch (currentPlotType) {
-            case 'Count': return countSettings;
-            case 'Mean': return meanSettings;
-            case 'Box': return boxSettings;
-            case 'Violin': return violinSettings;
-            default: return countSettings;
+            case 'Scatter': return scatterSettings;
+            case 'Residual': return residualSettings;
+            default: return scatterSettings;
         }
     };
 
     const setCurrentSettings = (settings) => {
         switch (currentPlotType) {
-            case 'Count': setCountSettings(settings); break;
-            case 'Mean': setMeanSettings(settings); break;
-            case 'Box': setBoxSettings(settings); break;
-            case 'Violin': setViolinSettings(settings); break;
+            case 'Scatter': setScatterSettings(settings); break;
+            case 'Residual': setResidualSettings(settings); break;
         }
     };
 
@@ -216,23 +241,14 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     const t = {
         fStatistic: language === 'বাংলা' ? 'এফ-পরিসংখ্যান' : 'F-Statistic',
         pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference (p ≥ 0.05)',
-        anovaTitle: language === 'বাংলা' ? 'এক-মুখী এনোভা' : 'One-Way ANOVA',
-        groupSizes: language === 'বাংলা' ? 'গ্রুপের আকার' : 'Group Sizes',
-        boxPlot: language === 'বাংলা' ? 'বক্স প্লট' : 'Box Plot',
-        violinPlot: language === 'বাংলা' ? 'ভায়োলিন প্লট' : 'Violin Plot',
-        meanPlot: language === 'বাংলা' ? 'গড় মান' : 'Mean Values',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations',
-        degreesOfFreedom: language === 'বাংলা' ? 'ডিগ্রী অফ ফ্রিডম' : 'Degrees of Freedom',
-        sumOfSquares: language === 'বাংলা' ? 'সমষ্টি বর্গ' : 'Sum of Squares',
-        meanSquare: language === 'বাংলা' ? 'গড় বর্গ' : 'Mean Square'
+        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য প্রভাব পাওয়া গেছে (p < 0.05)' : 'Significant effect found (p < 0.05)',
+        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য প্রভাব নেই (p ≥ 0.05)' : 'No significant effect (p ≥ 0.05)',
+        ancovaTitle: language === 'বাংলা' ? 'এনকোভা (ANCOVA)' : 'ANCOVA (Analysis of Covariance)',
+        scatterPlot: language === 'বাংলা' ? 'স্ক্যাটার প্লট' : 'Scatter Plot',
+        residualPlot: language === 'বাংলা' ? 'রেসিডুয়াল প্লট' : 'Residual Plot',
+        groupEffect: language === 'বাংলা' ? 'গ্রুপ প্রভাব' : 'Group Effect',
+        covariateEffect: language === 'বাংলা' ? 'কোভ্যারিয়েট প্রভাব' : 'Covariate Effect'
     };
-
-    const plotData = results.plot_data || [];
-    const groupColumn = results.column_names?.group || columns?.[0] || 'Group';
-    const valueColumn = results.column_names?.value || columns?.[1] || 'Value';
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
@@ -244,7 +260,9 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                     borderRadius: '8px',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
-                    <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
+                    <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
+                        {payload[0]?.payload?.group ? `${language === 'বাংলা' ? 'গ্রুপ' : 'Group'}: ${payload[0].payload.group}` : ''}
+                    </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
                             {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
@@ -258,10 +276,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
 
     const getDimensions = (dimensionString) => {
         const [width, height] = dimensionString.split('x').map(Number);
-
         let finalWidth = width;
         let finalHeight = height - 100;
-
         return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
 
@@ -298,26 +314,77 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
 
-    const getXAxisLabelOffset = (tickSize, angle = -45) => {
-        return -(tickSize * 1.5 + 5);
+    const getLineStyle = (style) => {
+        switch (style) {
+            case 'dashed': return '5 5';
+            case 'dotted': return '2 2';
+            default: return null;
+        }
     };
 
-    const renderCountChart = () => {
-        const settings = countSettings;
+    // Prepare scatter plot data with groups - USE NEW DATA STRUCTURE
+    const scatterData = results.data_points || [];
+    
+    // Group data by category for coloring
+    const groupedData = {};
+    scatterData.forEach(point => {
+        if (!groupedData[point.group]) {
+            groupedData[point.group] = [];
+        }
+        groupedData[point.group].push(point);
+    });
+
+    // Prepare regression lines for each group - USE NEW DATA STRUCTURE
+    const regressionLines = results.regression_lines || {};
+
+    const renderScatterChart = () => {
+        const settings = scatterSettings;
         const { height } = getDimensions(settings.dimensions);
+        
+        const yDomain = getYAxisDomain(settings, scatterData, 'y');
 
-        const data = plotData.map((group, idx) => ({
-            name: settings.categoryLabels[idx],
-            count: group.count,
-            fill: settings.categoryColors[idx]
-        }));
+        // Group scatter data by group for tooltips
+        const groupedScatterData = {};
+        scatterData.forEach(point => {
+            if (!groupedScatterData[point.group]) {
+                groupedScatterData[point.group] = [];
+            }
+            groupedScatterData[point.group].push(point);
+        });
 
-        const yDomain = getYAxisDomain(settings, data, 'count');
+        // Prepare regression line data in proper format for Recharts
+        const regressionLineComponents = [];
+        Object.keys(regressionLines).forEach((groupName, groupIndex) => {
+            const lineData = regressionLines[groupName];
+            if (!lineData) return;
+            
+            // Convert regression line data to proper format
+            const regressionData = lineData.x_range.map((x, i) => ({
+                x: x,
+                y: lineData.y_range[i],
+                group: groupName,
+                type: 'regression'
+            }));
+            
+            regressionLineComponents.push(
+                <Line
+                    key={`regression-${groupName}`}
+                    name={`${groupName} Regression`}
+                    data={regressionData}
+                    dataKey="y"
+                    stroke={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                    strokeWidth={settings.lineWidth || 2}
+                    dot={false}
+                    isAnimationActive={false}
+                    connectNulls={true}
+                />
+            );
+        });
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                    <button className="customize-btn" onClick={() => openCustomization('Count')}>
+                    <button className="customize-btn" onClick={() => openCustomization('Scatter')}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
@@ -325,10 +392,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                         Customize
                     </button>
                     <div style={{ position: 'relative' }}>
-                        <button
-                            className="customize-btn"
-                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        >
+                        <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
@@ -346,9 +410,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 </div>
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <BarChart
-                            data={data}
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                        <ComposedChart  
+                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -364,10 +427,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                 />
                             )}
                             <XAxis
-                                dataKey="name"
-                                angle={-45}
-                                textAnchor="end"
-                                height={40}
+                                type="number"
+                                dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
@@ -377,12 +438,15 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
+                                type="number"
+                                dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
@@ -394,178 +458,41 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            <Bar
-                                dataKey="count"
-                                radius={[0, 0, 0, 0]}
-                                barSize={settings.elementWidth * 100}
-                                style={{ transform: 'translateY(-1px)' }}
-                                label={settings.dataLabelsOn ? {
-                                    position: 'top',
-                                    fill: '#1f2937',
-                                    fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
-                                } : false}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.fill}
-                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
-                                        strokeWidth={settings.barBorderOn ? 1 : 0}
-                                    />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-
-                    {/* PLOT BORDER OVERLAY */}
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '80px',
-                            right: '20px',
-                            bottom: '80px',
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    const renderMeanChart = () => {
-        const settings = meanSettings;
-        const { height } = getDimensions(settings.dimensions);
-
-        const data = plotData.map((group, idx) => ({
-            name: settings.categoryLabels[idx],
-            mean: parseFloat(group.mean.toFixed(2)),
-            std: parseFloat(group.std.toFixed(2)),
-            fill: settings.categoryColors[idx]
-        }));
-
-        const yDomain = getYAxisDomain(settings, data, 'mean');
-
-        return (
-            <div style={{ position: 'relative', width: '100%' }}>
-                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                    <button className="customize-btn" onClick={() => openCustomization('Mean')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                        </svg>
-                        Customize
-                    </button>
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="customize-btn"
-                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                            </svg>
-                            Download
-                        </button>
-                        {downloadMenuOpen && (
-                            <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div ref={chartRef} style={{ position: 'relative' }}>
-                    <ResponsiveContainer width="100%" height={height}>
-                        <ComposedChart
-                            data={data}
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                            style={settings.borderOn ? { border: '2px solid black' } : {}}
-                        >
-                            {settings.captionOn && (
-                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
-                                    {settings.captionText}
-                                </text>
-                            )}
-                            {settings.gridOn && (
-                                <CartesianGrid
-                                    strokeDasharray={settings.gridStyle}
-                                    stroke={getGridStroke(settings.gridColor)}
-                                    strokeOpacity={settings.gridOpacity}
+                            
+                            {/* Regression Lines - Show before scatter points so they're behind */}
+                            {settings.showRegressionLines && regressionLineComponents}
+                            
+                            {/* Scatter Points - Show last so they're on top */}
+                            {settings.showScatterPoints && Object.keys(groupedScatterData).map((groupName, groupIndex) => (
+                                <Scatter
+                                    key={groupName}
+                                    name={groupName}
+                                    data={groupedScatterData[groupName]}
+                                    fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                    fillOpacity={settings.scatterOpacity}
+                                    shape={(props) => {
+                                        const { cx, cy } = props;
+                                        return (
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={settings.scatterSize / 2}  
+                                                fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                                fillOpacity={settings.scatterOpacity}
+                                            />
+                                        );
+                                    }}
                                 />
-                            )}
-                            <XAxis
-                                dataKey="name"
-                                angle={-45}
-                                textAnchor="end"
-                                height={40}
-                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
-                                label={{
-                                    value: settings.xAxisTitle,
-                                    position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
-                                    style: {
-                                        fontSize: settings.xAxisTitleSize,
-                                        fill: '#374151',
-                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
-                                }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
-                            />
-                            <YAxis
-                                domain={yDomain}
-                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                label={{
-                                    value: settings.yAxisTitle,
-                                    angle: -90,
-                                    position: 'insideLeft',
-                                    offset: settings.yAxisLeftMargin,
-                                    style: {
-                                        fontSize: settings.yAxisTitleSize,
-                                        fill: '#374151',
-                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
-                                }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Bar
-                                dataKey="mean"
-                                radius={[0, 0, 0, 0]}
-                                barSize={settings.elementWidth * 100}
-                                style={{ transform: 'translateY(-1px)' }}
-                                label={settings.dataLabelsOn ? {
-                                    position: 'top',
-                                    fill: '#1f2937',
-                                    fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
-                                } : false}
-                            >
-                                {data.map((entry, index) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.fill}
-                                        stroke={settings.barBorderOn ? '#1f2937' : 'none'}
-                                        strokeWidth={settings.barBorderOn ? 1 : 0}
-                                    />
-                                ))}
-                                {settings.errorBarsOn && (
-                                    <ErrorBar dataKey="std" width={4} strokeWidth={2} stroke="#374151" />
-                                )}
-                            </Bar>
+                            ))}
+                            
+                            {settings.legendOn && <Legend />}
                         </ComposedChart>
                     </ResponsiveContainer>
 
@@ -584,105 +511,135 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                         }} />
                     )}
                 </div>
+
+                {/* Regression Equations Display */}
+                {settings.showCriticalValues && Object.keys(regressionLines).length > 0 && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'গ্রুপ রিগ্রেশন সমীকরণ' : 'Group Regression Equations'}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
+                            {Object.keys(regressionLines).map((groupName, groupIndex) => {
+                                const lineData = regressionLines[groupName];
+                                if (!lineData) return null;
+                                
+                                return (
+                                    <div key={groupName} style={{ 
+                                        padding: '12px', 
+                                        background: 'white', 
+                                        borderRadius: '8px', 
+                                        borderLeft: `4px solid ${settings.categoryColors[groupIndex % settings.categoryColors.length]}` 
+                                    }}>
+                                        <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                            {groupName}
+                                        </div>
+                                        <div style={{ fontSize: '14px', color: '#6b7280', fontFamily: 'monospace' }}>
+                                            y = {lineData.slope.toFixed(4)}x {lineData.intercept >= 0 ? '+' : ''} {lineData.intercept.toFixed(4)}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+                                            R² = {calculateRSquared(groupedScatterData[groupName], lineData).toFixed(4)}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+
+                {/* ANCOVA Statistics Display */}
+                {settings.showCriticalValues && (
+                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
+                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
+                            {language === 'বাংলা' ? 'এনকোভা পরিসংখ্যান' : 'ANCOVA Statistics'}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {t.groupEffect}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    F = {results.f_statistic_group?.toFixed(4)}, p = {results.p_value_group?.toFixed(6)}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {t.covariateEffect}
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    F = {results.f_statistic_covariate?.toFixed(4)}, p = {results.p_value_covariate?.toFixed(6)}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    R²
+                                </div>
+                                <div style={{ fontSize: '14px', color: '#6b7280' }}>
+                                    {results.metadata?.r_squared?.toFixed(4)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     };
 
-    const CustomBoxPlot = ({ data, settings }) => {
-        const { height } = getDimensions(settings.dimensions);
-        const scatterData = [];
+    // Helper function to calculate R-squared for each group
+    const calculateRSquared = (data, regressionLine) => {
+        if (!data || data.length === 0) return 0;
+        
+        const yValues = data.map(point => point.y);
+        const yMean = yValues.reduce((sum, val) => sum + val, 0) / yValues.length;
+        
+        const totalSumOfSquares = yValues.reduce((sum, val) => sum + Math.pow(val - yMean, 2), 0);
+        const residualSumOfSquares = data.reduce((sum, point) => {
+            const predicted = regressionLine.slope * point.x + regressionLine.intercept;
+            return sum + Math.pow(point.y - predicted, 2);
+        }, 0);
+        
+        return totalSumOfSquares === 0 ? 0 : 1 - (residualSumOfSquares / totalSumOfSquares);
+    };
 
-        data.forEach((group, idx) => {
-            const xPos = idx;
-            scatterData.push(
-                { x: xPos, y: group.min, type: 'min', group: group.name, color: group.fill },
-                { x: xPos, y: group.q25, type: 'q25', group: group.name, color: group.fill },
-                { x: xPos, y: group.median, type: 'median', group: group.name, color: group.fill },
-                { x: xPos, y: group.q75, type: 'q75', group: group.name, color: group.fill },
-                { x: xPos, y: group.max, type: 'max', group: group.name, color: group.fill }
-            );
+    const renderResidualPlot = () => {
+        const settings = residualSettings;
+        const { height } = getDimensions(settings.dimensions);
+
+        // Use residual data from backend - USE NEW DATA STRUCTURE
+        const residualData = results.residual_data ? 
+            results.residual_data.independent.map((x, index) => ({
+                x: x,
+                y: results.residual_data.values[index],
+                group: scatterData[index]?.group || 'Unknown'
+            })) : 
+            scatterData.map(point => ({
+                x: point.x,
+                y: point.residual,
+                group: point.group
+            })) || [];
+
+        // Group residual data
+        const groupedResidualData = {};
+        residualData.forEach(point => {
+            if (!groupedResidualData[point.group]) {
+                groupedResidualData[point.group] = [];
+            }
+            groupedResidualData[point.group].push(point);
         });
 
-        let yDomainMin, yDomainMax;
+        // Create zero reference line data
+        const minX = Math.min(...residualData.map(d => d.x));
+        const maxX = Math.max(...residualData.map(d => d.x));
+        const zeroReferenceLine = [
+            { x: minX, y: 0 },
+            { x: maxX, y: 0 }
+        ];
 
-        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
-            const min = parseFloat(settings.yAxisMin);
-            const max = parseFloat(settings.yAxisMax);
-            if (!isNaN(min) && !isNaN(max)) {
-                yDomainMin = min;
-                yDomainMax = max;
-            }
-        }
-
-        if (yDomainMin === undefined || yDomainMax === undefined) {
-            const globalMin = Math.min(...data.map(d => d.min));
-            const globalMax = Math.max(...data.map(d => d.max));
-            const range = globalMax - globalMin;
-            const padding = range * 0.1;
-
-            const rawMin = globalMin - padding;
-            const rawMax = globalMax + padding;
-            const niceRange = rawMax - rawMin;
-            const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
-            const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
-
-            yDomainMin = Math.floor(rawMin / niceTick) * niceTick;
-            yDomainMax = Math.ceil(rawMax / niceTick) * niceTick;
-        }
-
-        const yDomain = [yDomainMin, yDomainMax];
-
-        const CustomBoxShape = (props) => {
-            const { cx, cy, payload, xAxis, yAxis } = props;
-            if (!payload || payload.type !== 'median') return null;
-
-            const groupData = data.find(g => g.name === payload.group);
-            if (!groupData) return null;
-
-            const yScale = yAxis.scale;
-
-            const yMinPos = yScale(groupData.min);
-            const yQ25Pos = yScale(groupData.q25);
-            const yMedianPos = yScale(groupData.median);
-            const yQ75Pos = yScale(groupData.q75);
-            const yMaxPos = yScale(groupData.max);
-
-            const boxWidth = 30 * settings.elementWidth;
-            const whiskerWidth = 20 * settings.elementWidth;
-
-            return (
-                <g>
-                    <line x1={cx} y1={yMinPos} x2={cx} y2={yQ25Pos} stroke={groupData.fill} strokeWidth="2" />
-                    <line x1={cx} y1={yQ75Pos} x2={cx} y2={yMaxPos} stroke={groupData.fill} strokeWidth="2" />
-                    <line x1={cx - whiskerWidth} y1={yMinPos} x2={cx + whiskerWidth} y2={yMinPos} stroke={groupData.fill} strokeWidth="2" />
-                    <line x1={cx - whiskerWidth} y1={yMaxPos} x2={cx + whiskerWidth} y2={yMaxPos} stroke={groupData.fill} strokeWidth="2" />
-                    <rect
-                        x={cx - boxWidth}
-                        y={yQ75Pos}
-                        width={boxWidth * 2}
-                        height={Math.abs(yQ25Pos - yQ75Pos)}
-                        fill={groupData.fill}
-                        fillOpacity="0.3"
-                        stroke={groupData.fill}
-                        strokeWidth="2"
-                        rx="4"
-                    />
-                    <line
-                        x1={cx - boxWidth}
-                        y1={yMedianPos}
-                        x2={cx + boxWidth}
-                        y2={yMedianPos}
-                        stroke="#1f2937"
-                        strokeWidth="3"
-                    />
-                </g>
-            );
-        };
+        const yDomain = getYAxisDomain(settings, residualData, 'y');
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                    <button className="customize-btn" onClick={() => openCustomization('Box')}>
+                    <button className="customize-btn" onClick={() => openCustomization('Residual')}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
@@ -690,10 +647,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                         Customize
                     </button>
                     <div style={{ position: 'relative' }}>
-                        <button
-                            className="customize-btn"
-                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        >
+                        <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
@@ -711,8 +665,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 </div>
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <ScatterChart
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                        <ComposedChart  
+                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -730,12 +684,6 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                             <XAxis
                                 type="number"
                                 dataKey="x"
-                                domain={[-0.5, data.length - 0.5]}
-                                ticks={data.map((_, idx) => idx)}
-                                tickFormatter={(value) => data[value]?.name || ''}
-                                angle={-45}
-                                textAnchor="end"
-                                height={40}
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.xAxisTitle,
@@ -745,7 +693,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -755,7 +704,6 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -765,14 +713,55 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            <Scatter data={scatterData} shape={<CustomBoxShape />} />
-                        </ScatterChart>
+                            
+                            {/* Zero Reference Line */}
+                            {settings.showReferenceLine && (
+                                <Line
+                                    name="Zero Reference"
+                                    type="linear"
+                                    dataKey="y"
+                                    data={zeroReferenceLine}
+                                    stroke={settings.referenceLineColor || '#ef4444'}
+                                    strokeWidth={settings.referenceLineWidth || 2}
+                                    strokeDasharray={settings.referenceLineStyle === 'dashed' ? '5 5' : 
+                                                settings.referenceLineStyle === 'dotted' ? '2 2' : '0'}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                />
+                            )}
+                            
+                            {/* Residual Points by Group */}
+                            {settings.showScatterPoints && Object.keys(groupedResidualData).map((groupName, groupIndex) => (
+                                <Scatter
+                                    key={groupName}
+                                    name={`${groupName} Residuals`}
+                                    data={groupedResidualData[groupName]}
+                                    fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                    fillOpacity={settings.scatterOpacity || 0.7}
+                                    shape={(props) => {
+                                        const { cx, cy } = props;
+                                        return (
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={settings.scatterSize / 2}  
+                                                fill={settings.categoryColors[groupIndex % settings.categoryColors.length]}
+                                                fillOpacity={settings.scatterOpacity || 0.7}
+                                            />
+                                        );
+                                    }}
+                                />
+                            ))}
+                            
+                            {settings.legendOn && <Legend />}
+                        </ComposedChart>
                     </ResponsiveContainer>
 
                     {/* PLOT BORDER OVERLAY */}
@@ -791,24 +780,37 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                     )}
                 </div>
 
-                {settings.dataLabelsOn && (
+                {/* Residual Statistics Display */}
+                {settings.showCriticalValues && results.residual_data && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                            {language === 'বাংলা' ? 'অবশিষ্ট পরিসংখ্যান' : 'Residual Statistics'}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                            {data.map((group, idx) => (
-                                <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
-                                    <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>Max: {group.max}</div>
-                                        <div>Q3 (75%): {group.q75}</div>
-                                        <div>Median: {group.median}</div>
-                                        <div>Q1 (25%): {group.q25}</div>
-                                        <div>Min: {group.min}</div>
-                                    </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'গড় অবশিষ্ট' : 'Mean Residual'}
                                 </div>
-                            ))}
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.residual_data.statistics?.mean?.toFixed(4) || '0.0000'}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'অবশিষ্ট এসডি' : 'Residual SD'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.residual_data.statistics?.std?.toFixed(4)}
+                                </div>
+                            </div>
+                            <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
+                                    {language === 'বাংলা' ? 'অবশিষ্ট পরিসীমা' : 'Residual Range'}
+                                </div>
+                                <div style={{ fontSize: '16px', color: '#6b7280' }}>
+                                    {results.residual_data.statistics?.min?.toFixed(4)} to {results.residual_data.statistics?.max?.toFixed(4)}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -816,290 +818,10 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
         );
     };
 
-    const CustomViolinPlot = ({ data, settings }) => {
-        const { height } = getDimensions(settings.dimensions);
-        const numPoints = 100;
-        const violinWidth = settings.elementWidth;
-
-        let yMin, yMax;
-
-        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
-            const min = parseFloat(settings.yAxisMin);
-            const max = parseFloat(settings.yAxisMax);
-            if (!isNaN(min) && !isNaN(max)) {
-                yMin = min;
-                yMax = max;
-            }
-        }
-
-        if (yMin === undefined || yMax === undefined) {
-            const globalMin = Math.min(...data.map(d => d.min));
-            const globalMax = Math.max(...data.map(d => d.max));
-            const range = globalMax - globalMin;
-            const padding = range * 0.1;
-
-            const rawMin = globalMin - padding;
-            const rawMax = globalMax + padding;
-            const niceRange = rawMax - rawMin;
-            const magnitude = Math.pow(10, Math.floor(Math.log10(niceRange)));
-            const niceTick = magnitude * (niceRange / magnitude < 2 ? 0.5 : niceRange / magnitude < 5 ? 1 : 2);
-
-            yMin = Math.floor(rawMin / niceTick) * niceTick;
-            yMax = Math.ceil(rawMax / niceTick) * niceTick;
-        }
-
-        const allViolinPoints = [];
-
-        data.forEach((group, groupIdx) => {
-            const points = [];
-            const groupRange = group.max - group.min;
-
-            for (let i = 0; i <= numPoints; i++) {
-                const t = i / numPoints;
-                const yValue = group.min + groupRange * t;
-
-                const distFromMedian = Math.abs(yValue - group.median);
-                const normalizedDist = distFromMedian / (groupRange / 2);
-                const density = Math.exp(-normalizedDist * normalizedDist * 3);
-
-                const distFromQ25 = Math.abs(yValue - group.q25);
-                const distFromQ75 = Math.abs(yValue - group.q75);
-                const quartileFactor = Math.exp(-Math.min(distFromQ25, distFromQ75) / (groupRange * 0.1));
-
-                const finalDensity = (density * 1.0 + quartileFactor * 0);
-
-                points.push({
-                    y: yValue,
-                    density: finalDensity,
-                    groupIdx: groupIdx,
-                    groupName: group.name,
-                    color: group.fill
-                });
-            }
-
-            allViolinPoints.push(...points);
-        });
-
-        const CustomViolinShape = (props) => {
-            const { cx, cy, payload, xAxis, yAxis } = props;
-            if (!payload || payload.groupIdx === undefined) return null;
-
-            const groupPoints = allViolinPoints.filter(p => p.groupIdx === payload.groupIdx);
-            const group = data[payload.groupIdx];
-
-            const yScale = yAxis.scale;
-            const xAxisWidth = xAxis.width || 710;
-            const groupWidth = xAxisWidth / data.length;
-            const maxWidth = groupWidth * violinWidth;
-
-            const maxDensity = Math.max(...groupPoints.map(p => p.density));
-
-            const leftPoints = groupPoints.map(p => {
-                const scaledDensity = (p.density / maxDensity) * maxWidth;
-                return {
-                    x: cx - scaledDensity,
-                    y: yScale(p.y)
-                };
-            });
-
-            const rightPoints = groupPoints.slice().reverse().map(p => {
-                const scaledDensity = (p.density / maxDensity) * maxWidth;
-                return {
-                    x: cx + scaledDensity,
-                    y: yScale(p.y)
-                };
-            });
-
-            const pathData = [
-                `M ${leftPoints[0].x} ${leftPoints[0].y}`,
-                ...leftPoints.slice(1).map(p => `L ${p.x} ${p.y}`),
-                ...rightPoints.map(p => `L ${p.x} ${p.y}`),
-                'Z'
-            ].join(' ');
-
-            const medianY = yScale(group.median);
-            const medianPoint = groupPoints.find(p => Math.abs(p.y - group.median) === Math.min(...groupPoints.map(pt => Math.abs(pt.y - group.median))));
-            const medianDensity = medianPoint ? (medianPoint.density / maxDensity) * maxWidth : maxWidth * 0.5;
-
-            return (
-                <g>
-                    <path
-                        d={pathData}
-                        fill={payload.color}
-                        fillOpacity={0.3}
-                        stroke={payload.color}
-                        strokeWidth={2}
-                    />
-                    <line
-                        x1={cx - medianDensity}
-                        y1={medianY}
-                        x2={cx + medianDensity}
-                        y2={medianY}
-                        stroke="#1f2937"
-                        strokeWidth={3}
-                    />
-                </g>
-            );
-        };
-
-        const scatterData = data.map((group, idx) => ({
-            x: idx,
-            y: group.median,
-            groupIdx: idx,
-            groupName: group.name,
-            color: group.fill
-        }));
-
-        return (
-            <div style={{ position: 'relative', width: '100%' }}>
-                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
-                    <button className="customize-btn" onClick={() => openCustomization('Violin')}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                        </svg>
-                        Customize
-                    </button>
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="customize-btn"
-                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                            </svg>
-                            Download
-                        </button>
-                        {downloadMenuOpen && (
-                            <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-                <div ref={chartRef} style={{ position: 'relative' }}>
-                    <ResponsiveContainer width="100%" height={height}>
-                        <ScatterChart
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                            style={settings.borderOn ? { border: '2px solid black' } : {}}
-                        >
-                            {settings.captionOn && (
-                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
-                                    {settings.captionText}
-                                </text>
-                            )}
-                            {settings.gridOn && (
-                                <CartesianGrid
-                                    strokeDasharray={settings.gridStyle}
-                                    stroke={getGridStroke(settings.gridColor)}
-                                    strokeOpacity={settings.gridOpacity}
-                                />
-                            )}
-                            <XAxis
-                                type="number"
-                                dataKey="x"
-                                domain={[-0.5, data.length - 0.5]}
-                                ticks={data.map((_, idx) => idx)}
-                                tickFormatter={(value) => data[value]?.name || ''}
-                                angle={-45}
-                                textAnchor="end"
-                                height={40}
-                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
-                                label={{
-                                    value: settings.xAxisTitle,
-                                    position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
-                                    style: {
-                                        fontSize: settings.xAxisTitleSize,
-                                        fill: '#374151',
-                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
-                                }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
-                            />
-                            <YAxis
-                                type="number"
-                                dataKey="y"
-                                domain={[yMin, yMax]}
-                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
-                                label={{
-                                    value: settings.yAxisTitle,
-                                    angle: -90,
-                                    position: 'insideLeft',
-                                    offset: settings.yAxisLeftMargin,
-                                    style: {
-                                        fontSize: settings.yAxisTitleSize,
-                                        fill: '#374151',
-                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
-                                }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
-                            />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Scatter data={scatterData} shape={<CustomViolinShape />} />
-                        </ScatterChart>
-                    </ResponsiveContainer>
-
-                    {/* PLOT BORDER OVERLAY */}
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '80px',
-                            right: '20px',
-                            bottom: '80px',
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 1
-                        }} />
-                    )}
-                </div>
-
-                {settings.dataLabelsOn && (
-                    <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-                        <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
-                        </h4>
-                        <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
-                        </p>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
-    const boxChartData = plotData.map((group, idx) => ({
-        name: boxSettings.categoryLabels[idx],
-        min: parseFloat(group.min.toFixed(2)),
-        q25: parseFloat(group.q25.toFixed(2)),
-        median: parseFloat(group.median.toFixed(2)),
-        q75: parseFloat(group.q75.toFixed(2)),
-        max: parseFloat(group.max.toFixed(2)),
-        fill: boxSettings.categoryColors[idx]
-    }));
-
-    const violinChartData = plotData.map((group, idx) => ({
-        name: violinSettings.categoryLabels[idx],
-        min: parseFloat(group.min.toFixed(2)),
-        q25: parseFloat(group.q25.toFixed(2)),
-        median: parseFloat(group.median.toFixed(2)),
-        q75: parseFloat(group.q75.toFixed(2)),
-        max: parseFloat(group.max.toFixed(2)),
-        fill: violinSettings.categoryColors[idx]
-    }));
-
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.anovaTitle}</h2>
+                <h2 className="stats-title">{t.ancovaTitle}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
@@ -1121,7 +843,11 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                     <tbody>
                         <tr>
                             <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{groupColumn} {language === 'বাংলা' ? 'এবং' : 'and'} {valueColumn}</td>
+                            <td className="stats-table-value">
+                                {results.column_names?.group} ({language === 'বাংলা' ? 'গ্রুপ' : 'group'}), 
+                                {results.column_names?.covariate} ({language === 'বাংলা' ? 'কোভ্যারিয়েট' : 'covariate'}), 
+                                {results.column_names?.outcome} ({language === 'বাংলা' ? 'আউটকাম' : 'outcome'})
+                            </td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
@@ -1132,22 +858,28 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.fStatistic}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.f_statistic?.toFixed(4))}</td>
+                            <td className="stats-table-label">{t.groupEffect}</td>
+                            <td className="stats-table-value stats-numeric">
+                                F = {mapDigitIfBengali(results.f_statistic_group?.toFixed(4))}, 
+                                p = {mapDigitIfBengali(results.p_value_group?.toFixed(6))}
+                            </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.pValue}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value?.toFixed(6))}</td>
+                            <td className="stats-table-label">{t.covariateEffect}</td>
+                            <td className="stats-table-value stats-numeric">
+                                F = {mapDigitIfBengali(results.f_statistic_covariate?.toFixed(4))}, 
+                                p = {mapDigitIfBengali(results.p_value_covariate?.toFixed(6))}
+                            </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.degreesOfFreedom}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.df_between)} {language === 'বাংলা' ? '(বিটুইন),' : '(between),'} {mapDigitIfBengali(results.df_within)} {language === 'বাংলা' ? '(উইদিন)' : '(within)'}</td>
+                            <td className="stats-table-label">R²</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.metadata?.r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপ প্রভাব সিদ্ধান্ত' : 'Group Effect Conclusion'}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
-                                    {results.p_value < 0.05 ? (
+                                    {results.p_value_group < 0.05 ? (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -1173,34 +905,20 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.count}</button>
-                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{t.meanPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{t.violinPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`} onClick={() => setActiveTab('scatter')}>{t.scatterPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'residuals' ? 'active' : ''}`} onClick={() => setActiveTab('residuals')}>{t.residualPlot}</button>
                 </div>
 
                 <div className="stats-plot-container">
-                    {activeTab === 'count' && (
+                    {activeTab === 'scatter' && (
                         <div className="stats-plot-wrapper active">
-                            {renderCountChart()}
+                            {renderScatterChart()}
                         </div>
                     )}
 
-                    {activeTab === 'mean' && (
+                    {activeTab === 'residuals' && (
                         <div className="stats-plot-wrapper active">
-                            {renderMeanChart()}
-                        </div>
-                    )}
-
-                    {activeTab === 'box' && (
-                        <div className="stats-plot-wrapper active">
-                            <CustomBoxPlot data={boxChartData} settings={boxSettings} />
-                        </div>
-                    )}
-
-                    {activeTab === 'violin' && (
-                        <div className="stats-plot-wrapper active">
-                            <CustomViolinPlot data={violinChartData} settings={violinSettings} />
+                            {renderResidualPlot()}
                         </div>
                     )}
                 </div>
@@ -1285,4 +1003,4 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     );
 };
 
-export default renderAnovaResults;
+export default renderAncovaResults;
