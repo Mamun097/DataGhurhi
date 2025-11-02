@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Pencil,
   Check,
@@ -11,67 +11,113 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import "./EditProfile.css";
 import defaultprofile from "./default_dp.png";
-
+import apiClient from "../api";
 export default function EditProfile() {
-  const fileInputRef = useRef(null);
-  const [profilePic, setProfilePic] = useState(defaultprofile);
 
-  const [info, setInfo] = useState({
-    name: "Swarnali Saha",
-    email: "swarnalisaha311220@gmail.com",
-    work_affiliation: "DataGhurhi Research Lab",
-    research_field: "Human–Computer Interaction",
-    profession: "Research Assistant",
-    date_of_birth: "2000-12-31",
-    highest_education: "B.Sc in Computer Science and Engineering",
-    gender: "Female",
-    home_address: "Dhaka, Bangladesh",
-    contact_no: "01601-819956",
-    profile_link: "https://dataghurhi.com/swarnali",
-    religion: "Hinduism",
-  });
-
-  const [editingField, setEditingField] = useState(null);
+  const [profileData, setProfileData] = useState({});
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
+  const [editedValues, setEditedValues] = useState({});
+  const [isEditingField, setIsEditingField] = useState(null);
   const [tempValue, setTempValue] = useState("");
-  const [openSections, setOpenSections] = useState({
-    basic: true,
-    contact: true,
-    education: false,
-    others: false,
-  });
-
   const [saveStatus, setSaveStatus] = useState("idle");
+  const [openSections, setOpenSections] = useState({ basic: true, contact: true});
+  const fileInputRef = useRef();
 
-  const handleToggle = (section) =>
-    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
+  //Fetch profile data on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem("token");
+    try {
+      const response = await apiClient.get("/api/profile", {
+        headers: { Authorization: "Bearer " + token },
+      });
+      console.log("Profile response:", response.data);
+      if (response.status === 200) {
+        setProfileData(response.data.user);
+        setProfilePicUrl(response.data.user.image);
+        setEditedValues(response.data.user);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => setProfilePic(ev.target.result);
-      reader.readAsDataURL(file);
+        // Set user type and available tokens
+        const currentUserType = response.data.user.user_type;
+        localStorage.setItem("userType", currentUserType);
+        localStorage.setItem("availableTokens",(response.data.user.available_token || 0));
+        localStorage.setItem("userId", response.data.user.user_id);
+      }} catch (err) {
+        console.error("Error fetching profile:", err);
+      }
+    };
+    fetchProfile();
+  }, []);
+const updateImageInDB = async (type, imageUrl) => {
+    const token = localStorage.getItem("token");
+    try {
+      await apiClient.put(
+        "/api/profile/update-profile-image",
+        { imageUrl },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (error) {
+      console.error("Failed to update ${type} image in DB:", error);
+    }
+  };
+  //  Handle edit click
+  const handleEdit = (field) => {
+    setIsEditingField(field);
+    setTempValue(profileData[field] || "");
+  };
+
+  //  Handle cancel
+  const handleCancel = () => {
+    setIsEditingField(null);
+    setTempValue("");
+  };
+
+  // Handle save single field 
+  const handleSave = async (field) => {
+    const updated = { ...profileData, [field]: tempValue };
+    setProfileData(updated);
+    setIsEditingField(null);
+
+    try {
+      await axios.put("/api/user/profile", { [field]: tempValue });
+    } catch (err) {
+      console.error("Error saving field:", err);
     }
   };
 
-  const handleEdit = (field) => {
-    setEditingField(field);
-    setTempValue(info[field]);
+  // Toggle section collapse
+  const handleToggle = (section) => {
+    setOpenSections((prev) => ({ ...prev, [section]: !prev[section] }));
   };
 
-  const handleSave = (field) => {
-    setInfo((prev) => ({ ...prev, [field]: tempValue }));
-    setEditingField(null);
+  // Handle profile picture upload
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("profilePic", file);
+
+    try {
+      const { data } = await axios.post("/api/user/profile/upload-pic", formData);
+      setProfileData((prev) => ({ ...prev, profilePic: data.url }));
+    } catch (err) {
+      console.error("Image upload failed:", err);
+    }
   };
 
-  const handleCancel = () => setEditingField(null);
-
-  const handleSaveProfile = () => {
+  // Save full profile
+  const handleSaveProfile = async () => {
     setSaveStatus("saving");
-    setTimeout(() => {
+    try {
+      await axios.put("/api/user/profile", profileData);
       setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 1500);
-    }, 1000);
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err) {
+      console.error("Error saving profile:", err);
+      setSaveStatus("idle");
+    }
   };
 
   const groupedFields = {
@@ -80,15 +126,30 @@ export default function EditProfile() {
     education: ["highest_education", "profession", "work_affiliation"],
     others: ["research_field"],
   };
-
-  const getLabel = (field) =>
-    field
-      ? field.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
-      : "";
+  const getLabel = (field) => {
+    const labels = {
+      name: "Name",
+      email: "Email",
+      work_affiliation: "Work Affiliation",
+      research_field: "Research Field",
+      profession: "Profession",
+      secret_question: "Secret Question",
+      secret_answer: "Secret Answer",
+      date_of_birth: "Date of Birth",
+      highest_education: "Highest Education",
+      gender: "Gender",
+      home_address: "Home Address",
+      contact_no: "Contact No",
+      profile_link: "Profile Link",
+      religion: "Religion",
+    };
+    return labels[field] || field;
+  };
 
   const renderField = (field) => {
-    const value = info[field] || "-";
-    const isEditing = editingField === field;
+    const value = profileData[field] || "";
+console.log(value);
+    const isEditing = isEditingField === field;
 
     return (
       <div key={field} className="info-row">
@@ -117,7 +178,7 @@ export default function EditProfile() {
             />
           )
         ) : (
-          <span className="info-value">{value}</span>
+          <span className="info-value">{value || "-"}</span>
         )}
 
         <div className="edit-buttons">
@@ -160,11 +221,7 @@ export default function EditProfile() {
                   ? "Education & Work"
                   : "Other Details"}
               </h2>
-              {openSections[section] ? (
-                <ChevronUp size={22} />
-              ) : (
-                <ChevronDown size={22} />
-              )}
+              {openSections[section] ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
             </div>
 
             <AnimatePresence initial={false}>
@@ -181,7 +238,7 @@ export default function EditProfile() {
                       <div className="profile-pic-section">
                         <div className="profile-pic-wrapper-large">
                           <img
-                            src={profilePic}
+                            src={profileData.profilePic || defaultprofile}
                             alt="Profile"
                             className="profile-pic-large"
                           />
