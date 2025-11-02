@@ -90,7 +90,7 @@
 
 /* Main Section */
 .projects-section {
-  margin-left: 250px; /* 230px sidebar + 20px gap */
+  margin-left: 266px; /* 230px sidebar + 16px left gap + 20px spacing */
   flex: 1;
   min-width: 300px;
   background: #ffffffd6;
@@ -102,7 +102,7 @@
 }
 
 .projects-section.sidebar-collapsed {
-  margin-left: 90px; /* 70px collapsed sidebar + 20px gap */
+  margin-left: 106px; /* 70px collapsed sidebar + 16px left gap + 20px spacing */
 }
 
 .edit-profile-header {
@@ -454,10 +454,11 @@
   margin: 0 0.75rem 1rem;
   text-align: center;
   opacity: 1;
-  transition: opacity 0.2s ease, height 0.2s ease, padding 0.2s ease,
-    margin 0.2s ease;
-  overflow: hidden; /* Prevent overflow */
-  white-space: nowrap; /* Prevent text wrapping */
+  max-width: calc(100% - 1.5rem);
+  transition: opacity 0.3s ease, height 0.3s ease, padding 0.3s ease,
+    margin 0.3s ease;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .sidebar-menu.collapsed .admin-badge {
@@ -466,45 +467,43 @@
   padding: 0;
   margin: 0;
   overflow: hidden;
-  display: none; /* Completely hide to prevent overflow */
+  display: none;
 }
 
 /* ============================================
    SIDEBAR STYLES - FIXED AND NON-SCROLLABLE
    ============================================ */
 
-/* Base Sidebar - FIXED POSITION */
+/* Base Sidebar - FIXED POSITION with floating effect */
 .sidebar-menu {
   position: fixed;
-  top: 80px;
-  left: 0;
-  bottom: 0;
+  top: 112px; /* 80px navbar + 16px gap */
+  left: 24px; /* Left gap for floating effect */
+  bottom: 24px; /* Bottom gap for floating effect */
   display: flex;
   flex-direction: column;
   width: 230px;
   background: #fff;
-  border-right: 1px solid #ddd;
-  border-radius: 0 10px 10px 0;
-  overflow-y: auto; /* Vertical scrolling only */
-  overflow-x: hidden; /* PREVENT horizontal scrolling */
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 100;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 200;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 /* Sidebar collapsed */
 .sidebar-menu.collapsed {
   width: 70px;
-  overflow-x: hidden; /* PREVENT horizontal scrolling */
 }
 
-/* Sidebar Header - More padding for better spacing */
+/* Sidebar Header - No border */
 .sidebar-header {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  padding: 1rem 1.25rem;
-  min-height: 70px;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0 0 0.6rem; /* Adjusted left padding to align with menu icons */
+  min-height: 20px;
   overflow: visible;
 }
 
@@ -513,7 +512,7 @@
   display: none;
 }
 
-/* Animated Hamburger Menu Button */
+/* Animated Hamburger Menu Button - Fixed position */
 .menu-toggle-btn {
   background: none;
   border: none;
@@ -523,76 +522,64 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   width: 44px;
   height: 44px;
   position: relative;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: background-color 0.2s ease, transform 0.2s ease;
   border-radius: 8px;
-  margin-left: 0;
+  margin: 0;
   flex-shrink: 0;
 }
 
 .menu-toggle-btn:hover {
-  background-color: #f0fdf4; /* Light green background on hover */
+  background-color: #f0fdf4;
   transform: scale(1.05);
 }
 
 .menu-toggle-btn span {
   display: block !important;
   width: 24px;
-  height: 2.5px;
-  background-color: #16a34a !important; /* Green color */
+  height: 2px;
+  background-color: #16a34a !important;
   border-radius: 2px;
-  transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-  transform-origin: center;
+  transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
   position: relative;
   flex-shrink: 0;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
-/* Hamburger to X animation - SAME SIZE AS HAMBURGER WITH RED COLOR */
+/* Hamburger to X animation - Smooth professional transition */
 .menu-toggle-btn.active {
-  gap: 0;
-  background-color: #fef2f2; /* Light red background when active */
+  background-color: #fef2f2;
 }
 
 .menu-toggle-btn.active:hover {
-  background-color: #fee2e2; /* Slightly darker red on hover */
+  background-color: #fee2e2;
 }
 
 .menu-toggle-btn.active span {
-  background-color: #dc2626 !important; /* Red color for cross */
+  background-color: #dc2626 !important;
 }
 
 .menu-toggle-btn.active span:nth-child(1) {
-  transform: translateY(0) rotate(45deg);
-  width: 24px;
+  transform: translateY(7px) rotate(45deg);
 }
 
 .menu-toggle-btn.active span:nth-child(2) {
   opacity: 0;
-  transform: scaleX(0) translateX(-10px);
+  transform: scaleX(0);
 }
 
 .menu-toggle-btn.active span:nth-child(3) {
-  transform: translateY(0) rotate(-45deg);
-  width: 24px;
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 .menu-toggle-btn:not(.active):hover span {
-  background-color: #15803d !important; /* Darker green */
-  width: 26px; /* Slight width increase on hover */
+  background-color: #15803d !important;
 }
 
 .menu-toggle-btn.active:hover span {
-  background-color: #b91c1c !important; /* Darker red on hover for cross */
-}
-
-/* Cross state hover effect */
-.menu-toggle-btn.active:hover span:not(:nth-child(2)) {
-  background-color: #b91c1c !important; /* Darker red */
-  width: 26px;
+  background-color: #b91c1c !important;
 }
 
 /* Focus state for accessibility */
@@ -605,51 +592,37 @@
   outline: none;
 }
 
-/* Optional: Add a subtle pulse animation on first load */
-@keyframes pulse-once {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
-}
-
-.menu-toggle-btn.first-load {
-  animation: pulse-once 0.6s ease-in-out;
-}
-
 /* Sidebar List */
 .sidebar-menu ul {
   list-style: none;
   margin: 0;
-  padding: 0.5rem;
+  padding: 0.5rem 0;
   flex: 1;
-  overflow-x: hidden; /* PREVENT horizontal scrolling */
+  overflow-x: hidden;
 }
 
 .sidebar-menu li {
-  margin: 0.25rem 0;
+  margin: 0.5rem 0; /* Increased from 0.25rem to 0.5rem */
+  padding: 0;
 }
 
-/* Sidebar Button */
+/* Sidebar Button - Icons stay in absolute fixed position */
 .sidebar-btn {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1rem;
+  display: block;
   width: 100%;
+  padding: 0.875rem 1rem 0.875rem 1rem;
   font-size: 0.95rem;
   background: none;
   border: none;
   cursor: pointer;
   color: #374151;
-  transition: all 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out;
   border-radius: 0.5rem;
   text-align: left;
-  overflow: hidden; /* Prevent overflow */
-  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  height: 45px;
 }
 
 .sidebar-btn:hover {
@@ -658,46 +631,55 @@
 
 .sidebar-btn.active {
   background-color: #e0f2fe;
-  color: #0284c7;
+  color: #4bb77d;
   font-weight: 600;
 }
 
-.sidebar-menu.collapsed .sidebar-btn {
-  justify-content: center;
-  padding: 0.875rem;
-  overflow: hidden; /* Prevent overflow */
-}
-
+/* Icon in absolute fixed position - NEVER moves */
 .icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
+  width: 20px;
+  height: 20px;
 }
 
+/* Label with smooth appearance - positioned next to icon */
 .label {
-  flex-grow: 1;
-  text-align: left;
+  display: inline-block;
+  margin-left: 35px; /* Space for icon */
   white-space: nowrap;
-  transition: opacity 0.2s ease;
-  overflow: hidden; /* Prevent overflow */
-  text-overflow: ellipsis; /* Add ellipsis for long text */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  max-width: 0;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s, 
+              max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  vertical-align: middle;
 }
 
+/* Show label when NOT collapsed */
+.sidebar-menu:not(.collapsed) .label {
+  opacity: 1;
+  max-width: 200px;
+}
+
+/* Collapsed state - label hidden */
 .sidebar-menu.collapsed .label {
   opacity: 0;
-  width: 0;
-  overflow: hidden;
-  display: none; /* Completely hide to prevent any overflow */
+  max-width: 0;
 }
 
 /* Tooltip */
-/* Tooltip container - prevent overflow */
 .tooltip-container {
   position: relative;
   display: inline-block;
   width: 100%;
-  overflow: hidden; /* Prevent overflow */
+  overflow: visible;
 }
 
 .tooltip-container .tooltip-text {
@@ -824,7 +806,7 @@
 
   .projects-section {
     margin-left: 0;
-    padding-bottom: 80px; /* Space for bottom mobile nav */
+    padding-bottom: 80px;
   }
 
   .projects-section.sidebar-collapsed {
