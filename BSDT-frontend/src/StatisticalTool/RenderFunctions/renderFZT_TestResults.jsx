@@ -672,7 +672,8 @@ const renderF_TestResults = (fTestActiveTab, setFTestActiveTab, results, languag
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                             />
                             <YAxis
@@ -686,7 +687,8 @@ const renderF_TestResults = (fTestActiveTab, setFTestActiveTab, results, languag
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                             />
                             <Tooltip 
@@ -1824,7 +1826,8 @@ const renderZ_TestResults = (zTestActiveTab, setZTestActiveTab, results, languag
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                             />
                             <YAxis
@@ -1837,7 +1840,8 @@ const renderZ_TestResults = (zTestActiveTab, setZTestActiveTab, results, languag
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                             />
                             <Tooltip 
@@ -3000,7 +3004,8 @@ const renderT_TestResults = (tTestActiveTab, setTTestActiveTab, results, languag
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                             />
                             <YAxis
@@ -3013,7 +3018,8 @@ const renderT_TestResults = (tTestActiveTab, setTTestActiveTab, results, languag
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                             />
                             <Tooltip 
@@ -4247,7 +4253,8 @@ const renderFZT_TestResults = (fztTestActiveTab, setFZTTestActiveTab, results, l
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                             />
                             <YAxis
@@ -4260,7 +4267,8 @@ const renderFZT_TestResults = (fztTestActiveTab, setFZTTestActiveTab, results, l
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                             />
                             <Tooltip 

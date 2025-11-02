@@ -31,6 +31,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         yAxisTickSize: 18,
         xAxisBottomMargin: -25,
         yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0, 
+        yAxisTitleOffset: 0,                       
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -467,7 +469,8 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
