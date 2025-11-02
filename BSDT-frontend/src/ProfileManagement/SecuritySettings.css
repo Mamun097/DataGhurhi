@@ -51,8 +51,9 @@
   align-items: center;
   cursor: pointer;
   padding: 1rem 1.5rem;
-  background-color: #e8f3e9;
+  background-color: #cdf0d1;
   border-bottom: 1px solid #cfe5d2;
+  box-shadow: #333;
 }
 
 .card-header h2,
@@ -62,7 +63,7 @@
   gap: 8px;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #2f5e33;
+  color: #25856f;
 }
 
 /*  Security Fields  */
@@ -195,12 +196,12 @@
 }
 
 .save-profile-btn {
-  background-color: #367131;
+  background-color: #25856f;
   color: #fff;
 }
 
 .save-profile-btn:hover {
-  background-color: #2b5a29;
+  background-color: #82bea1;
 }
 
 /* === Icon Inline Fix === */

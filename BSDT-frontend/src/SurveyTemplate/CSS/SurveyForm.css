@@ -71,25 +71,210 @@ h1 {
   margin-left: 0.5rem !important;
 }
 .bg-green{
-  background-color:#e9ffe9 
+  background-color:#f0faf0;
 }
 
 /* General Button Styling (Overrides Bootstrap defaults) */
-.btn {
-  padding: 10px 20px;
-  font-size: 1.1rem;
-  border-radius: 5px;
+.button-group-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
-.btn-primary {
-  background-color: #007bff;
+/* Compact button style */
+.btn-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  padding: 5px 10px;
   border: none;
-  color: white;
+  background-color: #2c957c;; /* Main color (blue tone, modern look) */
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.btn-primary:hover {
-  background-color: #0056b3;
+.btn-compact:hover:not(:disabled) {
+  background-color: #00a38d; /* Darker shade on hover */
 }
+
+.btn-compact:active {
+  background-color: #004b82;
+  transform: scale(0.98);
+}
+
+.btn-compact:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* Compact button (base style already exists) */
+.qs-btn-compact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  padding: 8px 16px;
+  border: none;
+  background-color: #0078d7;
+  color: #fff;
+  border-radius:8px;
+  margin: 0 8px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* White background with green border (Add button) */
+.qs-add-btn {
+  background-color: #ffffff;
+  color:  #25856f;
+  border: 1px solid  #25856f;
+  box-shadow: none;
+}
+
+.qs-add-btn:hover {
+  background-color:  #25856f;
+  color: #ffffff;
+  border-color:  #25856f;
+}
+
+.qs-add-btn:active {
+  background-color: #218838;
+  color: #ffffff;
+}
+
+.qs-add-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Icon alignment */
+.qs-add-btn i {
+  font-size: 13px;
+}
+
+
+
+/* Spinner (small and centered) */
+.spinner {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Badge (response count indicator) */
+.badge-small {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 10px;
+  margin-left: 4px;
+}
+/* Sidebar container */
+.sidebar-container {
+  width: 240px; /* slightly wider */
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #f0faf0;
+  border-right: 1px solid #ddd;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Sidebar content wrapper */
+.sidebar-content {
+  margin-top: 24px;
+}
+
+/* Sidebar title */
+.sidebar-title {
+  font-size: 18px;
+  font-weight: 600;
+  color:  #25856f;
+  margin-bottom: 16px;
+}
+
+/* Template list layout */
+.template-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Each template card */
+.template-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  padding: 10px;
+}
+
+.template-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+/* Selected template */
+.template-card.selected {
+  border: 2px solid #0078d7;
+  background-color: #f0f7ff;
+}
+
+/* Card body text */
+.template-card-body {
+  padding: 6px 0;
+}
+
+.template-title {
+  font-size: 14px;
+  font-weight: 500;
+  color:  #25856f;
+  margin: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-container {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .sidebar-content {
+    margin-top: 12px;
+  }
+
+  .template-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .template-card {
+    width: 48%;
+  }
+}
+
 
 /* Hover visibility for table elements (if used) */
 th:hover .hover-visible {
