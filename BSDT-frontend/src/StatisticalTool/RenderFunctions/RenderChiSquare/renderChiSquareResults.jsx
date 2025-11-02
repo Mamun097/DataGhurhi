@@ -498,18 +498,18 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                 <div
                     ref={tabContainerRef}
                     className="stats-tab-container"
-                    style={{
-                        position: isSticky ? 'fixed' : 'relative',
-                        top: isSticky ? '105px' : 'auto',
-                        left: isSticky ? 'auto' : 'auto',
-                        right: isSticky ? 'auto' : 'auto',
-                        width: isSticky ? containerWidth : 'auto',
-                        zIndex: 100,
-                        backgroundColor: 'white',
-                        padding: '0',
-                        boxShadow: isSticky ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
-                        transition: 'all 0.1s ease'
-                    }}
+                    // style={{
+                    //     position: isSticky ? 'fixed' : 'relative',
+                    //     top: isSticky ? '105px' : 'auto',
+                    //     left: isSticky ? 'auto' : 'auto',
+                    //     right: isSticky ? 'auto' : 'auto',
+                    //     width: isSticky ? containerWidth : 'auto',
+                    //     zIndex: 100,
+                    //     backgroundColor: 'white',
+                    //     padding: '0',
+                    //     boxShadow: isSticky ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                    //     transition: 'all 0.1s ease'
+                    // }}
                 >
                     <button
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
