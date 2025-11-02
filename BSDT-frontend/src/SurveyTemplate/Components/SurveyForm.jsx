@@ -473,113 +473,107 @@ const SurveyForm = ({
   return (
     <div className="px-2 px-md-3 py-5">
       {/* Action Buttons */}
-      <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
-        {surveyStatus === "published" ? (
-          <button
-            onClick={handleUpdate}
-            disabled={isLoading}
-            className="btn btn-outline-secondary btn-sm me-2"
-          >
-            {isLoading && actionType === "update" ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-1"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                {getLabel("Updating")}
-              </>
-            ) : (
-              <>
-                <i className="bi bi-pencil"></i> {getLabel("Update")}
-              </>
-            )}
-          </button>
+      <div className="button-group-compact">
+  {surveyStatus === "published" ? (
+    <button
+      onClick={handleUpdate}
+      disabled={isLoading}
+      className="btn-compact"
+    >
+      {isLoading && actionType === "update" ? (
+        <>
+          <span className="spinner"></span>
+          {getLabel("Updating")}
+        </>
+      ) : (
+        <>
+          <i className="bi bi-pencil"></i> {getLabel("Update")}
+        </>
+      )}
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={handleSave}
+        disabled={isLoading}
+        className="btn-compact"
+      >
+        {isLoading ? (
+          <>
+            <span className="spinner"></span>
+            {getLabel("Saving")}
+          </>
         ) : (
           <>
-            <button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="btn btn-outline-secondary btn-sm me-2"
-            >
-              {isLoading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-1"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  {getLabel("Saving")}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-save"></i> {getLabel("Save")}
-                </>
-              )}
-            </button>
-            <button
-              onClick={handlePublish}
-              disabled={isLoading}
-              className="btn btn-outline-secondary btn-sm me-2"
-            >
-              {isLoading && actionType === "publish" ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-1"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  {getLabel("Publishing")}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check-circle"></i> {getLabel("Publish")}
-                </>
-              )}
-            </button>
+            <i className="bi bi-save"></i> {getLabel("Save")}
           </>
         )}
-        {surveyLink && (
+      </button>
+
+      <button
+        onClick={handlePublish}
+        disabled={isLoading}
+        className="btn-compact"
+      >
+        {isLoading && actionType === "publish" ? (
           <>
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="btn btn-outline-info btn-sm me-2" 
-              title="Share survey link"
-            >
-              <i className="bi bi-share"></i> {getLabel("Survey Link")}
-            </button>
-            <button
-              onClick={() => setShowCollaborationModal(true)}
-              className="btn btn-outline-info btn-sm me-2"
-              title="Manage collaborators"
-            >
-              <i className="bi bi-people"></i> {getLabel("Collaborate")}
-            </button>
-            <ShareSurveyModal
-              show={showShareModal}
-              handleClose={() => setShowShareModal(false)}
-              surveyLink={surveyLink}
-              surveyTitle={title}
-            />
-            <button
-              onClick={handleSurveyResponses}
-              className="btn btn-outline-success btn-sm me-2"
-            >
-              <i className="bi bi-bar-chart"></i>
-              <span className="ms-1">{getLabel("View Response")}</span>
-              {responseCount !== null && (
-                <span className="badge bg-secondary ms-2">{responseCount}</span>
-              )}
-            </button>
-            <button
-              className="btn btn-outline-success btn-sm me-2"
-              onClick={() => handlePreview()}
-            >
-              <i className="bi bi-eye"></i> {getLabel("Preview")}
-            </button>
+            <span className="spinner"></span>
+            {getLabel("Publishing")}
+          </>
+        ) : (
+          <>
+            <i className="bi bi-check-circle"></i> {getLabel("Publish")}
           </>
         )}
-      </div>
+      </button>
+    </>
+  )}
+
+  {surveyLink && (
+    <>
+      <button
+        onClick={() => setShowShareModal(true)}
+        className="btn-compact info"
+        title="Share survey link"
+      >
+        <i className="bi bi-share"></i> {getLabel("Survey Link")}
+      </button>
+
+      <button
+        onClick={() => setShowCollaborationModal(true)}
+        className="btn-compact info"
+        title="Manage collaborators"
+      >
+        <i className="bi bi-people"></i> {getLabel("Collaborate")}
+      </button>
+
+      <ShareSurveyModal
+        show={showShareModal}
+        handleClose={() => setShowShareModal(false)}
+        surveyLink={surveyLink}
+        surveyTitle={title}
+      />
+
+      <button
+        onClick={handleSurveyResponses}
+        className="btn-compact success"
+      >
+        <i className="bi bi-bar-chart"></i>
+        <span className="ms-1">{getLabel("View Response")}</span>
+        {responseCount !== null && (
+          <span className="badge-small">{responseCount}</span>
+        )}
+      </button>
+
+      <button
+        className="btn-compact success"
+        onClick={() => handlePreview()}
+      >
+        <i className="bi bi-eye"></i> {getLabel("Preview")}
+      </button>
+    </>
+  )}
+</div>
 
       <hr className="my-4" />
 

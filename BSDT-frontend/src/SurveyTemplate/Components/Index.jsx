@@ -187,29 +187,29 @@ const Index = () => {
       <div className="container-fluid bg-green py-5" style={{paddingTop:"80 px"}}>
         <div className="row">
           {/* Sidebar */}
-          <div className="col-12 col-md-2">
-            <div className="mt-md-5">
-              {!useCustom && surveyStatus !== "published" && (
-                <>
-                  <h2 className="mb-4">{getLabel("Survey Templates")}</h2>
-                  <div className="d-flex flex-column gap-3">
-                    {templates.map((tmpl, idx) => (
-                      <div
-                        key={tmpl.id}
-                        className={`card text-center shadow-sm ${
-                          idx === selectedIndex ? "border-primary" : ""
-                        }`}
-                        style={{ cursor: "pointer" }}
-                        onClick={() => handleSelect(idx)}
-                      >
-                        <div className="card-body">
-                          <h5 className="card-title">{tmpl.title}</h5>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
+         <div className="sidebar-container">
+  <div className="sidebar-content">
+    {!useCustom && surveyStatus !== "published" && (
+      <>
+        <h2 className="sidebar-title">{getLabel("Survey Templates")}</h2>
+        <div className="template-list">
+          {templates.map((tmpl, idx) => (
+            <div
+              key={tmpl.id}
+              className={`template-card ${
+                idx === selectedIndex ? "selected" : ""
+              }`}
+              onClick={() => handleSelect(idx)}
+            >
+              <div className="template-card-body">
+                <h5 className="template-title">{tmpl.title}</h5>
+              </div>
+            </div>
+          ))}
+        </div>
+      </>
+    )}
+
               {!useCustom && surveyStatus === "published" && (
                 <div className="alert alert-warning text-center">
                   {getLabel("This survey has already been published.")}
