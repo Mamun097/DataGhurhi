@@ -47,10 +47,10 @@ const translations = {
         title: "Statistical Analysis Tool",
         subtitle: "Upload your Excel file and run various statistical tests on your data",
         formTitle: "Data Analysis Form",
-        uploadLabel: "Upload Your Data or Use Previously Saved File",
+        uploadLabel: "Import File",
         preprocessedLabel: "Preprocessed File",
         surveyLabel: "Survey Data File",
-        dropFile: "Drag your Excel file or click to browse",
+        dropFile: "Drag your file or click to browse",
         processing: "Processing file, please wait...",
         testType: "Test Type",
         testGroups: {
@@ -980,29 +980,96 @@ const StatisticalAnalysisTool = () => {
                             <div className="card-body">
                                 <form onSubmit={handleSubmit}>
                                     <div className="form-section">
-                                        <h5 className="section-title">
-                                            {isPreprocessed
-                                                ? t.preprocessedLabel
-                                                : isSurveyData
-                                                    ? t.surveyLabel
-                                                    : t.uploadLabel}
-                                        </h5>
+                                        {!(isPreprocessed || isSurveyData || file) && (
+                                            <h5 className="section-title">
+                                                {isPreprocessed
+                                                    ? t.preprocessedLabel
+                                                    : isSurveyData
+                                                        ? t.surveyLabel
+                                                        : t.uploadLabel}
+                                            </h5>
+                                        )}
 
                                         {(isPreprocessed || isSurveyData || file) ? (
-                                            <div className="file-info-box">
-                                                <svg className="file-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
-                                                    <path
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        strokeWidth="2"
-                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                    />
-                                                </svg>
-                                                <div className="file-details">
-                                                    <span className="file-label">
-                                                        {isPreprocessed ? "Preprocessed file" : isSurveyData ? "Survey file" : "Uploaded file"}
-                                                    </span>
-                                                    <strong className="file-name">{fileName}</strong>
+                                            <div className="uploaded-container">
+                                                <div className="left-partition">
+                                                    <div className="file-info-box">
+                                                        <svg className="file-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                            />
+                                                        </svg>
+                                                        <div className="file-details">
+                                                            <span className="file-label">
+                                                                {isPreprocessed ? "Preprocessed file" : isSurveyData ? "Survey file" : "Uploaded file"}
+                                                            </span>
+                                                            <strong className="file-name">{fileName}</strong>
+                                                        </div>
+                                                    </div>
+
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'flex-start',
+                                                        gap: '10px',
+                                                        margin: '0 0',
+                                                        marginTop: '1rem',
+                                                    }}>
+                                                        <div className="action-buttons" style={{
+                                                            display: 'flex',
+                                                            gap: '12px',
+                                                            justifyContent: 'flex-start'
+                                                        }}>
+                                                            <button
+                                                                type="button"
+                                                                className="customize-btn"
+                                                                onClick={handlePreviewClick}
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                                </svg>
+                                                                {language === "bn" ? "ডেটা প্রিভিউ" : "Preview"}
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="customize-btn"
+                                                                onClick={() => {
+                                                                    const path = "/preprocess";
+                                                                    navigate(path, { state: { userId: userId, filename: fileName } });
+                                                                }}
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
+                                                                </svg>
+                                                                {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
+                                                            </button>
+
+                                                            <button
+                                                                onClick={resetForm}
+                                                                className="customize-btn"
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                                    <path d="M21 3v5h-5"></path>
+                                                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                                    <path d="M3 21v-5h5"></path>
+                                                                </svg>
+                                                                Reset
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="right-partition">
+                                                    <div className="insights-placeholder">
+                                                        <h6 className="insights-title">File Insights</h6>
+                                                        <p className="insights-text">Insights will appear here</p>
+                                                    </div>
                                                 </div>
                                             </div>
                                         ) : (
@@ -1055,7 +1122,7 @@ const StatisticalAnalysisTool = () => {
                                                             d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                                                         />
                                                     </svg>
-                                                    <p className="action-text">Import file from Saved Folder</p>
+                                                    <p className="action-text">Import file from DataGhurhi Saved Folder</p>
                                                 </div>
                                             </div>
                                         )}
@@ -1066,9 +1133,65 @@ const StatisticalAnalysisTool = () => {
                                                 {t.processing}
                                             </div>
                                         )}
+
+                                        <style jsx>{`
+                                            .customize-btn {
+                                                
+                                                border-color: #22c55e;
+                                            }
+
+                                            .customize-btn:hover {
+                                                background-color: rgba(34, 197, 94, 0.1); /* Light green background */
+                                                border-color: #22c55e; /* Green border */
+                                                color: #16a34a; /* Green text */
+                                        `}</style>
                                     </div>
 
                                     <style jsx>{`
+                                        .uploaded-container {
+                                            display: flex;
+                                            gap: 1.5rem;
+                                            width: 100%;
+                                        }
+
+                                        .left-partition {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 0;
+                                        }
+
+                                        .right-partition {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                        }
+
+                                        .insights-placeholder {
+                                            padding: 1.5rem;
+                                            border: 2px dashed #e2e8f0;
+                                            border-radius: 12px;
+                                            background-color: #f7fafc;
+                                            min-height: 200px;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            justify-content: center;
+                                        }
+
+                                        .insights-title {
+                                            font-size: 1.125rem;
+                                            font-weight: 600;
+                                            color: #4a5568;
+                                            margin: 0 0 0.5rem 0;
+                                        }
+
+                                        .insights-text {
+                                            font-size: 0.875rem;
+                                            color: #a0aec0;
+                                            margin: 0;
+                                        }
+
                                         .upload-folder-container {
                                             display: flex;
                                             align-items: stretch;
@@ -1209,6 +1332,11 @@ const StatisticalAnalysisTool = () => {
 
                                         /* Mobile View - Show only icons */
                                         @media (max-width: 768px) {
+                                            .uploaded-container {
+                                                flex-direction: column;
+                                                gap: 1rem;
+                                            }
+
                                             .upload-folder-container {
                                                 gap: 1rem;
                                             }
@@ -1254,79 +1382,6 @@ const StatisticalAnalysisTool = () => {
                                             }
                                         }
                                     `}</style>
-
-
-                                    {(isPreprocessed || isSurveyData || file) ?
-                                            (<div style={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: '10px',
-                                                margin: '-70px 0',
-                                                marginBottom: '50px',
-                                            }}>
-                                                <div className="action-buttons" style={{
-                                                    display: 'flex',
-                                                    gap: '12px',
-                                                    justifyContent: 'right'
-                                                }}>
-                                                    <button
-                                                        type="button"
-                                                        className="customize-btn"
-                                                        onClick={handlePreviewClick}
-                                                    >
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                            <circle cx="12" cy="12" r="3"></circle>
-                                                        </svg>
-                                                        {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        className="customize-btn"
-                                                        onClick={() => {
-                                                            const path = "/preprocess";
-                                                            navigate(path, { state: { userId: userId, filename: fileName } });
-                                                        }}
-                                                    >
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
-                                                        </svg>
-                                                        {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
-                                                    </button>
-
-                                                    <button
-                                                        onClick={resetForm}
-                                                        className="customize-btn"
-                                                    >
-                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-                                                            <path d="M21 3v5h-5"></path>
-                                                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-                                                            <path d="M3 21v-5h5"></path>
-                                                        </svg>
-                                                        Reset File
-                                                    </button>
-                                                </div>
-
-                                                {/* Dotted horizontal line */}
-                                                <div style={{
-                                                    width: '100%',
-                                                    borderBottom: '2px dotted #ddd',
-                                                    margin: '0 auto'
-                                                }}></div>
-                                            </div>) : null}
-                                        <style jsx>{`
-                                            .customize-btn:hover {
-                                                background-color: rgba(34, 197, 94, 0.1); /* Light green background */
-                                                border-color: #22c55e; /* Green border */
-                                                color: #16a34a; /* Green text */
-                                        `}</style>
-
-
-                                    
-                                        
 
                                         {(isPreprocessed || isSurveyData || file) ? (
                                             <div className="form-section">
@@ -1376,7 +1431,7 @@ const StatisticalAnalysisTool = () => {
 
                                                 <div className="test-description-hint">{t.selectPrompt}</div>
 
-                                                {testType && t.descriptions[testType] && (
+                                                {/* {testType && t.descriptions[testType] && (
                                                     <div className="test-description-box">
                                                         <strong className="test-description-title">
                                                             {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
@@ -1396,7 +1451,7 @@ const StatisticalAnalysisTool = () => {
                                                             </div>
                                                         )}
                                                     </div>
-                                                )}
+                                                )} */}
 
                                             </div>) : null}
 
@@ -1749,6 +1804,7 @@ const StatisticalAnalysisTool = () => {
 
                                                 {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
                                                             {(testType === "kolmogorov" ||
                                                                 testType === "anderson" ||
@@ -1836,7 +1892,7 @@ const StatisticalAnalysisTool = () => {
                                                 )}
 
 
-                                                {testType === 'pearson' && (
+                                                {/* {testType === 'pearson' && (
                                                     <PearsonOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -2046,9 +2102,9 @@ const StatisticalAnalysisTool = () => {
                                                         setHist2Color={setHist2Color}
                                                         t={t}
                                                     />
-                                                )}
+                                                )} */}
 
-                                                {testType === 'cross_tabulation' && (
+                                                {/* {testType === 'cross_tabulation' && (
                                                     <CrossTabulationOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -2070,9 +2126,9 @@ const StatisticalAnalysisTool = () => {
                                                         setBarWidth={setBarWidth}
                                                         t={t}
                                                     />
-                                                )}
+                                                )} */}
 
-                                                {testType === 'eda_distribution' && (
+                                                {/* {testType === 'eda_distribution' && (
                                                     <EDADistributionsOptions
                                                         isFirstTimeAnalysis={isFirstTimeAnalysis}
                                                         setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
@@ -2100,9 +2156,9 @@ const StatisticalAnalysisTool = () => {
                                                         setShowGrid={setShowGrid}
                                                         t={t}
                                                     />
-                                                )}
+                                                )} */}
 
-                                                {testType === 'eda_swarm' && (
+                                                {/* {testType === 'eda_swarm' && (
                                                     <EDASwarmOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -2122,9 +2178,9 @@ const StatisticalAnalysisTool = () => {
                                                         setSwarmColor={setSwarmColor}
                                                         t={t}
                                                     />
-                                                )}
+                                                )} */}
 
-                                                {testType === 'eda_pie' && (
+                                                {/* {testType === 'eda_pie' && (
                                                     <PieChartOptions
                                                         language={language}
                                                         setLanguage={setLanguage}
@@ -2142,7 +2198,7 @@ const StatisticalAnalysisTool = () => {
                                                         setImageSize={setImageSize}
                                                         t={t}
                                                     />
-                                                )}
+                                                )} */}
 
                                                 {testType === 'bar_chart' && (
                                                     <BarChartOptions

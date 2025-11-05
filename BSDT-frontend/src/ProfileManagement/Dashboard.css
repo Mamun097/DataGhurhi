@@ -502,7 +502,7 @@
 .sidebar-header {
   display: flex;
   align-items: center;
-  padding: 1rem 0 0 0.6rem; /* Adjusted left padding to align with menu icons */
+  padding: 1rem 0 0 0.75rem; /* Adjusted left padding to align with menu icons */
   min-height: 20px;
   overflow: visible;
 }
