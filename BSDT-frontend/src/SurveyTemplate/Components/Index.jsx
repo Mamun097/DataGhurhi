@@ -188,27 +188,27 @@ const Index = () => {
         <div className="row">
           {/* Sidebar */}
          <div className="sidebar-container">
-  <div className="sidebar-content">
-    {!useCustom && surveyStatus !== "published" && (
-      <>
-        <h2 className="sidebar-title">{getLabel("Survey Templates")}</h2>
-        <div className="template-list">
-          {templates.map((tmpl, idx) => (
-            <div
-              key={tmpl.id}
-              className={`template-card ${
-                idx === selectedIndex ? "selected" : ""
-              }`}
-              onClick={() => handleSelect(idx)}
-            >
-              <div className="template-card-body">
-                <h5 className="template-title">{tmpl.title}</h5>
-              </div>
+      <div className="sidebar-content">
+        {!useCustom && surveyStatus !== "published" && (
+          <>
+            <h2 className="sidebar-title">{getLabel("Survey Templates")}</h2>
+            <div className="template-list">
+              {templates.map((tmpl, idx) => (
+                <div
+                  key={tmpl.id}
+                  className={`template-card ${
+                    idx === selectedIndex ? "selected" : ""
+                  }`}
+                  onClick={() => handleSelect(idx)}
+                >
+                  <div className="template-card-body">
+                    <h5 className="template-title">{tmpl.title}</h5>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-      </>
-    )}
+          </>
+        )}
 
               {!useCustom && surveyStatus === "published" && (
                 <div className="alert alert-warning text-center">
@@ -219,7 +219,7 @@ const Index = () => {
           </div>
 
           {/* Main form */}
-          <div className="col-12 col-md-8 mt-3 bg-white " >
+          <div className="col-12 col-md-8 mt-3 bg-transparent gap-3" >
             <SurveyForm
               title={title}
               setTitle={setTitle}
