@@ -4,7 +4,6 @@
 .modern-projects-container {
   width: 100%;
   padding: 2rem;
-  /* background: #f8f9fa; */
   background: #4bb77d10; /* Light green tint */
   min-height: 100vh;
   animation: fadeIn 0.3s ease-in-out;

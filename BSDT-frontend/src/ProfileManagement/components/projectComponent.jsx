@@ -25,6 +25,7 @@ import banner7 from "./banner/banner7.jpg";
 import banner8 from "./banner/banner8.jpg";
 import banner9 from "./banner/banner9.jpg";
 import banner10 from "./banner/banner10.jpg";
+import no_personal_project from "./banner/no_personal_project.png";
 
 const ProjectTab = ({
   getLabel,
@@ -351,7 +352,9 @@ const ProjectTab = ({
         </div>
       ) : (
         <div className="empty-state">
-          <FolderOpenIcon className="empty-icon" />
+            <div className="empty-illustration">
+              <img src={no_personal_project} alt="No Collaborated Projects" />
+            </div>
           <h3>{getLabel("No Projects Found")}</h3>
           <p
             className="empty-create-link"
