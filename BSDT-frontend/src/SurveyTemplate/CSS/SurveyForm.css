@@ -41,17 +41,17 @@ h1 {
 }
 
 .form-select {
-  height: 40px;
-  font-size: 1rem;
+  height: 20px;
+  font-size: 14px;
 }
 
 .form-check-input {
-  width: 20px;
-  height: 20px;
+  width: 15px;
+  height: 15px;
 }
 
 .form-check-label {
-  font-size: 1rem;
+  font-size: 14px;
 }
  .py-10{
   margin-top: 200px;
@@ -71,7 +71,13 @@ h1 {
   margin-left: 0.5rem !important;
 }
 .bg-green{
-  background-color:#f0faf0;
+   background:  #eef4ee;
+}
+.custom-hr {
+  border: none;
+  border-top: 3px solid  #25856f; /* Thicker green line */
+  margin: 0.5rem 0; 
+  opacity: 1; /* ensures it’s not faded */
 }
 
 /* General Button Styling (Overrides Bootstrap defaults) */
@@ -144,7 +150,7 @@ h1 {
 }
 
 .qs-add-btn:active {
-  background-color: #218838;
+  background-color: #25856f;
   color: #ffffff;
 }
 
@@ -157,40 +163,81 @@ h1 {
 .qs-add-btn i {
   font-size: 13px;
 }
-
-
-
-/* Spinner (small and centered) */
-.spinner {
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
+/* Floating Top Navigation Bar */
+.floating-top-bar {
+  position: fixed;
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 15px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  transition: all 0.3s ease;
+  min-width: 770px;
+  
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* Each icon button */
+.fab-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--btn-bg, #f8f9fa);
+  color: #25856f;
+  border: 1px solid #25856f;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
+
+.fab-btn:hover {
+  background: #e9ecef;
+}
+
+.fab-btn i {
+  font-size: 16px;
+}
+
+.btn-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.badge-small {
+  background: #25856f;
+  color: white;
+  font-size: 11px;
+  border-radius: 10px;
+  padding: 2px 6px;
+  margin-left: 4px;
+}
+
 
 /* Badge (response count indicator) */
-.badge-small {
+/* .badge-small {
   background-color: rgba(255, 255, 255, 0.2);
   color: #fff;
   font-size: 10px;
   padding: 2px 5px;
   border-radius: 10px;
   margin-left: 4px;
-}
+} */
+
+/* Small Badge (top-right corner) */
+
 /* Sidebar container */
 .sidebar-container {
   width: 240px; /* slightly wider */
   margin-top: 20px;
   padding: 20px;
-  background-color: #f0faf0;
+  background-color: transparent;
   border-right: 1px solid #ddd;
   min-height: 100%;
   box-sizing: border-box;
@@ -249,6 +296,48 @@ h1 {
   font-weight: 500;
   color:  #25856f;
   margin: 0;
+}
+.tag-toggle-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tag-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f8f9fa;
+  color: #333;
+  border: 2px solid  #25856f;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.tag-toggle-btn:hover {
+  background-color: #f0faf0;
+  transform: translateY(-1px);
+}
+
+.tag-toggle-btn i {
+  font-size: 0.9rem;
+  color: #6c757d;
+}
+
+.tag-section {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 12px;
+  background-color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  align-items: center;
 }
 
 /* Responsive adjustments */
@@ -333,6 +422,53 @@ td:hover .hover-visible {
   align-items: center; 
   row-gap: 0.5rem; 
 }
+/* logo alignment button*/
+
+
+/* Active (selected) button */
+.btn-aligned {
+  background-color: #25856f;
+  color: #fff;
+  border: 1px solid #25856f;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  transition: all 0.2s ease-in-out;
+}
+
+.btn-aligned:hover {
+  background-color: #1e6f5f;
+  border-color: #1e6f5f;
+  box-shadow: 0 2px 6px rgba(37, 133, 111, 0.25);
+}
+
+/* Inactive (outline) button */
+.btn-outline-aligned {
+  background-color: #fff;
+  color: #25856f;
+  border: 1px solid #25856f;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 4px 12px;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Hover effect for inactive button */
+.btn-outline-aligned:hover {
+  background-color: #25856f;
+  color: #fff;
+  border-color: #25856f;
+  box-shadow: 0 2px 6px rgba(37, 133, 111, 0.25);
+}
+
+/* Optional: remove Bootstrap blue focus ring */
+.btn-aligned:focus,
+.btn-outline-aligned:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 133, 111, 0.3);
+}
 
 @media (max-width: 767.98px) {
   .button-group-mobile-compact > .btn,
@@ -377,5 +513,89 @@ td:hover .hover-visible {
   .button-group-mobile-compact > label.btn .spinner-border-sm {
     width: 1rem !important;             
     height: 1rem !important;
+  }
+}
+.question-input {
+  border: 1px solid #25856f;
+  border-radius: 6px;
+  font-size: 14px;
+  padding: 4px 6px;
+  line-height: 1.2;
+  width: 100%;
+  min-height: 15px;
+  max-height: 160px;       
+  resize: none;              
+  overflow: hidden;          
+  background-color: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.question-input:focus {
+  border-color:  #d3e4e1;
+  box-shadow: 0 0 4px rgba(37, 133, 111, 0.3);
+  outline: none;
+}
+
+.question-input:hover {
+  border-color:   #d3e4e1;
+}
+
+.question-input::placeholder {
+  color: #888;
+  font-size: 13px;
+}
+
+.question-select {
+  border: 1px solid #25856f;      
+  border-radius: 6px;
+  font-size: 14px;
+  padding: 4px 24px 14px 10px;      
+  background-color: #fff;
+  color: #333;
+  appearance: none;                
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  min-width: 130px;
+}
+
+.question-select:focus {
+  border-color: #d3e4e1;
+  box-shadow: 0 0 4px rgba(37, 133, 111, 0.3);
+  outline: none;
+}
+
+.question-select:hover {
+  border-color: #96d2c6;
+}
+
+.question-select option {
+  font-size: 14px;
+  padding: 8px;
+}
+.add-sec-btn{
+  background-color: #ffffff;
+  color: #25856f;
+  border: 1px solid #25856f;
+  border-radius: 6px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+  margin: auto;
+  justify-content: center;
+  align-content: center;
+  font-size: 1rem;
+}
+.add-sec-btn:hover {
+  background-color: #f0faf0;
+  
+}
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .question-select {
+    width: 100%;
+    font-size: 13px;
+    padding: 6px 26px 6px 8px;
   }
 }
