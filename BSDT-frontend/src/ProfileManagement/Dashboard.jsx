@@ -536,7 +536,7 @@ const Dashboard = () => {
       return [
         // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
         { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
-        { label: "Shared with You", key: "shared", icon: <Users size={18} /> },
+        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
         // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
         { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
         { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
@@ -868,9 +868,7 @@ const Dashboard = () => {
               />
             )}
             {!isAdmin && activeTab === "questionbank" && (
-              <div className="question-bank-section">
-                <QB language={language} setLanguage={setLanguage} />
-              </div>
+              <QB language={language} setLanguage={setLanguage} />
             )}
             {!isAdmin && activeTab === "analysis" && (
               <div>

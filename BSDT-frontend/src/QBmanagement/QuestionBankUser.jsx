@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
-import "./CSS/SurveyForm.css";
+import "./CSS/QuestionBank.css";
 import SurveyForm from "./Components/SurveyForm";
 import { useLocation } from "react-router-dom";
 import apiClient from "../api";
+import QuizIcon from "@mui/icons-material/Quiz";
 
 // Google Translate API Key
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -31,8 +32,7 @@ const QB = ({ language, setLanguage }) => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState("mine");
   const [sharedQuestions, setSharedQuestions] = useState([]);
-  const [questions, setQuestions] = useState([]); // ✅ FIXED: was `false`
-
+  const [questions, setQuestions] = useState([]);
   const [translations, setTranslations] = useState({});
 
   const labelsToTranslate = [
@@ -40,6 +40,7 @@ const QB = ({ language, setLanguage }) => {
     "Shared with Me",
     "Loading questions…",
     "Question Bank",
+    "Manage and organize your survey questions",
   ];
 
   // Fetch questions
@@ -102,54 +103,74 @@ const QB = ({ language, setLanguage }) => {
 
   const getLabel = (text) => translations[text] || text;
 
-  if (questions.length === 0) {
-    return <p className="text-center mt-5">{getLabel("Loading questions…")}</p>;
+  if (questions.length === 0 && activeTab === "mine") {
+    return (
+      <div className="modern-qb-container">
+        <div className="qb-loading-state">
+          <QuizIcon className="loading-icon" />
+          <p>{getLabel("Loading questions…")}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="bg-white rounded shadow p-4 mb-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1 className="text-success mb-0 text-center w-100">
-          <i className="bi bi-journal-text me-2"></i> {getLabel("Question Bank")}
-        </h1>
+    <div className="modern-qb-container">
+      {/* Header Section */}
+      <div className="qb-header-section">
+        <div className="header-title">
+          <QuizIcon className="header-icon" />
+          <div>
+            <h2>{getLabel("Question Bank")}</h2>
+            <p className="header-subtitle">
+              {getLabel("Manage and organize your survey questions")}
+            </p>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="qb-tab-navigation">
+          <button
+            className={`tab-btn ${activeTab === "mine" ? "active" : ""}`}
+            onClick={() => setActiveTab("mine")}
+          >
+            <i className="bi bi-person me-2"></i>
+            {getLabel("My Questions")}
+          </button>
+          <button
+            className={`tab-btn ${activeTab === "shared" ? "active" : ""}`}
+            onClick={() => setActiveTab("shared")}
+          >
+            <i className="bi bi-people me-2"></i>
+            {getLabel("Shared with Me")}
+          </button>
+        </div>
       </div>
 
-      <div className="d-flex justify-content-end gap-2 mb-3">
-        <button
-          className={`btn btn-sm ${activeTab === "mine" ? "btn-success" : "btn-outline-success"}`}
-          onClick={() => setActiveTab("mine")}
-        >
-          <i className="bi bi-person me-1"></i> {getLabel("My Questions")}
-        </button>
-        <button
-          className={`btn btn-sm ${activeTab === "shared" ? "btn-success" : "btn-outline-success"}`}
-          onClick={() => setActiveTab("shared")}
-        >
-          <i className="bi bi-people me-1"></i> {getLabel("Shared with Me")}
-        </button>
+      {/* Question Content */}
+      <div className="qb-content-wrapper">
+        {activeTab === "mine" && (
+          <SurveyForm
+            questions={questions}
+            setQuestions={setQuestions}
+            activeTab={activeTab}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
+          />
+        )}
+
+        {activeTab === "shared" && (
+          <SurveyForm
+            questions={sharedQuestions}
+            setQuestions={() => {}}
+            activeTab={activeTab}
+            language={language}
+            setLanguage={setLanguage}
+            getLabel={getLabel}
+          />
+        )}
       </div>
-
-      {activeTab === "mine" && (
-        <SurveyForm
-          questions={questions}
-          setQuestions={setQuestions}
-          activeTab={activeTab}
-          language={language}
-          setLanguage={setLanguage}
-          getLabel={getLabel}
-        />
-      )}
-
-      {activeTab === "shared" && (
-        <SurveyForm
-          questions={sharedQuestions}
-          setQuestions={() => {}}
-          activeTab={activeTab}
-          language={language}
-          setLanguage={setLanguage}
-          getLabel={getLabel}
-        />
-      )}
     </div>
   );
 };

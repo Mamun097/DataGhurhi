@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef } from "react";
 import SurveyQuestions from "./SurveyQuestions";
 import AddQuestion from "./AddNewQuestion";
 import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
-// import "bootstrap-icons/font/bootstrap-icons.css";
-import "../CSS/SurveyForm.css"; // Assuming you have a CSS file for styling
+import "../CSS/QuestionBank.css";
 import axios from "axios";
 
-// Google Translate API Key (make sure you set this up correctly in your environment)
+// Google Translate API Key
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
 // Function to translate the text using Google Translate API
@@ -23,20 +22,18 @@ const translateText = async (textArray, targetLang) => {
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
     console.error("Translation error:", error);
-    return textArray; // If there's an error, fallback to original text
+    return textArray;
   }
 };
 
-const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage }) => {
+const SurveyForm = ({ questions, setQuestions, activeTab, language, setLanguage }) => {
   const [newQuestion, setNewQuestion] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState("all"); // "all" | "mine" | "public"
-  const [groupByProject, setGroupByProject] = useState(false); // toggle grouping
+  const [filter, setFilter] = useState("all");
+  const [groupByProject, setGroupByProject] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [searchLogic, setSearchLogic] = useState("intersection"); // or "union"
+  const [searchLogic, setSearchLogic] = useState("intersection");
   const [languageFilter, setLanguageFilter] = useState("all");
-
-
   const [searchFields, setSearchFields] = useState({
     keyword: true,
     project: false,
@@ -47,7 +44,7 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
   });
   const [showSearchFilters, setShowSearchFilters] = useState(false);
   const [translations, setTranslations] = useState({});
- 
+
   const bottomRef = useRef(null);
   const userId = parseInt(localStorage.getItem("userId"), 10);
 
@@ -110,17 +107,13 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
       default:
         break;
     }
-    console.log("Base question created:", baseQuestion);
-    // If new question is being added, reset the newQuestion state
 
-    // Add question
     const updatedQuestions = [...questions, baseQuestion];
     setQuestions(updatedQuestions);
 
-    // Scroll after short delay (so DOM updates first)
     setTimeout(() => {
       bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100); // short delay is needed for state update to reflect in DOM
+    }, 100);
   };
 
   const typeAlias = {
@@ -136,78 +129,67 @@ const SurveyForm = ({ questions, setQuestions, activeTab , language, setLanguage
   };
 
   const detectLanguage = (text) => {
-  const banglaRegex = /[\u0980-\u09FF]/;
-  return banglaRegex.test(text) ? "bn" : "en";
-};
+    const banglaRegex = /[\u0980-\u09FF]/;
+    return banglaRegex.test(text) ? "bn" : "en";
+  };
 
+  const filteredQuestions = questions
+    .filter((q) => {
+      const keywords = searchTerm
+        .toLowerCase()
+        .split(" ")
+        .map((k) => k.trim())
+        .filter(Boolean);
+      if (keywords.length === 0) return true;
 
+      const typeAliasText = typeAlias[q.type] || q.type;
 
+      const fieldMatchers = {
+        keyword: [
+          q.text,
+          q.type,
+          typeAliasText,
+          q.privacy,
+          JSON.stringify(q.meta),
+        ]
+          .join(" ")
+          .toLowerCase(),
+        project: (q.project_name || "").toLowerCase(),
+        type: typeAliasText.toLowerCase(),
+        tag: (q.tags || []).join(" ").toLowerCase(),
+        survey: (q.survey_name || "").toLowerCase(),
+        owner: (q.owner_name || "").toLowerCase(),
+      };
 
-const filteredQuestions = questions
-  .filter((q) => {
-    const keywords = searchTerm
-      .toLowerCase()
-      .split(" ")
-      .map((k) => k.trim())
-      .filter(Boolean);
-    if (keywords.length === 0) return true;
-
-    const typeAliasText = typeAlias[q.type] || q.type;
-
-    const fieldMatchers = {
-      keyword: [
-        q.text,
-        q.type,
-        typeAliasText,
-        q.privacy,
-        JSON.stringify(q.meta),
-      ].join(" ").toLowerCase(),
-      project: (q.project_name || "").toLowerCase(),
-      type: typeAliasText.toLowerCase(),
-      tag: (q.tags || []).join(" ").toLowerCase(),
-      survey: (q.survey_name || "").toLowerCase(),
-      owner: (q.owner_name || "").toLowerCase(),
-    };
-
-    const selectedFields = Object.keys(searchFields).filter(
-      (key) => searchFields[key]
-    );
-
-    if (selectedFields.length === 0) {
-      const fallbackCombined = Object.values(fieldMatchers).join(" ");
-      return keywords.every((kw) => fallbackCombined.includes(kw));
-    }
-
-    if (searchLogic === "intersection") {
-      // Each keyword must match at least one selected field
-      return keywords.every((kw) =>
-        selectedFields.some((field) =>
-          fieldMatchers[field]?.includes(kw)
-        )
+      const selectedFields = Object.keys(searchFields).filter(
+        (key) => searchFields[key]
       );
-    } else {
-      // At least one keyword must match at least one selected field
-      return keywords.some((kw) =>
-        selectedFields.some((field) =>
-          fieldMatchers[field]?.includes(kw)
-        )
-      );
-    }
-  })
-  .filter((q) => {
-    if (filter === "mine") return q.user_id === userId;
-    if (filter === "public")
-      return q.privacy === "public" && q.user_id !== userId;
-    return true;
-  })
 
-  .filter((q) => {
-    if (languageFilter === "all") return true;
-    return detectLanguage(q.text) === languageFilter;
-  });
+      if (selectedFields.length === 0) {
+        const fallbackCombined = Object.values(fieldMatchers).join(" ");
+        return keywords.every((kw) => fallbackCombined.includes(kw));
+      }
 
-
-
+      if (searchLogic === "intersection") {
+        return keywords.every((kw) =>
+          selectedFields.some((field) => fieldMatchers[field]?.includes(kw))
+        );
+      } else {
+        return keywords.some((kw) =>
+          selectedFields.some((field) => fieldMatchers[field]?.includes(kw))
+        );
+      }
+    })
+    .filter((q) => {
+      if (filter === "mine") return q.user_id === userId;
+      if (filter === "public")
+        return q.privacy === "public" && q.user_id !== userId;
+      return true;
+    })
+    .filter((q) => {
+      if (languageFilter === "all") return true;
+      return detectLanguage(q.text) === languageFilter;
+    });
 
   // Fetch translations when language changes
   useEffect(() => {
@@ -229,8 +211,6 @@ const filteredQuestions = questions
         "Tag",
         "Survey Name",
         "Owner Name",
-        "Search Filter",
-        "Search Filter",
         "Add Question",
         "Question Type",
         "Question Text",
@@ -246,7 +226,7 @@ const filteredQuestions = questions
         "All Languages",
         "English",
         "Bangla",
-
+        "Question Type",
       ];
 
       const translated = await translateText(
@@ -265,14 +245,6 @@ const filteredQuestions = questions
     loadTranslations();
   }, [language]);
 
-  // Toggle language between English and Bengali
-  const toggleLanguage = () => {
-    const newLang = language === "English" ? "bn" : "en"; // 'bn' for Bengali, 'en' for English
-    setLanguage(newLang === "bn" ? "বাংলা" : "English");
-    localStorage.setItem("language", newLang === "bn" ? "বাংলা" : "English");
-  };
-
-  // Function to get the translated text based on selected language
   const getLabel = (text) => translations[text] || text;
 
   return (
@@ -287,6 +259,7 @@ const filteredQuestions = questions
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+
         <div className="position-relative">
           <button
             className="btn btn-outline-secondary"
@@ -322,7 +295,7 @@ const filteredQuestions = questions
                     <input
                       className="form-check-input"
                       type="checkbox"
-                      id={`search-${key}`} // Corrected template literal here
+                      id={`search-${key}`}
                       style={{ transform: "scale(0.85)" }}
                       checked={searchFields[key]}
                       onChange={() =>
@@ -336,22 +309,16 @@ const filteredQuestions = questions
                       className="form-check-label small ms-1"
                       htmlFor={`search-${key}`}
                     >
-                      {" "}
-                      {/* Corrected htmlFor here */}
                       {label}
                     </label>
-
-                    
                   </div>
                 ))}
                 <hr />
                 <div className="form-check form-check-sm m-0 p-0">
-                  {/* dropdown for result logic */}
                   <label className="form-check-label small mb-2">
                     {getLabel("Result Option:")}
                   </label>
                   <div className="d-flex align-items-center">
-
                     <select
                       className="form-select form-select-sm me-2"
                       value={searchLogic}
@@ -364,28 +331,31 @@ const filteredQuestions = questions
                         {getLabel("Any selected keyword")}
                       </option>
                     </select>
-                    </div>
-                    </div>
-
+                  </div>
+                </div>
               </div>
             </div>
           )}
         </div>
 
-          <div className="position-relative">        
-            <div className=".btn-outline-secondary align-items-center gap-2">
+        <div className="position-relative">
+          <div className="btn-outline-secondary align-items-center gap-2">
             <select
               className="form-select form-select-sm"
-              style={{ width: "140px", display: "inline-block" ,
-                marginLeft: "0px" ,
+              style={{
+                width: "140px",
+                display: "inline-block",
+                marginLeft: "0px",
                 marginRight: "0px",
-                backgroundColor: "ffffff",
-                borderColor: "#09ae30cb",
-                borderWidth: "3px",
-                borderRadius: "0.25rem",
-                height: "46px",
-                fontStyle: "italic",
-                fontcolor: "#038103"    }}
+                backgroundColor: "#ffffff",
+                borderColor: "#4bb77d",
+                borderWidth: "2px",
+                borderRadius: "0.5rem",
+                height: "42px",
+                fontStyle: "normal",
+                fontWeight: "600",
+                color: "#4bb77d",
+              }}
               value={languageFilter}
               onChange={(e) => setLanguageFilter(e.target.value)}
             >
@@ -393,11 +363,8 @@ const filteredQuestions = questions
               <option value="en">{getLabel("English")}</option>
               <option value="bn">{getLabel("Bangla")}</option>
             </select>
-            </div>
           </div>
-
-
-
+        </div>
 
         <div className="position-relative">
           <button
@@ -491,7 +458,6 @@ const filteredQuestions = questions
         />
       )}
 
-      {/* Scroll target */}
       <div ref={bottomRef} />
     </div>
   );
