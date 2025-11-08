@@ -5,14 +5,11 @@ import jsPDF from "jspdf";
 import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 // import ChiSquareOptions from './ChiSquareOptions';
-import CramerVOptions from './CramerVOptions';
 import CrossTabulationOptions from './CrossTabulationOptions';
 import EDABasicsOptions from './EDABasicsOptions';
 // import KruskalOptions from './PlotCustomizers/KruskalOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
-import PearsonOptions from './PearsonOptions';
 import SimilarityOptions from './SimilarityOptions';
-import SpearmanOptions from './SpearmanOptions';
 import statTestDetails from './stat_tests_details';
 //import './StatisticalAnalysisTool.css';
 import './StatisticalAnalysisResultPage.css';
@@ -41,6 +38,9 @@ import {
     renderT_TestResults,
     renderFZT_TestResults
 } from './RenderFunctions/renderFZT_TestResults';
+import renderPearsonResults from './RenderFunctions/RenderPearson/renderPearsonResults';
+import renderSpearmanResults from './RenderFunctions/RenderSpearman/renderSpearmanResults';
+import renderCramerVResults from './RenderFunctions/RenderCramarV/renderCramerVResults';
 
 const translations = {
     English: {
@@ -81,7 +81,7 @@ const translations = {
             kolmogorov: "Kolmogorov–Smirnov Test",
             anderson: "Anderson–Darling Test",
             chi_square: "Chi-Square Test",
-            cramers_heatmap: "Cramér's V Heatmap",
+            cramers: "Cramér's V",
             network_graph: "Network Graph",
             f_test: "F-Test (Variance Comparison)",
             z_test: "Z-Test (Mean Comparison)",
@@ -114,7 +114,7 @@ const translations = {
             fzt_visualization: "Combined data visualizations for all three tests with histogram+KDE comparison.",            
             cross_tabulation: "Summarizes the relationship between two or more categorical variables using frequency tables and heatmaps.",
             chi_square: "Tests the association between categorical variables using observed and expected frequencies.",
-            cramers_heatmap: "Visual representation of Cramér's V association strength between categorical variables.",
+            cramers: "Visual representation of Cramér's V association strength between categorical variables.",
             network_graph: "Displays statistical relationships between variables using a graphical network."
         },
         selectPrompt: "Choose the appropriate statistical test for your analysis",
@@ -199,7 +199,7 @@ const translations = {
             fzt_visualization: "এফ/জেড/টি সম্মিলিত ভিজ্যুয়ালাইজেশন",
             cross_tabulation: "ক্রস ট্যাবুলেশন",
             chi_square: "কাই-স্কয়ার টেস্ট",
-            cramers_heatmap: "ক্র্যামের ভি হিটম্যাপ",
+            cramers: "ক্র্যামের ভি",
             network_graph: "নেটওয়ার্ক গ্রাফ"
         },
         descriptions: {
@@ -226,7 +226,7 @@ const translations = {
             fzt_visualization: "তিনটি পরীক্ষার জন্য সম্মিলিত ডেটা ভিজ্যুয়ালাইজেশন সাথে হিস্টোগ্রাম+কেডিই তুলনা।",
             cross_tabulation: "দুই বা ততোধিক শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক সারাংশ আকারে প্রদর্শন করে, ফ্রিকোয়েন্সি টেবিল ও হিটম্যাপ ব্যবহার করে।",
             chi_square: "বিভিন্ন শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যে সম্পর্ক নির্ধারণ করে।",
-            cramers_heatmap: "Cramér's V ব্যবহার করে শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যকার সম্পর্কের দৃঢ়তা চিত্রায়িত করে।",
+            cramers: "Cramér's V ব্যবহার করে শ্রেণিবিন্যাসকৃত ভেরিয়েবলের মধ্যকার সম্পর্কের দৃঢ়তা চিত্রায়িত করে।",
             network_graph: "ভেরিয়েবলের মধ্যকার পরিসংখ্যানগত সম্পর্ক একটি গ্রাফ নেটওয়ার্কের মাধ্যমে উপস্থাপন করে।"
         },
         selectPrompt: "আপনার বিশ্লেষণের জন্য সঠিক পরিসংখ্যান পরীক্ষাটি নির্বাচন করুন",
@@ -697,7 +697,7 @@ const StatisticalAnalysisTool = () => {
         }
         //
 
-        if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'bar_chart', 'eda_pie', 'eda_basics', 'chi_square', 'cramers_heatmap', 'cross_tabulation', 'network_graph'].includes(testType)) {
+        if (['kruskal', 'mannwhitney', 'wilcoxon', 'pearson', 'spearman', 'shapiro', 'linear_regression', 'anova', 'ancova', 'kolmogorov', 'anderson', 'fzt', 'eda_distribution', 'eda_swarm', 'bar_chart', 'eda_pie', 'eda_basics', 'chi_square', 'cramers', 'cross_tabulation', 'network_graph'].includes(testType)) {
             formData.append('format', imageFormat);
             formData.append('use_default', useDefaultSettings ? 'true' : 'false');
 
@@ -795,7 +795,7 @@ const StatisticalAnalysisTool = () => {
 
             }
 
-            if (['pearson', 'spearman', 'cross_tabulation', 'cramers_heatmap', 'chi_square', 'network_graph'].includes(testType)) {
+            if (['pearson', 'spearman', 'cross_tabulation', 'cramers', 'chi_square', 'network_graph'].includes(testType)) {
                 formData.append('heatmapSize', heatmapSize);
 
                 selectedColumns.forEach((col, idx) => {
@@ -870,7 +870,7 @@ const StatisticalAnalysisTool = () => {
                 return { col2: true, col3: true, refValue: false, heatmapSize: false };
             case 'cross_tabulation':
             case 'network_graph':
-            case 'cramers_heatmap':
+            case 'cramers':
             case 'chi_square':
             case 'spearman':
             case 'pearson':
@@ -1114,7 +1114,7 @@ const StatisticalAnalysisTool = () => {
                                             <option value="anderson">{t.tests.anderson}</option>
                                             <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
                                             <option value="chi_square">{t.tests.chi_square}</option>
-                                            <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                            <option value="cramers">{t.tests.cramers}</option>
                                             <option value="network_graph">{t.tests.network_graph}</option>
                                         </optgroup>
                                         </select>
@@ -1145,7 +1145,7 @@ const StatisticalAnalysisTool = () => {
 
                                      </div>
                                                                 
-                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
+                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
                                                 <div style={{ marginBottom: '2rem' }}>
                                                     <label style={{
                                                         display: 'block',
@@ -1476,7 +1476,7 @@ const StatisticalAnalysisTool = () => {
                                                         </h5>
                                                     )} */}
 
-                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                 <div className="form-group">
                                                     <label className="form-label">
                                                     {(testType === "kolmogorov" ||
@@ -1565,54 +1565,6 @@ const StatisticalAnalysisTool = () => {
                                                 )}
 
 
-                                                    {testType === 'pearson' && (
-                                                        <PearsonOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
-                                                    {testType === 'spearman' && (
-                                                        <SpearmanOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
-
                                                     {testType === 'cross_tabulation' && (
                                                         <CrossTabulationOptions
                                                             language={language}
@@ -1698,28 +1650,6 @@ const StatisticalAnalysisTool = () => {
                                                             t={t}
                                                         />
                                                     )} */}
-
-                                                    {testType === 'cramers_heatmap' && (
-                                                        <CramerVOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            t={t}
-                                                        />
-                                                    )}
 
                                                     {testType === 'network_graph' && (
                                                         <NetworkGraphOptions
@@ -1921,7 +1851,11 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     const [zTestActiveTab, setZTestActiveTab] = useState('count');
     const [tTestActiveTab, setTTestActiveTab] = useState('count');
     const [fztTestActiveTab, setFZTTestActiveTab] = useState('count');
+    const [pearsonActiveTab, setPearsonActiveTab] = useState('detailed');
+    const [spearmanActiveTab, setSpearmanActiveTab] = useState('detailed');    
+    const [cramerVActiveTab, setCramerVActiveTab] = useState('detailed');
 
+    
     // For rendering different results based on test type
     const renderResults = () => {
         if (testType === 'kruskal') {
@@ -2044,9 +1978,16 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
             language
         );                        
         } else if (testType === 'spearman') {
-            return renderSpearmanResults();
+            return renderSpearmanResults(
+                spearmanActiveTab,
+                setSpearmanActiveTab,
+                results,
+                language
+            );                          
+        } else if (testType === 'cramers') {
+            return renderCramerVResults(cramerVActiveTab, setCramerVActiveTab, results, language);            
         } else if (testType === 'pearson') {
-            return renderPearsonResults();
+            return renderPearsonResults(pearsonActiveTab, setPearsonActiveTab, results, language);
         } else if (testType === 'cross_tabulation') {
             return renderCrossTabulationResults();
         } else if (testType === 'eda_basics') {
@@ -2055,8 +1996,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
             return renderSimilarityResults();
         } else if (testType === 'chi_square') {
             return renderChiSquareResults(chiSquareActiveTab, setChiSquareActiveTab, results, language);
-        } else if (testType === 'cramers_heatmap') {
-            return renderCramerVResults();
         } else if (testType === 'network_graph') {
             return renderNetworkGraphResults();
         }
@@ -2086,170 +2025,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         }
     };
 
-
-    const renderSpearmanResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'বাংলা') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">{t.tests.spearman || 'Spearman Correlation'}</h2>
-
-                {/* {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'বাংলা' ? ' এবং ' : ' and ')}
-                    </p>
-                )} */}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <div className="relative">
-                                        <img
-                                            src={`http://127.0.0.1:8000/${path}`}
-                                            alt={`Spearman visualization ${index + 1}`}
-                                            className="w-full h-auto object-contain"
-                                        />
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                    const blob = await response.blob();
-                                                    const url = window.URL.createObjectURL(blob);
-                                                    const link = document.createElement('a');
-                                                    const filename = path.split('/').pop() || `spearman_visual_${index + 1}.png`;
-                                                    link.href = url;
-                                                    link.download = filename;
-                                                    document.body.appendChild(link);
-                                                    link.click();
-                                                    document.body.removeChild(link);
-                                                    window.URL.revokeObjectURL(url);
-                                                } catch (error) {
-                                                    console.error('Download failed:', error);
-                                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                                }
-                                            }}
-                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                            title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                        >
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                />
-                                            </svg>
-                                            {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    const renderPearsonResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'বাংলা') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">{t.tests.pearson || 'Pearson Correlation'}</h2>
-
-                {/* {columns?.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === 'বাংলা' ? 'বিশ্লেষণকৃত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.filter(Boolean).join(language === 'বাংলা' ? ' এবং ' : ' and ')}
-                    </p>
-                )} */}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 gap-6">
-                            {results.image_paths.map((path, index) => (
-                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
-                                    <div className="relative">
-                                        <img
-                                            src={`http://127.0.0.1:8000/${path}`}
-                                            alt={`Pearson visualization ${index + 1}`}
-                                            className="w-full h-auto object-contain"
-                                        />
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                                    const blob = await response.blob();
-                                                    const url = window.URL.createObjectURL(blob);
-                                                    const link = document.createElement('a');
-                                                    const filename = path.split('/').pop() || `pearson_visual_${index + 1}.png`;
-                                                    link.href = url;
-                                                    link.download = filename;
-                                                    document.body.appendChild(link);
-                                                    link.click();
-                                                    document.body.removeChild(link);
-                                                    window.URL.revokeObjectURL(url);
-                                                } catch (error) {
-                                                    console.error('Download failed:', error);
-                                                    alert(language === 'বাংলা' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                                }
-                                            }}
-                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                            title={language === 'বাংলা' ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                                        >
-                                            <svg
-                                                className="w-4 h-4 mr-1"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    strokeWidth="2"
-                                                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                                />
-                                            </svg>
-                                            {language === 'বাংলা' ? 'ডাউনলোড' : 'Download'}
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
 
     const renderCrossTabulationResults = () => {
         const mapDigitIfBengali = (text) => {
@@ -2579,94 +2354,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         );
     };
 
-    const renderCramerVResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? "ক্র্যামের ভি হিটম্যাপ" : "Cramér's V Heatmap"}
-                </h2>
-
-
-                <p>
-                    {results.columns.length > 0 && (
-
-                        // print first n-1 columns
-
-                        <><strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
-                            {results.columns.map((col, i) => (
-                                <span key={i}>
-                                    {col}{i < results.columns.length - 1 ? (language === 'bn' ? ' , ' : ' , ') : ''}
-                                </span>
-                            ))}</>
-
-                    )}
-                </p>
-
-                {results.statistic !== undefined && (
-                    <p className="mb-2">
-                        <strong>{language === 'bn' ? 'Cramér\'s V মান:' : "Cramér's V value:"}</strong>{" "}
-                        {mapDigitIfBengali(parseFloat(results.statistic).toFixed(4))}
-                    </p>
-                )}
-
-                {results.image_paths && results.image_paths.length > 0 && (
-                    <div className="mt-6">
-                        <h3 className="text-xl font-semibold mb-3">
-                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {results.image_paths.map((path, index) => {
-                                const handleDownload = async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${path}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        const filename = path.split('/').pop() || `cramer_v_plot_${index + 1}.png`;
-                                        link.href = url;
-                                        link.download = filename;
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === 'bn' ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                };
-
-                                return (
-                                    <div key={index} className="bg-white rounded shadow p-2 relative">
-                                        <img
-                                            src={`http://127.0.0.1:8000/${path}`}
-                                            alt={`cramer-v-plot-${index + 1}`}
-                                            className="w-full h-auto object-contain"
-                                        />
-                                        <button
-                                            onClick={handleDownload}
-                                            className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 text-sm"
-                                            title={language === 'bn' ? 'ডাউনলোড করুন' : 'Download'}
-                                        >
-                                            ⬇ {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
 
     const renderNetworkGraphResults = () => {
         const mapDigitIfBengali = (text) => {

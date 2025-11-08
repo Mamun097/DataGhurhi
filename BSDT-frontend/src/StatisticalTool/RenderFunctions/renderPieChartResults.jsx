@@ -134,6 +134,17 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         }
     };
 
+    // Add this check FIRST - handle error case from backend
+    if (results && results.success === false) {
+        return (
+            <div className="stats-error">
+                <h3 className="error-title">{language === 'বাংলা' ? 'ত্রুটি' : 'Error'}</h3>
+                <p>{results.error}</p>
+            </div>
+        );
+    }
+
+    // Then check for loading/empty data
     if (!results || !results.plot_data) {
         return (
             <div className="stats-loading">
