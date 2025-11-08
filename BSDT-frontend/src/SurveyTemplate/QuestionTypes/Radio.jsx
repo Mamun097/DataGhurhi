@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -17,6 +17,7 @@ const Radio = ({
   setLanguage,
   getLabel,
 }) => {
+  //console.log(question);
   const [required, setRequired] = useState(question.required || false);
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
@@ -377,10 +378,23 @@ const Radio = ({
     question.text,
     handleOptionChange,
   ]);
+const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="mb-3 dnd-isolate">
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
             Question No: {index}
@@ -395,7 +409,7 @@ const Radio = ({
           setQuestions={setQuestions}
           getLabel={getLabel}
         />
-      </div>
+      </div> */}
 
       {showCropper && selectedFile && (
         <ImageCropper
@@ -447,14 +461,14 @@ const Radio = ({
         </div>
       )}
 
-      <input
+      {/* <input
         type="text"
         className="form-control mb-2 mt-2"
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
         onFocus={(e) => e.target.select()}
         placeholder={getLabel("Enter your question here")}
-      />
+      /> */}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId={`options-radio-${question.id}`}>
@@ -484,7 +498,7 @@ const Radio = ({
                         <div className="col-auto" {...prov.dragHandleProps}>
                           <i
                             className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.5rem", cursor: "grab" }}
+                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
                           ></i>
                         </div>
                         <div className="col-auto">
@@ -498,7 +512,7 @@ const Radio = ({
                         <div className="col">
                           <input
                             type="text"
-                            className="form-control form-control-sm"
+                            className="survey-form-control survey-form-control-sm"
                             value={option.text || ""}
                             onChange={(e) => handleOptionChange(idx, e.target.value)}
                             onPaste={(e) => handleOptionPaste(idx, e)}
@@ -547,13 +561,13 @@ const Radio = ({
       </DragDropContext>
 
       <button
-        className="btn btn-sm btn-outline-secondary w-auto"
+        className="add-option-btn"
         onClick={addOption}
       >
         ➕ {getLabel("Add Option")}
       </button>
 
-      <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
+      {/* <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleCopy}
@@ -648,7 +662,106 @@ const Radio = ({
             {getLabel("Required")}
           </label>
         </div>
+      </div> */}
+       <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`requiredSwitchRadio-${question.id}`}
+          checked={required}
+          onChange={handleRequired}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`requiredSwitchRadio-${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+          {/* Shuffle Options */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-shuffle"></i>
+              {getLabel("Shuffle Option Order")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                id={`enableOptionShuffleRadio-${question.id}`}
+                checked={enableOptionShuffle}
+                onChange={handleEnableOptionShuffleToggle}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+          {/* enable marking */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-check2-square"></i>
+              {getLabel("Enable Marking System")}
+            </div>
+            <label className="switch-small">
+              <input
+                id={`enableMarksRadio-${question.id}`}
+                onChange={handleEnableMarksToggle}
+                checked={enableMarks}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

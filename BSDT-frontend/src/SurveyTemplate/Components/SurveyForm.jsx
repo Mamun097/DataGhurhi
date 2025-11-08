@@ -471,9 +471,9 @@ const SurveyForm = ({
   };
 
   return (
-    <div className="px-2 px-md-3 py-5">
+    <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
       {/* Action Buttons */}
-      <div className="button-group-compact">
+      {/* <div className="button-group-compact">
   {surveyStatus === "published" ? (
     <button
       onClick={handleUpdate}
@@ -545,6 +545,94 @@ const SurveyForm = ({
         title="Manage collaborators"
       >
         <i className="bi bi-people"></i> {getLabel("Collaborate")}
+      </button> */}
+
+      {/* Floating Top Navigation Bar */}
+<div className="floating-top-bar">
+  {surveyStatus === "published" ? (
+    <button
+      onClick={handleUpdate}
+      disabled={isLoading}
+      className="fab-btn"
+    >
+      {isLoading && actionType === "update" ? (
+        <span className="spinner"></span>
+      ) : (
+        <>
+          <i className="bi bi-pencil"></i>
+          <span className="btn-label">{getLabel("Update")}</span>
+        </>
+      )}
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={handleSave}
+        disabled={isLoading}
+        className="fab-btn"
+      >
+        {isLoading ? (
+          <span className="spinner"></span>
+        ) : (
+          <>
+            <i className="bi bi-save"></i>
+            <span className="btn-label">{getLabel("Save")}</span>
+          </>
+        )}
+      </button>
+
+      <button
+        onClick={handlePublish}
+        disabled={isLoading}
+        className="fab-btn"
+      >
+        {isLoading && actionType === "publish" ? (
+          <span className="spinner"></span>
+        ) : (
+          <>
+            <i className="bi bi-check-circle"></i>
+            <span className="btn-label">{getLabel("Publish")}</span>
+          </>
+        )}
+      </button>
+    </>
+  )}
+
+  {surveyLink && (
+    <>
+      <button
+        onClick={() => setShowShareModal(true)}
+        className="fab-btn"
+      >
+        <i className="bi bi-share"></i>
+        <span className="btn-label">{getLabel("Survey Link")}</span>
+      </button>
+
+      <button
+        onClick={() => setShowCollaborationModal(true)}
+        className="fab-btn"
+      >
+        <i className="bi bi-people"></i>
+        <span className="btn-label">{getLabel("Collaborate")}</span>
+      </button>
+
+      <button
+        onClick={handleSurveyResponses}
+        className="fab-btn"
+      >
+        <i className="bi bi-bar-chart"></i>
+        <span className="btn-label">{getLabel("View Response")}</span>
+        {responseCount !== null && (
+          <span className="badge-small">{responseCount}</span>
+        )}
+      </button>
+
+      <button
+        onClick={() => handlePreview()}
+        className="fab-btn"
+      >
+        <i className="bi bi-eye"></i>
+        <span className="btn-label">{getLabel("Preview")}</span>
       </button>
 
       <ShareSurveyModal
@@ -553,29 +641,22 @@ const SurveyForm = ({
         surveyLink={surveyLink}
         surveyTitle={title}
       />
+  
+ 
 
-      <button
-        onClick={handleSurveyResponses}
-        className="btn-compact success"
-      >
-        <i className="bi bi-bar-chart"></i>
-        <span className="ms-1">{getLabel("View Response")}</span>
-        {responseCount !== null && (
-          <span className="badge-small">{responseCount}</span>
-        )}
-      </button>
 
+{/* 
       <button
-        className="btn-compact success"
+        className="fab-btn"
         onClick={() => handlePreview()}
       >
         <i className="bi bi-eye"></i> {getLabel("Preview")}
-      </button>
+      </button> */}
     </>
   )}
 </div>
 
-      <hr className="my-4" />
+      <hr className="my-4 custom-hr" />
 
       {/* Survey Logo */}
       <SurveyLogo
@@ -589,7 +670,7 @@ const SurveyForm = ({
         setLogoInParent={setLogo}
       />
 
-      {(logo || currentBackgroundImage) && <hr className="my-4" />}
+      {(logo || currentBackgroundImage) && <hr className="my-4 custom-hr" />}
 
       {/* Survey Banner */}
       <SurveyBanner
@@ -599,7 +680,7 @@ const SurveyForm = ({
         setImageInParent={setCurrentBackgroundImage}
       />
 
-      {currentBackgroundImage && <hr className="my-4" />}
+      {currentBackgroundImage && <hr className="my-4 custom-hr" />}
 
       {/* Survey Title Input */}
       <div className="mt-4 mb-3">
@@ -639,12 +720,14 @@ const SurveyForm = ({
             getLabel={getLabel}
           />
         ))}
+        <div className="text-center my-4">
         <button
-          className="btn btn-outline-primary mt-3 d-block mx-auto"
+          className="add-sec-btn"
           onClick={handleAddSection}
         >
           ➕ {getLabel("Add Section")}
         </button>
+        </div>
       </div>
 
       {/* Render the modal */}

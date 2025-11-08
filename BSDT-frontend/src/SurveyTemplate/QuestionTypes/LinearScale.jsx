@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback,useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
@@ -243,10 +243,23 @@ const LinearScaleQuestion = ({
     handleQuestionChange,
     updateQuestion,
   ]);
+const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="mb-3">
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
             Question No: {index}
@@ -261,7 +274,7 @@ const LinearScaleQuestion = ({
           setQuestions={setQuestions}
           getLabel={getLabel}
         />
-      </div>
+      </div> */}
 
       {showCropper && selectedFile && (
         <ImageCropper
@@ -312,16 +325,16 @@ const LinearScaleQuestion = ({
         </div>
       )}
 
-      <div className="mb-3">
+      {/* <div className="mb-3">
         <input
           type="text"
-          className="form-control"
+          className="survey-form-control"
           placeholder={getLabel("Enter your question here")}
           value={question.text || ""}
           onChange={(e) => handleQuestionChange(e.target.value)}
           onFocus={(e) => e.target.select()}
         />
-      </div>
+      </div> */}
 
       {validationError && (
         <div className="alert alert-danger mt-2" role="alert">
@@ -335,14 +348,14 @@ const LinearScaleQuestion = ({
             <div className="d-flex align-items-center">
               <label
                 htmlFor={`min-${question.id}`}
-                className="form-label me-2 mb-0"
+                className="survey-form-label me-2 mb-0" style={{fontSize:"14px"}}
               >
                 <i>{getLabel("Min")}</i>
               </label>
               <input
                 type="number"
                 id={`min-${question.id}`}
-                className="form-control"
+                className="survey-form-control"
                 style={{ width: "80px" }}
                 value={minValue}
                 onChange={handleMinChange}
@@ -354,14 +367,14 @@ const LinearScaleQuestion = ({
             <div className="d-flex align-items-center mt-2 mt-sm-0">
               <label
                 htmlFor={`max-${question.id}`}
-                className="form-label me-2 mb-0"
+                className="survey-form-label me-2 mb-0" style={{fontSize:"14px"}}
               >
                 <i>{getLabel("Max")}</i>
               </label>
               <input
                 type="number"
                 id={`max-${question.id}`}
-                className="form-control"
+                className="survey-form-control"
                 style={{ width: "80px" }}
                 value={maxValue}
                 onChange={handleMaxChange}
@@ -373,7 +386,7 @@ const LinearScaleQuestion = ({
 
         {showLabels && (
           <div className="row g-3">
-            <div className="col-12 col-sm-6">
+            <div className="col-12 col-sm-6" style={{fontSize:"14px"}}>
               <label
                 htmlFor={`leftLabel-${question.id}`}
                 className="form-label"
@@ -386,13 +399,13 @@ const LinearScaleQuestion = ({
               <input
                 type="text"
                 id={`leftLabel-${question.id}`}
-                className="form-control"
+                className="survey-form-control"
                 value={leftLabel}
                 onChange={handleLeftLabelChange}
                 onFocus={(e) => e.target.select()}
               />
             </div>
-            <div className="col-12 col-sm-6">
+            <div className="col-12 col-sm-6" style={{fontSize:"14px"}}>
               <label
                 htmlFor={`rightLabel-${question.id}`}
                 className="form-label"
@@ -405,7 +418,7 @@ const LinearScaleQuestion = ({
               <input
                 type="text"
                 id={`rightLabel-${question.id}`}
-                className="form-control"
+                className="survey-form-control"
                 value={rightLabel}
                 onChange={handleRightLabelChange}
                 onFocus={(e) => e.target.select()}
@@ -414,7 +427,7 @@ const LinearScaleQuestion = ({
           </div>
         )}
       </div>
-
+{/* 
       <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
         <button
           className="btn btn-outline-secondary w-auto me-2"
@@ -481,7 +494,91 @@ const LinearScaleQuestion = ({
             </label>
           </div>
         </div>
+      </div> */}
+
+        <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`linearRequired-${question.id}`}
+          onChange={handleRequired}
+          checked={required}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`linearRequired-${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+          {/* Shuffle Options */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-eye"></i>
+               {getLabel("Show Labels")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                id={`showLabels-${question.id}`}
+                checked={showLabels}
+                onChange={toggleLabels}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+          {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

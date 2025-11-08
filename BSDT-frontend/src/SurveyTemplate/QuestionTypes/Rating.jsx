@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo,useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
@@ -136,10 +136,24 @@ const RatingQuestion = ({
     handleQuestionChange(response.data.data.translations[0].translatedText);
   }, [handleQuestionChange, question.text]);
 
+  const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef(null);
+  
+    // Close on outside click
+    useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (menuRef.current && !menuRef.current.contains(e.target)) {
+          setShowMenu(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
   return (
     <div className="mb-3">
       {/* Top Bar: Label and TagManager */}
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
             Question No: {index}
@@ -154,7 +168,7 @@ const RatingQuestion = ({
           setQuestions={setQuestions}
           getLabel={getLabel}
         />
-      </div>
+      </div> */}
 
       {showCropper && selectedFile && (
         <ImageCropper
@@ -208,7 +222,7 @@ const RatingQuestion = ({
       )}
 
       {/* Question Text Input */}
-      <div className="d-flex align-items-center mt-2 mb-2">
+      {/* <div className="d-flex align-items-center mt-2 mb-2">
         <input
           type="text"
           className="form-control"
@@ -217,7 +231,7 @@ const RatingQuestion = ({
           onChange={(e) => handleQuestionChange(e.target.value)}
           onFocus={(e) => e.target.select()}
         />
-      </div>
+      </div> */}
 
       {/* Scale Selector */}
       <div className="d-flex flex-wrap align-items-center my-3 gap-2">
@@ -225,7 +239,7 @@ const RatingQuestion = ({
         {/* Added flex-wrap and gap-2 */}
         <label
           htmlFor={`scale-select-${question.id}`}
-          className="form-label mb-0"
+          className="form-label mb-0" style={{fontSize:" 14px"}}
         >
           {getLabel("Levels:")}
         </label>{" "}
@@ -233,7 +247,7 @@ const RatingQuestion = ({
         <select
           id={`scale-select-${question.id}`}
           className="form-select form-select-sm"
-          style={{ width: "60px" }}
+          style={{ width: "60px", fontSize:" 14px" }}
           onChange={(e) => handleScaleChange(e.target.value)}
           value={scale}
         >
@@ -263,10 +277,10 @@ const RatingQuestion = ({
       </div>
 
       {/* Bottom Action Bar */}
-      <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
+      {/* <div className="d-flex flex-wrap align-items-center mt-3 gy-3"> */}
         {" "}
         {/* gy-3 for vertical spacing */}
-        <button
+        {/* <button
           className="btn btn-outline-secondary w-auto me-2"
           onClick={handleCopy}
           title="Copy Question"
@@ -284,9 +298,9 @@ const RatingQuestion = ({
           className="btn btn-outline-secondary w-auto me-0 me-sm-2"
           title="Add Image"
         >
-          {" "}
+          {" "} */}
           {/* Adjusted margin for last button before switch */}
-          <i className="bi bi-image"></i>
+          {/* <i className="bi bi-image"></i>
           <input
             type="file"
             accept="image/*"
@@ -300,9 +314,9 @@ const RatingQuestion = ({
           title="Translate Question"
         >
           <i className="bi bi-translate"></i>
-        </button>
+        </button> */}
         {/* Required Switch Group */}
-        <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
+        {/* <div className="d-flex w-100 w-sm-auto ms-0 ms-sm-auto mt-2 mt-sm-0">
           <div className="form-check form-switch">
             <input
               className="form-check-input"
@@ -319,7 +333,73 @@ const RatingQuestion = ({
             </label>
           </div>
         </div>
+      </div> */}
+      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`requiredSwitchRating-${question.id}`}
+          checked={required}
+          onChange={handleRequired}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`requiredSwitchRating-${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

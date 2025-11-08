@@ -31,6 +31,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         yAxisTickSize: 18,
         xAxisBottomMargin: -25,
         yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0, 
+        yAxisTitleOffset: 0,                        
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -368,7 +370,8 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -385,7 +388,8 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -512,7 +516,8 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -531,7 +536,8 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
