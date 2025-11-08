@@ -40,7 +40,6 @@ except ImportError:
     load_workbook = None
 
 
-
 def save_uploaded_file(user_id: str, django_file) -> dict:
     filename = django_file.name
     user_folder = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", "temporary_uploads")
@@ -114,6 +113,7 @@ def infer_columns_from_file(save_path: str, filename: str, active_sheet_name: st
     cols = list(df.columns)
 
     return cols, sheet_names, used_sheet
+
 
 @csrf_exempt
 def upload_file(request):
@@ -273,7 +273,6 @@ from django.http import JsonResponse, HttpResponse
 from django.conf import settings
 
 
-
 def analyze_data_api(request):
     if request.method == 'POST':
         try:
@@ -392,33 +391,23 @@ def analyze_data_api(request):
                 return process_mannwhitney_test(request, df, col1, col2,user_id)
  
             elif test_type == 'pearson':
-                # Step 1: Get all dynamic column keys sent by frontend
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
                         if value in df.columns:
                             selected_columns.append(value)
-
-                # Step 2: Validate count
-                if len(selected_columns) < 2:
-                    raise ValueError("Pearson correlation requires at least 2 columns")
-
+                print("Selected columns for Pearson:", selected_columns)
                 return process_pearson_test(request, df, selected_columns, user_id)
 
             elif test_type == 'spearman':
-                # Step 1: Collect dynamic columns from form
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
                         if value in df.columns:
                             selected_columns.append(value)
-
-                # Step 2: Validate
-                if len(selected_columns) < 2:
-                    raise ValueError("Spearman correlation requires at least 2 columns")
-
+                print("Selected columns for Spearman:", selected_columns)
                 return process_spearman_test(request, df, selected_columns, user_id)
           
             elif test_type == 'wilcoxon':
@@ -482,12 +471,10 @@ def analyze_data_api(request):
                 column1 = request.POST.get('column1')  
                 column2 = request.POST.get('column2')  
                 return process_eda_swarm_plot(request, df, column1, column2, user_id)
-
-            # New Code for Pie Chart
+            
             elif test_type == 'eda_pie':
                 col = request.POST.get('column1')
                 return process_pie_chart(request, df, col, user_id,ordinal_mappings)
-
 
             elif test_type == 'eda_basics':
                 return process_eda_basics(request, df, user_id)
@@ -520,14 +507,24 @@ def analyze_data_api(request):
                 # # Pass the mappings to the function
                 # return process_chi_square(request, df, selected_columns, user_id, categorical_mappings)
 
-            elif test_type == 'cramers_heatmap':
+            #elif test_type == 'cramers_heatmap':
+                #selected_columns = []
+                #for key in request.POST:
+                    #if key.startswith("column"):
+                        #value = request.POST[key]
+                        #if value in df.columns:
+                            #selected_columns.append(value)
+                #return process_cramers_heatmap(request,selected_columns, df, user_id)
+
+            elif test_type == 'cramers':
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
                         if value in df.columns:
                             selected_columns.append(value)
-                return process_cramers_heatmap(request,selected_columns, df, user_id)
+                print("Selected columns for Cramer's V:", selected_columns)
+                return process_cramers_test(request, df, selected_columns, user_id)
 
             elif test_type == 'network_graph':
                 selected_columns = []
@@ -3673,331 +3670,1313 @@ def process_fzt_visualization(request, df, col_group, col_value, user_id):
 
 
 
-
 def process_pearson_test(request, df, selected_columns, user_id):
-    
-    from itertools import combinations
     from scipy.stats import pearsonr
+    import numpy as np
+    import pandas as pd
+    from django.http import JsonResponse
 
     try:
-        language = request.POST.get('language', 'en')
-        img_format = request.POST.get('format', 'png')
-        use_default = request.POST.get('use_default', 'true') == 'true'
+        # ── 1) Extract inputs ──────────────────────────────────────────────
+        lang = (request.POST.get("language", "en") or "en").lower()
+        if lang not in ('en', 'bn'):
+            lang = 'en'
+        
+        is_bn = (lang == "bn")
 
-        # Translate & digit helper
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        # Variables to analyze
+        vars_list = selected_columns or []
+        if len(vars_list) < 2:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please select at least two numeric variables.'
+            })
 
-        def translate(text):
-            return translator.translate(text, dest='bn').text if language == 'bn' else text
+        print(f"[Pearson] Analyzing {len(vars_list)} variables: {vars_list}")
 
-        def map_digits(s):
-            return s.translate(digit_map_bn) if language == 'bn' else s
+        # ── 2) Core helper functions ───────────────────────────────────────
+        def fnum(x):
+            """Convert to float, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return float(x)
+            except Exception:
+                return None
 
-        # Settings
-        if use_default:
-            label_font_size = 36
-            tick_font_size = 16
-            img_quality = 90
-            width, height = 800, 600
-            plot_color = 'coolwarm'
-            bar_width = 0.8
+        def pearson_one_pair(var_a, var_b):
+            """
+            Perform Pearson correlation for one pair of variables.
+            Returns dict with test results.
+            """
+            # Ensure numeric data
+            s1 = pd.to_numeric(df[var_a], errors='coerce')
+            s2 = pd.to_numeric(df[var_b], errors='coerce')
+            
+            # Remove pairs where either is NaN
+            mask = s1.notna() & s2.notna()
+            s1_clean, s2_clean = s1[mask], s2[mask]
+            
+            n = len(s1_clean)
+            
+            if n < 2:
+                return {
+                    'n': 0,
+                    'correlation': None,
+                    'p_value': None,
+                    'ci_lower': None,
+                    'ci_upper': None
+                }
+            
+            try:
+                # Calculate Pearson correlation
+                corr, p_value = pearsonr(s1_clean, s2_clean)
+                
+                # Calculate 95% confidence interval using Fisher z-transform
+                z = np.arctanh(corr)
+                se = 1 / np.sqrt(n - 3)
+                z_lower = z - 1.96 * se
+                z_upper = z + 1.96 * se
+                ci_lower = np.tanh(z_lower)
+                ci_upper = np.tanh(z_upper)
+                
+                return {
+                    'n': n,
+                    'correlation': float(corr),
+                    'p_value': float(p_value),
+                    'ci_lower': float(ci_lower),
+                    'ci_upper': float(ci_upper)
+                }
+                
+            except Exception as e:
+                print(f"[Pearson] Error in pearsonr: {e}")
+                return {
+                    'n': n,
+                    'correlation': None,
+                    'p_value': None,
+                    'ci_lower': None,
+                    'ci_upper': None
+                }
+
+        def fdr_bh(pvals):
+            """Benjamini-Hochberg FDR correction"""
+            p = np.asarray(pvals, float)
+            n = p.size
+            if n == 0:
+                return np.array([])
+            order = np.argsort(p)
+            ranked = p[order]
+            adj = np.empty(n, float)
+            cm = 1.0
+            for i in range(n-1, -1, -1):
+                cm = min(cm, ranked[i] * n / (i+1))
+                adj[i] = cm
+            out = np.empty(n, float)
+            out[order] = np.minimum(adj, 1.0)
+            return out
+
+        # ── 3) Compute all pairwise tests ──────────────────────────────────
+        n_vars = len(vars_list)
+        pairwise_results = []
+        all_p_values = []
+        
+        for i in range(n_vars):
+            for j in range(i + 1, n_vars):
+                var1 = vars_list[i]
+                var2 = vars_list[j]
+                
+                result = pearson_one_pair(var1, var2)
+                
+                pairwise_results.append({
+                    'variable1': str(var1),
+                    'variable2': str(var2),
+                    'correlation': fnum(result['correlation']),
+                    'p_value': fnum(result['p_value']),
+                    'ci_lower': fnum(result['ci_lower']),
+                    'ci_upper': fnum(result['ci_upper']),
+                    'n': result['n']
+                })
+                
+                if result['p_value'] is not None:
+                    all_p_values.append(result['p_value'])
+                else:
+                    all_p_values.append(np.nan)
+
+        print(f"[Pearson] Completed {len(pairwise_results)} pairwise tests")
+
+        # ── 4) Apply FDR correction ────────────────────────────────────────
+        p_array = np.array(all_p_values, dtype=float)
+        mask = ~np.isnan(p_array)
+        
+        if mask.any():
+            adjusted_p = np.full(len(pairwise_results), np.nan, dtype=float)
+            adjusted_p[mask] = fdr_bh(p_array[mask])
+            
+            for i, result in enumerate(pairwise_results):
+                result['p_adjusted'] = float(adjusted_p[i]) if not np.isnan(adjusted_p[i]) else None
         else:
-            label_font_size = int(request.POST.get('label_font_size', 36))
-            tick_font_size = int(request.POST.get('tick_font_size', 16))
-            img_quality = int(request.POST.get('image_quality', 90))
-            size_input = request.POST.get('image_size', '800x600')
-            width, height = map(int, size_input.split('x'))
-            plot_color = request.POST.get('palette', 'coolwarm')
-            bar_width = float(request.POST.get('bar_width', 0.8))
+            for result in pairwise_results:
+                result['p_adjusted'] = None
 
-        # Font
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-        label_font = ImageFont.truetype(font_path, size=label_font_size)
-        tick_font = ImageFont.truetype(font_path, size=tick_font_size)
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-
-        # Ensure numeric
-        for col in selected_columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-
-        # Compute correlation and p-value matrices
-        corr_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
-        pval_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
-
-        for c in selected_columns:
-            corr_mat.loc[c, c] = 1.0
-            pval_mat.loc[c, c] = 0.0
-
-        for c1, c2 in combinations(selected_columns, 2):
-            r, p = pearsonr(df[c1].dropna(), df[c2].dropna())
-            corr_mat.loc[c1, c2] = corr_mat.loc[c2, c1] = r
-            pval_mat.loc[c1, c2] = pval_mat.loc[c2, c1] = p
-
-        corr_str = corr_mat.round(4).astype(str).applymap(map_digits)
-        pval_str = pval_mat.round(4).astype(str).applymap(map_digits)
-
-        # Plot heatmap
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.heatmap(
-            corr_mat.astype(float), annot=corr_str.values, fmt='', cmap=plot_color,
-            vmin=-1, vmax=1, square=True, linewidths=bar_width, linecolor='white',
-            cbar_kws={'shrink': 0.7},
-            annot_kws={'fontproperties': fm.FontProperties(fname=font_path, size=tick_font_size),
-                       'fontsize': tick_font_size}, ax=ax
+        # Sort by absolute correlation (descending)
+        pairwise_results.sort(
+            key=lambda r: (r['correlation'] is None, -abs(r['correlation']) if r['correlation'] is not None else 0)
         )
 
-        # Helper to render labels and ticks with PIL
-        def create_labeled_plot(fig, ax, title, base_name):
-            ax.set_title('')
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-            ax.set_xticks([])
-            ax.set_yticks([])
-            fig.tight_layout(pad=0)
+        # ── 5) Create correlation matrix for heatmap ───────────────────────
+        corr_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_adjusted_matrix = np.ones((n_vars, n_vars), dtype=float)
+        
+        for result in pairwise_results:
+            i = vars_list.index(result['variable1'])
+            j = vars_list.index(result['variable2'])
+            
+            corr_val = result['correlation'] if result['correlation'] is not None else 0.0
+            corr_matrix[i, j] = corr_val
+            corr_matrix[j, i] = corr_val
+            
+            p_val = result['p_value'] if result['p_value'] is not None else 1.0
+            p_matrix[i, j] = p_val
+            p_matrix[j, i] = p_val
+            
+            p_adj_val = result['p_adjusted'] if result['p_adjusted'] is not None else 1.0
+            p_adjusted_matrix[i, j] = p_adj_val
+            p_adjusted_matrix[j, i] = p_adj_val
+        
+        np.fill_diagonal(corr_matrix, 1.0)
+        np.fill_diagonal(p_matrix, 1.0)
+        np.fill_diagonal(p_adjusted_matrix, 1.0)
 
-            cbar = ax.collections[0].colorbar
-            cbar.set_ticklabels([map_digits(f"{t:.2f}") for t in cbar.get_ticks()])
-            cbar.set_label('')
+        # ── 6) Prepare variable-level statistics ──────────────────────────
+        variable_stats = []
+        
+        for var in vars_list:
+            col_data = pd.to_numeric(df[var], errors='coerce').dropna()
+            
+            variable_stats.append({
+                'variable': str(var),
+                'n_observations': int(len(col_data)),
+                'n_missing': int(df[var].isna().sum()),
+                'mean': float(col_data.mean()) if len(col_data) > 0 else None,
+                'std': float(col_data.std()) if len(col_data) > 0 else None,
+                'min': float(col_data.min()) if len(col_data) > 0 else None,
+                'max': float(col_data.max()) if len(col_data) > 0 else None,
+                'median': float(col_data.median()) if len(col_data) > 0 else None
+            })
 
-            base_path = os.path.join(plots_dir, base_name + '.png')
-            # fig.savefig(base_path, dpi=300, format='PNG')
-            fig.savefig(base_path, dpi=fig.dpi, format='PNG')
-            plt.close(fig)
+        # ── 7) Create blocks (one anchor variable at a time) ──────────────
+        blocks = []
+        
+        for anchor in vars_list:
+            block_results = []
+            
+            for result in pairwise_results:
+                if result['variable1'] == anchor:
+                    block_results.append(result)
+                elif result['variable2'] == anchor:
+                    # Swap variables so anchor is always first
+                    swapped_result = {
+                        'variable1': result['variable2'],
+                        'variable2': result['variable1'],
+                        'correlation': result['correlation'],
+                        'p_value': result['p_value'],
+                        'p_adjusted': result['p_adjusted'],
+                        'ci_lower': result['ci_lower'],
+                        'ci_upper': result['ci_upper'],
+                        'n': result['n']
+                    }
+                    block_results.append(swapped_result)
+            
+            blocks.append({
+                'anchor': str(anchor),
+                'results': block_results
+            })
 
-            img = Image.open(base_path).convert('RGB')
-            bw, bh = img.size
+        # ── 8) Prepare table columns for frontend ─────────────────────────
+        if is_bn:
+            table_columns = [
+                {"key": "variable1", "label": "ভেরিয়েবল ১"},
+                {"key": "variable2", "label": "ভেরিয়েবল ২"},
+                {"key": "correlation", "label": "পিয়ারসন সম্পর্ক"},
+                {"key": "p_value", "label": "পি-মান"},
+                {"key": "p_adjusted", "label": "সমন্বিত পি-মান"},
+                {"key": "ci_lower", "label": "৯৫% সিআই নিম্ন"},
+                {"key": "ci_upper", "label": "৯৫% সিআই উচ্চ"},
+                {"key": "n", "label": "নমুনা"},
+            ]
+        else:
+            table_columns = [
+                {"key": "variable1", "label": "Variable 1"},
+                {"key": "variable2", "label": "Variable 2"},
+                {"key": "correlation", "label": "Pearson Correlation"},
+                {"key": "p_value", "label": "P-value"},
+                {"key": "p_adjusted", "label": "Adjusted P-value"},
+                {"key": "ci_lower", "label": "95% CI Lower"},
+                {"key": "ci_upper", "label": "95% CI Upper"},
+                {"key": "n", "label": "N"},
+            ]
 
-            tx = map_digits(translate(title))
-            tx_w, tx_h = label_font.getbbox(tx)[2:]
+        # ── 9) Prepare plot data for visualizations ───────────────────────
+        plot_data = []
+        for i, var1 in enumerate(vars_list):
+            for j, var2 in enumerate(vars_list):
+                if i != j:
+                    # Find the corresponding result
+                    result = None
+                    for r in pairwise_results:
+                        if (r['variable1'] == var1 and r['variable2'] == var2) or \
+                           (r['variable1'] == var2 and r['variable2'] == var1):
+                            result = r
+                            break
+                    
+                    if result:
+                        plot_data.append({
+                            'category': f"{var1}",
+                            'variable': f"{var2}",
+                            'p_value': result['p_value'],
+                            'correlation': result['correlation'],
+                            'p_adjusted': result['p_adjusted']
+                        })
 
-            ticks = [map_digits(translate(c)) for c in selected_columns]
-            wrapped, widths, heights = [], [], []
-            for t in ticks:
-                lines = [' '.join(t.split()[i:i+3]) for i in range(0, len(t.split()), 3)]
-                txt = '\n'.join(lines)
-                wrapped.append(txt)
-                widths.append(max(tick_font.getbbox(l)[2] for l in lines))
-                heights.append(len(lines) * tick_font.getbbox(lines[0])[3])
-            max_tick_w, max_tick_h = max(widths), max(heights)
-
-            pad = label_font_size // 2
-            lm = max_tick_w + pad
-            rm = pad
-            tm = tx_h + pad
-            bm = max_tick_h + pad
-            W, H = bw + lm + rm, bh + tm + bm
-
-            canvas = Image.new('RGB', (W, H), 'white')
-            canvas.paste(img, (lm, tm))
-            draw = ImageDraw.Draw(canvas)
-
-            draw.text(((W - tx_w) / 2, (tm - tx_h) / 2), tx, font=label_font, fill='black')
-
-            heat_pos = ax.get_position()
-            fig_w_px = fig.get_size_inches()[0] * fig.dpi
-            hm_x0 = heat_pos.x0 * fig_w_px + lm
-            hm_w = heat_pos.width * fig_w_px
-            n = len(wrapped)
-            for i, txt in enumerate(wrapped):
-                block_w = widths[i]
-                x_center = hm_x0 + (hm_w / n) * (i + 0.5)
-                x0 = x_center - block_w / 2
-                y0 = tm + bh + pad
-                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
-
-            ch = bh / n
-            for i, txt in enumerate(wrapped):
-                block_h = heights[i]
-                x0 = lm - max_tick_w - pad
-                y0 = tm + ch * (i + 0.5) - block_h / 2
-                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
-
-            cb_label = map_digits(translate('Correlation Coefficient'))
-            cb_w, cb_h = tick_font.getbbox(cb_label)[2:]
-            Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
-            ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
-            Crot = Cimg.rotate(90, expand=True)
-            # x_cb = lm + bw + pad // 4
-            x_cb = lm + bw - tick_font_size // 4 
-
-            y_cb = tm + (bh - Crot.height) / 2
-            canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
-
-            final_path = os.path.join(plots_dir, base_name + '.' + img_format)
-            canvas.save(final_path, format=img_format.upper(), quality=img_quality)
-            return os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
-
-        img_url = create_labeled_plot(fig, ax, title=translate("Pearson Correlation Heatmap"), base_name="pearson_heatmap")
-        print(img_url)
-
-        return JsonResponse({
+        # ── 10) Prepare final response ─────────────────────────────────────
+        test_name = 'Pearson Correlation Test' if lang == 'en' else 'পিয়ারসন সম্পর্ক পরীক্ষা'
+        
+        response_data = {
             'success': True,
-            'image_paths': [img_url],
-            'columns': selected_columns,
-            'message': translate("Pearson correlation matrix completed.")
-        })
+            'test': test_name,
+            'language': lang,
+            'n_variables': int(n_vars),
+            'n_comparisons': int(len(pairwise_results)),
+            'variables': [str(v) for v in vars_list],
+            'variable_stats': variable_stats,
+            'pairwise_results': pairwise_results,
+            'blocks': blocks,
+            'correlation_matrix': [[float(val) for val in row] for row in corr_matrix.tolist()],
+            'p_value_matrix': [[float(val) for val in row] for row in p_matrix.tolist()],
+            'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
+            'plot_data': plot_data,
+            'table_columns': table_columns,
+            'metadata': {
+                'fdr_correction': 'Benjamini-Hochberg',
+                'alpha': 0.05,
+                'total_observations': int(len(df)),
+                'confidence_level': 0.95
+            }
+        }
+
+        print(f"[Pearson] Response prepared successfully with {len(pairwise_results)} comparisons")
+        return JsonResponse(response_data)
 
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        import traceback
+        error_msg = str(e)
+        traceback_msg = traceback.format_exc()
+        print(f"[Pearson] Error: {error_msg}")
+        print(f"[Pearson] Traceback: {traceback_msg}")
+        return JsonResponse({
+            'success': False, 
+            'error': error_msg,
+            'traceback': traceback_msg
+        })
+
 
 def process_spearman_test(request, df, selected_columns, user_id):
-    import os
-    from itertools import combinations
     from scipy.stats import spearmanr
+    import numpy as np
+    import pandas as pd
+    from django.http import JsonResponse
 
     try:
-        language = request.POST.get('language', 'en')
-        img_format = request.POST.get('format', 'png')
-        use_default = request.POST.get('use_default', 'true') == 'true'
+        # ── 1) Extract inputs ──────────────────────────────────────────────
+        lang = (request.POST.get("language", "en") or "en").lower()
+        if lang not in ('en', 'bn'):
+            lang = 'en'
+        
+        is_bn = (lang == "bn")
 
-        translator = Translator()
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def translate(text): return translator.translate(text, dest='bn').text if language == 'bn' else text
-        def map_digits(s): return s.translate(digit_map_bn) if language == 'bn' else s
+        # Variables to analyze
+        vars_list = selected_columns or []
+        if len(vars_list) < 2:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please select at least two numeric variables.'
+            })
 
-        if use_default:
-            label_font_size = 36
-            tick_font_size = 16
-            img_quality = 90
-            width, height = 800, 600
-            plot_color = 'coolwarm'
-            bar_width = 0.8
+        print(f"[Spearman] Analyzing {len(vars_list)} variables: {vars_list}")
+
+        # ── 2) Core helper functions ───────────────────────────────────────
+        def fnum(x):
+            """Convert to float, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return float(x)
+            except Exception:
+                return None
+
+        def spearman_one_pair(var_a, var_b):
+            """
+            Perform Spearman rank correlation for one pair of variables.
+            Returns dict with test results.
+            """
+            # Ensure numeric data
+            s1 = pd.to_numeric(df[var_a], errors='coerce')
+            s2 = pd.to_numeric(df[var_b], errors='coerce')
+            
+            # Remove pairs where either is NaN
+            mask = s1.notna() & s2.notna()
+            s1_clean, s2_clean = s1[mask], s2[mask]
+            
+            n = len(s1_clean)
+            
+            if n < 2:
+                return {
+                    'n': 0,
+                    'correlation': None,
+                    'p_value': None,
+                    'ci_lower': None,
+                    'ci_upper': None
+                }
+            
+            try:
+                # Calculate Spearman rank correlation
+                rho, p_value = spearmanr(s1_clean, s2_clean)
+                
+                # Calculate 95% confidence interval using Fisher z-transform
+                # Note: This is an approximation for Spearman's rho
+                z = np.arctanh(rho)
+                se = 1 / np.sqrt(n - 3)
+                z_lower = z - 1.96 * se
+                z_upper = z + 1.96 * se
+                ci_lower = np.tanh(z_lower)
+                ci_upper = np.tanh(z_upper)
+                
+                return {
+                    'n': n,
+                    'correlation': float(rho),
+                    'p_value': float(p_value),
+                    'ci_lower': float(ci_lower),
+                    'ci_upper': float(ci_upper)
+                }
+                
+            except Exception as e:
+                print(f"[Spearman] Error in spearmanr: {e}")
+                return {
+                    'n': n,
+                    'correlation': None,
+                    'p_value': None,
+                    'ci_lower': None,
+                    'ci_upper': None
+                }
+
+        def fdr_bh(pvals):
+            """Benjamini-Hochberg FDR correction"""
+            p = np.asarray(pvals, float)
+            n = p.size
+            if n == 0:
+                return np.array([])
+            order = np.argsort(p)
+            ranked = p[order]
+            adj = np.empty(n, float)
+            cm = 1.0
+            for i in range(n-1, -1, -1):
+                cm = min(cm, ranked[i] * n / (i+1))
+                adj[i] = cm
+            out = np.empty(n, float)
+            out[order] = np.minimum(adj, 1.0)
+            return out
+
+        # ── 3) Compute all pairwise tests ──────────────────────────────────
+        n_vars = len(vars_list)
+        pairwise_results = []
+        all_p_values = []
+        
+        for i in range(n_vars):
+            for j in range(i + 1, n_vars):
+                var1 = vars_list[i]
+                var2 = vars_list[j]
+                
+                result = spearman_one_pair(var1, var2)
+                
+                pairwise_results.append({
+                    'variable1': str(var1),
+                    'variable2': str(var2),
+                    'correlation': fnum(result['correlation']),
+                    'p_value': fnum(result['p_value']),
+                    'ci_lower': fnum(result['ci_lower']),
+                    'ci_upper': fnum(result['ci_upper']),
+                    'n': result['n']
+                })
+                
+                if result['p_value'] is not None:
+                    all_p_values.append(result['p_value'])
+                else:
+                    all_p_values.append(np.nan)
+
+        print(f"[Spearman] Completed {len(pairwise_results)} pairwise tests")
+
+        # ── 4) Apply FDR correction ────────────────────────────────────────
+        p_array = np.array(all_p_values, dtype=float)
+        mask = ~np.isnan(p_array)
+        
+        if mask.any():
+            adjusted_p = np.full(len(pairwise_results), np.nan, dtype=float)
+            adjusted_p[mask] = fdr_bh(p_array[mask])
+            
+            for i, result in enumerate(pairwise_results):
+                result['p_adjusted'] = float(adjusted_p[i]) if not np.isnan(adjusted_p[i]) else None
         else:
-            label_font_size = int(request.POST.get('label_font_size', 36))
-            tick_font_size = int(request.POST.get('tick_font_size', 16))
-            img_quality = int(request.POST.get('image_quality', 90))
-            width, height = map(int, request.POST.get('image_size', '800x600').split('x'))
-            plot_color = request.POST.get('palette', 'coolwarm')
-            bar_width = float(request.POST.get('bar_width', 0.8))
+            for result in pairwise_results:
+                result['p_adjusted'] = None
 
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        if os.path.exists(font_path):
-            fm.fontManager.addfont(font_path)
-            mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-        label_font = ImageFont.truetype(font_path, size=label_font_size)
-        tick_font = ImageFont.truetype(font_path, size=tick_font_size)
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f"ID_{user_id}_uploads", 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-
-        for col in selected_columns:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-
-        corr_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
-        pval_mat = pd.DataFrame(index=selected_columns, columns=selected_columns, dtype=float)
-        for c in selected_columns:
-            corr_mat.loc[c, c] = 1.0
-            pval_mat.loc[c, c] = 0.0
-        for c1, c2 in combinations(selected_columns, 2):
-            rho, p = spearmanr(df[c1].dropna(), df[c2].dropna())
-            corr_mat.loc[c1, c2] = corr_mat.loc[c2, c1] = rho
-            pval_mat.loc[c1, c2] = pval_mat.loc[c2, c1] = p
-
-        corr_str = corr_mat.round(4).astype(str).applymap(map_digits)
-
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        sns.heatmap(
-            corr_mat.astype(float), annot=corr_str.values, fmt='', cmap=plot_color,
-            vmin=-1, vmax=1, square=True, linewidths=bar_width, linecolor='white',
-            cbar_kws={'shrink': 0.7},
-            annot_kws={'fontproperties': fm.FontProperties(fname=font_path, size=tick_font_size),
-                       'fontsize': tick_font_size}, ax=ax
+        # Sort by absolute correlation (descending)
+        pairwise_results.sort(
+            key=lambda r: (r['correlation'] is None, -abs(r['correlation']) if r['correlation'] is not None else 0)
         )
 
-        def create_labeled_plot(fig, ax, title, base_name):
-            ax.set_title('')
-            ax.set_xlabel('')
-            ax.set_ylabel('')
-            ax.set_xticks([])
-            ax.set_yticks([])
-            fig.tight_layout(pad=0)
+        # ── 5) Create correlation matrix for heatmap ───────────────────────
+        corr_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_adjusted_matrix = np.ones((n_vars, n_vars), dtype=float)
+        
+        for result in pairwise_results:
+            i = vars_list.index(result['variable1'])
+            j = vars_list.index(result['variable2'])
+            
+            corr_val = result['correlation'] if result['correlation'] is not None else 0.0
+            corr_matrix[i, j] = corr_val
+            corr_matrix[j, i] = corr_val
+            
+            p_val = result['p_value'] if result['p_value'] is not None else 1.0
+            p_matrix[i, j] = p_val
+            p_matrix[j, i] = p_val
+            
+            p_adj_val = result['p_adjusted'] if result['p_adjusted'] is not None else 1.0
+            p_adjusted_matrix[i, j] = p_adj_val
+            p_adjusted_matrix[j, i] = p_adj_val
+        
+        np.fill_diagonal(corr_matrix, 1.0)
+        np.fill_diagonal(p_matrix, 1.0)
+        np.fill_diagonal(p_adjusted_matrix, 1.0)
 
-            cbar = ax.collections[0].colorbar
-            cbar.set_ticklabels([map_digits(f"{t:.2f}") for t in cbar.get_ticks()])
-            cbar.set_label('')
+        # ── 6) Prepare variable-level statistics ──────────────────────────
+        variable_stats = []
+        
+        for var in vars_list:
+            col_data = pd.to_numeric(df[var], errors='coerce').dropna()
+            
+            variable_stats.append({
+                'variable': str(var),
+                'n_observations': int(len(col_data)),
+                'n_missing': int(df[var].isna().sum()),
+                'mean': float(col_data.mean()) if len(col_data) > 0 else None,
+                'std': float(col_data.std()) if len(col_data) > 0 else None,
+                'min': float(col_data.min()) if len(col_data) > 0 else None,
+                'max': float(col_data.max()) if len(col_data) > 0 else None,
+                'median': float(col_data.median()) if len(col_data) > 0 else None,
+                'q1': float(col_data.quantile(0.25)) if len(col_data) > 0 else None,
+                'q3': float(col_data.quantile(0.75)) if len(col_data) > 0 else None
+            })
 
-            base_path = os.path.join(plots_dir, base_name + '.png')
-            # fig.savefig(base_path, dpi=300, format='PNG')
-            fig.savefig(base_path, dpi=fig.dpi, format='PNG')
-            plt.close(fig)
+        # ── 7) Create blocks (one anchor variable at a time) ──────────────
+        blocks = []
+        
+        for anchor in vars_list:
+            block_results = []
+            
+            for result in pairwise_results:
+                if result['variable1'] == anchor:
+                    block_results.append(result)
+                elif result['variable2'] == anchor:
+                    # Swap variables so anchor is always first
+                    swapped_result = {
+                        'variable1': result['variable2'],
+                        'variable2': result['variable1'],
+                        'correlation': result['correlation'],
+                        'p_value': result['p_value'],
+                        'p_adjusted': result['p_adjusted'],
+                        'ci_lower': result['ci_lower'],
+                        'ci_upper': result['ci_upper'],
+                        'n': result['n']
+                    }
+                    block_results.append(swapped_result)
+            
+            blocks.append({
+                'anchor': str(anchor),
+                'results': block_results
+            })
 
-            img = Image.open(base_path).convert('RGB')
-            bw, bh = img.size
+        # ── 8) Prepare table columns for frontend ─────────────────────────
+        if is_bn:
+            table_columns = [
+                {"key": "variable1", "label": "ভেরিয়েবল ১"},
+                {"key": "variable2", "label": "ভেরিয়েবল ২"},
+                {"key": "correlation", "label": "স্পিয়ারম্যান সম্পর্ক"},
+                {"key": "p_value", "label": "পি-মান"},
+                {"key": "p_adjusted", "label": "সমন্বিত পি-মান"},
+                {"key": "ci_lower", "label": "৯৫% সিআই নিম্ন"},
+                {"key": "ci_upper", "label": "৯৫% সিআই উচ্চ"},
+                {"key": "n", "label": "নমুনা"},
+            ]
+        else:
+            table_columns = [
+                {"key": "variable1", "label": "Variable 1"},
+                {"key": "variable2", "label": "Variable 2"},
+                {"key": "correlation", "label": "Spearman Correlation"},
+                {"key": "p_value", "label": "P-value"},
+                {"key": "p_adjusted", "label": "Adjusted P-value"},
+                {"key": "ci_lower", "label": "95% CI Lower"},
+                {"key": "ci_upper", "label": "95% CI Upper"},
+                {"key": "n", "label": "N"},
+            ]
 
-            tx = map_digits(translate(title))
-            tx_w, tx_h = label_font.getbbox(tx)[2:]
-            ticks = [map_digits(translate(c)) for c in selected_columns]
-            wrapped, widths, heights = [], [], []
-            for t in ticks:
-                lines = [' '.join(t.split()[i:i+3]) for i in range(0, len(t.split()), 3)]
-                txt = '\n'.join(lines)
-                wrapped.append(txt)
-                widths.append(max(tick_font.getbbox(l)[2] for l in lines))
-                heights.append(len(lines) * tick_font.getbbox(lines[0])[3])
-            max_tick_w, max_tick_h = max(widths), max(heights)
+        # ── 9) Prepare plot data for visualizations ───────────────────────
+        plot_data = []
+        for i, var1 in enumerate(vars_list):
+            for j, var2 in enumerate(vars_list):
+                if i != j:
+                    # Find the corresponding result
+                    result = None
+                    for r in pairwise_results:
+                        if (r['variable1'] == var1 and r['variable2'] == var2) or \
+                           (r['variable1'] == var2 and r['variable2'] == var1):
+                            result = r
+                            break
+                    
+                    if result:
+                        plot_data.append({
+                            'category': f"{var1}",
+                            'variable': f"{var2}",
+                            'p_value': result['p_value'],
+                            'correlation': result['correlation'],
+                            'p_adjusted': result['p_adjusted']
+                        })
 
-            pad = label_font_size // 2
-            lm = max_tick_w + pad
-            rm = pad
-            tm = tx_h + pad
-            bm = max_tick_h + pad
-            W, H = bw + lm + rm, bh + tm + bm
+        # ── 10) Prepare final response ─────────────────────────────────────
+        test_name = 'Spearman Rank Correlation Test' if lang == 'en' else 'স্পিয়ারম্যান র্যাঙ্ক সম্পর্ক পরীক্ষা'
+        
+        response_data = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'n_variables': int(n_vars),
+            'n_comparisons': int(len(pairwise_results)),
+            'variables': [str(v) for v in vars_list],
+            'variable_stats': variable_stats,
+            'pairwise_results': pairwise_results,
+            'blocks': blocks,
+            'correlation_matrix': [[float(val) for val in row] for row in corr_matrix.tolist()],
+            'p_value_matrix': [[float(val) for val in row] for row in p_matrix.tolist()],
+            'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
+            'plot_data': plot_data,
+            'table_columns': table_columns,
+            'metadata': {
+                'fdr_correction': 'Benjamini-Hochberg',
+                'alpha': 0.05,
+                'total_observations': int(len(df)),
+                'confidence_level': 0.95,
+                'correlation_type': 'spearman'
+            }
+        }
 
-            canvas = Image.new('RGB', (W, H), 'white')
-            canvas.paste(img, (lm, tm))
-            draw = ImageDraw.Draw(canvas)
-            draw.text(((W - tx_w) / 2, (tm - tx_h) / 2), tx, font=label_font, fill='black')
+        print(f"[Spearman] Response prepared successfully with {len(pairwise_results)} comparisons")
+        return JsonResponse(response_data)
 
-            heat_pos = ax.get_position()
-            fig_w_px = fig.get_size_inches()[0] * fig.dpi
-            hm_x0 = heat_pos.x0 * fig_w_px + lm
-            hm_w = heat_pos.width * fig_w_px
-            n = len(wrapped)
-            for i, txt in enumerate(wrapped):
-                block_w = widths[i]
-                x_center = hm_x0 + (hm_w / n) * (i + 0.5)
-                x0 = x_center - block_w / 2
-                y0 = tm + bh + pad
-                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback_msg = traceback.format_exc()
+        print(f"[Spearman] Error: {error_msg}")
+        print(f"[Spearman] Traceback: {traceback_msg}")
+        return JsonResponse({
+            'success': False, 
+            'error': error_msg,
+            'traceback': traceback_msg
+        })
 
-            ch = bh / n
-            for i, txt in enumerate(wrapped):
-                block_h = heights[i]
-                x0 = lm - max_tick_w - pad
-                y0 = tm + ch * (i + 0.5) - block_h / 2
-                draw.multiline_text((x0, y0), txt, font=tick_font, fill='black')
 
-            cb_label = map_digits(translate('Spearman Coefficient'))
-            cb_w, cb_h = tick_font.getbbox(cb_label)[2:]
-            Cimg = Image.new('RGBA', (cb_w, cb_h), (255, 255, 255, 0))
-            ImageDraw.Draw(Cimg).text((0, 0), cb_label, font=tick_font, fill='black')
-            Crot = Cimg.rotate(90, expand=True)
-            # x_cb = lm + bw + pad // 4
-            x_cb = lm + bw - tick_font_size // 2
-            y_cb = tm + (bh - Crot.height) / 2
-            canvas.paste(Crot, (int(x_cb), int(y_cb)), Crot)
+'''
+def process_cramers_heatmap(request, selected_columns, df, user_id):
+    
 
-            final_path = os.path.join(plots_dir, base_name + '.' + img_format)
-            canvas.save(final_path, format=img_format.upper(), quality=img_quality)
-            return os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', base_name + '.' + img_format)
+    try:
+        # --- 1) Inputs ---
+        lang = request.POST.get("language", "en")
+        fmt = request.POST.get("format", "png").lower()
+        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
 
-        image_url = create_labeled_plot(fig, ax, translate("Spearman Rank Correlation Heatmap"), "spearman_heatmap")
- 
+        label_font_size = 58
+        tick_font_size =36
+        img_quality = int(request.POST.get("image_quality", 90))
+        palette = request.POST.get("palette", "coolwarm")
+        image_size = request.POST.get("image_size", "800x600")
+
+        
+        try:
+            width, height = map(int, image_size.lower().split("x"))
+        except:
+            width, height = 800, 600
+
+        # --- 2) Font & Path setup ---
+        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
+        fm.fontManager.addfont(font_path)
+        bengali_font = fm.FontProperties(fname=font_path).get_name()
+        mpl.rcParams['font.family'] = bengali_font
+        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
+        label_font = ImageFont.truetype(font_path, size=label_font_size)
+
+        translator = Translator()
+        def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
+        def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
+
+        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        uid = str(uuid.uuid4())[:8]
+
+
+        if len(selected_columns) < 2:
+            return JsonResponse({'success': False, 'error': "Select at least two columns"})
+        print(selected_columns) 
+
+        # --- 3) Compute Cramér’s V matrix ---
+        def cramers_v(x, y):
+            confusion_matrix = pd.crosstab(x, y)
+            # print("Confusion Matrix:\n", confusion_matrix)
+
+            chi2, _, _, _ = chi2_contingency(confusion_matrix)  # ✅ use scipy
+            n = confusion_matrix.sum().sum()
+            phi2 = chi2 / n
+            r, k = confusion_matrix.shape
+            #bias correction
+            phi2corr = max(0,phi2-((k-1)*(r-1))/(n-1))
+            rcorr = r - ((r - 1) ** 2) / ( n - 1 )
+            kcorr = k - ((k - 1) ** 2) / ( n - 1 )
+            return np.sqrt(phi2corr / min(kcorr - 1, rcorr - 1)) 
+
+
+        n = len(selected_columns)
+        mat = pd.DataFrame(np.zeros((n, n)), index=selected_columns, columns=selected_columns)
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    mat.iloc[i, j] = 1.0
+                else:
+                    mat.iloc[i, j] = cramers_v(df[selected_columns[i]], df[selected_columns[j]])
+        # print(mat) 
+        # --- 4) Heatmap ---
+        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
+        cmap = sns.color_palette(palette, as_cmap=True)
+        hm = sns.heatmap(mat, annot=True, fmt=".2f", cmap=cmap, ax=ax, cbar=True)
+        
+
+        
+        # Hide all Matplotlib text; PIL will draw it
+        ax.set_xlabel(''); ax.set_ylabel(''); ax.set_title('')
+        ax.set_xticklabels([]); ax.set_yticklabels([])
+        ax.tick_params(axis='both', length=0)
+
+        
+        fig.canvas.draw()
+        renderer = fig.canvas.get_renderer()
+
+        n_rows, n_cols = mat.shape
+
+        
+        x_left_fig,  _          = ax.transData.transform((0,        0))
+        x_right_fig, _          = ax.transData.transform((n_cols,   0))
+        
+        _, y_top_fig            = ax.transData.transform((0,        0))
+        _, y_bottom_fig         = ax.transData.transform((0,   n_rows))
+
+        # column centers (x only)
+        col_centers_fig = [ax.transData.transform((j + 0.5, 0))[0] for j in range(n_cols)]
+        # row centers (y only)
+        row_centers_fig = [ax.transData.transform((0, i + 0.5))[1] for i in range(n_rows)]
+
+    
+        save_dpi = 300
+        scale = save_dpi / fig.dpi
+
+        x_left_px   = int(x_left_fig   * scale)
+        x_right_px  = int(x_right_fig  * scale)
+        y_top_px    = int(y_top_fig    * scale)
+        y_bottom_px = int(y_bottom_fig * scale)
+        col_centers_px = [int(x * scale) for x in col_centers_fig]
+        row_centers_px = [int(y * scale) for y in row_centers_fig]
+
+        
+        base_png_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}_base.png")
+        fig.savefig(base_png_path, dpi=save_dpi)   
+        plt.close(fig)
+
+
+        # Prepare localized labels 
+        title_txt  = map_digits(translate("Cramér's V Heatmap"))
+        col_labels = [map_digits(translate(str(t))) for t in mat.columns]
+        row_labels = [map_digits(translate(str(t))) for t in mat.index]
+
+        
+        tick_font  = ImageFont.truetype(font_path, size=tick_font_size)
+
+        # Open base and make a canvas with margins
+        base = Image.open(base_png_path).convert("RGB")
+        bw, bh = base.size
+
+        def _w(font, txt): 
+            if not txt: return 0
+            a,b,c,d = font.getbbox(txt); return c-a
+        def _h(font, txt): 
+            if not txt: return 0
+            a,b,c,d = font.getbbox(txt); return d-b
+
+        title_h = _h(label_font, title_txt) if title_txt else 0
+        pad     = max(8, tick_font.size // 2)
+
+        # estimate needed margins
+        max_x_tick_h = max((_w(tick_font, s) for s in col_labels), default=0) // 2 + tick_font.size // 2
+        max_y_tick_w = max((_w(tick_font, s) for s in row_labels), default=0)
+
+        top_margin    = (title_h + pad) if title_txt else pad
+        bottom_margin = (max_x_tick_h + pad) if col_labels else pad
+        left_margin   = (max_y_tick_w + pad) if row_labels else pad
+        right_margin  = pad
+
+        W = bw + left_margin + right_margin
+        H = bh + top_margin + bottom_margin
+        canvas = Image.new("RGB", (W, H), "white")
+        canvas.paste(base, (left_margin, top_margin))
+        draw = ImageDraw.Draw(canvas)
+
+        # Title (top, centered)
+        if title_txt:
+            tlen = draw.textlength(title_txt, font=label_font)
+            tx = (W - int(tlen)) // 2
+            ty = (top_margin - title_h) // 2
+            draw.text((tx, ty), title_txt, font=label_font, fill="black")
+
+        # Convert heatmap edge & center pixels into canvas coords
+        x_left_c   = left_margin + x_left_px
+        x_right_c  = left_margin + x_right_px
+        y_top_c    = top_margin  + y_top_px
+        y_bottom_c = top_margin  + y_bottom_px
+        col_centers_c = [left_margin + x for x in col_centers_px]
+        row_centers_c = [top_margin  + y for y in row_centers_px]
+
+        # X labels (bottom, rotated 45°, centered under each column)
+        base_y =  y_bottom_c + pad
+        # X labels: bottom of the axis, horizontally centered under each column
+        for cx, lab in zip(col_centers_c, col_labels):
+            tw = int(draw.textlength(lab, font=tick_font))
+            th = tick_font.size
+            lx = cx - tw               # center text under the column
+            ly = y_bottom_c + pad           # place just below the heatmap bottom edge
+            
+            lab_img = Image.new("RGBA", (tw + 8, th + 8), (255,255,255,0))
+            d2 = ImageDraw.Draw(lab_img)
+            d2.text((4, 0), lab, font=tick_font, fill="black")
+            lab_rot = lab_img.rotate(30, expand=True)
+            lx = cx - lab_rot.width
+            ly = y_top_c + pad
+            canvas.paste(lab_rot, (lx, ly), lab_rot)
+
+
+
+        # Y labels (left, horizontal, centered on each row)
+        for cy, lab in zip(row_centers_c, row_labels):
+            tw = int(draw.textlength(lab, font=tick_font))
+            lx = max(0, x_left_c - pad - tw)
+            ly = cy - tick_font.size // 2
+            draw.text((lx, ly), lab, font=tick_font, fill="black")
+
+        # Final save
+        final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
+        if pil_fmt == "JPEG":
+            canvas.save(final_path, format=pil_fmt, quality=img_quality, subsampling=0, progressive=True)
+        elif pil_fmt == "PNG":
+            canvas.save(final_path, format=pil_fmt, optimize=True)
+        else:
+            canvas.save(final_path, format=pil_fmt)
+
+
+
+        print(final_path) 
+
         return JsonResponse({
             'success': True,
-            'image_paths': [image_url],
+            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
             'columns': selected_columns,
-            'message': translate("Spearman correlation matrix completed.")
         })
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+'''
+
+def process_cramers_test(request, df, selected_columns, user_id):
+    import numpy as np
+    import pandas as pd
+    from scipy.stats import chi2_contingency
+    from django.http import JsonResponse
+
+    try:
+        # ── 1) Extract inputs ──────────────────────────────────────────────
+        lang = (request.POST.get("language", "en") or "en").lower()
+        if lang not in ('en', 'bn'):
+            lang = 'en'
+        
+        is_bn = (lang == "bn")
+
+        # Variables to analyze
+        vars_list = selected_columns or []
+        if len(vars_list) < 2:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please select at least two categorical variables.'
+            })
+
+        print(f"[Cramer's V] Analyzing {len(vars_list)} variables: {vars_list}")
+
+        # ── 2) Core helper functions ───────────────────────────────────────
+        def fnum(x):
+            """Convert to float, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return float(x)
+            except Exception:
+                return None
+
+        def inum(x):
+            """Convert to int, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return int(x)
+            except Exception:
+                try:
+                    return int(float(x))
+                except Exception:
+                    return None
+
+        def cramers_v_one_pair(var_a, var_b, dropna=True, include_na_as_category=False, bias_correction=True):
+            """
+            Calculate Cramer's V for one pair of variables.
+            Returns dict with Cramer's V results and contingency table data.
+            """
+            s1, s2 = df[var_a].copy(), df[var_b].copy()
+            
+            # Handle missing values
+            if include_na_as_category:
+                s1 = s1.fillna("__NA__")
+                s2 = s2.fillna("__NA__")
+            elif dropna:
+                mask = s1.notna() & s2.notna()
+                s1, s2 = s1[mask], s2[mask]
+            
+            # Create contingency table
+            ct = pd.crosstab(s1, s2, dropna=False)
+            
+            if ct.shape[0] == 0 or ct.shape[1] == 0:
+                return {
+                    'n': 0,
+                    'cramers_v': None,
+                    'chi2': None,
+                    'p_value': None,
+                    'dof': None,
+                    'contingency_table': None,
+                    'expected_frequencies': None,
+                    'n_categories_var1': 0,
+                    'n_categories_var2': 0,
+                    'effect_size': None,
+                    'categories_var1': [],
+                    'categories_var2': [],
+                    'var1_categories': [],
+                    'var2_categories': []
+                }
+            
+            n_obs = ct.sum().sum()
+            
+            # Calculate chi-square statistics
+            try:
+                chi2, p_value, dof, expected = chi2_contingency(ct)
+            except Exception as e:
+                print(f"[Cramer's V] Error in chi2_contingency: {e}")
+                return {
+                    'n': n_obs,
+                    'cramers_v': None,
+                    'chi2': None,
+                    'p_value': None,
+                    'dof': None,
+                    'contingency_table': [[int(val) for val in row] for row in ct.values.tolist()],
+                    'expected_frequencies': None,
+                    'n_categories_var1': ct.shape[0],
+                    'n_categories_var2': ct.shape[1],
+                    'effect_size': None,
+                    'categories_var1': [str(c) for c in ct.index.tolist()],
+                    'categories_var2': [str(c) for c in ct.columns.tolist()],
+                    'var1_categories': [str(c) for c in ct.index.tolist()],
+                    'var2_categories': [str(c) for c in ct.columns.tolist()]
+                }
+            
+            # Calculate Cramer's V with optional bias correction
+            phi2 = chi2 / n_obs
+            r, k = ct.shape
+            
+            if bias_correction:
+                # Bias-corrected Cramer's V
+                phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n_obs - 1))
+                rcorr = r - ((r - 1) ** 2) / (n_obs - 1)
+                kcorr = k - ((k - 1) ** 2) / (n_obs - 1)
+                denominator = min((kcorr - 1), (rcorr - 1))
+                if denominator <= 0:
+                    cramers_v_value = 0.0
+                else:
+                    cramers_v_value = np.sqrt(phi2corr / denominator)
+            else:
+                # Standard Cramer's V
+                denominator = min((k - 1), (r - 1))
+                if denominator <= 0:
+                    cramers_v_value = 0.0
+                else:
+                    cramers_v_value = np.sqrt(phi2 / denominator)
+            
+            # Interpret effect size
+            if cramers_v_value is not None:
+                if cramers_v_value < 0.1:
+                    effect_size = 'Negligible'
+                elif cramers_v_value < 0.3:
+                    effect_size = 'Small'
+                elif cramers_v_value < 0.5:
+                    effect_size = 'Medium'
+                else:
+                    effect_size = 'Large'
+            else:
+                effect_size = None
+            
+            # Get category names
+            categories_var1 = [str(c) for c in ct.index.tolist()]
+            categories_var2 = [str(c) for c in ct.columns.tolist()]
+            
+            return {
+                'n': int(n_obs),
+                'cramers_v': float(cramers_v_value) if not np.isnan(cramers_v_value) else None,
+                'chi2': float(chi2),
+                'p_value': float(p_value),
+                'dof': int(dof),
+                'contingency_table': [[int(val) for val in row] for row in ct.values.tolist()],
+                'expected_frequencies': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in expected.tolist()],
+                'n_categories_var1': r,
+                'n_categories_var2': k,
+                'effect_size': effect_size,
+                'categories_var1': categories_var1,
+                'categories_var2': categories_var2,
+                'var1_categories': categories_var1,
+                'var2_categories': categories_var2
+            }
+
+        def fdr_bh(pvals):
+            """Benjamini-Hochberg FDR correction"""
+            p = np.asarray(pvals, float)
+            n = p.size
+            if n == 0:
+                return np.array([])
+            order = np.argsort(p)
+            ranked = p[order]
+            adj = np.empty(n, float)
+            cm = 1.0
+            for i in range(n-1, -1, -1):
+                cm = min(cm, ranked[i] * n / (i+1))
+                adj[i] = cm
+            out = np.empty(n, float)
+            out[order] = np.minimum(adj, 1.0)
+            return out
+
+        # ── 3) Compute all pairwise tests ──────────────────────────────────
+        n_vars = len(vars_list)
+        pairwise_results = []
+        all_p_values = []
+        
+        for i in range(n_vars):
+            for j in range(i + 1, n_vars):
+                var1 = vars_list[i]
+                var2 = vars_list[j]
+                
+                print(f"[Cramer's V] Testing {var1} vs {var2}")
+                
+                result = cramers_v_one_pair(
+                    var1, var2,
+                    dropna=True,
+                    include_na_as_category=False,
+                    bias_correction=True
+                )
+                
+                pairwise_results.append({
+                    'variable1': str(var1),
+                    'variable2': str(var2),
+                    'cramers_v': fnum(result['cramers_v']),
+                    'chi2': fnum(result['chi2']),
+                    'p_value': fnum(result['p_value']),
+                    'dof': inum(result['dof']),
+                    'n': inum(result['n']),
+                    'n_categories_var1': result['n_categories_var1'],
+                    'n_categories_var2': result['n_categories_var2'],
+                    'contingency_table': result['contingency_table'],
+                    'expected_frequencies': result['expected_frequencies'],
+                    'effect_size': result['effect_size'],
+                    'categories_var1': result['categories_var1'],
+                    'categories_var2': result['categories_var2'],
+                    'var1_categories': result['var1_categories'],
+                    'var2_categories': result['var2_categories']
+                })
+                
+                if result['p_value'] is not None:
+                    all_p_values.append(result['p_value'])
+                else:
+                    all_p_values.append(np.nan)
+
+        print(f"[Cramer's V] Completed {len(pairwise_results)} pairwise tests")
+
+        # ── 4) Apply FDR correction ────────────────────────────────────────
+        p_array = np.array(all_p_values, dtype=float)
+        mask = ~np.isnan(p_array)
+        
+        if mask.any():
+            adjusted_p = np.full(len(pairwise_results), np.nan, dtype=float)
+            adjusted_p[mask] = fdr_bh(p_array[mask])
+            
+            for i, result in enumerate(pairwise_results):
+                result['p_adjusted'] = float(adjusted_p[i]) if not np.isnan(adjusted_p[i]) else None
+        else:
+            for result in pairwise_results:
+                result['p_adjusted'] = None
+
+        # ── 5) Create matrices for heatmap ────────────────────────────────
+        cramers_v_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_value_matrix = np.ones((n_vars, n_vars), dtype=float)
+        p_adjusted_matrix = np.ones((n_vars, n_vars), dtype=float)
+        effect_size_matrix = np.full((n_vars, n_vars), '', dtype=object)
+        
+        for result in pairwise_results:
+            i = vars_list.index(result['variable1'])
+            j = vars_list.index(result['variable2'])
+            
+            cramers_v_val = result['cramers_v'] if result['cramers_v'] is not None else 0.0
+            cramers_v_matrix[i, j] = cramers_v_val
+            cramers_v_matrix[j, i] = cramers_v_val
+            
+            p_val = result['p_value'] if result['p_value'] is not None else 1.0
+            p_value_matrix[i, j] = p_val
+            p_value_matrix[j, i] = p_val
+            
+            p_adj_val = result['p_adjusted'] if result['p_adjusted'] is not None else 1.0
+            p_adjusted_matrix[i, j] = p_adj_val
+            p_adjusted_matrix[j, i] = p_adj_val
+            
+            effect_size_val = result['effect_size'] if result['effect_size'] is not None else 'Negligible'
+            effect_size_matrix[i, j] = effect_size_val
+            effect_size_matrix[j, i] = effect_size_val
+        
+        # Set diagonal to 1.0 for Cramer's V (perfect self-association)
+        np.fill_diagonal(cramers_v_matrix, 1.0)
+        np.fill_diagonal(p_value_matrix, 1.0)
+        np.fill_diagonal(p_adjusted_matrix, 1.0)
+        np.fill_diagonal(effect_size_matrix, 'Perfect')
+
+        # ── 6) Prepare variable-level statistics ──────────────────────────
+        variable_stats = []
+        
+        for var in vars_list:
+            col_data = df[var].dropna()
+            value_counts = col_data.value_counts()
+            
+            # Calculate entropy
+            proportions = value_counts / len(col_data)
+            entropy = -sum(p * np.log(p) for p in proportions if p > 0) if len(col_data) > 0 else 0.0
+            
+            variable_stats.append({
+                'variable': str(var),
+                'n_categories': int(len(value_counts)),
+                'n_observations': int(len(col_data)),
+                'n_missing': int(df[var].isna().sum()),
+                'categories': [str(c) for c in value_counts.index.tolist()],
+                'frequencies': [int(f) for f in value_counts.values.tolist()],
+                'percentages': [float(p) for p in (value_counts / len(col_data) * 100).values.tolist()],
+                'entropy': float(entropy)
+            })
+
+        # ── 7) Create blocks (one anchor variable at a time) ──────────────
+        blocks = []
+        
+        for anchor in vars_list:
+            block_results = []
+            
+            for result in pairwise_results:
+                if result['variable1'] == anchor:
+                    block_results.append(result)
+                elif result['variable2'] == anchor:
+                    # Swap variables so anchor is always first
+                    swapped_result = {
+                        'variable1': result['variable2'],
+                        'variable2': result['variable1'],
+                        'cramers_v': result['cramers_v'],
+                        'chi2': result['chi2'],
+                        'p_value': result['p_value'],
+                        'p_adjusted': result['p_adjusted'],
+                        'dof': result['dof'],
+                        'n': result['n'],
+                        'n_categories_var1': result['n_categories_var2'],
+                        'n_categories_var2': result['n_categories_var1'],
+                        # Swap contingency table dimensions
+                        'contingency_table': [[result['contingency_table'][j][i] for j in range(len(result['contingency_table']))] 
+                                             for i in range(len(result['contingency_table'][0]))] if result['contingency_table'] else None,
+                        'expected_frequencies': [[result['expected_frequencies'][j][i] for j in range(len(result['expected_frequencies']))] 
+                                                for i in range(len(result['expected_frequencies'][0]))] if result['expected_frequencies'] else None,
+                        'effect_size': result['effect_size'],
+                        # Swap categories
+                        'categories_var1': result['categories_var2'],
+                        'categories_var2': result['categories_var1'],
+                        'var1_categories': result['var2_categories'],
+                        'var2_categories': result['var1_categories']
+                    }
+                    block_results.append(swapped_result)
+            
+            # Sort by Cramer's V (descending)
+            block_results.sort(key=lambda x: x['cramers_v'] or 0, reverse=True)
+            
+            blocks.append({
+                'anchor': str(anchor),
+                'results': block_results
+            })
+
+        # ── 8) Prepare table columns for frontend ─────────────────────────
+        if is_bn:
+            table_columns = [
+                {"key": "variable1", "label": "ভেরিয়েবল ১"},
+                {"key": "variable2", "label": "ভেরিয়েবল ২"},
+                {"key": "cramers_v", "label": "ক্রেমার'স ভি"},
+                {"key": "effect_size", "label": "সম্পর্কের মাত্রা"},
+                {"key": "p_value", "label": "পি-মান"},
+                {"key": "p_adjusted", "label": "সমন্বিত পি-মান"},
+                {"key": "chi2", "label": "কাই-স্কয়ার"},
+                {"key": "dof", "label": "স্বাধীনতার মাত্রা"},
+                {"key": "n", "label": "নমুনা"},
+            ]
+        else:
+            table_columns = [
+                {"key": "variable1", "label": "Variable 1"},
+                {"key": "variable2", "label": "Variable 2"},
+                {"key": "cramers_v", "label": "Cramer's V"},
+                {"key": "effect_size", "label": "Effect Size"},
+                {"key": "p_value", "label": "P-value"},
+                {"key": "p_adjusted", "label": "Adjusted P-value"},
+                {"key": "chi2", "label": "Chi²"},
+                {"key": "dof", "label": "DoF"},
+                {"key": "n", "label": "N"},
+            ]
+
+        # ── 9) Prepare plot data for visualizations ───────────────────────
+        plot_data = []
+        for i, var1 in enumerate(vars_list):
+            for j, var2 in enumerate(vars_list):
+                if i != j:
+                    # Find the corresponding result
+                    result = None
+                    for r in pairwise_results:
+                        if (r['variable1'] == var1 and r['variable2'] == var2) or \
+                           (r['variable1'] == var2 and r['variable2'] == var1):
+                            result = r
+                            break
+                    
+                    if result:
+                        plot_data.append({
+                            'category': f"{var1}",
+                            'variable': f"{var2}",
+                            'cramers_v': result['cramers_v'],
+                            'p_value': result['p_value'],
+                            'effect_size': result['effect_size'],
+                            'p_adjusted': result['p_adjusted']
+                        })
+
+        # ── 10) Create association strength summary ──────────────────────
+        effect_size_counts = {
+            'Large': 0,
+            'Medium': 0,
+            'Small': 0,
+            'Negligible': 0
+        }
+        
+        for result in pairwise_results:
+            if result['effect_size'] in effect_size_counts:
+                effect_size_counts[result['effect_size']] += 1
+
+        # ── 11) Generate insight message ──────────────────────────────────
+        def generate_insight_message():
+            strong_associations = [r for r in pairwise_results if r['effect_size'] in ['Medium', 'Large']]
+            
+            if is_bn:
+                if len(strong_associations) == 0:
+                    return "কোনো শক্তিশালী সম্পর্ক পাওয়া যায়নি (ক্রেমার'স ভি < ০.৩)। সমস্ত ভেরিয়েবল দুর্বলভাবে সম্পর্কিত।"
+                elif len(strong_associations) == len(pairwise_results):
+                    return f"সব {len(strong_associations)}টি ভেরিয়েবল জোড়ায় শক্তিশালী সম্পর্ক পাওয়া গেছে (ক্রেমার'স ভি ≥ ০.৩)।"
+                else:
+                    return f"{len(strong_associations)}টি ভেরিয়েবল জোড়ায় শক্তিশালী সম্পর্ক পাওয়া গেছে (মোট {len(pairwise_results)}টির মধ্যে)।"
+            else:
+                if len(strong_associations) == 0:
+                    return "No strong associations found (Cramer's V < 0.3). All variables are weakly related."
+                elif len(strong_associations) == len(pairwise_results):
+                    return f"All {len(strong_associations)} variable pairs show strong associations (Cramer's V ≥ 0.3)."
+                else:
+                    return f"{len(strong_associations)} variable pairs show strong associations (out of {len(pairwise_results)} total)."
+
+        # ── 12) Prepare final response ────────────────────────────────────
+        test_name = "Cramer's V Association Analysis" if lang == 'en' else "ক্রেমার'স ভি সম্পর্ক বিশ্লেষণ"
+        
+        response_data = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'n_variables': int(n_vars),
+            'n_comparisons': int(len(pairwise_results)),
+            'variables': [str(v) for v in vars_list],
+            'variable_stats': variable_stats,
+            'pairwise_results': pairwise_results,
+            'blocks': blocks,
+            'cramers_v_matrix': [[float(val) for val in row] for row in cramers_v_matrix.tolist()],
+            'p_value_matrix': [[float(val) for val in row] for row in p_value_matrix.tolist()],
+            'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
+            'effect_size_matrix': [[str(val) for val in row] for row in effect_size_matrix.tolist()],
+            'plot_data': plot_data,
+            'table_columns': table_columns,
+            'effect_size_summary': effect_size_counts,
+            'insight_message': generate_insight_message(),
+            'metadata': {
+                'fdr_correction': 'Benjamini-Hochberg',
+                'bias_correction': True,
+                'effect_size_interpretation': {
+                    'Negligible': 'V < 0.1',
+                    'Small': '0.1 ≤ V < 0.3', 
+                    'Medium': '0.3 ≤ V < 0.5',
+                    'Large': 'V ≥ 0.5'
+                },
+                'alpha': 0.05,
+                'total_observations': int(len(df))
+            }
+        }
+
+        print(f"[Cramer's V] Response prepared successfully with {len(pairwise_results)} comparisons")
+        return JsonResponse(response_data)
+
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback_msg = traceback.format_exc()
+        print(f"[Cramer's V] Error: {error_msg}")
+        print(f"[Cramer's V] Traceback: {traceback_msg}")
+        return JsonResponse({
+            'success': False, 
+            'error': error_msg,
+            'traceback': traceback_msg
+        })
 
 
 
@@ -4174,11 +5153,6 @@ def process_cross_tabulation(request, df, selected_columns, user_id):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
-def create_plot(fig, ax, title, xlabel, ylabel, base, final):
-            # Format tick labels first
-            xt = [format_tick(x) for x in ax.get_xticks()]
-            yt = [format_tick]
 
 
 def process_eda_basics(request, df, user_id):
@@ -5019,219 +5993,6 @@ def process_chi_square(request, df, selected_columns, user_id):
             'traceback': traceback_msg
         })
 
-def process_cramers_heatmap(request, selected_columns, df, user_id):
-    
-
-    try:
-        # --- 1) Inputs ---
-        lang = request.POST.get("language", "en")
-        fmt = request.POST.get("format", "png").lower()
-        pil_fmt = {"png": "PNG", "jpg": "JPEG", "jpeg": "JPEG", "pdf": "PDF", "tiff": "TIFF"}.get(fmt, "PNG")
-
-        label_font_size = 58
-        tick_font_size =36
-        img_quality = int(request.POST.get("image_quality", 90))
-        palette = request.POST.get("palette", "coolwarm")
-        image_size = request.POST.get("image_size", "800x600")
-
-        
-        try:
-            width, height = map(int, image_size.lower().split("x"))
-        except:
-            width, height = 800, 600
-
-        # --- 2) Font & Path setup ---
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        fm.fontManager.addfont(font_path)
-        bengali_font = fm.FontProperties(fname=font_path).get_name()
-        mpl.rcParams['font.family'] = bengali_font
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
-        label_font = ImageFont.truetype(font_path, size=label_font_size)
-
-        translator = Translator()
-        def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
-        def map_digits(txt): return txt.translate(str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')) if lang == 'bn' else txt
-
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
-        uid = str(uuid.uuid4())[:8]
-
-
-        if len(selected_columns) < 2:
-            return JsonResponse({'success': False, 'error': "Select at least two columns"})
-        print(selected_columns) 
-
-        # --- 3) Compute Cramér’s V matrix ---
-        def cramers_v(x, y):
-            confusion_matrix = pd.crosstab(x, y)
-            # print("Confusion Matrix:\n", confusion_matrix)
-
-            chi2, _, _, _ = chi2_contingency(confusion_matrix)  # ✅ use scipy
-            n = confusion_matrix.sum().sum()
-            phi2 = chi2 / n
-            r, k = confusion_matrix.shape
-            #bias correction
-            phi2corr = max(0,phi2-((k-1)*(r-1))/(n-1))
-            rcorr = r - ((r - 1) ** 2) / ( n - 1 )
-            kcorr = k - ((k - 1) ** 2) / ( n - 1 )
-            return np.sqrt(phi2corr / min(kcorr - 1, rcorr - 1)) 
-
-
-        n = len(selected_columns)
-        mat = pd.DataFrame(np.zeros((n, n)), index=selected_columns, columns=selected_columns)
-        for i in range(n):
-            for j in range(n):
-                if i == j:
-                    mat.iloc[i, j] = 1.0
-                else:
-                    mat.iloc[i, j] = cramers_v(df[selected_columns[i]], df[selected_columns[j]])
-        # print(mat) 
-        # --- 4) Heatmap ---
-        fig, ax = plt.subplots(figsize=(width/100, height/100), dpi=100)
-        cmap = sns.color_palette(palette, as_cmap=True)
-        hm = sns.heatmap(mat, annot=True, fmt=".2f", cmap=cmap, ax=ax, cbar=True)
-        
-
-        
-        # Hide all Matplotlib text; PIL will draw it
-        ax.set_xlabel(''); ax.set_ylabel(''); ax.set_title('')
-        ax.set_xticklabels([]); ax.set_yticklabels([])
-        ax.tick_params(axis='both', length=0)
-
-        
-        fig.canvas.draw()
-        renderer = fig.canvas.get_renderer()
-
-        n_rows, n_cols = mat.shape
-
-        
-        x_left_fig,  _          = ax.transData.transform((0,        0))
-        x_right_fig, _          = ax.transData.transform((n_cols,   0))
-        
-        _, y_top_fig            = ax.transData.transform((0,        0))
-        _, y_bottom_fig         = ax.transData.transform((0,   n_rows))
-
-        # column centers (x only)
-        col_centers_fig = [ax.transData.transform((j + 0.5, 0))[0] for j in range(n_cols)]
-        # row centers (y only)
-        row_centers_fig = [ax.transData.transform((0, i + 0.5))[1] for i in range(n_rows)]
-
-    
-        save_dpi = 300
-        scale = save_dpi / fig.dpi
-
-        x_left_px   = int(x_left_fig   * scale)
-        x_right_px  = int(x_right_fig  * scale)
-        y_top_px    = int(y_top_fig    * scale)
-        y_bottom_px = int(y_bottom_fig * scale)
-        col_centers_px = [int(x * scale) for x in col_centers_fig]
-        row_centers_px = [int(y * scale) for y in row_centers_fig]
-
-        
-        base_png_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}_base.png")
-        fig.savefig(base_png_path, dpi=save_dpi)   
-        plt.close(fig)
-
-
-        # Prepare localized labels 
-        title_txt  = map_digits(translate("Cramér's V Heatmap"))
-        col_labels = [map_digits(translate(str(t))) for t in mat.columns]
-        row_labels = [map_digits(translate(str(t))) for t in mat.index]
-
-        
-        tick_font  = ImageFont.truetype(font_path, size=tick_font_size)
-
-        # Open base and make a canvas with margins
-        base = Image.open(base_png_path).convert("RGB")
-        bw, bh = base.size
-
-        def _w(font, txt): 
-            if not txt: return 0
-            a,b,c,d = font.getbbox(txt); return c-a
-        def _h(font, txt): 
-            if not txt: return 0
-            a,b,c,d = font.getbbox(txt); return d-b
-
-        title_h = _h(label_font, title_txt) if title_txt else 0
-        pad     = max(8, tick_font.size // 2)
-
-        # estimate needed margins
-        max_x_tick_h = max((_w(tick_font, s) for s in col_labels), default=0) // 2 + tick_font.size // 2
-        max_y_tick_w = max((_w(tick_font, s) for s in row_labels), default=0)
-
-        top_margin    = (title_h + pad) if title_txt else pad
-        bottom_margin = (max_x_tick_h + pad) if col_labels else pad
-        left_margin   = (max_y_tick_w + pad) if row_labels else pad
-        right_margin  = pad
-
-        W = bw + left_margin + right_margin
-        H = bh + top_margin + bottom_margin
-        canvas = Image.new("RGB", (W, H), "white")
-        canvas.paste(base, (left_margin, top_margin))
-        draw = ImageDraw.Draw(canvas)
-
-        # Title (top, centered)
-        if title_txt:
-            tlen = draw.textlength(title_txt, font=label_font)
-            tx = (W - int(tlen)) // 2
-            ty = (top_margin - title_h) // 2
-            draw.text((tx, ty), title_txt, font=label_font, fill="black")
-
-        # Convert heatmap edge & center pixels into canvas coords
-        x_left_c   = left_margin + x_left_px
-        x_right_c  = left_margin + x_right_px
-        y_top_c    = top_margin  + y_top_px
-        y_bottom_c = top_margin  + y_bottom_px
-        col_centers_c = [left_margin + x for x in col_centers_px]
-        row_centers_c = [top_margin  + y for y in row_centers_px]
-
-        # X labels (bottom, rotated 45°, centered under each column)
-        base_y =  y_bottom_c + pad
-        # X labels: bottom of the axis, horizontally centered under each column
-        for cx, lab in zip(col_centers_c, col_labels):
-            tw = int(draw.textlength(lab, font=tick_font))
-            th = tick_font.size
-            lx = cx - tw               # center text under the column
-            ly = y_bottom_c + pad           # place just below the heatmap bottom edge
-            
-            lab_img = Image.new("RGBA", (tw + 8, th + 8), (255,255,255,0))
-            d2 = ImageDraw.Draw(lab_img)
-            d2.text((4, 0), lab, font=tick_font, fill="black")
-            lab_rot = lab_img.rotate(30, expand=True)
-            lx = cx - lab_rot.width
-            ly = y_top_c + pad
-            canvas.paste(lab_rot, (lx, ly), lab_rot)
-
-
-
-        # Y labels (left, horizontal, centered on each row)
-        for cy, lab in zip(row_centers_c, row_labels):
-            tw = int(draw.textlength(lab, font=tick_font))
-            lx = max(0, x_left_c - pad - tw)
-            ly = cy - tick_font.size // 2
-            draw.text((lx, ly), lab, font=tick_font, fill="black")
-
-        # Final save
-        final_path = os.path.join(plots_dir, f"cramers_heatmap_{uid}.{fmt}")
-        if pil_fmt == "JPEG":
-            canvas.save(final_path, format=pil_fmt, quality=img_quality, subsampling=0, progressive=True)
-        elif pil_fmt == "PNG":
-            canvas.save(final_path, format=pil_fmt, optimize=True)
-        else:
-            canvas.save(final_path, format=pil_fmt)
-
-
-
-        print(final_path) 
-
-        return JsonResponse({
-            'success': True,
-            'image_paths': [os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_path))],
-            'columns': selected_columns,
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 # def process_cramers_heatmap(request, df, user_id):
 #     from django.http import JsonResponse
@@ -5888,6 +6649,12 @@ def process_network_graph(request, df, selected_columns, user_id):
     except Exception as e:
         print(f"Error in network graph generation: {str(e)}")
         return JsonResponse({'success': False, 'error': str(e)})
+
+
+def create_plot(fig, ax, title, xlabel, ylabel, base, final):
+            # Format tick labels first
+            xt = [format_tick(x) for x in ax.get_xticks()]
+            yt = [format_tick]
 
 def save_plot(plt, filename, user_id):
     import os
@@ -7197,8 +7964,7 @@ def save_results_api(request):
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
-        
-        
+                
 # save edited file
 
 from django.core.files.storage import default_storage
@@ -7276,7 +8042,6 @@ def list_user_files(request):
         })
 
     return JsonResponse(file_list, safe=False)
-
 
 from django.http import FileResponse, JsonResponse, HttpResponse
 from django.views.decorators.http import require_GET
