@@ -70,7 +70,7 @@ const SurveyLogo = ({
       <div className="mt-3 flex flex-column align-items-center">
         {/* Upload */}
         <div className="mt-3 button-group-mobile-compact justify-content-center">
-          <label className="btn btn-outline-secondary btn-sm me-1">
+          <label className="btn btn-outline-secondary btn-sm me-1"> 
             <Tooltip
               title="Max height: 200px, Max width: 600px"
               placement="top"
@@ -79,7 +79,7 @@ const SurveyLogo = ({
                 popper: {
                   sx: {
                     "& .MuiTooltip-tooltip": {
-                      backgroundColor: "#333", // dark background
+                      backgroundColor: "#25856f", // dark background
                       color: "#fff", // white text
                       fontSize: "0.9rem", // slightly bigger text
                       padding: "8px 12px", // more padding
@@ -129,8 +129,8 @@ const SurveyLogo = ({
                 key={align}
                 className={`btn btn-sm me-1 ${
                   logoAlignment === align
-                    ? "btn-primary"
-                    : "btn-outline-primary"
+                    ? "btn-aligned"
+                    : "btn-outline-aligned"
                 }`}
                 onClick={() => handleLogoAlignmentChange(align)}
               >

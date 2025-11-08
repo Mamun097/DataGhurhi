@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect,useRef } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -373,10 +373,22 @@ const LikertScale = ({
     question.meta.columns,
     updateMeta,
   ]);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
 
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
   return (
     <div className="mb-3 dnd-isolate">
-      <div className="d-flex justify-content-between align-items-center mb-2">
+      {/* <div className="d-flex justify-content-between align-items-center mb-2">
         <label className="ms-2 mb-2 mb-2" style={{ fontSize: "1.2rem" }}>
           <em>
             Question No: {index}
@@ -391,7 +403,7 @@ const LikertScale = ({
           setQuestions={setQuestions}
           getLabel={getLabel}
         />
-      </div>
+      </div> */}
 
       {showCropper && selectedFile && (
         <ImageCropper
@@ -442,14 +454,14 @@ const LikertScale = ({
         </div>
       )}
 
-      <input
+      {/* <input
         type="text"
         className="form-control mb-2"
         placeholder={getLabel("Enter your question here")}
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
         onFocus={(e) => e.target.select()}
-      />
+      /> */}
 
       <div className="mb-3">
         <h6>
@@ -478,12 +490,12 @@ const LikertScale = ({
                         >
                           <i
                             className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.5rem" }}
+                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
                           ></i>
                         </span>
                         <input
                           type="text"
-                          className="form-control"
+                          className="survey-form-control"
                           value={row}
                           onChange={(e) =>
                             handleRowChange(index, e.target.value)
@@ -509,7 +521,7 @@ const LikertScale = ({
           </Droppable>
         </DragDropContext>
         <button
-          className="btn btn-sm btn-outline-primary mt-2 w-auto"
+          className="add-option-btn"
           onClick={handleAddRow}
         >
           ➕ {getLabel("Add Row")}
@@ -543,12 +555,12 @@ const LikertScale = ({
                         >
                           <i
                             className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.5rem" }}
+                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
                           ></i>
                         </span>
                         <input
                           type="text"
-                          className="form-control"
+                          className="survey-form-control"
                           value={col}
                           onChange={(e) =>
                             handleColumnChange(index, e.target.value)
@@ -574,7 +586,7 @@ const LikertScale = ({
           </Droppable>
         </DragDropContext>
         <button
-          className="btn btn-sm btn-outline-primary mt-2 w-auto"
+          className="add-option-btn"
           onClick={handleAddColumn}
           disabled={columns.length >= MAX_COLUMNS}
         >
@@ -618,7 +630,7 @@ const LikertScale = ({
       )} */}
 
       {/* Action Buttons - now separate from toggles */}
-      <div className="d-flex align-items-center mt-3">
+      {/* <div className="d-flex align-items-center mt-3">
         <button
           className="btn btn-sm btn-outline-secondary w-auto me-2"
           onClick={handleCopy}
@@ -652,9 +664,9 @@ const LikertScale = ({
         >
           <i className="bi bi-translate"></i>
         </button>
-      </div>
+      </div> */}
       {/* Additional Toggles Separated for Clarity */}
-      <div className="mt-3 border-top pt-3">
+      {/* <div className="mt-3 border-top pt-3">
         <div className="form-check form-switch mb-2">
           <input
             className="form-check-input"
@@ -700,7 +712,104 @@ const LikertScale = ({
             {getLabel("Required")}
           </label>
         </div>
+      </div> */}
+       <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`requiredSwitchLikert${question.id}`}
+          onChange={handleRequired}
+          checked={required}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`requiredSwitchLikert${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+          {/* Shuffle Options */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-shuffle"></i>
+              {getLabel("Shuffle Option Order")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                id={`enableRowShuffleLikert${question.id}`}
+                onChange={handleEnableRowShuffleToggle}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+        {/* Require at least one row*/}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-check2-square"></i>
+              {getLabel("Require at least one selection")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                id={`requireEachRowLikert${question.id}`}
+                onChange={handleRequireEachRowResponseToggle}
+                checked={requireEachRowResponse}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

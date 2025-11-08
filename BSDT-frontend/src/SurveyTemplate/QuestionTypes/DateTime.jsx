@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
@@ -156,10 +156,24 @@ const DateTimeQuestion = ({
     handleQuestionChange(response.data.data.translations[0].translatedText);
   }, [handleQuestionChange, question.text]);
 
+    const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef(null);
+  
+    // Close on outside click
+    useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (menuRef.current && !menuRef.current.contains(e.target)) {
+          setShowMenu(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+  
   return (
     <div className="mb-3">
       {/* Top Bar: Label and TagManager */}
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2em" }}>
           <em>
             Question No: {index}
@@ -174,7 +188,7 @@ const DateTimeQuestion = ({
           setQuestions={setQuestions}
           getLabel={getLabel}
         />
-      </div>
+      </div> */}
 
       {/* Image Cropper and Previews */}
       <div className="mb-2">
@@ -233,7 +247,7 @@ const DateTimeQuestion = ({
       </div>
 
       {/* Question Text Input */}
-      <div className="mb-3">
+      {/* <div className="mb-3">
         <input
           type="text"
           className="form-control"
@@ -242,13 +256,13 @@ const DateTimeQuestion = ({
           onChange={(e) => handleQuestionChange(e.target.value)}
           onFocus={(e) => e.target.select()}
         />
-      </div>
+      </div> */}
 
       {/* Date/Time Input & Type Selector */}
-      <div className="d-flex flex-wrap align-items-center gap-2 ms-1 mb-3">
+      <div className="d-flex flex-wrap align-items-center gap-2  mb-2" style={{marginLeft:"20px"}}>
         <input
           type={question.meta?.dateType === "time" ? "time" : "date"}
-          className="form-control form-control-sm w-auto"
+          className="survey-form-control survey-form-control-sm w-auto"
           readOnly
         />
         <select
@@ -263,7 +277,7 @@ const DateTimeQuestion = ({
       </div>
 
       {/* Action Buttons & Required Toggle */}
-      <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
+      {/* <div className="d-flex flex-wrap align-items-center mt-3 gy-3">
         <button
           className="btn btn-outline-secondary w-auto me-2"
           onClick={handleCopy}
@@ -314,7 +328,77 @@ const DateTimeQuestion = ({
             </label>
           </div>
         </div>
+      </div> */}
+
+ <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`dateTimeRequired-${question.id}`}
+          checked={required}
+          onChange={handleRequired}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`dateTimeRequired-${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+    
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
+
+      
     </div>
   );
 };
