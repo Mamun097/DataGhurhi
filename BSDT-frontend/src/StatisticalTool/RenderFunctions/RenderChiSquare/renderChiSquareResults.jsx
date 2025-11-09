@@ -498,6 +498,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                 <div
                     ref={tabContainerRef}
                     className="stats-tab-container"
+<<<<<<< Updated upstream
                     // style={{
                     //     position: isSticky ? 'fixed' : 'relative',
                     //     top: isSticky ? '105px' : 'auto',
@@ -510,6 +511,20 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     //     boxShadow: isSticky ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
                     //     transition: 'all 0.1s ease'
                     // }}
+=======
+                    style={{
+                        position: isSticky ? 'fixed' : 'relative',
+                        top: isSticky ? '105px' : 'auto',
+                        left: isSticky ? 'auto' : 'auto',
+                        right: isSticky ? 'auto' : 'auto',
+                        width: isSticky ? containerWidth : 'auto',
+                        zIndex: 100,
+                        backgroundColor: 'white',
+                        padding: '0',
+                        boxShadow: isSticky ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
+                        transition: 'all 0.1s ease'
+                    }}
+>>>>>>> Stashed changes
                 >
                     <button
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
@@ -523,12 +538,20 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     >
                         {t('Heatmap', 'হিটম্যাপ')}
                     </button>
+<<<<<<< Updated upstream
                     {/* <button
+=======
+                    <button
+>>>>>>> Stashed changes
                         className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('mosaic')}
                     >
                         {t('Mosaic Plot', 'মোজাইক প্লট')}
+<<<<<<< Updated upstream
                     </button> */}
+=======
+                    </button>
+>>>>>>> Stashed changes
 
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
