@@ -10,6 +10,7 @@ import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import AddIcon from "@mui/icons-material/Add";
 import UpdateIcon from "@mui/icons-material/Update";
+import MultipleFolders from "@mui/icons-material/FolderCopyTwoTone";
 import apiClient from "../../api";
 import "../Dashboard.css";
 import "./projectComponent.css";
@@ -140,7 +141,7 @@ const ProjectTab = ({
       {/* Header Section */}
       <div className="projects-header-section">
         <div className="header-title">
-          <FolderOpenIcon className="header-icon" />
+          <MultipleFolders className="header-icon" />
           <div>
             <h2>{getLabel("My Projects")}</h2>
             <p className="header-subtitle">
