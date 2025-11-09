@@ -313,8 +313,6 @@ const CollabSurveyTab = ({
             <span>{getLabel("View Requests")}</span>
           </button>
         </div>
-<<<<<<< Updated upstream
-=======
         <button
           className="btn btn-sm btn-outline-primary"
           onClick={() => {
@@ -328,7 +326,6 @@ const CollabSurveyTab = ({
             {getLabel("View Request")}
           </span>
         </button>
->>>>>>> Stashed changes
       </div>
 
       {/* Surveys Display */}
