@@ -42,7 +42,7 @@ const CollabProjectTab= ({ getLabel,collaboratedProjects,showCollabModal,collabR
                       title={getLabel("View Collaboration Requests")}
                     >
                       <i className="bi bi-eye me-1"></i>
-                      <span className="d-none d-sm-inline text-muted " >{getLabel("View Request")}</span>
+                      <span className="d-none d-sm-inline text-white " >{getLabel("View Request")}</span>
                     </button>
                   </div>
                   <div className="collaborated-projects-list">

@@ -29,3 +29,262 @@
   background-color: #f9f9f9;
   border-right: 1px solid #ccc;
 }
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+/* Button Styling */
+.save-cloud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.save-cloud-btn:hover {
+  background-color: #1e4ed8;
+  transform: translateY(-1px);
+}
+
+.save-cloud-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Popup Overlay */
+.popup-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+/* Popup Box */
+.popup-content {
+  background: white;
+  border-radius: 10px;
+  padding: 18px 20px;
+  width: 260px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.popup-content h3 {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 16px;
+  color: #222;
+}
+
+.popup-content input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 14px;
+  transition: border 0.2s ease;
+}
+
+.popup-content input:focus {
+  border-color: #2563eb;
+}
+
+/* Buttons inside popup */
+.popup-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.save-btn,
+.cancel-btn {
+  flex: 1;
+  padding: 6px 0;
+  border-radius: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.save-btn {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+}
+
+.save-btn:hover {
+  background-color: #1d4ed8;
+}
+
+.cancel-btn {
+  background-color: #e5e7eb;
+  color: #333;
+  border: none;
+}
+
+.cancel-btn:hover {
+  background-color: #d1d5db;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Save Section Container */
+.save-section {
+  display: flex;
+  margin-left: auto;
+  justify-content: flex-end; /* align buttons to the right */
+  gap: 12px; /* space between buttons */
+  margin-bottom: 1rem;
+}
+.button-group {
+  display: flex;
+  gap: 12px; }
+
+.file-update-btn, 
+.file-save-btn {
+  display: flex; 
+  align-items: center;
+  gap: 6px; 
+  padding: 8px 16px;
+  border-radius: 6px; 
+  font-size: 14px; 
+  font-weight: 500; 
+  transition: all 0.2s ease;
+   }
+
+/* Update Table Button */
+.file-update-btn {
+
+  background-color: #34c131;
+  color: #f1ecec;
+  border: 1px solid #ccc;
+}
+
+.file-update-btn:hover {
+  background-color: #e6e6e6;
+}
+
+/* Save to Cloud Button */
+.file-save-btn {
+
+  background-color: #2563eb;
+  color: white;
+  border: none;
+}
+
+.file-save-btn:hover {
+  background-color: #1e4ed8;
+}
+
+
+/* Modal Styling */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-box {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  width: 500px;
+  text-align: center;
+}
+
+.modal-box h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.modal-box input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 1rem;
+}
+
+.modal-box input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* Modal Buttons */
+.modal-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.modal-save {
+  flex: 1;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-save:hover {
+  background-color: #1e4ed8;
+}
+
+.modal-cancel {
+  flex: 1;
+  background-color: #f3f3f3;
+  color: #444;
+  border: 1px solid #ddd;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-cancel:hover {
+  background-color: #e9e9e9;
+}

@@ -57,7 +57,7 @@ const handleConfirmImport = (selectedQuestions) => {
 
   return (
     <>
-      <button className="btn btn-outline-primary mb-md-0 me-md-3" onClick={() => setShowImportModal(true)}>
+      <button className="qs-btn-compact qs-add-btn" onClick={() => setShowImportModal(true)}>
         Import Questions from Question Bank
       </button>
 

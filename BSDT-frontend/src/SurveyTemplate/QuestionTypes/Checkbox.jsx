@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -6,6 +6,7 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
+import "../CSS/SurveyQuestions.css";
 
 const Checkbox = ({
   index,
@@ -15,6 +16,7 @@ const Checkbox = ({
   language,
   setLanguage,
   getLabel,
+
 }) => {
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
@@ -386,26 +388,22 @@ const Checkbox = ({
     question.text,
     handleOptionChange,
   ]);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="mb-3 dnd-isolate">
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
-        <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em>
-            Question No: {index}
-            <hr />
-            Type: <strong>{getLabel("Checkbox")}</strong>
-          </em>
-        </label>
-        <TagManager
-          questionId={question.id}
-          questionText={question.text}
-          questions={questions}
-          setQuestions={setQuestions}
-          getLabel={getLabel}
-        />
-      </div>
-
       {showCropper && selectedFile && (
         <ImageCropper
           file={selectedFile}
@@ -454,7 +452,7 @@ const Checkbox = ({
           ))}
         </div>
       )}
-
+{/* 
       <input
         type="text"
         className="form-control mb-3"
@@ -462,7 +460,7 @@ const Checkbox = ({
         value={question.text || ""}
         onChange={(e) => handleQuestionChange(e.target.value)}
         onFocus={(e) => e.target.select()}
-      />
+      /> */}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId={`checkbox-options-${question.id}`}>
@@ -483,7 +481,7 @@ const Checkbox = ({
                       <div className="col-auto" {...prov.dragHandleProps}>
                         <i
                           className="bi bi-grip-vertical"
-                          style={{ fontSize: "1.5rem", cursor: "grab" }}
+                          style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
                         ></i>
                       </div>
                       <div className="col-auto">
@@ -496,7 +494,7 @@ const Checkbox = ({
                       <div className="col">
                         <input
                           type="text"
-                          className="form-control form-control-sm"
+                          className="survey-form-control survey-form-control-sm"
                           value={option}
                           onChange={(e) => handleOptionChange(idx, e.target.value)}
                           onPaste={(e) => handleOptionPaste(idx, e)}
@@ -526,20 +524,21 @@ const Checkbox = ({
         </Droppable>
       </DragDropContext>
 
-      <button
-        className="btn btn-sm btn-outline-secondary w-auto"
+     <button
+        className="add-option-btn"
         onClick={addOption}
       >
         ➕ {getLabel("Add Option")}
       </button>
 
+{/* 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button
           className="btn btn-outline-secondary w-auto"
           onClick={handleCopy}
           title="Copy Question"
         >
-          <i className="bi bi-clipboard"></i>
+          <i className="bi bi-copy"></i>
         </button>
         <button
           className="btn btn-outline-secondary w-auto"
@@ -627,8 +626,106 @@ const Checkbox = ({
           >
             {getLabel("Required")}
           </label>
-        </div>
+        </div> */}
+      {/* </div> */}
+  <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`requiredSwitchCheckbox${question.id}`}
+          checked={required}
+          onChange={handleRequired}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`requiredSwitchCheckbox${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+          {/* Shuffle Options */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-shuffle"></i>
+              {getLabel("Shuffle Option Order")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                checked={enableOptionShuffle}
+                onChange={handleEnableOptionShuffleToggle}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+          {/* Require at least one */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-check2-square"></i>
+              {getLabel("Require at least one selection")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                checked={requireAtLeastOneSelection}
+                onChange={handleRequireAtLeastOneSelectionToggle}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

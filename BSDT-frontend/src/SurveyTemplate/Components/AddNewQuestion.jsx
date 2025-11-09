@@ -127,13 +127,13 @@ const AddQuestion = ({
 
       <div className="d-flex flex-column flex-md-row align-items-center justify-content-center mt-3 text-center">
         {!showQuestionTypes && (
-          <button
-            className="btn btn-outline-primary mb-2 mb-md-0 me-md-3"
-            onClick={() => setShowQuestionTypes(true)}
-          >
-            <i className="bi bi-plus-lg"></i>{" "}
-            {getLabel("Add Question Manually")}
-          </button>
+         <button
+          className="qs-btn-compact qs-add-btn"
+          onClick={() => setShowQuestionTypes(true)}
+        >
+          <i className="bi bi-plus-lg"></i> {getLabel("Add Question Manually")}
+        </button>
+
         )}
 
         <ImportFromQb
