@@ -31,7 +31,7 @@ export default function FileExplorer() {
   const fetchFiles = async (folderPath) => {
     try {
       const res = await axios.get(
-        `http://103.94.135.115:8001/files?user_id=${userId}${
+        `https://dataghurhi.cse.buet.ac.bd:8001/files?user_id=${userId}${
           folderPath ? `&path=${folderPath}` : ""
         }`
       );
@@ -45,7 +45,7 @@ export default function FileExplorer() {
   const goBack = (index) => setPathStack(pathStack.slice(0, index + 1));
 
 const handleDownload = (file) => {
-  const url = `http://103.94.135.115:8001/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
+  const url = `https://dataghurhi.cse.buet.ac.bd:8001/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
   fetch(url)
     .then((res) => res.blob())
     .then((blob) => {
@@ -128,7 +128,7 @@ const handleDownload = (file) => {
             >
               {["jpg", "jpeg", "png", "gif"].includes(file.type) ? (
                 <img
-                  src={`http://103.94.135.115:8001/files/${file.name}?user_id=${userId}&path=${currentPath}`}
+                  src={`https://dataghurhi.cse.buet.ac.bd:8001/files/${file.name}?user_id=${userId}&path=${currentPath}`}
                   alt={file.name}
                   className="file-thumbnail"
                 />
