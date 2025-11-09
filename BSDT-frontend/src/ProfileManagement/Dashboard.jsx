@@ -124,20 +124,12 @@ const Dashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
   const [availableTokens, setAvailableTokens] = useState(0);
-<<<<<<< Updated upstream
-  const userId = localStorage.getItem("userId");
-=======
   const userId= localStorage.getItem("userId");
->>>>>>> Stashed changes
 
   useEffect(() => {
     setUserType(localStorage.getItem("userType"));
   }, [userId]);
-<<<<<<< Updated upstream
-
-=======
   
->>>>>>> Stashed changes
 
   // Admin states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -377,31 +369,6 @@ const Dashboard = () => {
   }, []);
 
   const getuserType = useCallback(async () => {
-<<<<<<< Updated upstream
-
-
-    if (userType === "admin") {
-      setIsAdmin(true);
-      setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
-      fetchAdminStats(); // Fetch admin statistics
-    } else {
-      setIsAdmin(false);
-      setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
-
-      // Show ad banner for normal users only once per session
-
-      // Check if the banner has already been shown in this session
-      const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
-      const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
-
-      if (!bannerAlreadyShown) {
-        setShowAdBanner(true);
-        // Mark banner as shown in this session
-        sessionStorage.setItem(bannerShownKey, "true");
-      }
-    }
-
-=======
     
          
         if (userType === "admin") {
@@ -425,7 +392,6 @@ const Dashboard = () => {
             }      
       }
     
->>>>>>> Stashed changes
   }, [fetchAdminStats]);
 
   useEffect(() => {
@@ -548,13 +514,8 @@ const Dashboard = () => {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
-<<<<<<< Updated upstream
-  const [collapsed, setCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-=======
 const [collapsed, setCollapsed] = useState(false);
 const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
->>>>>>> Stashed changes
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -575,31 +536,18 @@ const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
       return [
         // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
         { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
-<<<<<<< Updated upstream
-        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
-        // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
-        { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
-        { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
-=======
         { label: "Shared with You", key: "shared", icon: <Users size={18} /> },
         // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
         { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
         {label: "Analysis", key: "analysis", icon: <ChartColumn size={18} />},
->>>>>>> Stashed changes
         { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
       ];
     }
   };
 
-<<<<<<< Updated upstream
-  useEffect(() => {
-    setCollapsed(isMobile);
-  }, [isMobile]);
-=======
 useEffect(() => {
   setCollapsed(isMobile);
 }, [isMobile]);
->>>>>>> Stashed changes
 
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [passwordValues, setPasswordValues] = useState({
@@ -635,11 +583,7 @@ useEffect(() => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-<<<<<<< Updated upstream
-
-=======
       
->>>>>>> Stashed changes
       if (response.data.success) {
         alert("Password updated successfully.");
         setShowPasswordFields(false);
@@ -654,79 +598,13 @@ useEffect(() => {
   };
 
   return (
-<<<<<<< Updated upstream
-    <div style={{ paddingTop: "80px" }}>
-=======
    <div style={{ paddingTop: "80px" }}>
->>>>>>> Stashed changes
       <NavbarAcholder
         language={language}
         setLanguage={setLanguage}
         isAdmin={isAdmin}
         userType={userType}
       />
-<<<<<<< Updated upstream
-
-      <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
-        <div className="dashboard-layout">
-          <div
-            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${collapsed ? "collapsed" : ""
-              }`}
-          >
-            {!isMobile && (
-              <div className="sidebar-header">
-                <button
-                  className={`menu-toggle-btn ${!collapsed ? "active" : ""}`}
-                  onClick={() => setCollapsed(!collapsed)}
-                  aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-                >
-                  <span></span>
-                  <span></span>
-                  <span></span>
-                </button>
-              </div>
-            )}
-
-            {/* Admin Badge */}
-            {!collapsed && isAdmin && !isMobile && (
-              <div className="admin-badge">
-                <span>👑 Administrator</span>
-              </div>
-            )}
-
-            <ul className={`sidebar-list ${isMobile ? "horizontal" : ""}`}>
-              {getTabs().map((tab) => (
-                <li key={tab.key}>
-                  <div className="tooltip-container">
-                    <button
-                      className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
-                      onClick={() => {
-                        if (tab.key === "premiumpackages") {
-                          setShowPremiumModal(true);
-                        } else {
-                          const url = new URL(window.location);
-                          url.searchParams.set("tab", tab.key);
-                          window.history.replaceState({}, "", url);
-                          setActiveTab(tab.key);
-                        }
-                      }}
-                    >
-                      <span className="icon">{tab.icon}</span>
-                      {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
-                    </button>
-
-                    {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
-                      <span className="tooltip-text">{tab.label}</span>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-
-          </div>
-
-          <div className={`projects-section ${collapsed ? "sidebar-collapsed" : ""}`}>
-=======
 
       <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
         <div className="dashboard-layout">
@@ -894,9 +772,6 @@ useEffect(() => {
                     </div>
                   ))}
                 </div>
-<<<<<<< Updated upstream
-
-=======
                 
 >>>>>>> Stashed changes
                 {isEditing && (
@@ -1006,20 +881,6 @@ useEffect(() => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-<<<<<<< Updated upstream
-                language={language}
-              />
-            )}
-            {!isAdmin && activeTab === "questionbank" && (
-              <QB language={language} setLanguage={setLanguage} />
-            )}
-            {!isAdmin && activeTab === "analysis" && (
-              <div>
-                <StatisticalAnalysisTool />
-              </div>
-            )}
-
-=======
                language={language}
               />
               )}
@@ -1034,7 +895,6 @@ useEffect(() => {
               </div>
             )}
             
->>>>>>> Stashed changes
           </div>
         </div>
       </div>

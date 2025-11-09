@@ -1,9 +1,6 @@
 /* General container */
 .dashboard-container {
-<<<<<<< Updated upstream
-=======
 
->>>>>>> Stashed changes
   padding: 2rem;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   background: #f0faf0;
@@ -12,10 +9,7 @@
 
 /* Layout */
 .dashboard-layout {
-<<<<<<< Updated upstream
-=======
  
->>>>>>> Stashed changes
   display: flex;
   flex-wrap: wrap;
   gap: 2rem;
@@ -106,14 +100,10 @@
   padding: 2rem;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   animation: fadeIn 0.5s ease-in-out;
-  transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.projects-section.sidebar-collapsed {
-  margin-left: 106px; /* 70px collapsed sidebar + 16px left gap + 20px spacing */
 }
 
 .edit-profile-header {
+ 
   justify-content: space-between;
   align-items: center;
   border-bottom: 2px solid #ececec;
@@ -293,32 +283,6 @@
   transition: background-color 0.2s ease;
 }
 
-<<<<<<< Updated upstream
-.create-project-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  background-color: #25856f;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 500;
-  transition: background-color 0.2s ease;
-}
-
-.create-project-btn:hover {
-  background-color: #5a795d;
-}
-
-.bi-plus {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-=======
 .create-project-btn:hover {
   background-color: #5a795d;
 }
@@ -326,7 +290,6 @@
   font-size: 20px;  
   font-weight: bold;
 }
->>>>>>> Stashed changes
 /* New project header and card container */
 .new-project-section {
   display: flex;
@@ -477,8 +440,6 @@
   cursor: pointer;
 }
 
-<<<<<<< Updated upstream
-=======
 .collapse-btn {
   background: none;
   border: none;
@@ -488,7 +449,6 @@
   transition: transform 0.2s ease;
 }
 
->>>>>>> Stashed changes
 .admin-badge {
   background-color: #fef3c7;
   color: #92400e;
@@ -497,46 +457,6 @@
   padding: 0.4rem 0.75rem;
   margin: 0 0.75rem 1rem;
   text-align: center;
-<<<<<<< Updated upstream
-  opacity: 1;
-  max-width: calc(100% - 1.5rem);
-  transition: opacity 0.3s ease, height 0.3s ease, padding 0.3s ease,
-    margin 0.3s ease;
-  overflow: hidden;
-  white-space: nowrap;
-}
-
-.sidebar-menu.collapsed .admin-badge {
-  opacity: 0;
-  height: 0;
-  padding: 0;
-  margin: 0;
-  overflow: hidden;
-  display: none;
-}
-
-/* ============================================
-   SIDEBAR STYLES - FIXED AND NON-SCROLLABLE
-   ============================================ */
-
-/* Base Sidebar - FIXED POSITION with floating effect */
-.sidebar-menu {
-  position: fixed;
-  top: 112px; /* 80px navbar + 16px gap */
-  left: 24px; /* Left gap for floating effect */
-  bottom: 24px; /* Bottom gap for floating effect */
-  display: flex;
-  flex-direction: column;
-  width: 230px;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 200;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-=======
 }
 /* Base Sidebar */
 
@@ -550,130 +470,10 @@
   border-radius: 10px;
   height: 100%;
   transition: all 0.3s ease;
->>>>>>> Stashed changes
 }
 
 /* Sidebar collapsed */
 .sidebar-menu.collapsed {
-<<<<<<< Updated upstream
-  width: 70px;
-}
-
-/* Sidebar Header - No border */
-.sidebar-header {
-  display: flex;
-  align-items: center;
-  padding: 1rem 0 0 0.75rem; /* Adjusted left padding to align with menu icons */
-  min-height: 20px;
-  overflow: visible;
-}
-
-/* Hide any h2 title */
-.sidebar-header h2 {
-  display: none;
-}
-
-/* Animated Hamburger Menu Button - Fixed position */
-.menu-toggle-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  width: 44px;
-  height: 44px;
-  position: relative;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  border-radius: 8px;
-  margin: 0;
-  flex-shrink: 0;
-}
-
-.menu-toggle-btn:hover {
-  background-color: #f0fdf4;
-  transform: scale(1.05);
-}
-
-.menu-toggle-btn span {
-  display: block !important;
-  width: 24px;
-  height: 2px;
-  background-color: #16a34a !important;
-  border-radius: 2px;
-  transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
-  position: relative;
-  flex-shrink: 0;
-}
-
-/* Hamburger to X animation - Smooth professional transition */
-.menu-toggle-btn.active {
-  background-color: #fef2f2;
-}
-
-.menu-toggle-btn.active:hover {
-  background-color: #fee2e2;
-}
-
-.menu-toggle-btn.active span {
-  background-color: #dc2626 !important;
-}
-
-.menu-toggle-btn.active span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
-}
-
-.menu-toggle-btn.active span:nth-child(2) {
-  opacity: 0;
-  transform: scaleX(0);
-}
-
-.menu-toggle-btn.active span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
-.menu-toggle-btn:not(.active):hover span {
-  background-color: #15803d !important;
-}
-
-.menu-toggle-btn.active:hover span {
-  background-color: #b91c1c !important;
-}
-
-/* Focus state for accessibility */
-.menu-toggle-btn:focus {
-  outline: 2px solid #3b82f6;
-  outline-offset: 2px;
-}
-
-.menu-toggle-btn:focus:not(:focus-visible) {
-  outline: none;
-}
-
-/* Sidebar List */
-.sidebar-menu ul {
-  list-style: none;
-  margin: 0;
-  padding: 0.5rem 0;
-  flex: 1;
-  overflow-x: hidden;
-}
-
-.sidebar-menu li {
-  margin: 0.5rem 0; /* Increased from 0.25rem to 0.5rem */
-  padding: 0;
-}
-
-/* Sidebar Button - Icons stay in absolute fixed position */
-.sidebar-btn {
-  display: block;
-  width: 100%;
-  padding: 0.875rem 1rem 0.875rem 1rem;
-  font-size: 0.95rem;
-=======
   width: 70px;  /* Sidebar width when collapsed */
  
 }
@@ -686,24 +486,10 @@
   gap: 0.5rem;
   padding: 1rem;
   font-size:1rem;
->>>>>>> Stashed changes
   background: none;
   border: none;
   cursor: pointer;
   color: #374151;
-<<<<<<< Updated upstream
-  transition: background-color 0.2s ease-in-out;
-  border-radius: 0.5rem;
-  text-align: left;
-  overflow: hidden;
-  white-space: nowrap;
-  position: relative;
-  height: 45px;
-}
-
-.sidebar-btn:hover {
-  background-color: #f3f4f6;
-=======
   transition: all 0.2s ease-in-out;
   border-radius: 0.375rem;
 }
@@ -744,102 +530,10 @@
 
 .sidebar-menu li {
   margin: 0.25rem 0;
->>>>>>> Stashed changes
 }
 
 .sidebar-btn.active {
   background-color: #e0f2fe;
-<<<<<<< Updated upstream
-  color: #4bb77d;
-  font-weight: 600;
-}
-
-/* Icon in absolute fixed position - NEVER moves */
-.icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-}
-
-/* Label with smooth appearance - positioned next to icon */
-.label {
-  display: inline-block;
-  margin-left: 35px; /* Space for icon */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0;
-  max-width: 0;
-  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.1s, 
-              max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  vertical-align: middle;
-}
-
-/* Show label when NOT collapsed */
-.sidebar-menu:not(.collapsed) .label {
-  opacity: 1;
-  max-width: 200px;
-}
-
-/* Collapsed state - label hidden */
-.sidebar-menu.collapsed .label {
-  opacity: 0;
-  max-width: 0;
-}
-
-/* Tooltip */
-.tooltip-container {
-  position: relative;
-  display: inline-block;
-  width: 100%;
-  overflow: visible;
-}
-
-.tooltip-container .tooltip-text {
-  visibility: hidden;
-  opacity: 0;
-  width: max-content;
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #fff;
-  text-align: center;
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  position: absolute;
-  left: calc(100% + 12px);
-  top: 50%;
-  transform: translateY(-50%);
-  transition: opacity 0.2s ease-in-out;
-  white-space: nowrap;
-  z-index: 1000;
-  pointer-events: none;
-}
-
-.tooltip-container .tooltip-text::before {
-  content: "";
-  position: absolute;
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  border-width: 5px;
-  border-style: solid;
-  border-color: transparent rgba(0, 0, 0, 0.85) transparent transparent;
-}
-
-.sidebar-menu.collapsed .tooltip-container:hover .tooltip-text {
-  visibility: visible;
-  opacity: 1;
-}
-
-.sidebar-menu:not(.collapsed) .tooltip-text {
-  display: none;
-=======
   color: #0284c7;
   border-left-color: #0284c7;
   font-weight: 600;
@@ -861,45 +555,22 @@
   text-align: left;
   white-space: nowrap;
   transition: opacity 0.2s ease;
->>>>>>> Stashed changes
 }
 
 /* Mobile horizontal layout */
 .sidebar-menu.mobile-horizontal {
   position: fixed;
-<<<<<<< Updated upstream
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: auto;
-  background: #ffffff;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: row;
-=======
   bottom: 0; /* you can also make it top: 0; if you prefer top bar */
   left: 0;
   right: 0;
   background: #ffffff;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
   display: flex;
->>>>>>> Stashed changes
   justify-content: space-around;
   align-items: center;
   padding: 0.5rem 0;
   z-index: 1000;
   border-top: 1px solid #ddd;
-<<<<<<< Updated upstream
-  border-right: none;
-  border-radius: 0;
-  width: 100%;
-  height: auto;
-}
-
-.sidebar-menu.mobile-horizontal .sidebar-header {
-  display: none;
-=======
->>>>>>> Stashed changes
 }
 
 .sidebar-menu.mobile-horizontal ul {
@@ -931,10 +602,6 @@
 
 .sidebar-menu.mobile-horizontal .sidebar-btn.active {
   color: #007bff;
-<<<<<<< Updated upstream
-  background-color: transparent;
-=======
->>>>>>> Stashed changes
 }
 
 .sidebar-menu.mobile-horizontal .sidebar-btn .icon {
@@ -942,14 +609,6 @@
 }
 
 .sidebar-menu.mobile-horizontal .sidebar-btn .label {
-<<<<<<< Updated upstream
-  display: none;
-}
-
-/* ============================================
-   RESPONSIVE STYLES
-   ============================================ */
-=======
   display: none; /* hide labels to keep it minimal */
 }
 .tooltip-container {
@@ -994,7 +653,6 @@
   opacity: 1;
 }
 
->>>>>>> Stashed changes
 
 @media (max-width: 768px) {
   .dashboard-layout {
@@ -1058,34 +716,12 @@
     flex-direction: column;
     gap: 10px;
   }
-<<<<<<< Updated upstream
-
-=======
   /* Sidebar collapsed on mobile */
->>>>>>> Stashed changes
   .sidebar-menu.collapsed {
     height: 60px;
     width: 100%;
   }
 
-<<<<<<< Updated upstream
-  /* Tooltip positioning for mobile */
-  .tooltip-container .tooltip-text {
-    left: 50%;
-    top: auto;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%);
-  }
-
-  .tooltip-container .tooltip-text::before {
-    right: auto;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
-  }
-
-=======
   /* Hide the collapse button for mobile */
   .collapse-btn {
     display: none;
@@ -1093,18 +729,12 @@
  .tooltip-container .tooltip-text {
     bottom: 120%;
   }
->>>>>>> Stashed changes
   .tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
   }
-<<<<<<< Updated upstream
-}
-
-=======
 
 }
->>>>>>> Stashed changes
 @media (max-width: 460px) {
   .dashboard-container {
     padding: 1rem;
@@ -1186,15 +816,6 @@
     font-size: 1rem;
   }
 
-  .create-project-btn {
-    width: 50%;
-    align-self: center;
-    margin: auto;
-    justify-content: center;
-    padding: 10px 0;
-    font-size: 1rem;
-  }
-
   .project-filter-bar {
     flex-direction: column;
     gap: 10px;
@@ -1217,29 +838,10 @@
     right: 16px;
     z-index: 1000;
   }
-<<<<<<< Updated upstream
-
-  .projects-section h3 {
-    font-size: 2rem;
-  }
-}
-
-/* Fade in animation */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-=======
   .projects-section h3{
     font-size: 2rem;
     
   }
   
  
->>>>>>> Stashed changes
 }

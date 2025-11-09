@@ -69,11 +69,7 @@
 //     if (!userId) return;
 
 //     // Now fetch only when userId is set
-<<<<<<< Updated upstream
-//     fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/preview-data/', {
-=======
 //     fetch('http://103.94.135.115:8001/api/preview-data/', {
->>>>>>> Stashed changes
 //       method: 'GET',
 //       headers: {
 //         'userID': userId,
@@ -104,11 +100,7 @@
 
 //     if (selectedOption === 'handle_outliers') {
 //       console.log("entered");
-<<<<<<< Updated upstream
-//       fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/outliers-summary/', {
-=======
 //       fetch('http://103.94.135.115:8001/api/outliers-summary/', {
->>>>>>> Stashed changes
 //         method: 'POST',
 //         headers: {
 //           'Content-Type': 'application/json',
@@ -206,11 +198,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/delete-columns/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/delete-columns/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId, // Include user ID in headers
@@ -238,11 +226,7 @@
 
 //                 // Option 2: Remove Duplicate Rows
 //                 else if (selectedOption === 'remove_duplicates') {
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/find-duplicates/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/find-duplicates/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId,
@@ -275,11 +259,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/handle-missing/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/handle-missing/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -315,11 +295,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/handle-outliers/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/handle-outliers/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -350,11 +326,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/rank-column/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/rank-column/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -393,11 +365,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/split-column/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/split-column/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json',
@@ -437,11 +405,7 @@
 //                     return;
 //                   }
 
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/group-data/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/group-data/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId, // Include user ID in headers
@@ -458,11 +422,7 @@
 //                         sessionStorage.setItem("fileURL", result.file_url || '');
 //                         alert("Grouped data saved successfully!");
 //                         const link = document.createElement('a');
-<<<<<<< Updated upstream
-//                         link.href = `https://dataghurhi.cse.buet.ac.bd:8001${result.download_url}`;
-=======
 //                         link.href = `http://103.94.135.115:8001${result.download_url}`;
->>>>>>> Stashed changes
 //                         link.setAttribute('download', '');
 //                         document.body.appendChild(link);
 //                         link.click();
@@ -474,11 +434,7 @@
 //                 }
 
 //                 else if (selectedOption === 'generate_id') {
-<<<<<<< Updated upstream
-//                   fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/generate-unique-id/', {
-=======
 //                   fetch('http://103.94.135.115:8001/api/generate-unique-id/', {
->>>>>>> Stashed changes
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json',
@@ -930,11 +886,7 @@
 //         )}
 
 //         <PreviewTable
-<<<<<<< Updated upstream
-//           workbookUrl={`https://dataghurhi.cse.buet.ac.bd:8001${sessionStorage.getItem("fileURL")}`}
-=======
 //           workbookUrl={`http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`}
->>>>>>> Stashed changes
 //           columns={columns}
 //           duplicateIndices={duplicateIndices}
 //           setData={setData}
@@ -1021,11 +973,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
   useEffect(() => {
     if (!userId) return;
 
-<<<<<<< Updated upstream
-    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/preview-data/', {
-=======
     fetch('http://103.94.135.115:8001/api/preview-data/', {
->>>>>>> Stashed changes
       method: 'GET',
       headers: {
         'userID': userId,
@@ -1055,11 +1003,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
   useEffect(() => {
     if (selectedOption === 'handle_outliers') {
       console.log("entered");
-<<<<<<< Updated upstream
-      fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/outliers-summary/', {
-=======
       fetch('http://103.94.135.115:8001/api/outliers-summary/', {
->>>>>>> Stashed changes
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1155,11 +1099,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/delete-columns/', {
-=======
                     fetch('http://103.94.135.115:8001/api/delete-columns/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1187,11 +1127,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
 
                   // Option 2: Remove Duplicate Rows
                   else if (selectedOption === 'remove_duplicates') {
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/find-duplicates/', {
-=======
                     fetch('http://103.94.135.115:8001/api/find-duplicates/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1224,11 +1160,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/handle-missing/', {
-=======
                     fetch('http://103.94.135.115:8001/api/handle-missing/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1263,11 +1195,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/handle-outliers/', {
-=======
                     fetch('http://103.94.135.115:8001/api/handle-outliers/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1298,11 +1226,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/rank-column/', {
-=======
                     fetch('http://103.94.135.115:8001/api/rank-column/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1341,11 +1265,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/split-column/', {
-=======
                     fetch('http://103.94.135.115:8001/api/split-column/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1385,11 +1305,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/group-data/', {
-=======
                     fetch('http://103.94.135.115:8001/api/group-data/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1406,11 +1322,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                           sessionStorage.setItem("fileURL", result.file_url || '');
                           alert("Grouped data saved successfully!");
                           const link = document.createElement('a');
-<<<<<<< Updated upstream
-                          link.href = `https://dataghurhi.cse.buet.ac.bd:8001${result.download_url}`;
-=======
                           link.href = `http://103.94.135.115:8001${result.download_url}`;
->>>>>>> Stashed changes
                           link.setAttribute('download', '');
                           document.body.appendChild(link);
                           link.click();
@@ -1422,11 +1334,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                   }
 
                   else if (selectedOption === 'generate_id') {
-<<<<<<< Updated upstream
-                    fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/generate-unique-id/', {
-=======
                     fetch('http://103.94.135.115:8001/api/generate-unique-id/', {
->>>>>>> Stashed changes
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1860,11 +1768,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
         )}
 
         <PreviewTable
-<<<<<<< Updated upstream
-          workbookUrl={`https://dataghurhi.cse.buet.ac.bd:8001${sessionStorage.getItem("fileURL")}`}
-=======
           workbookUrl={`http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`}
->>>>>>> Stashed changes
           columns={columns}
           duplicateIndices={duplicateIndices}
           setData={setData}
