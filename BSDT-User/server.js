@@ -13,7 +13,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
 app.use(express.json());
 
-const allowedOrigins = ['http://localhost:5173', 'http://103.94.135.115:5173', 'http://dataghurhi.cse.buet.ac.bd:5173']
+const allowedOrigins = ['http://localhost:5173', 'https://dataghurhi.cse.buet.ac.bd', 'https://dataghurhi.cse.buet.ac.bd']
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {

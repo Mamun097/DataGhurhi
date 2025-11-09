@@ -40,7 +40,7 @@ const GroupPreviewPage = () => {
 
       <div className="mt-6">
         <a
-          href={`http://103.94.135.115:8001${downloadUrl}`}
+          href={`https://dataghurhi.cse.buet.ac.bd:8001${downloadUrl}`}
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
           download
         >
