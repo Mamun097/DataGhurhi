@@ -47,10 +47,10 @@ const translations = {
         title: "Statistical Analysis Tool",
         subtitle: "Upload your Excel file and run various statistical tests on your data",
         formTitle: "Data Analysis Form",
-        uploadLabel: "Upload Your Data or Use Previously Saved File",
+        uploadLabel: "Import File",
         preprocessedLabel: "Preprocessed File",
         surveyLabel: "Survey Data File",
-        dropFile: "Drag & drop your Excel file or click to browse",
+        dropFile: "Drag your file or click to browse",
         processing: "Processing file, please wait...",
         testType: "Test Type",
         testGroups: {
@@ -149,6 +149,7 @@ const translations = {
         uploadError: "Please upload an Excel file",
         columnError: "Please select at least one column",
         selectTest: "Select Statistical Test",
+        selectColumns: "Select Columns",
         selectVariables: "Select Variables",
         anotherAnalysis: "Perform Another Analysis",
         visualizations: "Visualizations",
@@ -261,6 +262,7 @@ const translations = {
         uploadError: "অনুগ্রহ করে একটি এক্সেল ফাইল আপলোড করুন",
         columnError: "অনুগ্রহ করে অন্তত একটি কলাম নির্বাচন করুন",
         selectTest: "পরিসংখ্যানগত পরীক্ষা নির্বাচন করুন",
+        selectColumns: "কলাম নির্বাচন করুন",
         selectVariables: "ভেরিয়েবল নির্বাচন করুন",
         anotherAnalysis: "আরেকটি বিশ্লেষণ করুন",
         visualizations: "ভিজ্যুয়ালাইজেশন",
@@ -931,705 +933,1290 @@ const StatisticalAnalysisTool = () => {
 
 
     return (
-       
 
-                        <div className="an-wrapper">
-                        <header className="page-header">
-                            <h1 className="page-title">{t.title}</h1>
-                        </header>
 
-                        <div className="content-center">
-                            <div className="form-wrapper">
-                            {/* Error Message */}
-                            {errorMessage && (
-                                <div className="error-box">
-                                <div className="error-icon">
-                                    <svg viewBox="0 0 20 20" fill="currentColor">
+        <div className="an-wrapper">
+            <header className="page-header">
+                <h1 className="page-title">{t.title}</h1>
+            </header>
+
+            <div className="content-center">
+                <div className="form-wrapper">
+                    {/* Error Message */}
+                    {/* {errorMessage && (
+                        <div className="error-box">
+                            <div className="error-icon">
+                                <svg viewBox="0 0 20 20" fill="currentColor">
                                     <path
                                         fillRule="evenodd"
                                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                         clipRule="evenodd"
                                     />
-                                    </svg>
-                                </div>
-                                <div className="error-text">{errorMessage}</div>
-                                </div>
-                            )}
+                                </svg>
+                            </div>
+                            <div className="error-text">{errorMessage}</div>
+                        </div>
+                    )} */}
 
-                            {!results ? (
-                                <div className="card">
-                                <div className="card-header">
-                                    <div className="header-left">
+                    {!results ? (
+                        <div className="card">
+                            <div className="card-header">
+                                <div className="header-left">
                                     <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
                                         <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth="2"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                                         />
                                     </svg>
                                     <span>{t.formTitle}</span>
-                                    </div>
-                                    <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
+                                </div>
+                                <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
                                     {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
-                                    </button>
-                                </div>
+                                </button>
+                            </div>
 
-                                <div className="header-actions">
-                                    <button onClick={resetForm} className="an-btn an-btn-success small">
-                                    Reset File
-                                    </button>
-                                </div>
-
-                                <div className="card-body">
-                                    <form onSubmit={handleSubmit}>
+                            <div className="card-body">
+                                <form onSubmit={handleSubmit}>
                                     <div className="form-section">
-                                        <h5 className="section-title">
-                                        {isPreprocessed
-                                            ? t.preprocessedLabel
-                                            : isSurveyData
-                                            ? t.surveyLabel
-                                            : t.uploadLabel}
-                                        </h5>
-
-                                        {(isPreprocessed || isSurveyData) ? (
-                                        <div className="file-info">
-                                            {(isPreprocessed ? "Preprocessed file" : "Survey file")}{" "}
-                                            <strong>{fileName}</strong> loaded automatically.
-                                        </div>
-                                        ) : (
-                                        <div
-                                            ref={uploadContainerRef}
-                                            className={`upload-box ${
-                                            uploadStatus === "loading"
-                                                ? "loading"
-                                                : uploadStatus === "success"
-                                                ? "success"
-                                                : ""
-                                            }`}
-                                            onClick={() => fileInputRef.current.click()}
-                                        >
-                                            <svg className="upload-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
-                                            {uploadStatus === "success" ? (
-                                                <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                                />
-                                            ) : (
-                                                <path
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                                strokeWidth="2"
-                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                                                />
-                                            )}
-                                            </svg>
-                                            <p id="fileName">{file ? fileName : t.dropFile}</p>
-                                            <input
-                                            ref={fileInputRef}
-                                            type="file"
-                                            className="hidden-input"
-                                            accept=".xls,.xlsx"
-                                            onClick={(e) => (e.target.value = null)}
-                                            onChange={handleFileChange}
-                                            />
-                                        </div>
+                                        {!(isPreprocessed || isSurveyData || file) && (
+                                            <h5 className="section-title">
+                                                {isPreprocessed
+                                                    ? t.preprocessedLabel
+                                                    : isSurveyData
+                                                        ? t.surveyLabel
+                                                        : t.uploadLabel}
+                                            </h5>
                                         )}
 
-                                        <div className="divider">
-                                        <span>Or</span>
-                                        </div>
+                                        {(isPreprocessed || isSurveyData || file) ? (
+                                            <div className="uploaded-container">
+                                                <div className="left-partition">
+                                                    <div className="file-info-box">
+                                                        <svg className="file-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                                            <path
+                                                                strokeLinecap="round"
+                                                                strokeLinejoin="round"
+                                                                strokeWidth="2"
+                                                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                                            />
+                                                        </svg>
+                                                        <div className="file-details">
+                                                            <span className="file-label">
+                                                                {isPreprocessed ? "Preprocessed file" : isSurveyData ? "Survey file" : "Uploaded file"}
+                                                            </span>
+                                                            <strong className="file-name">{fileName}</strong>
+                                                        </div>
+                                                    </div>
 
-                                        <div className="center">
-                                        <button onClick={() => navigate("/saved-files")} className="an-btn an-btn-outline">
-                                            Go to Saved Folder
-                                        </button>
-                                        </div>
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'flex-start',
+                                                        gap: '10px',
+                                                        margin: '0 0',
+                                                        marginTop: '1rem',
+                                                    }}>
+                                                        <div className="action-buttons" style={{
+                                                            display: 'flex',
+                                                            gap: '12px',
+                                                            justifyContent: 'flex-start'
+                                                        }}>
+                                                            <button
+                                                                type="button"
+                                                                className="customize-btn"
+                                                                onClick={handlePreviewClick}
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                                    <circle cx="12" cy="12" r="3"></circle>
+                                                                </svg>
+                                                                {language === "bn" ? "ডেটা প্রিভিউ" : "Preview"}
+                                                            </button>
+
+                                                            <button
+                                                                type="button"
+                                                                className="customize-btn"
+                                                                onClick={() => {
+                                                                    const path = "/preprocess";
+                                                                    navigate(path, { state: { userId: userId, filename: fileName } });
+                                                                }}
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
+                                                                </svg>
+                                                                {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
+                                                            </button>
+
+                                                            <button
+                                                                onClick={resetForm}
+                                                                className="customize-btn"
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                                                                    <path d="M21 3v5h-5"></path>
+                                                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                                                                    <path d="M3 21v-5h5"></path>
+                                                                </svg>
+                                                                Reset
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="right-partition">
+                                                    <div className="insights-placeholder">
+                                                        <h6 className="insights-title">File Insights</h6>
+                                                        <p className="insights-text">Insights will appear here</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="upload-folder-container">
+                                                {/* File Upload Section */}
+                                                <div
+                                                    ref={uploadContainerRef}
+                                                    className={`action-box upload-box ${uploadStatus === "loading"
+                                                        ? "loading"
+                                                        : uploadStatus === "success"
+                                                            ? "success"
+                                                            : ""
+                                                        }`}
+                                                    onClick={() => fileInputRef.current.click()}
+                                                >
+                                                    <svg className="action-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                        />
+                                                    </svg>
+                                                    <p className="action-text">{t.dropFile}</p>
+                                                    <input
+                                                        ref={fileInputRef}
+                                                        type="file"
+                                                        className="hidden-input"
+                                                        accept=".xls,.xlsx"
+                                                        onClick={(e) => (e.target.value = null)}
+                                                        onChange={handleFileChange}
+                                                    />
+                                                </div>
+
+                                                {/* Vertical Divider */}
+                                                <div className="vertical-divider">
+                                                    <span>Or</span>
+                                                </div>
+
+                                                {/* Saved Folder Section */}
+                                                <div
+                                                    className="action-box folder-box"
+                                                    onClick={() => navigate("/saved-files")}
+                                                >
+                                                    <svg className="action-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                                        />
+                                                    </svg>
+                                                    <p className="action-text">Import file from DataGhurhi Saved Folder</p>
+                                                </div>
+                                            </div>
+                                        )}
 
                                         {uploadStatus === "loading" && (
-                                        <div className="status-line">
-                                            <div className="spinner" />
-                                            {t.processing}
-                                        </div>
+                                            <div className="status-line">
+                                                <div className="spinner" />
+                                                {t.processing}
+                                            </div>
                                         )}
+
+                                        <style jsx>{`
+                                            .customize-btn {
+                                                
+                                                border-color: #22c55e;
+                                            }
+
+                                            .customize-btn:hover {
+                                                background-color: rgba(34, 197, 94, 0.1); /* Light green background */
+                                                border-color: #22c55e; /* Green border */
+                                                color: #16a34a; /* Green text */
+                                        `}</style>
                                     </div>
 
-                                    <div className="action-buttons">
-                                        <button type="button" className="an-btn an-btn-primary" onClick={handlePreviewClick}>
-                                        {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
-                                        </button>
-                                        <button
-                                        type="button"
-                                        className="an-btn an-btn-purple"
-                                        onClick={() => {
-                                            const path = "/preprocess";
-                                            navigate(path, { state: { userId: userId, filename: fileName } });
-                                        }}
-                                        >
-                                        {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
-                                        </button>
-                                    </div>
+                                    <style jsx>{`
+                                        .uploaded-container {
+                                            display: flex;
+                                            gap: 1.5rem;
+                                            width: 100%;
+                                        }
 
-                                    <div className="form-section">
-                                        <h5 className="section-title">{t.selectTest}</h5>
-                                        <label className="form-label">{t.testType}</label>
-                                        <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+                                        .left-partition {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 0;
+                                        }
 
-                                        <option value="" disabled>{t.selectPrompt}</option>
-                                        <optgroup label={t.testGroups.eda}>
-                                            <option value="eda_basics">{t.tests.eda_basics}</option>
-                                            <option value="eda_distribution">{t.tests.eda_distribution}</option>
-                                            <option value="eda_swarm">{t.tests.eda_swarm}</option>
-                                            <option value="eda_pie">{t.tests.eda_pie}</option>
-                                            <option value="bar_chart">{t.tests.bar_chart}</option>
-                                            <option value="similarity">{t.tests.similarity}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.nonParametric}>
-                                            <option value="kruskal">{t.tests.kruskal}</option>
-                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>
-                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.correlation}>
-                                            <option value="pearson">{t.tests.pearson}</option>
-                                            <option value="spearman">{t.tests.spearman}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.parametric}>
-                                            <option value="f_test">{t.tests.f_test}</option>
-                                            <option value="z_test">{t.tests.z_test}</option>
-                                            <option value="t_test">{t.tests.t_test}</option>
-                                            <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.regression}>
-                                            <option value="linear_regression">{t.tests.linear_regression}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.anova}>
-                                            <option value="anova">{t.tests.anova}</option>
-                                            <option value="ancova">{t.tests.ancova}</option>
-                                        </optgroup>
-                                        <optgroup label={t.testGroups.other}>
-                                            <option value="shapiro">{t.tests.shapiro}</option>
-                                            <option value="kolmogorov">{t.tests.kolmogorov}</option>
-                                            <option value="anderson">{t.tests.anderson}</option>
-                                            <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
-                                            <option value="chi_square">{t.tests.chi_square}</option>
-                                            <option value="cramers">{t.tests.cramers}</option>
-                                            <option value="network_graph">{t.tests.network_graph}</option>
-                                        </optgroup>
-                                        </select>
+                                        .right-partition {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                        }
+
+                                        .insights-placeholder {
+                                            padding: 1.5rem;
+                                            border: 2px dashed #e2e8f0;
+                                            border-radius: 12px;
+                                            background-color: #f7fafc;
+                                            min-height: 200px;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            justify-content: center;
+                                        }
+
+                                        .insights-title {
+                                            font-size: 1.125rem;
+                                            font-weight: 600;
+                                            color: #4a5568;
+                                            margin: 0 0 0.5rem 0;
+                                        }
+
+                                        .insights-text {
+                                            font-size: 0.875rem;
+                                            color: #a0aec0;
+                                            margin: 0;
+                                        }
+
+                                        .upload-folder-container {
+                                            display: flex;
+                                            align-items: stretch;
+                                            gap: 0;
+                                            width: 100%;
+                                        }
+
+                                        .action-box {
+                                            flex: 1;
+                                            display: flex;
+                                            flex-direction: column;
+                                            align-items: center;
+                                            justify-content: center;
+                                            padding: 1.5rem;
+                                            border: 2px solid #e2e8f0;
+                                            border-radius: 12px;
+                                            cursor: pointer;
+                                            transition: all 0.3s ease;
+                                            min-height: 120px;
+                                            background-color: #ffffff;
+                                        }
+
+                                        .action-box:hover {
+                                            border-color: #4bb77d;
+                                            background-color: #f7fafc;
+                                            transform: translateY(-2px);
+                                            box-shadow: 0 4px 12px rgba(66, 153, 225, 0.15);
+                                        }
+
+                                        .upload-box.loading {
+                                            border-color: #4bb77d;
+                                            background-color: #ebf8ff;
+                                        }
+
+                                        .upload-box.success {
+                                            border-color: #48bb78;
+                                            background-color: #f0fff4;
+                                        }
+
+                                        .upload-box.success .action-icon {
+                                            color: #48bb78;
+                                        }
+
+                                        .action-icon {
+                                            width: 48px;
+                                            height: 48px;
+                                            margin-bottom: 0.75rem;
+                                            color: #4a5568;
+                                            transition: all 0.3s ease;
+                                        }
+
+                                        .upload-box .action-icon {
+                                            color: #4bb77d;
+                                        }
+
+                                        .folder-box .action-icon {
+                                            color: #4bb77d;
+                                        }
+
+                                        .action-box:hover .action-icon {
+                                            transform: scale(1.1);
+                                        }
+
+                                        .action-text {
+                                            margin: 0;
+                                            color: #2d3748;
+                                            font-size: 1rem;
+                                            font-weight: 500;
+                                            text-align: center;
+                                        }
+
+                                        .vertical-divider {
+                                            display: flex;
+                                            align-items: center;
+                                            justify-content: center;
+                                            padding: 0 1.5rem;
+                                            position: relative;
+                                        }
+
+                                        .vertical-divider::before {
+                                            content: '';
+                                            position: absolute;
+                                            left: 50%;
+                                            top: 0;
+                                            bottom: 0;
+                                            width: 1px;
+                                            background-color: #e2e8f0;
+                                            transform: translateX(-50%);
+                                        }
+
+                                        .vertical-divider span {
+                                            background-color: white;
+                                            padding: 0.5rem;
+                                            color: #a0aec0;
+                                            font-size: 0.875rem;
+                                            font-weight: 500;
+                                            position: relative;
+                                            z-index: 1;
+                                        }
+
+                                        .hidden-input {
+                                            display: none;
+                                        }
+
+                                        .file-info-box {
+                                            display: flex;
+                                            align-items: center;
+                                            padding: 1.5rem;
+                                            border: 2px solid #48bb78;
+                                            border-radius: 12px;
+                                            background-color: #f0fff4;
+                                            gap: 1rem;
+                                        }
+
+                                        .file-icon {
+                                            width: 48px;
+                                            height: 48px;
+                                            color: #48bb78;
+                                            flex-shrink: 0;
+                                        }
+
+                                        .file-details {
+                                            display: flex;
+                                            flex-direction: column;
+                                            gap: 0.25rem;
+                                        }
+
+                                        .file-label {
+                                            font-size: 0.875rem;
+                                            color: #2d3748;
+                                        }
+
+                                        .file-name {
+                                            font-size: 1rem;
+                                            color: #1a202c;
+                                            font-weight: 600;
+                                        }
+
+                                        /* Mobile View - Show only icons */
+                                        @media (max-width: 768px) {
+                                            .uploaded-container {
+                                                flex-direction: column;
+                                                gap: 1rem;
+                                            }
+
+                                            .upload-folder-container {
+                                                gap: 1rem;
+                                            }
+
+                                            .action-box {
+                                                padding: 1.5rem 1rem;
+                                                min-height: 150px;
+                                            }
+
+                                            .action-icon {
+                                                width: 48px;
+                                                height: 48px;
+                                                margin-bottom: 0;
+                                            }
+
+                                            .action-text {
+                                                display: none;
+                                            }
+
+                                            .vertical-divider {
+                                                padding: 0 0.75rem;
+                                            }
+
+                                            .vertical-divider span {
+                                                font-size: 0.75rem;
+                                                padding: 0.25rem 0.5rem;
+                                            }
+                                        }
+
+                                        @media (max-width: 480px) {
+                                            .action-box {
+                                                padding: 1rem 0.5rem;
+                                                min-height: 120px;
+                                            }
+
+                                            .action-icon {
+                                                width: 40px;
+                                                height: 40px;
+                                            }
+
+                                            .vertical-divider {
+                                                padding: 0 0.5rem;
+                                            }
+                                        }
+                                    `}</style>
+
+                                        {(isPreprocessed || isSurveyData || file) ? (
+                                            <div className="form-section">
+                                                <h5 className="section-title">{t.selectTest}</h5>
+                                                <label className="form-label">{t.testType}</label>
+                                                <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+                                                    <option value="" disabled>
+                                                        {t.selectPrompt}
+                                                    </option>
+                                                    <optgroup label={t.testGroups.eda}>
+                                                        <option value="eda_basics">{t.tests.eda_basics}</option>
+                                                        <option value="eda_distribution">{t.tests.eda_distribution}</option>
+                                                        <option value="eda_swarm">{t.tests.eda_swarm}</option>
+                                                        <option value="eda_pie">{t.tests.eda_pie}</option>
+                                                        <option value="bar_chart">{t.tests.bar_chart}</option>
+                                                        <option value="similarity">{t.tests.similarity}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.nonParametric}>
+                                                        <option value="kruskal">{t.tests.kruskal}</option>
+                                                        <option value="mannwhitney">{t.tests.mannwhitney}</option>
+                                                        <option value="wilcoxon">{t.tests.wilcoxon}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.correlation}>
+                                                        <option value="pearson">{t.tests.pearson}</option>
+                                                        <option value="spearman">{t.tests.spearman}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.parametric}>
+                                                        <option value="fzt">{t.tests.fzt}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.regression}>
+                                                        <option value="linear_regression">{t.tests.linear_regression}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.anova}>
+                                                        <option value="anova">{t.tests.anova}</option>
+                                                        <option value="ancova">{t.tests.ancova}</option>
+                                                    </optgroup>
+                                                    <optgroup label={t.testGroups.other}>
+                                                        <option value="shapiro">{t.tests.shapiro}</option>
+                                                        <option value="kolmogorov">{t.tests.kolmogorov}</option>
+                                                        <option value="anderson">{t.tests.anderson}</option>
+                                                        <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
+                                                        <option value="chi_square">{t.tests.chi_square}</option>
+                                                        <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                                        <option value="network_graph">{t.tests.network_graph}</option>
+                                                    </optgroup>
+                                                </select>
 
                                                 <div className="test-description-hint">{t.selectPrompt}</div>
 
-                                                {testType && t.descriptions[testType] && (
-                                                <div className="test-description-box">
-                                                    <strong className="test-description-title">
-                                                    {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
-                                                    </strong>
+                                                {/* {testType && t.descriptions[testType] && (
+                                                    <div className="test-description-box">
+                                                        <strong className="test-description-title">
+                                                            {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
+                                                        </strong>
 
-                                                    <div className="test-description-text">{t.descriptions[testType]}</div>
+                                                        <div className="test-description-text">{t.descriptions[testType]}</div>
 
-                                                    {!testsWithoutDetails.includes(testType) && (
-                                                    <div>
-                                                        <button
-                                                        type="button"
-                                                        onClick={() => setDetailsModalVisible(true)}
-                                                        className="test-details-link"
-                                                        >
-                                                        {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
-                                                        </button>
+                                                        {!testsWithoutDetails.includes(testType) && (
+                                                            <div>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setDetailsModalVisible(true)}
+                                                                    className="test-details-link"
+                                                                >
+                                                                    {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
+                                                                </button>
+                                                            </div>
+                                                        )}
                                                     </div>
+                                                )} */}
+
+                                            </div>) : null}
+
+                                    
+                                    {(isPreprocessed || isSurveyData || file) && (
+                                        <div className="form-section">
+                                        {testType === "bar_chart" ? (
+                                            <div className="form-group">
+                                                <label className="form-label">
+                                                    {language === "bn"
+                                                        ? "বার চার্ট টাইপ নির্বাচন করুন:"
+                                                        : "Select bar chart type:"}
+                                                </label>
+                                                <select
+                                                    value={barChartType}
+                                                    onChange={(e) => setBarChartType(e.target.value)}
+                                                    className="form-select"
+                                                >
+                                                    <option value="vertical">
+                                                        {language === "bn" ? "উল্লম্ব (Vertical)" : "Vertical"}
+                                                    </option>
+                                                    <option value="horizontal">
+                                                        {language === "bn" ? "অনুভূমিক (Horizontal)" : "Horizontal"}
+                                                    </option>
+                                                </select>
+                                            </div>
+                                        ) : null}
+
+                                        {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
+                                            <div style={{ marginBottom: '2rem' }}>
+                                                <h5 className="section-title">{t.selectColumns}</h5>
+
+                                                {/* Selected Columns Display */}
+                                                <div style={{
+                                                    border: '2px solid #d1d5db',
+                                                    borderRadius: '0.5rem',
+                                                    padding: '1rem',
+                                                    backgroundColor: '#f9fafb',
+                                                    minHeight: '60px',
+                                                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                }}>
+                                                    {selectedColumns.length > 0 ? (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                            {selectedColumns.map((col, idx) => (
+                                                                <div
+                                                                    key={idx}
+                                                                    style={{
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.5rem',
+                                                                        padding: '0.25rem 0.5rem',
+                                                                        backgroundColor: '#3b82f6',
+                                                                        borderRadius: '0.5rem',
+                                                                        fontSize: '0.875rem',
+                                                                        fontWeight: '600',
+                                                                        color: 'white',
+                                                                        boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
+                                                                    }}
+                                                                >
+                                                                    <span>{col}</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            width: '1.5rem',
+                                                                            height: '1.5rem',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            borderRadius: '50%',
+                                                                            backgroundColor: '#2563eb',
+                                                                            color: 'white',
+                                                                            border: 'none',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '1.25rem',
+                                                                            fontWeight: 'bold',
+                                                                            transition: 'background-color 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                                                                        onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
+                                                                    >
+                                                                        ×
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'left',
+                                                            justifyContent: 'left',
+                                                            height: '100%',
+                                                            color: '#9ca3af',
+                                                            fontStyle: 'italic',
+                                                            fontSize: '0.875rem'
+                                                        }}>
+                                                            No columns selected yet
+                                                        </div>
                                                     )}
                                                 </div>
-                                                )}
 
-                                     </div>
-                                                                
-                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
-                                                <div style={{ marginBottom: '2rem' }}>
-                                                    <label style={{
-                                                        display: 'block',
-                                                        fontSize: '0.875rem',
-                                                        fontWeight: '600',
-                                                        color: '#1f2937',
-                                                        marginBottom: '0.75rem'
-                                                    }}>
-                                                        Select Columns
-                                                    </label>
+                                                {/* Dropdown Menu Button */}
+                                                <div style={{ marginTop: '1rem', position: 'relative' }}>
+                                                    <button
+                                                        type="button"
+                                                        style={{
+                                                            width: '100%',
+                                                            border: '2px solid #d1d5db',
+                                                            borderRadius: '0.5rem',
+                                                            padding: '1rem',
+                                                            backgroundColor: 'white',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'space-between',
+                                                            cursor: 'pointer',
+                                                            fontSize: '1rem',
+                                                            fontWeight: '500',
+                                                            transition: 'all 0.2s',
+                                                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                        }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.backgroundColor = '#eff6ff';
+                                                            e.currentTarget.style.borderColor = '#3b82f6';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.backgroundColor = 'white';
+                                                            e.currentTarget.style.borderColor = '#d1d5db';
+                                                        }}
+                                                        onClick={() => setShowColumnMenu(prev => !prev)}
+                                                    >
+                                                        <span style={{ color: '#374151' }}>Choose columns from list...</span>
+                                                        <span style={{
+                                                            color: '#6b7280',
+                                                            transition: 'transform 0.2s',
+                                                            transform: showColumnMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                            display: 'inline-block'
+                                                        }}>
+                                                            ▼
+                                                        </span>
+                                                    </button>
 
-                                                    {/* Selected Columns Display */}
-                                                    <div style={{
-                                                        border: '2px solid #d1d5db',
-                                                        borderRadius: '0.5rem',
-                                                        padding: '1rem',
-                                                        backgroundColor: '#f9fafb',
-                                                        minHeight: '60px',
-                                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                                                    }}>
-                                                        {selectedColumns.length > 0 ? (
-                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                                                {selectedColumns.map((col, idx) => (
-                                                                    <div
-                                                                        key={idx}
-                                                                        style={{
-                                                                            display: 'inline-flex',
-                                                                            alignItems: 'center',
-                                                                            gap: '0.5rem',
-                                                                            padding: '0.25rem 0.5rem',
-                                                                            backgroundColor: '#3b82f6',
-                                                                            borderRadius: '0.5rem',
-                                                                            fontSize: '0.875rem',
-                                                                            fontWeight: '600',
-                                                                            color: 'white',
-                                                                            boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
-                                                                        }}
-                                                                    >
-                                                                        <span>{col}</span>
-                                                                        <button
-                                                                            type="button"
+                                                    {/* Dropdown Panel */}
+                                                    {showColumnMenu && (
+                                                        <div style={{
+                                                            position: 'absolute',
+                                                            zIndex: 20,
+                                                            bottom: '100%',
+                                                            marginBottom: '0.5rem',
+                                                            width: '100%',
+                                                            border: '2px solid #d1d5db',
+                                                            borderRadius: '0.5rem',
+                                                            backgroundColor: 'white',
+                                                            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                                                            overflow: 'hidden'
+                                                        }}>
+                                                            {/* Column List */}
+                                                            <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+                                                                {columns.map((col, idx) => {
+                                                                    const isSelected = tempSelectedColumns.includes(col);
+                                                                    return (
+                                                                        <div
+                                                                            key={idx}
                                                                             style={{
-                                                                                width: '1.5rem',
-                                                                                height: '1.5rem',
+                                                                                padding: '0.75rem 1rem',
+                                                                                cursor: 'pointer',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                gap: '0.75rem',
+                                                                                backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                borderBottom: idx !== columns.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                transition: 'background-color 0.15s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => {
+                                                                                e.currentTarget.style.backgroundColor = isSelected ? '#bfdbfe' : '#f3f4f6';
+                                                                            }}
+                                                                            onMouseLeave={(e) => {
+                                                                                e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white';
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                if (tempSelectedColumns.includes(col)) {
+                                                                                    setTempSelectedColumns(prev => prev.filter(c => c !== col));
+                                                                                } else {
+                                                                                    setTempSelectedColumns(prev => [...prev, col]);
+                                                                                }
+                                                                            }}
+                                                                        >
+                                                                            {/* Checkbox */}
+                                                                            <div style={{
+                                                                                width: '1.0rem',
+                                                                                height: '1.0rem',
+                                                                                borderRadius: '0.25rem',
                                                                                 display: 'flex',
                                                                                 alignItems: 'center',
                                                                                 justifyContent: 'center',
-                                                                                borderRadius: '50%',
-                                                                                backgroundColor: '#2563eb',
-                                                                                color: 'white',
-                                                                                border: 'none',
-                                                                                cursor: 'pointer',
-                                                                                fontSize: '1.25rem',
-                                                                                fontWeight: 'bold',
-                                                                                transition: 'background-color 0.2s'
-                                                                            }}
-                                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
-                                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
-                                                                            onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
-                                                                        >
-                                                                            ×
-                                                                        </button>
-                                                                    </div>
-                                                                ))}
+                                                                                flexShrink: 0,
+                                                                                backgroundColor: isSelected ? '#3b82f6' : 'white',
+                                                                                border: isSelected ? '2px solid #3b82f6' : '2px solid #9ca3af',
+                                                                                transition: 'all 0.15s'
+                                                                            }}>
+                                                                                {isSelected && (
+                                                                                    <svg style={{ width: '1.25rem', height: '1.25rem', color: 'white' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                    </svg>
+                                                                                )}
+                                                                            </div>
+                                                                            {/* Column Name */}
+                                                                            <span style={{
+                                                                                fontWeight: '600',
+                                                                                fontSize: '0.9375rem',
+                                                                                color: isSelected ? '#1e40af' : '#1f2937'
+                                                                            }}>
+                                                                                {col}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                })}
                                                             </div>
-                                                        ) : (
-                                                            <div style={{
-                                                                display: 'flex',
-                                                                alignItems: 'left',
-                                                                justifyContent: 'left',
-                                                                height: '100%',
-                                                                color: '#9ca3af',
-                                                                fontStyle: 'italic',
-                                                                fontSize: '0.875rem'
-                                                            }}>
-                                                                No columns selected yet
-                                                            </div>
-                                                        )}
-                                                    </div>
 
-                                                    {/* Dropdown Menu Button */}
-                                                    <div style={{ marginTop: '1rem', position: 'relative' }}>
+                                                            {/* Action Buttons */}
+                                                            <div style={{
+                                                                borderTop: '1px solid #e5e7eb',
+                                                                padding: '0.5rem',
+                                                                display: 'flex',
+                                                                gap: '0.5rem',
+                                                                backgroundColor: 'white'
+                                                            }}>
+                                                                <button
+                                                                    type="button"
+                                                                    style={{
+                                                                        backgroundColor: '#10b981',
+                                                                        color: 'white',
+                                                                        borderRadius: '0.375rem',
+                                                                        padding: '0.5rem 1rem',
+                                                                        border: 'none',
+                                                                        fontWeight: '600',
+                                                                        fontSize: '0.875rem',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s',
+                                                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.currentTarget.style.backgroundColor = '#059669';
+                                                                        e.currentTarget.style.boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.1)';
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.backgroundColor = '#10b981';
+                                                                        e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setSelectedColumns(tempSelectedColumns);
+                                                                        setShowColumnMenu(false);
+                                                                    }}
+                                                                >
+                                                                    ✓ Apply
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    style={{
+                                                                        backgroundColor: '#e5e7eb',
+                                                                        color: '#1f2937',
+                                                                        borderRadius: '0.375rem',
+                                                                        padding: '0.5rem 1rem',
+                                                                        border: '1px solid #d1d5db',
+                                                                        fontWeight: '600',
+                                                                        fontSize: '0.875rem',
+                                                                        cursor: 'pointer',
+                                                                        transition: 'all 0.2s'
+                                                                    }}
+                                                                    onMouseEnter={(e) => {
+                                                                        e.currentTarget.style.backgroundColor = '#d1d5db';
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        e.currentTarget.style.backgroundColor = '#e5e7eb';
+                                                                    }}
+                                                                    onClick={() => {
+                                                                        setTempSelectedColumns(selectedColumns);
+                                                                        setShowColumnMenu(false);
+                                                                    }}
+                                                                >
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Selection Counter */}
+                                                <div style={{
+                                                    marginTop: '1rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '0 0.25rem'
+                                                }}>
+                                                    <p style={{
+                                                        fontSize: '0.875rem',
+                                                        color: '#374151',
+                                                        fontWeight: '600'
+                                                    }}>
+                                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <span style={{
+                                                                width: '0.5rem',
+                                                                height: '0.5rem',
+                                                                backgroundColor: '#3b82f6',
+                                                                borderRadius: '50%'
+                                                            }}></span>
+                                                            {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''} selected
+                                                        </span>
+                                                    </p>
+                                                    {selectedColumns.length > 0 && (
                                                         <button
                                                             type="button"
                                                             style={{
-                                                                width: '100%',
-                                                                border: '2px solid #d1d5db',
-                                                                borderRadius: '0.5rem',
-                                                                padding: '1rem',
-                                                                backgroundColor: 'white',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'space-between',
+                                                                fontSize: '0.875rem',
+                                                                color: '#dc2626',
+                                                                fontWeight: '600',
+                                                                background: 'none',
+                                                                border: 'none',
                                                                 cursor: 'pointer',
-                                                                fontSize: '1rem',
-                                                                fontWeight: '500',
-                                                                transition: 'all 0.2s',
-                                                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                                transition: 'color 0.2s'
                                                             }}
                                                             onMouseEnter={(e) => {
-                                                                e.currentTarget.style.backgroundColor = '#eff6ff';
-                                                                e.currentTarget.style.borderColor = '#3b82f6';
+                                                                e.currentTarget.style.color = '#991b1b';
+                                                                e.currentTarget.style.textDecoration = 'underline';
                                                             }}
                                                             onMouseLeave={(e) => {
-                                                                e.currentTarget.style.backgroundColor = 'white';
-                                                                e.currentTarget.style.borderColor = '#d1d5db';
+                                                                e.currentTarget.style.color = '#dc2626';
+                                                                e.currentTarget.style.textDecoration = 'none';
                                                             }}
-                                                            onClick={() => setShowColumnMenu(prev => !prev)}
+                                                            onClick={() => {
+                                                                setSelectedColumns([]);
+                                                                setTempSelectedColumns([]);
+                                                            }}
                                                         >
-                                                            <span style={{ color: '#374151' }}>Choose columns from list...</span>
-                                                            <span style={{
-                                                                color: '#6b7280',
-                                                                transition: 'transform 0.2s',
-                                                                transform: showColumnMenu ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                                display: 'inline-block'
-                                                            }}>
-                                                                ▼
-                                                            </span>
+                                                            Clear all
                                                         </button>
-
-                                                        {/* Dropdown Panel */}
-                                                        {showColumnMenu && (
-                                                            <div style={{
-                                                                position: 'absolute',
-                                                                zIndex: 20,
-                                                                bottom: '100%',
-                                                                marginBottom: '0.5rem',
-                                                                width: '100%',
-                                                                border: '2px solid #d1d5db',
-                                                                borderRadius: '0.5rem',
-                                                                backgroundColor: 'white',
-                                                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-                                                                overflow: 'hidden'
-                                                            }}>
-                                                                {/* Column List */}
-                                                                <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
-                                                                    {columns.map((col, idx) => {
-                                                                        const isSelected = tempSelectedColumns.includes(col);
-                                                                        return (
-                                                                            <div
-                                                                                key={idx}
-                                                                                style={{
-                                                                                    padding: '0.75rem 1rem',
-                                                                                    cursor: 'pointer',
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: '0.75rem',
-                                                                                    backgroundColor: isSelected ? '#dbeafe' : 'white',
-                                                                                    borderBottom: idx !== columns.length - 1 ? '1px solid #e5e7eb' : 'none',
-                                                                                    transition: 'background-color 0.15s'
-                                                                                }}
-                                                                                onMouseEnter={(e) => {
-                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#bfdbfe' : '#f3f4f6';
-                                                                                }}
-                                                                                onMouseLeave={(e) => {
-                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white';
-                                                                                }}
-                                                                                onClick={() => {
-                                                                                    if (tempSelectedColumns.includes(col)) {
-                                                                                        setTempSelectedColumns(prev => prev.filter(c => c !== col));
-                                                                                    } else {
-                                                                                        setTempSelectedColumns(prev => [...prev, col]);
-                                                                                    }
-                                                                                }}
-                                                                            >
-                                                                                {/* Checkbox */}
-                                                                                <div style={{
-                                                                                    width: '1.0rem',
-                                                                                    height: '1.0rem',
-                                                                                    borderRadius: '0.25rem',
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    justifyContent: 'center',
-                                                                                    flexShrink: 0,
-                                                                                    backgroundColor: isSelected ? '#3b82f6' : 'white',
-                                                                                    border: isSelected ? '2px solid #3b82f6' : '2px solid #9ca3af',
-                                                                                    transition: 'all 0.15s'
-                                                                                }}>
-                                                                                    {isSelected && (
-                                                                                        <svg style={{ width: '1.25rem', height: '1.25rem', color: 'white' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                                                        </svg>
-                                                                                    )}
-                                                                                </div>
-                                                                                {/* Column Name */}
-                                                                                <span style={{
-                                                                                    fontWeight: '600',
-                                                                                    fontSize: '0.9375rem',
-                                                                                    color: isSelected ? '#1e40af' : '#1f2937'
-                                                                                }}>
-                                                                                    {col}
-                                                                                </span>
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
-
-                                                                {/* Action Buttons */}
-                                                                <div style={{
-                                                                    borderTop: '1px solid #e5e7eb',
-                                                                    padding: '0.5rem',
-                                                                    display: 'flex',
-                                                                    gap: '0.5rem',
-                                                                    backgroundColor: 'white'
-                                                                }}>
-                                                                    <button
-                                                                        type="button"
-                                                                        style={{
-                                                                            backgroundColor: '#10b981',
-                                                                            color: 'white',
-                                                                            borderRadius: '0.375rem',
-                                                                            padding: '0.5rem 1rem',
-                                                                            border: 'none',
-                                                                            fontWeight: '600',
-                                                                            fontSize: '0.875rem',
-                                                                            cursor: 'pointer',
-                                                                            transition: 'all 0.2s',
-                                                                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.currentTarget.style.backgroundColor = '#059669';
-                                                                            e.currentTarget.style.boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.1)';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.currentTarget.style.backgroundColor = '#10b981';
-                                                                            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
-                                                                        }}
-                                                                        onClick={() => {
-                                                                            setSelectedColumns(tempSelectedColumns);
-                                                                            setShowColumnMenu(false);
-                                                                        }}
-                                                                    >
-                                                                        ✓ Apply
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        style={{
-                                                                            backgroundColor: '#e5e7eb',
-                                                                            color: '#1f2937',
-                                                                            borderRadius: '0.375rem',
-                                                                            padding: '0.5rem 1rem',
-                                                                            border: '1px solid #d1d5db',
-                                                                            fontWeight: '600',
-                                                                            fontSize: '0.875rem',
-                                                                            cursor: 'pointer',
-                                                                            transition: 'all 0.2s'
-                                                                        }}
-                                                                        onMouseEnter={(e) => {
-                                                                            e.currentTarget.style.backgroundColor = '#d1d5db';
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            e.currentTarget.style.backgroundColor = '#e5e7eb';
-                                                                        }}
-                                                                        onClick={() => {
-                                                                            setTempSelectedColumns(selectedColumns);
-                                                                            setShowColumnMenu(false);
-                                                                        }}
-                                                                    >
-                                                                        Cancel
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    {/* Selection Counter */}
-                                                    <div style={{
-                                                        marginTop: '1rem',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'space-between',
-                                                        padding: '0 0.25rem'
-                                                    }}>
-                                                        <p style={{
-                                                            fontSize: '0.875rem',
-                                                            color: '#374151',
-                                                            fontWeight: '600'
-                                                        }}>
-                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                <span style={{
-                                                                    width: '0.5rem',
-                                                                    height: '0.5rem',
-                                                                    backgroundColor: '#3b82f6',
-                                                                    borderRadius: '50%'
-                                                                }}></span>
-                                                                {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''} selected
-                                                            </span>
-                                                        </p>
-                                                        {selectedColumns.length > 0 && (
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    fontSize: '0.875rem',
-                                                                    color: '#dc2626',
-                                                                    fontWeight: '600',
-                                                                    background: 'none',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    transition: 'color 0.2s'
-                                                                }}
-                                                                onMouseEnter={(e) => {
-                                                                    e.currentTarget.style.color = '#991b1b';
-                                                                    e.currentTarget.style.textDecoration = 'underline';
-                                                                }}
-                                                                onMouseLeave={(e) => {
-                                                                    e.currentTarget.style.color = '#dc2626';
-                                                                    e.currentTarget.style.textDecoration = 'none';
-                                                                }}
-                                                                onClick={() => {
-                                                                    setSelectedColumns([]);
-                                                                    setTempSelectedColumns([]);
-                                                                }}
-                                                            >
-                                                                Clear all
-                                                            </button>
-                                                        )}
-                                                    </div>
+                                                    )}
                                                 </div>
-                                            )}
+                                            </div>
+                                        )}
 
-
-                                            {testType !== 'eda_basics' && (
-                                                <div className="mb-6">
-                                                    {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
-                                                    {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+                                        {testType !== 'eda_basics' && (
+                                            <div className="mb-6">
+                                                {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
+                                                {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
                                                         <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
                                                             {t.selectVariables}
                                                         </h5>
                                                     )} */}
 
-                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
-                                                <div className="form-group">
-                                                    <label className="form-label">
-                                                    {(testType === "kolmogorov" ||
-                                                        testType === "anderson" ||
-                                                        testType === "shapiro" ||
-                                                        testType === "eda_distribution")
-                                                        ? language === "bn"
-                                                        ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
-                                                        : "Pick a Numerical Column"
-                                                        : t.column1}
-                                                    </label>
-                                                    <select
-                                                    className="form-select"
-                                                    value={column1}
-                                                    onChange={(e) => setColumn1(e.target.value)}
-                                                    disabled={columns.length === 0}
-                                                    >
-                                                    {columns.length === 0 ? (
-                                                        <option value="">-- Upload a file first --</option>
-                                                    ) : (
-                                                        columns.map((col, idx) => (
-                                                        <option key={idx} value={col}>
-                                                            {col}
-                                                        </option>
-                                                        ))
-                                                    )}
-                                                    </select>
-                                                </div>
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
+                                                    <div className="form-group">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <label className="form-label">
+                                                            {(testType === "kolmogorov" ||
+                                                                testType === "anderson" ||
+                                                                testType === "shapiro" ||
+                                                                testType === "eda_distribution")
+                                                                ? language === "bn"
+                                                                    ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
+                                                                    : "Pick a Numerical Column"
+                                                                : t.column1}
+                                                        </label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={column1}
+                                                            onChange={(e) => setColumn1(e.target.value)}
+                                                            disabled={columns.length === 0}
+                                                        >
+                                                            {columns.length === 0 ? (
+                                                                <option value="">-- Upload a file first --</option>
+                                                            ) : (
+                                                                columns.map((col, idx) => (
+                                                                    <option key={idx} value={col}>
+                                                                        {col}
+                                                                    </option>
+                                                                ))
+                                                            )}
+                                                        </select>
+                                                    </div>
                                                 )}
 
                                                 {requiredFields.col2 && (
-                                                <div className="form-group">
-                                                    <label className="form-label">{t.column2}</label>
-                                                    <select
-                                                    className="form-select"
-                                                    value={column2}
-                                                    onChange={(e) => setColumn2(e.target.value)}
-                                                    disabled={columns.length === 0}
-                                                    >
-                                                    <option value="">-- Select a column --</option>
-                                                    {columns.map((col, idx) => (
-                                                        <option key={idx} value={col}>
-                                                        {col}
-                                                        </option>
-                                                    ))}
-                                                    </select>
-                                                </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.column2}</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={column2}
+                                                            onChange={(e) => setColumn2(e.target.value)}
+                                                            disabled={columns.length === 0}
+                                                        >
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>
+                                                                    {col}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 )}
 
                                                 {requiredFields.col3 && (
-                                                <div className="form-group">
-                                                    <label className="form-label">{t.column3}</label>
-                                                    <select
-                                                    className="form-select"
-                                                    value={column3}
-                                                    onChange={(e) => setColumn3(e.target.value)}
-                                                    disabled={columns.length === 0}
-                                                    >
-                                                    <option value="">-- Select a column --</option>
-                                                    {columns.map((col, idx) => (
-                                                        <option key={idx} value={col}>
-                                                        {col}
-                                                        </option>
-                                                    ))}
-                                                    </select>
-                                                </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.column3}</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={column3}
+                                                            onChange={(e) => setColumn3(e.target.value)}
+                                                            disabled={columns.length === 0}
+                                                        >
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>
+                                                                    {col}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 )}
 
                                                 {requiredFields.col4 && (
-                                                <div className="form-group">
-                                                    <label className="form-label">{t.column4}</label>
-                                                    <select
-                                                    className="form-select"
-                                                    value={column4}
-                                                    onChange={(e) => setColumn4(e.target.value)}
-                                                    disabled={columns.length === 0}
-                                                    >
-                                                    <option value="">-- Select a column --</option>
-                                                    {columns.map((col, idx) => (
-                                                        <option key={idx} value={col}>
-                                                        {col}
-                                                        </option>
-                                                    ))}
-                                                    </select>
-                                                </div>
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.column4}</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={column4}
+                                                            onChange={(e) => setColumn4(e.target.value)}
+                                                            disabled={columns.length === 0}
+                                                        >
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>
+                                                                    {col}
+                                                                </option>
+                                                            ))}
+                                                        </select>
+                                                    </div>
                                                 )}
 
 
-                                                    {testType === 'cross_tabulation' && (
-                                                        <CrossTabulationOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            colorPalette={colorPalette}
-                                                            setColorPalette={setColorPalette}
-                                                            barWidth={barWidth}
-                                                            setBarWidth={setBarWidth}
-                                                            t={t}
-                                                        />
-                                                    )}
+                                                {testType === 'shapiro' && (
+                                                    <ShapiroWilkOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
+                                                        t={t}
+                                                    />
+                                                )}
 
-                                                    {testType === 'eda_basics' && (
-                                                        <EDABasicsOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            t={t}
-                                                        />
-                                                    )}
+                                                {testType === 'linear_regression' && (
+                                                    <LinearRegressionOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        boxWidth={boxWidth}
+                                                        setBoxWidth={setBoxWidth}
+                                                        violinWidth={violinWidth}
+                                                        setViolinWidth={setViolinWidth}
+                                                        legendFontSize={legendFontSize}
+                                                        setLegendFontSize={setLegendFontSize}
+                                                        lineColor={lineColor}
+                                                        setLineColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        lineWidth={lineWidth}
+                                                        setLineWidth={setLineWidth}
+                                                        dotColor={dotColor}
+                                                        setDotColor={setDotColor}
+                                                        dotWidth={dotWidth}
+                                                        setDotWidth={setDotWidth}
+                                                        t={t}
+                                                    />
+                                                )}
 
-                                                    {testType === 'similarity' && (
-                                                        <SimilarityOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            imageFormat={imageFormat}
-                                                            setImageFormat={setImageFormat}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            labelFontSize={labelFontSize}
-                                                            setLabelFontSize={setLabelFontSize}
-                                                            tickFontSize={tickFontSize}
-                                                            setTickFontSize={setTickFontSize}
-                                                            imageQuality={imageQuality}
-                                                            setImageQuality={setImageQuality}
-                                                            imageSize={imageSize}
-                                                            setImageSize={setImageSize}
-                                                            t={t}
-                                                        />
-                                                    )}
+                                                {testType === 'kolmogorov' && (
+                                                    <KolmogorovSmirnovOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        ecdfColor={dotColor}            // reuse dotColor for ECDF
+                                                        setEcdfColor={setDotColor}
+                                                        cdfColor={lineColor}            // reuse lineColor for CDF
+                                                        setCdfColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        t={t}
+                                                        selectedColumn={column1}
+                                                        setSelectedColumn={setColumn1}
+                                                    />
+                                                )}
 
-                                                    {/* {testType === 'chi_square' && (
+                                                {testType === 'anderson' && (
+                                                    <AndersonDarlingOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        scatterColor={dotColor}         // reuse dotColor for scatter
+                                                        setScatterColor={setDotColor}
+                                                        lineColor={lineColor}
+                                                        setLineColor={setLineColor}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        selectedColumn={column1}
+                                                        setSelectedColumn={setColumn1}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'fzt' && (
+                                                    <FZTOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        lineWidth={lineWidth}
+                                                        setLineWidth={setLineWidth}
+                                                        lineStyle={lineStyle}
+                                                        setLineStyle={setLineStyle}
+                                                        fCurveColor={fCurveColor}
+                                                        setFCurveColor={setFCurveColor}
+                                                        fLineColor={fLineColor}
+                                                        setFLineColor={setFLineColor}
+                                                        zCurveColor={zCurveColor}
+                                                        setZCurveColor={setZCurveColor}
+                                                        zLineColor={zLineColor}
+                                                        setZLineColor={setZLineColor}
+                                                        tCurveColor={tCurveColor}
+                                                        setTCurveColor={setTCurveColor}
+                                                        tLineColor={tLineColor}
+                                                        setTLineColor={setTLineColor}
+                                                        hist1Color={hist1Color}
+                                                        setHist1Color={setHist1Color}
+                                                        hist2Color={hist2Color}
+                                                        setHist2Color={setHist2Color}
+                                                        t={t}
+                                                    />
+                                                )} */}
+
+                                                {/* {testType === 'cross_tabulation' && (
+                                                    <CrossTabulationOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        colorPalette={colorPalette}
+                                                        setColorPalette={setColorPalette}
+                                                        barWidth={barWidth}
+                                                        setBarWidth={setBarWidth}
+                                                        t={t}
+                                                    />
+                                                )} */}
+
+                                                {/* {testType === 'eda_distribution' && (
+                                                    <EDADistributionsOptions
+                                                        isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                                        setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        histColor={histColor}
+                                                        setHistColor={setHistColor}
+                                                        kdeColor={kdeColor}
+                                                        setKdeColor={setKdeColor}
+                                                        distColor={distColor}
+                                                        setDistColor={setDistColor}
+                                                        showGrid={showGrid}
+                                                        setShowGrid={setShowGrid}
+                                                        t={t}
+                                                    />
+                                                )} */}
+
+                                                {/* {testType === 'eda_swarm' && (
+                                                    <EDASwarmOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        swarmColor={swarmColor}
+                                                        setSwarmColor={setSwarmColor}
+                                                        t={t}
+                                                    />
+                                                )} */}
+
+                                                {/* {testType === 'eda_pie' && (
+                                                    <PieChartOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )} */}
+
+                                                {testType === 'bar_chart' && (
+                                                    <BarChartOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        barColor={barColor}
+                                                        setBarColor={setBarColor}
+                                                        barChartType={barChartType}
+                                                        setBarChartType={setBarChartType}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'eda_basics' && (
+                                                    <EDABasicsOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {testType === 'similarity' && (
+                                                    <SimilarityOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        imageFormat={imageFormat}
+                                                        setImageFormat={setImageFormat}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        labelFontSize={labelFontSize}
+                                                        setLabelFontSize={setLabelFontSize}
+                                                        tickFontSize={tickFontSize}
+                                                        setTickFontSize={setTickFontSize}
+                                                        imageQuality={imageQuality}
+                                                        setImageQuality={setImageQuality}
+                                                        imageSize={imageSize}
+                                                        setImageSize={setImageSize}
+                                                        t={t}
+                                                    />
+                                                )}
+
+                                                {/* {testType === 'chi_square' && (
                                                         <ChiSquareOptions
                                                             language={language}
                                                             setLanguage={setLanguage}
@@ -1651,182 +2238,184 @@ const StatisticalAnalysisTool = () => {
                                                         />
                                                     )} */}
 
-                                                    {testType === 'network_graph' && (
-                                                        <NetworkGraphOptions
-                                                            language={language}
-                                                            setLanguage={setLanguage}
-                                                            useDefaultSettings={useDefaultSettings}
-                                                            setUseDefaultSettings={setUseDefaultSettings}
-                                                            nodeColor={nodeColor}
-                                                            setNodeColor={setNodeColor}
-                                                            nodeSize={nodeSize}
-                                                            setNodeSize={setNodeSize}
-                                                            textSize={textSize}
-                                                            setTextSize={setTextSize}
-                                                            textColor={textColor}
-                                                            setTextColor={setTextColor}
-                                                            edgeWidthFactor={edgeWidthFactor}
-                                                            setEdgeWidthFactor={setEdgeWidthFactor}
-                                                            showEdgeWeights={showEdgeWeights}
-                                                            setShowEdgeWeights={setShowEdgeWeights}
-                                                            weightFontSize={weightFontSize}
-                                                            setWeightFontSize={setWeightFontSize}
-                                                            weightColor={weightColor}
-                                                            setWeightColor={setWeightColor}
-                                                            useMatrix={useMatrix}
-                                                            setUseMatrix={setUseMatrix}
-                                                            t={t}
-                                                        />
-                                                    )}
+                                                {testType === 'network_graph' && (
+                                                    <NetworkGraphOptions
+                                                        language={language}
+                                                        setLanguage={setLanguage}
+                                                        useDefaultSettings={useDefaultSettings}
+                                                        setUseDefaultSettings={setUseDefaultSettings}
+                                                        nodeColor={nodeColor}
+                                                        setNodeColor={setNodeColor}
+                                                        nodeSize={nodeSize}
+                                                        setNodeSize={setNodeSize}
+                                                        textSize={textSize}
+                                                        setTextSize={setTextSize}
+                                                        textColor={textColor}
+                                                        setTextColor={setTextColor}
+                                                        edgeWidthFactor={edgeWidthFactor}
+                                                        setEdgeWidthFactor={setEdgeWidthFactor}
+                                                        showEdgeWeights={showEdgeWeights}
+                                                        setShowEdgeWeights={setShowEdgeWeights}
+                                                        weightFontSize={weightFontSize}
+                                                        setWeightFontSize={setWeightFontSize}
+                                                        weightColor={weightColor}
+                                                        setWeightColor={setWeightColor}
+                                                        useMatrix={useMatrix}
+                                                        setUseMatrix={setUseMatrix}
+                                                        t={t}
+                                                    />
+                                                )}
 
 
-                                                    {requiredFields.col5 && (
+                                                {requiredFields.col5 && (
                                                     <div className="form-group">
                                                         <label className="form-label">{t.column5}</label>
                                                         <select
-                                                        className="form-select"
-                                                        value={column5}
-                                                        onChange={(e) => setColumn5(e.target.value)}
-                                                        disabled={columns.length === 0}
+                                                            className="form-select"
+                                                            value={column5}
+                                                            onChange={(e) => setColumn5(e.target.value)}
+                                                            disabled={columns.length === 0}
                                                         >
-                                                        <option value="">-- Select a column --</option>
-                                                        {columns.map((col, idx) => (
-                                                            <option key={idx} value={col}>
-                                                            {col}
-                                                            </option>
-                                                        ))}
+                                                            <option value="">-- Select a column --</option>
+                                                            {columns.map((col, idx) => (
+                                                                <option key={idx} value={col}>
+                                                                    {col}
+                                                                </option>
+                                                            ))}
                                                         </select>
                                                     </div>
-                                                    )}
-                                                </div>
                                                 )}
+                                            </div>
+                                        )}
 
-                                                {requiredFields.refValue && (
-                                                <div className="form-group">
-                                                    <label className="form-label">{t.referenceValue}</label>
-                                                    <input
+                                        {requiredFields.refValue && (
+                                            <div className="form-group">
+                                                <label className="form-label">{t.referenceValue}</label>
+                                                <input
                                                     type="number"
                                                     className="form-input"
                                                     value={referenceValue}
                                                     onChange={(e) => setReferenceValue(parseFloat(e.target.value))}
                                                     step="0.01"
-                                                    />
-                                                </div>
-                                                )}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>)}
 
-                                                                                            <div className="submit-section">
-                                                <button
-                                                    type="submit"
-                                                    className="an-btn an-btn-primary large"
-                                                    disabled={
+                                    {(isPreprocessed || isSurveyData || file) && (
+                                        <div className="submit-section" style={{
+                                            display: 'flex',
+                                            justifyContent: 'center',
+                                            margin: '20px 0'
+                                        }}>
+                                            <button
+                                                type="submit"
+                                                className="customize-btn"
+                                                style={{
+                                                    padding: '8px 16px',
+                                                    fontSize: '16px',
+                                                    fontWeight: '700'
+                                                }}
+                                                disabled={
                                                     isAnalyzing ||
                                                     !file ||
                                                     !column1 ||
                                                     (requiredFields.col2 && !column2) ||
                                                     (requiredFields.col3 && !column3)
-                                                    }
-                                                >
-                                                    {isAnalyzing ? (
+                                                }
+                                            >
+                                                {isAnalyzing ? (
                                                     <>
                                                         <div className="spinner small"></div>
                                                         {t.analyzing}
                                                     </>
-                                                    ) : (
-                                                        <>
-                                                        <svg
-                                                        className="icon-inline"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                        >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth="2"
-                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                                                        />
+                                                ) : (
+                                                    <>
+                                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                            <line x1="18" y1="20" x2="18" y2="10"></line>
+                                                            <line x1="12" y1="20" x2="12" y2="4"></line>
+                                                            <line x1="6" y1="20" x2="6" y2="14"></line>
                                                         </svg>
                                                         {t.analyzeButton}
                                                     </>
+                                                )}
+                                            </button>
+                                        </div>)}
+                                </form>
 
-                                                    )}
-                                                </button>
-                                            </div>
-                                        </form>
-
-                                    {detailsModalVisible && (
+                                {detailsModalVisible && (
                                     <div className="modal-overlay">
                                         <div className="modal-content">
-                                        <button
-                                            className="modal-close"
-                                            onClick={() => setDetailsModalVisible(false)}
-                                        >
-                                            &times;
-                                        </button>
-                                        <h2>{t.tests[testType]}</h2>
-                                        <pre className="modal-body">
-                                            {statTestDetails[language]?.[testType] ||
-                                            (language === "bn"
-                                                ? "এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।"
-                                                : "No details available.")}
-                                        </pre>
+                                            <button
+                                                className="modal-close"
+                                                onClick={() => setDetailsModalVisible(false)}
+                                            >
+                                                &times;
+                                            </button>
+                                            <h2>{t.tests[testType]}</h2>
+                                            <pre className="modal-body">
+                                                {statTestDetails[language]?.[testType] ||
+                                                    (language === "bn"
+                                                        ? "এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।"
+                                                        : "No details available.")}
+                                            </pre>
                                         </div>
                                     </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ) : (
-                                <AnalysisResults
-                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                    handleSubmit={handleSubmit}
-                                    user_id={userId}
-                                    results={results}
-                                    testType={testType}
-                                    columns={[column1, column2, column3]}
-                                    language={language}
-                                    setLanguage={setLanguage}
-                                    imageFormat={imageFormat}
-                                    setImageFormat={setImageFormat}
-                                    useDefaultSettings={useDefaultSettings}
-                                    setUseDefaultSettings={setUseDefaultSettings}
-                                    labelFontSize={labelFontSize}
-                                    setLabelFontSize={setLabelFontSize}
-                                    tickFontSize={tickFontSize}
-                                    setTickFontSize={setTickFontSize}
-                                    imageQuality={imageQuality}
-                                    setImageQuality={setImageQuality}
-                                    imageSize={imageSize}
-                                    setImageSize={setImageSize}
-                                    colorPalette={colorPalette}
-                                    setColorPalette={setColorPalette}
-                                    barWidth={barWidth}
-                                    setBarWidth={setBarWidth}
-                                    boxWidth={boxWidth}
-                                    setBoxWidth={setBoxWidth}
-                                    violinWidth={violinWidth}
-                                    setViolinWidth={setViolinWidth}
-                                    showGrid={showGrid}
-                                    setShowGrid={setShowGrid}
-                                    histColor={histColor}
-                                    setHistColor={setHistColor}
-                                    kdeColor={kdeColor}
-                                    setKdeColor={setKdeColor}
-                                    distColor={distColor}
-                                    setDistColor={setDistColor}
-
-                                    t={t}
-                                    filename={fileName}
-                                />
-
-                            )}
-
+                                )}
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <AnalysisResults
+                            isFirstTimeAnalysis={isFirstTimeAnalysis}
+                            setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                            handleSubmit={handleSubmit}
+                            user_id={userId}
+                            results={results}
+                            testType={testType}
+                            columns={[column1, column2, column3]}
+                            language={language}
+                            setLanguage={setLanguage}
+                            imageFormat={imageFormat}
+                            setImageFormat={setImageFormat}
+                            useDefaultSettings={useDefaultSettings}
+                            setUseDefaultSettings={setUseDefaultSettings}
+                            labelFontSize={labelFontSize}
+                            setLabelFontSize={setLabelFontSize}
+                            tickFontSize={tickFontSize}
+                            setTickFontSize={setTickFontSize}
+                            imageQuality={imageQuality}
+                            setImageQuality={setImageQuality}
+                            imageSize={imageSize}
+                            setImageSize={setImageSize}
+                            colorPalette={colorPalette}
+                            setColorPalette={setColorPalette}
+                            barWidth={barWidth}
+                            setBarWidth={setBarWidth}
+                            boxWidth={boxWidth}
+                            setBoxWidth={setBoxWidth}
+                            violinWidth={violinWidth}
+                            setViolinWidth={setViolinWidth}
+                            showGrid={showGrid}
+                            setShowGrid={setShowGrid}
+                            histColor={histColor}
+                            setHistColor={setHistColor}
+                            kdeColor={kdeColor}
+                            setKdeColor={setKdeColor}
+                            distColor={distColor}
+                            setDistColor={setDistColor}
+
+                            t={t}
+                            filename={fileName}
+                        />
+
+                    )}
 
                 </div>
-           
-      
+            </div>
+
+        </div>
+
+
     );
 };
 
@@ -2523,75 +3112,75 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     );
 
     // Other visualization components
-    const CorrelationHeatmap = ({ data }) => {
-        // Extracting unique variables
-        const variables = [...new Set(data.flatMap(item => [item.Variable_1, item.Variable_2]))];
+    // const CorrelationHeatmap = ({ data }) => {
+    //     // Extracting unique variables
+    //     const variables = [...new Set(data.flatMap(item => [item.Variable_1, item.Variable_2]))];
 
-        // Creating correlation matrix
-        const matrix = [];
-        for (let i = 0; i < variables.length; i++) {
-            const row = [];
-            for (let j = 0; j < variables.length; j++) {
-                if (i === j) {
-                    row.push(1); // Diagonal is always 1
-                } else {
-                    const correlation = data.find(
-                        item => (item.Variable_1 === variables[i] && item.Variable_2 === variables[j]) ||
-                            (item.Variable_1 === variables[j] && item.Variable_2 === variables[i])
-                    );
-                    row.push(correlation ? correlation.Correlation : 0);
-                }
-            }
-            matrix.push(row);
-        }
+    //     // Creating correlation matrix
+    //     const matrix = [];
+    //     for (let i = 0; i < variables.length; i++) {
+    //         const row = [];
+    //         for (let j = 0; j < variables.length; j++) {
+    //             if (i === j) {
+    //                 row.push(1); // Diagonal is always 1
+    //             } else {
+    //                 const correlation = data.find(
+    //                     item => (item.Variable_1 === variables[i] && item.Variable_2 === variables[j]) ||
+    //                         (item.Variable_1 === variables[j] && item.Variable_2 === variables[i])
+    //                 );
+    //                 row.push(correlation ? correlation.Correlation : 0);
+    //             }
+    //         }
+    //         matrix.push(row);
+    //     }
 
-        // Creating color scale
-        const getColor = (value) => {
-            if (value >= 0.7) return 'bg-red-700 text-white';
-            if (value >= 0.5) return 'bg-red-500 text-white';
-            if (value >= 0.3) return 'bg-red-300 text-gray-800';
-            if (value >= 0.1) return 'bg-red-100 text-gray-800';
-            if (value >= -0.1) return 'bg-gray-100 text-gray-800';
-            if (value >= -0.3) return 'bg-blue-100 text-gray-800';
-            if (value >= -0.5) return 'bg-blue-300 text-gray-800';
-            if (value >= -0.7) return 'bg-blue-500 text-white';
-            return 'bg-blue-700 text-white';
-        };
+    //     // Creating color scale
+    //     const getColor = (value) => {
+    //         if (value >= 0.7) return 'bg-red-700 text-white';
+    //         if (value >= 0.5) return 'bg-red-500 text-white';
+    //         if (value >= 0.3) return 'bg-red-300 text-gray-800';
+    //         if (value >= 0.1) return 'bg-red-100 text-gray-800';
+    //         if (value >= -0.1) return 'bg-gray-100 text-gray-800';
+    //         if (value >= -0.3) return 'bg-blue-100 text-gray-800';
+    //         if (value >= -0.5) return 'bg-blue-300 text-gray-800';
+    //         if (value >= -0.7) return 'bg-blue-500 text-white';
+    //         return 'bg-blue-700 text-white';
+    //     };
 
-        return (
-            <div className="overflow-x-auto">
-                <table className="w-full bg-white rounded-lg overflow-hidden border-collapse">
-                    <thead>
-                        <tr>
-                            <th className="p-2 border"></th>
-                            {variables.map((variable, idx) => (
-                                <th key={idx} className="p-2 border bg-gray-100 text-sm font-medium transform -rotate-45 origin-bottom-left h-20">
-                                    <div className="ml-2">{variable}</div>
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {matrix.map((row, rowIdx) => (
-                            <tr key={rowIdx}>
-                                <th className="p-2 border bg-gray-100 font-medium text-left">
-                                    {variables[rowIdx]}
-                                </th>
-                                {row.map((value, colIdx) => (
-                                    <td
-                                        key={colIdx}
-                                        className={`p-2 border text-center ${getColor(value)}`}
-                                        title={`${variables[rowIdx]} vs ${variables[colIdx]}: ${value.toFixed(2)}`}
-                                    >
-                                        {value.toFixed(2)}
-                                    </td>
-                                ))}
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-        );
-    };
+    //     return (
+    //         <div className="overflow-x-auto">
+    //             <table className="w-full bg-white rounded-lg overflow-hidden border-collapse">
+    //                 <thead>
+    //                     <tr>
+    //                         <th className="p-2 border"></th>
+    //                         {variables.map((variable, idx) => (
+    //                             <th key={idx} className="p-2 border bg-gray-100 text-sm font-medium transform -rotate-45 origin-bottom-left h-20">
+    //                                 <div className="ml-2">{variable}</div>
+    //                             </th>
+    //                         ))}
+    //                     </tr>
+    //                 </thead>
+    //                 <tbody>
+    //                     {matrix.map((row, rowIdx) => (
+    //                         <tr key={rowIdx}>
+    //                             <th className="p-2 border bg-gray-100 font-medium text-left">
+    //                                 {variables[rowIdx]}
+    //                             </th>
+    //                             {row.map((value, colIdx) => (
+    //                                 <td
+    //                                     key={colIdx}
+    //                                     className={`p-2 border text-center ${getColor(value)}`}
+    //                                     title={`${variables[rowIdx]} vs ${variables[colIdx]}: ${value.toFixed(2)}`}
+    //                                 >
+    //                                     {value.toFixed(2)}
+    //                                 </td>
+    //                             ))}
+    //                         </tr>
+    //                     ))}
+    //                 </tbody>
+    //             </table>
+    //         </div>
+    //     );
+    // };
 };
 export default StatisticalAnalysisTool;
