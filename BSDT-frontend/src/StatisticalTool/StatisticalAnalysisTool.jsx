@@ -345,7 +345,7 @@ const StatisticalAnalysisTool = () => {
 
 
             // Call the API to get columns
-            fetch('http://127.0.0.1:8000/api/get-columns/', {
+            fetch('http://103.94.135.115:8001/api/get-columns/', {
                 method: 'POST',
                 body: formData,
 
@@ -383,12 +383,12 @@ const StatisticalAnalysisTool = () => {
             sessionStorage.removeItem("surveyfile");
         }
         else if (isPreprocessed) {
-            //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+            //fileUrl = `http://103.94.135.115:8001/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
 
             sessionStorage.removeItem("preprocessed");
         }
 
-        fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
+        fileUrl = `http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
 
 
@@ -426,7 +426,7 @@ const StatisticalAnalysisTool = () => {
 
 
                     //               // Call the API to get columns
-                    //             fetch('http://127.0.0.1:8000/api/get-columns/', {
+                    //             fetch('http://103.94.135.115:8001/api/get-columns/', {
                     //                 method: 'POST',
                     //                 body: formData,
 
@@ -586,7 +586,7 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch('http://127.0.0.1:8000/api/upload-file/', {
+            fetch('http://103.94.135.115:8001/api/upload-file/', {
                 method: 'POST',
 
                 body: formData,
@@ -810,7 +810,7 @@ const StatisticalAnalysisTool = () => {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
-        fetch('http://127.0.0.1:8000/api/analyze/', {
+        fetch('http://103.94.135.115:8001/api/analyze/', {
             method: 'POST',
             body: formData
 
@@ -2461,7 +2461,7 @@ const [barChartType, setBarChartType] = useState("vertical");
                             {results.image_paths.map((path, index) => (
                                 <div key={index} className="bg-white rounded-lg shadow-md p-4">
                                     <img
-                                        src={`http://127.0.0.1:8000${path}`}
+                                        src={`http://103.94.135.115:8001${path}`}
                                         alt={`Bar chart visualization ${index + 1}`}
                                         className="w-full h-auto object-contain"
                                     />
