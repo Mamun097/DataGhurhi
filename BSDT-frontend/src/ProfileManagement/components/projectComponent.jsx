@@ -84,8 +84,6 @@ const ProjectTab = ({
           headers: {
             Authorization: `Bearer ${token}`,
           },
-<<<<<<< Updated upstream
-=======
         })
         .then((response) => {
           if (!response.ok) {

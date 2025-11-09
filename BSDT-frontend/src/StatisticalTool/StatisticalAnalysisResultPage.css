@@ -579,11 +579,7 @@
 /* ---------- Header ---------- */
 .page-header {
   text-align: center;
-<<<<<<< Updated upstream
-  /* margin-bottom: 0.5rem; */
-=======
   margin-bottom: 2rem;
->>>>>>> Stashed changes
 }
 
 .page-title {
@@ -611,11 +607,7 @@
   color: #b91c1c;
   padding: 12px 16px;
   border-radius: 6px;
-<<<<<<< Updated upstream
-  margin-bottom: 1.0rem;
-=======
   margin-bottom: 1.5rem;
->>>>>>> Stashed changes
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -630,17 +622,9 @@
 /* ---------- Card Layout ---------- */
 .card {
   background: #fff;
-<<<<<<< Updated upstream
-  border-radius: 0px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  min-width: 984px;
-  margin-left: -67px;
-=======
   border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   overflow: hidden;
->>>>>>> Stashed changes
 }
 
 .card-header {
@@ -1036,12 +1020,7 @@
 
 /* ---------- Form Section ---------- */
 .form-section {
-<<<<<<< Updated upstream
-  margin-top: -1.0rem;
-  margin-bottom: 5rem;
-=======
   margin-top: 1.25rem;
->>>>>>> Stashed changes
 }
 
 .form-group {

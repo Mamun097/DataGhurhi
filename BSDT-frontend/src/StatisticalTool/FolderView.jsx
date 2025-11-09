@@ -31,11 +31,7 @@ export default function FileExplorer() {
   const fetchFiles = async (folderPath) => {
     try {
       const res = await axios.get(
-<<<<<<< Updated upstream
-        `https://dataghurhi.cse.buet.ac.bd:8001/files?user_id=${userId}${
-=======
         `http://127.0.0.1:8000/files?user_id=${userId}${
->>>>>>> Stashed changes
           folderPath ? `&path=${folderPath}` : ""
         }`
       );
@@ -49,11 +45,7 @@ export default function FileExplorer() {
   const goBack = (index) => setPathStack(pathStack.slice(0, index + 1));
 
 const handleDownload = (file) => {
-<<<<<<< Updated upstream
-  const url = `https://dataghurhi.cse.buet.ac.bd:8001/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
-=======
   const url = `http://127.0.0.1:8000/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
->>>>>>> Stashed changes
   fetch(url)
     .then((res) => res.blob())
     .then((blob) => {
@@ -136,11 +128,7 @@ const handleDownload = (file) => {
             >
               {["jpg", "jpeg", "png", "gif"].includes(file.type) ? (
                 <img
-<<<<<<< Updated upstream
-                  src={`https://dataghurhi.cse.buet.ac.bd:8001/files/${file.name}?user_id=${userId}&path=${currentPath}`}
-=======
                   src={`http://127.0.0.1:8000/files/${file.name}?user_id=${userId}&path=${currentPath}`}
->>>>>>> Stashed changes
                   alt={file.name}
                   className="file-thumbnail"
                 />
