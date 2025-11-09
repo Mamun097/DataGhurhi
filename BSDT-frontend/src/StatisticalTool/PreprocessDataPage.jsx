@@ -69,8 +69,7 @@
 //     if (!userId) return;
 
 //     // Now fetch only when userId is set
-//     fetch('http://127.0.0.1:8000/api/preview-data/', {
-//     fetch('http://127.0.0.1:8000/api/preview-data/', {
+//     fetch('http://103.94.135.115:8001/api/preview-data/', {
 //       method: 'GET',
 //       headers: {
 //         'userID': userId,
@@ -101,8 +100,7 @@
 
 //     if (selectedOption === 'handle_outliers') {
 //       console.log("entered");
-//       fetch('http://127.0.0.1:8000/api/outliers-summary/', {
-//       fetch('http://127.0.0.1:8000/api/outliers-summary/', {
+//       fetch('http://103.94.135.115:8001/api/outliers-summary/', {
 //         method: 'POST',
 //         headers: {
 //           'Content-Type': 'application/json',
@@ -200,8 +198,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/delete-columns/', {
-//                   fetch('http://127.0.0.1:8000/api/delete-columns/', {
+//                   fetch('http://103.94.135.115:8001/api/delete-columns/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId, // Include user ID in headers
@@ -229,8 +226,7 @@
 
 //                 // Option 2: Remove Duplicate Rows
 //                 else if (selectedOption === 'remove_duplicates') {
-//                   fetch('http://127.0.0.1:8000/api/find-duplicates/', {
-//                   fetch('http://127.0.0.1:8000/api/find-duplicates/', {
+//                   fetch('http://103.94.135.115:8001/api/find-duplicates/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId,
@@ -263,8 +259,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/handle-missing/', {
-//                   fetch('http://127.0.0.1:8000/api/handle-missing/', {
+//                   fetch('http://103.94.135.115:8001/api/handle-missing/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -300,8 +295,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/handle-outliers/', {
-//                   fetch('http://127.0.0.1:8000/api/handle-outliers/', {
+//                   fetch('http://103.94.135.115:8001/api/handle-outliers/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -332,8 +326,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/rank-column/', {
-//                   fetch('http://127.0.0.1:8000/api/rank-column/', {
+//                   fetch('http://103.94.135.115:8001/api/rank-column/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json'
@@ -372,8 +365,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/split-column/', {
-//                   fetch('http://127.0.0.1:8000/api/split-column/', {
+//                   fetch('http://103.94.135.115:8001/api/split-column/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json',
@@ -413,8 +405,7 @@
 //                     return;
 //                   }
 
-//                   fetch('http://127.0.0.1:8000/api/group-data/', {
-//                   fetch('http://127.0.0.1:8000/api/group-data/', {
+//                   fetch('http://103.94.135.115:8001/api/group-data/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'userID': userId, // Include user ID in headers
@@ -431,8 +422,7 @@
 //                         sessionStorage.setItem("fileURL", result.file_url || '');
 //                         alert("Grouped data saved successfully!");
 //                         const link = document.createElement('a');
-//                         link.href = `http://127.0.0.1:8000${result.download_url}`;
-//                         link.href = `http://127.0.0.1:8000${result.download_url}`;
+//                         link.href = `http://103.94.135.115:8001${result.download_url}`;
 //                         link.setAttribute('download', '');
 //                         document.body.appendChild(link);
 //                         link.click();
@@ -444,7 +434,7 @@
 //                 }
 
 //                 else if (selectedOption === 'generate_id') {
-//                   fetch('http://127.0.0.1:8000/api/generate-unique-id/', {
+//                   fetch('http://103.94.135.115:8001/api/generate-unique-id/', {
 //                     method: 'POST',
 //                     headers: {
 //                       'Content-Type': 'application/json',
@@ -896,7 +886,7 @@
 //         )}
 
 //         <PreviewTable
-//           workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`}
+//           workbookUrl={`http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`}
 //           columns={columns}
 //           duplicateIndices={duplicateIndices}
 //           setData={setData}
@@ -983,7 +973,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
   useEffect(() => {
     if (!userId) return;
 
-    fetch('http://127.0.0.1:8000/api/preview-data/', {
+    fetch('http://103.94.135.115:8001/api/preview-data/', {
       method: 'GET',
       headers: {
         'userID': userId,
@@ -1013,7 +1003,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
   useEffect(() => {
     if (selectedOption === 'handle_outliers') {
       console.log("entered");
-      fetch('http://127.0.0.1:8000/api/outliers-summary/', {
+      fetch('http://103.94.135.115:8001/api/outliers-summary/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1109,7 +1099,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/delete-columns/', {
+                    fetch('http://103.94.135.115:8001/api/delete-columns/', {
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1137,7 +1127,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
 
                   // Option 2: Remove Duplicate Rows
                   else if (selectedOption === 'remove_duplicates') {
-                    fetch('http://127.0.0.1:8000/api/find-duplicates/', {
+                    fetch('http://103.94.135.115:8001/api/find-duplicates/', {
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1170,7 +1160,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/handle-missing/', {
+                    fetch('http://103.94.135.115:8001/api/handle-missing/', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1205,7 +1195,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/handle-outliers/', {
+                    fetch('http://103.94.135.115:8001/api/handle-outliers/', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1236,7 +1226,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/rank-column/', {
+                    fetch('http://103.94.135.115:8001/api/rank-column/', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json'
@@ -1275,7 +1265,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/split-column/', {
+                    fetch('http://103.94.135.115:8001/api/split-column/', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1315,7 +1305,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                       return;
                     }
 
-                    fetch('http://127.0.0.1:8000/api/group-data/', {
+                    fetch('http://103.94.135.115:8001/api/group-data/', {
                       method: 'POST',
                       headers: {
                         'userID': userId,
@@ -1332,7 +1322,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                           sessionStorage.setItem("fileURL", result.file_url || '');
                           alert("Grouped data saved successfully!");
                           const link = document.createElement('a');
-                          link.href = `http://127.0.0.1:8000${result.download_url}`;
+                          link.href = `http://103.94.135.115:8001${result.download_url}`;
                           link.setAttribute('download', '');
                           document.body.appendChild(link);
                           link.click();
@@ -1344,7 +1334,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
                   }
 
                   else if (selectedOption === 'generate_id') {
-                    fetch('http://127.0.0.1:8000/api/generate-unique-id/', {
+                    fetch('http://103.94.135.115:8001/api/generate-unique-id/', {
                       method: 'POST',
                       headers: {
                         'Content-Type': 'application/json',
@@ -1778,7 +1768,7 @@ const [isPopupOpen, setIsPopupOpen] = useState(false);
         )}
 
         <PreviewTable
-          workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`}
+          workbookUrl={`http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`}
           columns={columns}
           duplicateIndices={duplicateIndices}
           setData={setData}
