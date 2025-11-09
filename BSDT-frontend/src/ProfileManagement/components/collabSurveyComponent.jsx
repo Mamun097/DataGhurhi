@@ -313,6 +313,22 @@ const CollabSurveyTab = ({
             <span>{getLabel("View Requests")}</span>
           </button>
         </div>
+<<<<<<< Updated upstream
+=======
+        <button
+          className="btn btn-sm btn-outline-primary"
+          onClick={() => {
+            setShowCollabModal(true);
+            fetchCollaborationRequests();
+          }}
+          title={getLabel("View Collaboration Requests")}
+        >
+          <i className="bi bi-eye me-1"></i>
+          <span className="d-none d-sm-inline text-white">
+            {getLabel("View Request")}
+          </span>
+        </button>
+>>>>>>> Stashed changes
       </div>
 
       {/* Surveys Display */}

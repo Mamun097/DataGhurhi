@@ -47,10 +47,17 @@ const translations = {
         title: "Statistical Analysis Tool",
         subtitle: "Upload your Excel file and run various statistical tests on your data",
         formTitle: "Data Analysis Form",
+<<<<<<< Updated upstream
         uploadLabel: "Import File",
         preprocessedLabel: "Preprocessed File",
         surveyLabel: "Survey Data File",
         dropFile: "Drag your file or click to browse",
+=======
+        uploadLabel: "Upload Your Data or Use Previously Saved File",
+        preprocessedLabel: "Preprocessed File",
+        surveyLabel: "Survey Data File",
+        dropFile: "Drag & drop your Excel file or click to browse",
+>>>>>>> Stashed changes
         processing: "Processing file, please wait...",
         testType: "Test Type",
         testGroups: {
@@ -347,7 +354,11 @@ const StatisticalAnalysisTool = () => {
 
 
             // Call the API to get columns
+<<<<<<< Updated upstream
             fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/get-columns/', {
+=======
+            fetch('http://127.0.0.1:8000/api/get-columns/', {
+>>>>>>> Stashed changes
                 method: 'POST',
                 body: formData,
 
@@ -371,6 +382,7 @@ const StatisticalAnalysisTool = () => {
         }
     }
 
+<<<<<<< Updated upstream
 
     useEffect(() => {
 
@@ -461,6 +473,98 @@ const StatisticalAnalysisTool = () => {
 
         }
 
+=======
+
+    useEffect(() => {
+
+        const filename = sessionStorage.getItem("file_name") || '';
+
+
+        let fileUrl = "";
+
+        if (isSurveyData) {
+
+
+            sessionStorage.removeItem("surveyfile");
+        }
+        else if (isPreprocessed) {
+            //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+
+            sessionStorage.removeItem("preprocessed");
+        }
+
+        fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
+        console.log("File URL from sessionStorage:", fileUrl);
+
+
+
+
+        if (sessionStorage.getItem("fileURL")) {
+            fetch(fileUrl)
+                .then(res => {
+                    if (!res.ok) throw new Error(`Failed to fetch file from ${fileUrl}`);
+                    return res.blob();
+                })
+                .then(blob => {
+                    const newFile = new File([blob], filename, { type: blob.type });
+                    setFile(newFile);
+                    setFileName(filename || newFile.name);
+                    setUploadStatus("success");
+                    console.log("File loaded successfully:", newFile.name);
+
+                    // Send file to backend to extract columns
+                    const formData = new FormData();
+                    formData.append('file', newFile);
+                    formData.append('userID', userId);
+
+
+                    //                   const storedSheetName = sessionStorage.getItem("activesheetname");
+                    //   if( fileName && userId && fileURL){
+                    //   console.log("Active sheet name from sessionStorage:", storedSheetName);
+                    //    const formData = new FormData();
+
+
+                    //             formData.append('filename', fileName);
+                    //             formData.append('userID', userId);
+                    //             formData.append('activeSheet', storedSheetName || '');
+                    //             formData.append('Fileurl', fileURL || '');
+
+
+                    //               // Call the API to get columns
+                    //             fetch('http://127.0.0.1:8000/api/get-columns/', {
+                    //                 method: 'POST',
+                    //                 body: formData,
+
+                    //             })
+                    //                 .then(response => response.json())
+                    //                 .then(data => {
+                    //                     if (data.success) {
+
+                    //                         console.log(data.columns);
+                    //                        setColumns(data.columns || []);
+                    //                        setColumn1(data.columns[0])
+                    //                        console.log(columns);
+
+                    //                     } else {
+                    //                         console.error("Error fetching columns:", data.error);
+                    //                     }
+                    //                 })
+                    //                 .catch(error => {
+                    //                     console.error("Error:", error);
+                    //                 });
+                    //             }
+                    fetchcolumn();
+
+                })
+                .catch(err => {
+                    console.error("Error loading file:", err);
+                    setErrorMessage("Error loading file. Please re-upload.");
+                    setUploadStatus("error");
+                });
+
+        }
+
+>>>>>>> Stashed changes
 
     }, [isPreprocessed, isSurveyData, fileName]);
 
@@ -588,7 +692,11 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
+<<<<<<< Updated upstream
             fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/upload-file/', {
+=======
+            fetch('http://127.0.0.1:8000/api/upload-file/', {
+>>>>>>> Stashed changes
                 method: 'POST',
 
                 body: formData,
@@ -812,7 +920,11 @@ const StatisticalAnalysisTool = () => {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
+<<<<<<< Updated upstream
         fetch('https://dataghurhi.cse.buet.ac.bd:8001/api/analyze/', {
+=======
+        fetch('http://127.0.0.1:8000/api/analyze/', {
+>>>>>>> Stashed changes
             method: 'POST',
             body: formData
 
@@ -933,8 +1045,17 @@ const StatisticalAnalysisTool = () => {
 
 
     return (
+<<<<<<< Updated upstream
+=======
+       
+>>>>>>> Stashed changes
 
+                        <div className="an-wrapper">
+                        <header className="page-header">
+                            <h1 className="page-title">{t.title}</h1>
+                        </header>
 
+<<<<<<< Updated upstream
         <div className="an-wrapper">
             <header className="page-header">
                 <h1 className="page-title">{t.title}</h1>
@@ -947,11 +1068,21 @@ const StatisticalAnalysisTool = () => {
                         <div className="error-box">
                             <div className="error-icon">
                                 <svg viewBox="0 0 20 20" fill="currentColor">
+=======
+                        <div className="content-center">
+                            <div className="form-wrapper">
+                            {/* Error Message */}
+                            {errorMessage && (
+                                <div className="error-box">
+                                <div className="error-icon">
+                                    <svg viewBox="0 0 20 20" fill="currentColor">
+>>>>>>> Stashed changes
                                     <path
                                         fillRule="evenodd"
                                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
                                         clipRule="evenodd"
                                     />
+<<<<<<< Updated upstream
                                 </svg>
                             </div>
                             <div className="error-text">{errorMessage}</div>
@@ -1797,10 +1928,534 @@ const StatisticalAnalysisTool = () => {
                                             <div className="mb-6">
                                                 {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
                                                 {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+=======
+                                    </svg>
+                                </div>
+                                <div className="error-text">{errorMessage}</div>
+                                </div>
+                            )}
+
+                            {!results ? (
+                                <div className="card">
+                                <div className="card-header">
+                                    <div className="header-left">
+                                    <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                        <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth="2"
+                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                        />
+                                    </svg>
+                                    <span>{t.formTitle}</span>
+                                    </div>
+                                    <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
+                                    {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
+                                    </button>
+                                </div>
+
+                                <div className="header-actions">
+                                    <button onClick={resetForm} className="an-btn an-btn-success small">
+                                    Reset File
+                                    </button>
+                                </div>
+
+                                <div className="card-body">
+                                    <form onSubmit={handleSubmit}>
+                                    <div className="form-section">
+                                        <h5 className="section-title">
+                                        {isPreprocessed
+                                            ? t.preprocessedLabel
+                                            : isSurveyData
+                                            ? t.surveyLabel
+                                            : t.uploadLabel}
+                                        </h5>
+
+                                        {(isPreprocessed || isSurveyData) ? (
+                                        <div className="file-info">
+                                            {(isPreprocessed ? "Preprocessed file" : "Survey file")}{" "}
+                                            <strong>{fileName}</strong> loaded automatically.
+                                        </div>
+                                        ) : (
+                                        <div
+                                            ref={uploadContainerRef}
+                                            className={`upload-box ${
+                                            uploadStatus === "loading"
+                                                ? "loading"
+                                                : uploadStatus === "success"
+                                                ? "success"
+                                                : ""
+                                            }`}
+                                            onClick={() => fileInputRef.current.click()}
+                                        >
+                                            <svg className="upload-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
+                                            {uploadStatus === "success" ? (
+                                                <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                                />
+                                            ) : (
+                                                <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth="2"
+                                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                                                />
+                                            )}
+                                            </svg>
+                                            <p id="fileName">{file ? fileName : t.dropFile}</p>
+                                            <input
+                                            ref={fileInputRef}
+                                            type="file"
+                                            className="hidden-input"
+                                            accept=".xls,.xlsx"
+                                            onClick={(e) => (e.target.value = null)}
+                                            onChange={handleFileChange}
+                                            />
+                                        </div>
+                                        )}
+
+                                        <div className="divider">
+                                        <span>Or</span>
+                                        </div>
+
+                                        <div className="center">
+                                        <button onClick={() => navigate("/saved-files")} className="an-btn an-btn-outline">
+                                            Go to Saved Folder
+                                        </button>
+                                        </div>
+
+                                        {uploadStatus === "loading" && (
+                                        <div className="status-line">
+                                            <div className="spinner" />
+                                            {t.processing}
+                                        </div>
+                                        )}
+                                    </div>
+
+                                    <div className="action-buttons">
+                                        <button type="button" className="an-btn an-btn-primary" onClick={handlePreviewClick}>
+                                        {language === "bn" ? "ডেটা প্রিভিউ" : "Preview Data"}
+                                        </button>
+                                        <button
+                                        type="button"
+                                        className="an-btn an-btn-purple"
+                                        onClick={() => {
+                                            const path = "/preprocess";
+                                            navigate(path, { state: { userId: userId, filename: fileName } });
+                                        }}
+                                        >
+                                        {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess Data"}
+                                        </button>
+                                    </div>
+
+                                    <div className="form-section">
+                                        <h5 className="section-title">{t.selectTest}</h5>
+                                        <label className="form-label">{t.testType}</label>
+                                        <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+
+                                        <option value="" disabled>{t.selectPrompt}</option>
+                                        <optgroup label={t.testGroups.eda}>
+                                            <option value="eda_basics">{t.tests.eda_basics}</option>
+                                            <option value="eda_distribution">{t.tests.eda_distribution}</option>
+                                            <option value="eda_swarm">{t.tests.eda_swarm}</option>
+                                            <option value="eda_pie">{t.tests.eda_pie}</option>
+                                            <option value="bar_chart">{t.tests.bar_chart}</option>
+                                            <option value="similarity">{t.tests.similarity}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.nonParametric}>
+                                            <option value="kruskal">{t.tests.kruskal}</option>
+                                            <option value="mannwhitney">{t.tests.mannwhitney}</option>
+                                            <option value="wilcoxon">{t.tests.wilcoxon}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.correlation}>
+                                            <option value="pearson">{t.tests.pearson}</option>
+                                            <option value="spearman">{t.tests.spearman}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.parametric}>
+                                            <option value="f_test">{t.tests.f_test}</option>
+                                            <option value="z_test">{t.tests.z_test}</option>
+                                            <option value="t_test">{t.tests.t_test}</option>
+                                            <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.regression}>
+                                            <option value="linear_regression">{t.tests.linear_regression}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.anova}>
+                                            <option value="anova">{t.tests.anova}</option>
+                                            <option value="ancova">{t.tests.ancova}</option>
+                                        </optgroup>
+                                        <optgroup label={t.testGroups.other}>
+                                            <option value="shapiro">{t.tests.shapiro}</option>
+                                            <option value="kolmogorov">{t.tests.kolmogorov}</option>
+                                            <option value="anderson">{t.tests.anderson}</option>
+                                            <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
+                                            <option value="chi_square">{t.tests.chi_square}</option>
+                                            <option value="cramers">{t.tests.cramers}</option>
+                                            <option value="network_graph">{t.tests.network_graph}</option>
+                                        </optgroup>
+                                        </select>
+
+                                                <div className="test-description-hint">{t.selectPrompt}</div>
+
+                                                {testType && t.descriptions[testType] && (
+                                                <div className="test-description-box">
+                                                    <strong className="test-description-title">
+                                                    {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
+                                                    </strong>
+
+                                                    <div className="test-description-text">{t.descriptions[testType]}</div>
+
+                                                    {!testsWithoutDetails.includes(testType) && (
+                                                    <div>
+                                                        <button
+                                                        type="button"
+                                                        onClick={() => setDetailsModalVisible(true)}
+                                                        className="test-details-link"
+                                                        >
+                                                        {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
+                                                        </button>
+                                                    </div>
+                                                    )}
+                                                </div>
+                                                )}
+
+                                     </div>
+                                                                
+                                            {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
+                                                <div style={{ marginBottom: '2rem' }}>
+                                                    <label style={{
+                                                        display: 'block',
+                                                        fontSize: '0.875rem',
+                                                        fontWeight: '600',
+                                                        color: '#1f2937',
+                                                        marginBottom: '0.75rem'
+                                                    }}>
+                                                        Select Columns
+                                                    </label>
+
+                                                    {/* Selected Columns Display */}
+                                                    <div style={{
+                                                        border: '2px solid #d1d5db',
+                                                        borderRadius: '0.5rem',
+                                                        padding: '1rem',
+                                                        backgroundColor: '#f9fafb',
+                                                        minHeight: '60px',
+                                                        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                    }}>
+                                                        {selectedColumns.length > 0 ? (
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                                {selectedColumns.map((col, idx) => (
+                                                                    <div
+                                                                        key={idx}
+                                                                        style={{
+                                                                            display: 'inline-flex',
+                                                                            alignItems: 'center',
+                                                                            gap: '0.5rem',
+                                                                            padding: '0.25rem 0.5rem',
+                                                                            backgroundColor: '#3b82f6',
+                                                                            borderRadius: '0.5rem',
+                                                                            fontSize: '0.875rem',
+                                                                            fontWeight: '600',
+                                                                            color: 'white',
+                                                                            boxShadow: '0 2px 4px 0 rgba(0, 0, 0, 0.1)'
+                                                                        }}
+                                                                    >
+                                                                        <span>{col}</span>
+                                                                        <button
+                                                                            type="button"
+                                                                            style={{
+                                                                                width: '1.5rem',
+                                                                                height: '1.5rem',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                borderRadius: '50%',
+                                                                                backgroundColor: '#2563eb',
+                                                                                color: 'white',
+                                                                                border: 'none',
+                                                                                cursor: 'pointer',
+                                                                                fontSize: '1.25rem',
+                                                                                fontWeight: 'bold',
+                                                                                transition: 'background-color 0.2s'
+                                                                            }}
+                                                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+                                                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                                                                            onClick={() => setSelectedColumns(prev => prev.filter(c => c !== col))}
+                                                                        >
+                                                                            ×
+                                                                        </button>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{
+                                                                display: 'flex',
+                                                                alignItems: 'left',
+                                                                justifyContent: 'left',
+                                                                height: '100%',
+                                                                color: '#9ca3af',
+                                                                fontStyle: 'italic',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                No columns selected yet
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Dropdown Menu Button */}
+                                                    <div style={{ marginTop: '1rem', position: 'relative' }}>
+                                                        <button
+                                                            type="button"
+                                                            style={{
+                                                                width: '100%',
+                                                                border: '2px solid #d1d5db',
+                                                                borderRadius: '0.5rem',
+                                                                padding: '1rem',
+                                                                backgroundColor: 'white',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between',
+                                                                cursor: 'pointer',
+                                                                fontSize: '1rem',
+                                                                fontWeight: '500',
+                                                                transition: 'all 0.2s',
+                                                                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                            }}
+                                                            onMouseEnter={(e) => {
+                                                                e.currentTarget.style.backgroundColor = '#eff6ff';
+                                                                e.currentTarget.style.borderColor = '#3b82f6';
+                                                            }}
+                                                            onMouseLeave={(e) => {
+                                                                e.currentTarget.style.backgroundColor = 'white';
+                                                                e.currentTarget.style.borderColor = '#d1d5db';
+                                                            }}
+                                                            onClick={() => setShowColumnMenu(prev => !prev)}
+                                                        >
+                                                            <span style={{ color: '#374151' }}>Choose columns from list...</span>
+                                                            <span style={{
+                                                                color: '#6b7280',
+                                                                transition: 'transform 0.2s',
+                                                                transform: showColumnMenu ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                display: 'inline-block'
+                                                            }}>
+                                                                ▼
+                                                            </span>
+                                                        </button>
+
+                                                        {/* Dropdown Panel */}
+                                                        {showColumnMenu && (
+                                                            <div style={{
+                                                                position: 'absolute',
+                                                                zIndex: 20,
+                                                                bottom: '100%',
+                                                                marginBottom: '0.5rem',
+                                                                width: '100%',
+                                                                border: '2px solid #d1d5db',
+                                                                borderRadius: '0.5rem',
+                                                                backgroundColor: 'white',
+                                                                boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                                                                overflow: 'hidden'
+                                                            }}>
+                                                                {/* Column List */}
+                                                                <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+                                                                    {columns.map((col, idx) => {
+                                                                        const isSelected = tempSelectedColumns.includes(col);
+                                                                        return (
+                                                                            <div
+                                                                                key={idx}
+                                                                                style={{
+                                                                                    padding: '0.75rem 1rem',
+                                                                                    cursor: 'pointer',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '0.75rem',
+                                                                                    backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                    borderBottom: idx !== columns.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                    transition: 'background-color 0.15s'
+                                                                                }}
+                                                                                onMouseEnter={(e) => {
+                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#bfdbfe' : '#f3f4f6';
+                                                                                }}
+                                                                                onMouseLeave={(e) => {
+                                                                                    e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white';
+                                                                                }}
+                                                                                onClick={() => {
+                                                                                    if (tempSelectedColumns.includes(col)) {
+                                                                                        setTempSelectedColumns(prev => prev.filter(c => c !== col));
+                                                                                    } else {
+                                                                                        setTempSelectedColumns(prev => [...prev, col]);
+                                                                                    }
+                                                                                }}
+                                                                            >
+                                                                                {/* Checkbox */}
+                                                                                <div style={{
+                                                                                    width: '1.0rem',
+                                                                                    height: '1.0rem',
+                                                                                    borderRadius: '0.25rem',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center',
+                                                                                    flexShrink: 0,
+                                                                                    backgroundColor: isSelected ? '#3b82f6' : 'white',
+                                                                                    border: isSelected ? '2px solid #3b82f6' : '2px solid #9ca3af',
+                                                                                    transition: 'all 0.15s'
+                                                                                }}>
+                                                                                    {isSelected && (
+                                                                                        <svg style={{ width: '1.25rem', height: '1.25rem', color: 'white' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                </div>
+                                                                                {/* Column Name */}
+                                                                                <span style={{
+                                                                                    fontWeight: '600',
+                                                                                    fontSize: '0.9375rem',
+                                                                                    color: isSelected ? '#1e40af' : '#1f2937'
+                                                                                }}>
+                                                                                    {col}
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+
+                                                                {/* Action Buttons */}
+                                                                <div style={{
+                                                                    borderTop: '1px solid #e5e7eb',
+                                                                    padding: '0.5rem',
+                                                                    display: 'flex',
+                                                                    gap: '0.5rem',
+                                                                    backgroundColor: 'white'
+                                                                }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            backgroundColor: '#10b981',
+                                                                            color: 'white',
+                                                                            borderRadius: '0.375rem',
+                                                                            padding: '0.5rem 1rem',
+                                                                            border: 'none',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.875rem',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s',
+                                                                            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#059669';
+                                                                            e.currentTarget.style.boxShadow = '0 2px 4px 0 rgba(0, 0, 0, 0.1)';
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#10b981';
+                                                                            e.currentTarget.style.boxShadow = '0 1px 2px 0 rgba(0, 0, 0, 0.05)';
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setSelectedColumns(tempSelectedColumns);
+                                                                            setShowColumnMenu(false);
+                                                                        }}
+                                                                    >
+                                                                        ✓ Apply
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        style={{
+                                                                            backgroundColor: '#e5e7eb',
+                                                                            color: '#1f2937',
+                                                                            borderRadius: '0.375rem',
+                                                                            padding: '0.5rem 1rem',
+                                                                            border: '1px solid #d1d5db',
+                                                                            fontWeight: '600',
+                                                                            fontSize: '0.875rem',
+                                                                            cursor: 'pointer',
+                                                                            transition: 'all 0.2s'
+                                                                        }}
+                                                                        onMouseEnter={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#d1d5db';
+                                                                        }}
+                                                                        onMouseLeave={(e) => {
+                                                                            e.currentTarget.style.backgroundColor = '#e5e7eb';
+                                                                        }}
+                                                                        onClick={() => {
+                                                                            setTempSelectedColumns(selectedColumns);
+                                                                            setShowColumnMenu(false);
+                                                                        }}
+                                                                    >
+                                                                        Cancel
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Selection Counter */}
+                                                    <div style={{
+                                                        marginTop: '1rem',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        padding: '0 0.25rem'
+                                                    }}>
+                                                        <p style={{
+                                                            fontSize: '0.875rem',
+                                                            color: '#374151',
+                                                            fontWeight: '600'
+                                                        }}>
+                                                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <span style={{
+                                                                    width: '0.5rem',
+                                                                    height: '0.5rem',
+                                                                    backgroundColor: '#3b82f6',
+                                                                    borderRadius: '50%'
+                                                                }}></span>
+                                                                {selectedColumns.length} column{selectedColumns.length !== 1 ? 's' : ''} selected
+                                                            </span>
+                                                        </p>
+                                                        {selectedColumns.length > 0 && (
+                                                            <button
+                                                                type="button"
+                                                                style={{
+                                                                    fontSize: '0.875rem',
+                                                                    color: '#dc2626',
+                                                                    fontWeight: '600',
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    transition: 'color 0.2s'
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    e.currentTarget.style.color = '#991b1b';
+                                                                    e.currentTarget.style.textDecoration = 'underline';
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    e.currentTarget.style.color = '#dc2626';
+                                                                    e.currentTarget.style.textDecoration = 'none';
+                                                                }}
+                                                                onClick={() => {
+                                                                    setSelectedColumns([]);
+                                                                    setTempSelectedColumns([]);
+                                                                }}
+                                                            >
+                                                                Clear all
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+
+                                            {testType !== 'eda_basics' && (
+                                                <div className="mb-6">
+                                                    {/* Only show the heading if the testType is NOT one of the ones you want to skip */}
+                                                    {/* {!['spearman', 'pearson', 'cross_tabulation', 'network_graph'].includes(testType) && (
+>>>>>>> Stashed changes
                                                         <h5 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b-2 border-gray-200">
                                                             {t.selectVariables}
                                                         </h5>
                                                     )} */}
+<<<<<<< Updated upstream
 
                                                 {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
@@ -2292,11 +2947,244 @@ const StatisticalAnalysisTool = () => {
                                             <div className="form-group">
                                                 <label className="form-label">{t.referenceValue}</label>
                                                 <input
+=======
+
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
+                                                <div className="form-group">
+                                                    <label className="form-label">
+                                                    {(testType === "kolmogorov" ||
+                                                        testType === "anderson" ||
+                                                        testType === "shapiro" ||
+                                                        testType === "eda_distribution")
+                                                        ? language === "bn"
+                                                        ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
+                                                        : "Pick a Numerical Column"
+                                                        : t.column1}
+                                                    </label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column1}
+                                                    onChange={(e) => setColumn1(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    {columns.length === 0 ? (
+                                                        <option value="">-- Upload a file first --</option>
+                                                    ) : (
+                                                        columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                            {col}
+                                                        </option>
+                                                        ))
+                                                    )}
+                                                    </select>
+                                                </div>
+                                                )}
+
+                                                {requiredFields.col2 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column2}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column2}
+                                                    onChange={(e) => setColumn2(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
+
+                                                {requiredFields.col3 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column3}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column3}
+                                                    onChange={(e) => setColumn3(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
+
+                                                {requiredFields.col4 && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.column4}</label>
+                                                    <select
+                                                    className="form-select"
+                                                    value={column4}
+                                                    onChange={(e) => setColumn4(e.target.value)}
+                                                    disabled={columns.length === 0}
+                                                    >
+                                                    <option value="">-- Select a column --</option>
+                                                    {columns.map((col, idx) => (
+                                                        <option key={idx} value={col}>
+                                                        {col}
+                                                        </option>
+                                                    ))}
+                                                    </select>
+                                                </div>
+                                                )}
+
+
+                                                    {testType === 'cross_tabulation' && (
+                                                        <CrossTabulationOptions
+                                                            language={language}
+                                                            setLanguage={setLanguage}
+                                                            imageFormat={imageFormat}
+                                                            setImageFormat={setImageFormat}
+                                                            useDefaultSettings={useDefaultSettings}
+                                                            setUseDefaultSettings={setUseDefaultSettings}
+                                                            labelFontSize={labelFontSize}
+                                                            setLabelFontSize={setLabelFontSize}
+                                                            tickFontSize={tickFontSize}
+                                                            setTickFontSize={setTickFontSize}
+                                                            imageQuality={imageQuality}
+                                                            setImageQuality={setImageQuality}
+                                                            imageSize={imageSize}
+                                                            setImageSize={setImageSize}
+                                                            colorPalette={colorPalette}
+                                                            setColorPalette={setColorPalette}
+                                                            barWidth={barWidth}
+                                                            setBarWidth={setBarWidth}
+                                                            t={t}
+                                                        />
+                                                    )}
+
+                                                    {testType === 'eda_basics' && (
+                                                        <EDABasicsOptions
+                                                            language={language}
+                                                            setLanguage={setLanguage}
+                                                            imageFormat={imageFormat}
+                                                            setImageFormat={setImageFormat}
+                                                            useDefaultSettings={useDefaultSettings}
+                                                            setUseDefaultSettings={setUseDefaultSettings}
+                                                            labelFontSize={labelFontSize}
+                                                            setLabelFontSize={setLabelFontSize}
+                                                            tickFontSize={tickFontSize}
+                                                            setTickFontSize={setTickFontSize}
+                                                            imageQuality={imageQuality}
+                                                            setImageQuality={setImageQuality}
+                                                            imageSize={imageSize}
+                                                            setImageSize={setImageSize}
+                                                            t={t}
+                                                        />
+                                                    )}
+
+                                                    {testType === 'similarity' && (
+                                                        <SimilarityOptions
+                                                            language={language}
+                                                            setLanguage={setLanguage}
+                                                            imageFormat={imageFormat}
+                                                            setImageFormat={setImageFormat}
+                                                            useDefaultSettings={useDefaultSettings}
+                                                            setUseDefaultSettings={setUseDefaultSettings}
+                                                            labelFontSize={labelFontSize}
+                                                            setLabelFontSize={setLabelFontSize}
+                                                            tickFontSize={tickFontSize}
+                                                            setTickFontSize={setTickFontSize}
+                                                            imageQuality={imageQuality}
+                                                            setImageQuality={setImageQuality}
+                                                            imageSize={imageSize}
+                                                            setImageSize={setImageSize}
+                                                            t={t}
+                                                        />
+                                                    )}
+
+                                                    {/* {testType === 'chi_square' && (
+                                                        <ChiSquareOptions
+                                                            language={language}
+                                                            setLanguage={setLanguage}
+                                                            imageFormat={imageFormat}
+                                                            setImageFormat={setImageFormat}
+                                                            useDefaultSettings={useDefaultSettings}
+                                                            setUseDefaultSettings={setUseDefaultSettings}
+                                                            labelFontSize={labelFontSize}
+                                                            setLabelFontSize={setLabelFontSize}
+                                                            tickFontSize={tickFontSize}
+                                                            setTickFontSize={setTickFontSize}
+                                                            imageQuality={imageQuality}
+                                                            setImageQuality={setImageQuality}
+                                                            imageSize={imageSize}
+                                                            setImageSize={setImageSize}
+                                                            colorPalette={colorPalette}
+                                                            setColorPalette={setColorPalette}
+                                                            t={t}
+                                                        />
+                                                    )} */}
+
+                                                    {testType === 'network_graph' && (
+                                                        <NetworkGraphOptions
+                                                            language={language}
+                                                            setLanguage={setLanguage}
+                                                            useDefaultSettings={useDefaultSettings}
+                                                            setUseDefaultSettings={setUseDefaultSettings}
+                                                            nodeColor={nodeColor}
+                                                            setNodeColor={setNodeColor}
+                                                            nodeSize={nodeSize}
+                                                            setNodeSize={setNodeSize}
+                                                            textSize={textSize}
+                                                            setTextSize={setTextSize}
+                                                            textColor={textColor}
+                                                            setTextColor={setTextColor}
+                                                            edgeWidthFactor={edgeWidthFactor}
+                                                            setEdgeWidthFactor={setEdgeWidthFactor}
+                                                            showEdgeWeights={showEdgeWeights}
+                                                            setShowEdgeWeights={setShowEdgeWeights}
+                                                            weightFontSize={weightFontSize}
+                                                            setWeightFontSize={setWeightFontSize}
+                                                            weightColor={weightColor}
+                                                            setWeightColor={setWeightColor}
+                                                            useMatrix={useMatrix}
+                                                            setUseMatrix={setUseMatrix}
+                                                            t={t}
+                                                        />
+                                                    )}
+
+
+                                                    {requiredFields.col5 && (
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.column5}</label>
+                                                        <select
+                                                        className="form-select"
+                                                        value={column5}
+                                                        onChange={(e) => setColumn5(e.target.value)}
+                                                        disabled={columns.length === 0}
+                                                        >
+                                                        <option value="">-- Select a column --</option>
+                                                        {columns.map((col, idx) => (
+                                                            <option key={idx} value={col}>
+                                                            {col}
+                                                            </option>
+                                                        ))}
+                                                        </select>
+                                                    </div>
+                                                    )}
+                                                </div>
+                                                )}
+
+                                                {requiredFields.refValue && (
+                                                <div className="form-group">
+                                                    <label className="form-label">{t.referenceValue}</label>
+                                                    <input
+>>>>>>> Stashed changes
                                                     type="number"
                                                     className="form-input"
                                                     value={referenceValue}
                                                     onChange={(e) => setReferenceValue(parseFloat(e.target.value))}
                                                     step="0.01"
+<<<<<<< Updated upstream
                                                 />
                                             </div>
                                         )}
@@ -2363,6 +3251,119 @@ const StatisticalAnalysisTool = () => {
                                     </div>
                                 )}
                             </div>
+=======
+                                                    />
+                                                </div>
+                                                )}
+
+                                                                                            <div className="submit-section">
+                                                <button
+                                                    type="submit"
+                                                    className="an-btn an-btn-primary large"
+                                                    disabled={
+                                                    isAnalyzing ||
+                                                    !file ||
+                                                    !column1 ||
+                                                    (requiredFields.col2 && !column2) ||
+                                                    (requiredFields.col3 && !column3)
+                                                    }
+                                                >
+                                                    {isAnalyzing ? (
+                                                    <>
+                                                        <div className="spinner small"></div>
+                                                        {t.analyzing}
+                                                    </>
+                                                    ) : (
+                                                        <>
+                                                        <svg
+                                                        className="icon-inline"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        viewBox="0 0 24 24"
+                                                        >
+                                                        <path
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            strokeWidth="2"
+                                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                                                        />
+                                                        </svg>
+                                                        {t.analyzeButton}
+                                                    </>
+
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </form>
+
+                                    {detailsModalVisible && (
+                                    <div className="modal-overlay">
+                                        <div className="modal-content">
+                                        <button
+                                            className="modal-close"
+                                            onClick={() => setDetailsModalVisible(false)}
+                                        >
+                                            &times;
+                                        </button>
+                                        <h2>{t.tests[testType]}</h2>
+                                        <pre className="modal-body">
+                                            {statTestDetails[language]?.[testType] ||
+                                            (language === "bn"
+                                                ? "এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।"
+                                                : "No details available.")}
+                                        </pre>
+                                        </div>
+                                    </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <AnalysisResults
+                                    isFirstTimeAnalysis={isFirstTimeAnalysis}
+                                    setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
+                                    handleSubmit={handleSubmit}
+                                    user_id={userId}
+                                    results={results}
+                                    testType={testType}
+                                    columns={[column1, column2, column3]}
+                                    language={language}
+                                    setLanguage={setLanguage}
+                                    imageFormat={imageFormat}
+                                    setImageFormat={setImageFormat}
+                                    useDefaultSettings={useDefaultSettings}
+                                    setUseDefaultSettings={setUseDefaultSettings}
+                                    labelFontSize={labelFontSize}
+                                    setLabelFontSize={setLabelFontSize}
+                                    tickFontSize={tickFontSize}
+                                    setTickFontSize={setTickFontSize}
+                                    imageQuality={imageQuality}
+                                    setImageQuality={setImageQuality}
+                                    imageSize={imageSize}
+                                    setImageSize={setImageSize}
+                                    colorPalette={colorPalette}
+                                    setColorPalette={setColorPalette}
+                                    barWidth={barWidth}
+                                    setBarWidth={setBarWidth}
+                                    boxWidth={boxWidth}
+                                    setBoxWidth={setBoxWidth}
+                                    violinWidth={violinWidth}
+                                    setViolinWidth={setViolinWidth}
+                                    showGrid={showGrid}
+                                    setShowGrid={setShowGrid}
+                                    histColor={histColor}
+                                    setHistColor={setHistColor}
+                                    kdeColor={kdeColor}
+                                    setKdeColor={setKdeColor}
+                                    distColor={distColor}
+                                    setDistColor={setDistColor}
+
+                                    t={t}
+                                    filename={fileName}
+                                />
+
+                            )}
+
+>>>>>>> Stashed changes
                         </div>
                     ) : (
                         <AnalysisResults
@@ -2411,11 +3412,16 @@ const StatisticalAnalysisTool = () => {
                     )}
 
                 </div>
+<<<<<<< Updated upstream
             </div>
 
         </div>
 
 
+=======
+           
+      
+>>>>>>> Stashed changes
     );
 };
 
@@ -3015,6 +4021,57 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
         );
     };
 
+<<<<<<< Updated upstream
+=======
+const [barChartType, setBarChartType] = useState("vertical");
+
+    const renderBarChartResults = () => {
+        if (!results) {
+            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        }
+
+        return (
+            <>
+                <h2 className="text-2xl font-bold mb-4">
+                    {language === 'bn' ? 'বার চার্ট' : 'Bar Chart'}
+                </h2>
+
+                {columns && columns[0] && (
+                    <p className="mb-3">
+                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Column analyzed:'}</strong> {columns[0]}
+                    </p>
+                )}
+
+                <p className="mb-2">
+                    <strong>{language === 'bn' ? 'বার চার্ট টাইপ:' : 'Bar chart type:'}</strong>{" "}
+                    {barChartType === "vertical"
+                        ? (language === 'bn' ? 'উল্লম্ব' : 'Vertical')
+                        : (language === 'bn' ? 'অনুভূমিক' : 'Horizontal')}
+                </p>
+
+                {results.image_paths && results.image_paths.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-xl font-semibold mb-3">
+                            {language === 'bn' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}
+                        </h3>
+                        <div className="grid grid-cols-1 gap-6">
+                            {results.image_paths.map((path, index) => (
+                                <div key={index} className="bg-white rounded-lg shadow-md p-4">
+                                    <img
+                                        src={`http://127.0.0.1:8000${path}`}
+                                        alt={`Bar chart visualization ${index + 1}`}
+                                        className="w-full h-auto object-contain"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
+
+>>>>>>> Stashed changes
     // Helper component for consistent layout
     const StatRow = ({ label, value }) => (
         <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
@@ -3112,6 +4169,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     );
 
     // Other visualization components
+<<<<<<< Updated upstream
     // const CorrelationHeatmap = ({ data }) => {
     //     // Extracting unique variables
     //     const variables = [...new Set(data.flatMap(item => [item.Variable_1, item.Variable_2]))];
@@ -3182,5 +4240,77 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     //         </div>
     //     );
     // };
+=======
+    const CorrelationHeatmap = ({ data }) => {
+        // Extracting unique variables
+        const variables = [...new Set(data.flatMap(item => [item.Variable_1, item.Variable_2]))];
+
+        // Creating correlation matrix
+        const matrix = [];
+        for (let i = 0; i < variables.length; i++) {
+            const row = [];
+            for (let j = 0; j < variables.length; j++) {
+                if (i === j) {
+                    row.push(1); // Diagonal is always 1
+                } else {
+                    const correlation = data.find(
+                        item => (item.Variable_1 === variables[i] && item.Variable_2 === variables[j]) ||
+                            (item.Variable_1 === variables[j] && item.Variable_2 === variables[i])
+                    );
+                    row.push(correlation ? correlation.Correlation : 0);
+                }
+            }
+            matrix.push(row);
+        }
+
+        // Creating color scale
+        const getColor = (value) => {
+            if (value >= 0.7) return 'bg-red-700 text-white';
+            if (value >= 0.5) return 'bg-red-500 text-white';
+            if (value >= 0.3) return 'bg-red-300 text-gray-800';
+            if (value >= 0.1) return 'bg-red-100 text-gray-800';
+            if (value >= -0.1) return 'bg-gray-100 text-gray-800';
+            if (value >= -0.3) return 'bg-blue-100 text-gray-800';
+            if (value >= -0.5) return 'bg-blue-300 text-gray-800';
+            if (value >= -0.7) return 'bg-blue-500 text-white';
+            return 'bg-blue-700 text-white';
+        };
+
+        return (
+            <div className="overflow-x-auto">
+                <table className="w-full bg-white rounded-lg overflow-hidden border-collapse">
+                    <thead>
+                        <tr>
+                            <th className="p-2 border"></th>
+                            {variables.map((variable, idx) => (
+                                <th key={idx} className="p-2 border bg-gray-100 text-sm font-medium transform -rotate-45 origin-bottom-left h-20">
+                                    <div className="ml-2">{variable}</div>
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {matrix.map((row, rowIdx) => (
+                            <tr key={rowIdx}>
+                                <th className="p-2 border bg-gray-100 font-medium text-left">
+                                    {variables[rowIdx]}
+                                </th>
+                                {row.map((value, colIdx) => (
+                                    <td
+                                        key={colIdx}
+                                        className={`p-2 border text-center ${getColor(value)}`}
+                                        title={`${variables[rowIdx]} vs ${variables[colIdx]}: ${value.toFixed(2)}`}
+                                    >
+                                        {value.toFixed(2)}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    };
+>>>>>>> Stashed changes
 };
 export default StatisticalAnalysisTool;
