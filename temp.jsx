@@ -10,7 +10,6 @@ import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import AddIcon from "@mui/icons-material/Add";
 import UpdateIcon from "@mui/icons-material/Update";
-import MultipleFolders from "@mui/icons-material/FolderCopyTwoTone";
 import apiClient from "../../api";
 import "../Dashboard.css";
 import "./projectComponent.css";
@@ -26,7 +25,6 @@ import banner7 from "./banner/banner7.jpg";
 import banner8 from "./banner/banner8.jpg";
 import banner9 from "./banner/banner9.jpg";
 import banner10 from "./banner/banner10.jpg";
-import no_personal_project from "./banner/no_personal_project.png";
 
 const ProjectTab = ({
   getLabel,
@@ -141,7 +139,7 @@ const ProjectTab = ({
       {/* Header Section */}
       <div className="projects-header-section">
         <div className="header-title">
-          <MultipleFolders className="header-icon" />
+          <FolderOpenIcon className="header-icon" />
           <div>
             <h2>{getLabel("My Projects")}</h2>
             <p className="header-subtitle">
@@ -353,9 +351,7 @@ const ProjectTab = ({
         </div>
       ) : (
         <div className="empty-state">
-            <div className="empty-illustration">
-              <img src={no_personal_project} alt="No Collaborated Projects" />
-            </div>
+          <FolderOpenIcon className="empty-icon" />
           <h3>{getLabel("No Projects Found")}</h3>
           <p
             className="empty-create-link"

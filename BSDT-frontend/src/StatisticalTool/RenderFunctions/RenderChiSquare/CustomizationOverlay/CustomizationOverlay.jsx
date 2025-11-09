@@ -135,7 +135,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             )}
 
-                        {(
+                        {(plotType==='Mosaic' || plotType==='Stacked Bar') && (
                             <div className="setting-group">
                                 <label className="setting-label">
                                     {language === 'বাংলা' ? 'প্রদর্শনের জন্য জোড়া' : 'Variable Pair to Display'}

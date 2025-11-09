@@ -579,7 +579,7 @@
 /* ---------- Header ---------- */
 .page-header {
   text-align: center;
-  margin-bottom: 2rem;
+  /* margin-bottom: 0.5rem; */
 }
 
 .page-title {
@@ -607,7 +607,7 @@
   color: #b91c1c;
   padding: 12px 16px;
   border-radius: 6px;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.0rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -622,9 +622,11 @@
 /* ---------- Card Layout ---------- */
 .card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 0px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  min-width: 984px;
+  margin-left: -67px;
 }
 
 .card-header {
@@ -1020,7 +1022,8 @@
 
 /* ---------- Form Section ---------- */
 .form-section {
-  margin-top: 1.25rem;
+  margin-top: -1.0rem;
+  margin-bottom: 5rem;
 }
 
 .form-group {
