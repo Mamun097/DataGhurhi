@@ -586,7 +586,7 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch('https://dataghurhi.cse.buet.ac.bd/api/upload-file/', {
+            fetch('http://103.94.135.115:8001/api/upload-file/', {
                 method: 'POST',
 
                 body: formData,
