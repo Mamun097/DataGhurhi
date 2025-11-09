@@ -91,7 +91,7 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
           <div key={index} className={`message ${msg.sender}`}>
             <div className="message-content">{msg.text}</div>
             {msg.options && (
-              <div className="options-container">
+              <div className="options-container-chatbot">
                 {msg.options.map((opt) => (
                   <button
                     key={opt.id}

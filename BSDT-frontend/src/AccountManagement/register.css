@@ -1,6 +1,7 @@
 /* Container for the whole registration page */
 .register-container {
 /* space for fixed navbar */
+padding-top: 100px;
   background: linear-gradient(135deg, #eaeeec, #c8e6d7);
   min-height: 100vh;
   font-family: 'Poppins', sans-serif;

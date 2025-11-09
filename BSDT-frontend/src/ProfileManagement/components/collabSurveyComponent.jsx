@@ -191,7 +191,7 @@ const CollabSurveyTab = ({
           title={getLabel("View Collaboration Requests")}
         >
           <i className="bi bi-eye me-1"></i>
-          <span className="d-none d-sm-inline text-muted">
+          <span className="d-none d-sm-inline text-white">
             {getLabel("View Request")}
           </span>
         </button>

@@ -32,11 +32,12 @@ const ProjectTab = ({
         )
       )
     ) {
-      apiClient.delete(`/api/project/${projectId}/delete-project`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
+      apiClient
+        .delete(`/api/project/${projectId}/delete-project`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
         .then((response) => {
           if (!response.ok) {
             throw new Error(
@@ -60,18 +61,40 @@ const ProjectTab = ({
 
   return (
     <div>
-      <h3>{getLabel("My Research Projects")}</h3>
+      <h3 className="text-lg font-semibold">
+        {getLabel("My Project Folders")}
+      </h3>
+      {/* <p
+        className="text-center mt-1"
+        style={{
+          color: "#dc2626",
+          fontSize: "1.2rem",
+        }}
+      >
+        <span style={{ fontWeight: 700, color: "#dc2626" }}>* </span>
+        {getLabel(
+          "You must create and manage surveys within your project folders."
+        )}{" "}
+      </p> */}
 
       {/* New Project Section */}
-      <div className="new-project-section">
+      {/* <div className="new-project-section">
         <h4>{getLabel("Create a New Project")}</h4>
         <div className="add-project-card" onClick={handleAddProjectClick}>
           <div className="plus-icon">+</div>
         </div>
       </div>
 
-      <hr className="section-divider" />
+       */}
+  <div className="project-header">
+  <button className="create-project-btn" onClick={handleAddProjectClick}>
+    <i className="bi bi-plus"></i> {/* Bootstrap Plus Icon */}
+    {getLabel("Create Project")}
+  </button>
+</div>
 
+
+<hr className="section-divider" />
       {/* Existing Projects */}
       <h4>{getLabel("Existing Projects")}</h4>
       <div className="project-filter-bar">
@@ -155,7 +178,8 @@ const ProjectTab = ({
                 >
                   <h4>{project.title}</h4>
                   <p>
-                    <strong>{getLabel("Research Field:")}</strong> {project.field}
+                    <strong>{getLabel("Research Field:")}</strong>{" "}
+                    {project.field}
                   </p>
                   <p>
                     <strong>{getLabel("Visibility Setting:")}</strong>{" "}
@@ -163,27 +187,33 @@ const ProjectTab = ({
                   </p>
                   <p>
                     <strong>{getLabel("Created At:")}</strong>{" "}
-                    {new Date(project.created_at + "Z").toLocaleString("en-US", {
-                      timeZone: "Asia/Dhaka",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {new Date(project.created_at + "Z").toLocaleString(
+                      "en-US",
+                      {
+                        timeZone: "Asia/Dhaka",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      }
+                    )}
                   </p>
                   <p>
                     <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(project.last_updated + "Z").toLocaleString("en-US", {
-                      timeZone: "Asia/Dhaka",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {new Date(project.last_updated + "Z").toLocaleString(
+                      "en-US",
+                      {
+                        timeZone: "Asia/Dhaka",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      }
+                    )}
                   </p>
                 </div>
 
@@ -195,14 +225,14 @@ const ProjectTab = ({
                   }}
                   sx={{
                     position: "absolute",
-                    top: { xs: 1, sm: 2 },        
-                    right: { xs: 1, sm: 2 },      
+                    top: { xs: 1, sm: 2 },
+                    right: { xs: 1, sm: 2 },
                     color: "red",
                     backgroundColor: "#fff",
-                    width: { xs: 24, sm: 36 },    
+                    width: { xs: 24, sm: 36 },
                     height: { xs: 24, sm: 36 },
                     "& .MuiSvgIcon-root": {
-                      fontSize: { xs: "1rem", sm: "1.5rem" } 
+                      fontSize: { xs: "1rem", sm: "1.5rem" },
                     },
                     "&:hover": {
                       backgroundColor: "transparent",

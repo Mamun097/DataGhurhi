@@ -1,0 +1,254 @@
+/* === Layout === */
+.profile-layout-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: linear-gradient(360deg, #e0f8e0, #ecf7f3);
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  padding: 2rem;
+  gap: 1.5rem;
+}
+
+.edit-page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #25856f;
+  text-align: center;
+}
+
+/* === Cards === */
+.info-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 1.5rem;
+  align-items: start; /* prevents cards from stretching */
+}
+
+.card.info-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card.info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+/* === Collapsible Header === */
+.collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e8f3e9;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid #cfe5d2;
+  cursor: pointer;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.collapsible-header h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  color: #25856f;
+  font-weight: 600;
+}
+
+/* === Basic Info Section === */
+.basic-info-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  padding: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-pic-section {
+  flex: 0 0 120px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+}
+
+.profile-pic-wrapper-large {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.profile-pic-large {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #d6e5d6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.edit-profile-pic-btn {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: #9fce9b;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  padding: 6px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.edit-profile-pic-btn:hover {
+  background: #275525;
+  transform: scale(1.1);
+}
+
+.basic-info-fields {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+/* === Info Fields === */
+.info-fields {
+  padding: 0.8rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap; /* allows wrapping on small screens */
+}
+
+.info-label {
+  font-weight: 500;
+  color: #235728;
+  min-width: 120px;
+  flex: 1;
+}
+
+.info-value {
+  color: #4a4a4a;
+  flex: 2;
+  word-break: break-word;
+}
+
+.edit-input {
+  flex: 2;
+  padding: 5px 8px;
+  border: 1px solid #cfe5d2;
+  border-radius: 6px;
+  outline: none;
+  transition: border 0.2s ease;
+}
+
+.edit-input:focus {
+  border-color: #367131;
+}
+/* .info-value,
+.edit-input,
+select {
+  flex: 1 1 auto; 
+  min-width: 150px; 
+  word-break: break-word;
+} */
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #5f6368;
+  transition: color 0.2s ease;
+}
+
+.icon-btn:hover {
+  color: #24ae2d;
+}
+
+.edit-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* === Save Button === */
+.save-profile-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+.save-profile-btn {
+  background: #2c8158;
+  color: #fff;
+  border: none;
+  padding: 0.9rem 2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.save-profile-btn:hover {
+  background: #2b5a29;
+  transform: translateY(-1px);
+}
+
+.save-profile-btn.saving {
+  background: #999;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .basic-info-layout {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .basic-info-fields {
+    width: 100%;
+    text-align: left;
+  }
+
+  .profile-pic-section {
+    flex: none;
+    margin-bottom: 1rem;
+  }
+
+  .edit-profile-pic-btn {
+    bottom: 4px;
+    right: 4px;
+    padding: 5px;
+  }
+}
+
+@media (max-width: 480px) {
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .info-label {
+    margin-bottom: 2px;
+  }
+
+  .edit-profile-pic-btn {
+    display: flex;
+    bottom: 4px;
+    right: 4px;
+    border-radius: 50%;
+  }
+}

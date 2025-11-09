@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, use } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../db";
@@ -11,13 +11,31 @@ import "./Dashboard.css";
 import "./PremiumFeatures/PremiumAdBanner.css";
 import "./PremiumFeatures/PremiumPackagesModal.css";
 import "./AdminComponents/AdminDashboard.css";
+import "./AdminComponents/CouponManagement.css";
 import defaultprofile from "./default_dp.png";
 import QB from "../QBmanagement/QuestionBankUser";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import ProjectTab from "./components/projectComponent";
+import StatisticalAnalysisTool from "../StatisticalTool/StatisticalAnalysisTool";
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
+import Collab from "./components/collaboration";
 import apiClient from "../api";
+import {
+  LayoutDashboard,
+  Package,
+  TicketPercent,
+  User,
+  FolderKanban,
+  Users,
+  FileSpreadsheet,
+  Crown,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  ChartColumn
+} from "lucide-react";
+import CouponManagement from "./AdminComponents/CouponManagement";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -60,7 +78,7 @@ const Dashboard = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-//  console.log(localStorage.getItem("user_id"));
+  //  console.log(localStorage.getItem("user_id"));
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
@@ -106,6 +124,12 @@ const Dashboard = () => {
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
   const [availableTokens, setAvailableTokens] = useState(0);
+  const userId= localStorage.getItem("userId");
+
+  useEffect(() => {
+    setUserType(localStorage.getItem("userType"));
+  }, [userId]);
+  
 
   // Admin states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -157,7 +181,7 @@ const Dashboard = () => {
       "Profile Link",
       "Religion",
       "Working Place",
-     "Create a New Project",
+      "Create a New Project",
       "Existing Projects",
       "Filter by: ",
       "All",
@@ -192,8 +216,6 @@ const Dashboard = () => {
       "Survey Creation Growth Rate",
       "This Month",
       "Last Month",
-
- 
       "Fixed Package Management",
       "Add Package",
       "Manage and customize premium packages for your users",
@@ -203,8 +225,6 @@ const Dashboard = () => {
       "Tags",
       "Questions",
       "Surveys",
-
-  
       "Choose Your Premium Package",
       "Unlock Powerful AI Features",
       "AI Survey Generation",
@@ -213,9 +233,9 @@ const Dashboard = () => {
       "Generate relevant questions based on your research goals",
       "Automatic Tagging",
       "Organize questions with intelligent tagging system",
-   
+
       "Most Popular",
-   
+
       "Build Your Custom Package",
       "Select the items you need and choose validity period",
       "Question Tags",
@@ -241,7 +261,7 @@ const Dashboard = () => {
       "AI Survey Template Generation",
       "Smart Question Generation",
       "Automatic Question Tagging",
-  
+
       "Survey",
       "Question",
       "Tag",
@@ -259,7 +279,7 @@ const Dashboard = () => {
       "Price Multiplier",
       "Edit Unit Price",
       "Base Price Per Unit",
-      
+
       "Collaborated Surveys",
     ];
 
@@ -348,25 +368,10 @@ const Dashboard = () => {
     }
   }, []);
 
-  const getProfile = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    try {
-      const response = await apiClient.get("/api/profile", {
-        headers: { Authorization: "Bearer " + token },
-      });
-      console.log("Profile response:", response.data);
-      if (response.status === 200) {
-        setValues(response.data);
-        setProfilePicUrl(response.data.user.image);
-        setEditedValues(response.data.user);
-
-        // Set user type and available tokens
-        const currentUserType = response.data.user.user_type;
-        setUserType(currentUserType);
-        setAvailableTokens(response.data.user.available_token || 0);
-
-        // Check if user is admin
-        if (currentUserType === "admin") {
+  const getuserType = useCallback(async () => {
+    
+         
+        if (userType === "admin") {
           setIsAdmin(true);
           setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
           fetchAdminStats(); // Fetch admin statistics
@@ -375,7 +380,7 @@ const Dashboard = () => {
           setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
 
           // Show ad banner for normal users only once per session
-          if (currentUserType === "normal") {
+          
             // Check if the banner has already been shown in this session
             const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
             const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
@@ -384,19 +389,14 @@ const Dashboard = () => {
               setShowAdBanner(true);
               // Mark banner as shown in this session
               sessionStorage.setItem(bannerShownKey, "true");
-            }
-          }
-        }
-        localStorage.setItem("userId", response.data.user.user_id);
+            }      
       }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+    
   }, [fetchAdminStats]);
 
   useEffect(() => {
-    getProfile();
-  }, [getProfile]);
+    getuserType
+  }, [userId]);
 
   const toggleEdit = () => setIsEditing(!isEditing);
 
@@ -500,9 +500,12 @@ const Dashboard = () => {
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get("/api/collaborator/all-invitations", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(
+        "/api/collaborator/all-invitations",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
         console.log("Collaboration Requests:", response.data.invitations);
@@ -511,141 +514,171 @@ const Dashboard = () => {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
+const [collapsed, setCollapsed] = useState(false);
+const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-  
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Get tabs based on user type
-  const getTabs = () => {
+ const getTabs = () => {
     if (isAdmin) {
       return [
-        { label: "Dashboard", key: "dashboard" },
-        { label: "Customize Packages", key: "customizepackages" },
-        { label: "My Profile", key: "editprofile" },
+        { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
+        { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
+        { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
+        { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
       return [
-        { label: "My Profile", key: "editprofile" },
-        { label: "Projects", key: "projects" },
-        { label: "Collaborated Projects", key: "collaboratedprojects" },
-        { label: "Collaborated Surveys", key: "collaboratedsurveys"},
-        { label: "Question Bank", key: "questionbank" },
-        { label: "Premium Packages", key: "premiumpackages" },
+        // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+        { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
+        { label: "Shared with You", key: "shared", icon: <Users size={18} /> },
+        // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
+        { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
+        {label: "Analysis", key: "analysis", icon: <ChartColumn size={18} />},
+        { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
       ];
     }
   };
-const [showPasswordFields, setShowPasswordFields] = useState(false);
-const [passwordValues, setPasswordValues] = useState({
-  old_password: "",
-  new_password: "",
-});
-const handlePasswordChange = (e) => {
-  setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
-};
 
-const togglePasswordFields = () => {
-  setShowPasswordFields((prev) => !prev);
-};
-const handleSavePassword = async () => {
-  const { old_password, new_password } = passwordValues;
+useEffect(() => {
+  setCollapsed(isMobile);
+}, [isMobile]);
 
-  if (!old_password || !new_password) {
-    alert("Please fill out both the old and new password fields.");
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem("token");
-    // Example POST request to backend API
-    const response = await apiClient.put("/api/profile/update-password", {
-
-      oldPassword: old_password,
-      newPassword: new_password,
-    },
-  {
-    
-      headers: { Authorization: `Bearer ${token}`,
-     
-  },
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
+  const [passwordValues, setPasswordValues] = useState({
+    old_password: "",
+    new_password: "",
   });
+  const handlePasswordChange = (e) => {
+    setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
+  };
 
-    if (response.data.success) {
-      alert("Password updated successfully.");
-      setShowPasswordFields(false);
-      setPasswordValues({ old_password: "", new_password: "" });
-    } else {
-      alert(response.data.message || "Password update failed.");
+  const togglePasswordFields = () => {
+    setShowPasswordFields((prev) => !prev);
+  };
+  const handleSavePassword = async () => {
+    const { old_password, new_password } = passwordValues;
+
+    if (!old_password || !new_password) {
+      alert("Please fill out both the old and new password fields.");
+      return;
     }
-  } catch (error) {
-    console.error("Password change error:", error);
-    alert("An error occurred while changing the password.");
-  }
-};
 
+    try {
+      const token = localStorage.getItem("token");
+      // Example POST request to backend API
+
+      const response = await apiClient.put(
+        "/api/profile/update-password",
+        {
+          oldPassword: old_password,
+          newPassword: new_password,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      if (response.data.success) {
+        alert("Password updated successfully.");
+        setShowPasswordFields(false);
+        setPasswordValues({ old_password: "", new_password: "" });
+      } else {
+        alert(response.data.message || "Password update failed.");
+      }
+    } catch (error) {
+      console.error("Password change error:", error);
+      alert("An error occurred while changing the password.");
+    }
+  };
 
   return (
-    <div>
+   <div style={{ paddingTop: "80px" }}>
       <NavbarAcholder
         language={language}
         setLanguage={setLanguage}
         isAdmin={isAdmin}
         userType={userType}
       />
-      
-      <div
-        className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
-      >
+
+      <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
         <div className="dashboard-layout">
-          <div className="profile-section">
-            <div className="profile-pic-wrapper">
-              <img
-                src={profilePicUrl || defaultprofile}
-                alt="Profile"
-                className="profile-pic"
-              />
-              <input
-                type="file"
-                id="profileUpload"
-                accept="image/*"
-                onChange={(e) => handleImageUpload(e, "profile")}
-                style={{ display: "none" }}
-              />
-              <label htmlFor="profileUpload" className="edit-profile-pic-btn">
-                📷
-              </label>
-            </div>
-            <h2>{values.user?.name || "Loading..."}</h2>
+      <div
+        className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
+          collapsed ? "collapsed" : ""
+        }`}
+      >
+        {!isMobile && (
+          <div className="sidebar-header">
+            {collapsed ? (
+            
+                <button
+                  className="collapse-btn"
+                  onClick={() => setCollapsed(!collapsed)} 
+                  aria-label="Toggle sidebar"
+                >
+                  <Menu size={20} />
+                </button>
+              ) : (
+            
+                <>
+                  <h2 className="sidebar-header">Dashboard</h2>
+                  <button
+                    className="collapse-btn"
+                    onClick={() => setCollapsed(!collapsed)} 
+                    aria-label="Collapse sidebar"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  </>
+                )}
+          
+          </div>
+        )}
 
-            {/* Admin badge */}
-            {isAdmin && (
-              <div className="admin-badge">
-                <span>👑 Administrator</span>
-              </div>
-            )}
+        {/* Admin Badge */}
+        {!collapsed && isAdmin && !isMobile && (
+          <div className="admin-badge">
+            <span>👑 Administrator</span>
+          </div>
+        )}
 
-            <div className="profile-tabs">
-              <ul>
+            <ul className={`sidebar-list ${isMobile ? "horizontal" : ""}`}>
                 {getTabs().map((tab) => (
                   <li key={tab.key}>
-                    <button
-                      className={activeTab === tab.key ? "active" : ""}
-                      onClick={() => {
-                        if (tab.key === "premiumpackages") {
-                          setShowPremiumModal(true);
-                        } else {
-                          const url = new URL(window.location);
-                          url.searchParams.set("tab", tab.key);
-                          window.history.replaceState({}, "", url);
-                          setActiveTab(tab.key);
-                        }
-                      }}
-                    >
-                      {getLabel(tab.label)}
-                    </button>
+                    <div className="tooltip-container">
+                      <button
+                        className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed? "collapsed":""}`}
+                        onClick={() => {
+                          if (tab.key === "premiumpackages") {
+                            setShowPremiumModal(true);
+                          } else {
+                            const url = new URL(window.location);
+                            url.searchParams.set("tab", tab.key);
+                            window.history.replaceState({}, "", url);
+                            setActiveTab(tab.key);
+                          }
+                        }}
+                      >
+                        <span className="icon">{tab.icon}</span>
+                        {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
+                      </button>
+
+                      {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
+                        <span className="tooltip-text">{tab.label}</span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
 
+          </div>
+    
           <div className="projects-section">
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
@@ -658,6 +691,11 @@ const handleSavePassword = async () => {
             {/* Admin Package Customizer */}
             {isAdmin && activeTab === "customizepackages" && (
               <AdminPackageCustomizer getLabel={getLabel} />
+            )}
+
+            {/* Admin Coupon Management */}
+            {isAdmin && activeTab === "managecoupons" && (
+              <CouponManagement getLabel={getLabel} />
             )}
 
             {/* Profile - Common for both admin and normal users */}
@@ -684,9 +722,7 @@ const handleSavePassword = async () => {
                     "Home Address",
                     "Contact No",
                     "Profile Link",
-                    "Religion"
-                    
-              
+                    "Religion",
                   ].map((field, index) => (
                     <div key={index}>
                       <label>{getLabel(field)}:</label>
@@ -696,7 +732,7 @@ const handleSavePassword = async () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -718,7 +754,7 @@ const handleSavePassword = async () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -735,7 +771,6 @@ const handleSavePassword = async () => {
                     </div>
                   ))}
                 </div>
-
                 
                 {isEditing && (
                   <button className="save-btn" onClick={handleSaveChanges}>
@@ -744,14 +779,18 @@ const handleSavePassword = async () => {
                 )}
 
                 <div className="change-password-section">
-                  <button className="change-password-toggle-btn" onClick={togglePasswordFields}>
-                    {showPasswordFields ? getLabel("Cancel Password Change") : getLabel("Change Password")}
+                  <button
+                    className="change-password-toggle-btn"
+                    onClick={togglePasswordFields}
+                  >
+                    {showPasswordFields
+                      ? getLabel("Cancel Password Change")
+                      : getLabel("Change Password")}
                   </button>
 
                   {showPasswordFields && (
                     <div className="password-fields">
                       <div>
-                      
                         <input
                           type="password"
                           name="old_password"
@@ -762,7 +801,6 @@ const handleSavePassword = async () => {
                         />
                       </div>
                       <div>
-                       
                         <input
                           type="password"
                           name="new_password"
@@ -772,13 +810,15 @@ const handleSavePassword = async () => {
                           required
                         />
                       </div>
-                      <button className="save-password-btn" onClick={handleSavePassword}>
+                      <button
+                        className="save-password-btn"
+                        onClick={handleSavePassword}
+                      >
                         {getLabel("Save Password")}
                       </button>
                     </div>
                   )}
                 </div>
-
               </div>
             )}
 
@@ -802,7 +842,7 @@ const handleSavePassword = async () => {
                 setProjects={setProjects}
               />
             )}
-            {!isAdmin && activeTab === "collaboratedprojects" && (
+            {/* {!isAdmin && activeTab === "collaboratedprojects" && (
               <CollabProjectTab
                 getLabel={getLabel}
                 collaboratedProjects={collaboratedProjects}
@@ -813,7 +853,6 @@ const handleSavePassword = async () => {
                 handleAccept={handleAccept}
                 handleReject={handleReject}
                 navigate={navigate}
-                
               />
             )}
             {!isAdmin && activeTab === "collaboratedsurveys" && (
@@ -828,12 +867,32 @@ const handleSavePassword = async () => {
                 //handleReject={handleReject}
                 navigate={navigate}
               />
-            )}
-            {activeTab === "questionbank" && (
+            )} */}
+            {!isAdmin && activeTab === "shared" && (
+              <Collab
+                getLabel={getLabel}
+                collaboratedProjects={collaboratedProjects}
+                showCollabModal={showCollabModal}
+                collabRequests={collabRequests}
+                setShowCollabModal={setShowCollabModal}
+                fetchCollaborationRequests={fetchCollaborationRequests}
+                handleAccept={handleAccept}
+                handleReject={handleReject}
+                navigate={navigate}
+               language={language}
+              />
+              )}
+            {!isAdmin && activeTab === "questionbank" && (
               <div className="question-bank-section">
                 <QB language={language} setLanguage={setLanguage} />
               </div>
             )}
+               {!isAdmin && activeTab === "analysis" && (
+              <div>
+                <StatisticalAnalysisTool />
+              </div>
+            )}
+            
           </div>
         </div>
       </div>

@@ -19,7 +19,6 @@ import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
-
 const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
@@ -132,7 +131,7 @@ const EditProject = () => {
     "Created At",
     "Ended At",
     "Published At",
-    "Generate Survey with LLM"
+    "Generate Survey with LLM",
   ];
 
   const loadTranslations = async () => {
@@ -161,16 +160,11 @@ const EditProject = () => {
     try {
       if (!token && privacyMode === "public") {
         //header will have no token and fetch
-         response = await apiClient.get(
-          `/api/project/${projectId}`
-        );
+        response = await apiClient.get(`/api/project/${projectId}`);
       } else {
-        response = await apiClient.get(
-          `/api/project/${projectId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        response = await apiClient.get(`/api/project/${projectId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       }
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } =
@@ -208,19 +202,16 @@ const EditProject = () => {
     const token = localStorage.getItem("token");
     let response;
     try {
-      if(token){
-      response = await apiClient.get(
-        `/api/project/${projectId}/surveys`,
-        {
+      if (token) {
+        response = await apiClient.get(`/api/project/${projectId}/surveys`, {
           headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-    }
-    if(!token){
-      response=await apiClient.get(
-        `/api/project/${projectId}/public/surveys`
-      );
-    }
+        });
+      }
+      if (!token) {
+        response = await apiClient.get(
+          `/api/project/${projectId}/public/surveys`
+        );
+      }
       if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
       console.error("Error fetching surveys:", error);
@@ -247,7 +238,6 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-
   const handleGenerateSurvey = async (surveyMeta) => {
     setShowSurveyChatbot(false);
     setIsLoading(true);
@@ -268,7 +258,8 @@ const EditProject = () => {
         }
       );
 
-      const survey_id = resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
+      const survey_id =
+        resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
       if (!survey_id) throw new Error("Survey not created");
 
       // 2. calling LLM to generate questions
@@ -297,7 +288,10 @@ const EditProject = () => {
       let questions = resLLM.data;
       if (questions.rawResponse) {
         try {
-          const cleanedRaw = questions.rawResponse.replace(/undefined/g, "null");
+          const cleanedRaw = questions.rawResponse.replace(
+            /undefined/g,
+            "null"
+          );
           const parsed = JSON.parse(cleanedRaw);
           questions = Array.isArray(parsed) ? parsed : [parsed];
         } catch (err) {
@@ -325,7 +319,10 @@ const EditProject = () => {
           questions: questions.map((q, i) => ({
             id: i + 1,
             text: q.question || q.text || "Untitled Question",
-            type: (q.type || "text").toLowerCase() === "mixed" ? "text" : (q.type || "text").toLowerCase(),
+            type:
+              (q.type || "text").toLowerCase() === "mixed"
+                ? "text"
+                : (q.type || "text").toLowerCase(),
 
             required: q.required ?? false,
             section: 1,
@@ -348,7 +345,8 @@ const EditProject = () => {
         }
       );
 
-      if (resSave.status !== 201) throw new Error("Failed to save survey template");
+      if (resSave.status !== 201)
+        throw new Error("Failed to save survey template");
 
       toast.success(getLabel("Survey created successfully!"));
       await fetchSurveys();
@@ -365,20 +363,21 @@ const EditProject = () => {
       }, 3000);
 
       //reducing survey count
-      apiClient.get("/api/reduce-survey-count", {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
-      })
-        .then(response => {
+      apiClient
+        .get("/api/reduce-survey-count", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        })
+        .then((response) => {
           if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
           }
           return response.json();
         })
-        .then(data => {
+        .then((data) => {
           if (data.success) {
             console.log("Survey count reduced successfully:", data);
           } else {
@@ -386,7 +385,7 @@ const EditProject = () => {
             alert(data.message || "Failed to reduce survey count.");
           }
         })
-        .catch(error => {
+        .catch((error) => {
           console.error("Error calling API:", error);
           alert("An error occurred while reducing survey count.");
         });
@@ -429,11 +428,15 @@ const EditProject = () => {
 
           setTimeout(() => {
             navigate(
-              `/view-survey/${response.data.data?.survey_id || response.data.survey_id
+              `/view-survey/${
+                response.data.data?.survey_id || response.data.survey_id
               }`,
               {
-                state: { project_id: projectId, survey_details: response.data, input_title: result.value },
-
+                state: {
+                  project_id: projectId,
+                  survey_details: response.data,
+                  input_title: result.value,
+                },
               }
             );
           }, 3000); // 3 seconds delay
@@ -466,13 +469,18 @@ const EditProject = () => {
       toast.error(getLabel("Failed to delete survey."));
     }
   };
-  const handleSurveyClick = (survey_id, survey, survey_title, response_user_logged_in_status) => {
+  const handleSurveyClick = (
+    survey_id,
+    survey,
+    survey_title,
+    response_user_logged_in_status
+  ) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
         survey_details: survey,
         input_title: survey_title || "Untitled Survey",
-        response_user_logged_in_status: response_user_logged_in_status
+        response_user_logged_in_status: response_user_logged_in_status,
       },
     });
   };
@@ -534,16 +542,15 @@ const EditProject = () => {
     } catch (error) {
       if (error.response && error.response.data) {
         // Handle specific error messages from the server
-        const errorMessage = error.response.data.error || getLabel("Failed to add collaborator.");
+        const errorMessage =
+          error.response.data.error || getLabel("Failed to add collaborator.");
         toast.error(errorMessage);
-      }
-      else {
+      } else {
         console.error("Error adding collaborator:", error);
         toast.error(getLabel("Failed to add collaborator."));
       }
     }
   };
-
 
   // if (loading) return <p>Loading...</p>;
 
@@ -555,7 +562,7 @@ const EditProject = () => {
           {/* Project Details / Collaborator Tabs and Forms */}
 
           <div className="tab-header-container">
-            <h2>{formData.title}</h2>
+            {/* <h2>{formData.title}</h2> */}
             <div className="tabs">
               <button
                 className={activeTab === "details" ? "active-tab" : ""}
@@ -581,13 +588,14 @@ const EditProject = () => {
                 {/* <h2>{getLabel("Project Details")}</h2> */}
 
                 <button
-                  className={`edit-toggle-btn ${!canEdit ? "disabled-btn" : ""}`}
+                  className={`edit-toggle-btn ${
+                    !canEdit ? "disabled-btn" : ""
+                  }`}
                   onClick={() => setIsEditing(!isEditing)}
                   disabled={!canEdit}
                 >
                   {isEditing ? getLabel("Cancel") : getLabel("Edit")}
                 </button>
-
               </div>
               <div className="project-form-2">
                 {isEditing ? (
@@ -658,7 +666,8 @@ const EditProject = () => {
                       {formData.title}
                     </p>
                     <p>
-                      <strong>{getLabel("Research Field")}:</strong> {formData.field}
+                      <strong>{getLabel("Research Field")}:</strong>{" "}
+                      {formData.field}
                     </p>
                     <p>
                       <strong>{getLabel("Description")}:</strong>{" "}
@@ -758,9 +767,14 @@ const EditProject = () => {
             </div>
           </div>
 
-
           {canEdit && (
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "10px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: "10px",
+              }}
+            >
               {/* <button
                   className="btn btn-outline-success"
                   onClick={() => setShowSurveyChatbot(true)}
@@ -838,8 +852,8 @@ const EditProject = () => {
                     .toLowerCase()
                     .includes(
                       "last_updated" ||
-                      sortField.toLowerCase().includes("published_date") ||
-                      sortField.toLowerCase().includes("ending_date")
+                        sortField.toLowerCase().includes("published_date") ||
+                        sortField.toLowerCase().includes("ending_date")
                     );
 
                 if (isDateField) {
@@ -860,13 +874,18 @@ const EditProject = () => {
                   className="survey-card"
                   style={{ cursor: "pointer" }}
                   onClick={() =>
-                    handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
+                    handleSurveyClick(
+                      survey.survey_id,
+                      survey,
+                      survey.title,
+                      survey.response_user_logged_in_status
+                    )
                   }
                 >
                   <img
                     src={
                       survey.template?.backgroundImage ||
-                      "/assets/images/banner.jpg"
+                      "/assets/images/survey_slide.png"
                     }
                     className="survey-banner"
                     alt="Survey"
@@ -874,15 +893,18 @@ const EditProject = () => {
                   <h4>{survey.title}</h4>
                   <p>
                     <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(survey.last_updated + "Z").toLocaleString("en-US", {
-                      timeZone: "Asia/Dhaka",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
+                    {new Date(survey.last_updated + "Z").toLocaleString(
+                      "en-US",
+                      {
+                        timeZone: "Asia/Dhaka",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      }
+                    )}
                   </p>
 
                   <p>
@@ -931,7 +953,6 @@ const EditProject = () => {
                           hour12: true,
                         }
                       )}{" "}
-
                     </p>
                   )}
 
@@ -963,7 +984,13 @@ const EditProject = () => {
                       fontSize="inherit"
                       onClick={
                         canEdit
-                          ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)
+                          ? () =>
+                              handleSurveyClick(
+                                survey.survey_id,
+                                survey,
+                                survey.title,
+                                survey.response_user_logged_in_status
+                              )
                           : undefined
                       }
                       style={{ cursor: canEdit ? "pointer" : "not-allowed" }}

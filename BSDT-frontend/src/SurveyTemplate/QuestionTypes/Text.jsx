@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
@@ -307,9 +307,23 @@ const Text = ({
     handleQuestionChange(response.data.data.translations[0].translatedText);
   }, [handleQuestionChange, question.text]);
 
+  const [showMenu, setShowMenu] = useState(false);
+    const menuRef = useRef(null);
+  
+    // Close on outside click
+    useEffect(() => {
+      const handleClickOutside = (e) => {
+        if (menuRef.current && !menuRef.current.contains(e.target)) {
+          setShowMenu(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
   return (
     <div className="mb-3">
-      <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
+      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
         <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
           <em>
             Question No: {index}
@@ -335,7 +349,7 @@ const Text = ({
           placeholder={getLabel("Enter your question here")}
           onFocus={(e) => e.target.select()}
         />
-      </div>
+      </div> */}
       <div className="mb-2">
         {showCropper && selectedFile && (
           <ImageCropper
@@ -394,13 +408,13 @@ const Text = ({
       {responseType === "short" ? (
         <input
           type="text"
-          className="form-control mb-2"
+          className="survey-form-control mb-2"
           placeholder={getLabel("Short answer text")}
           readOnly
         />
       ) : (
         <textarea
-          className="form-control mb-2"
+          className="survey-form-control mb-2"
           rows="3"
           placeholder={getLabel("Long answer text (paragraph)")}
           readOnly
@@ -409,10 +423,10 @@ const Text = ({
 
       {inputValidation && (
         <div className="border-top pt-3 mt-3">
-          <h6 className="mb-2">{getLabel("Response Validation")}</h6>
+          <h6 className="mb-2" style={{fontSize:"14px"}}>{getLabel("Response Validation")}</h6>
           <div className="d-flex flex-column flex-sm-row align-items-stretch mt-2">
             <select
-              className="form-select mb-2 mb-sm-0 me-sm-2"
+              className="form-select mb-2 mb-sm-0 me-sm-2 " style={{fontSize:"14px"}}
               onChange={handleValidationTypeChange}
               value={validationType}
             >
@@ -423,7 +437,7 @@ const Text = ({
               ))}
             </select>
             <select
-              className="form-select"
+              className="form-select" style={{fontSize:"14px"}}
               onChange={handleConditionChange}
               value={condition}
             >
@@ -438,7 +452,7 @@ const Text = ({
             <div className="d-flex flex-column flex-sm-row align-items-sm-center mt-2">
               <input
                 type="text"
-                className="form-control mb-2 mb-sm-0 me-sm-2"
+                className="survey-form-control mb-2 mb-sm-0 me-sm-2" 
                 placeholder="Value 1"
                 value={min}
                 onChange={(e) => handleMinMaxChange(e.target.value, max)}
@@ -446,7 +460,7 @@ const Text = ({
               <span className="mx-0 mx-sm-1 mb-2 mb-sm-0">&</span>
               <input
                 type="text"
-                className="form-control"
+                className="survey-form-control"
                 placeholder="Value 2"
                 value={max}
                 onChange={(e) => handleMinMaxChange(min, e.target.value)}
@@ -468,7 +482,7 @@ const Text = ({
                       ? "number"
                       : "text"
                   }
-                  className="form-control"
+                  className="survey-form-control"
                   placeholder="Value"
                   value={validationText}
                   onChange={handleValidationTextChange}
@@ -479,7 +493,7 @@ const Text = ({
           <div>
             <input
               type="text"
-              className="form-control mt-2"
+              className="survey-form-control mt-2"
               placeholder={getLabel("Custom Error Message (Optional)")}
               value={errorText}
               onChange={handleErrorTextChange}
@@ -488,7 +502,7 @@ const Text = ({
         </div>
       )}
 
-      <div className="d-flex flex-wrap align-items-center gy-5">
+      {/* <div className="d-flex flex-wrap align-items-center gy-5">
         <button
           className="btn btn-outline-secondary w-auto me-2 mt-3"
           onClick={handleCopy}
@@ -566,7 +580,105 @@ const Text = ({
             </label>
           </div>
         </div>
+      </div> */}
+      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+      {/* Copy */}
+      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
+        <i className="bi bi-copy"></i>
+      </button>
+
+      {/* Delete */}
+      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
+        <i className="bi bi-trash"></i>
+      </button>
+
+      {/* Required */}
+      <div className="form-check form-switch mb-0">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id={`requiredSwitch-${question.id}`}
+          checked={required}
+          onChange={handleRequired}
+        />
+        <label
+          className="form-check-label small"
+          htmlFor={`requiredSwitch-${question.id}`}
+        >
+          {getLabel("Required")}
+        </label>
       </div>
+
+      {/* Three Dots Menu */}
+      <div className="menu-container" ref={menuRef}>
+        <button
+          className="icon-btn"
+          onClick={() => setShowMenu((prev) => !prev)}
+          title="More Options"
+        >
+          <i className="bi bi-three-dots-vertical"></i>
+        </button>
+
+      {showMenu && (
+        <div className="custom-menu">
+          {/* Shuffle Options */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-gear"></i>
+              {getLabel("Response Validation Settings")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                onClick={handleSettings}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+          {/* long answer */}
+          <div className="menu-item">
+            <div className="menu-label">
+              <i className="bi bi-card-text"></i>
+              {getLabel("Long Answer")}
+            </div>
+            <label className="switch-small">
+              <input
+                type="checkbox"
+                id={`responseTypeSwitch-${question.id}`}
+                onChange={handleResponseTypeToggle}
+                checked={responseType === "long"}
+              />
+              <span className="slider-small"></span>
+            </label>
+          </div>
+
+            {/* Add Image */}
+          <label className="menu-item" style={{ cursor: "pointer" }}>
+            <div className="menu-label">
+              <i className="bi bi-image"></i>
+              {getLabel("Add Image")}
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={handleQuestionImageUpload}
+            />
+          </label>
+
+          {/* Translate */}
+          <button className="menu-item" onClick={handleTranslation}>
+            <div className="menu-label">
+              <i className="bi bi-translate"></i>
+              {getLabel("Translate Question")}
+            </div>
+          </button>
+        </div>
+      )}
+
+      </div>
+    </div>
     </div>
   );
 };

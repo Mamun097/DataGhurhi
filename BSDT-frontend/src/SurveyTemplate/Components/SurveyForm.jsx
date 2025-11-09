@@ -7,10 +7,12 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../CSS/SurveyForm.css";
 import CollaborationModal from "../utils/CollaborationModal";
-import { handleImageUpload } from "../utils/handleImageUpload";
 import PublicationSettingsModal from "../utils/publication_modal_settings";
 import ShareSurveyModal from "../utils/ShareSurveyModal";
 import SurveySections from "./SurveySections";
+import SurveyLogo from "./SurveyLogo";
+import SurveyBanner from "./SurveyBanner";
+import SurveyDescription from "./SurveyDescription";
 import apiClient from "../../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -31,6 +33,7 @@ const translateText = async (textArray, targetLang) => {
     return textArray;
   }
 };
+
 const SurveyForm = ({
   title,
   setTitle,
@@ -55,44 +58,24 @@ const SurveyForm = ({
 }) => {
   // State for the logo
   const [logo, setLogo] = useState(logoFromParent);
-  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "left");
+  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "center");
   const [logoText, setLogoText] = useState(logoTextFromParent || "");
 
   // State for the background image
-  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
-    imageFromParent || ""
-  );
-
-  useEffect(() => {
-    setLogo(logoFromParent || null);
-    setLogoAlignment(logoAlignmentFromParent || "left");
-    setLogoText(logoTextFromParent || "");
-    setCurrentBackgroundImage(imageFromParent || "");
-  }, [
-    logoFromParent,
-    logoAlignmentFromParent,
-    logoTextFromParent,
-    imageFromParent,
-  ]);
+  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(imageFromParent || "");
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
-
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
-
-  // State for the description editing
-  const [isEditingDescription, setIsEditingDescription] = useState(false);
-  const [localDescriptionText, setLocalDescriptionText] = useState(
-    description || ""
-  );
 
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
   const [shuffleQuestions, setShuffleQuestions] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
+  const [responseCount, setResponseCount] = useState(null);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -212,15 +195,11 @@ const SurveyForm = ({
   );
 
   const getLabel = (text) => translatedLabels[text] || text;
-  console.log(questions);
+
   useEffect(() => {
     setLogo(logoFromParent || null);
     setCurrentBackgroundImage(imageFromParent || "");
   }, [logoFromParent, imageFromParent]);
-
-  useEffect(() => {
-    setLocalDescriptionText(description || "");
-  }, [description]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -258,6 +237,41 @@ const SurveyForm = ({
     loadTranslations();
   }, [language, labelsToTranslate]);
 
+  useEffect(() => {
+    if (!survey_id) {
+      return;
+    }
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.error("Authentication token not found.");
+      return;
+    }
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+    console.log(API_BASE_URL);
+    const eventSource = new EventSource(
+      `${API_BASE_URL}/api/surveytemplate/stream/${survey_id}?token=${token}`
+    );
+    eventSource.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.count !== undefined) {
+        setResponseCount(data.count);
+      }
+      if (data.error) {
+        console.error("Stream error:", data.error);
+        eventSource.close();
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [survey_id]);
+
   // Function to update the logo and relay it to the parent component
   const updateAndRelayLogo = (newLogo) => {
     setLogo(newLogo);
@@ -288,44 +302,6 @@ const SurveyForm = ({
     setSections([...sections, newSection]);
   };
 
-  // Function to remove the current logo
-  const handleRemoveLogo = () => {
-    updateAndRelayLogo(null);
-    const fileInput = document.getElementById("bannerLogoInput");
-    if (fileInput) {
-      fileInput.value = "";
-    }
-  };
-
-  // Function to remove the current background image
-  const handleRemoveImage = () => {
-    updateAndRelayBackgroundImage("");
-    const fileInput = document.getElementById("bannerImageInput");
-    if (fileInput) {
-      fileInput.value = "";
-    }
-  };
-
-  const handleAddOrEditDescriptionClick = () => {
-    setLocalDescriptionText(description || "");
-    setIsEditingDescription(true);
-  };
-
-  const handleSaveDescription = () => {
-    setDescription(localDescriptionText);
-    setIsEditingDescription(false);
-  };
-
-  const handleCancelEditDescription = () => {
-    setIsEditingDescription(false);
-  };
-
-  const handleDeleteDescription = () => {
-    setDescription(null);
-    setLocalDescriptionText("");
-    setIsEditingDescription(false);
-  };
-
   const handleOpenPublicationModal = (action) => {
     setActionType(action);
     setShowPublicationModal(true);
@@ -340,7 +316,7 @@ const SurveyForm = ({
     setIsLoggedInRequired(isLoggedIn);
     setShuffleQuestions(isShuffled);
     let url;
-    if (actionType === 'publish' || actionType === 'update') {
+    if (actionType === "publish" || actionType === "update") {
       url = "/api/surveytemplate";
     } else {
       console.error("Invalid action type for publication.");
@@ -365,7 +341,6 @@ const SurveyForm = ({
     }
 
     try {
-      let tokenToUse = bearerTokenString;
       try {
         const parsedToken = JSON.parse(bearerTokenString);
         if (parsedToken && typeof parsedToken === "object") {
@@ -481,450 +456,255 @@ const SurveyForm = ({
   const handleUpdate = () => handleOpenPublicationModal("update");
 
   const handleSurveyResponses = () => {
-    // send survey title
     navigate(`/survey-responses/${survey_id}`, {
       state: { title: title },
     });
   };
 
   const handlePreview = async () => {
-    // save all data and navigate to preview
     await handleSave();
-    // After saving, navigate to preview with all necessary data
     navigate("/preview", {
       state: {
-        title: title,
-        sections: sections,
-        questions: questions,
-        logo: logo,
-        logoAlignment: logoAlignment,
-        logoText: logoText,
-        image: currentBackgroundImage,
-        description: description,
-        language: language,
+        slug: surveyLink,
       },
     });
   };
 
   return (
-    <div className="px-2 px-md-3 py-5">
+    <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
       {/* Action Buttons */}
-      <div className="mb-3 p-md-0 button-group-mobile-compact justify-content-start">
-        {surveyStatus === "published" ? (
-          <button
-            onClick={handleUpdate}
-            disabled={isLoading}
-            className="btn btn-outline-primary btn-sm me-2"
-          >
-            {isLoading && actionType === "update" ? (
-              <>
-                <span
-                  className="spinner-border spinner-border-sm me-1"
-                  role="status"
-                  aria-hidden="true"
-                ></span>
-                {getLabel("Updating")}
-              </>
-            ) : (
-              <>
-                <i className="bi bi-pencil"></i> {getLabel("Update")}
-              </>
-            )}
-          </button>
+      {/* <div className="button-group-compact">
+  {surveyStatus === "published" ? (
+    <button
+      onClick={handleUpdate}
+      disabled={isLoading}
+      className="btn-compact"
+    >
+      {isLoading && actionType === "update" ? (
+        <>
+          <span className="spinner"></span>
+          {getLabel("Updating")}
+        </>
+      ) : (
+        <>
+          <i className="bi bi-pencil"></i> {getLabel("Update")}
+        </>
+      )}
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={handleSave}
+        disabled={isLoading}
+        className="btn-compact"
+      >
+        {isLoading ? (
+          <>
+            <span className="spinner"></span>
+            {getLabel("Saving")}
+          </>
         ) : (
           <>
-            <button
-              onClick={handleSave}
-              disabled={isLoading}
-              className="btn btn-outline-secondary btn-sm me-2"
-            >
-              {isLoading ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-1"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  {getLabel("Saving")}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-save"></i> {getLabel("Save")}
-                </>
-              )}
-            </button>
-            <button
-              onClick={handlePublish}
-              disabled={isLoading}
-              className="btn btn-outline-success btn-sm me-2"
-            >
-              {isLoading && actionType === "publish" ? (
-                <>
-                  <span
-                    className="spinner-border spinner-border-sm me-1"
-                    role="status"
-                    aria-hidden="true"
-                  ></span>
-                  {getLabel("Publishing")}
-                </>
-              ) : (
-                <>
-                  <i className="bi bi-check-circle"></i> {getLabel("Publish")}
-                </>
-              )}
-            </button>
+            <i className="bi bi-save"></i> {getLabel("Save")}
           </>
         )}
-        {surveyLink && (
-          <>
-            <button
-              onClick={() => setShowShareModal(true)}
-              className="btn btn-outline-info btn-sm me-2"
-              title="Share survey link"
-            >
-              <i className="bi bi-share"></i> {getLabel("Share Survey")}
-            </button>
-            <button
-              onClick={() => setShowCollaborationModal(true)}
-              className="btn btn-outline-warning btn-sm me-2"
-              title="Manage collaborators"
-            >
-              <i className="bi bi-people"></i> {getLabel("Collaborate")}
-            </button>
+      </button>
 
-            <ShareSurveyModal
-              show={showShareModal}
-              handleClose={() => setShowShareModal(false)}
-              surveyLink={surveyLink}
-              surveyTitle={title}
-            />
-            <button
-              onClick={handleSurveyResponses}
-              className="btn btn-outline-info btn-sm me-2"
-            >
-              <i className="bi bi-bar-chart"></i> {getLabel("View Response")}
-            </button>
-            <button
-              className="btn btn-outline-secondary btn-sm me-2"
-              onClick={() => handlePreview()}
-            >
-              <i className="bi bi-eye"></i> {getLabel("Preview")}
-            </button>
+      <button
+        onClick={handlePublish}
+        disabled={isLoading}
+        className="btn-compact"
+      >
+        {isLoading && actionType === "publish" ? (
+          <>
+            <span className="spinner"></span>
+            {getLabel("Publishing")}
+          </>
+        ) : (
+          <>
+            <i className="bi bi-check-circle"></i> {getLabel("Publish")}
           </>
         )}
-      </div>
+      </button>
+    </>
+  )}
+
+  {surveyLink && (
+    <>
+      <button
+        onClick={() => setShowShareModal(true)}
+        className="btn-compact info"
+        title="Share survey link"
+      >
+        <i className="bi bi-share"></i> {getLabel("Survey Link")}
+      </button>
+
+      <button
+        onClick={() => setShowCollaborationModal(true)}
+        className="btn-compact info"
+        title="Manage collaborators"
+      >
+        <i className="bi bi-people"></i> {getLabel("Collaborate")}
+      </button> */}
+
+      {/* Floating Top Navigation Bar */}
+<div className="floating-top-bar">
+  {surveyStatus === "published" ? (
+    <button
+      onClick={handleUpdate}
+      disabled={isLoading}
+      className="fab-btn"
+    >
+      {isLoading && actionType === "update" ? (
+        <span className="spinner"></span>
+      ) : (
+        <>
+          <i className="bi bi-pencil"></i>
+          <span className="btn-label">{getLabel("Update")}</span>
+        </>
+      )}
+    </button>
+  ) : (
+    <>
+      <button
+        onClick={handleSave}
+        disabled={isLoading}
+        className="fab-btn"
+      >
+        {isLoading ? (
+          <span className="spinner"></span>
+        ) : (
+          <>
+            <i className="bi bi-save"></i>
+            <span className="btn-label">{getLabel("Save")}</span>
+          </>
+        )}
+      </button>
+
+      <button
+        onClick={handlePublish}
+        disabled={isLoading}
+        className="fab-btn"
+      >
+        {isLoading && actionType === "publish" ? (
+          <span className="spinner"></span>
+        ) : (
+          <>
+            <i className="bi bi-check-circle"></i>
+            <span className="btn-label">{getLabel("Publish")}</span>
+          </>
+        )}
+      </button>
+    </>
+  )}
+
+  {surveyLink && (
+    <>
+      <button
+        onClick={() => setShowShareModal(true)}
+        className="fab-btn"
+      >
+        <i className="bi bi-share"></i>
+        <span className="btn-label">{getLabel("Survey Link")}</span>
+      </button>
+
+      <button
+        onClick={() => setShowCollaborationModal(true)}
+        className="fab-btn"
+      >
+        <i className="bi bi-people"></i>
+        <span className="btn-label">{getLabel("Collaborate")}</span>
+      </button>
+
+      <button
+        onClick={handleSurveyResponses}
+        className="fab-btn"
+      >
+        <i className="bi bi-bar-chart"></i>
+        <span className="btn-label">{getLabel("View Response")}</span>
+        {responseCount !== null && (
+          <span className="badge-small">{responseCount}</span>
+        )}
+      </button>
+
+      <button
+        onClick={() => handlePreview()}
+        className="fab-btn"
+      >
+        <i className="bi bi-eye"></i>
+        <span className="btn-label">{getLabel("Preview")}</span>
+      </button>
+
+      <ShareSurveyModal
+        show={showShareModal}
+        handleClose={() => setShowShareModal(false)}
+        surveyLink={surveyLink}
+        surveyTitle={title}
+      />
+  
+ 
+
+
+{/* 
+      <button
+        className="fab-btn"
+        onClick={() => handlePreview()}
+      >
+        <i className="bi bi-eye"></i> {getLabel("Preview")}
+      </button> */}
+    </>
+  )}
+</div>
+
+      <hr className="my-4 custom-hr" />
 
       {/* Survey Logo */}
-      <div
-        style={{
-          backgroundColor: "#f8f9fa",
-          paddingTop: "20px",
-        }}
-        className="shadow border-0 rounded-lg"
-      >
-        <div
-          style={{
-            position: "relative",
-            width: "100%",
-            textAlign:
-              logoAlignment === "left"
-                ? "left"
-                : logoAlignment === "center"
-                ? "center"
-                : "right",
-          }}
-        >
-          {logo ? (
-            <img
-              src={logo}
-              alt={getLabel("Survey Logo") || "Survey Logo"}
-              className="img-fluid"
-              style={{
-                maxHeight: "200px",
-                objectFit: "cover",
-                display: "inline-block",
-              }}
-            />
-          ) : (
-            <div
-              className="d-flex align-items-center justify-content-center"
-              style={{
-                width: "100%",
-                minHeight: "400px",
-                backgroundColor: "#e9ecef",
-                border: "2px dashed #ced4da",
-                color: "#6c757d",
-              }}
-            >
-              <span className="text-muted">{getLabel("No Logo Uploaded")}</span>
-            </div>
-          )}
-        </div>
+      <SurveyLogo
+        logo={logo}
+        setLogo={setLogo}
+        logoAlignment={logoAlignment}
+        setLogoAlignment={setLogoAlignment}
+        logoText={logoText}
+        setLogoText={setLogoText}
+        getLabel={getLabel}
+        setLogoInParent={setLogo}
+      />
 
-        {/* Logo Controls */}
-        <div className="mt-3 d-flex flex-column align-items-center">
-          {/* Upload & Remove Buttons */}
-          <div className="mt-3 button-group-mobile-compact justify-content-center">
-            <label className="btn btn-outline-secondary btn-sm me-1">
-              <i className="bi bi-image me-2"></i> {getLabel("Upload Logo")}
-              <input
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => {
-                  handleImageUpload(e, updateAndRelayLogo);
-                }}
-                id="bannerLogoInput"
-              />
-            </label>
-            {logo && (
-              <button
-                className="btn btn-outline-danger btn-sm me-1"
-                onClick={handleRemoveLogo}
-                title={getLabel("Remove current Logo")}
-              >
-                <i className="bi bi-trash"></i> {getLabel("Remove Logo")}
-              </button>
-            )}
-          </div>
-
-          {/* Alignment Buttons */}
-          {logo && (
-            <div className="mt-2 button-group-mobile-compact justify-content-center">
-              {["left", "center", "right"].map((align) => (
-                <button
-                  key={align}
-                  className={`btn btn-sm me-1 ${
-                    logoAlignment === align
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                  }`}
-                  onClick={() => handleLogoAlignmentChange(align)}
-                >
-                  {align.charAt(0).toUpperCase() + align.slice(1)}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Logo Text Input */}
-          {logo && (logoAlignment === "left" || logoAlignment === "right") && (
-            <div className="mt-3 w-100">
-              <textarea
-                rows="4"
-                className="form-control text-center shadow-sm"
-                placeholder={getLabel(
-                  "Enter Logo Text - aligned left or right automatically"
-                )}
-                value={logoText}
-                onChange={(e) => setLogoText(e.target.value)}
-                style={{
-                  color: "#333",
-                  fontWeight: "bold",
-                  borderRadius: "8px",
-                  border: "2px solid #e9ecef",
-                  padding: "12px 16px",
-                }}
-              />
-            </div>
-          )}
-
-          {logo && logoAlignment === "center" && (
-            <div className="mt-3 w-100">
-              <input
-                type="text"
-                className="form-control text-center"
-                placeholder={getLabel(
-                  "Enter Logo Text - aligned below automatically"
-                )}
-                value={logoText}
-                onChange={(e) => setLogoText(e.target.value)}
-                style={{
-                  color: "#333",
-                  fontWeight: "bold",
-                  borderRadius: "4px",
-                }}
-              />
-            </div>
-          )}
-        </div>
-      </div>
+      {(logo || currentBackgroundImage) && <hr className="my-4 custom-hr" />}
 
       {/* Survey Banner */}
-      <div
-        style={{ backgroundColor: "white", paddingBottom: "20px" }}
-        className="shadow-sm rounded mt-4"
-      >
-        <div style={{ position: "relative", width: "100%" }}>
-          {currentBackgroundImage ? (
-            <img
-              src={currentBackgroundImage}
-              alt={getLabel("Survey Banner") || "Survey Banner"}
-              className="img-fluid"
-              style={{
-                width: "100%",
-                height: "auto",
-                maxHeight: "400px",
-                objectFit: "cover",
-              }}
-            />
-          ) : (
-            <div
-              className="img-fluid d-flex align-items-center justify-content-center"
-              style={{
-                width: "100%",
-                height: "auto",
-                minHeight: "400px",
-                backgroundColor: "#e9ecef",
-                border: "2px dashed #ced4da",
-                color: "#6c757d",
-              }}
-            >
-              {/* <span>{getLabel("No banner image selected")}</span> */}
-            </div>
-          )}
-          {/* <input
-            type="text"
-            className="form-control text-center survey-title-overlay"
-            placeholder={getLabel("Enter Survey Title")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              color: "white",
-              fontWeight: "bold",
-              background: "rgba(0, 0, 0, 0.6)",
-              border: "none",
-              borderRadius: "4px",
-            }}
-          /> */}
-        </div>
+      <SurveyBanner
+        currentBackgroundImage={currentBackgroundImage}
+        setCurrentBackgroundImage={setCurrentBackgroundImage}
+        getLabel={getLabel}
+        setImageInParent={setCurrentBackgroundImage}
+      />
 
-        {/* Banner and Description Controls */}
-        <div className="mt-3 button-group-mobile-compact justify-content-center">
-          <label className="btn btn-outline-secondary btn-sm me-1">
-            <i className="bi bi-image me-2"></i>{" "}
-            {getLabel("Upload Banner Image")}
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                handleImageUpload(e, updateAndRelayBackgroundImage);
-              }}
-              id="bannerImageInput"
-            />
-          </label>
-          {currentBackgroundImage && (
-            <button
-              className="btn btn-outline-danger btn-sm me-1"
-              onClick={handleRemoveImage}
-              title={getLabel("Remove current banner image")}
-            >
-              <i className="bi bi-trash"></i> {getLabel("Remove Banner")}
-            </button>
-          )}
-        </div>
+      {currentBackgroundImage && <hr className="my-4 custom-hr" />}
+
+      {/* Survey Title Input */}
+      <div className="mt-4 mb-3">
+        <input
+          type="text"
+          className="form-control text-center border-black"
+          placeholder={getLabel("Enter Survey Title")}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          onFocus={(e) => e.target.select()}
+          style={{
+            color: "#333",
+            fontWeight: "bold",
+            borderRadius: "4px",
+          }}
+        />
       </div>
 
-      {/* Title Input */}
-      <div className="mt-4 text-center shadow border-0 rounded-lg">
-        <div className="mb-3">
-          <input
-            type="text"
-            className="form-control text-center"
-            placeholder={getLabel("Enter Survey Title")}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onFocus={(e) => e.target.select()}
-            style={{
-              color: "#333",
-              fontWeight: "bold",
-              borderRadius: "4px",
-            }}
-          />
-        </div>
-
-        {!description && !isEditingDescription && (
-          <button
-            className="btn btn-outline-info btn-sm"
-            onClick={handleAddOrEditDescriptionClick}
-          >
-            <i className="bi bi-plus-circle me-2"></i>{" "}
-            {getLabel("Add Description")}
-          </button>
-        )}
-      </div>
-
-      <div
-        style={{ backgroundColor: "#f8f9fa" }}
-        className="shadow border-0 rounded-lg"
-      >
-        {isEditingDescription ? (
-          <div className="card p-3 shadow-sm">
-            <h5 className="card-title">
-              {description
-                ? getLabel("Edit Description")
-                : getLabel("Add New Description")}
-            </h5>
-            <textarea
-              className="form-control"
-              rows="4"
-              value={localDescriptionText}
-              onChange={(e) => setLocalDescriptionText(e.target.value)}
-              onFocus={(e) => e.target.select()}
-              placeholder={getLabel("Enter your survey description here")}
-            />
-            <div className="text-end mt-3">
-              <button
-                className="btn btn-secondary btn-sm me-2"
-                onClick={handleCancelEditDescription}
-              >
-                {getLabel("Cancel")}
-              </button>
-              <button
-                className="btn btn-primary btn-sm"
-                onClick={handleSaveDescription}
-              >
-                <i className="bi bi-save me-1"></i>{" "}
-                {getLabel("Save Description")}
-              </button>
-            </div>
-          </div>
-        ) : (
-          description && (
-            <div className="card p-3 shadow-sm">
-              <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-start">
-                <div className="mb-2 mb-md-0">
-                  <h5 className="card-title">
-                    {getLabel("Survey Description")}
-                  </h5>
-                  <p className="card-text" style={{ whiteSpace: "pre-wrap" }}>
-                    {description}
-                  </p>
-                </div>
-                <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center mt-2 mt-md-0">
-                  <button
-                    className="btn btn-sm btn-outline-primary mb-2 mb-sm-0 me-sm-2"
-                    onClick={handleAddOrEditDescriptionClick}
-                  >
-                    <i className="bi bi-pencil"></i> {getLabel("Edit")}
-                  </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={handleDeleteDescription}
-                  >
-                    <i className="bi bi-trash"></i> {getLabel("Delete")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )
-        )}
-      </div>
+      {/* Survey Description */}
+      <SurveyDescription
+        description={description}
+        setDescription={setDescription}
+        getLabel={getLabel}
+      />
 
       <div className="mt-4">
         {sections.map((section, index) => (
@@ -940,12 +720,14 @@ const SurveyForm = ({
             getLabel={getLabel}
           />
         ))}
+        <div className="text-center my-4">
         <button
-          className="btn btn-outline-primary mt-3 d-block mx-auto"
+          className="add-sec-btn"
           onClick={handleAddSection}
         >
           ➕ {getLabel("Add Section")}
         </button>
+        </div>
       </div>
 
       {/* Render the modal */}
