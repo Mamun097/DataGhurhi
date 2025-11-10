@@ -2,20 +2,32 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
 import IconButton from "@mui/material/IconButton";
-import axios from "axios";
-import { useEffect, useState } from "react";
-import { FaLock } from "react-icons/fa";
-import { MdPublic } from "react-icons/md";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { ToastContainer, toast } from "react-toastify";
+import GroupIcon from "@mui/icons-material/Group";
+import LockIcon from "@mui/icons-material/Lock";
+import PublicIcon from "@mui/icons-material/Public";
+import SearchIcon from "@mui/icons-material/Search";
+import GridViewIcon from "@mui/icons-material/GridView";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import PendingIcon from "@mui/icons-material/Pending";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
+import AddIcon from "@mui/icons-material/Add";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Swal from "sweetalert2";
+import axios from "axios";
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
-import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
 import AutoSurveyGeneration from "./AutoSurveyGeneration";
-import "./createProject.css";
-import "./editProject.css";
-import apiClient from "../api";
+import "./EditProject.css";
+
+// Import your API client - adjust the path based on your project structure
+const apiClient = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
+});
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -39,6 +51,27 @@ const translateText = async (textArray, targetLang) => {
 const EditProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [activeCollabModal, setActiveCollabModal] = useState(false);
+  const [viewMode, setViewMode] = useState("grid");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortField, setSortField] = useState("title");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [loading, setLoading] = useState(true);
+  const [collabEmail, setCollabEmail] = useState("");
+  const [accessControl, setAccessControl] = useState("viewer");
+
+  const userRroleProject = location.state?.role || " ";
+  const privacyMode = useParams().privacy || "public";
+  const canEdit = userRroleProject === "owner" || userRroleProject === "editor";
+
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "English"
+  );
+  const [translatedLabels, setTranslatedLabels] = useState({});
 
   const [formData, setFormData] = useState({
     title: "",
@@ -46,31 +79,9 @@ const EditProject = () => {
     description: "",
     privacy_mode: "",
   });
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [collabEmail, setCollabEmail] = useState("");
-  const [accessControl, setAccessControl] = useState("view");
-  const [activeTab, setActiveTab] = useState("details");
+
   const [collaborators, setCollaborators] = useState([]);
   const [surveys, setSurveys] = useState([]);
-  const [filterStatus, setFilterStatus] = useState("all");
-
-  const [showSurveyChatbot, setShowSurveyChatbot] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingPhase, setLoadingPhase] = useState("initial");
-
-  const [sortOrder, setSortOrder] = useState("asc");
-  const [sortField, setSortField] = useState("title");
-  const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "English"
-  );
-  const location = useLocation();
-  const userRroleProject = location.state?.role || " ";
-  const privacyMode = useParams().privacy || "public";
-  console.log("User Role in Project:", userRroleProject);
-  const canEdit = userRroleProject === "owner" || userRroleProject === "editor";
-  const [translatedLabels, setTranslatedLabels] = useState({});
 
   const labelsToTranslate = [
     "Project Details",
@@ -132,6 +143,24 @@ const EditProject = () => {
     "Ended At",
     "Published At",
     "Generate Survey with LLM",
+    "Edit Project",
+    "Project Surveys",
+    "Create Survey",
+    "Generate with AI",
+    "Search surveys...",
+    "Status:",
+    "Sort:",
+    "Updated",
+    "Created",
+    "No Surveys Found",
+    "Create your first survey to get started",
+    "Project Collaborators",
+    "Enter email address",
+    "Viewer",
+    "Editor",
+    "Accepted",
+    "Pending",
+    "Draft",
   ];
 
   const loadTranslations = async () => {
@@ -154,12 +183,12 @@ const EditProject = () => {
   const getLabel = (text) =>
     language === "English" ? text : translatedLabels[text] || text;
 
+  // Fetch project details
   const fetchProject = async () => {
     const token = localStorage.getItem("token");
     let response;
     try {
       if (!token && privacyMode === "public") {
-        //header will have no token and fetch
         response = await apiClient.get(`/api/project/${projectId}`);
       } else {
         response = await apiClient.get(`/api/project/${projectId}`, {
@@ -177,27 +206,8 @@ const EditProject = () => {
       setLoading(false);
     }
   };
-  // const handleDeleteSurvey = async (surveyId) => {
-  //   const token = localStorage.getItem("token");
-  //   try {
-  //     const response = await axios.delete(
-  //       `http://localhost:2000/api/surveytemplate/${surveyId}`,
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-  //     if (response.status === 200) {
-  //       toast.success(getLabel("Survey deleted successfully!"));
-  //       fetchSurveys();
-  //       // reload
-  //       setTimeout(() => window.location.reload(), 2000);
-  //     } else {
-  //       console.error("Error deleting survey:", response.statusText);
-  //       toast.error(getLabel("Failed to delete survey."));
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting survey:", error);
-  //     toast.error(getLabel("Failed to delete survey."));
-  //   }
-  // };
+
+  // Fetch surveys
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     let response;
@@ -206,8 +216,7 @@ const EditProject = () => {
         response = await apiClient.get(`/api/project/${projectId}/surveys`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-      }
-      if (!token) {
+      } else {
         response = await apiClient.get(
           `/api/project/${projectId}/public/surveys`
         );
@@ -218,6 +227,7 @@ const EditProject = () => {
     }
   };
 
+  // Fetch collaborators
   const fetchCollaborators = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -238,162 +248,22 @@ const EditProject = () => {
     fetchSurveys();
   }, [projectId]);
 
-  const handleGenerateSurvey = async (surveyMeta) => {
-    setShowSurveyChatbot(false);
-    setIsLoading(true);
-    setLoadingPhase("initial");
-
-    const token = localStorage.getItem("token");
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      // 1. creating a new survey
-      const resSurvey = await apiClient.post(
-        `/api/project/${projectId}/create-survey`,
-        { title: surveyMeta.topic || "Untitled Survey" },
+      await apiClient.put(
+        `/api/project/${projectId}/update-project`,
+        formData,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
         }
       );
 
-      const survey_id =
-        resSurvey.data?.survey_id || resSurvey.data?.data?.survey_id;
-      if (!survey_id) throw new Error("Survey not created");
-
-      // 2. calling LLM to generate questions
-      const resLLM = await apiClient.post(
-        `/api/generate-multiple-questions-with-llm`,
-        {
-          questionData: {
-            type: surveyMeta.questionTypes,
-            metadata: {
-              numQuestions: surveyMeta.numQuestions,
-              audience: surveyMeta.audience,
-            },
-            additionalInfo: surveyMeta.topic,
-          },
-          questionInfo: { survey_id },
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // 3. parsing questions from rawResponse
-      let questions = resLLM.data;
-      if (questions.rawResponse) {
-        try {
-          const cleanedRaw = questions.rawResponse.replace(
-            /undefined/g,
-            "null"
-          );
-          const parsed = JSON.parse(cleanedRaw);
-          questions = Array.isArray(parsed) ? parsed : [parsed];
-        } catch (err) {
-          console.error("Failed to parse cleaned LLM response:", err.message);
-          throw new Error("Invalid LLM response format");
-        }
-      } else {
-        questions = Array.isArray(questions) ? questions : [questions];
-      }
-
-      console.log("LLM Questions:", questions);
-
-      // 4. preparing survey_template object
-      const surveyTemplatePayload = {
-        survey_id: survey_id,
-        project_id: Number(projectId),
-        title: surveyMeta.topic,
-        user_id: null,
-        survey_template: {
-          title: surveyMeta.topic,
-          description: null,
-          backgroundImage:
-            "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.pixelstalk.net%2Fwp-content%2Fuploads%2F2016%2F10%2FBlank-Wallpaper-HD.jpg&f=1&nofb=1",
-          sections: [{ id: 1, title: "Section 1" }],
-          questions: questions.map((q, i) => ({
-            id: i + 1,
-            text: q.question || q.text || "Untitled Question",
-            type:
-              (q.type || "text").toLowerCase() === "mixed"
-                ? "text"
-                : (q.type || "text").toLowerCase(),
-
-            required: q.required ?? false,
-            section: 1,
-            meta: {
-              options: q.options || q.meta?.options || [],
-            },
-          })),
-        },
-      };
-
-      // 5. saving the generated survey template
-      const resSave = await apiClient.put(
-        `/api/surveytemplate/save`,
-        surveyTemplatePayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (resSave.status !== 201)
-        throw new Error("Failed to save survey template");
-
-      toast.success(getLabel("Survey created successfully!"));
-      await fetchSurveys();
-
-      // 6. redirecting to the survey
-      setTimeout(() => {
-        navigate(`/view-survey/${survey_id}`, {
-          state: {
-            project_id: projectId,
-            input_title: surveyMeta.topic,
-            survey_details: resSave.data.data,
-          },
-        });
-      }, 3000);
-
-      //reducing survey count
-      apiClient
-        .get("/api/reduce-survey-count", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-          }
-          return response.json();
-        })
-        .then((data) => {
-          if (data.success) {
-            console.log("Survey count reduced successfully:", data);
-          } else {
-            console.error("Failed to reduce survey count:", data.message);
-            alert(data.message || "Failed to reduce survey count.");
-          }
-        })
-        .catch((error) => {
-          console.error("Error calling API:", error);
-          alert("An error occurred while reducing survey count.");
-        });
+      toast.success(getLabel("Project updated successfully!"));
+      setIsEditing(false);
     } catch (error) {
-      console.error("Survey creation error:", error);
-      toast.error(getLabel("Failed to generate survey."));
-    } finally {
-      setIsLoading(false);
+      console.error("Error updating project:", error);
+      toast.error(getLabel("Failed to update project."));
     }
   };
 
@@ -439,7 +309,7 @@ const EditProject = () => {
                 },
               }
             );
-          }, 3000); // 3 seconds delay
+          }, 3000);
         }
       } catch (error) {
         console.error("Error creating survey:", error);
@@ -458,8 +328,6 @@ const EditProject = () => {
       if (response.status === 200) {
         toast.success(getLabel("Survey deleted successfully!"));
         fetchSurveys();
-        // reload
-        // setTimeout(() => window.location.reload(), 4000);
       } else {
         console.error("Error deleting survey:", response.statusText);
         toast.error(getLabel("Failed to delete survey."));
@@ -469,6 +337,7 @@ const EditProject = () => {
       toast.error(getLabel("Failed to delete survey."));
     }
   };
+
   const handleSurveyClick = (
     survey_id,
     survey,
@@ -485,29 +354,6 @@ const EditProject = () => {
     });
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await apiClient.put(
-        `/api/project/${projectId}/update-project`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-
-      toast.success(getLabel("Project updated successfully!"));
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Error updating project:", error);
-      toast.error(getLabel("Failed to update project."));
-    }
-  };
   const handleAddCollaborator = async () => {
     if (!collabEmail) {
       toast.error(getLabel("Email is required!"));
@@ -520,7 +366,7 @@ const EditProject = () => {
         {
           email: collabEmail,
           access_role: accessControl,
-          invitation: "pending", // Assuming you want to set the initial invitation status
+          invitation: "pending",
         },
         {
           headers: {
@@ -532,16 +378,11 @@ const EditProject = () => {
       if (response.status === 200) {
         toast.success(getLabel("Collaborator added successfully!"));
         setCollabEmail("");
-        setAccessControl("view");
-        setShowModal(false);
+        setAccessControl("viewer");
         await fetchCollaborators();
-      } else {
-        console.error("Error adding collaborator:", error);
-        toast.error(getLabel("Failed to add collaborator."));
       }
     } catch (error) {
       if (error.response && error.response.data) {
-        // Handle specific error messages from the server
         const errorMessage =
           error.response.data.error || getLabel("Failed to add collaborator.");
         toast.error(errorMessage);
@@ -552,492 +393,478 @@ const EditProject = () => {
     }
   };
 
-  // if (loading) return <p>Loading...</p>;
+  const formatDate = (dateString) => {
+    return new Date(dateString + "Z").toLocaleString("en-US", {
+      timeZone: "Asia/Dhaka",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const filteredAndSortedSurveys = surveys
+    .filter((survey) => {
+      const matchesStatus = filterStatus === "all" || survey.survey_status === filterStatus;
+      const matchesSearch = survey.title.toLowerCase().includes(searchTerm.toLowerCase());
+      return matchesStatus && matchesSearch;
+    })
+    .sort((a, b) => {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      const isDateField = sortField.includes("updated") || sortField.includes("created");
+      
+      if (isDateField) {
+        const aTime = new Date(aVal).getTime();
+        const bTime = new Date(bVal).getTime();
+        return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
+      } else {
+        const aStr = (aVal || "").toString().toLowerCase();
+        const bStr = (bVal || "").toString().toLowerCase();
+        return sortOrder === "asc" ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+      }
+    });
+
+  if (loading) {
+    return (
+      <div className="edit-project-modern-container">
+        <div className="loading-state">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="edit-project-grid">
-        <div className="edit-left">
-          {/* Project Details / Collaborator Tabs and Forms */}
-
-          <div className="tab-header-container">
-            {/* <h2>{formData.title}</h2> */}
-            <div className="tabs">
-              <button
-                className={activeTab === "details" ? "active-tab" : ""}
-                onClick={() => setActiveTab("details")}
-              >
-                {getLabel("Project Details")}
-              </button>
-              <button
-                className={activeTab === "collaborators" ? "active-tab" : ""}
-                onClick={async () => {
-                  setActiveTab("collaborators");
-                  await fetchCollaborators();
-                }}
-              >
-                {getLabel("Collaborators")}
-              </button>
-            </div>
-          </div>
-
-          {activeTab === "details" ? (
-            <div className="project-form">
-              <div className="header-with-button">
-                {/* <h2>{getLabel("Project Details")}</h2> */}
-
-                <button
-                  className={`edit-toggle-btn ${
-                    !canEdit ? "disabled-btn" : ""
-                  }`}
-                  onClick={() => setIsEditing(!isEditing)}
-                  disabled={!canEdit}
-                >
-                  {isEditing ? getLabel("Cancel") : getLabel("Edit")}
-                </button>
+      <div className="edit-project-modern-container">
+        {/* Project Header Section */}
+        <div className="project-header-modern">
+          <div className="project-header-content">
+            <div className="project-header-left">
+              <div className="project-icon-large">
+                {formData.privacy_mode === "private" ? <LockIcon /> : <PublicIcon />}
               </div>
-              <div className="project-form-2">
-                {isEditing ? (
-                  <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                      <label>{getLabel("Project Name")}</label>
-                      <input
-                        type="text"
-                        name="title"
-                        value={formData.title}
-                        onChange={handleChange}
-                        required
-                      />
+              <div className="project-header-info">
+                {!isEditing ? (
+                  <>
+                    <h1 className="project-title-large">{formData.title}</h1>
+                    <div className="project-meta-chips">
+                      <span className="field-chip">{formData.field}</span>
+                      <span className="privacy-chip">
+                        {formData.privacy_mode === "private" ? (
+                          <><LockIcon fontSize="small" /> {getLabel("Private")}</>
+                        ) : (
+                          <><PublicIcon fontSize="small" /> {getLabel("Public")}</>
+                        )}
+                      </span>
                     </div>
-                    <div className="form-group">
-                      <label>{getLabel("Field")}</label>
-                      <input
-                        type="text"
-                        name="field"
-                        value={formData.field}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>{getLabel("Description")}</label>
-                      <textarea
-                        name="description"
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div className="visibility-section">
-                      <label>{getLabel("Visibility")}</label>
-                      <div className="visibility-options">
-                        <label className="visibility-option">
-                          <input
-                            type="radio"
-                            name="privacy_mode"
-                            value="public"
-                            checked={formData.privacy_mode === "public"}
-                            onChange={handleChange}
-                          />
-                          <MdPublic className="visibility-icon" />{" "}
-                          {getLabel("Public")}
-                        </label>
-                        <label className="visibility-option">
-                          <input
-                            type="radio"
-                            name="privacy_mode"
-                            value="private"
-                            checked={formData.privacy_mode === "private"}
-                            onChange={handleChange}
-                          />
-                          <FaLock className="visibility-icon" />{" "}
-                          {getLabel("Private")}
-                        </label>
-                      </div>
-                    </div>
-                    <button type="submit" className="submit-btn">
-                      {getLabel("Save Changes")}
-                    </button>
-                  </form>
+                    {formData.description && (
+                      <p className="project-description-large">{formData.description}</p>
+                    )}
+                  </>
                 ) : (
-                  <div className="view-project">
-                    <p>
-                      <strong>{getLabel("Project Name")}:</strong>{" "}
-                      {formData.title}
-                    </p>
-                    <p>
-                      <strong>{getLabel("Research Field")}:</strong>{" "}
-                      {formData.field}
-                    </p>
-                    <p>
-                      <strong>{getLabel("Description")}:</strong>{" "}
-                      {formData.description || <i>(none)</i>}
-                    </p>
-                    <p>
-                      <strong>{getLabel("Visibility")}:</strong>{" "}
-                      {formData.privacy_mode}
-                    </p>
-                  </div>
+                  <form onSubmit={handleSubmit} className="project-edit-form">
+                    <input
+                      type="text"
+                      className="edit-input-title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({...formData, title: e.target.value})}
+                      placeholder={getLabel("Project Name")}
+                      required
+                    />
+                    <input
+                      type="text"
+                      className="edit-input-field"
+                      value={formData.field}
+                      onChange={(e) => setFormData({...formData, field: e.target.value})}
+                      placeholder={getLabel("Research Field")}
+                      required
+                    />
+                    <textarea
+                      className="edit-textarea-desc"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      placeholder={getLabel("Description")}
+                      rows="3"
+                    />
+                    <div className="edit-privacy-options">
+                      <label className="privacy-radio-label">
+                        <input
+                          type="radio"
+                          name="privacy_mode"
+                          value="public"
+                          checked={formData.privacy_mode === "public"}
+                          onChange={(e) => setFormData({...formData, privacy_mode: e.target.value})}
+                        />
+                        <PublicIcon fontSize="small" />
+                        <span>{getLabel("Public")}</span>
+                      </label>
+                      <label className="privacy-radio-label">
+                        <input
+                          type="radio"
+                          name="privacy_mode"
+                          value="private"
+                          checked={formData.privacy_mode === "private"}
+                          onChange={(e) => setFormData({...formData, privacy_mode: e.target.value})}
+                        />
+                        <LockIcon fontSize="small" />
+                        <span>{getLabel("Private")}</span>
+                      </label>
+                    </div>
+                  </form>
                 )}
               </div>
             </div>
-          ) : (
-            <div className="collaborator-list">
-              <button
-                className={`add-collab-btn ${!canEdit ? "disabled-btn" : ""}`}
-                onClick={() => canEdit && setShowModal(true)}
-                disabled={!canEdit}
-              >
-                {getLabel("Add Collaborator")}
-              </button>
-              <table className="collab-table">
-                <thead>
-                  <tr>
-                    <th>{getLabel("Collaborator Name")}</th>
-                    <th>{getLabel("Email")}</th>
-                    <th>{getLabel("Access Role")}</th>
-                    <th>{getLabel("Invitation Status")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {collaborators.length === 0 ? (
-                    <tr>
-                      <td colSpan="4">
-                        {getLabel("No collaborators added yet.")}
-                      </td>
-                    </tr>
-                  ) : (
-                    collaborators.map((collab, index) => (
-                      <tr key={index}>
-                        <td>{collab.user.name}</td>
-                        <td>{collab.user.email}</td>
-                        <td>{collab.access_role}</td>
-                        <td>{collab.invitation}</td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-              {showModal && canEdit && (
-                <div className="modal-overlay">
-                  <div className="modal-content">
-                    <h3>{getLabel("Add Collaborator")}</h3>
-                    <label>{getLabel("Email")}</label>
-                    <input
-                      type="email"
-                      value={collabEmail}
-                      onChange={(e) => setCollabEmail(e.target.value)}
-                      required
-                    />
-                    <label>{getLabel("Access Control")}</label>
-                    <select
-                      value={accessControl}
-                      onChange={(e) => setAccessControl(e.target.value)}
-                    >
-                      <option value="viewer">{getLabel("View Only")}</option>
-                      <option value="editor">{getLabel("Can Edit")}</option>
-                    </select>
-                    <div className="modal-buttons">
-                      <button onClick={handleAddCollaborator}>
-                        {getLabel("Add")}
-                      </button>
-                      <button onClick={() => setShowModal(false)}>
-                        {getLabel("Cancel")}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            
+            <div className="project-header-actions">
+              {!isEditing ? (
+                <>
+                  <button 
+                    className={`btn-action-modern ${!canEdit ? 'disabled' : ''}`}
+                    onClick={() => {
+                      if (canEdit) {
+                        fetchCollaborators();
+                        setActiveCollabModal(true);
+                      }
+                    }}
+                    disabled={!canEdit}
+                  >
+                    <GroupIcon fontSize="small" />
+                    <span>{getLabel("Collaborators")} ({collaborators.length})</span>
+                  </button>
+                  <button 
+                    className={`btn-edit-modern ${!canEdit ? 'disabled' : ''}`}
+                    onClick={() => canEdit && setIsEditing(true)}
+                    disabled={!canEdit}
+                  >
+                    <EditIcon fontSize="small" />
+                    <span>{getLabel("Edit Project")}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" className="btn-cancel-modern" onClick={() => setIsEditing(false)}>
+                    <CloseIcon fontSize="small" />
+                    <span>{getLabel("Cancel")}</span>
+                  </button>
+                  <button type="submit" className="btn-save-modern" onClick={handleSubmit}>
+                    <SaveIcon fontSize="small" />
+                    <span>{getLabel("Save Changes")}</span>
+                  </button>
+                </>
               )}
             </div>
-          )}
-
-          {/* Reuse form / details section */}
+          </div>
         </div>
-        <div className="edit-right">
-          <h3 className="survey-section-heading">
-            {getLabel("Create a New Survey")}
-          </h3>
-          <div className="survey-grid-center">
-            <div
-              className={`add-survey-card ${!canEdit ? "disabled-btn" : ""}`}
-              onClick={canEdit ? handleAddSurveyClick : null}
-              style={{ pointerEvents: canEdit ? "auto" : "none" }}
-            >
-              <div className="plus-icon">+</div>
+
+        {/* Surveys Section */}
+        <div className="surveys-section-modern">
+          <div className="surveys-header-actions">
+            <h2 className="surveys-section-title">{getLabel("Project Surveys")}</h2>
+            <div className="surveys-create-buttons">
+              <button 
+                className={`btn-create-survey ${!canEdit ? 'disabled' : ''}`}
+                onClick={canEdit ? handleAddSurveyClick : null}
+                disabled={!canEdit}
+              >
+                <AddIcon fontSize="small" />
+                <span>{getLabel("Create Survey")}</span>
+              </button>
+              <button 
+                className={`btn-generate-survey ${!canEdit ? 'disabled' : ''}`}
+                disabled={!canEdit}
+              >
+                <AutoAwesomeIcon fontSize="small" />
+                <span>{getLabel("Generate with AI")}</span>
+              </button>
             </div>
           </div>
 
           {canEdit && (
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "center",
-                marginTop: "10px",
-              }}
-            >
-              {/* <button
-                  className="btn btn-outline-success"
-                  onClick={() => setShowSurveyChatbot(true)}
-                >
-                  <i className="bi bi-robot me-2" /> {getLabel("Generate Survey with LLM")}
-                </button> */}
-
+            <div style={{ marginBottom: '1.5rem' }}>
               <AutoSurveyGeneration
-                onGenerateSurvey={handleGenerateSurvey}
+                onGenerateSurvey={(surveyMeta) => {
+                  console.log('Generate survey with:', surveyMeta);
+                }}
                 getLabel={getLabel}
               />
             </div>
           )}
 
-          <hr className="section-divider" />
-          <h3 className="survey-section-heading">
-            {getLabel("Existing Surveys")}
-          </h3>
-          <div className="survey-controls">
-            <div className="survey-filter">
-              <label htmlFor="statusFilter">{getLabel("Filter by: ")}</label>
-              <select
-                id="statusFilter"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">{getLabel("All")}</option>
-                <option value="published">{getLabel("Published")}</option>
-                <option value="saved">{getLabel("Unpublished")}</option>
-              </select>
+          {/* Toolbar */}
+          <div className="surveys-toolbar-modern">
+            <div className="search-box-modern">
+              <input
+                type="text"
+                placeholder={getLabel("Search surveys...")}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="search-input-modern"
+              />
+              <SearchIcon className="search-icon-modern" />
             </div>
-            <div className="survey-sort">
-              <label htmlFor="sortKey">{getLabel("Sort by:")}</label>
-              <select
-                id="sortKey"
-                value={sortField}
-                onChange={(e) => setSortField(e.target.value)}
-              >
-                <option value="title">{getLabel("Title")}</option>
-                <option value="last_updated">{getLabel("Last Updated")}</option>
-                <option value="created_at">{getLabel("Created At")}</option>
-                <option value="ending_date">{getLabel("Ended At")}</option>
-                {filterStatus === "published" && (
-                  <option value="published_date">
-                    {getLabel("Published At")}
-                  </option>
-                )}
-              </select>
 
-              <select
-                className="sort-order-dropdown"
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-              >
-                <option value="asc">{getLabel("Ascending")}</option>
-                <option value="desc">{getLabel("Descending")}</option>
-              </select>
-            </div>
-          </div>
-          <div className="survey-grid">
-            {surveys
-              .filter((survey) =>
-                filterStatus === "all"
-                  ? true
-                  : survey.survey_status === filterStatus
-              )
-              .sort((a, b) => {
-                const aVal = a[sortField];
-                const bVal = b[sortField];
-
-                // Check if field is date-like
-                const isDateField =
-                  sortField.toLowerCase().includes("created_at") ||
-                  sortField
-                    .toLowerCase()
-                    .includes(
-                      "last_updated" ||
-                        sortField.toLowerCase().includes("published_date") ||
-                        sortField.toLowerCase().includes("ending_date")
-                    );
-
-                if (isDateField) {
-                  const aTime = new Date(aVal).getTime();
-                  const bTime = new Date(bVal).getTime();
-                  return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
-                } else {
-                  const aStr = (aVal || "").toString().toLowerCase();
-                  const bStr = (bVal || "").toString().toLowerCase();
-                  return sortOrder === "asc"
-                    ? aStr.localeCompare(bStr)
-                    : bStr.localeCompare(aStr);
-                }
-              })
-              .map((survey) => (
-                <div
-                  key={survey.survey_id}
-                  className="survey-card"
-                  style={{ cursor: "pointer" }}
-                  onClick={() =>
-                    handleSurveyClick(
-                      survey.survey_id,
-                      survey,
-                      survey.title,
-                      survey.response_user_logged_in_status
-                    )
-                  }
+            <div className="toolbar-controls-modern">
+              <div className="filter-group-modern">
+                <label>{getLabel("Status:")}</label>
+                <select
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="filter-select-modern"
                 >
-                  <img
-                    src={
-                      survey.template?.backgroundImage ||
-                      "/assets/images/survey_slide.png"
-                    }
-                    className="survey-banner"
-                    alt="Survey"
-                  />
-                  <h4>{survey.title}</h4>
-                  <p>
-                    <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(survey.last_updated + "Z").toLocaleString(
-                      "en-US",
-                      {
-                        timeZone: "Asia/Dhaka",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}
-                  </p>
+                  <option value="all">{getLabel("All")}</option>
+                  <option value="published">{getLabel("Published")}</option>
+                  <option value="saved">{getLabel("Unpublished")}</option>
+                </select>
+              </div>
 
-                  <p>
-                    <strong>{getLabel("Created At:")}</strong>{" "}
-                    {new Date(survey.created_at + "Z").toLocaleString("en-US", {
-                      timeZone: "Asia/Dhaka",
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </p>
+              <div className="filter-group-modern">
+                <label>{getLabel("Sort:")}</label>
+                <select
+                  value={sortField}
+                  onChange={(e) => setSortField(e.target.value)}
+                  className="filter-select-modern"
+                >
+                  <option value="title">{getLabel("Title")}</option>
+                  <option value="last_updated">{getLabel("Updated")}</option>
+                  <option value="created_at">{getLabel("Created")}</option>
+                </select>
+              </div>
 
-                  {survey.ending_date && (
-                    <p>
-                      <strong>{getLabel("Ended At:")}</strong>{" "}
-                      {new Date(survey.ending_date + "Z").toLocaleString(
-                        "en-US",
-                        {
-                          timeZone: "Asia/Dhaka",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        }
-                      )}
-                    </p>
-                  )}
+              <div className="filter-group-modern">
+                <select
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  className="filter-select-modern"
+                >
+                  <option value="asc">↑ {getLabel("Ascending")}</option>
+                  <option value="desc">↓ {getLabel("Descending")}</option>
+                </select>
+              </div>
 
-                  {survey.survey_status === "published" && (
-                    <p>
-                      <strong>{getLabel("Published At:")}</strong>{" "}
-                      {new Date(survey.published_date + "Z").toLocaleString(
-                        "en-US",
-                        {
-                          timeZone: "Asia/Dhaka",
-                          year: "numeric",
-                          month: "long",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        }
-                      )}{" "}
-                    </p>
-                  )}
-
-                  <IconButton
-                    aria-label="edit"
-                    size="large"
-                    sx={{
-                      "&:hover": {
-                        color: "blue",
-                        backgroundColor: "#e6f0ff",
-                      },
-                    }}
-                  >
-                    <SendIcon fontSize="inherit" />
-                  </IconButton>
-                  <IconButton
-                    aria-label="edit"
-                    size="large"
-                    disabled={!canEdit}
-                    sx={{
-                      "&:hover": {
-                        color: canEdit ? "blue" : "inherit",
-                        backgroundColor: canEdit ? "#e6f0ff" : "transparent",
-                      },
-                      color: !canEdit ? "#ccc" : "inherit",
-                    }}
-                  >
-                    <EditIcon
-                      fontSize="inherit"
-                      onClick={
-                        canEdit
-                          ? () =>
-                              handleSurveyClick(
-                                survey.survey_id,
-                                survey,
-                                survey.title,
-                                survey.response_user_logged_in_status
-                              )
-                          : undefined
-                      }
-                      style={{ cursor: canEdit ? "pointer" : "not-allowed" }}
-                    />
-                  </IconButton>
-
-                  <IconButton
-                    aria-label="delete"
-                    size="large"
-                    sx={{
-                      "&:hover": {
-                        color: "red",
-                        backgroundColor: "#ffe6e6",
-                      },
-                    }}
-                  >
-                    <DeleteIcon
-                      fontSize="inherit"
-                      onClick={() => {
-                        Swal.fire({
-                          title: getLabel("Are you sure?"),
-                          text: getLabel("This action cannot be undone."),
-                          icon: "warning",
-                          showCancelButton: true,
-                          confirmButtonText: getLabel("Yes, delete it!"),
-                          cancelButtonText: getLabel("No, cancel!"),
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            handleDeleteSurvey(survey.survey_id);
-                          }
-                        });
-                      }}
-                    />
-                  </IconButton>
-                </div>
-              ))}
+              <div className="view-toggle-modern">
+                <IconButton
+                  onClick={() => setViewMode("grid")}
+                  className={viewMode === "grid" ? "active" : ""}
+                  size="small"
+                >
+                  <GridViewIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => setViewMode("list")}
+                  className={viewMode === "list" ? "active" : ""}
+                  size="small"
+                >
+                  <ViewListIcon />
+                </IconButton>
+              </div>
+            </div>
           </div>
+
+          {/* Surveys Grid/List */}
+          {filteredAndSortedSurveys.length > 0 ? (
+            <div className={`surveys-${viewMode}-modern`}>
+              {filteredAndSortedSurveys.map((survey) => (
+                viewMode === "grid" ? (
+                  <div key={survey.survey_id} className="survey-card-modern grid">
+                    <div 
+                      className="survey-banner-modern"
+                      style={{ 
+                        backgroundImage: `url(${survey.template?.backgroundImage || '/assets/images/survey_slide.png'})` 
+                      }}
+                      onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)}
+                    >
+                      <div className="survey-status-badge">
+                        {survey.survey_status === "published" ? (
+                          <><CheckCircleIcon fontSize="small" /> {getLabel("Published")}</>
+                        ) : (
+                          <><PendingIcon fontSize="small" /> {getLabel("Draft")}</>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="survey-content-modern" onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)}>
+                      <h3 className="survey-title-modern">{survey.title}</h3>
+                      <p className="survey-date-modern">
+                        {getLabel("Updated")}: {formatDate(survey.last_updated)}
+                      </p>
+                      
+                      <div className="survey-actions-modern" onClick={(e) => e.stopPropagation()}>
+                        <IconButton 
+                          size="small" 
+                          className="action-icon-modern view"
+                          onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)}
+                        >
+                          <SendIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          className="action-icon-modern edit"
+                          disabled={!canEdit}
+                          onClick={canEdit ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status) : undefined}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          className="action-icon-modern delete"
+                          disabled={!canEdit}
+                          onClick={canEdit ? () => {
+                            Swal.fire({
+                              title: getLabel("Are you sure?"),
+                              text: getLabel("This action cannot be undone."),
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonText: getLabel("Yes, delete it!"),
+                              cancelButtonText: getLabel("No, cancel!"),
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                handleDeleteSurvey(survey.survey_id);
+                              }
+                            });
+                          } : undefined}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div key={survey.survey_id} className="survey-card-modern list">
+                    <div className="survey-list-left" onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)}>
+                      <div className="survey-list-icon">
+                        <SendIcon />
+                      </div>
+                      <div className="survey-list-info">
+                        <h3 className="survey-list-title">{survey.title}</h3>
+                        <p className="survey-list-date">{getLabel("Updated")}: {formatDate(survey.last_updated)}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="survey-list-right">
+                      <span className={`survey-list-status ${survey.survey_status}`}>
+                        {survey.survey_status === "published" ? getLabel("Published") : getLabel("Draft")}
+                      </span>
+                      <div className="survey-list-actions">
+                        <IconButton 
+                          size="small" 
+                          className="list-action-icon"
+                          onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status)}
+                        >
+                          <SendIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          className="list-action-icon" 
+                          disabled={!canEdit}
+                          onClick={canEdit ? () => handleSurveyClick(survey.survey_id, survey, survey.title, survey.response_user_logged_in_status) : undefined}
+                        >
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton 
+                          size="small" 
+                          className="list-action-icon delete" 
+                          disabled={!canEdit}
+                          onClick={canEdit ? () => {
+                            Swal.fire({
+                              title: getLabel("Are you sure?"),
+                              text: getLabel("This action cannot be undone."),
+                              icon: "warning",
+                              showCancelButton: true,
+                              confirmButtonText: getLabel("Yes, delete it!"),
+                              cancelButtonText: getLabel("No, cancel!"),
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                handleDeleteSurvey(survey.survey_id);
+                              }
+                            });
+                          } : undefined}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state-modern">
+              <div className="empty-icon-modern">📋</div>
+              <h3>{getLabel("No Surveys Found")}</h3>
+              <p>{getLabel("Create your first survey to get started")}</p>
+            </div>
+          )}
         </div>
+
+        {/* Collaborators Modal */}
+        {activeCollabModal && (
+          <div className="modal-overlay-modern" onClick={() => setActiveCollabModal(false)}>
+            <div className="modal-content-modern" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header-modern">
+                <h3>
+                  <GroupIcon /> {getLabel("Project Collaborators")}
+                </h3>
+                <IconButton size="small" onClick={() => setActiveCollabModal(false)}>
+                  <CloseIcon />
+                </IconButton>
+              </div>
+              
+              <div className="modal-body-modern">
+                {canEdit && (
+                  <div className="add-collaborator-section">
+                    <input 
+                      type="email" 
+                      placeholder={getLabel("Enter email address")}
+                      className="collab-input-modern"
+                      value={collabEmail}
+                      onChange={(e) => setCollabEmail(e.target.value)}
+                    />
+                    <select 
+                      className="collab-role-select"
+                      value={accessControl}
+                      onChange={(e) => setAccessControl(e.target.value)}
+                    >
+                      <option value="viewer">{getLabel("Viewer")}</option>
+                      <option value="editor">{getLabel("Editor")}</option>
+                    </select>
+                    <button className="btn-add-collab" onClick={handleAddCollaborator}>
+                      {getLabel("Add")}
+                    </button>
+                  </div>
+                )}
+                
+                <div className="collaborators-list-modern">
+                  {collaborators.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>
+                      {getLabel("No collaborators added yet.")}
+                    </p>
+                  ) : (
+                    collaborators.map((collab, idx) => (
+                      <div key={idx} className="collaborator-item-modern">
+                        <div className="collab-avatar">{collab.user.name[0]}</div>
+                        <div className="collab-details">
+                          <div className="collab-name">{collab.user.name}</div>
+                          <div className="collab-email">{collab.user.email}</div>
+                        </div>
+                        <div className="collab-role-badge">{collab.access_role}</div>
+                        <div className={`collab-status-badge ${collab.invitation}`}>
+                          {collab.invitation === "accepted" ? (
+                            <><CheckCircleIcon fontSize="small" /> {getLabel("Accepted")}</>
+                          ) : (
+                            <><PendingIcon fontSize="small" /> {getLabel("Pending")}</>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <ToastContainer position="top-center" autoClose={3000} />
       </div>
-
-      {showSurveyChatbot && (
-        <AISurveyChatbot
-          onClose={() => setShowSurveyChatbot(false)}
-          onGenerateSurvey={handleGenerateSurvey}
-        />
-      )}
     </>
   );
 };
