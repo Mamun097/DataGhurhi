@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import "./register.css";
-import Navbarhome from "../Homepage/navbarhome";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { ToastContainer, toast } from "react-toastify";
 import apiClient from "../api";
 
@@ -179,7 +179,7 @@ const Register = () => {
 
   return (
     <div className="register-container">
-      <Navbarhome language={language} setLanguage={setLanguage} />
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
         <motion.div
           className="feature-card"

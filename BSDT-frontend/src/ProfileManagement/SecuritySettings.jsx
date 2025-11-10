@@ -11,8 +11,10 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./SecuritySettings.css";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 
 export default function SecuritySettings() {
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "en");
   const [openSections, setOpenSections] = useState({
     password: false,
     secret: false,
@@ -100,14 +102,20 @@ export default function SecuritySettings() {
   };
 
   return (
-    <div className="background-container">
+      <div style={{ paddingTop: "80px" }}>
+      <NavbarAcholder
+        language={language}
+        setLanguage={setLanguage}
+      />
+
+    <div className="sec-background-container">
       <div className="profile-wrapper">
         <h1 className="sec-page-title">Manage your security settings</h1>
 
         <div className="security-cards-grid">
           {/* Change Password Card */}
-          <div className="card password-card">
-            <div className="card-header collapsible-header" onClick={() => handleToggle("password")}>
+          <div className="sec-card password-card">
+            <div className="sec-card-header collapsible-header" onClick={() => handleToggle("password")}>
               <h2>
                 <Lock size={20} className="icon-inline" /> Change Password
               </h2>
@@ -165,9 +173,9 @@ export default function SecuritySettings() {
           </div>
 
           {/* Secret Question Card */}
-          <div className="card secret-card">
-            <div className="card-header collapsible-header" onClick={() => handleToggle("secret")}>
-              <h2 className="card-title">
+          <div className="sec-card secret-card">
+            <div className="sec-card-header collapsible-header" onClick={() => handleToggle("secret")}>
+              <h2 className="sec-card-title">
                 <Shield size={20} className="icon-inline" /> Secret Question & Answer
               </h2>
               {openSections.secret ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
@@ -254,6 +262,7 @@ export default function SecuritySettings() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }

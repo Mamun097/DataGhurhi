@@ -1,8 +1,8 @@
 /* Full Page */
 .landing-container {
   font-family: "Poppins", sans-serif;
-  background: linear-gradient(to bottom right, #ccefef, #d1edef);
-  min-height: 6vh;
+  background: linear-gradient(to bottom right, #bdede0, #f3feff);
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,10 +130,11 @@ input:checked + .slider:before {
 
 /* Slide */
 .slide {
-  background: rgba(122, 230, 212, 0.6);
+  background: rgba(204, 249, 222, 0.799);
   backdrop-filter: blur(12px);
   border-radius: 1rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+  min-height: 300px;
   width: 100%;
   padding: 1.5rem;
 }
