@@ -86,15 +86,6 @@ const ProjectTab = ({
           },
         })
         .then((response) => {
-          if (!response.ok) {
-            throw new Error(
-              getLabel("Failed to delete project. Please try again.")
-            );
-          }
-          return response.json();
->>>>>>> Stashed changes
-        })
-        .then((response) => {
           setProjects((prevProjects) =>
             prevProjects.filter((project) => project.project_id !== projectId)
           );
@@ -107,7 +98,6 @@ const ProjectTab = ({
     }
   };
 
-<<<<<<< Updated upstream
   const formatDate = (dateString) => {
     return new Date(dateString + "Z").toLocaleString("en-US", {
       timeZone: "Asia/Dhaka",
@@ -247,115 +237,6 @@ const ProjectTab = ({
           {filteredAndSortedProjects.map((project) => (
             viewMode === "grid" ? (
               // GRID VIEW
-=======
-  return (
-    <div>
-      <h3 className="text-lg font-semibold">
-        {getLabel("My Project Folders")}
-      </h3>
-      {/* <p
-        className="text-center mt-1"
-        style={{
-          color: "#dc2626",
-          fontSize: "1.2rem",
-        }}
-      >
-        <span style={{ fontWeight: 700, color: "#dc2626" }}>* </span>
-        {getLabel(
-          "You must create and manage surveys within your project folders."
-        )}{" "}
-      </p> */}
-
-      {/* New Project Section */}
-      {/* <div className="new-project-section">
-        <h4>{getLabel("Create a New Project")}</h4>
-        <div className="add-project-card" onClick={handleAddProjectClick}>
-          <div className="plus-icon">+</div>
-        </div>
-      </div>
-
-       */}
-  <div className="project-header">
-  <button className="create-project-btn" onClick={handleAddProjectClick}>
-    <i className="bi bi-plus"></i> {/* Bootstrap Plus Icon */}
-    {getLabel("Create Project")}
-  </button>
-</div>
-
-
-<hr className="section-divider" />
-      {/* Existing Projects */}
-      <h4>{getLabel("Existing Projects")}</h4>
-      <div className="project-filter-bar">
-        {/* Filter by Privacy */}
-        <label htmlFor="privacyFilter">{getLabel("Filter by: ")}</label>
-        <select
-          id="privacyFilter"
-          value={privacyFilter}
-          onChange={(e) => setPrivacyFilter(e.target.value)}
-          className="privacy-filter-dropdown"
-        >
-          <option value="all">{getLabel("All")}</option>
-          <option value="public">{getLabel("Public")}</option>
-          <option value="private">{getLabel("Private")}</option>
-        </select>
-
-        {/* Sort By Field */}
-        <label htmlFor="sortField">{getLabel("Sort by:")}</label>
-        <select
-          id="sortField"
-          value={sortField}
-          onChange={(e) => setSortField(e.target.value)}
-          className="sort-dropdown"
-        >
-          <option value="title">{getLabel("Title")}</option>
-          <option value="field">{getLabel("Field")}</option>
-          <option value="created_at">{getLabel("Created At")}</option>
-          <option value="last_updated">{getLabel("Last Updated")}</option>
-        </select>
-
-        {/* Sort Order */}
-        <select
-          id="sortOrder"
-          value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
-          className="sort-dropdown"
-        >
-          <option value="asc">{getLabel("Ascending")}</option>
-          <option value="desc">{getLabel("Descending")}</option>
-        </select>
-      </div>
-
-      {projects.length > 0 ? (
-        <div className="project-grid">
-          {projects
-            .filter(
-              (project) =>
-                privacyFilter === "all" ||
-                project.privacy_mode === privacyFilter
-            )
-            .sort((a, b) => {
-              const aVal = a[sortField];
-              const bVal = b[sortField];
-
-              const isDateField =
-                sortField.toLowerCase().includes("created_at") ||
-                sortField.toLowerCase().includes("last_updated");
-
-              if (isDateField) {
-                const aTime = new Date(aVal).getTime();
-                const bTime = new Date(bVal).getTime();
-                return sortOrder === "asc" ? aTime - bTime : bTime - aTime;
-              } else {
-                const aStr = (aVal || "").toString().toLowerCase();
-                const bStr = (bVal || "").toString().toLowerCase();
-                return sortOrder === "asc"
-                  ? aStr.localeCompare(bStr)
-                  : bStr.localeCompare(aStr);
-              }
-            })
-            .map((project) => (
->>>>>>> Stashed changes
               <div
                 key={project.project_id}
                 className="project-card-modern grid"
@@ -371,7 +252,6 @@ const ProjectTab = ({
                     backgroundRepeat: 'no-repeat'
                   }}
                 >
-<<<<<<< Updated upstream
                   <div className="privacy-badge">
                     {project.privacy_mode === "private" ? (
                       <>
@@ -426,73 +306,6 @@ const ProjectTab = ({
                     </div>
                   </div>
                 </div>
-=======
-                  <h4>{project.title}</h4>
-                  <p>
-                    <strong>{getLabel("Research Field:")}</strong>{" "}
-                    {project.field}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Visibility Setting:")}</strong>{" "}
-                    {project.privacy_mode}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Created At:")}</strong>{" "}
-                    {new Date(project.created_at + "Z").toLocaleString(
-                      "en-US",
-                      {
-                        timeZone: "Asia/Dhaka",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}
-                  </p>
-                  <p>
-                    <strong>{getLabel("Last Updated:")}</strong>{" "}
-                    {new Date(project.last_updated + "Z").toLocaleString(
-                      "en-US",
-                      {
-                        timeZone: "Asia/Dhaka",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        hour: "numeric",
-                        minute: "2-digit",
-                        hour12: true,
-                      }
-                    )}
-                  </p>
-                </div>
-
-                <IconButton
-                  aria-label="delete"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteProject(project.project_id);
-                  }}
-                  sx={{
-                    position: "absolute",
-                    top: { xs: 1, sm: 2 },
-                    right: { xs: 1, sm: 2 },
-                    color: "red",
-                    backgroundColor: "#fff",
-                    width: { xs: 24, sm: 36 },
-                    height: { xs: 24, sm: 36 },
-                    "& .MuiSvgIcon-root": {
-                      fontSize: { xs: "1rem", sm: "1.5rem" },
-                    },
-                    "&:hover": {
-                      backgroundColor: "transparent",
-                    },
-                  }}
-                >
-                  <DeleteIcon />
-                </IconButton>
->>>>>>> Stashed changes
               </div>
             ) : (
               // COMPACT LIST VIEW

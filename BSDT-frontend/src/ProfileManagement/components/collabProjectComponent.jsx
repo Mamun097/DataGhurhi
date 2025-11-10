@@ -210,14 +210,8 @@ const CollabProjectTab = ({
                           : "other"
                       }`}
                     >
-<<<<<<< Updated upstream
                       {access_role}
                     </span>
-=======
-                      <i className="bi bi-eye me-1"></i>
-                      <span className="d-none d-sm-inline text-white " >{getLabel("View Request")}</span>
-                    </button>
->>>>>>> Stashed changes
                   </div>
                 </div>
 
