@@ -154,7 +154,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://103.94.135.115:5173",
     "http://localhost:5173",
-    "http://dataghurhi.cse.buet.ac.bd:5173"
+    "http://dataghurhi.cse.buet.ac.bd"
 ]
 
 CORS_ALLOW_HEADERS = [
