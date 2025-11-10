@@ -17,7 +17,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 CSRF_TRUSTED_ORIGINS = [
     "http://103.94.135.115:5173",
-    "https://dataghurhi.cse.buet.ac.bd", 
+    "http://dataghurhi.cse.buet.ac.bd", 
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
@@ -154,7 +154,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://103.94.135.115:5173",
     "http://localhost:5173",
-    "https://dataghurhi.cse.buet.ac.bd"
+    "http://dataghurhi.cse.buet.ac.bd"
 ]
 
 CORS_ALLOW_HEADERS = [
