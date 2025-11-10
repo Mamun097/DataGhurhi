@@ -93,6 +93,7 @@ async function deleteUser(userId) {
     .eq('user_id', userId)
     return { error };
 }
+// fetch password
 // update password
 async function updatePassword(userId, password) {
     const { data, error } = await supabase

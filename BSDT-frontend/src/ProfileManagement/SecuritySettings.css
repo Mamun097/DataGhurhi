@@ -1,14 +1,16 @@
 /*  Container Adjustments  */
-.background-container {
+.sec-background-container {
   
   display: flex;
   justify-content: center;
   background: #f0faf0;
+
 }
 
 .profile-wrapper {
   max-width: 900px;
   width: 100%;
+ min-height: 100vh;
   margin: 0 auto;
   padding: 2rem;
   box-sizing: border-box;
@@ -30,34 +32,37 @@
 }
 
 
-.card {
-  width: 100%;
+.sec-card {
+  min-width: 400px;
   border-radius: 12px;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   overflow: hidden;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  
 }
 
-.card:hover {
+.sec-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(0,0,0,0.15);
 }
 
 /*  Card Header  */
-.card-header {
+.sec-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: #d1efd1;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid #92c299;
   cursor: pointer;
-  padding: 1rem 1.5rem;
-  background-color: #cdf0d1;
-  border-bottom: 1px solid #cfe5d2;
-  box-shadow: #333;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  
 }
 
-.card-header h2,
-.card-title {
+.sec-card-header h2,
+.sec-card-title {
   display: flex;
   align-items: center;
   gap: 8px;

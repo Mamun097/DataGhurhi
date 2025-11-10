@@ -937,11 +937,11 @@ const StatisticalAnalysisTool = () => {
 
         <div className="an-wrapper">
             <header className="page-header">
-                <h1 className="page-title">{t.title}</h1>
+                <h1 className="an-page-title">{t.title}</h1>
             </header>
 
-            <div className="content-center">
-                <div className="form-wrapper">
+            <div className="an-content-center">
+                <div className="an-form-wrapper">
                     {/* Error Message */}
                     {/* {errorMessage && (
                         <div className="error-box">
@@ -959,7 +959,7 @@ const StatisticalAnalysisTool = () => {
                     )} */}
 
                     {!results ? (
-                        <div className="card">
+                        <div className="an-card">
                             <div className="card-header">
                                 <div className="header-left">
                                     <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
@@ -2054,7 +2054,7 @@ const StatisticalAnalysisTool = () => {
                                                         setHist2Color={setHist2Color}
                                                         t={t}
                                                     />
-                                                )} */}
+                                                )} 
 
                                                 {/* {testType === 'cross_tabulation' && (
                                                     <CrossTabulationOptions
