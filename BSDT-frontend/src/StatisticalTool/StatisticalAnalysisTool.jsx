@@ -347,7 +347,7 @@ const StatisticalAnalysisTool = () => {
 
 
             // Call the API to get columns
-            fetch('http://103.94.135.115:8001/api/get-columns/', {
+            fetch('http://127.0.0.1:8000/api/get-columns/', {
                 method: 'POST',
                 body: formData,
 
@@ -385,12 +385,12 @@ const StatisticalAnalysisTool = () => {
             sessionStorage.removeItem("surveyfile");
         }
         else if (isPreprocessed) {
-            //fileUrl = `http://103.94.135.115:8001/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
+            //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
 
             sessionStorage.removeItem("preprocessed");
         }
 
-        fileUrl = `http://103.94.135.115:8001${sessionStorage.getItem("fileURL")}`;
+        fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
 
 
@@ -428,7 +428,7 @@ const StatisticalAnalysisTool = () => {
 
 
                     //               // Call the API to get columns
-                    //             fetch('http://103.94.135.115:8001/api/get-columns/', {
+                    //             fetch('http://127.0.0.1:8000/api/get-columns/', {
                     //                 method: 'POST',
                     //                 body: formData,
 
@@ -588,7 +588,7 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch('http://103.94.135.115:8001/api/upload-file/', {
+            fetch('http://127.0.0.1:8000/api/upload-file/', {
                 method: 'POST',
 
                 body: formData,
@@ -812,7 +812,7 @@ const StatisticalAnalysisTool = () => {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
-        fetch('http://103.94.135.115:8001/api/analyze/', {
+        fetch('http://127.0.0.1:8000/api/analyze/', {
             method: 'POST',
             body: formData
 
@@ -1409,7 +1409,10 @@ const StatisticalAnalysisTool = () => {
                                                         <option value="spearman">{t.tests.spearman}</option>
                                                     </optgroup>
                                                     <optgroup label={t.testGroups.parametric}>
-                                                        <option value="fzt">{t.tests.fzt}</option>
+                                                        <option value="f_test">{t.tests.f_test}</option>
+                                                        <option value="z_test">{t.tests.z_test}</option>
+                                                        <option value="t_test">{t.tests.t_test}</option>
+                                                    <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
                                                     </optgroup>
                                                     <optgroup label={t.testGroups.regression}>
                                                         <option value="linear_regression">{t.tests.linear_regression}</option>
@@ -1424,7 +1427,7 @@ const StatisticalAnalysisTool = () => {
                                                         <option value="anderson">{t.tests.anderson}</option>
                                                         <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
                                                         <option value="chi_square">{t.tests.chi_square}</option>
-                                                        <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                                        <option value="cramers">{t.tests.cramers}</option>
                                                         <option value="network_graph">{t.tests.network_graph}</option>
                                                     </optgroup>
                                                 </select>
@@ -1480,7 +1483,7 @@ const StatisticalAnalysisTool = () => {
                                             </div>
                                         ) : null}
 
-                                        {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
+                                        {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
                                             <div style={{ marginBottom: '2rem' }}>
                                                 <h5 className="section-title">{t.selectColumns}</h5>
 
@@ -1802,7 +1805,7 @@ const StatisticalAnalysisTool = () => {
                                                         </h5>
                                                     )} */}
 
-                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -2076,102 +2079,6 @@ const StatisticalAnalysisTool = () => {
                                                         setColorPalette={setColorPalette}
                                                         barWidth={barWidth}
                                                         setBarWidth={setBarWidth}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_distribution' && (
-                                                    <EDADistributionsOptions
-                                                        isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                                        setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        histColor={histColor}
-                                                        setHistColor={setHistColor}
-                                                        kdeColor={kdeColor}
-                                                        setKdeColor={setKdeColor}
-                                                        distColor={distColor}
-                                                        setDistColor={setDistColor}
-                                                        showGrid={showGrid}
-                                                        setShowGrid={setShowGrid}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_swarm' && (
-                                                    <EDASwarmOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        swarmColor={swarmColor}
-                                                        setSwarmColor={setSwarmColor}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_pie' && (
-                                                    <PieChartOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {testType === 'bar_chart' && (
-                                                    <BarChartOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        barColor={barColor}
-                                                        setBarColor={setBarColor}
-                                                        barChartType={barChartType}
-                                                        setBarChartType={setBarChartType}
                                                         t={t}
                                                     />
                                                 )}
@@ -2693,7 +2600,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                                 {language === 'bn' ? 'হিটম্যাপ' : 'Heatmap'}
                             </h4>
                             <img
-                                src={`http://103.94.135.115:8001/${results.heatmap_path}`}
+                                src={`http://127.0.0.1:8000/${results.heatmap_path}`}
                                 alt="Heatmap"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -2706,7 +2613,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                                 {language === 'bn' ? 'বারপ্লট' : 'Bar Plot'}
                             </h4>
                             <img
-                                src={`http://103.94.135.115:8001/${results.barplot_path}`}
+                                src={`http://127.0.0.1:8000/${results.barplot_path}`}
                                 alt="Bar Plot"
                                 className="w-full h-auto object-contain border rounded shadow"
                             />
@@ -2968,14 +2875,14 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
                         <div className="relative">
                             <img
-                                src={`http://103.94.135.115:8001/${results.image_path}`}
+                                src={`http://127.0.0.1:8000/${results.image_path}`}
                                 alt={language === 'bn' ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://103.94.135.115:8001/${results.image_path}`);
+                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');
