@@ -127,7 +127,8 @@ const NavbarAcholder = ({
     setLanguage(newLang);
   };
 
-  const handleSearch = async () => {
+  
+   const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
         const response = await apiClient.get("/api/search", {
@@ -137,17 +138,22 @@ const NavbarAcholder = ({
           },
         });
 
+        const results = response.data.results;
         navigate("/search-results", {
           state: {
-            results: res.data.results,
+            results,
             query: searchQuery,
           },
         });
-      } catch (err) {
-        console.error("Search failed:", err);
+      } catch (error) {
+        console.error(
+          "Search request failed:",
+          error.response?.data || error.message
+        );
       }
     }
   };
+
 
   return (
     <motion.nav className="NavbarAcholderContainer">
