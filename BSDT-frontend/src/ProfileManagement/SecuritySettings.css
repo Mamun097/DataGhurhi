@@ -4,11 +4,12 @@
   display: flex;
   justify-content: center;
   background: #f0faf0;
+  min-width: 100vw;
 
 }
 
-.profile-wrapper {
-  max-width: 900px;
+.sec-profile-wrapper {
+ 
   width: 100%;
  min-height: 100vh;
   margin: 0 auto;
@@ -16,9 +17,10 @@
   box-sizing: border-box;
 }
 .sec-page-title {
+  margin-top: 20px;
   font-size: 2rem;
   font-weight: 700;
-  color: #2f5e33;
+  color:  #25856f;
   text-align: center;
 }
 
@@ -33,7 +35,8 @@
 
 
 .sec-card {
-  min-width: 400px;
+  max-width: 600px;
+  width: 100%;
   border-radius: 12px;
   background-color: #fff;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -88,7 +91,7 @@
 
 .security-field label {
   font-weight: 500;
-  color: #333;
+  color:  #25856f;;
 }
 
 .security-field input,
@@ -103,36 +106,31 @@
 
 .security-field input:focus,
 .security-field select:focus {
-  border-color: #1eab27;
+  border-color: #25856f;
 }
 
 /*  Password Field Wrapper  */
 .sec-password-input-wrapper {
   position: relative;
-  width: 100%;
-  min-width: 0;
+  
 }
 
 .sec-password-input-wrapper input {
   width: 100%;
-  padding: 8px calc(2.5rem + 8px) 8px 10px; /* space for toggle button */
 }
 
 .sec-password-input-wrapper .toggle-eye-btn {
   position: absolute;
   top: 50%;
-  right: 10px;
+  right: 12px;
   transform: translateY(-50%);
-  background: none;
-  border: none;
   cursor: pointer;
-  color: #555;
-  font-size: 1rem;
-  z-index: 2;
+  font-size: 18px;
+  color: #666;
 }
 
 .sec-password-input-wrapper .toggle-eye-btn:hover {
-  color: #1ae81d;
+  color:  #25856f;
 }
 
 /* Flex wrapper for input + eye button */
@@ -153,7 +151,7 @@
 }
 
 .input-with-eye input:focus {
-  border-color: #1eab27;
+  border-color:  #25856f;
 }
 
 .input-with-eye .toggle-eye-btn {
@@ -170,9 +168,8 @@
 }
 
 .input-with-eye .toggle-eye-btn:hover {
-  color: #1a73e8;
+  color:  #25856f;
 }
-
 .save-profile-container {
   display: flex;
   justify-content: center;
@@ -180,10 +177,10 @@
 }
 
 .save-profile-btn,
-.confirm-btn,
-.cancel-btn,
+.sec-confirm-btn,
+.sec-cancel-btn,
 .edit-profile-btn {
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 6px;
   font-weight: 500;
   border: none;
@@ -191,12 +188,20 @@
   width: fit-content;
 }
 
-.cancel-btn {
+.sec-cancel-btn {
   background-color: #f0f0f0;
   color: #333;
 }
-
-.cancel-btn:hover {
+.sec-confirm-btn {
+  background-color: #25856f;
+  color: #fff;
+  margin-left: auto;
+}
+.edit-profile-btn{
+  background-color: #25856f;
+  color: #fff;
+}
+.sec-cancel-btn:hover {
   background-color: #e0e0e0;
 }
 
@@ -208,7 +213,17 @@
 .save-profile-btn:hover {
   background-color: #82bea1;
 }
-
+.verify-password-btn{
+  margin-top: 8px;
+  margin-left: auto;
+  padding: 6px 10px;
+  background-color: #25856f;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  width: fit-content;
+}
 /* === Icon Inline Fix === */
 .icon-inline {
   flex-shrink: 0;
@@ -244,7 +259,7 @@
   }
 
   .save-profile-btn,
-  .cancel-btn,
+  
   .edit-profile-btn {
     width: 60%;
     text-align: center;
@@ -285,7 +300,7 @@
   }
 
   .save-profile-btn,
-  .cancel-btn,
+  
   .edit-profile-btn {
     width: 100%;
     font-size: 0.9rem;

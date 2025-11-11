@@ -93,6 +93,12 @@ const AddQuestion = ({
       )}
 
       <button
+         disabled={true}
+        // muted
+        style={{
+            opacity: 0.6,
+            cursor: "not-allowed"
+        }}
         className="btn btn-outline-primary mt-2 ms-4 mb-3"
         onClick={() => setNewQuestion(true)}
       >
