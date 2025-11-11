@@ -13,7 +13,7 @@
   padding-top: 80px;
   /* background: #f9fbfc; */
 
-  background: linear-gradient(90deg, #e9fdf4 30%, #f0faf0 30%);
+  background: linear-gradient( #f0faf0 );
 }
 .edit-left,
 .edit-right {
@@ -24,11 +24,12 @@
 
 .edit-left {
   flex: 0 0 30%;
-  /* background: #fff; */
-  /* border-radius: 12px; */
+  background: #d8fff0;
+  border-radius: 12px;
   padding: 24px; 
   /* box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); */
-  margin-top: 20px;
+  /* margin-top: 20px; */
+  
 }
 
 .edit-right {
@@ -52,6 +53,7 @@
 
 .tabs {
   display: flex;
+  gap: 10px;
   /* border-bottom: 4px solid #e0e0e0; */
 }
 
@@ -542,15 +544,21 @@ textarea {
   .edit-project-grid {
     flex-direction: column;
     padding: 16px;
+    
   }
 
   .edit-left,
   .edit-right {
     max-width: 100%;
     flex: 1 1 100%;
+    margin-top: 100px;
+    gap: 1rem;
   }
   .edit-right {
     margin-right: 20px;
+  }
+  .tab-header-container{
+    gap: 1rem;
   }
 
 
