@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 // import PremiumPackages from "./PremiumPackages";
 import UserSubscriptions from "./PremiumFeatures/UserSubscription";
 import PremiumPackagesModal from "./PremiumFeatures/PremiumPackagesModal";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import "./SubscriptionPage.css"; // optional for small custom styling
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
@@ -25,6 +26,7 @@ const translateText = async (textArray, targetLang) => {
 };
 
 export default function SubscriptionPage() {
+  
   const [openSection, setOpenSection] = useState("history");
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
@@ -141,9 +143,11 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="background-container">
-      <div className="profile-wrapper">
-        <h1 className="edit-page-title">Manage Your Subscriptions</h1>
+    <div style={{ paddingTop: "80px" }}>
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
+    <div className="sub-background-container">
+      <div className="sub-wrapper">
+        <h1 className="sub-page-title">Manage Your Subscriptions</h1>
         <div className="subscription-cards-grid">
           {/* Premium Packages Section */}
           <div className="card subscription-card">
@@ -222,6 +226,7 @@ export default function SubscriptionPage() {
         )}
 
       </div>
+    </div>
     </div>
   );
 }

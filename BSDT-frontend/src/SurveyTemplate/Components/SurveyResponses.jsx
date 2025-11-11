@@ -1254,7 +1254,7 @@ const SurveyResponses = () => {
         );
         //ask for confirmation before redirecting
         // alert(fixedUrl)
-        window.location.href = "/analysis";
+        window.location.href = "http://localhost:5173/?tab=analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");
       }
@@ -1282,9 +1282,14 @@ const SurveyResponses = () => {
   };
 
   return (
-    <>
+    <div style={{paddingTop:"100px", backgroundColor:"#f0faf0"}}>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container " style={{ marginTop: " 160px" }}>
+      <div  style={{
+      
+      maxWidth: "1000px",
+      marginLeft: "auto",marginRight:"auto", backgroundColor: "#fff",
+      padding: "30px", borderRadius: "8px",
+      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1);"}}>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3>
             {getLabel("Survey Responses")}
@@ -1293,15 +1298,15 @@ const SurveyResponses = () => {
             )}
           </h3>
           <div className="d-flex gap-2">
-            <button className="btn btn-primary" onClick={downloadCSV}>
+            <button className="btn btn-outline-secondary" onClick={downloadCSV}>
               {getLabel("Download CSV")}
             </button>
 
-            <button className="btn btn-success" onClick={downloadXLSX}>
+            <button className="btn btn-outline-secondary" onClick={downloadXLSX}>
               Download XLSX
             </button>
 
-            <button className="btn btn-info" onClick={handleAnalyzeClick}>
+            <button className="btn btn-outline-secondary" onClick={handleAnalyzeClick}>
               {getLabel("Analyze the Result")}
             </button>
           </div>
@@ -1341,7 +1346,7 @@ const SurveyResponses = () => {
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
