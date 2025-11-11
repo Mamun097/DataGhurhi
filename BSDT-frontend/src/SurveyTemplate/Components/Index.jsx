@@ -241,6 +241,7 @@ const Index = () => {
               setLanguage={setLanguage}
               isLoggedInRequired={isLoggedInRequired}
               setIsLoggedInRequired={setIsLoggedInRequired}
+              template={survey_details?.template || null}
             />
           </div>
           <div className="d-none d-md-block col-md-2" />
