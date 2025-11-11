@@ -1,10 +1,14 @@
 const supabase = require("../db");
+const {encrypt} = require("../utils/encryption");
 
 exports.submitSurvey = async (req, res) => {
 try {
         const { slug } = req.params;
         const { userResponse, calculatedMarks } = req.body;
         const userId = req.jwt?.id; 
+
+        //0. ecntypt the user response before storing
+        const encryptedResponse = encrypt(JSON.stringify(userResponse));
 
         // 1. Fetch the survey's rules (ID and login requirement) in one call.
         const { data: survey, error: surveyError } = await supabase
@@ -41,8 +45,8 @@ try {
 
             // If all checks pass, insert the response with the user's ID.
             const { data, error } = await supabase
-                .from('response')
-                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse , marks:calculatedMarks }])
+                .from('response_temporary')
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: encryptedResponse , marks:calculatedMarks }])
                 .select()
                 .single();
                 
@@ -55,8 +59,8 @@ try {
             // Anyone can submit. The userId will be saved if the user happens to be logged in,
             // otherwise it will be saved as NULL. This is why the column must be nullable.
             const { data, error } = await supabase
-                .from('response')
-                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse }])
+                .from('response_temporary')
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: encryptedResponse }])
                 .select()
                 .single();
 

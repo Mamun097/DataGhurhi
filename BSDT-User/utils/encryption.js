@@ -3,12 +3,12 @@ const crypto = require('crypto');
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 16;
 const AUTH_TAG_LENGTH = 16;
-const KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex'); // Get key from .env
+const KEY = Buffer.from(process.env.ENCRYPTION_KEY, 'hex');
 
 /**
  * Encrypts plaintext.
- * @param {string} textToEncrypt The plaintext data
- * @returns {string} A combined string: "iv:authTag:encryptedData"
+ * @param {string} textToEncrypt
+ * @returns {string}
  */
 function encrypt(textToEncrypt) {
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -18,15 +18,13 @@ function encrypt(textToEncrypt) {
   encrypted += cipher.final('hex');
   
   const authTag = cipher.getAuthTag();
-
-  // Combine IV, auth tag, and data into one string for storage
   return `${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
 }
 
 /**
  * Decrypts a stored string back into plaintext.
- * @param {string} encryptedText The stored string: "iv:authTag:encryptedData"
- * @returns {string} The original plaintext
+ * @param {string} encryptedText
+ * @returns {string}
  */
 function decrypt(encryptedText) {
   try {
@@ -44,9 +42,8 @@ function decrypt(encryptedText) {
     return decrypted;
   } catch (error) {
     console.error("Decryption failed:", error.message);
-    return null; // Handle decryption failure gracefully
+    return null;
   }
 }
 
-// Make sure to export them
 module.exports = { encrypt, decrypt };
