@@ -1,5 +1,6 @@
 const supabase = require("../db");
 const { Parser } = require("json2csv");
+const {decrypt} = require("../utils/encryption");
 
 function formatCsvCell(value) {
   if (value === null || value === undefined) {
@@ -29,7 +30,7 @@ exports.getCSV = async (req, res) => {
 
     // Fetch survey responses from Supabase database
     const { data: rawResponseEntries, error: fetchError } = await supabase
-      .from("response")
+      .from("response_temporary")
       .select("response_data")
       .eq("survey_id", surveyId);
 
@@ -44,12 +45,30 @@ exports.getCSV = async (req, res) => {
       return res.status(404).json({ message: "No responses found for this survey" });
     }
 
+    const sanitizeKey = (key) => {
+      return key.replace(/[^a-zA-Z0-9\s-]/g, '_');
+    };
+
+    //decrypt the data.
+    const decryptedResponseEntries = rawResponseEntries.map(entry => {
+      if (entry.response_data) {
+        try {
+          const decryptedData = decrypt(entry.response_data);
+          return { ...entry, response_data: JSON.parse(decryptedData) };
+        } catch (error) {
+          console.error("Decryption or parsing failed:", error.message);
+          return { ...entry, response_data: null };
+        }
+      }
+      return entry;
+    }).filter(entry => entry.response_data);
+
     // Initialize structures to track questions and their types
     const questionStructures = new Map();
     const orderedBaseQuestionTexts = [];
 
     // Process each response entry to identify question types and structures
-    rawResponseEntries.forEach(entry => {
+    decryptedResponseEntries.forEach(entry => {
       if (entry.response_data && Array.isArray(entry.response_data)) {
         entry.response_data.forEach(response => {
           if (!response || typeof response.questionText !== 'string') return;
@@ -99,13 +118,13 @@ exports.getCSV = async (req, res) => {
           const columnLabel = `${qText} - ${rowText}`; 
           fieldsConfig.push({
             label: columnLabel, 
-            value: columnLabel.replace(/[^a-zA-Z0-9\s-]/g, '_') 
+            value: sanitizeKey(columnLabel)
           });
         });
       } else {
         fieldsConfig.push({
           label: qText, 
-          value: qText.replace(/[^a-zA-Z0-9\s]/g, '_') 
+          value: sanitizeKey(qText)
         });
       }
     });
@@ -116,7 +135,7 @@ exports.getCSV = async (req, res) => {
     }
 
     // Transform response data into CSV rows
-    const csvData = rawResponseEntries.map(entry => {
+    const csvData = decryptedResponseEntries.map(entry => {
       const rowOutput = {};
       fieldsConfig.forEach(fc => { rowOutput[fc.value] = null; });
 
@@ -138,7 +157,7 @@ exports.getCSV = async (req, res) => {
         if (structure.type === 'matrix' && Array.isArray(uResponse)) {
           uResponse.forEach(item => {
             if (item && typeof item === 'object' && typeof item.row === 'string' && 'column' in item) {
-              const dataKey = `${qText} - ${item.row}`.replace(/[^a-zA-Z0-9\s-]/g, '_');
+              const dataKey = sanitizeKey(`${qText} - ${item.row}`);
               const columnValue = Array.isArray(item.column) ? item.column.join('; ') : item.column;
               if (!processedData[dataKey]) {
                 processedData[dataKey] = columnValue;
@@ -148,7 +167,7 @@ exports.getCSV = async (req, res) => {
             }
           });
         } else {
-          const dataKey = qText.replace(/[^a-zA-Z0-9\s]/g, '_');
+          const dataKey = sanitizeKey(qText);
           processedData[dataKey] = uResponse;
         }
       });
