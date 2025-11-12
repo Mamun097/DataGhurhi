@@ -179,13 +179,14 @@ h1 {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 1000;
   transition: all 0.3s ease;
-  min-width: 770px;
+  min-width:max-content;
   
 }
 
 /* Each icon button */
 .fab-btn {
   display: flex;
+
   align-items: center;
   gap: 4px;
   background: var(--btn-bg, #f8f9fa);
