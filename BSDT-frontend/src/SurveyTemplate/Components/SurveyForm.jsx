@@ -575,10 +575,7 @@ const SurveyForm = ({
     </>
         )}
 
-        <button onClick={openSettingsModal} className="fab-btn">
-          <i className="bi bi-gear"></i>
-          <span className="btn-label">{getLabel("Settings")}</span>
-        </button>
+       
 
         {surveyLink && (
           <>
@@ -614,6 +611,10 @@ const SurveyForm = ({
       </button> */}
     </>
   )}
+   <button onClick={openSettingsModal} className="fab-btn">
+          <i className="bi bi-gear"></i>
+          <span className="btn-label">{getLabel("Settings")}</span>
+        </button>
 </div>
 
       <hr className="my-4 custom-hr" />
