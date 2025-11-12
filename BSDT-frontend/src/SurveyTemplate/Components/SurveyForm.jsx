@@ -13,6 +13,7 @@ import SurveySections from "./SurveySections";
 import SurveyLogo from "./SurveyLogo";
 import SurveyBanner from "./SurveyBanner";
 import SurveyDescription from "./SurveyDescription";
+import SettingsModal from "./SurveySettings";
 import apiClient from "../../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
@@ -55,14 +56,20 @@ const SurveyForm = ({
   setLanguage,
   isLoggedInRequired = false,
   setIsLoggedInRequired,
+  template,
 }) => {
+  console.log("Questions in SurveyForm:", questions);
   // State for the logo
   const [logo, setLogo] = useState(logoFromParent);
-  const [logoAlignment, setLogoAlignment] = useState(logoAlignmentFromParent || "center");
+  const [logoAlignment, setLogoAlignment] = useState(
+    logoAlignmentFromParent || "center"
+  );
   const [logoText, setLogoText] = useState(logoTextFromParent || "");
 
   // State for the background image
-  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(imageFromParent || "");
+  const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
+    imageFromParent || ""
+  );
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
@@ -76,6 +83,26 @@ const SurveyForm = ({
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
   const [responseCount, setResponseCount] = useState(null);
+
+  // State for survey settings
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  console.log("Settings Modal State:", showSettingsModal);
+
+  // State for Quiz settings
+  const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
+  const [timeLimit, setTimeLimit] = useState(template?.quiz_settings?.time_limit || 30); // in minutes
+  const [releaseMarks, setReleaseMarks] = useState(template?.quiz_settings?.release_marks || "immediately"); // 'immediately' or 'later'
+  const [seeMissedQuestions, setSeeMissedQuestions] = useState(template?.quiz_settings?.see_missed_questions || false);
+  const [seeCorrectAnswers, setSeeCorrectAnswers] = useState(template?.quiz_settings?.see_correct_answers || false);
+  const [seePointValues, setSeePointValues] = useState(template?.quiz_settings?.see_point_values || false);
+  const [defaultPointValue, setDefaultPointValue] = useState(template?.quiz_settings?.default_point_value || 0);
+
+  // Other Quiz related states
+  const [totalMarks, setTotalMarks] = useState(0);
+
+  // Functions for Survey Settings Modal
+  const openSettingsModal = () => setShowSettingsModal(true);
+  const closeSettingsModal = () => setShowSettingsModal(false);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -368,6 +395,14 @@ const SurveyForm = ({
           title,
           description: description,
           questions,
+          is_quiz: isQuiz,
+          quiz_settings: {
+            release_marks: releaseMarks,
+            see_missed_questions: seeMissedQuestions,
+            see_correct_answers: seeCorrectAnswers,
+            see_point_values: seePointValues,
+            default_point_value: defaultPointValue,
+          },
         },
         title: title,
         user_id: userIdInPayload,
@@ -474,129 +509,55 @@ const SurveyForm = ({
     <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
    
       {/* Action Buttons */}
-      {/* <div className="button-group-compact">
-  {surveyStatus === "published" ? (
-    <button
-      onClick={handleUpdate}
-      disabled={isLoading}
-      className="btn-compact"
-    >
-      {isLoading && actionType === "update" ? (
-        <>
-          <span className="spinner"></span>
-          {getLabel("Updating")}
-        </>
-      ) : (
-        <>
-          <i className="bi bi-pencil"></i> {getLabel("Update")}
-        </>
-      )}
-    </button>
-  ) : (
-    <>
-      <button
-        onClick={handleSave}
-        disabled={isLoading}
-        className="btn-compact"
-      >
-        {isLoading ? (
-          <>
-            <span className="spinner"></span>
-            {getLabel("Saving")}
-          </>
-        ) : (
-          <>
-            <i className="bi bi-save"></i> {getLabel("Save")}
-          </>
-        )}
-      </button>
-
-      <button
-        onClick={handlePublish}
-        disabled={isLoading}
-        className="btn-compact"
-      >
-        {isLoading && actionType === "publish" ? (
-          <>
-            <span className="spinner"></span>
-            {getLabel("Publishing")}
-          </>
-        ) : (
-          <>
-            <i className="bi bi-check-circle"></i> {getLabel("Publish")}
-          </>
-        )}
-      </button>
-    </>
-  )}
-
-  {surveyLink && (
-    <>
-      <button
-        onClick={() => setShowShareModal(true)}
-        className="btn-compact info"
-        title="Share survey link"
-      >
-        <i className="bi bi-share"></i> {getLabel("Survey Link")}
-      </button>
-
-      <button
-        onClick={() => setShowCollaborationModal(true)}
-        className="btn-compact info"
-        title="Manage collaborators"
-      >
-        <i className="bi bi-people"></i> {getLabel("Collaborate")}
-      </button> */}
-
       {/* Floating Top Navigation Bar */}
-<div className="floating-top-bar">
-  {surveyStatus === "published" ? (
-    <button
-      onClick={handleUpdate}
-      disabled={isLoading}
-      className="fab-btn"
-    >
-      {isLoading && actionType === "update" ? (
-        <span className="spinner"></span>
-      ) : (
-        <>
-          <i className="bi bi-pencil"></i>
-          <span className="btn-label">{getLabel("Update")}</span>
-        </>
-      )}
-    </button>
-  ) : (
-    <>
-      <button
-        onClick={handleSave}
-        disabled={isLoading}
-        className="fab-btn"
-      >
-        {isLoading ? (
-          <span className="spinner"></span>
+      <div className="floating-top-bar">
+        {surveyStatus === "published" ? (
+          <button
+            onClick={handleUpdate}
+            disabled={isLoading}
+            className="fab-btn"
+          >
+            {isLoading && actionType === "update" ? (
+              <span className="spinner"></span>
+            ) : (
+              <>
+                <i className="bi bi-pencil"></i>
+                <span className="btn-label">{getLabel("Update")}</span>
+              </>
+            )}
+          </button>
         ) : (
           <>
-            <i className="bi bi-save"></i>
-            <span className="btn-label">{getLabel("Save")}</span>
-          </>
-        )}
-      </button>
+            <button
+              onClick={handleSave}
+              disabled={isLoading}
+              className="fab-btn"
+            >
+              {isLoading ? (
+                <span className="spinner"></span>
+              ) : (
+                <>
+                  <i className="bi bi-save"></i>
+                  <span className="btn-label">{getLabel("Save")}</span>
+                </>
+              )}
+            </button>
 
-      <button
-        onClick={handlePublish}
-        disabled={isLoading}
-        className="fab-btn"
-      >
-        {isLoading && actionType === "publish" ? (
-          <span className="spinner"></span>
-        ) : (
-          <>
-            <i className="bi bi-check-circle"></i>
-            <span className="btn-label">{getLabel("Publish")}</span>
-          </>
-        )}
-      </button>
-      <button
+            <button
+              onClick={handlePublish}
+              disabled={isLoading}
+              className="fab-btn"
+            >
+              {isLoading && actionType === "publish" ? (
+                <span className="spinner"></span>
+              ) : (
+                <>
+                  <i className="bi bi-check-circle"></i>
+                  <span className="btn-label">{getLabel("Publish")}</span>
+                </>
+              )}
+            </button>
+            <button
         onClick={() => setShowCollaborationModal(true)}
         className="fab-btn"
       >
@@ -612,17 +573,19 @@ const SurveyForm = ({
       </button>
 
     </>
-  )}
+        )}
 
-  {surveyLink && (
-    <>
-      <button
-        onClick={() => setShowShareModal(true)}
-        className="fab-btn"
-      >
-        <i className="bi bi-share"></i>
-        <span className="btn-label">{getLabel("Survey Link")}</span>
-      </button>
+        <button onClick={openSettingsModal} className="fab-btn">
+          <i className="bi bi-gear"></i>
+          <span className="btn-label">{getLabel("Settings")}</span>
+        </button>
+
+        {surveyLink && (
+          <>
+            <button onClick={() => setShowShareModal(true)} className="fab-btn">
+              <i className="bi bi-share"></i>
+              <span className="btn-label">{getLabel("Survey Link")}</span>
+            </button>
 
       
       <button
@@ -715,19 +678,39 @@ const SurveyForm = ({
             language={language}
             setLanguage={setLanguage}
             getLabel={getLabel}
+            isQuiz={isQuiz}
+            defaultPointValue={defaultPointValue}
+            totalMarks={totalMarks}
+            setTotalMarks={setTotalMarks}
           />
         ))}
         <div className="text-center my-4">
-        <button
-          className="add-sec-btn"
-          onClick={handleAddSection}
-        >
-          ➕ {getLabel("Add Section")}
-        </button>
+          <button className="add-sec-btn" onClick={handleAddSection}>
+            ➕ {getLabel("Add Section")}
+          </button>
         </div>
       </div>
 
       {/* Render the modal */}
+      <SettingsModal
+        isOpen={showSettingsModal}
+        onClose={closeSettingsModal}
+        isQuiz={isQuiz}
+        setIsQuiz={setIsQuiz}
+        timeLimit={timeLimit}
+        setTimeLimit={setTimeLimit}
+        releaseMarks={releaseMarks}
+        setReleaseMarks={setReleaseMarks}
+        seeMissedQuestions={seeMissedQuestions}
+        setSeeMissedQuestions={setSeeMissedQuestions}
+        seeCorrectAnswers={seeCorrectAnswers}
+        setSeeCorrectAnswers={setSeeCorrectAnswers}
+        seePointValues={seePointValues}
+        setSeePointValues={setSeePointValues}
+        defaultPointValue={defaultPointValue}
+        setDefaultPointValue={setDefaultPointValue}
+      />
+
       <PublicationSettingsModal
         show={showPublicationModal}
         handleClose={handleClosePublicationModal}
@@ -737,6 +720,7 @@ const SurveyForm = ({
         setShuffleQuestions={setShuffleQuestions}
         action={actionType}
       />
+
       <CollaborationModal
         show={showCollaborationModal}
         handleClose={() => setShowCollaborationModal(false)}
