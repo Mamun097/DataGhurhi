@@ -472,6 +472,7 @@ const SurveyForm = ({
 
   return (
     <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
+   
       {/* Action Buttons */}
       {/* <div className="button-group-compact">
   {surveyStatus === "published" ? (
@@ -595,6 +596,21 @@ const SurveyForm = ({
           </>
         )}
       </button>
+      <button
+        onClick={() => setShowCollaborationModal(true)}
+        className="fab-btn"
+      >
+        <i className="bi bi-people"></i>
+        <span className="btn-label">{getLabel("Collaborate")}</span>
+      </button>
+<button
+        onClick={() => handlePreview()}
+        className="fab-btn"
+      >
+        <i className="bi bi-eye"></i>
+        <span className="btn-label">{getLabel("Preview")}</span>
+      </button>
+
     </>
   )}
 
@@ -608,14 +624,7 @@ const SurveyForm = ({
         <span className="btn-label">{getLabel("Survey Link")}</span>
       </button>
 
-      <button
-        onClick={() => setShowCollaborationModal(true)}
-        className="fab-btn"
-      >
-        <i className="bi bi-people"></i>
-        <span className="btn-label">{getLabel("Collaborate")}</span>
-      </button>
-
+      
       <button
         onClick={handleSurveyResponses}
         className="fab-btn"
@@ -627,20 +636,8 @@ const SurveyForm = ({
         )}
       </button>
 
-      <button
-        onClick={() => handlePreview()}
-        className="fab-btn"
-      >
-        <i className="bi bi-eye"></i>
-        <span className="btn-label">{getLabel("Preview")}</span>
-      </button>
-
-      <ShareSurveyModal
-        show={showShareModal}
-        handleClose={() => setShowShareModal(false)}
-        surveyLink={surveyLink}
-        surveyTitle={title}
-      />
+      
+     
   
  
 
@@ -746,7 +743,13 @@ const SurveyForm = ({
         surveyId={Number(survey_id)}
         surveyTitle={title}
       />
-      <ToastContainer position="bottom-right" autoClose={3000} newestOnTop />
+       <ShareSurveyModal
+        show={showShareModal}
+        handleClose={() => setShowShareModal(false)}
+        surveyLink={surveyLink}
+        surveyTitle={title}
+      />
+      <ToastContainer position="bottom-right" autoClose={2000} newestOnTop />
     </div>
   );
 };
