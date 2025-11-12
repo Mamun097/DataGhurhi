@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import SurveySections from "./SurveySectionsUser";
 import Linkify from "react-linkify";
+import QuizTimer from "../Utils/QuizTimer";
 
 const isSectionVisible = (section, userResponse) => {
   const triggerQuestion = section.triggerQuestionText;
@@ -43,9 +44,9 @@ const SurveyForm = ({
   isSubmitting = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
-  console.log(questions);
-  console.log("User response");
-  console.log(userResponse);
+  console.log("Template: ", template);
+  console.log("Questions: ", questions);
+  console.log("User response: ", userResponse);
   // Scroll to top when section changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -53,6 +54,10 @@ const SurveyForm = ({
 
   // State and Effect for detecting mobile view ---
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  // Quiz related states
+  const isQuiz = template?.template?.is_quiz || false;
+  const quizDuration = template?.template?.quiz_settings?.time_limit || 0; // in minutes
 
   useEffect(() => {
     const handleResize = () => {
@@ -190,13 +195,30 @@ const SurveyForm = ({
 
     return true;
   };
-  const handleFormSubmit = (e) => {
-    e.preventDefault();
+
+  {
+    /** Two ways to submit the form.
+     * 1. Regular submit button
+     * 2. If the survey is in quiz mode then after fixed time automatic submission */
+  }
+
+  // Central function for the submission logic
+  const submitSurvey = (event = null) => {
     if (validateCurrentSection()) {
       if (onSubmit) {
-        onSubmit(e);
+        onSubmit(event);
       }
     }
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    submitSurvey(e); // Call the central logic
+  };
+
+  // Handler for when the timer runs out
+  const handleTimeUp = () => {
+    submitSurvey();
   };
 
   const handleNext = () => {
@@ -215,6 +237,16 @@ const SurveyForm = ({
 
   return (
     <div>
+      {/* If survey is in quiz mode, show timer here */}
+      {isQuiz && quizDuration > 0 && (
+        <QuizTimer durationInMinutes={quizDuration} onTimeUp={handleTimeUp} />
+      )}
+
+      {/* If survey is in quiz mode, make vertical space between timer and content */}
+      {isQuiz && quizDuration > 0 && (
+        <div style={{ height: "50px" }} />
+      )}
+
       {logo && (
         <>
           {isMobile || logoAlignment === "center" ? (
@@ -320,6 +352,9 @@ const SurveyForm = ({
           </h1>
         )}
       </div>
+
+      {backgroundImage && <hr className="my-4" />}
+
       {description && (
         <div className="container rounded">
           <Linkify
@@ -348,8 +383,12 @@ const SurveyForm = ({
           </Linkify>
         </div>
       )}
-      <p className="text-danger ms-3 mt-2 mb-4" style={{ fontSize: "1.1rem" }}>
-        * Required fields are marked with an asterisk.
+
+      <p
+        className="text-danger text-center my-3"
+        style={{ fontSize: "1.1rem" }}
+      >
+        * Required fields are marked.
       </p>
 
       <div>

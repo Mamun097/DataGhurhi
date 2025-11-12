@@ -77,7 +77,7 @@ const Index = () => {
   }, [slug, navigate]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setIsSubmitting(true);
     const calculatedMarks = handleMarking(userResponse, questions);
     try {
@@ -94,7 +94,15 @@ const Index = () => {
         },
         config
       );
-      navigate("/survey-success");
+      // Survey success props: is_quiz, calculatedMarks, totalMarks
+      navigate("/survey-success", {
+        state: {
+          isQuiz: template?.template?.is_quiz || false,
+          releaseMarks: template?.template?.quiz_settings?.releaseMarks || "immediately",
+          calculatedMarks: calculatedMarks,
+          // totalMarks: questions.reduce((total, q) => total + (q.marks || 0), 0),
+        },
+      });
     } catch (error) {
       console.error("Error submitting survey:", error);
       alert("There was an error submitting your survey. Please try again.");
