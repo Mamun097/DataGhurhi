@@ -58,9 +58,8 @@ const SurveyForm = ({
   setIsLoggedInRequired,
   template,
 }) => {
-  console.log("Questions in SurveyForm:", questions);
   // State for the logo
-  const [logo, setLogo] = useState(logoFromParent);
+  const [logo, setLogo] = useState(logoFromParent || null);
   const [logoAlignment, setLogoAlignment] = useState(
     logoAlignmentFromParent || "center"
   );
@@ -90,15 +89,25 @@ const SurveyForm = ({
 
   // State for Quiz settings
   const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
-  const [timeLimit, setTimeLimit] = useState(template?.quiz_settings?.time_limit || 30); // in minutes
-  const [releaseMarks, setReleaseMarks] = useState(template?.quiz_settings?.release_marks || "immediately"); // 'immediately' or 'later'
-  const [seeMissedQuestions, setSeeMissedQuestions] = useState(template?.quiz_settings?.see_missed_questions || false);
-  const [seeCorrectAnswers, setSeeCorrectAnswers] = useState(template?.quiz_settings?.see_correct_answers || false);
-  const [seePointValues, setSeePointValues] = useState(template?.quiz_settings?.see_point_values || false);
-  const [defaultPointValue, setDefaultPointValue] = useState(template?.quiz_settings?.default_point_value || 0);
-
-  // Other Quiz related states
-  const [totalMarks, setTotalMarks] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(
+    template?.quiz_settings?.time_limit || 30
+  ); // in minutes
+  const [releaseMarks, setReleaseMarks] = useState(
+    template?.quiz_settings?.release_marks || "immediately"
+  ); // 'immediately' or 'later'
+  const [seeMissedQuestions, setSeeMissedQuestions] = useState(
+    template?.quiz_settings?.see_missed_questions || false
+  );
+  const [seeCorrectAnswers, setSeeCorrectAnswers] = useState(
+    template?.quiz_settings?.see_correct_answers || false
+  );
+  const [seePointValues, setSeePointValues] = useState(
+    template?.quiz_settings?.see_point_values || false
+  );
+  const [defaultPointValue, setDefaultPointValue] = useState(
+    template?.quiz_settings?.default_point_value || 0
+  );
+  const [totalMarks, setTotalMarks] = useState(template?.total_marks || 0);
 
   // Functions for Survey Settings Modal
   const openSettingsModal = () => setShowSettingsModal(true);
@@ -223,10 +232,10 @@ const SurveyForm = ({
 
   const getLabel = (text) => translatedLabels[text] || text;
 
-  useEffect(() => {
-    setLogo(logoFromParent || null);
-    setCurrentBackgroundImage(imageFromParent || "");
-  }, [logoFromParent, imageFromParent]);
+  // useEffect(() => {
+  //   setLogo(logoFromParent || null);
+  //   setCurrentBackgroundImage(imageFromParent || "");
+  // }, [logoFromParent, imageFromParent]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -298,29 +307,6 @@ const SurveyForm = ({
       eventSource.close();
     };
   }, [survey_id]);
-
-  // Function to update the logo and relay it to the parent component
-  const updateAndRelayLogo = (newLogo) => {
-    setLogo(newLogo);
-    if (setLogoInParent) {
-      setLogoInParent(newLogo);
-    }
-  };
-
-  // Function to handle Logo alignment changes
-  const handleLogoAlignmentChange = (alignment) => {
-    if (["left", "center", "right"].includes(alignment)) {
-      setLogoAlignment(alignment);
-    }
-  };
-
-  // Function to update the background image and relay it to the parent component
-  const updateAndRelayBackgroundImage = (newImageSrc) => {
-    setCurrentBackgroundImage(newImageSrc);
-    if (setImageInParent) {
-      setImageInParent(newImageSrc);
-    }
-  };
 
   const handleAddSection = () => {
     const newSectionId =
@@ -402,6 +388,8 @@ const SurveyForm = ({
             see_correct_answers: seeCorrectAnswers,
             see_point_values: seePointValues,
             default_point_value: defaultPointValue,
+            time_limit: timeLimit,
+            total_marks: totalMarks,
           },
         },
         title: title,
@@ -496,8 +484,25 @@ const SurveyForm = ({
     });
   };
 
+  // If survey is already published, then sendSurveyData is used, otherwise handleSave is used
   const handlePreview = async () => {
-    await handleSave();
+    if (surveyStatus !== "published") {
+      // Save the survey first
+      setIsLoading(true);
+      await handleSave();
+      setIsLoading(false);
+    }
+    else {
+      setIsLoading(true);
+      await sendSurveyData(
+        "/api/surveytemplate",
+        isLoggedInRequired,
+        shuffleQuestions
+      );
+      setIsLoading(false);
+    }
+
+    // Navigate to preview page
     navigate("/preview", {
       state: {
         slug: surveyLink,

@@ -179,11 +179,7 @@ const QuestionContainer = ({
       )}
 
       <div className="d-flex flex-column flex-sm-row align-items-start align-items-sm-center justify-content-between gap-2 mb-3">
-        <em>
-          {autoNumbering ? `${index}. ` : ""}
-          {/* <hr />
-            Type: <strong>{getLabel("Checkbox")}</strong> */}
-        </em>
+        <em>{autoNumbering ? `${index}. ` : ""}</em>
         {/* Question Input */}
         <textarea
           ref={textareaRef}
@@ -199,15 +195,22 @@ const QuestionContainer = ({
           value={question.type}
           onChange={handleTypeChange}
         >
-          <option value="checkbox">{getLabel("Checkbox")}</option>
-          <option value="radio">{getLabel("Radio")}</option>
-          <option value="text">{getLabel("Text")}</option>
-          <option value="dropdown">{getLabel("Dropdown")}</option>
-          <option value="rating">{getLabel("Rating")}</option>
-          <option value="likert">{getLabel("Likert Scale")}</option>
-          <option value="linearScale">{getLabel("Linear Scale")}</option>
-          <option value="datetime">{getLabel("Date/Time")}</option>
-          <option value="tickboxGrid">{getLabel("Tick Box Grid")}</option>
+          {/* if isQuiz is true, show only radio; else show all types */}
+          {isQuiz ? (
+            <option value="radio">{getLabel("Radio")}</option>
+          ) : (
+            <>
+              <option value="checkbox">{getLabel("Checkbox")}</option>
+              <option value="radio">{getLabel("Radio")}</option>
+              <option value="text">{getLabel("Text")}</option>
+              <option value="dropdown">{getLabel("Dropdown")}</option>
+              <option value="rating">{getLabel("Rating")}</option>
+              <option value="likert">{getLabel("Likert Scale")}</option>
+              <option value="linearScale">{getLabel("Linear Scale")}</option>
+              <option value="datetime">{getLabel("Date/Time")}</option>
+              <option value="tickboxGrid">{getLabel("Tick Box Grid")}</option>
+            </>
+          )}
         </select>
       </div>
 
