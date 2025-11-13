@@ -459,8 +459,11 @@ def analyze_data_api(request):
             elif test_type == 'cross_tabulation':
                 selected_columns = []
                 for key in request.POST:
-                    if key.startswith("column") and request.POST[key] in df.columns:
-                        selected_columns.append(request.POST[key])
+                    if key.startswith("column"):
+                        value = request.POST[key]
+                        if value in df.columns:
+                            selected_columns.append(value)
+                print("Selected columns for Cross-Tabulation:", selected_columns)
                 return process_cross_tabulation(request, df, selected_columns, user_id)
 
             elif test_type == 'eda_distribution':
@@ -4979,180 +4982,402 @@ def process_cramers_test(request, df, selected_columns, user_id):
         })
 
 
-
 def process_cross_tabulation(request, df, selected_columns, user_id):
-    from django.http import JsonResponse
-    from django.conf import settings
     import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-    import matplotlib.font_manager as fm
-    from googletrans import Translator
-    from PIL import Image, ImageDraw, ImageFont
-    from functools import lru_cache
+    import numpy as np
+    from django.http import JsonResponse
     import os
-    import uuid
-
+    from django.conf import settings
 
     try:
-        if len(selected_columns) < 2:
-            raise ValueError("At least two columns are required for cross-tabulation.")
-
-        # --- 1. Input settings ---
-        lang = request.POST.get('language', 'en').lower()
-        if lang not in ('bn', 'en'):
+        # ── 1) Extract inputs ──────────────────────────────────────────────
+        lang = (request.POST.get("language", "en") or "en").lower()
+        if lang not in ('en', 'bn'):
             lang = 'en'
-        fmt = request.POST.get('format', 'png').lower()
-        if fmt not in ('png', 'jpg', 'jpeg', 'pdf', 'tiff'):
-            fmt = 'png'
-        pil_fmt = {'png': 'PNG', 'jpg': 'JPEG', 'jpeg': 'JPEG', 'pdf': 'PDF', 'tiff': 'TIFF'}[fmt]
+        
+        is_bn = (lang == "bn")
 
-        use_default = request.POST.get('use_default', 'true') == 'true'
-        heatmap_color_theme = request.POST.get('palette', 'Blues') if not use_default else 'Blues'
-        bar_width = float(request.POST.get('bar_width', 0.8))
-        label_font_size = int(request.POST.get('label_font_size', 36))
-        tick_font_size = int(request.POST.get('tick_font_size', 16))
-        image_quality = int(request.POST.get('image_quality', 90))
-        width, height = map(int, request.POST.get('image_size', '800x600').lower().split('x'))
+        # Variables to analyze
+        vars_list = selected_columns or []
+        if len(vars_list) < 2:
+            return JsonResponse({
+                'success': False, 
+                'error': 'Please select at least two categorical variables for cross-tabulation.'
+            })
 
-        # --- 2. Fonts & translation ---
-        font_path = os.path.join(settings.BASE_DIR, 'NotoSansBengali-Regular.ttf')
-        fm.fontManager.addfont(font_path)
-        mpl.rcParams['font.family'] = fm.FontProperties(fname=font_path).get_name()
-        label_font = ImageFont.truetype(font_path, label_font_size)
-        tick_prop = fm.FontProperties(fname=font_path, size=tick_font_size) if lang == 'bn' else fm.FontProperties(size=tick_font_size)
+        print(f"[Cross-tabulation] Analyzing {len(vars_list)} variables: {vars_list}")
 
-        translator = Translator()
-        digit_map = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
+        # ── 2) Core helper functions ───────────────────────────────────────
+        def fnum(x):
+            """Convert to float, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return float(x)
+            except Exception:
+                return None
 
-        @lru_cache(None)
-        def translate(txt): return translator.translate(txt, dest='bn').text if lang == 'bn' else txt
+        def inum(x):
+            """Convert to int, handling None and NaN"""
+            if x is None or (isinstance(x, float) and np.isnan(x)):
+                return None
+            try:
+                return int(x)
+            except Exception:
+                try:
+                    return int(float(x))
+                except Exception:
+                    return None
 
-        def map_digits(txt): return txt.translate(digit_map) if lang == 'bn' else txt
+        def create_cross_tab(var_a, var_b, dropna=True, include_na_as_category=False, margins=True):
+            """
+            Create cross-tabulation for two variables.
+            Returns dict with cross-tab data and statistics.
+            """
+            s1, s2 = df[var_a].copy(), df[var_b].copy()
+            
+            # Handle missing values
+            if include_na_as_category:
+                s1 = s1.fillna("__NA__")
+                s2 = s2.fillna("__NA__")
+            elif dropna:
+                mask = s1.notna() & s2.notna()
+                s1, s2 = s1[mask], s2[mask]
+            
+            # Create cross-tabulation with margins
+            try:
+                ct = pd.crosstab(s1, s2, margins=margins, dropna=False)
+                
+                # Calculate percentages
+                row_percentages = (pd.crosstab(s1, s2, normalize='index') * 100).round(2)
+                col_percentages = (pd.crosstab(s1, s2, normalize='columns') * 100).round(2)
+                total_percentages = (pd.crosstab(s1, s2, normalize='all') * 100).round(2)
+                
+            except Exception as e:
+                print(f"[Cross-tabulation] Error creating crosstab: {e}")
+                return {
+                    'n': 0,
+                    'contingency_table': None,
+                    'row_percentages': None,
+                    'col_percentages': None,
+                    'total_percentages': None,
+                    'categories_var1': [],
+                    'categories_var2': [],
+                    'row_totals': [],
+                    'col_totals': [],
+                    'margins_row': [],
+                    'margins_col': [],
+                    'grand_total': 0,
+                    'summary_stats': {}
+                }
+            
+            if ct.shape[0] == 0 or ct.shape[1] == 0:
+                return {
+                    'n': 0,
+                    'contingency_table': None,
+                    'row_percentages': None,
+                    'col_percentages': None,
+                    'total_percentages': None,
+                    'categories_var1': [],
+                    'categories_var2': [],
+                    'row_totals': [],
+                    'col_totals': [],
+                    'margins_row': [],
+                    'margins_col': [],
+                    'grand_total': 0,
+                    'summary_stats': {}
+                }
+            
+            # Extract data without margins for the main table
+            ct_no_margins = ct.iloc[:-1, :-1] if margins else ct
+            grand_total = ct.iloc[-1, -1] if margins else ct.values.sum()
+            
+            # Get category names (without margins)
+            categories_var1 = [str(c) for c in ct_no_margins.index.tolist()]
+            categories_var2 = [str(c) for c in ct_no_margins.columns.tolist()]
+            
+            # Calculate totals (without margins)
+            row_totals = ct_no_margins.sum(axis=1).tolist()
+            col_totals = ct_no_margins.sum(axis=0).tolist()
+            
+            # Extract margins if available
+            margins_row = ct.iloc[:-1, -1].tolist() if margins else []
+            margins_col = ct.iloc[-1, :-1].tolist() if margins else []
+            
+            # Calculate summary statistics
+            flat_counts = []
+            for i, cat1 in enumerate(categories_var1):
+                for j, cat2 in enumerate(categories_var2):
+                    count = int(ct_no_margins.values[i][j])
+                    flat_counts.append({
+                        'category1': cat1,
+                        'category2': cat2,
+                        'count': count,
+                        'row_percentage': float(row_percentages.values[i][j]) if not np.isnan(row_percentages.values[i][j]) else 0.0,
+                        'col_percentage': float(col_percentages.values[i][j]) if not np.isnan(col_percentages.values[i][j]) else 0.0,
+                        'total_percentage': float(total_percentages.values[i][j]) if not np.isnan(total_percentages.values[i][j]) else 0.0
+                    })
+            
+            # Find most and least frequent combinations
+            if flat_counts:
+                most_frequent = max(flat_counts, key=lambda x: x['count'])
+                least_frequent = min(flat_counts, key=lambda x: x['count'])
+            else:
+                most_frequent = least_frequent = None
+            
+            # Prepare data for stacked bar chart (similar to chi-square)
+            stacked_data = []
+            for i, cat1 in enumerate(categories_var1):
+                row_data = {
+                    'category': str(cat1),
+                    'total': int(row_totals[i])
+                }
+                
+                for j, cat2 in enumerate(categories_var2):
+                    count = int(ct_no_margins.values[i][j])
+                    percentage = float(row_percentages.values[i][j]) if not np.isnan(row_percentages.values[i][j]) else 0.0
+                    
+                    row_data[str(cat2)] = percentage
+                    row_data[f'{cat2}_count'] = count
+                
+                stacked_data.append(row_data)
+            
+            return {
+                'n': int(grand_total),
+                'contingency_table': [[int(val) if not np.isnan(val) else 0 for val in row] for row in ct_no_margins.values.tolist()],
+                'row_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in row_percentages.values.tolist()],
+                'col_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in col_percentages.values.tolist()],
+                'total_percentages': [[float(val) if not np.isnan(val) else 0.0 for val in row] for row in total_percentages.values.tolist()],
+                'categories_var1': categories_var1,
+                'categories_var2': categories_var2,
+                'row_totals': [int(val) for val in row_totals],
+                'col_totals': [int(val) for val in col_totals],
+                'margins_row': [int(val) for val in margins_row],
+                'margins_col': [int(val) for val in margins_col],
+                'grand_total': int(grand_total),
+                'stacked_data': stacked_data,
+                'summary_stats': {
+                    'total_observations': int(grand_total),
+                    'most_frequent': most_frequent,
+                    'least_frequent': least_frequent,
+                    'n_categories_var1': len(categories_var1),
+                    'n_categories_var2': len(categories_var2)
+                }
+            }
 
-        # --- 3. File paths ---
-        uid = str(uuid.uuid4())[:8]
-        plots_dir = os.path.join(settings.MEDIA_ROOT, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots')
-        os.makedirs(plots_dir, exist_ok=True)
+        # ── 3) Compute all pairwise cross-tabulations ──────────────────────
+        n_vars = len(vars_list)
+        pairwise_results = []
+        
+        for i in range(n_vars):
+            for j in range(i + 1, n_vars):
+                var1 = vars_list[i]
+                var2 = vars_list[j]
+                
+                print(f"[Cross-tabulation] Creating crosstab for {var1} vs {var2}")
+                
+                result = create_cross_tab(
+                    var1, var2,
+                    dropna=True,
+                    include_na_as_category=False,
+                    margins=True
+                )
+                
+                pairwise_results.append({
+                    'variable1': str(var1),
+                    'variable2': str(var2),
+                    'n': inum(result['n']),
+                    'contingency_table': result['contingency_table'],
+                    'row_percentages': result['row_percentages'],
+                    'col_percentages': result['col_percentages'],
+                    'total_percentages': result['total_percentages'],
+                    'categories_var1': result['categories_var1'],
+                    'categories_var2': result['categories_var2'],
+                    'row_totals': result['row_totals'],
+                    'col_totals': result['col_totals'],
+                    'margins_row': result['margins_row'],
+                    'margins_col': result['margins_col'],
+                    'grand_total': result['grand_total'],
+                    'stacked_data': result['stacked_data'],
+                    'summary_stats': result['summary_stats']
+                })
 
-        def create_labeled_plot(fig, ax, title, xlabel, ylabel, base, final):
-            ax.set(title='', xlabel='', ylabel='')
-            plt.tight_layout(pad=0)
-            fig.savefig(base, dpi=300, format='PNG', bbox_inches='tight')
-            plt.close(fig)
+        print(f"[Cross-tabulation] Completed {len(pairwise_results)} pairwise cross-tabulations")
 
-            # Translate labels
-            T = map_digits(translate(title))
-            X = map_digits(translate(xlabel))
-            Y = map_digits(translate(ylabel))
-            t0, t1, t2, t3 = label_font.getbbox(T); th = t3 - t1
-            x0, x1, x2, x3 = label_font.getbbox(X); xh = x3 - x1
-            y0, y1, y2, y3 = label_font.getbbox(Y); yw = y2 - y0; yh = y3 - y1
-            pad = label_font_size // 2
-            lm, rm, tm, bm = yh + pad, pad, th + pad, xh + pad
+        # Sort by total observations (descending)
+        pairwise_results.sort(key=lambda r: r['n'] or 0, reverse=True)
 
-            img = Image.open(base).convert("RGB")
-            bw, bh = img.size
-            W, H = bw + lm + rm, bh + tm + bm
-            canvas = Image.new("RGB", (W, H), "white")
-            canvas.paste(img, (lm, tm))
-            draw = ImageDraw.Draw(canvas)
+        # ── 4) Prepare variable-level statistics ──────────────────────────
+        variable_stats = []
+        
+        for var in vars_list:
+            col_data = df[var].dropna()
+            value_counts = col_data.value_counts()
+            
+            variable_stats.append({
+                'variable': str(var),
+                'n_categories': int(len(value_counts)),
+                'n_observations': int(len(col_data)),
+                'n_missing': int(df[var].isna().sum()),
+                'categories': [str(c) for c in value_counts.index.tolist()],
+                'frequencies': [int(f) for f in value_counts.values.tolist()],
+                'percentages': [float(p) for p in (value_counts / len(col_data) * 100).values.tolist()]
+            })
 
-            def center_text(txt, font, total_width):
-                return (total_width - int(draw.textlength(txt, font=font))) // 2
+        # ── 5) Create blocks (one anchor variable at a time) ──────────────
+        blocks = []
+        
+        for anchor in vars_list:
+            block_results = []
+            
+            for result in pairwise_results:
+                if result['variable1'] == anchor:
+                    block_results.append(result)
+                elif result['variable2'] == anchor:
+                    # Swap variables so anchor is always first
+                    swapped_result = {
+                        'variable1': result['variable2'],
+                        'variable2': result['variable1'],
+                        'n': result['n'],
+                        # Transpose the tables
+                        'contingency_table': [[result['contingency_table'][j][i] for j in range(len(result['contingency_table']))] 
+                                             for i in range(len(result['contingency_table'][0]))] if result['contingency_table'] else None,
+                        'row_percentages': [[result['col_percentages'][j][i] for j in range(len(result['col_percentages']))] 
+                                           for i in range(len(result['col_percentages'][0]))] if result['col_percentages'] else None,
+                        'col_percentages': [[result['row_percentages'][j][i] for j in range(len(result['row_percentages']))] 
+                                           for i in range(len(result['row_percentages'][0]))] if result['row_percentages'] else None,
+                        'total_percentages': [[result['total_percentages'][j][i] for j in range(len(result['total_percentages']))] 
+                                             for i in range(len(result['total_percentages'][0]))] if result['total_percentages'] else None,
+                        # Swap categories
+                        'categories_var1': result['categories_var2'],
+                        'categories_var2': result['categories_var1'],
+                        # Swap totals
+                        'row_totals': result['col_totals'],
+                        'col_totals': result['row_totals'],
+                        'margins_row': result['margins_col'],
+                        'margins_col': result['margins_row'],
+                        'grand_total': result['grand_total'],
+                        # Stacked data needs to be regenerated for swapped variables
+                        'stacked_data': result['stacked_data'],  # This will need adjustment in frontend
+                        'summary_stats': result['summary_stats']
+                    }
+                    block_results.append(swapped_result)
+            
+            blocks.append({
+                'anchor': str(anchor),
+                'results': block_results
+            })
 
-            draw.text((center_text(T, label_font, W), (tm - th) // 2), T, font=label_font, fill="black")
-            draw.text((center_text(X, label_font, W), tm + bh + (bm - xh) // 2), X, font=label_font, fill="black")
+        # ── 6) Prepare table columns for frontend ─────────────────────────
+        if is_bn:
+            table_columns = [
+                {"key": "variable1", "label": "ভেরিয়েবল ১"},
+                {"key": "variable2", "label": "ভেরিয়েবল ২"},
+                {"key": "n", "label": "মোট পর্যবেক্ষণ"},
+                {"key": "n_categories_var1", "label": "ভেরিয়েবল ১-এর শ্রেণী"},
+                {"key": "n_categories_var2", "label": "ভেরিয়েবল ২-এর শ্রেণী"},
+            ]
+        else:
+            table_columns = [
+                {"key": "variable1", "label": "Variable 1"},
+                {"key": "variable2", "label": "Variable 2"},
+                {"key": "n", "label": "Total Observations"},
+                {"key": "n_categories_var1", "label": "Categories in Var1"},
+                {"key": "n_categories_var2", "label": "Categories in Var2"},
+            ]
 
-            Yimg = Image.new("RGBA", (yw, yh), (255, 255, 255, 0))
-            d2 = ImageDraw.Draw(Yimg)
-            d2.text((0, 0), Y, font=label_font, fill="black")
-            Yrot = Yimg.rotate(90, expand=True)
-            canvas.paste(Yrot, ((lm - Yrot.width) // 2, tm + (bh - Yrot.height) // 2), Yrot)
-            canvas.save(final, format=pil_fmt, quality=image_quality)
+        # ── 7) Create matrices for heatmap compatibility ─────────────────
+        # Create frequency-based matrices for heatmap visualization
+        freq_matrix = np.zeros((n_vars, n_vars), dtype=float)
+        obs_matrix = np.zeros((n_vars, n_vars), dtype=float)
 
-        # --- 4. Cross-tabulation heatmap ---
-        pd.set_option('display.max_rows', None)
-        colors = [mpl.colors.rgb2hex(c) for c in sns.color_palette(heatmap_color_theme, len(selected_columns))]
-        cross_tab = pd.crosstab(index=[df[v] for v in selected_columns[:-1]], columns=df[selected_columns[-1]])
+        for result in pairwise_results:
+            i = vars_list.index(result['variable1'])
+            j = vars_list.index(result['variable2'])
+            
+            # Use actual observation count for visualization
+            obs_count = result['n'] or 0
+            obs_matrix[i, j] = obs_count
+            obs_matrix[j, i] = obs_count
+            
+            # Normalize frequency by total possible observations
+            freq_val = obs_count / (len(df) or 1) if len(df) > 0 else 0
+            freq_matrix[i, j] = freq_val
+            freq_matrix[j, i] = freq_val
 
-        # Translated DataFrame
-        dtab = cross_tab.copy().astype(str).applymap(lambda x: map_digits(translate(x)))
-        dtab.index = [
-            map_digits(translate("|".join(map(str, ix))) if isinstance(ix, tuple) else translate(str(ix)))
-            for ix in cross_tab.index
-        ]
-        dtab.columns = [map_digits(translate(str(c))) for c in cross_tab.columns]
+        np.fill_diagonal(obs_matrix, len(df))  # Diagonal represents max possible
+        np.fill_diagonal(freq_matrix, 1.0)     # Diagonal represents same variable
 
-        # Annotated heatmap
-        annot = cross_tab.copy().astype(str)
-        for r in annot.index:
-            for c in annot.columns:
-                annot.at[r, c] = map_digits(translate(annot.at[r, c]))
+        # ── 8) Prepare plot data for visualizations ───────────────────────
+        plot_data = []
+        for i, var1 in enumerate(vars_list):
+            for j, var2 in enumerate(vars_list):
+                if i != j:
+                    # Find the corresponding result
+                    result = None
+                    for r in pairwise_results:
+                        if (r['variable1'] == var1 and r['variable2'] == var2) or \
+                        (r['variable1'] == var2 and r['variable2'] == var1):
+                            result = r
+                            break
+                    
+                    if result:
+                        plot_data.append({
+                            'category': f"{var1}",
+                            'variable': f"{var2}",
+                            'value': float(freq_matrix[i, j]),
+                            'frequency': result['n'] or 0,
+                            'total_observations': result['n'] or 0,
+                            'normalized_frequency': float(freq_matrix[i, j])
+                        })
 
-        fig1, ax1 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.heatmap(cross_tab, annot=annot, fmt='', cmap=heatmap_color_theme, cbar=True, ax=ax1)
-        ax1.set_xticklabels([map_digits(translate(str(c))) for c in cross_tab.columns], fontproperties=tick_prop, rotation=45)
-        ax1.set_yticklabels(
-            [map_digits(translate("|".join(map(str, ix))) if isinstance(ix, tuple) else translate(str(ix))) for ix in cross_tab.index],
-            fontproperties=tick_prop, rotation=0
-        )
-        cb = ax1.collections[0].colorbar
-        cb.set_ticklabels([map_digits(translate(str(int(t)))) for t in cb.get_ticks()])
-        cb.ax.tick_params(labelsize=tick_font_size)
-        for lbl in cb.ax.get_yticklabels():
-            lbl.set_fontproperties(tick_prop)
-
-        base_heat = os.path.join(plots_dir, f"heatmap_base_{uid}.png")
-        final_heatmap = os.path.join(plots_dir, f"crosstab_heatmap_{uid}.{fmt}")
-        create_labeled_plot(fig1, ax1, f"Heatmap of {' vs '.join(selected_columns)}", selected_columns[-1], " × ".join(selected_columns[:-1]), base_heat, final_heatmap)
-
-        # --- 5. Frequency Bar Plot ---
-        freq_list = []
-        for v in selected_columns:
-            f = df[v].value_counts().sort_index()
-            freq_list.append(pd.DataFrame({'Value': f.index.astype(str), 'Frequency': f.values, 'Variable': v}))
-        fdf = pd.concat(freq_list, ignore_index=True)
-        if lang == 'bn':
-            fdf['Value'] = fdf['Value'].apply(lambda x: map_digits(translate(x)))
-            fdf['Variable'] = fdf['Variable'].apply(lambda x: map_digits(translate(x)))
-
-        fig2, ax2 = plt.subplots(figsize=(width / 100, height / 100), dpi=100)
-        sns.barplot(data=fdf, x='Value', y='Frequency', hue='Variable', palette=colors, ax=ax2, width=bar_width, dodge=True)
-        ax2.set_xlabel(map_digits(translate('Value')))
-        ax2.set_ylabel(map_digits(translate('Frequency')))
-        ax2.set_xticklabels(ax2.get_xticklabels(), fontproperties=tick_prop, rotation=45)
-        ax2.set_yticklabels([map_digits(str(int(y))) for y in ax2.get_yticks()], fontproperties=tick_prop)
-        final_bar = os.path.join(plots_dir, f'frequency_both_{uid}.{fmt}')
-        fig2.savefig(final_bar, dpi=300, format=pil_fmt, bbox_inches='tight')
-        plt.close(fig2)
-
-        # --- 6. Summary Text ---
-        total = int(cross_tab.values.sum())
-        stk = cross_tab.stack()
-        mi, ma = stk.idxmin(), stk.idxmax()
-        cnt_min, cnt_max = stk.min(), stk.max()
-        min_lbl = " vs ".join(map(str, mi)) if isinstance(mi, tuple) else str(mi)
-        max_lbl = " vs ".join(map(str, ma)) if isinstance(ma, tuple) else str(ma)
-
-        summary = {
-            'total_observations': map_digits(translate(f"Total observations: {total}")),
-            'most_frequent': map_digits(translate(f"Most frequent combination ({max_lbl}): {cnt_max} observations.")),
-            'least_frequent': map_digits(translate(f"Least frequent combination ({min_lbl}): {cnt_min} observations."))
+        # ── 9) Prepare final response ─────────────────────────────────────
+        test_name = 'Cross-Tabulation Analysis' if lang == 'en' else 'ক্রস-ট্যাবুলেশন বিশ্লেষণ'
+        
+        response_data = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'n_variables': int(n_vars),
+            'n_comparisons': int(len(pairwise_results)),
+            'variables': [str(v) for v in vars_list],
+            'variable_stats': variable_stats,
+            'pairwise_results': pairwise_results,
+            'blocks': blocks,
+            # Matrices for heatmap compatibility
+            'frequency_matrix': [[float(val) for val in row] for row in freq_matrix.tolist()],
+            'observation_matrix': [[float(val) for val in row] for row in obs_matrix.tolist()],
+            'p_value_matrix': [[float(freq_matrix[i][j]) for j in range(n_vars)] for i in range(n_vars)],  # Use frequency for p-value matrix
+            'chi2_matrix': [[float(obs_matrix[i][j]) for j in range(n_vars)] for i in range(n_vars)],  # Use observations for chi2 matrix
+            'p_adjusted_matrix': [[float(freq_matrix[i][j]) for j in range(n_vars)] for i in range(n_vars)],  # Use frequency for adjusted p 
+            'plot_data': plot_data,
+            'table_columns': table_columns,
+            'metadata': {
+                'total_observations': int(len(df)),
+                'analysis_type': 'frequency_distribution',
+                'include_margins': True,
+                'include_percentages': True,
+                'fdr_correction': 'None',
+                'yates_correction': False,
+                'alpha': 0.05
+            }
         }
 
-        return JsonResponse({
-            'success': True,
-            'translated_table': dtab.to_dict(),
-            'heatmap_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_heatmap)),
-            'barplot_path': os.path.join(settings.MEDIA_URL, f'ID_{user_id}_uploads', 'temporary_uploads', 'plots', os.path.basename(final_bar)),
-            'summary': summary,
-            'columns': selected_columns
-        })
+        print(f"[Cross-tabulation] Response prepared successfully with {len(pairwise_results)} comparisons")
+        return JsonResponse(response_data)
 
     except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
+        import traceback
+        error_msg = str(e)
+        traceback_msg = traceback.format_exc()
+        print(f"[Cross-tabulation] Error: {error_msg}")
+        print(f"[Cross-tabulation] Traceback: {traceback_msg}")
+        return JsonResponse({
+            'success': False, 
+            'error': error_msg,
+            'traceback': traceback_msg
+        })
+
 
 
 def process_eda_basics(request, df, user_id):
