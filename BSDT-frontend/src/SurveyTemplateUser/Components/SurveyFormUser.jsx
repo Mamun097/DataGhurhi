@@ -44,9 +44,7 @@ const SurveyForm = ({
   isSubmitting = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
-  console.log("Template: ", template);
-  console.log("Questions: ", questions);
-  console.log("User response: ", userResponse);
+  console.log("Template in SurveyFormUser:", template);
   // Scroll to top when section changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -57,7 +55,7 @@ const SurveyForm = ({
 
   // Quiz related states
   const isQuiz = template?.template?.is_quiz || false;
-  const quizDuration = template?.template?.quiz_settings?.time_limit || 0; // in minutes
+  const [quizTimeLeft, setQuizTimeLeft] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {
@@ -104,6 +102,14 @@ const SurveyForm = ({
   }, [image]);
 
   useEffect(() => {
+    // Set Time left for quiz if in quiz mode
+    if (isQuiz && template?.template?.quiz_settings) {
+      const endTime = new Date(template.template.quiz_settings.end_time);
+      const now = new Date();
+      const timeLeftInSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
+      setQuizTimeLeft(timeLeftInSeconds / 60); // convert to minutes
+    }
+
     if (shuffle && !hasShuffled.current) {
       const questionsBySection = questions.reduce((acc, question) => {
         const sectionId = question.section;
@@ -129,7 +135,7 @@ const SurveyForm = ({
       setQuestions(finalShuffledQuestions);
       hasShuffled.current = true;
     }
-  }, [shuffle, questions, setQuestions]);
+  }, [shuffle, questions, setQuestions, isQuiz, template]);
 
   const validateCurrentSection = () => {
     const currentSection = visibleSections[currentVisibleIndex];
@@ -238,14 +244,12 @@ const SurveyForm = ({
   return (
     <div>
       {/* If survey is in quiz mode, show timer here */}
-      {isQuiz && quizDuration > 0 && (
-        <QuizTimer durationInMinutes={quizDuration} onTimeUp={handleTimeUp} />
+      {isQuiz && quizTimeLeft > 0 && (
+        <QuizTimer durationInMinutes={quizTimeLeft} onTimeUp={handleTimeUp} />
       )}
 
       {/* If survey is in quiz mode, make vertical space between timer and content */}
-      {isQuiz && quizDuration > 0 && (
-        <div style={{ height: "50px" }} />
-      )}
+      {isQuiz && quizTimeLeft > 0 && <div style={{ height: "50px" }} />}
 
       {logo && (
         <>

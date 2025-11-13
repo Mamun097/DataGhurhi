@@ -380,10 +380,11 @@ const Radio = ({
     (optionText) => {
       if (!isQuiz) return;
 
+      // Set the selected option as the correct answer, and update Points by mark
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
-            ? { ...q, meta: { ...q.meta, correctAnswer: optionText } }
+            ? { ...q, meta: { ...q.meta, correctAnswer: optionText }, points: mark }
             : q
         )
       );
