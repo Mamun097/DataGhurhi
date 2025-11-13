@@ -58,6 +58,7 @@ const SurveyForm = ({
   setIsLoggedInRequired,
   template,
 }) => {
+  console.log("questions in SurveyForm:", questions);
   // State for the logo
   const [logo, setLogo] = useState(logoFromParent || null);
   const [logoAlignment, setLogoAlignment] = useState(
@@ -85,13 +86,16 @@ const SurveyForm = ({
 
   // State for survey settings
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  console.log("Settings Modal State:", showSettingsModal);
 
   // State for Quiz settings
   const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
-  const [timeLimit, setTimeLimit] = useState(
-    template?.quiz_settings?.time_limit || 30
-  ); // in minutes
+  const [startTime, setStartTime] = useState(
+    template?.quiz_settings?.start_time || null
+  );
+  const [endTime, setEndTime] = useState(
+    template?.quiz_settings?.end_time || null
+  );
+
   const [releaseMarks, setReleaseMarks] = useState(
     template?.quiz_settings?.release_marks || "immediately"
   ); // 'immediately' or 'later'
@@ -388,7 +392,8 @@ const SurveyForm = ({
             see_correct_answers: seeCorrectAnswers,
             see_point_values: seePointValues,
             default_point_value: defaultPointValue,
-            time_limit: timeLimit,
+            start_time: startTime,
+            end_time: endTime,
             total_marks: totalMarks,
           },
         },
@@ -491,8 +496,7 @@ const SurveyForm = ({
       setIsLoading(true);
       await handleSave();
       setIsLoading(false);
-    }
-    else {
+    } else {
       setIsLoading(true);
       await sendSurveyData(
         "/api/surveytemplate",
@@ -512,7 +516,6 @@ const SurveyForm = ({
 
   return (
     <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
-   
       {/* Action Buttons */}
       {/* Floating Top Navigation Bar */}
       <div className="floating-top-bar">
@@ -563,24 +566,18 @@ const SurveyForm = ({
               )}
             </button>
             <button
-        onClick={() => setShowCollaborationModal(true)}
-        className="fab-btn"
-      >
-        <i className="bi bi-people"></i>
-        <span className="btn-label">{getLabel("Collaborate")}</span>
-      </button>
-<button
-        onClick={() => handlePreview()}
-        className="fab-btn"
-      >
-        <i className="bi bi-eye"></i>
-        <span className="btn-label">{getLabel("Preview")}</span>
-      </button>
-
-    </>
+              onClick={() => setShowCollaborationModal(true)}
+              className="fab-btn"
+            >
+              <i className="bi bi-people"></i>
+              <span className="btn-label">{getLabel("Collaborate")}</span>
+            </button>
+            <button onClick={() => handlePreview()} className="fab-btn">
+              <i className="bi bi-eye"></i>
+              <span className="btn-label">{getLabel("Preview")}</span>
+            </button>
+          </>
         )}
-
-       
 
         {surveyLink && (
           <>
@@ -589,38 +586,20 @@ const SurveyForm = ({
               <span className="btn-label">{getLabel("Survey Link")}</span>
             </button>
 
-      
-      <button
-        onClick={handleSurveyResponses}
-        className="fab-btn"
-      >
-        <i className="bi bi-bar-chart"></i>
-        <span className="btn-label">{getLabel("View Response")}</span>
-        {responseCount !== null && (
-          <span className="badge-small">{responseCount}</span>
+            <button onClick={handleSurveyResponses} className="fab-btn">
+              <i className="bi bi-bar-chart"></i>
+              <span className="btn-label">{getLabel("View Response")}</span>
+              {responseCount !== null && (
+                <span className="badge-small">{responseCount}</span>
+              )}
+            </button>
+          </>
         )}
-      </button>
-
-      
-     
-  
- 
-
-
-{/* 
-      <button
-        className="fab-btn"
-        onClick={() => handlePreview()}
-      >
-        <i className="bi bi-eye"></i> {getLabel("Preview")}
-      </button> */}
-    </>
-  )}
-   <button onClick={openSettingsModal} className="fab-btn">
+        <button onClick={openSettingsModal} className="fab-btn">
           <i className="bi bi-gear"></i>
           <span className="btn-label">{getLabel("Settings")}</span>
         </button>
-</div>
+      </div>
 
       <hr className="my-4 custom-hr" />
 
@@ -703,8 +682,10 @@ const SurveyForm = ({
         onClose={closeSettingsModal}
         isQuiz={isQuiz}
         setIsQuiz={setIsQuiz}
-        timeLimit={timeLimit}
-        setTimeLimit={setTimeLimit}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
         releaseMarks={releaseMarks}
         setReleaseMarks={setReleaseMarks}
         seeMissedQuestions={seeMissedQuestions}
@@ -715,6 +696,7 @@ const SurveyForm = ({
         setSeePointValues={setSeePointValues}
         defaultPointValue={defaultPointValue}
         setDefaultPointValue={setDefaultPointValue}
+        setIsLoggedInRequired={setIsLoggedInRequired}
       />
 
       <PublicationSettingsModal
@@ -725,6 +707,7 @@ const SurveyForm = ({
         shuffleQuestions={shuffleQuestions}
         setShuffleQuestions={setShuffleQuestions}
         action={actionType}
+        isQuiz={isQuiz}
       />
 
       <CollaborationModal
@@ -733,7 +716,7 @@ const SurveyForm = ({
         surveyId={Number(survey_id)}
         surveyTitle={title}
       />
-       <ShareSurveyModal
+      <ShareSurveyModal
         show={showShareModal}
         handleClose={() => setShowShareModal(false)}
         surveyLink={surveyLink}
