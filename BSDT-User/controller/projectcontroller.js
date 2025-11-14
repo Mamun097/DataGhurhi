@@ -1,4 +1,5 @@
 const e = require('express');
+const supabase = require('../db');
 const Project = require('../model/project');
 // const User = require('../model/user');
 
@@ -170,4 +171,75 @@ exports.removeCollaborator = async (req, res) => {
     }
     return res.status(200).json({ message: 'Collaborator removed successfully' });
 }
+
+exports.fetchUserAccess = async (req, res) => {
+    try {
+        const { projectId } = req.params;
+        const userId = req.jwt.id; // Assuming user ID comes from auth middleware
+
+        if (!projectId) {
+            return res.status(400).json({ error: "Project ID is required" });
+        }
+
+        if (!userId) {
+            return res.status(401).json({ error: "User not authenticated" });
+        }
+
+        // First, check if the user is the owner of the project
+        const { data: projectData, error: projectError } = await supabase
+            .from("survey_project")
+            .select("user_id")
+            .eq("project_id", projectId)
+            .single();
+
+        if (projectError) {
+            console.error("Error fetching project:", projectError);
+            return res.status(500).json({ error: "Error fetching project: " + projectError.message });
+        }
+
+        if (!projectData) {
+            return res.status(404).json({ error: "Project not found" });
+        }
+
+        // If the user is the owner
+        if (projectData.user_id === userId) {
+            return res.status(200).json({
+                access_role: "owner",
+                is_owner: true
+            });
+        }
+
+        // If not owner, check if they are a collaborator
+        const { data: collaboratorData, error: collaboratorError } = await supabase
+            .from("project_shared_with_collaborator")
+            .select("access_role, invitation")
+            .eq("project_id", projectId)
+            .eq("user_id", userId)
+            .eq("invitation", "accepted") // Only accepted invitations
+            .single();
+
+        if (collaboratorError) {
+            // If no row found, user has no access
+            if (collaboratorError.code === 'PGRST116') {
+                return res.status(403).json({ 
+                    error: "Access denied. You do not have permission to access this project.",
+                    access_role: null
+                });
+            }
+            
+            console.error("Error fetching collaborator data:", collaboratorError);
+            return res.status(500).json({ error: "Error fetching access data: " + collaboratorError.message });
+        }
+
+        // Return the collaborator's access role
+        return res.status(200).json({
+            access_role: collaboratorData.access_role, // "editor" or "viewer"
+            is_owner: false
+        });
+
+    } catch (error) {
+        console.error("Server error:", error);
+        res.status(500).json({ error: "Server error: " + error.message });
+    }
+};
 

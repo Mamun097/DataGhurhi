@@ -4,11 +4,9 @@ import Register from "./AccountManagement/registernew";
 import Home from "./Homepage/landingpage";
 import Dashboard from "./ProfileManagement/Dashboard";
 import AddProject from "./ProjectManagement/createProject";
-import EditProject from "./ProjectManagement/editProject";
 import Index from "./SurveyTemplate/Components/Index";
 import IndexUser from "./SurveyTemplateUser/Components/IndexUser";
 import SurveyResponses from "./SurveyTemplate/Components/SurveyResponses"
-//import PreviewPage from "./SurveyTemplate/SurveyTemplatePreview/PreviewPage";
 import PreviewPage from "./SurveyTemplate/Components/Preview/Components/IndexUser";
 import QB from "./QBmanagement/QuestionBankUser";
 import FaqTopics from "./FAQ/faqTopics";
@@ -37,28 +35,26 @@ function App() {
     <Layout>
       <Routes>
         {/* Public Routes */}
-
         <Route path="/signup" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/faq" element={<FaqTopics />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/faq/:topic" element={<FaqByTopic />} />
-        <Route path="/view-project/:projectId/:privacy" element={<EditProject />} />
         <Route path="/search-results" element={<SearchResults />} />
-        {/* <Route path="/surveytemplate" element={<Index />} /> */}
-
         <Route path="/v/:slug" element={<IndexUser />} />
         <Route path="/survey-success" element={<SurveySuccess />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Protected Routes */}
-        {token && role== "user"? (
+        {token && role === "user" ? (
           <>
             <Route path="/" element={<Dashboard />} />
             <Route path="/home" element={<Dashboard/>} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/addproject" element={<AddProject />} />
-            <Route path="/view-project/:projectId" element={<EditProject />} />
+            
+            {/* Project details now handled within Dashboard via query params */}
+            {/* e.g., /dashboard?tab=projectdetails&projectId=123 */}
             
             <Route path="/view-survey/:survey_id" element={<Index />} />
             <Route path="/v/:slug" element={<IndexUser />} />
@@ -66,18 +62,13 @@ function App() {
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/security-settings" element={<SecuritySettings />} />
             <Route path="/subscription" element={<SubscriptionPage />} />
-            {/* <Route path="/question-bank" element={<QB />} /> */}
             <Route path="/analysis" element={<StatisticalAnalysisTool />} />   
             <Route path="/preprocess" element={<PreprocessDataPage />} />
             <Route path="/visualization" element={<Data_summary />} />
-           <Route path="/saved-files" element={<FileExplorer/>} />
-
+            <Route path="/saved-files" element={<FileExplorer/>} />
             <Route path="/survey-responses/:survey_id" element={<SurveyResponses />} />
-            
             <Route path="/group-preview" element={<GroupPreviewPage />} />
-
             <Route path="/report" element={<ReportViewer />} />
-
           </>
         ) : (
           <>
@@ -89,8 +80,6 @@ function App() {
 
         {/* Catch-All Route (404 Page) */}
         <Route path="*" element={<h2>404 - Page Not Found</h2>} />
-
-       
       </Routes>
       </Layout>
     </Router>
