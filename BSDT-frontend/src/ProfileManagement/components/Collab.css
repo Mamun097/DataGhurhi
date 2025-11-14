@@ -99,8 +99,8 @@
 }
 
 .collab-tab-btn.active {
-  background: #4bb77d;
-  color: white;
+  background: #4bb77d79;
+  color: #1e293b;
   box-shadow: 0 2px 8px rgba(75, 183, 125, 0.3);
 }
 
