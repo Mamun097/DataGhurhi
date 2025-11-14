@@ -147,11 +147,9 @@ const Index = () => {
       // Survey success props: is_quiz, calculatedMarks, totalMarks
       navigate("/survey-success", {
         state: {
-          isQuiz: template?.template?.is_quiz || false,
-          releaseMarks:
-            template?.template?.quiz_settings?.releaseMarks || "immediately",
+          template: template,
+          userResponse: userResponse,
           calculatedMarks: calculatedMarks,
-          // totalMarks: questions.reduce((total, q) => total + (q.marks || 0), 0),
         },
       });
     } catch (error) {

@@ -141,19 +141,19 @@ const SettingsModal = ({
               </div>
 
               {/* --- Respondent settings --- */}
-              {/* <div className="settings-group">
+              <div className="settings-group">
                 <h3 className="settings-heading">Respondent settings</h3>
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   id="see-missed"
                   label="Missed questions"
                   description="Respondents can see which questions were answered incorrectly"
                   checked={seeMissedQuestions}
                   onChange={(e) => setSeeMissedQuestions(e.target.checked)}
-                />
+                /> */}
                 <ToggleSwitch
                   id="see-correct"
                   label="Correct answers"
-                  description="Respondents can see correct answers after grades are released"
+                  description="Respondents can see correct answers"
                   checked={seeCorrectAnswers}
                   onChange={(e) => setSeeCorrectAnswers(e.target.checked)}
                 />
@@ -164,7 +164,7 @@ const SettingsModal = ({
                   checked={seePointValues}
                   onChange={(e) => setSeePointValues(e.target.checked)}
                 />
-              </div> */}
+              </div>
 
               {/* --- Global quiz defaults --- */}
               <div className="settings-group">
