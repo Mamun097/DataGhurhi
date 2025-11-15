@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
@@ -14,6 +14,22 @@ const ResponseIndex = () => {
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
+
+  // Disable browser back button to prevent resubmission
+  useEffect(() => {
+    window.history.pushState(null, document.title, window.location.href);
+    window.addEventListener("popstate", handleBackButton);
+
+    return () => {
+      window.removeEventListener("popstate", handleBackButton);
+    };
+  }, []);
+
+  const handleBackButton = (event) => {
+    window.alert("Redirecting to Home Page");
+    window.history.pushState(null, document.title, window.location.href);
+    navigate("/");
+  };
 
   return (
     <>
