@@ -7,17 +7,7 @@ import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import { handleMarking } from "../Utils/handleMarking";
 import apiClient from "../../api";
 import CustomLoader from "../Utils/CustomLoader";
-
-// helper to render message when quiz is not open
-const RenderSurveyNotOpenMessage = ({ surveyOpenMessage }) => {
-  return (
-    <div className="col-12 col-md-8">
-      <div className="alert alert-info mt-4" role="alert">
-        {surveyOpenMessage}
-      </div>
-    </div>
-  );
-};
+import SurveyNotOpen from "../Utils/SurveyNotOpen";
 
 // helper to check if survey is open
 const isSurveyOpen = (template, setSurveyOpenMessage, setQuizTimeLeft) => {
@@ -197,7 +187,10 @@ const Index = () => {
               <div className="col-12 col-md-8" />
             )
           ) : (
-            <RenderSurveyNotOpenMessage surveyOpenMessage={surveyOpenMessage} />
+            <SurveyNotOpen
+              surveyOpenMessage={surveyOpenMessage}
+              template={template}
+            />
           )}
         </div>
       </div>
