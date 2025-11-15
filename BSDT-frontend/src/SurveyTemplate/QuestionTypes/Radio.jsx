@@ -384,7 +384,11 @@ const Radio = ({
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
-            ? { ...q, meta: { ...q.meta, correctAnswer: optionText }, points: mark }
+            ? {
+                ...q,
+                meta: { ...q.meta, correctAnswer: optionText },
+                points: mark,
+              }
             : q
         )
       );

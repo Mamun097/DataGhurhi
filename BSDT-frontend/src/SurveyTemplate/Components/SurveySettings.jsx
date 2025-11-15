@@ -117,29 +117,45 @@ const SettingsModal = ({
                     id="start-time"
                     className="settings-datetime-input"
                     value={startTime || ""}
-                    // If endTime is null, then endTime = startTime
+                    // If endTime is null, then endTime = startTime + 30 minutes
                     onChange={(e) => {
                       setStartTime(e.target.value);
                       if (!endTime) {
-                        setEndTime(e.target.value);
+                        setEndTime(
+                          new Date(
+                            new Date(e.target.value).getTime() + 30 * 60000
+                          )
+                            .toISOString()
+                            .slice(0, 16)
+                        );
                       }
                     }}
                   />
                 </div>
                 <div className="settings-datetime-item">
+                  {/* If endTime is before startTime, show a warning */}
                   <label htmlFor="end-time" style={{ fontWeight: "500" }}>
                     End time
                   </label>
+                  {startTime &&
+                    endTime &&
+                    new Date(endTime) < new Date(startTime) && (
+                      <p style={{ color: "red", marginTop: "4px" }}>
+                        End time cannot be before start time.
+                      </p>
+                    )}
+
                   <input
                     type="datetime-local"
                     id="end-time"
                     className="settings-datetime-input"
                     value={endTime || ""}
-                    onChange={(e) => setEndTime(e.target.value)}
+                    onChange={(e) => {
+                      setEndTime(e.target.value);
+                    }}
                   />
                 </div>
               </div>
-
               {/* --- Respondent settings --- */}
               <div className="settings-group">
                 <h3 className="settings-heading">Respondent settings</h3>
