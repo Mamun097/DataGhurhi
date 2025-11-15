@@ -622,7 +622,7 @@ const Radio = ({
           {getLabel("Add Option")}
         </button>
 
-        {!otherOption && (
+        {!otherOption && !isQuiz && (
           <button
             type="button"
             className="add-option-btn"
