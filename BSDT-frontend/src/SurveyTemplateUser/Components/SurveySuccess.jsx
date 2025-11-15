@@ -109,13 +109,15 @@ const SurveySuccess = () => {
                 )}
 
                 {/* Action buttons - should be aligned */}
-                <div className="d-flex justify-content-center">
-                  <button
-                    className="btn btn-primary me-3"
-                    onClick={handleResponseShow}
-                  >
-                    See Your Responses
-                  </button>
+                <div className="d-flex justify-content-center gap-2">
+                  {isQuiz && (
+                    <button
+                      className="btn btn-primary"
+                      onClick={handleResponseShow}
+                    >
+                      See Your Responses
+                    </button>
+                  )}
                   <button
                     className="btn btn-primary"
                     onClick={() => (window.location.href = "/")}
