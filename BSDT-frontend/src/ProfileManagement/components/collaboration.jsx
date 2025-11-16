@@ -17,7 +17,7 @@ const Collab = ({
   handleReject,
   collaboratedProjects,
 }) => {
-  const [activeTab, setActiveTab] = useState("survey");
+  const [activeTab, setActiveTab] = useState("project");
 
   return (
     <div className="modern-collab-container">
@@ -67,16 +67,6 @@ const Collab = ({
 
       {/* Tabs Content */}
       <div className="collab-tab-content">
-        {activeTab === "survey" && (
-          <CollabSurveyTab
-            getLabel={getLabel}
-            showCollabModal={showCollabModal}
-            setShowCollabModal={setShowCollabModal}
-            navigate={navigate}
-            language={language}
-          />
-        )}
-
         {activeTab === "project" && (
           <CollabProjectTab
             getLabel={getLabel}
@@ -88,6 +78,16 @@ const Collab = ({
             handleAccept={handleAccept}
             handleReject={handleReject}
             navigate={navigate}
+          />
+        )}
+
+        {activeTab === "survey" && (
+          <CollabSurveyTab
+            getLabel={getLabel}
+            showCollabModal={showCollabModal}
+            setShowCollabModal={setShowCollabModal}
+            navigate={navigate}
+            language={language}
           />
         )}
       </div>

@@ -70,6 +70,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
 
   const [surveys, setSurveys] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
+  const [acceptedCollaborators, setAcceptedCollaborators] = useState([]);
   const [userRole, setUserRole] = useState("");
 
   const canEdit = userRole === "owner" || userRole === "editor";
@@ -144,6 +145,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCollaborators(response.data.collaborators || []);
+      setAcceptedCollaborators(response.data.acceptedCollaborators || []);
     } catch (error) {
       console.error("Error fetching collaborators:", error);
     }
@@ -582,7 +584,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
                   >
                     <GroupIcon fontSize="small" />
                   </IconButton>
-                  <span className="collaborators-count-badge">{collaborators.length}</span>
+                  <span className="collaborators-count-badge">{acceptedCollaborators.length}</span>
                 </div>
               </>
             ) : (
