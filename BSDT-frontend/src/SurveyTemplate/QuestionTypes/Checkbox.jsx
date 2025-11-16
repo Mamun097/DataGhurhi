@@ -558,7 +558,7 @@ const Checkbox = ({
           <div className="col-auto">
             <input
               className="form-check-input"
-              type="checkbox" // <-- Note: Changed to checkbox
+              type="checkbox"
               disabled
             />
           </div>
