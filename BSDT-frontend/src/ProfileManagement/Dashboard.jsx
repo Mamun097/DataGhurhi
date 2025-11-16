@@ -119,6 +119,7 @@ const Dashboard = () => {
       if (response.status === 200) {
         console.log("Invitation accepted successfully");
         fetchCollaborationRequests();
+        fetchCollaboratedProjects(); // Fetch updated collaborated projects
       }
     } catch (error) {
       console.error("Failed to accept invitation:", error);
@@ -396,6 +397,10 @@ const Dashboard = () => {
     }
   }, []);
 
+  useEffect(() => {
+    fetchCollaborationRequests();
+  }, []);
+
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -406,23 +411,30 @@ const Dashboard = () => {
   }, []);
 
   const getTabs = () => {
-    if (isAdmin) {
-      return [
-        { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
-        { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
-        { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
-        { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
-      ];
-    } else {
-      return [
-        { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
-        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
-        { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
-        { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
-        { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
-      ];
-    }
-  };
+  const pendingRequestsCount = collabRequests?.length || 0;
+  
+  if (isAdmin) {
+    return [
+      { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
+      { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
+      { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
+      { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+    ];
+  } else {
+    return [
+      { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
+      { 
+        label: "Shared with Me", 
+        key: "shared", 
+        icon: <Users size={18} />,
+        badge: pendingRequestsCount > 0 ? pendingRequestsCount : null
+      },
+      { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
+      { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
+      { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
+    ];
+  }
+};
 
   useEffect(() => {
     setCollapsed(isMobile);
@@ -514,12 +526,11 @@ const Dashboard = () => {
                 <li key={tab.key}>
                   <div className="tooltip-container">
                     <button
-                      className={`sidebar-btn ${
-                        (activeTab === tab.key || 
-                         (activeTab === "projectdetails" && tab.key === "projects"))
+                      className={`sidebar-btn ${(activeTab === tab.key ||
+                          (activeTab === "projectdetails" && tab.key === "projects"))
                           ? "active"
                           : ""
-                      } ${collapsed ? "collapsed" : ""}`}
+                        } ${collapsed ? "collapsed" : ""}`}
                       onClick={() => {
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
@@ -532,12 +543,15 @@ const Dashboard = () => {
                       {!collapsed && !isMobile && (
                         <span className="label">{tab.label}</span>
                       )}
+                      {tab.badge && (
+                        <span className="notification-badge">{tab.badge}</span>
+                      )}
                     </button>
 
                     {((window.innerWidth <= 768) ||
                       (collapsed && !isMobile)) && (
-                      <span className="tooltip-text">{tab.label}</span>
-                    )}
+                        <span className="tooltip-text">{tab.label}</span>
+                      )}
                   </div>
                 </li>
               ))}
@@ -735,6 +749,7 @@ const Dashboard = () => {
                 handleReject={handleReject}
                 navigate={navigate}
                 language={language}
+                fetchCollaboratedProjects={fetchCollaboratedProjects} // Add this line
               />
             )}
 

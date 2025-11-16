@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import PersonIcon from "@mui/icons-material/Person";
 import SearchIcon from "@mui/icons-material/Search";
@@ -31,6 +31,7 @@ const CollabProjectTab = ({
   handleAccept,
   handleReject,
   navigate,
+  fetchCollaboratedProjects, // Add this prop
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
@@ -38,6 +39,11 @@ const CollabProjectTab = ({
   const [sortOrder, setSortOrder] = useState("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
+
+  // Fetch collaboration requests when component mounts
+  useEffect(() => {
+    fetchCollaborationRequests();
+  }, []);
 
   const bannerImages = [
     banner1, banner2, banner3, banner4, banner5,
@@ -51,9 +57,6 @@ const CollabProjectTab = ({
   };
 
   const handleProjectClick = (projectId, access_role) => {
-    // navigate(`/view-project/${projectId}`, {
-    //   state: { role: access_role },
-    // });
     navigate(`/dashboard?tab=projectdetails&projectId=${projectId}`);
   };
 
@@ -103,6 +106,9 @@ const CollabProjectTab = ({
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
   const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
   const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
+
+  // Get the count of pending requests
+  const pendingRequestsCount = collabRequests.length;
 
   return (
     <div>
@@ -174,6 +180,9 @@ const CollabProjectTab = ({
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
             <span>{getLabel("View Requests")}</span>
+            {pendingRequestsCount > 0 && (
+              <span className="notification-badge">{pendingRequestsCount}</span>
+            )}
           </button>
         </div>
       </div>
@@ -303,7 +312,12 @@ const CollabProjectTab = ({
         >
           <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h5 className="modal-title">{getLabel("Collaboration Requests")}</h5>
+              <div className="modal-header-content">
+                <h5 className="modal-title">{getLabel("Collaboration Requests")}</h5>
+                {collabRequests.length > 0 && (
+                  <span className="modal-count-badge">{collabRequests.length} pending</span>
+                )}
+              </div>
               <button
                 className="btn-modal-close"
                 onClick={() => setShowCollabModal(false)}
@@ -422,7 +436,14 @@ const CollabProjectTab = ({
                 </>
               ) : (
                 <div className="empty-requests">
-                  <p>{getLabel("No collaboration requests")}</p>
+                  <div className="empty-requests-icon">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <path d="M9 11l3 3L22 4"></path>
+                      <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                    </svg>
+                  </div>
+                  <h4>{getLabel("All caught up!")}</h4>
+                  <p>{getLabel("You have no pending collaboration requests")}</p>
                 </div>
               )}
             </div>
