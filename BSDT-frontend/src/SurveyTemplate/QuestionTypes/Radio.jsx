@@ -44,10 +44,7 @@ const Radio = ({
             prev.map((q) => {
               if (q.id === question.id) {
                 const currentOptions = [...(q.meta?.options || [])];
-                currentOptions[index] = {
-                  ...currentOptions[index],
-                  text: lines[0].trim(),
-                };
+                currentOptions[index] = lines[0].trim();
                 const newOptions = lines.slice(1).map((line) => line.trim());
                 currentOptions.splice(index + 1, 0, ...newOptions);
 
@@ -114,10 +111,7 @@ const Radio = ({
             prev.map((q) => {
               if (q.id === question.id) {
                 const currentOptions = [...(q.meta?.options || [])];
-                currentOptions[index] = {
-                  ...currentOptions[index],
-                  text: lines[0].trim(),
-                };
+                currentOptions[index] = lines[0].trim();
                 const newOptions = lines.slice(1).map((line) => line.trim());
                 currentOptions.splice(index + 1, 0, ...newOptions);
 
