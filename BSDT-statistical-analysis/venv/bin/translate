@@ -1,4 +1,4 @@
-#!/home/m/Desktop/DataGhurhi/BSDT-statistical-analysis/venv/bin/python3.10
+#!/home/tawhidumar/codes/DataGhurhi/BSDT-statistical-analysis/venv/bin/python3
 # -*- coding: utf-8 -*-
 import argparse
 import sys
