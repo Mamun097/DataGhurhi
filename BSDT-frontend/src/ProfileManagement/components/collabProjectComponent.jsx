@@ -51,9 +51,10 @@ const CollabProjectTab = ({
   };
 
   const handleProjectClick = (projectId, access_role) => {
-    navigate(`/view-project/${projectId}`, {
-      state: { role: access_role },
-    });
+    // navigate(`/view-project/${projectId}`, {
+    //   state: { role: access_role },
+    // });
+    navigate(`/dashboard?tab=projectdetails&projectId=${projectId}`);
   };
 
   const formatDate = (dateString) => {

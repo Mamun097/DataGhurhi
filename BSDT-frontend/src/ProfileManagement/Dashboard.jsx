@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../db";
 import NavbarAcholder from "./navbarAccountholder";
 import PremiumAdBanner from "./PremiumFeatures/PremiumAdBanner";
@@ -72,6 +72,9 @@ const Dashboard = () => {
     return urlParams.get("projectId");
   };
 
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "projects");
   const [selectedProjectId, setSelectedProjectId] = useState(getProjectIdFromURL());
   const [privacyFilter, setPrivacyFilter] = useState("all");
@@ -85,8 +88,22 @@ const Dashboard = () => {
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [showCollabModal, setShowCollabModal] = useState(false);
-  
-  const navigate = useNavigate();
+
+  // Sync state with URL parameters whenever location changes
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tab = urlParams.get("tab");
+    const projectId = urlParams.get("projectId");
+    
+    if (tab) {
+      setActiveTab(tab);
+    }
+    if (projectId) {
+      setSelectedProjectId(projectId);
+    } else {
+      setSelectedProjectId(null);
+    }
+  }, [location.search]);
 
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
