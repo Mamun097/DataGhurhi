@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -16,7 +22,6 @@ const Checkbox = ({
   language,
   setLanguage,
   getLabel,
-
 }) => {
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
@@ -32,101 +37,57 @@ const Checkbox = ({
     question.meta?.requireAtLeastOneSelection || false
   );
 
-  const handleOptionChange = useCallback((index, value) => {
-    if (value.includes('\n')) {
-      const lines = value.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        setQuestions(prev =>
-          prev.map(q => {
-            if (q.id === question.id) {
-              const currentOptions = [...(q.meta?.options || [])];
-              currentOptions[index] = lines[0].trim();
-              const newOptions = lines.slice(1).map(line => line.trim());
-              currentOptions.splice(index + 1, 0, ...newOptions);
-              
-              return {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: currentOptions
-                }
-              };
-            }
-            return q;
-          })
-        );
-      } else if (lines.length === 1) {
-        setQuestions(prev =>
-          prev.map(q =>
-            q.id === question.id
-              ? {
-                  ...q,
-                  meta: {
-                    ...q.meta,
-                    options: (q.meta?.options || []).map((opt, i) =>
-                      i === index ? lines[0].trim() : opt
-                    ),
-                  },
-                }
-              : q
-          )
-        );
-      }
-    } else {
-      setQuestions(prev =>
-        prev.map(q =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === index ? value : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
+  const handleOptionChange = useCallback(
+    (index, value) => {
+      if (value.includes("\n")) {
+        const lines = value.split("\n").filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          setQuestions((prev) =>
+            prev.map((q) => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[index] = lines[0].trim();
+                const newOptions = lines.slice(1).map((line) => line.trim());
+                currentOptions.splice(index + 1, 0, ...newOptions);
 
-  const handleOptionPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        setQuestions(prev =>
-          prev.map(q => {
-            if (q.id === question.id) {
-              const currentOptions = [...(q.meta?.options || [])];
-              currentOptions[index] = lines[0].trim();
-              const newOptions = lines.slice(1).map(line => line.trim());
-              currentOptions.splice(index + 1, 0, ...newOptions);
-              
-              return {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: currentOptions
-                }
-              };
-            }
-            return q;
-          })
-        );
-      } else if (lines.length === 1) {
-        setQuestions(prev =>
-          prev.map(q =>
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions,
+                  },
+                };
+              }
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions((prev) =>
+            prev.map((q) =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === index ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
             q.id === question.id
               ? {
                   ...q,
                   meta: {
                     ...q.meta,
                     options: (q.meta?.options || []).map((opt, i) =>
-                      i === index ? lines[0].trim() : opt
+                      i === index ? value : opt
                     ),
                   },
                 }
@@ -134,24 +95,76 @@ const Checkbox = ({
           )
         );
       }
-    } else {
-      setQuestions(prev =>
-        prev.map(q =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === index ? pastedText : opt
-                  ),
-                },
+    },
+    [question.id, setQuestions]
+  );
+
+  const handleOptionPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
+
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          setQuestions((prev) =>
+            prev.map((q) => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[index] = lines[0].trim();
+                const newOptions = lines.slice(1).map((line) => line.trim());
+                currentOptions.splice(index + 1, 0, ...newOptions);
+
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions,
+                  },
+                };
               }
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions((prev) =>
+            prev.map((q) =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === index ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? pastedText : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    },
+    [question.id, setQuestions]
+  );
 
   useEffect(() => {
     setRequired(question.required || false);
@@ -452,7 +465,7 @@ const Checkbox = ({
           ))}
         </div>
       )}
-{/* 
+      {/* 
       <input
         type="text"
         className="form-control mb-3"
@@ -481,7 +494,11 @@ const Checkbox = ({
                       <div className="col-auto" {...prov.dragHandleProps}>
                         <i
                           className="bi bi-grip-vertical"
-                          style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
+                          style={{
+                            fontSize: "1.2rem",
+                            cursor: "grab",
+                            color: "gray",
+                          }}
                         ></i>
                       </div>
                       <div className="col-auto">
@@ -496,7 +513,9 @@ const Checkbox = ({
                           type="text"
                           className="survey-form-control survey-form-control-sm"
                           value={option}
-                          onChange={(e) => handleOptionChange(idx, e.target.value)}
+                          onChange={(e) =>
+                            handleOptionChange(idx, e.target.value)
+                          }
                           onPaste={(e) => handleOptionPaste(idx, e)}
                           onFocus={(e) => e.target.select()}
                           placeholder={`Option ${idx + 1}`}
@@ -523,15 +542,75 @@ const Checkbox = ({
           )}
         </Droppable>
       </DragDropContext>
+      {/* Other Option */}
+      {otherOption && (
+        <div className="row g-2 mb-2 align-items-center">
+          <div className="col-auto">
+            <i
+              className="bi bi-grip-vertical"
+              style={{
+                fontSize: "1.2rem",
+                cursor: "grab",
+                color: "transparent",
+              }}
+            ></i>
+          </div>
+          <div className="col-auto">
+            <input
+              className="form-check-input"
+              type="checkbox" // <-- Note: Changed to checkbox
+              disabled
+            />
+          </div>
+          <div className="col-auto">
+            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
+              {getLabel("Other: ")}
+            </span>
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="survey-form-control survey-form-control-sm"
+              disabled
+              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+            />
+          </div>
+          <div className="col-auto">
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={() => {
+                handleOtherOption(false, question.id, setQuestions);
+                setOtherOption(false);
+              }}
+              title={getLabel("Remove Other")}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="d-flex gap-2 mt-3">
+        <button type="button" className="add-option-btn" onClick={addOption}>
+          <i className="bi bi-plus-circle me-1"></i>
+          {getLabel("Add Option")}
+        </button>
 
-     <button
-        className="add-option-btn"
-        onClick={addOption}
-      >
-        ➕ {getLabel("Add Option")}
-      </button>
+        {!otherOption && (
+          <button
+            type="button"
+            className="add-option-btn"
+            onClick={() => {
+              handleOtherOption(!otherOption, question.id, setQuestions);
+              setOtherOption(true);
+            }}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            {getLabel('Add "Other"')}
+          </button>
+        )}
+      </div>
 
-{/* 
+      {/* 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button
           className="btn btn-outline-secondary w-auto"
@@ -628,104 +707,111 @@ const Checkbox = ({
           </label>
         </div> */}
       {/* </div> */}
-  <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-      {/* Copy */}
-      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
-        <i className="bi bi-copy"></i>
-      </button>
-
-      {/* Delete */}
-      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
-        <i className="bi bi-trash"></i>
-      </button>
-
-      {/* Required */}
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={`requiredSwitchCheckbox${question.id}`}
-          checked={required}
-          onChange={handleRequired}
-        />
-        <label
-          className="form-check-label small"
-          htmlFor={`requiredSwitchCheckbox${question.id}`}
-        >
-          {getLabel("Required")}
-        </label>
-      </div>
-
-      {/* Three Dots Menu */}
-      <div className="menu-container" ref={menuRef}>
+      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+        {/* Copy */}
         <button
-          className="icon-btn"
-          onClick={() => setShowMenu((prev) => !prev)}
-          title="More Options"
+          className="survey-icon-btn"
+          onClick={handleCopy}
+          title="Copy Question"
         >
-          <i className="bi bi-three-dots-vertical"></i>
+          <i className="bi bi-copy"></i>
         </button>
 
-      {showMenu && (
-        <div className="custom-menu">
-          {/* Shuffle Options */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-shuffle"></i>
-              {getLabel("Shuffle Option Order")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                checked={enableOptionShuffle}
-                onChange={handleEnableOptionShuffleToggle}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
+        {/* Delete */}
+        <button
+          className="survey-icon-btn"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
+          <i className="bi bi-trash"></i>
+        </button>
 
-          {/* Require at least one */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-check2-square"></i>
-              {getLabel("Require at least one selection")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                checked={requireAtLeastOneSelection}
-                onChange={handleRequireAtLeastOneSelectionToggle}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
-
-            {/* Add Image */}
-          <label className="menu-item" style={{ cursor: "pointer" }}>
-            <div className="menu-label">
-              <i className="bi bi-image"></i>
-              {getLabel("Add Image")}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleQuestionImageUpload}
-            />
+        {/* Required */}
+        <div className="form-check form-switch mb-0">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitchCheckbox${question.id}`}
+            checked={required}
+            onChange={handleRequired}
+          />
+          <label
+            className="form-check-label small"
+            htmlFor={`requiredSwitchCheckbox${question.id}`}
+          >
+            {getLabel("Required")}
           </label>
-
-          {/* Translate */}
-          <button className="menu-item" onClick={handleTranslation}>
-            <div className="menu-label">
-              <i className="bi bi-translate"></i>
-              {getLabel("Translate Question")}
-            </div>
-          </button>
         </div>
-      )}
 
+        {/* Three Dots Menu */}
+        <div className="menu-container" ref={menuRef}>
+          <button
+            className="icon-btn"
+            onClick={() => setShowMenu((prev) => !prev)}
+            title="More Options"
+          >
+            <i className="bi bi-three-dots-vertical"></i>
+          </button>
+
+          {showMenu && (
+            <div className="custom-menu">
+              {/* Shuffle Options */}
+              <div className="menu-item">
+                <div className="menu-label">
+                  <i className="bi bi-shuffle"></i>
+                  {getLabel("Shuffle Option Order")}
+                </div>
+                <label className="switch-small">
+                  <input
+                    type="checkbox"
+                    checked={enableOptionShuffle}
+                    onChange={handleEnableOptionShuffleToggle}
+                  />
+                  <span className="slider-small"></span>
+                </label>
+              </div>
+
+              {/* Require at least one */}
+              <div className="menu-item">
+                <div className="menu-label">
+                  <i className="bi bi-check2-square"></i>
+                  {getLabel("Require at least one selection")}
+                </div>
+                <label className="switch-small">
+                  <input
+                    type="checkbox"
+                    checked={requireAtLeastOneSelection}
+                    onChange={handleRequireAtLeastOneSelectionToggle}
+                  />
+                  <span className="slider-small"></span>
+                </label>
+              </div>
+
+              {/* Add Image */}
+              <label className="menu-item" style={{ cursor: "pointer" }}>
+                <div className="menu-label">
+                  <i className="bi bi-image"></i>
+                  {getLabel("Add Image")}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleQuestionImageUpload}
+                />
+              </label>
+
+              {/* Translate */}
+              <button className="menu-item" onClick={handleTranslation}>
+                <div className="menu-label">
+                  <i className="bi bi-translate"></i>
+                  {getLabel("Translate Question")}
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };
