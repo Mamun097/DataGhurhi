@@ -75,7 +75,7 @@ async function sendCollaboratorInvitation({
           background-color: #f5f5f5;
         }
         .container {
-          max-width: 600px;
+          max-width: 100%;
           margin: 0 auto;
           background-color: #ffffff;
         }
@@ -180,7 +180,7 @@ async function sendCollaboratorInvitation({
           <p class="greeting">Hello${collaboratorName ? ' ' + collaboratorName : ''},</p>
           
           <p class="message">
-            <strong>${invitorName}</strong> (${invitorEmail}) has invited you to collaborate on their research project on the DataGhurhi platform.
+            <strong>${invitorName}</strong> (${invitorEmail}) has invited you to collaborate on their research project on DataGhurhi.
           </p>
           
           <div class="project-details">
@@ -228,8 +228,8 @@ async function sendCollaboratorInvitation({
         </div>
         
         <div class="footer">
-          <p><strong>DataGhurhi Research Platform</strong></p>
-          <p>Empowering research through collaborative data collection</p>
+          <p><strong>DataGhurhi</strong></p>
+          <p>Collect, Analyze, and Share Research Data Seamlessly!</p>
           <p style="margin-top: 15px; font-size: 12px;">
             If you received this email by mistake, please ignore it.
           </p>
@@ -268,7 +268,7 @@ If you received this email by mistake, please ignore it.
   // Send email
   try {
     const info = await transporter.sendMail({
-      from: `"DataGhurhi Platform" <${process.env.EMAIL_USER}>`,
+      from: `"DataGhurhi" <${process.env.EMAIL_USER}>`,
       to: collaboratorEmail,
       subject: subject,
       text: textBody,
