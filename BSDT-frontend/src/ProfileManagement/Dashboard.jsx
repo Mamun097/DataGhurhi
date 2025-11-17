@@ -76,6 +76,7 @@ const Dashboard = () => {
   const location = useLocation();
 
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "projects");
+  const [sourceTab, setSourceTab] = useState(null);
   const [selectedProjectId, setSelectedProjectId] = useState(getProjectIdFromURL());
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
@@ -91,19 +92,26 @@ const Dashboard = () => {
 
   // Sync state with URL parameters whenever location changes
   useEffect(() => {
-    const urlParams = new URLSearchParams(location.search);
-    const tab = urlParams.get("tab");
-    const projectId = urlParams.get("projectId");
-    
-    if (tab) {
-      setActiveTab(tab);
-    }
-    if (projectId) {
-      setSelectedProjectId(projectId);
-    } else {
-      setSelectedProjectId(null);
-    }
-  }, [location.search]);
+  const urlParams = new URLSearchParams(location.search);
+  const tab = urlParams.get("tab");
+  const projectId = urlParams.get("projectId");
+  const source = urlParams.get("source");
+  
+  if (tab) {
+    setActiveTab(tab);
+  }
+  if (source) {
+    setSourceTab(source);
+  } else if (tab !== "projectdetails") {
+    // Only clear sourceTab if we're not viewing project details
+    setSourceTab(null);
+  }
+  if (projectId) {
+    setSelectedProjectId(projectId);
+  } else {
+    setSelectedProjectId(null);
+  }
+}, [location.search]);
 
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
@@ -314,22 +322,27 @@ const Dashboard = () => {
   const handleAddProjectClick = () => navigate("/addproject");
   
   const handleProjectClick = (projectId, role) => {
-    setSelectedProjectId(projectId);
-    setActiveTab("projectdetails");
-    const url = new URL(window.location);
-    url.searchParams.set("tab", "projectdetails");
-    url.searchParams.set("projectId", projectId);
-    window.history.replaceState({}, "", url);
-  };
+  setSelectedProjectId(projectId);
+  setActiveTab("projectdetails");
+  setSourceTab("projects"); // Set source as projects
+  const url = new URL(window.location);
+  url.searchParams.set("tab", "projectdetails");
+  url.searchParams.set("projectId", projectId);
+  url.searchParams.set("source", "projects"); // Add source parameter
+  window.history.replaceState({}, "", url);
+};
 
   const handleBackToProjects = () => {
-    setSelectedProjectId(null);
-    setActiveTab("projects");
-    const url = new URL(window.location);
-    url.searchParams.delete("projectId");
-    url.searchParams.set("tab", "projects");
-    window.history.replaceState({}, "", url);
-  };
+  setSelectedProjectId(null);
+  const targetTab = sourceTab || "projects";
+  setActiveTab(targetTab);
+  setSourceTab(null);
+  const url = new URL(window.location);
+  url.searchParams.delete("projectId");
+  url.searchParams.delete("source");
+  url.searchParams.set("tab", targetTab);
+  window.history.replaceState({}, "", url);
+};
 
   const handleCloseAdBanner = () => {
     setShowAdBanner(false);
@@ -344,15 +357,29 @@ const Dashboard = () => {
     setShowPremiumModal(false);
   };
 
+  // const handleTabClick = (tabKey) => {
+  //   if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
+  //     setShowPremiumModal(true);
+  //   } else {
+  //     setActiveTab(tabKey);
+  //     setSelectedProjectId(null);
+  //     const url = new URL(window.location);
+  //     url.searchParams.set("tab", tabKey);
+  //     url.searchParams.delete("projectId");
+  //     window.history.replaceState({}, "", url);
+  //   }
+  // };
   const handleTabClick = (tabKey) => {
     if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
       setShowPremiumModal(true);
     } else {
       setActiveTab(tabKey);
       setSelectedProjectId(null);
+      setSourceTab(null); // Clear source tab when switching tabs
       const url = new URL(window.location);
+      // Clear all query params and set only the tab
+      url.search = '';
       url.searchParams.set("tab", tabKey);
-      url.searchParams.delete("projectId");
       window.history.replaceState({}, "", url);
     }
   };
@@ -527,7 +554,7 @@ const Dashboard = () => {
                   <div className="tooltip-container">
                     <button
                       className={`sidebar-btn ${(activeTab === tab.key ||
-                          (activeTab === "projectdetails" && tab.key === "projects"))
+                          (activeTab === "projectdetails" && sourceTab === tab.key)) // Check if source matches
                           ? "active"
                           : ""
                         } ${collapsed ? "collapsed" : ""}`}
@@ -729,6 +756,7 @@ const Dashboard = () => {
             {/* Project Details Tab */}
             {!isAdmin && activeTab === "projectdetails" && selectedProjectId && (
               <ProjectDetailsTab
+                key={`${selectedProjectId}-${sourceTab}-${location.search}`}
                 projectId={selectedProjectId}
                 getLabel={getLabel}
                 language={language}

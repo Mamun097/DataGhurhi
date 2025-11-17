@@ -57,7 +57,14 @@ const CollabProjectTab = ({
   };
 
   const handleProjectClick = (projectId, access_role) => {
-    navigate(`/dashboard?tab=projectdetails&projectId=${projectId}`);
+    const currentParams = new URLSearchParams(window.location.search);
+    const currentProjectId = currentParams.get("projectId");
+    const currentTab = currentParams.get("tab");
+
+    // Always add timestamp when navigating to project details to ensure fresh mount
+    // This solves the issue of clicking the same project multiple times
+    const timestamp = Date.now();
+    navigate(`/dashboard?tab=projectdetails&projectId=${projectId}&source=shared&refresh=${timestamp}`);
   };
 
   const formatDate = (dateString) => {
