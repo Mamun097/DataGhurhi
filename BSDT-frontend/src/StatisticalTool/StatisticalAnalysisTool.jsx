@@ -1051,16 +1051,16 @@ const StatisticalAnalysisTool = () => {
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
-                                                                disabled={true}
-                                                                // muted
-                                                                style={{
-                                                                    opacity: 0.6,
-                                                                    cursor: "not-allowed"
-                                                                }}
-                                                                // onClick={() => {
-                                                                //     const path = "/preprocess";
-                                                                //     navigate(path, { state: { userId: userId, filename: fileName } });
+                                                                // disabled={true}
+                                                                // // muted
+                                                                // style={{
+                                                                //     opacity: 0.6,
+                                                                //     cursor: "not-allowed"
                                                                 // }}
+                                                                onClick={() => {
+                                                                    const path = "/preprocess";
+                                                                    navigate(path, { state: { userId: userId, filename: fileName } });
+                                                                }}
                                                             >
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                     <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>

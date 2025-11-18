@@ -401,7 +401,7 @@ def analyze_data_api(request):
                 return process_pearson_test(request, df, selected_columns, user_id)
 
             elif test_type == 'spearman':
-                selected_columns = []
+                selected_columns = [] 
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
@@ -6899,105 +6899,110 @@ def delete_columns_api(request):
 def find_duplicates_api(request):
     try:
         # --- Extract headers ---
-        user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet_name= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl') 
-        if not user_id:
-            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
-        if not file_url:
-            return JsonResponse({'success': False, 'error': 'File URL not provided.'})
-        folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
+        if(request.method == 'POST'):
+
+            user_id = request.headers.get('userID')
+            filename = request.headers.get('filename')
+            sheet_name= request.headers.get('sheet')
+            file_url = request.headers.get('Fileurl') 
+            print(f"Received User ID: {user_id}") 
+            if not user_id:
+                return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+            if not file_url:
+                return JsonResponse({'success': False, 'error': 'File URL not provided.'})
+            folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
 
 
-        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
+            file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
 
-        if not os.path.exists(file_path):
-            return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+            if not os.path.exists(file_path):
+                return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
+            
+            preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
         
-        preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
-    
-        # Create preprocess folder if not exists
-        os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
-         
-        # Define preprocess file path
-        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+            # Create preprocess folder if not exists
+            os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
+            
+            # Define preprocess file path
+            preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
 
-        # Load from preprocess if exists, otherwise from original
-        source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
+            # Load from preprocess if exists, otherwise from original
+            source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
 
-        # --- Load Excel ---
-        try:
-            if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-                df= pd.read_excel(source_path, sheet_name= None)
-                if sheet_name in df:
-                    df = df[sheet_name]
+            # --- Load Excel ---
+            try:
+                if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
+                    df= pd.read_excel(source_path, sheet_name= None)
+                    if sheet_name in df:
+                        df = df[sheet_name]
+                    else:
+                        df = list(df.values())[0]
                 else:
-                    df = list(df.values())[0]
-            else:
-                df = pd.read_csv(source_path)
-        except Exception as e:
-            return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
-        total_rows = len(df)
+                    df = pd.read_csv(source_path)
+            except Exception as e:
+                return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
+            total_rows = len(df)
 
-        # --- Get columns from request body ---
-        body = json.loads(request.body)
-        columns = body.get('columns', [])
-        
-        dup_info = []
-        summary_msg = "No duplicates detected."
-        duplicate_indices = []  
+            # --- Get columns from request body ---
+            body = json.loads(request.body)
+            columns = body.get('columns', [])
+            df.columns = df.columns.str.replace("\n", " ").str.strip()
+            print(df.columns.tolist())            
+            
+            dup_info = []
+            summary_msg = "No duplicates detected."
+            duplicate_indices = []  
 
-        if columns:
-            existing_cols = [c for c in columns if c in df.columns]
-            missing_cols = [c for c in columns if c not in df.columns]
+            if columns:
+                existing_cols = [c for c in columns if c in df.columns]
+                missing_cols = [c for c in columns if c not in df.columns]
+                print(columns)
+                print(existing_cols) 
+                for col in missing_cols:
+                    dup_info.append({'column': col, 'error': 'Column not found'})
 
-            for col in missing_cols:
-                dup_info.append({'column': col, 'error': 'Column not found'})
+                if len(existing_cols) == 1:
+                    col = existing_cols[0]
+                    dup_mask = df[col].duplicated(keep=False)
+                    dupped_rows = df[dup_mask]
+          
+                    if not dupped_rows.empty:
+                        duplicate_indices = dupped_rows.index.tolist()
+                        dup_info.append({
+                            'column': col,
+                            'duplicates_found': len(dupped_rows),
+                            'duplicate_values': dupped_rows[col].tolist()
+                        })
+                        print(dupped_rows) 
+                        summary_msg = f"Duplicates detected in column '{col}'."
+                    else:
+                        dup_info.append({'column': col, 'message': 'No duplicates found'})
 
-            if len(existing_cols) == 1:
-                col = existing_cols[0]
-                dup_mask = df[col].duplicated(keep=False)
-                dupped_rows = df[dup_mask]
+                elif len(existing_cols) > 1:
+                    dup_mask = df.duplicated(subset=existing_cols, keep=False)
+                    dupped_rows = df[dup_mask]
 
-                if not dupped_rows.empty:
-                    duplicate_indices = dupped_rows.index.tolist()
-                    dup_info.append({
-                        'column': col,
-                        'duplicates_found': len(dupped_rows),
-                        'duplicate_values': dupped_rows[col].tolist()
-                    })
-                    summary_msg = f"Duplicates detected in column '{col}'."
-                else:
-                    dup_info.append({'column': col, 'message': 'No duplicates found'})
+                    if not dupped_rows.empty:
+                        duplicate_indices = dupped_rows.index.tolist()
+                        dup_info.append({
+                            'columns': existing_cols,
+                            'duplicates_found': len(dupped_rows),
+                            'duplicate_combinations': dupped_rows[existing_cols].drop_duplicates().to_dict(orient="records")
+                        })
+                        summary_msg = f"Duplicates detected based on combination of columns: {existing_cols}"
+                    else:
+                        dup_info.append({'columns': existing_cols, 'message': 'No duplicates found'})
+            print(duplicate_indices)  
+            return JsonResponse({
+                'success': True,
+                'message': summary_msg,
+                'info': dup_info,
+                'columns': df.columns.tolist(),
+                'rows': df.fillna("").astype(str).to_dict(orient='records'),  
+                'duplicate_indices': duplicate_indices,  
+                'total_rows': total_rows
+            })
 
-            elif len(existing_cols) > 1:
-                dup_mask = df.duplicated(subset=existing_cols, keep=False)
-                dupped_rows = df[dup_mask]
-
-                if not dupped_rows.empty:
-                    duplicate_indices = dupped_rows.index.tolist()
-                    dup_info.append({
-                        'columns': existing_cols,
-                        'duplicates_found': len(dupped_rows),
-                        'duplicate_combinations': dupped_rows[existing_cols].drop_duplicates().to_dict(orient="records")
-                    })
-                    summary_msg = f"Duplicates detected based on combination of columns: {existing_cols}"
-                else:
-                    dup_info.append({'columns': existing_cols, 'message': 'No duplicates found'})
-        print(dupped_rows)
-        return JsonResponse({
-            'success': True,
-            'message': summary_msg,
-            'info': dup_info,
-            'columns': df.columns.tolist(),
-            'rows': df.fillna("").astype(str).to_dict(orient='records'),  
-            'duplicate_indices': duplicate_indices,  
-            'total_rows': total_rows
-        })
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 
     except Exception as e:
@@ -7013,7 +7018,8 @@ def remove_duplicates(request):
     columns = body.get('columns', [])
     mode = body.get('mode')  # "all" or "selected"
     selected_indices = body.get('selected', [])
-
+    print(selected_indices)
+    print(file_url) 
     try:
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
@@ -7030,7 +7036,7 @@ def remove_duplicates(request):
 
         # Load from preprocess if exists, otherwise from original
         source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
-
+        print(file_path) 
         # --- Load Excel ---
         try:
             if filename.lower().endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
@@ -8006,8 +8012,9 @@ def save_edited_excel(request):
         except Exception as e:
             return JsonResponse({
                 "success": False,
-                "error": str(e)
+                "error": str(e) 
             }, status=500)
+        
 
     return JsonResponse({"success": False, "error": "Invalid request."}, status=400)
 
@@ -8082,3 +8089,25 @@ def serve_user_file(request, filename):
         response["Content-Length"] = os.path.getsize(file_path)
         response["X-Content-Type-Options"] = "nosniff"
         return response
+
+import shutil
+@csrf_exempt 
+
+
+
+def delete_temp_folder(request):    
+
+    if(request.method == "POST"):
+        user_id = request.POST.get("user_id")
+        print(user_id) 
+
+    
+        temp_folder = os.path.join(settings.MEDIA_ROOT,f'ID_{user_id}_uploads/', 'temporary_uploads')
+
+        try:
+            if os.path.exists(temp_folder):
+                shutil.rmtree(temp_folder)  
+            os.makedirs(temp_folder, exist_ok=True)  
+            return JsonResponse({"status": "success", "message": "Temporary folder deleted"})
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
