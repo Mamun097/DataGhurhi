@@ -625,8 +625,8 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
             )}
           </div>
         </div>
-
-        <div className="project-details-actions">
+        {accessControl!="viewer" &&
+        (<div className="project-details-actions">
           {!isEditing ? (
             <IconButton
               className={`btn-edit-icon ${!canEdit ? "disabled" : ""}`}
@@ -649,7 +649,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
               </button>
             </div>
           )}
-        </div>
+        </div>)}
       </div>
 
       {/* Surveys Section Header */}
@@ -852,7 +852,9 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
                       ? getLabel("Published")
                       : getLabel("Draft")}
                   </span>
-                  <IconButton
+                  
+                  {accessControl!="viewer" &&
+                  (<IconButton
                     className="list-delete"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -875,7 +877,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
                     disabled={!canEdit}
                   >
                     <DeleteIcon fontSize="small" />
-                  </IconButton>
+                  </IconButton>)}
                 </div>
               </div>
             )
