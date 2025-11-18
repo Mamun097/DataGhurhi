@@ -7,6 +7,35 @@ import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 import { handleMarking } from "../Utils/handleMarking";
 import apiClient from "../../api";
 import CustomLoader from "../Utils/CustomLoader";
+import SurveyNotOpen from "../Utils/SurveyNotOpen";
+
+// helper to check if survey is open
+const isSurveyOpen = (template, setSurveyOpenMessage, setQuizTimeLeft) => {
+  if (!template) return false;
+  if (!template.template.is_quiz) return true; // Not a quiz, so always open
+
+  const now = new Date();
+  const { quiz_settings } = template.template;
+  const startTime = quiz_settings.start_time
+    ? new Date(quiz_settings.start_time)
+    : null;
+  const endTime = quiz_settings.end_time
+    ? new Date(quiz_settings.end_time)
+    : null;
+
+  if (startTime && now < startTime) {
+    setSurveyOpenMessage(
+      `This survey will open on ${startTime.toLocaleString()}.`
+    );
+    return false; // Not started yet
+  }
+  if (endTime && now > endTime) {
+    setSurveyOpenMessage(`This survey ended on ${endTime.toLocaleString()}.`);
+    return false; // Already ended
+  }
+
+  return true; // Survey is open
+};
 
 const Index = () => {
   const navigate = useNavigate();
@@ -28,6 +57,10 @@ const Index = () => {
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Survey Open/Close related states
+  const [isSurveyCurrentlyOpen, setIsSurveyCurrentlyOpen] = useState(null);
+  const [surveyOpenMessage, setSurveyOpenMessage] = useState("");
+
   useEffect(() => {
     const load = async () => {
       if (slug) {
@@ -46,6 +79,13 @@ const Index = () => {
 
           const surveyData = response.data.data;
           setTemplate(surveyData);
+
+          // Check if survey is open
+          if (surveyData) {
+            const isOpen = isSurveyOpen(surveyData, setSurveyOpenMessage);
+            setIsSurveyCurrentlyOpen(isOpen);
+          }
+
           setTitle(surveyData.title);
           setSections(surveyData.template.sections);
           setQuestions(surveyData.template.questions);
@@ -77,7 +117,7 @@ const Index = () => {
   }, [slug, navigate]);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     setIsSubmitting(true);
     const calculatedMarks = handleMarking(userResponse, questions);
     try {
@@ -94,7 +134,14 @@ const Index = () => {
         },
         config
       );
-      navigate("/survey-success");
+      // Survey success props: is_quiz, calculatedMarks, totalMarks
+      navigate("/survey-success", {
+        state: {
+          template: template,
+          userResponse: userResponse,
+          calculatedMarks: calculatedMarks,
+        },
+      });
     } catch (error) {
       console.error("Error submitting survey:", error);
       alert("There was an error submitting your survey. Please try again.");
@@ -103,35 +150,48 @@ const Index = () => {
     }
   };
 
-  if (template === undefined || template === null) {
+  if (
+    template === undefined ||
+    template === null ||
+    isSurveyCurrentlyOpen === null
+  ) {
     return <CustomLoader />;
   }
+
   return (
     <>
       {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
       <div className="container-fluid bg-white">
         <div className="row justify-content-center">
-          {!submitted && (
-            <div className="col-12 col-md-8">
-              <SurveyForm
-                title={title}
-                sections={sections}
-                questions={questions}
-                setQuestions={setQuestions}
-                logo={logo}
-                logoAlignment={logoAlignment}
-                logoText={logoText}
-                image={backgroundImage}
-                userResponse={userResponse}
-                setUserResponse={setUserResponse}
-                template={template}
-                shuffle={shuffle}
-                onSubmit={handleSubmit}
-                isSubmitting={isSubmitting}
-              />
-            </div>
+          {isSurveyCurrentlyOpen ? (
+            !submitted ? (
+              <div className="col-12 col-md-8">
+                <SurveyForm
+                  title={title}
+                  sections={sections}
+                  questions={questions}
+                  setQuestions={setQuestions}
+                  logo={logo}
+                  logoAlignment={logoAlignment}
+                  logoText={logoText}
+                  image={backgroundImage}
+                  userResponse={userResponse}
+                  setUserResponse={setUserResponse}
+                  template={template}
+                  shuffle={shuffle}
+                  onSubmit={handleSubmit}
+                  isSubmitting={isSubmitting}
+                />
+              </div>
+            ) : (
+              <div className="col-12 col-md-8" />
+            )
+          ) : (
+            <SurveyNotOpen
+              surveyOpenMessage={surveyOpenMessage}
+              template={template}
+            />
           )}
-          {submitted && <div className="col-12 col-md-8"></div>}
         </div>
       </div>
     </>
