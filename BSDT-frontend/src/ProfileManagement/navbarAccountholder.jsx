@@ -35,10 +35,26 @@ const translateText = async (textArray, targetLang) => {
   }
 };
 
-const logOut = () => {
+const logOut  = async () => {
+
+   try {
+     const formData = new FormData();
+    formData.append("user_id",  localStorage.getItem("user_id"));
+    // Delete temporary uploads folder
+      await fetch(
+        "http://127.0.0.1:8000/api/delete-temp-folder/",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
   localStorage.clear();
+  sessionStorage.clear();
   localStorage.setItem("language", "English");
   window.location.href = "/";
+  } catch (err) {
+    console.error("Error logging out:", err);
+  }
 };
 
 const NavbarAcholder = ({
