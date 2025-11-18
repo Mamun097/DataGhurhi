@@ -4,9 +4,9 @@ export const handleMarking = (userResponse, questions) => {
     userResponse.forEach((response) => {
         const question = questions.find(q => q.text === response.questionText);
         if (question && question.type === "radio") {
-            const correctAnswer = question.meta?.options?.find(option => option.value !== undefined && option.value !== null && option.value !== 0);
-            if (correctAnswer && response.userResponse === correctAnswer.text) {
-                marks += correctAnswer.value;
+            const correctAnswer = question.meta?.correctAnswer;
+            if (response.userResponse === correctAnswer) {
+                marks += question.points || 0;
             }
         }
     });

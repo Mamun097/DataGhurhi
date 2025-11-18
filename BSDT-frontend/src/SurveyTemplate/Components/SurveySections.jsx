@@ -175,6 +175,9 @@ const SurveySections = ({
     switch (type) {
       case "radio":
         newQ.meta.options = [getLabel("Option 1"), getLabel("Option 2")];
+        if (isQuiz) {
+          newQ.points = defaultPointValue || 1;
+        }
         break;
       case "checkbox":
       case "dropdown":

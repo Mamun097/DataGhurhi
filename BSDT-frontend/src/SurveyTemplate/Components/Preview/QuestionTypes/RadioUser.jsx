@@ -125,8 +125,8 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
               className="form-check-input me-2"
               name={`radio-${question.id}`}
               id={`radio-opt-${question.id}-${idx}`}
-              value={option.text}
-              checked={userAnswer === option.text}
+              value={option}
+              checked={userAnswer === option}
               onChange={(e) => {
                 handleAnswerChange(e);
                 setOtherSelected(false); // Reset otherSelected when selecting regular options
@@ -139,7 +139,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
               className="form-check-label pe-2 mt-2"
               htmlFor={`radio-opt-${question.id}-${idx}`}
             >
-              {option.text || `Option ${idx + 1}`}
+              {option || `Option ${idx + 1}`}
             </label>
           </div>
         ))}

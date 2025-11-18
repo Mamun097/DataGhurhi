@@ -303,7 +303,6 @@ const SurveyQuestions = ({
   const handleInsertQuestionClick = (index) => {
     setInsertQuestionIndex((prev) => (prev === index ? null : index));
   };
-  console.log("isQuiz in SurveyQuestions:", isQuiz);
   const sectionQuestions = questions.filter((q) => q.section === section.id);
 
   const handleAddNewQuestion = (type, index) => {
@@ -331,7 +330,10 @@ const SurveyQuestions = ({
     const combinedQuestions = [...otherQuestions, ...sectionQuestions];
     combinedQuestions.sort((a, b) => a.section - b.section);
 
-    const reindexed = combinedQuestions.map((q, idx) => ({ ...q, id: idx + 1 }));
+    const reindexed = combinedQuestions.map((q, idx) => ({
+      ...q,
+      id: idx + 1,
+    }));
     setQuestions(reindexed);
   };
 
@@ -406,9 +408,7 @@ const SurveyQuestions = ({
                   >
                     <i
                       className={
-                        insertQuestionIndex === index
-                          ? "bi bi-x"
-                          : "bi bi-plus"
+                        insertQuestionIndex === index ? "bi bi-x" : "bi bi-plus"
                       }
                     ></i>{" "}
                     {insertQuestionIndex === index
@@ -446,4 +446,3 @@ const SurveyQuestions = ({
 };
 
 export default SurveyQuestions;
-

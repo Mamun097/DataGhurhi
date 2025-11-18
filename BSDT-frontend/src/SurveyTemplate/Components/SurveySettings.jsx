@@ -22,8 +22,10 @@ const SettingsModal = ({
   onClose,
   isQuiz,
   setIsQuiz,
-  timeLimit,
-  setTimeLimit,
+  startTime,
+  setStartTime,
+  endTime,
+  setEndTime,
   releaseMarks,
   setReleaseMarks,
   seeMissedQuestions,
@@ -34,6 +36,7 @@ const SettingsModal = ({
   setSeePointValues,
   defaultPointValue,
   setDefaultPointValue,
+  setIsLoggedInRequired,
 }) => {
   if (!isOpen) return null;
 
@@ -55,7 +58,10 @@ const SettingsModal = ({
               label="Quiz"
               description="Enable quiz features like grading and feedback (only for multiple choice questions)"
               checked={isQuiz}
-              onChange={(e) => setIsQuiz(e.target.checked)}
+              onChange={(e) => {
+                setIsQuiz(e.target.checked);
+                setIsLoggedInRequired(e.target.checked);
+              }}
             />
           </div>
 
@@ -98,41 +104,72 @@ const SettingsModal = ({
                 </div>
               </div>
 
-              {/* --- Time limit --- */}
+              {/* --- Time --- */}
+              {/* User can set start and end time for quiz availability */}
               <div className="settings-group">
-                <h3 className="settings-heading">Time limit - minutes</h3>
-                <div className="settings-number-item">
-                  <p className="settings-description">
-                    Set a time limit for completing the quiz
-                  </p>
+                <h3 className="settings-heading">Quiz availability</h3>
+                <div className="settings-datetime-item">
+                  <label htmlFor="start-time" style={{ fontWeight: "500" }}>
+                    Start time
+                  </label>
                   <input
-                    type="number"
-                    id="time-limit"
-                    min="1"
-                    step="1"
-                    value={timeLimit}
-                    onChange={(e) =>
-                      setTimeLimit(Math.max(0, Number(e.target.value)))
-                    }
-                    className="settings-number-input"
+                    type="datetime-local"
+                    id="start-time"
+                    className="settings-datetime-input"
+                    value={startTime || ""}
+                    // If endTime is null, then endTime = startTime + 30 minutes
+                    onChange={(e) => {
+                      setStartTime(e.target.value);
+                      if (!endTime) {
+                        setEndTime(
+                          new Date(
+                            new Date(e.target.value).getTime() + 30 * 60000
+                          )
+                            .toISOString()
+                            .slice(0, 16)
+                        );
+                      }
+                    }}
+                  />
+                </div>
+                <div className="settings-datetime-item">
+                  {/* If endTime is before startTime, show a warning */}
+                  <label htmlFor="end-time" style={{ fontWeight: "500" }}>
+                    End time
+                  </label>
+                  {startTime &&
+                    endTime &&
+                    new Date(endTime) < new Date(startTime) && (
+                      <p style={{ color: "red", marginTop: "4px" }}>
+                        End time cannot be before start time.
+                      </p>
+                    )}
+
+                  <input
+                    type="datetime-local"
+                    id="end-time"
+                    className="settings-datetime-input"
+                    value={endTime || ""}
+                    onChange={(e) => {
+                      setEndTime(e.target.value);
+                    }}
                   />
                 </div>
               </div>
-
               {/* --- Respondent settings --- */}
-              {/* <div className="settings-group">
+              <div className="settings-group">
                 <h3 className="settings-heading">Respondent settings</h3>
-                <ToggleSwitch
+                {/* <ToggleSwitch
                   id="see-missed"
                   label="Missed questions"
                   description="Respondents can see which questions were answered incorrectly"
                   checked={seeMissedQuestions}
                   onChange={(e) => setSeeMissedQuestions(e.target.checked)}
-                />
+                /> */}
                 <ToggleSwitch
                   id="see-correct"
                   label="Correct answers"
-                  description="Respondents can see correct answers after grades are released"
+                  description="Respondents can see correct answers"
                   checked={seeCorrectAnswers}
                   onChange={(e) => setSeeCorrectAnswers(e.target.checked)}
                 />
@@ -143,7 +180,7 @@ const SettingsModal = ({
                   checked={seePointValues}
                   onChange={(e) => setSeePointValues(e.target.checked)}
                 />
-              </div> */}
+              </div>
 
               {/* --- Global quiz defaults --- */}
               <div className="settings-group">

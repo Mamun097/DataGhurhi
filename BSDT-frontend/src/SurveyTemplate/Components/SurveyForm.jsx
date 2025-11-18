@@ -58,9 +58,9 @@ const SurveyForm = ({
   setIsLoggedInRequired,
   template,
 }) => {
-  console.log("Questions in SurveyForm:", questions);
+  console.log("questions in SurveyForm:", questions);
   // State for the logo
-  const [logo, setLogo] = useState(logoFromParent);
+  const [logo, setLogo] = useState(logoFromParent || null);
   const [logoAlignment, setLogoAlignment] = useState(
     logoAlignmentFromParent || "center"
   );
@@ -86,19 +86,32 @@ const SurveyForm = ({
 
   // State for survey settings
   const [showSettingsModal, setShowSettingsModal] = useState(false);
-  console.log("Settings Modal State:", showSettingsModal);
 
   // State for Quiz settings
   const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
-  const [timeLimit, setTimeLimit] = useState(template?.quiz_settings?.time_limit || 30); // in minutes
-  const [releaseMarks, setReleaseMarks] = useState(template?.quiz_settings?.release_marks || "immediately"); // 'immediately' or 'later'
-  const [seeMissedQuestions, setSeeMissedQuestions] = useState(template?.quiz_settings?.see_missed_questions || false);
-  const [seeCorrectAnswers, setSeeCorrectAnswers] = useState(template?.quiz_settings?.see_correct_answers || false);
-  const [seePointValues, setSeePointValues] = useState(template?.quiz_settings?.see_point_values || false);
-  const [defaultPointValue, setDefaultPointValue] = useState(template?.quiz_settings?.default_point_value || 0);
+  const [startTime, setStartTime] = useState(
+    template?.quiz_settings?.start_time || null
+  );
+  const [endTime, setEndTime] = useState(
+    template?.quiz_settings?.end_time || null
+  );
 
-  // Other Quiz related states
-  const [totalMarks, setTotalMarks] = useState(0);
+  const [releaseMarks, setReleaseMarks] = useState(
+    template?.quiz_settings?.release_marks || "immediately"
+  ); // 'immediately' or 'later'
+  const [seeMissedQuestions, setSeeMissedQuestions] = useState(
+    template?.quiz_settings?.see_missed_questions || false
+  );
+  const [seeCorrectAnswers, setSeeCorrectAnswers] = useState(
+    template?.quiz_settings?.see_correct_answers || false
+  );
+  const [seePointValues, setSeePointValues] = useState(
+    template?.quiz_settings?.see_point_values || false
+  );
+  const [defaultPointValue, setDefaultPointValue] = useState(
+    template?.quiz_settings?.default_point_value || 0
+  );
+  const [totalMarks, setTotalMarks] = useState(template?.total_marks || 0);
 
   // Functions for Survey Settings Modal
   const openSettingsModal = () => setShowSettingsModal(true);
@@ -223,10 +236,10 @@ const SurveyForm = ({
 
   const getLabel = (text) => translatedLabels[text] || text;
 
-  useEffect(() => {
-    setLogo(logoFromParent || null);
-    setCurrentBackgroundImage(imageFromParent || "");
-  }, [logoFromParent, imageFromParent]);
+  // useEffect(() => {
+  //   setLogo(logoFromParent || null);
+  //   setCurrentBackgroundImage(imageFromParent || "");
+  // }, [logoFromParent, imageFromParent]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -298,29 +311,6 @@ const SurveyForm = ({
       eventSource.close();
     };
   }, [survey_id]);
-
-  // Function to update the logo and relay it to the parent component
-  const updateAndRelayLogo = (newLogo) => {
-    setLogo(newLogo);
-    if (setLogoInParent) {
-      setLogoInParent(newLogo);
-    }
-  };
-
-  // Function to handle Logo alignment changes
-  const handleLogoAlignmentChange = (alignment) => {
-    if (["left", "center", "right"].includes(alignment)) {
-      setLogoAlignment(alignment);
-    }
-  };
-
-  // Function to update the background image and relay it to the parent component
-  const updateAndRelayBackgroundImage = (newImageSrc) => {
-    setCurrentBackgroundImage(newImageSrc);
-    if (setImageInParent) {
-      setImageInParent(newImageSrc);
-    }
-  };
 
   const handleAddSection = () => {
     const newSectionId =
@@ -402,6 +392,9 @@ const SurveyForm = ({
             see_correct_answers: seeCorrectAnswers,
             see_point_values: seePointValues,
             default_point_value: defaultPointValue,
+            start_time: startTime,
+            end_time: endTime,
+            total_marks: totalMarks,
           },
         },
         title: title,
@@ -496,8 +489,24 @@ const SurveyForm = ({
     });
   };
 
+  // If survey is already published, then sendSurveyData is used, otherwise handleSave is used
   const handlePreview = async () => {
-    await handleSave();
+    if (surveyStatus !== "published") {
+      // Save the survey first
+      setIsLoading(true);
+      await handleSave();
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+      await sendSurveyData(
+        "/api/surveytemplate",
+        isLoggedInRequired,
+        shuffleQuestions
+      );
+      setIsLoading(false);
+    }
+
+    // Navigate to preview page
     navigate("/preview", {
       state: {
         slug: surveyLink,
@@ -507,7 +516,6 @@ const SurveyForm = ({
 
   return (
     <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
-   
       {/* Action Buttons */}
       {/* Floating Top Navigation Bar */}
       <div className="floating-top-bar">
@@ -557,25 +565,19 @@ const SurveyForm = ({
                 </>
               )}
             </button>
-            <button
-        onClick={() => setShowCollaborationModal(true)}
-        className="fab-btn"
-      >
-        <i className="bi bi-people"></i>
-        <span className="btn-label">{getLabel("Collaborate")}</span>
-      </button>
-<button
-        onClick={() => handlePreview()}
-        className="fab-btn"
-      >
-        <i className="bi bi-eye"></i>
-        <span className="btn-label">{getLabel("Preview")}</span>
-      </button>
-
-    </>
+          </>
         )}
-
-       
+        <button
+          onClick={() => setShowCollaborationModal(true)}
+          className="fab-btn"
+        >
+          <i className="bi bi-people"></i>
+          <span className="btn-label">{getLabel("Collaborate")}</span>
+        </button>
+        <button onClick={() => handlePreview()} className="fab-btn">
+          <i className="bi bi-eye"></i>
+          <span className="btn-label">{getLabel("Preview")}</span>
+        </button>
 
         {surveyLink && (
           <>
@@ -584,38 +586,20 @@ const SurveyForm = ({
               <span className="btn-label">{getLabel("Survey Link")}</span>
             </button>
 
-      
-      <button
-        onClick={handleSurveyResponses}
-        className="fab-btn"
-      >
-        <i className="bi bi-bar-chart"></i>
-        <span className="btn-label">{getLabel("View Response")}</span>
-        {responseCount !== null && (
-          <span className="badge-small">{responseCount}</span>
+            <button onClick={handleSurveyResponses} className="fab-btn">
+              <i className="bi bi-bar-chart"></i>
+              <span className="btn-label">{getLabel("View Response")}</span>
+              {responseCount !== null && (
+                <span className="badge-small">{responseCount}</span>
+              )}
+            </button>
+          </>
         )}
-      </button>
-
-      
-     
-  
- 
-
-
-{/* 
-      <button
-        className="fab-btn"
-        onClick={() => handlePreview()}
-      >
-        <i className="bi bi-eye"></i> {getLabel("Preview")}
-      </button> */}
-    </>
-  )}
-   <button onClick={openSettingsModal} className="fab-btn">
+        <button onClick={openSettingsModal} className="fab-btn">
           <i className="bi bi-gear"></i>
           <span className="btn-label">{getLabel("Settings")}</span>
         </button>
-</div>
+      </div>
 
       <hr className="my-4 custom-hr" />
 
@@ -698,8 +682,10 @@ const SurveyForm = ({
         onClose={closeSettingsModal}
         isQuiz={isQuiz}
         setIsQuiz={setIsQuiz}
-        timeLimit={timeLimit}
-        setTimeLimit={setTimeLimit}
+        startTime={startTime}
+        setStartTime={setStartTime}
+        endTime={endTime}
+        setEndTime={setEndTime}
         releaseMarks={releaseMarks}
         setReleaseMarks={setReleaseMarks}
         seeMissedQuestions={seeMissedQuestions}
@@ -710,6 +696,7 @@ const SurveyForm = ({
         setSeePointValues={setSeePointValues}
         defaultPointValue={defaultPointValue}
         setDefaultPointValue={setDefaultPointValue}
+        setIsLoggedInRequired={setIsLoggedInRequired}
       />
 
       <PublicationSettingsModal
@@ -720,6 +707,7 @@ const SurveyForm = ({
         shuffleQuestions={shuffleQuestions}
         setShuffleQuestions={setShuffleQuestions}
         action={actionType}
+        isQuiz={isQuiz}
       />
 
       <CollaborationModal
@@ -728,7 +716,7 @@ const SurveyForm = ({
         surveyId={Number(survey_id)}
         surveyTitle={title}
       />
-       <ShareSurveyModal
+      <ShareSurveyModal
         show={showShareModal}
         handleClose={() => setShowShareModal(false)}
         surveyLink={surveyLink}

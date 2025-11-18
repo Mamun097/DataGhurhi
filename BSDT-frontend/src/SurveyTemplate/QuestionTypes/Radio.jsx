@@ -24,6 +24,7 @@ const Radio = ({
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
   );
+  console.log("Other Option: ", otherOption);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -43,10 +44,7 @@ const Radio = ({
             prev.map((q) => {
               if (q.id === question.id) {
                 const currentOptions = [...(q.meta?.options || [])];
-                currentOptions[index] = {
-                  ...currentOptions[index],
-                  text: lines[0].trim(),
-                };
+                currentOptions[index] = lines[0].trim();
                 const newOptions = lines.slice(1).map((line) => line.trim());
                 currentOptions.splice(index + 1, 0, ...newOptions);
 
@@ -113,10 +111,7 @@ const Radio = ({
             prev.map((q) => {
               if (q.id === question.id) {
                 const currentOptions = [...(q.meta?.options || [])];
-                currentOptions[index] = {
-                  ...currentOptions[index],
-                  text: lines[0].trim(),
-                };
+                currentOptions[index] = lines[0].trim();
                 const newOptions = lines.slice(1).map((line) => line.trim());
                 currentOptions.splice(index + 1, 0, ...newOptions);
 
@@ -380,10 +375,15 @@ const Radio = ({
     (optionText) => {
       if (!isQuiz) return;
 
+      // Set the selected option as the correct answer, and update Points by mark
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === question.id
-            ? { ...q, meta: { ...q.meta, correctAnswer: optionText } }
+            ? {
+                ...q,
+                meta: { ...q.meta, correctAnswer: optionText },
+                points: mark,
+              }
             : q
         )
       );
@@ -560,9 +560,76 @@ const Radio = ({
         </Droppable>
       </DragDropContext>
 
-      <button className="add-option-btn ms-5 mt-2" onClick={addOption}>
-        ➕ {getLabel("Add Option")}
-      </button>
+      {/* Other Option */}
+      {otherOption && (
+        <div className="row g-2 mb-2 align-items-center">
+          <div className="col-auto">
+            <i
+              className="bi bi-grip-vertical"
+              style={{
+                fontSize: "1.2rem",
+                cursor: "grab",
+                color: "transparent",
+              }}
+            ></i>
+          </div>
+          <div className="col-auto">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={`display-radio-${question.id}`}
+              disabled
+            />
+          </div>
+          <div className="col-auto">
+            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
+              {getLabel("Other: ")}
+            </span>
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="survey-form-control survey-form-control-sm"
+              disabled
+              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+            />
+          </div>
+          <div className="col-auto">
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={() => {
+                handleOtherOption(false, question.id, setQuestions);
+                setOtherOption(false);
+              }}
+              title={getLabel("Remove Other")}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Add Option or Add "Other" */}
+      <div className="d-flex gap-2 mt-3">
+        <button type="button" className="add-option-btn" onClick={addOption}>
+          <i className="bi bi-plus-circle me-1"></i>
+          {getLabel("Add Option")}
+        </button>
+
+        {!otherOption && !isQuiz && (
+          <button
+            type="button"
+            className="add-option-btn"
+            onClick={() => {
+              handleOtherOption(!otherOption, question.id, setQuestions);
+              setOtherOption(true);
+            }}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            {getLabel('Add "Other"')}
+          </button>
+        )}
+      </div>
 
       <hr />
       {/* Mark for an individual question - Quiz feature */}
