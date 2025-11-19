@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import "./FolderView.css";
+import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 
 export default function FileExplorer() {
   const [files, setFiles] = useState([]);
@@ -21,7 +22,8 @@ export default function FileExplorer() {
   const [showDetails, setShowDetails] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const userId = localStorage.getItem("user_id") || "";
-
+const [language, setLanguage] = useState(() => localStorage.getItem("language") || "English");
+  useEffect(() => localStorage.setItem("language", language), [language]);
   const currentPath = pathStack.join("/");
 
   useEffect(() => {
@@ -76,7 +78,7 @@ const handleDownload = (file) => {
     const fileURL = `/media/ID_${userId}_uploads/saved_files/${file.name}`;
     sessionStorage.setItem("file_name", file.name);
     sessionStorage.setItem("fileURL", fileURL);
-    window.location.href = "/analysis";
+    window.location.href = "http://localhost:5173/?tab=analysis";
 
 
   };
@@ -92,6 +94,9 @@ const handleDownload = (file) => {
   };
 
   return (
+    <div style={{paddingTop:"80px"}}>
+      <NavbarAcholder  language={language} setLanguage={setLanguage}/>
+  
     <div className="file-explorer">
       {/* Header */}
       <div className="header">
@@ -200,5 +205,6 @@ const handleDownload = (file) => {
         </div>
       )}
     </div>
+      </div>
   );
 }

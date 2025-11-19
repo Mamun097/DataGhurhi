@@ -292,6 +292,7 @@ const mapDigits = (text, lang) => {
 // Main App Component
 const StatisticalAnalysisTool = () => {
      const API_BASE = 'http://127.0.0.1:8000/api';
+     const API_WORKBOOK='http://127.0.0.1:8000'
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -933,18 +934,34 @@ const StatisticalAnalysisTool = () => {
 
         // Optional: scroll to the suggestion panel or show modal
     };
-
+const closePreview= async () =>{
+    setIsPreviewModalOpen(false);
+}
 
     return (
 
 
         <div className="an-wrapper">
+
             <header className="page-header">
                 <h1 className="an-page-title">{t.title}</h1>
             </header>
 
             <div className="an-content-center">
                 <div className="an-form-wrapper">
+                                {isPreviewModalOpen && (
+                                    <div className="prev-modal-overlay">
+                                        
+                                        <div className="prev-modal-container">
+                                             <button className="prev-close-btn" onClick={closePreview}>X</button>
+                                            <h3>Data Preview</h3>
+                                            
+
+                                                <PreviewTable workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+                                        
+                                        </div>
+                                    </div>
+                                    )}
                     {/* Error Message */}
                     {/* {errorMessage && (
                         <div className="error-box">
@@ -963,6 +980,7 @@ const StatisticalAnalysisTool = () => {
 
                     {!results ? (
                         <div className="an-card">
+                            
                             <div className="card-header">
                                 <div className="header-left">
                                     <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
@@ -1036,12 +1054,12 @@ const StatisticalAnalysisTool = () => {
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
-                                                                   disabled={true}
-                                                                // muted
-                                                                style={{
-                                                                    opacity: 0.6,
-                                                                    cursor: "not-allowed"
-                                                                }}
+                                                                //    disabled={true}
+                                                                // // muted
+                                                                // style={{
+                                                                //     opacity: 0.6,
+                                                                //     cursor: "not-allowed"
+                                                                // }}
                                                                 onClick={handlePreviewClick}
                                                             >
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1050,6 +1068,7 @@ const StatisticalAnalysisTool = () => {
                                                                 </svg>
                                                                 {language === "bn" ? "ডেটা প্রিভিউ" : "Preview"}
                                                             </button>
+                                                            
 
                                                             <button
                                                                 type="button"
@@ -1094,7 +1113,10 @@ const StatisticalAnalysisTool = () => {
                                                         <p className="insights-text">Insights will appear here</p>
                                                     </div>
                                                 </div>
+                                                
                                             </div>
+                                            
+                                            
                                         ) : (
                                             <div className="upload-folder-container">
                                                 {/* File Upload Section */}
@@ -2156,7 +2178,6 @@ const StatisticalAnalysisTool = () => {
 
                 </div>
             </div>
-
         </div>
 
 
