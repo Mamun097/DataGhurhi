@@ -118,7 +118,7 @@ const Index = () => {
 
   // Load survey details or templates
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    //window.scrollTo({ top: 0, behavior: "smooth" });
     const load = async () => {
       if (useCustom) {
         console.log("Loading custom survey details:", survey_details);
