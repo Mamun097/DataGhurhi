@@ -160,6 +160,17 @@ margin-bottom: 20px;
   background-color: #80d3bc;
 }
 
+.remove-btn{
+  background-color: #25ba95;
+  margin:10px 10px;
+  border:none;
+  gap:1rem;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-weight: 500;
+  color: #fff;
+
+}
 .match-count {
   margin-top: 4px;
   font-size: 12px;
@@ -181,9 +192,9 @@ margin-bottom: 20px;
 }
 
 /* Ag-Grid adjustments */
-.dup-cell { background-color: #b19539ff !important; color: #000 !important; }
-.outlier-cell { background-color: #865b56ff !important; color: red !important; }
-.match-cell { background-color: #ffeb3b !important; color: #000 !important; }
+.dup-cell { background-color: rgba(190, 255, 190, 0.457) !important; color: #000 !important; }
+.outlier-cell { background-color: rgba(225, 191, 187, 0.555) !important; color: red !important; }
+.match-cell { background-color: #f4eda7 !important; color: #000 !important; }
 .my-context-menu div.my-context-item {
   padding: 8px 12px;
   font-size: 14px;
@@ -209,3 +220,25 @@ margin-bottom: 20px;
   0% { background-color: yellow; }
   100% { background-color: transparent; }
 }
+/* selected column cell background */
+.ag-root .selected-col {
+  background: rgba(42, 177, 143, 0.08) !important; /* subtle green tint */
+}
+
+/* selected header style */
+.ag-header-cell.selected-header {
+  background: rgba(42, 177, 143, 0.14) !important;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(42, 177, 143, 0.25);
+}
+
+/* header context menu styles (small hover) */
+.my-header-context-menu .my-context-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.my-header-context-menu .my-context-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+

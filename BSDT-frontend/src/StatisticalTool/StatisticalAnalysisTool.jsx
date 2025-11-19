@@ -291,6 +291,7 @@ const mapDigits = (text, lang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
+     const API_BASE = 'http://127.0.0.1:8000/api';
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -349,7 +350,7 @@ const StatisticalAnalysisTool = () => {
 
 
             // Call the API to get columns
-            fetch('http://127.0.0.1:8000/api/get-columns/', {
+            fetch(`${API_BASE}/get-columns/`, {
                 method: 'POST',
                 body: formData,
 
@@ -590,7 +591,7 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch('http://127.0.0.1:8000/api/upload-file/', {
+            fetch(`${API_BASE}/upload-file/`, {
                 method: 'POST',
 
                 body: formData,
@@ -814,7 +815,7 @@ const StatisticalAnalysisTool = () => {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
-        fetch('http://127.0.0.1:8000/api/analyze/', {
+        fetch(`${API_BASE}/analyze/`, {
             method: 'POST',
             body: formData
 
@@ -975,12 +976,12 @@ const StatisticalAnalysisTool = () => {
                                     <span>{t.formTitle}</span>
                                 </div>
                                 <button 
-                                disabled={true}
-                                // muted
-                                style={{
+                                // disabled={true}
+                                // // muted
+                                // style={{
                                     
-                                    cursor: "not-allowed"
-                                }}
+                                //     cursor: "not-allowed"
+                                // }}
                                 onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
                                     {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
                                 </button>
