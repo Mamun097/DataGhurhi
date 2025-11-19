@@ -552,15 +552,20 @@ const EditProject = () => {
     }
   };
 
-  // if (loading) return <p>Loading...</p>;
-
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="edit-project-grid">
         <div className="edit-left">
-          {/* Project Details / Collaborator Tabs and Forms */}
+          {/* Back button - takes to home */}
+          <div className="mt-2 mb-2">
+            <button onClick={() => navigate("/")} title="Go back to home">
+              <i className="bi bi-arrow-left me-2"></i>
+              {getLabel("Back")}
+            </button>
+          </div>
 
+          {/* Project Details / Collaborator Tabs and Forms */}
           <div className="tab-header-container">
             {/* <h2>{formData.title}</h2> */}
             <div className="tabs">
