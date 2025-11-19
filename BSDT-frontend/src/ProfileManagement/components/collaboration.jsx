@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CollabProjectTab from "./collabProjectComponent";
 import CollabSurveyTab from "./collabSurveyComponent";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
@@ -16,8 +16,19 @@ const Collab = ({
   handleAccept,
   handleReject,
   collaboratedProjects,
+  fetchCollaboratedProjects, // Add this prop
 }) => {
-  const [activeTab, setActiveTab] = useState("survey");
+  const [activeTab, setActiveTab] = useState("project");
+
+  // Fetch collaboration requests when component mounts
+  useEffect(() => {
+    if (fetchCollaborationRequests) {
+      fetchCollaborationRequests();
+    }
+  }, [fetchCollaborationRequests]);
+
+  // Get the count of pending requests
+  const pendingRequestsCount = collabRequests?.length || 0;
 
   return (
     <div className="modern-collab-container">
@@ -47,6 +58,9 @@ const Collab = ({
             <polyline points="2 12 12 17 22 12"></polyline>
           </svg>
           <span>{getLabel("Collaborated Projects")}</span>
+          {pendingRequestsCount > 0 && (
+            <span className="notification-badge">{pendingRequestsCount}</span>
+          )}
         </button>
 
         <button
@@ -67,16 +81,6 @@ const Collab = ({
 
       {/* Tabs Content */}
       <div className="collab-tab-content">
-        {activeTab === "survey" && (
-          <CollabSurveyTab
-            getLabel={getLabel}
-            showCollabModal={showCollabModal}
-            setShowCollabModal={setShowCollabModal}
-            navigate={navigate}
-            language={language}
-          />
-        )}
-
         {activeTab === "project" && (
           <CollabProjectTab
             getLabel={getLabel}
@@ -88,6 +92,17 @@ const Collab = ({
             handleAccept={handleAccept}
             handleReject={handleReject}
             navigate={navigate}
+            fetchCollaboratedProjects={fetchCollaboratedProjects} // Pass the function here
+          />
+        )}
+
+        {activeTab === "survey" && (
+          <CollabSurveyTab
+            getLabel={getLabel}
+            showCollabModal={showCollabModal}
+            setShowCollabModal={setShowCollabModal}
+            navigate={navigate}
+            language={language}
           />
         )}
       </div>
