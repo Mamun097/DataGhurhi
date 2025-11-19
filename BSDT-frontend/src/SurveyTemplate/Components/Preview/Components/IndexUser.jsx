@@ -122,10 +122,6 @@ const Index = () => {
     return <CustomLoader />;
   }
 
-  const handleGoBack = () => {
-    window.history.back();
-  };
-
   return (
     <>
       <div className="hide-on-print">

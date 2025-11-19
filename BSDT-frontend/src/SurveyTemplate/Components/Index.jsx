@@ -118,7 +118,7 @@ const Index = () => {
 
   // Load survey details or templates
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    //window.scrollTo({ top: 0, behavior: "smooth" });
     const load = async () => {
       if (useCustom) {
         console.log("Loading custom survey details:", survey_details);
@@ -204,6 +204,18 @@ const Index = () => {
               <div className="mt-2 mb-2">
                 <button
                   onClick={() => handleBackButton()}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: "1rem",
+                    color: "#000000ff",
+                    backgroundColor: "#ffffffff",
+                    border: "2px solid #25856fff",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                    marginTop: "10px",
+                    fontSize: "1rem",
+                  }}
                   title="Go back to Projects}"
                 >
                   <i className="bi bi-arrow-left me-2"></i>

@@ -12,6 +12,7 @@ import {
   FaQuestionCircle,
   FaSearch,
   FaChartBar,
+  FaCreditCard
 } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
 
@@ -298,6 +299,13 @@ const NavbarAcholder = ({
               <FaLock style={{ marginRight: "8px" }} />
               <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 {getLabel("Security")}
+              </span>
+            </MenuItem>
+            {/* Subscription */}
+            <MenuItem onClick={() => (window.location.href = "/subscription")}>
+              <FaCreditCard style={{ marginRight: "8px" }} />
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                {getLabel("Subscription")}
               </span>
             </MenuItem>
             {/* Divider */}

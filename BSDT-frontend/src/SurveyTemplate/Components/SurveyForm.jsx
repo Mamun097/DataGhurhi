@@ -574,10 +574,13 @@ const SurveyForm = ({
           <i className="bi bi-people"></i>
           <span className="btn-label">{getLabel("Collaborate")}</span>
         </button>
-        <button onClick={() => handlePreview()} className="fab-btn">
-          <i className="bi bi-eye"></i>
-          <span className="btn-label">{getLabel("Preview")}</span>
-        </button>
+
+        {surveyStatus == "published" && (
+          <button onClick={() => handlePreview()} className="fab-btn">
+            <i className="bi bi-eye"></i>
+            <span className="btn-label">{getLabel("Preview")}</span>
+          </button>
+        )}
 
         {surveyLink && (
           <>

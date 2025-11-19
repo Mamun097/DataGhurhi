@@ -1088,3 +1088,40 @@
         border: 1px solid #000;
     }
 }
+.an-wrapper .prev-modal-overlay {
+position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 10px;
+  z-index: 9999;
+}
+
+.an-wrapper .prev-modal-container {
+  width: 95vw;              
+  max-width: 1600px;        
+  height: 95vh;            
+  background: #c6c6c6;
+  border-radius: 10px;
+  padding: 5px;
+  overflow-y: auto;         /* Scrollable */
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+
+.an-wrapper .prev-close-btn {
+
+  background: #c6a8a8;
+  margin-top: 20px;
+  color: rgb(93, 12, 12);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
