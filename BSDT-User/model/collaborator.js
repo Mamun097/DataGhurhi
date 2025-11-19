@@ -18,7 +18,7 @@ async function acceptInvitation(userId, projectID) {
 async function rejectInvitation(userId, projectID) {
   const { data, error } = await supabase
     .from("project_shared_with_collaborator")
-    .update({ invitation: "declined" })
+    .delete()
     .eq("user_id", userId)
     .eq("project_id", projectID)
     .select("*");

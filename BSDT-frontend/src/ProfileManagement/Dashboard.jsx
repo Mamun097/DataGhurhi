@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, use } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "../../db";
 import NavbarAcholder from "./navbarAccountholder";
 import PremiumAdBanner from "./PremiumFeatures/PremiumAdBanner";
@@ -20,7 +20,9 @@ import StatisticalAnalysisTool from "../StatisticalTool/StatisticalAnalysisTool"
 import CollabProjectTab from "./components/collabProjectComponent";
 import CollabSurveyTab from "./components/collabSurveyComponent";
 import Collab from "./components/collaboration";
+import ProjectDetailsTab from "./../ProjectManagement/editProject";
 import apiClient from "../api";
+
 import {
   LayoutDashboard,
   Package,
@@ -62,7 +64,17 @@ const Dashboard = () => {
     return urlParams.get("tab");
   };
 
+  const getProjectIdFromURL = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get("projectId");
+  };
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "projects");
+  const [sourceTab, setSourceTab] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState(getProjectIdFromURL());
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -73,9 +85,31 @@ const Dashboard = () => {
     localStorage.getItem("language") || "English"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
-  // collab
   const [showCollabModal, setShowCollabModal] = useState(false);
-  //  console.log(localStorage.getItem("user_id"));
+
+  // Sync state with URL parameters whenever location changes
+  useEffect(() => {
+  const urlParams = new URLSearchParams(location.search);
+  const tab = urlParams.get("tab");
+  const projectId = urlParams.get("projectId");
+  const source = urlParams.get("source");
+  
+  if (tab) {
+    setActiveTab(tab);
+  }
+  if (source) {
+    setSourceTab(source);
+  } else if (tab !== "projectdetails") {
+    // Only clear sourceTab if we're not viewing project details
+    setSourceTab(null);
+  }
+  if (projectId) {
+    setSelectedProjectId(projectId);
+  } else {
+    setSelectedProjectId(null);
+  }
+}, [location.search]);
+
   const handleAccept = async (projectId) => {
     console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
@@ -89,7 +123,8 @@ const Dashboard = () => {
       );
       if (response.status === 200) {
         console.log("Invitation accepted successfully");
-        fetchCollaborationRequests(); // Refresh requests
+        fetchCollaborationRequests();
+        fetchCollaboratedProjects(); // Fetch updated collaborated projects
       }
     } catch (error) {
       console.error("Failed to accept invitation:", error);
@@ -109,7 +144,7 @@ const Dashboard = () => {
       );
       if (response.status === 200) {
         console.log("Invitation rejected successfully");
-        fetchCollaborationRequests(); // Refresh requests
+        fetchCollaborationRequests();
       }
     } catch (error) {
       console.error("Failed to reject invitation:", error);
@@ -193,98 +228,14 @@ const Dashboard = () => {
       "Created At",
       "Last Updated:",
       "Last Updated",
-
-      "System Overview",
-      "Welcome to the administrative dashboard. Monitor your platform's performance and manage system settings.",
-      "Total Users",
-      "Active Surveys",
-      "Total Responses",
-      "Premium Users",
-      "User Analytics",
-      "Survey Analytics",
-      "Revenue Overview",
-      "New User at Current Month",
-      "Survey Created at Current Month",
-      "New User at Previous Month",
-      "Survey Created at Previous Month",
-      "User Growth Rate",
-      "Survey Creation Growth Rate",
-      "This Month",
-      "Last Month",
-      "Fixed Package Management",
-      "Add Package",
-      "Manage and customize premium packages for your users",
-      "Total Packages",
-      "Discounted",
-      "Premium",
-      "Tags",
-      "Questions",
-      "Surveys",
-      "Choose Your Premium Package",
-      "Unlock Powerful AI Features",
-      "AI Survey Generation",
-      "Create professional surveys in seconds with AI assistance",
-      "Smart Question Creation",
-      "Generate relevant questions based on your research goals",
-      "Automatic Tagging",
-      "Organize questions with intelligent tagging system",
-
-      "Most Popular",
-
-      "Build Your Custom Package",
-      "Select the items you need and choose validity period",
-      "Question Tags",
-      "unit",
-      "Questions",
-      "Surveys",
-      "Choose Validity Period",
-      "Standard",
-      "Validity",
-      "Total",
-      "Fixed Packages",
-      "Custom Package",
-      "Automatic Question Tag Generation",
-      "Automatic Question Generation",
-      "Automatic Survey Template Generation",
-      "Basic Survey Templates",
-      "Advanced Survey Templates",
-      "Premium Survey Templates",
-      "Package Summary",
-
-      "Unlock Premium Features",
-      "Take your surveys to the next level with AI-powered tools",
-      "AI Survey Template Generation",
-      "Smart Question Generation",
-      "Automatic Question Tagging",
-
-      "Survey",
-      "Question",
-      "Tag",
-      "Custom Package Management",
-      "Configure unit prices and validity periods for custom packages",
-      "Unit Prices",
-      "Set base price per unit for each package item",
-      "per unit",
-      "Edit Price",
-      "Validity Periods",
-      "Configure validity periods and their price multipliers",
-      "Add Validity",
-      "Delete Validity",
-      "Edit Validity",
-      "Price Multiplier",
-      "Edit Unit Price",
-      "Base Price Per Unit",
-
       "Collaborated Surveys",
     ];
 
     const translations = await translateText(labelsToTranslate, "bn");
-
     const translated = {};
     labelsToTranslate.forEach((key, idx) => {
       translated[key] = translations[idx];
     });
-
     setTranslatedLabels(translated);
   };
 
@@ -299,38 +250,19 @@ const Dashboard = () => {
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.get("/api/admin/stats");
-
       if (response.status === 200) {
         setAdminStats(response.data);
       }
     } catch (error) {
       console.error("Failed to fetch admin stats:", error);
-      // Set mock data for demonstration
-      setAdminStats({
-        totalUsers: 1250,
-        activeSurveys: 89,
-        totalResponses: 15420,
-        premiumUsers: 78,
-        recentActivities: [
-          { id: 1, activity: "New user registration", time: "2 minutes ago" },
-          { id: 2, activity: "Survey created", time: "5 minutes ago" },
-          { id: 3, activity: "Premium subscription", time: "15 minutes ago" },
-          {
-            id: 4,
-            activity: "Survey response submitted",
-            time: "20 minutes ago",
-          },
-          { id: 5, activity: "User profile updated", time: "25 minutes ago" },
-        ],
-      });
     }
   }, []);
 
   const getuserType = useCallback(async () => {
     if (userType === "admin") {
       setIsAdmin(true);
-      setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
-      fetchAdminStats(); // Fetch admin statistics
+      setActiveTab(getTabFromURL() || "dashboard");
+      fetchAdminStats();
     } else {
       setIsAdmin(false);
       setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
@@ -349,6 +281,15 @@ const Dashboard = () => {
     }
   }, [fetchAdminStats]);
 
+  const handleTabClick = (tabKey) => {
+  setActiveTab(tabKey);
+  const url = new URL(window.location);
+  url.searchParams.set("tab", tabKey);
+  url.searchParams.delete("projectId");
+  url.searchParams.delete("source");
+  window.history.replaceState({}, "", url);
+};
+
   useEffect(() => {
     getuserType;
   }, [userId]);
@@ -361,7 +302,6 @@ const Dashboard = () => {
 
   const handleSaveChanges = async () => {
     const token = localStorage.getItem("token");
-    console.log(editedValues);
     try {
       const response = await apiClient.put(
         "/api/profile/update-profile",
@@ -372,7 +312,6 @@ const Dashboard = () => {
       );
       if (response.status === 200) {
         setIsEditing(false);
-        getProfile();
       }
     } catch (error) {
       console.error("Failed to update profile:", error);
@@ -397,15 +336,31 @@ const Dashboard = () => {
     }
   }, [isAdmin, fetchProjects]);
 
-  const navigate = useNavigate();
   const handleAddProjectClick = () => navigate("/addproject");
+  
   const handleProjectClick = (projectId, role) => {
-    console.log("Project clicked:", projectId, "Role:", role);
-    navigate(`/view-project/${projectId}`, {
-      state: { role: role },
-    });
-  };
-  // Premium feature handlers
+  setSelectedProjectId(projectId);
+  setActiveTab("projectdetails");
+  setSourceTab("projects"); // Set source as projects
+  const url = new URL(window.location);
+  url.searchParams.set("tab", "projectdetails");
+  url.searchParams.set("projectId", projectId);
+  url.searchParams.set("source", "projects"); // Add source parameter
+  window.history.replaceState({}, "", url);
+};
+
+  const handleBackToProjects = () => {
+  setSelectedProjectId(null);
+  const targetTab = sourceTab || "projects";
+  setActiveTab(targetTab);
+  setSourceTab(null);
+  const url = new URL(window.location);
+  url.searchParams.delete("projectId");
+  url.searchParams.delete("source");
+  url.searchParams.set("tab", targetTab);
+  window.history.replaceState({}, "", url);
+};
+
   const handleCloseAdBanner = () => {
     setShowAdBanner(false);
   };
@@ -431,19 +386,18 @@ const Dashboard = () => {
       });
       if (response.status === 200) {
         setCollaboratedProjects(response.data.projects || []);
-        console.log("Collaborated Projects:", response.data.projects);
       }
     } catch (error) {
       console.error("Failed to fetch collaborated projects:", error);
     }
   }, []);
+
   useEffect(() => {
     if (!isAdmin) {
       fetchCollaboratedProjects();
     }
   }, [isAdmin, fetchCollaboratedProjects]);
 
-  // Fetch collaboration requests
   const fetchCollaborationRequests = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
@@ -455,12 +409,16 @@ const Dashboard = () => {
       );
       if (response.status === 200) {
         setCollabRequests(response.data.invitations || []);
-        console.log("Collaboration Requests:", response.data.invitations);
       }
     } catch (error) {
       console.error("Failed to fetch collaboration requests:", error);
     }
   }, []);
+
+  useEffect(() => {
+    fetchCollaborationRequests();
+  }, []);
+
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
@@ -470,7 +428,6 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Get tabs based on user type
   const getTabs = () => {
     if (isAdmin) {
       return [
@@ -525,6 +482,7 @@ const Dashboard = () => {
     old_password: "",
     new_password: "",
   });
+
   const handlePasswordChange = (e) => {
     setPasswordValues({ ...passwordValues, [e.target.name]: e.target.value });
   };
@@ -532,18 +490,15 @@ const Dashboard = () => {
   const togglePasswordFields = () => {
     setShowPasswordFields((prev) => !prev);
   };
+
   const handleSavePassword = async () => {
     const { old_password, new_password } = passwordValues;
-
     if (!old_password || !new_password) {
       alert("Please fill out both the old and new password fields.");
       return;
     }
-
     try {
       const token = localStorage.getItem("token");
-      // Example POST request to backend API
-
       const response = await apiClient.put(
         "/api/profile/update-password",
         {
@@ -554,7 +509,6 @@ const Dashboard = () => {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       if (response.data.success) {
         alert("Password updated successfully.");
         setShowPasswordFields(false);
@@ -600,7 +554,6 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* Admin Badge */}
             {!collapsed && isAdmin && !isMobile && (
               <div className="admin-badge">
                 <span>👑 Administrator</span>
@@ -619,10 +572,7 @@ const Dashboard = () => {
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
                         } else {
-                          const url = new URL(window.location);
-                          url.searchParams.set("tab", tab.key);
-                          window.history.replaceState({}, "", url);
-                          setActiveTab(tab.key);
+                          handleTabClick(tab.key);
                         }
                       }}
                     >
@@ -792,7 +742,7 @@ const Dashboard = () => {
               <UserSubscriptions userType={userType} language={language} />
             )}
 
-            {/* Normal User Tabs */}
+            {/* Projects Tab */}
             {!isAdmin && activeTab === "projects" && (
               <ProjectTab
                 getLabel={getLabel}
@@ -808,32 +758,19 @@ const Dashboard = () => {
                 setProjects={setProjects}
               />
             )}
-            {/* {!isAdmin && activeTab === "collaboratedprojects" && (
-              <CollabProjectTab
+
+            {/* Project Details Tab */}
+            {!isAdmin && activeTab === "projectdetails" && selectedProjectId && (
+              <ProjectDetailsTab
+                key={`${selectedProjectId}-${sourceTab}-${location.search}`}
+                projectId={selectedProjectId}
                 getLabel={getLabel}
-                collaboratedProjects={collaboratedProjects}
-                showCollabModal={showCollabModal}
-                collabRequests={collabRequests}
-                setShowCollabModal={setShowCollabModal}
-                fetchCollaborationRequests={fetchCollaborationRequests}
-                handleAccept={handleAccept}
-                handleReject={handleReject}
-                navigate={navigate}
+                language={language}
+                onBack={handleBackToProjects}
               />
             )}
-            {!isAdmin && activeTab === "collaboratedsurveys" && (
-              <CollabSurveyTab
-                language={language}
-                //collaboratedProjects={collaboratedProjects}
-                showCollabModal={showCollabModal}
-                // collabRequests={collabRequests}
-                setShowCollabModal={setShowCollabModal}
-                // fetchCollaborationRequests={fetchCollaborationRequests}
-                //handleAccept={handleAccept}
-                //handleReject={handleReject}
-                navigate={navigate}
-              />
-            )} */}
+
+            {/* Shared with Me Tab */}
             {!isAdmin && activeTab === "shared" && (
               <Collab
                 getLabel={getLabel}
@@ -846,11 +783,16 @@ const Dashboard = () => {
                 handleReject={handleReject}
                 navigate={navigate}
                 language={language}
+                fetchCollaboratedProjects={fetchCollaboratedProjects} // Add this line
               />
             )}
+
+            {/* Question Bank Tab */}
             {!isAdmin && activeTab === "questionbank" && (
               <QB language={language} setLanguage={setLanguage} />
             )}
+
+            {/* Analysis Tab */}
             {!isAdmin && activeTab === "analysis" && (
               <div>
                 <StatisticalAnalysisTool />
@@ -860,7 +802,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Premium Ad Banner - Only show for normal users */}
       {!isAdmin && userType === "normal" && showAdBanner && (
         <PremiumAdBanner
           onClose={handleCloseAdBanner}
@@ -869,7 +810,6 @@ const Dashboard = () => {
         />
       )}
 
-      {/* Premium Packages Modal - Only for normal users */}
       {!isAdmin && (
         <PremiumPackagesModal
           isOpen={showPremiumModal}
