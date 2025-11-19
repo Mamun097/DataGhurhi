@@ -6,10 +6,12 @@ import './PreprocessDataPage.css';
 import PreviewTable from './previewTable';
 import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
 import { useLocation } from 'react-router-dom';
-import {Files} from "lucide-react";
+import {Files ,SlidersVertical} from "lucide-react";
 
 const PreprocessDataPage = () => {
  
+  const API_BASE = 'http://127.0.0.1:8000/api';
+  const API_WORKBOOK='http://127.0.0.1:8000'
   const [data, setData] = useState([]);
   const filename = sessionStorage.getItem('file_name') || 'latest_uploaded.xlsx';
   const [columns, setColumns] = useState([]);
@@ -75,7 +77,7 @@ const PreprocessDataPage = () => {
 
   useEffect(() => {
     if (!userId) return;
-    fetch('http://127.0.0.1:8000/api/preview-data/', {
+    fetch(`${API_BASE}/preview-data/`, {
       method: 'GET',
       headers: {
         'userID': userId,
@@ -97,7 +99,7 @@ const PreprocessDataPage = () => {
   // Fetch outlier summary lazily when option selected
   useEffect(() => {
     if (selectedOption !== 'handle_outliers') return;
-    fetch('http://127.0.0.1:8000/api/outliers-summary/', {
+    fetch(`${API_BASE}/outliers-summary/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -175,7 +177,7 @@ const PreprocessDataPage = () => {
       // delete
       case 'delete_column': {
         if (!columnsToDelete.length) return alert("Select at least one column to delete.");
-        fetch('http://127.0.0.1:8000/api/delete-columns/', {
+        fetch(`${API_BASE}/delete-columns/`, {
           method: 'POST',
           headers: {
             'userID': userId, 'filename': filename, 'sheet': sessionStorage.getItem("activesheetname") || '',
@@ -199,7 +201,7 @@ const PreprocessDataPage = () => {
 
       // remove duplicates
       case 'remove_duplicates': {
-        fetch('http://127.0.0.1:8000/api/find-duplicates/', {
+        fetch(`${API_BASE}/find-duplicates/`, {
           method: 'POST',
           headers: {
                         'userID': userId,
@@ -227,7 +229,7 @@ const PreprocessDataPage = () => {
       // missing values
       case 'handle_missing': {
         if (!missingColumn || !missingMethod) return alert("Select column and method.");
-        fetch('http://127.0.0.1:8000/api/handle-missing/', {
+        fetch(`${API_BASE}/handle-missing/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
@@ -250,7 +252,7 @@ const PreprocessDataPage = () => {
       // outliers
       case 'handle_outliers': {
         if (!outlierColumn || !outlierMethod) return alert("Select column & method.");
-        fetch('http://127.0.0.1:8000/api/handle-outliers/', {
+        fetch(`${API_BASE}/handle-outliers/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', 'userID': userId, 'Fileurl': sessionStorage.getItem("fileURL") || '',
@@ -274,7 +276,7 @@ const PreprocessDataPage = () => {
       // rank column
       case 'rank_column': {
         if (!rankColumn || !Object.keys(rankMapping).length) return alert("Assign ranks.");
-        fetch('http://127.0.0.1:8000/api/rank-column/', {
+        fetch(`${API_BASE}/rank-column/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
@@ -297,7 +299,7 @@ const PreprocessDataPage = () => {
       case 'split_column': {
         if (!splitTargetColumn || !splitMethod) return alert("Select column & method.");
         if (splitMethod === 'custom' && !customPhrases.length) return alert("Add custom phrases.");
-        fetch('http://127.0.0.1:8000/api/split-column/', {
+        fetch(`${API_BASE}/split-column/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
@@ -348,7 +350,7 @@ const PreprocessDataPage = () => {
 
       // generate id
       case 'generate_id': {
-        fetch('http://127.0.0.1:8000/api/generate-unique-id/', {
+        fetch(`${API_BASE}/generate-unique-id/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
@@ -370,6 +372,11 @@ const PreprocessDataPage = () => {
         alert("Unknown option");
     }
   };
+const handleReapply = () => {
+  if (selectedOption && selectedOption !== "open") {
+    setIsRightPanelOpen(true);
+  }
+};
 
 
   return (
@@ -385,17 +392,15 @@ const PreprocessDataPage = () => {
           </div>
 
           <div className="topbar-right">
-            <label className="select-wrap">
-
+           <div className="select-wrap">
               <select
                 className="select-input"
                 value={selectedOption}
-                onChange={(e) => { setSelectedOption(e.target.value); 
-                  
-                  if(e.target.value !== "open") {
-                
-                    setIsRightPanelOpen(true);}
-                  }}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedOption(value);
+                  if (value !== "open") setIsRightPanelOpen(true);
+                }}
               >
                 <option value="open">Preprocessing Menu</option>
                 <option value="delete_column">Delete Column</option>
@@ -404,10 +409,24 @@ const PreprocessDataPage = () => {
                 <option value="handle_outliers">Handle Outliers</option>
                 <option value="rank_column">Rank Column</option>
                 <option value="split_column">Split Column</option>
-                {/* <option value="grouping">Grouping</option> */}
                 <option value="generate_id">Generate Unique ID</option>
               </select>
-            </label>
+ </div>
+            {/* customize icon */}
+            <div className="customize-icon-container">
+              <button
+                className="customize-icon-btn"
+                onClick={handleReapply}
+              >
+                <SlidersVertical size={20}  />  {/* smaller icon */}
+              </button>
+
+              <div className="customize-tooltip">
+                Reapply
+              </div>
+            </div>
+
+           
 
             {/* three-dot icon */}
             <button className="icon-btn" onClick={() => setIsPopupOpen(true)} aria-label="menu">
@@ -470,12 +489,11 @@ const PreprocessDataPage = () => {
               </div>
             </div>
 
-            {/* panel body with accordions (collapsible) */}
+      
             <div className="right-panel-body">
-              {/* small helper text */}
+           
               <p className="panel-intro">Configure <strong>{(selectedOption || '').replace(/_/g,' ')}</strong> then click <strong>Apply</strong>.</p>
 
-              {/* Accordion pattern: use details/summary for accessible collapse */}
               <details open className="panel-accordion">
                 <summary className="accordion-summary">Configuration</summary>
 
@@ -499,7 +517,10 @@ const PreprocessDataPage = () => {
                 {selectedOption === 'remove_duplicates' && (
                   <div className="panel-section">
                     <label className="panel-label">Columns to check duplicates</label>
-                    <div className="tags-box">{duplicateColumns.length ? duplicateColumns.join(', ') : <div className="placeholder-text">No selection</div>}</div>
+                    <div className="tags-box">{duplicateColumns.length ? duplicateColumns.map((c,i) =>(
+                      <span key={i} className="tag-chip">{c}<button className="remove-button" onClick={() => setDuplicateColumns(prev => prev.filter(x => x !== c))}>×</button></span>
+                      )) : <div className="placeholder-text">No selection</div>}
+                    </div>
                     <select className="select-full" onChange={(e) => { const v = e.target.value; if (v && !duplicateColumns.includes(v)) setDuplicateColumns(prev => [...prev, v]); e.target.selectedIndex = 0; }}>
                       <option value="">Select column...</option>
                       {availableColumns.filter(c => !duplicateColumns.includes(c)).map((c, i) => <option key={i}>{c}</option>)}
@@ -653,7 +674,7 @@ const PreprocessDataPage = () => {
       
         
         <PreviewTable
-          workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`}
+          workbookUrl={`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`}
           columns={columns}
           duplicateIndices={duplicateIndices}
           setData={setData}
@@ -663,7 +684,7 @@ const PreprocessDataPage = () => {
           selectedOption={selectedOption}
         />
 
-        <div className="center-link"><a href="/analysis" className="back-link">← Back</a></div>
+        {/* <div className="center-link"><a href="/analysis" className="back-link">← Back</a></div> */}
       </div>
     
     </>

@@ -1,0 +1,119 @@
+/* ===== Scoped Only for ReportViewer Page ===== */
+.report-viewer-page {
+    font-family: 'Poppins', sans-serif;
+    padding: 20px;
+    background-color: #f8f9fc;
+    min-height: 100vh;
+}
+
+/* Typography */
+.report-viewer-page .title {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+}
+.report-viewer-page .subtitle {
+    font-size: 14px;
+    color: #555;
+}
+
+/* Header Card */
+.report-viewer-page .header-card {
+    background: white;
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Empty Box Section */
+.report-viewer-page .empty-box {
+    text-align: center;
+    background: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+.report-viewer-page .empty-title {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+/* Reports Container */
+.report-viewer-page .reports-container {
+    display: grid;
+    gap: 20px;
+}
+
+/* Report Card */
+.report-viewer-page .report-card {
+    background: white;
+    padding: 18px;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: rgba(0, 0, 0, 0.08) 0px 3px 10px;
+}
+.report-viewer-page .report-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+/* Detail Box */
+.report-viewer-page .details-box {
+    background: #fafafa;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #e6e6e6;
+}
+.report-viewer-page .details-box h4 {
+    margin: 0 0 8px 0;
+    font-size: 15px;
+}
+
+/* Images */
+.report-viewer-page .image-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+.report-viewer-page .chart-image {
+    width: 180px;
+    height: auto;
+    cursor: pointer;
+    border-radius: 6px;
+}
+
+/* Buttons */
+.report-viewer-page .button-container {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 25px;
+}
+.report-viewer-page .btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+.report-viewer-page .btn-blue { background: #007bff; color: white; }
+.report-viewer-page .btn-green { background: #28a745; color: white; }
+.report-viewer-page .btn-red   { background: #dc3545; color: white; }
+
+/* Modal */
+.report-viewer-page .modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.report-viewer-page .modal-content img {
+    max-width: 85vw;
+    max-height: 85vh;
+    border-radius: 8px;
+}
