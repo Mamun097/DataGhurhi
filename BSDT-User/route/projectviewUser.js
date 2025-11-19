@@ -16,4 +16,6 @@ router.post('/:projectID/invite-collaborator', jwtAuthMiddleware, projectControl
 router.get('/:projectID/collaborators', jwtAuthMiddleware, projectController.getCollaborators);
 router.delete('/:projectID/collaborators/:collaboratorId', jwtAuthMiddleware, projectController.removeCollaborator);
 
+router.get('/:projectId/fetchaccess', jwtAuthMiddleware, projectController.fetchUserAccess);
+
 module.exports = router;

@@ -1,10 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import PersonIcon from "@mui/icons-material/Person";
 import SearchIcon from "@mui/icons-material/Search";
 import GridViewIcon from "@mui/icons-material/GridView";
 import ViewListIcon from "@mui/icons-material/ViewList";
-import UpdateIcon from "@mui/icons-material/Update";
+import GroupIcon from "@mui/icons-material/Group";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import CloseIcon from "@mui/icons-material/Close";
 import IconButton from "@mui/material/IconButton";
 import "./Collab.css";
 
@@ -31,13 +34,17 @@ const CollabProjectTab = ({
   handleAccept,
   handleReject,
   navigate,
+  fetchCollaboratedProjects,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
-  const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 5;
+
+  // Fetch collaboration requests when component mounts
+  useEffect(() => {
+    fetchCollaborationRequests();
+  }, []);
 
   const bannerImages = [
     banner1, banner2, banner3, banner4, banner5,
@@ -51,9 +58,13 @@ const CollabProjectTab = ({
   };
 
   const handleProjectClick = (projectId, access_role) => {
-    navigate(`/view-project/${projectId}`, {
-      state: { role: access_role },
-    });
+    const currentParams = new URLSearchParams(window.location.search);
+    const currentProjectId = currentParams.get("projectId");
+    const currentTab = currentParams.get("tab");
+
+    // Always add timestamp when navigating to project details to ensure fresh mount
+    const timestamp = Date.now();
+    navigate(`/dashboard?tab=projectdetails&projectId=${projectId}&source=shared&refresh=${timestamp}`);
   };
 
   const formatDate = (dateString) => {
@@ -62,6 +73,8 @@ const CollabProjectTab = ({
       year: "numeric",
       month: "short",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
@@ -98,10 +111,8 @@ const CollabProjectTab = ({
     (a, b) => new Date(b.invite_time) - new Date(a.invite_time)
   );
 
-  const indexOfLastRow = currentPage * rowsPerPage;
-  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
-  const currentRows = sortedRequests.slice(indexOfFirstRow, indexOfLastRow);
-  const totalPages = Math.ceil(sortedRequests.length / rowsPerPage);
+  // Get the count of pending requests
+  const pendingRequestsCount = collabRequests.length;
 
   return (
     <div>
@@ -173,6 +184,9 @@ const CollabProjectTab = ({
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
             <span>{getLabel("View Requests")}</span>
+            {pendingRequestsCount > 0 && (
+              <span className="notification-badge">{pendingRequestsCount}</span>
+            )}
           </button>
         </div>
       </div>
@@ -294,134 +308,80 @@ const CollabProjectTab = ({
         </div>
       )}
 
-      {/* Collaboration Requests Modal */}
+      {/* Redesigned Collaboration Requests Modal */}
       {showCollabModal && (
         <div
-          className="custom-modal-overlay"
+          className="modal-overlay-modern"
           onClick={() => setShowCollabModal(false)}
         >
-          <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h5 className="modal-title">{getLabel("Collaboration Requests")}</h5>
-              <button
-                className="btn-modal-close"
+          <div className="modal-content-modern" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h3>
+                <GroupIcon style={{ fontSize: "1.5rem", color: "#4bb77d" }} />
+                {getLabel("Collaboration Requests")}
+              </h3>
+              <IconButton
                 onClick={() => setShowCollabModal(false)}
+                style={{
+                  background: "white",
+                  border: "2px solid #e2e8f0",
+                  padding: "0.5rem",
+                }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
+                <CloseIcon style={{ fontSize: "1.25rem", color: "#64748b" }} />
+              </IconButton>
             </div>
 
-            <div className="custom-modal-body">
-              {collabRequests.length > 0 ? (
-                <>
-                  <div className="table-responsive">
-                    <table className="requests-table">
-                      <thead>
-                        <tr>
-                          <th>{getLabel("Project Title")}</th>
-                          <th>{getLabel("Owner")}</th>
-                          <th>{getLabel("Email")}</th>
-                          <th>{getLabel("Role")}</th>
-                          <th>{getLabel("Invited At")}</th>
-                          <th>{getLabel("Actions")}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {currentRows.map((req) => (
-                          <tr key={req.shared_id}>
-                            <td className="fw-semibold">{req.project_title}</td>
-                            <td>{req.owner_name}</td>
-                            <td className="text-muted">{req.owner_email}</td>
-                            <td>
-                              <span
-                                className={`table-role-badge ${
-                                  req.access_role === "editor"
-                                    ? "editor"
-                                    : req.access_role === "viewer"
-                                    ? "viewer"
-                                    : "other"
-                                }`}
-                              >
-                                {req.access_role}
-                              </span>
-                            </td>
-                            <td>
-                              <small className="text-muted">
-                                {new Date(req.invite_time).toLocaleString()}
-                              </small>
-                            </td>
-                            <td>
-                              <div className="action-buttons">
-                                <button
-                                  className="btn-accept"
-                                  onClick={() => handleAccept(req.project_id)}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                  {getLabel("Accept")}
-                                </button>
-                                <button
-                                  className="btn-reject"
-                                  onClick={() => handleReject(req.project_id)}
-                                >
-                                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                                  </svg>
-                                  {getLabel("Reject")}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="pagination">
-                      <button
-                        className="pagination-btn"
-                        onClick={() => setCurrentPage(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                      </button>
-
-                      {Array.from({ length: totalPages }, (_, i) => (
+            <div className="modal-body-modern">
+              {sortedRequests.length > 0 ? (
+                <div className="collaborators-list-modern">
+                  {sortedRequests.map((req) => (
+                    <div key={req.shared_id} className="collaborator-item-modern request-item">
+                      <div className="collab-avatar">{req.owner_name[0]}</div>
+                      <div className="collab-details">
+                        <div className="collab-name">{req.project_title}</div>
+                        <div className="collab-email">
+                          {getLabel("From")}: {req.owner_name} ({req.owner_email})
+                        </div>
+                        <div className="collab-meta">
+                          <span className="collab-role-badge">{req.access_role}</span>
+                          <span className="collab-time">
+                            {formatDate(req.invite_time)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="collab-actions">
                         <button
-                          key={i + 1}
-                          className={`pagination-btn ${
-                            currentPage === i + 1 ? "active" : ""
-                          }`}
-                          onClick={() => setCurrentPage(i + 1)}
+                          className="btn-collab-action accept"
+                          onClick={() => handleAccept(req.project_id)}
+                          title={getLabel("Accept")}
                         >
-                          {i + 1}
+                          <CheckCircleIcon fontSize="small" />
+                          <span>{getLabel("Accept")}</span>
                         </button>
-                      ))}
-
-                      <button
-                        className="pagination-btn"
-                        onClick={() => setCurrentPage(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                      </button>
+                        <button
+                          className="btn-collab-action reject"
+                          onClick={() => handleReject(req.project_id)}
+                          title={getLabel("Reject")}
+                        >
+                          <CancelIcon fontSize="small" />
+                          <span>{getLabel("Reject")}</span>
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </>
+                  ))}
+                </div>
               ) : (
-                <div className="empty-requests">
-                  <p>{getLabel("No collaboration requests")}</p>
+                <div style={{ textAlign: "center", padding: "3rem 1rem" }}>
+                  <div style={{ marginBottom: "1rem", opacity: 0.6 }}>
+                    <CheckCircleIcon style={{ fontSize: "4rem", color: "#22c55e" }} />
+                  </div>
+                  <h4 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1e293b", margin: "0 0 0.5rem 0" }}>
+                    {getLabel("All caught up!")}
+                  </h4>
+                  <p style={{ fontSize: "0.9375rem", color: "#64748b", margin: 0 }}>
+                    {getLabel("You have no pending collaboration requests")}
+                  </p>
                 </div>
               )}
             </div>
