@@ -81,7 +81,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  background: transparent;
+  background: #f8fafc;
   color: #64748b;
   border: none;
   border-radius: 8px;
@@ -91,6 +91,7 @@
   transition: all 0.2s ease;
   flex: 1;
   justify-content: center;
+  position: relative;
 }
 
 .collab-tab-btn:hover {
@@ -107,6 +108,25 @@
 .collab-tab-btn svg {
   width: 20px;
   height: 20px;
+}
+
+/* Notification badge on tab button */
+.collab-tab-btn .notification-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4), 0 0 0 3px white;
 }
 
 /* ========================================
@@ -239,6 +259,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .btn-view-requests:hover {
@@ -251,6 +272,25 @@
 .btn-view-requests svg {
   width: 18px;
   height: 18px;
+}
+
+/* Notification Badge */
+.notification-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4), 0 0 0 3px white;
 }
 
 /* ========================================
@@ -584,7 +624,7 @@
 }
 
 .empty-illustration img {
-  width: 400px; /* Adjust to your preference */
+  width: 400px;
   height: auto;
   max-width: 100%;
 }
@@ -607,9 +647,9 @@
 }
 
 /* ========================================
-   MODAL STYLES
+   REDESIGNED MODAL - MATCHING PROJECT DETAILS STYLE
    ======================================== */
-.custom-modal-overlay {
+.modal-overlay-modern {
   position: fixed;
   top: 0;
   left: 0;
@@ -619,17 +659,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1050;
-  animation: fadeIn 0.2s ease-in;
+  z-index: 1000;
   backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-in;
 }
 
-.custom-modal {
+.modal-content-modern {
   background: white;
   border-radius: 16px;
+  max-width: 700px;
   width: 90%;
-  max-width: 900px;
   max-height: 85vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
@@ -640,238 +681,165 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px) scale(0.95);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
-.modal-header {
+.modal-header-modern {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 2px solid #f1f5f9;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.modal-title {
+.modal-header-modern h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
   font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
-  margin: 0;
 }
 
-.btn-modal-close {
-  background: #f1f5f9;
-  border: none;
-  border-radius: 8px;
-  padding: 0.5rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-}
-
-.btn-modal-close:hover {
-  background: #e2e8f0;
-  color: #1e293b;
-}
-
-.custom-modal-body {
+.modal-body-modern {
   padding: 1.5rem;
   overflow-y: auto;
   flex: 1;
 }
 
-/* ========================================
-   TABLE STYLES
-   ======================================== */
-.table-responsive {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+/* Collaborators List for Requests */
+.collaborators-list-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
-.requests-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.requests-table thead {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  color: white;
-}
-
-.requests-table th {
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.requests-table tbody tr {
-  border-bottom: 1px solid #f1f5f9;
-  transition: background 0.2s ease;
-}
-
-.requests-table tbody tr:hover {
+.collaborator-item-modern.request-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
   background: #f8fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
 }
 
-.requests-table td {
-  padding: 1rem;
+.collaborator-item-modern.request-item:hover {
+  background: #f1f5f9;
+  border-color: #4bb77d;
 }
 
-.fw-semibold {
+.collab-avatar {
+  width: 40px;
+  height: 40px;
+  background: #4bb77d;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.collab-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.collab-name {
   font-weight: 600;
   color: #1e293b;
+  font-size: 0.9375rem;
+  margin-bottom: 0.25rem;
 }
 
-.text-muted {
+.collab-email {
+  font-size: 0.8125rem;
   color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 0.5rem;
 }
 
-.table-role-badge {
-  display: inline-block;
-  padding: 0.25rem 0.625rem;
-  border-radius: 5px;
+.collab-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.collab-role-badge {
+  padding: 0.25rem 0.75rem;
+  background: #e0f2fe;
+  color: #0369a1;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
 
-.table-role-badge.editor {
-  background: #dbeafe;
-  color: #2563eb;
-  border: 1px solid #3b82f6;
+.collab-time {
+  font-size: 0.75rem;
+  color: #94a3b8;
 }
 
-.table-role-badge.viewer {
-  background: #f1f5f9;
-  color: #64748b;
-  border: 1px solid #94a3b8;
-}
-
-.table-role-badge.other {
-  background: #fef3c7;
-  color: #f59e0b;
-  border: 1px solid #fbbf24;
-}
-
-/* ========================================
-   ACTION BUTTONS
-   ======================================== */
-.action-buttons {
+/* Action Buttons for Requests */
+.collab-actions {
   display: flex;
   gap: 0.5rem;
+  flex-shrink: 0;
 }
 
-.btn-accept,
-.btn-reject {
+.btn-collab-action {
   display: flex;
   align-items: center;
   gap: 0.375rem;
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 0.875rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.8125rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
-.btn-accept {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #10b981;
+.btn-collab-action svg {
+  font-size: 1rem !important;
 }
 
-.btn-accept:hover {
-  background: #10b981;
-  color: white;
+.btn-collab-action.accept {
+  background: white;
+  color: #16a34a;
+  border: 1px solid #22c55e;
+}
+
+.btn-collab-action.accept:hover {
+  background-color: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
   transform: translateY(-1px);
 }
 
-.btn-reject {
-  background: #fee2e2;
-  color: #991b1b;
+.btn-collab-action.reject {
+  background: white;
+  color: #dc2626;
   border: 1px solid #ef4444;
 }
 
-.btn-reject:hover {
-  background: #ef4444;
-  color: white;
+.btn-collab-action.reject:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
   transform: translateY(-1px);
-}
-
-.btn-accept svg,
-.btn-reject svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* ========================================
-   PAGINATION
-   ======================================== */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.pagination-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 36px;
-  height: 36px;
-  padding: 0.5rem;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pagination-btn:hover:not(:disabled) {
-  background: #f8fafc;
-  border-color: #4bb77d;
-  color: #4bb77d;
-}
-
-.pagination-btn.active {
-  background: #4bb77d;
-  border-color: #4bb77d;
-  color: white;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/* ========================================
-   EMPTY REQUESTS
-   ======================================== */
-.empty-requests {
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #64748b;
-}
-
-.empty-requests p {
-  font-size: 1rem;
-  margin: 0;
 }
 
 /* ========================================
@@ -891,15 +859,6 @@
 
   .list-field {
     display: none;
-  }
-
-  .requests-table {
-    font-size: 0.8125rem;
-  }
-
-  .requests-table th,
-  .requests-table td {
-    padding: 0.75rem;
   }
 }
 
@@ -976,17 +935,37 @@
     border-top: 1px solid #f1f5f9;
   }
 
-  .custom-modal {
+  .modal-content-modern {
     width: 95%;
     max-height: 90vh;
   }
 
-  .table-responsive {
-    overflow-x: auto;
+  .modal-header-modern {
+    padding: 1.25rem 1.5rem;
   }
 
-  .requests-table {
-    min-width: 600px;
+  .modal-header-modern h3 {
+    font-size: 1.125rem;
+  }
+
+  .modal-body-modern {
+    padding: 1.25rem 1.5rem;
+  }
+
+  .collaborator-item-modern.request-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .collab-actions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .btn-collab-action {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -1013,14 +992,19 @@
     font-size: 0.75rem;
   }
 
-  .action-buttons {
-    flex-direction: column;
-    width: 100%;
+  .modal-header-modern {
+    padding: 1rem 1.25rem;
   }
 
-  .btn-accept,
-  .btn-reject {
-    width: 100%;
-    justify-content: center;
+  .modal-body-modern {
+    padding: 1rem 1.25rem;
+  }
+
+  .collab-name {
+    font-size: 0.875rem;
+  }
+
+  .collab-email {
+    font-size: 0.75rem;
   }
 }

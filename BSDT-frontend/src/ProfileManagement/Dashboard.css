@@ -635,6 +635,65 @@
   font-weight: 600;
 }
 
+/* Notification badge on sidebar button (expanded state) */
+.sidebar-btn .notification-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4), 0 0 0 2px white;
+  z-index: 10;
+  transition: all 0.3s ease;
+}
+
+/* Notification badge when sidebar is collapsed */
+.sidebar-btn.collapsed .notification-badge {
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+}
+
+/* Notification badge on hover effect */
+.sidebar-btn:hover .notification-badge {
+  transform: scale(1);
+  box-shadow: 0 3px 12px rgba(239, 68, 68, 0.5), 0 0 0 2px white;
+}
+
+/* For mobile horizontal sidebar */
+.sidebar-list.horizontal .sidebar-btn .notification-badge {
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  font-size: 0.6rem;
+}
+
+/* Tooltip container adjustment for notification badge */
+.tooltip-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Active state adjustment */
+.sidebar-btn.active .notification-badge {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5), 0 0 0 2px rgba(75, 183, 125, 0.2);
+}
+
 /* Icon in absolute fixed position - NEVER moves */
 .icon {
   position: absolute;
@@ -878,6 +937,15 @@
   .tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
+  }
+
+  .sidebar-btn .notification-badge {
+    top: 2px;
+    right: 2px;
+    min-width: 14px;
+    height: 14px;
+    font-size: 0.55rem;
+    padding: 0 4px;
   }
 }
 

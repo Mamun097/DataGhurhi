@@ -163,6 +163,7 @@ async function inviteCollaborator(projectId, user_data) {
     .select("*")
     .eq("user_id", id)
     .eq("project_id", projectId)
+    .neq("invitation", "declined")
     .single();
   
   if (fetchError && fetchError.code !== "PGRST116") {
