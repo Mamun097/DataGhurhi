@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback, useRef } from "react";
 import SurveyQuestions from "../Components/SurveyQuestions";
 import AddQuestion from "../Components/AddNewQuestion";
 import "./LLL-Generated-Question/ChatbotLoading.css";
-import Option from "../QuestionTypes/QuestionSpecificUtils/OptionClass";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "../CSS/SurveySections.css";
@@ -50,6 +49,10 @@ const SurveySections = ({
   language,
   setLanguage,
   getLabel,
+  isQuiz,
+  defaultPointValue,
+  totalMarks,
+  setTotalMarks,
 }) => {
   const [showLogicDropdown, setShowLogicDropdown] = useState(false);
   const [selectedTriggerQuestionText, setSelectedTriggerQuestionText] =
@@ -171,10 +174,10 @@ const SurveySections = ({
 
     switch (type) {
       case "radio":
-        newQ.meta.options = [
-          new Option(getLabel("Option 1"), 0),
-          new Option(getLabel("Option 2"), 0),
-        ];
+        newQ.meta.options = [getLabel("Option 1"), getLabel("Option 2")];
+        if (isQuiz) {
+          newQ.points = defaultPointValue || 1;
+        }
         break;
       case "checkbox":
       case "dropdown":
@@ -313,79 +316,76 @@ const SurveySections = ({
   const eligibleTriggerQuestions = getEligibleTriggerQuestions();
   const optionsForSelectedQuestion = getOptionsForSelectedQuestion();
   const handleToggleAutoNumbering = () => {
-    setSections(prevSections =>
-      prevSections.map(sec =>
-        sec.id === section.id ? { ...sec, autoNumbering: !sec.autoNumbering } : sec
+    setSections((prevSections) =>
+      prevSections.map((sec) =>
+        sec.id === section.id
+          ? { ...sec, autoNumbering: !sec.autoNumbering }
+          : sec
       )
     );
   };
   const handleToggleTitle = () => {
     setSections((prevSections) =>
       prevSections.map((sec) =>
-        sec.id === section.id
-          ? { ...sec, showTitle: !sec.showTitle }
-          : sec
+        sec.id === section.id ? { ...sec, showTitle: !sec.showTitle } : sec
       )
     );
   };
 
-console.log(section.autoNumbering,"autoNumbering in checkbox");
+  console.log(section.autoNumbering, "autoNumbering in checkbox");
   return (
     <div className="survey-section__container container-fluid shadow border bg-transparent rounded p-3 mt-5 mb-3">
-      
       <div className="survey-section__header d-flex justify-content-between align-items-start">
         <div className="flex-grow-1">
           <h1 className="survey-section__id-display text-left mb-3">
             <i>{getLabel("Section") || "Section"} </i>
             {section.id}
           </h1>
-      {section.showTitle && (
-        <textarea
-          className="survey-section__title-input form-control mt-2 mb-4"
-          placeholder={getLabel("Enter Section Title") || "Enter Section Title"}
-          value={section.title || ""}
-          onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
-          onFocus={(e) => e.target.select()}
-        />
-      )}
-
+          {section.showTitle && (
+            <textarea
+              className="survey-section__title-input form-control mt-2 mb-4"
+              placeholder={
+                getLabel("Enter Section Title") || "Enter Section Title"
+              }
+              value={section.title || ""}
+              onChange={(e) => handleUpdatingSectionTitle(e.target.value)}
+              onFocus={(e) => e.target.select()}
+            />
+          )}
         </div>
 
-      <div className="d-flex align-items-center justify-content-end mb-2 gap-3">
-        {/* Auto Numbering */}
-       <div className="d-flex align-items-center">
-        <input
-          type="checkbox"
-          id={`auto-numbering-${section.id}`}
-          checked={section.autoNumbering || false}
-          onChange={handleToggleAutoNumbering}
-          className="form-check-input me-1"
-        />
-        <label
-          htmlFor={`auto-numbering-${section.id}`}
-          className="form-check-label"
-        >
-          {getLabel("Auto Numbering")}
-        </label>
-      </div>
-
-        {/* Title toggle slider */}
-        <div className="d-flex align-items-center">
-          <label className="form-check-label me-1">{getLabel("Title")}</label>
-          <div className="form-check form-switch">
+        <div className="d-flex align-items-center justify-content-end mb-2 gap-3">
+          {/* Auto Numbering */}
+          <div className="d-flex align-items-center">
             <input
-              className="form-check-input"
               type="checkbox"
-              id={`title-toggle-${section.id}`}
-              checked={section.showTitle || false}
-              onChange={handleToggleTitle}
+              id={`auto-numbering-${section.id}`}
+              checked={section.autoNumbering || false}
+              onChange={handleToggleAutoNumbering}
+              className="form-check-input me-1"
             />
+            <label
+              htmlFor={`auto-numbering-${section.id}`}
+              className="form-check-label"
+            >
+              {getLabel("Auto Numbering")}
+            </label>
+          </div>
+
+          {/* Title toggle slider */}
+          <div className="d-flex align-items-center">
+            <label className="form-check-label me-1">{getLabel("Title")}</label>
+            <div className="form-check form-switch">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                id={`title-toggle-${section.id}`}
+                checked={section.showTitle || false}
+                onChange={handleToggleTitle}
+              />
+            </div>
           </div>
         </div>
-      </div>
-
-
-
 
         {section.id > 1 && (
           <div className="logic-container position-relative" ref={logicRef}>
@@ -467,6 +467,7 @@ console.log(section.autoNumbering,"autoNumbering in checkbox");
       {sectionQuestionCount === 0 && (
         <div className="survey-section__add-question-area mb-3">
           <AddQuestion
+            isQuiz={isQuiz}
             addNewQuestion={addNewQuestion}
             addGeneratedQuestion={addGeneratedQuestion}
             addImportedQuestion={addImportedQuestion}
@@ -492,6 +493,10 @@ console.log(section.autoNumbering,"autoNumbering in checkbox");
           setLanguage={setLanguage}
           getLabel={getLabel}
           autoNumbering={section.autoNumbering}
+          isQuiz={isQuiz}
+          defaultPointValue={defaultPointValue}
+          totalMarks={totalMarks}
+          setTotalMarks={setTotalMarks}
         />
       </div>
 

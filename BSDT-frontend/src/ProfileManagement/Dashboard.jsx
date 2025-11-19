@@ -35,7 +35,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  ChartColumn
+  ChartColumn,
 } from "lucide-react";
 import CouponManagement from "./AdminComponents/CouponManagement";
 
@@ -59,9 +59,6 @@ const translateText = async (textArray, targetLang) => {
 };
 
 const Dashboard = () => {
-  const [profilePicUrl, setProfilePicUrl] = useState(null);
-  const [values, setValues] = useState({});
-
   const getTabFromURL = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("tab");
@@ -158,7 +155,6 @@ const Dashboard = () => {
   const [showAdBanner, setShowAdBanner] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
-  const [availableTokens, setAvailableTokens] = useState(0);
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
@@ -269,12 +265,24 @@ const Dashboard = () => {
       fetchAdminStats();
     } else {
       setIsAdmin(false);
-      setActiveTab(getTabFromURL() || "projects");
+      setActiveTab(getTabFromURL() || "projects"); // Set default tab for normal user
+
+      // Show ad banner for normal users only once per session
+
+      // Check if the banner has already been shown in this session
+      const bannerShownKey = `adBannerShown_${response.data.user.user_id}`;
+      const bannerAlreadyShown = sessionStorage.getItem(bannerShownKey);
+
+      if (!bannerAlreadyShown) {
+        setShowAdBanner(true);
+        // Mark banner as shown in this session
+        sessionStorage.setItem(bannerShownKey, "true");
+      }
     }
-  }, [fetchAdminStats, userType]);
+  }, [fetchAdminStats]);
 
   useEffect(() => {
-    getuserType();
+    getuserType;
   }, [userId]);
 
   const toggleEdit = () => setIsEditing(!isEditing);
@@ -357,33 +365,7 @@ const Dashboard = () => {
     setShowPremiumModal(false);
   };
 
-  // const handleTabClick = (tabKey) => {
-  //   if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
-  //     setShowPremiumModal(true);
-  //   } else {
-  //     setActiveTab(tabKey);
-  //     setSelectedProjectId(null);
-  //     const url = new URL(window.location);
-  //     url.searchParams.set("tab", tabKey);
-  //     url.searchParams.delete("projectId");
-  //     window.history.replaceState({}, "", url);
-  //   }
-  // };
-  const handleTabClick = (tabKey) => {
-    if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
-      setShowPremiumModal(true);
-    } else {
-      setActiveTab(tabKey);
-      setSelectedProjectId(null);
-      setSourceTab(null); // Clear source tab when switching tabs
-      const url = new URL(window.location);
-      // Clear all query params and set only the tab
-      url.search = '';
-      url.searchParams.set("tab", tabKey);
-      window.history.replaceState({}, "", url);
-    }
-  };
-
+  //collaborated projects
   const [collaboratedProjects, setCollaboratedProjects] = useState([]);
   const [collabRequests, setCollabRequests] = useState([]);
 
@@ -438,30 +420,49 @@ const Dashboard = () => {
   }, []);
 
   const getTabs = () => {
-  const pendingRequestsCount = collabRequests?.length || 0;
-  
-  if (isAdmin) {
-    return [
-      { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
-      { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
-      { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
-      { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
-    ];
-  } else {
-    return [
-      { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
-      { 
-        label: "Shared with Me", 
-        key: "shared", 
-        icon: <Users size={18} />,
-        badge: pendingRequestsCount > 0 ? pendingRequestsCount : null
-      },
-      { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
-      { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
-      { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
-    ];
-  }
-};
+    if (isAdmin) {
+      return [
+        {
+          label: "Dashboard",
+          key: "dashboard",
+          icon: <LayoutDashboard size={18} />,
+        },
+        {
+          label: "Customize Packages",
+          key: "customizepackages",
+          icon: <Package size={18} />,
+        },
+        {
+          label: "Manage Coupons",
+          key: "managecoupons",
+          icon: <TicketPercent size={18} />,
+        },
+        { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+      ];
+    } else {
+      return [
+        // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+        {
+          label: "Projects",
+          key: "projects",
+          icon: <FolderKanban size={18} />,
+        },
+        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
+        // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
+        {
+          label: "Question Bank",
+          key: "questionbank",
+          icon: <Package size={18} />,
+        },
+        { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
+        {
+          label: "Premium Packages",
+          key: "premiumpackages",
+          icon: <Crown size={18} />,
+        },
+      ];
+    }
+  };
 
   useEffect(() => {
     setCollapsed(isMobile);
@@ -521,7 +522,9 @@ const Dashboard = () => {
         userType={userType}
       />
 
-      <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
+      <div
+        className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
+      >
         <div className="dashboard-layout">
           <div
             className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
@@ -553,11 +556,9 @@ const Dashboard = () => {
                 <li key={tab.key}>
                   <div className="tooltip-container">
                     <button
-                      className={`sidebar-btn ${(activeTab === tab.key ||
-                          (activeTab === "projectdetails" && sourceTab === tab.key)) // Check if source matches
-                          ? "active"
-                          : ""
-                        } ${collapsed ? "collapsed" : ""}`}
+                      className={`sidebar-btn ${
+                        activeTab === tab.key ? "active" : ""
+                      } ${collapsed ? "collapsed" : ""}`}
                       onClick={() => {
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
@@ -570,15 +571,11 @@ const Dashboard = () => {
                       {!collapsed && !isMobile && (
                         <span className="label">{tab.label}</span>
                       )}
-                      {tab.badge && (
-                        <span className="notification-badge">{tab.badge}</span>
-                      )}
                     </button>
 
-                    {((window.innerWidth <= 768) ||
-                      (collapsed && !isMobile)) && (
-                        <span className="tooltip-text">{tab.label}</span>
-                      )}
+                    {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
+                      <span className="tooltip-text">{tab.label}</span>
+                    )}
                   </div>
                 </li>
               ))}

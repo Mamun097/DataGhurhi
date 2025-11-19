@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -6,10 +6,29 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
+  const shuffledOptions = useMemo(() => {
+    const options = question.meta?.options || [];
+    // Shuffle only if the flag is explicitly true
+    if (question.meta?.enableOptionShuffle === true) {
+      // Create a copy and shuffle it using the Fisher-Yates algorithm
+      const shuffled = [...options];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+      }
+      return shuffled;
+    }
+    return options;
+  }, [question]); // Dependency: re-calculate only if the question object changes
+  const isOtherSelected =
+    userAnswer && userAnswer !== "" && !shuffledOptions.includes(userAnswer);
 
-  // This handler updates the user's response state
-  const handleAnswerChange = (e) => {
-    const selectedValue = e.target.value;
+  const [otherOption, setOtherOption] = useState(
+    isOtherSelected ? userAnswer : ""
+  );
+  const [otherSelected, setOtherSelected] = useState(isOtherSelected);
+  const selectValue = isOtherSelected ? "__OTHER__" : userAnswer || "";
+  const updateUserResponse = (selectedValue) => {
     const existingResponseIndex = userResponse.findIndex(
       (response) => response.questionText === question.text
     );
@@ -28,26 +47,34 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
     }
   };
 
-  const shuffledOptions = useMemo(() => {
-    const options = question.meta?.options || [];
-    // Shuffle only if the flag is explicitly true
-    if (question.meta?.enableOptionShuffle === true) {
-      // Create a copy and shuffle it using the Fisher-Yates algorithm
-      const shuffled = [...options];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
-      }
-      return shuffled;
+  // This is the new handler for the <select> element
+  const handleAnswerChange = (e) => {
+    const selectedValue = e.target.value;
+    if (selectedValue === "__OTHER__") {
+      setOtherSelected(true);
+      updateUserResponse(otherOption); // Update response with "Other" text
+    } else {
+      setOtherSelected(false);
+      updateUserResponse(selectedValue); // Update response with standard option
     }
-    return options;
-  }, [question]); // Dependency: re-calculate only if the question object changes
+  };
 
+  // This handles changes to the "Other" text box
+  const handleEditOtherOption = (e) => {
+    const newOtherOption = e.target.value;
+    setOtherOption(newOtherOption);
+
+    // If "Other" is currently selected, update userResponse with the new text
+    if (otherSelected) {
+      updateUserResponse(newOtherOption);
+    }
+  };
   return (
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}{". "}
+        {index}
+        {". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -77,7 +104,7 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
         <select
           className="form-select"
           style={{ maxWidth: "200px" }}
-          value={userAnswer || ""}
+          value={selectValue}
           onChange={handleAnswerChange}
           required={question.required}
           disabled={question.disabled}
@@ -85,6 +112,7 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
           <option value="" disabled>
             Select an option
           </option>
+          {question.otherAsOption && <option value="__OTHER__">Other</option>}
 
           {shuffledOptions.map((option, idx) => {
             const optionValue =
@@ -97,6 +125,19 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
           })}
         </select>
       </div>
+      {question.otherAsOption && otherSelected && (
+        <div className="mt-3">
+          <input
+            type="text"
+            className="form-control"
+            style={{ maxWidth: "300px" }}
+            placeholder="Write your own option"
+            value={otherOption}
+            onChange={handleEditOtherOption}
+            required={otherSelected}
+          />
+        </div>
+      )}
     </div>
   );
 };

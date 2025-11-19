@@ -146,7 +146,7 @@ const SurveyForm = ({
                 padding: "8px 20px",
                 fontSize: "1rem",
                 color: "#fff",
-                backgroundColor: "#28a745",
+                backgroundColor: "#25856fff",
                 border: "none",
                 borderRadius: "5px",
                 cursor: "pointer",
@@ -162,13 +162,14 @@ const SurveyForm = ({
               style={{
                 padding: "8px 20px",
                 fontSize: "1rem",
-                color: "#fff",
-                backgroundColor: "#007bff",
-                border: "none",
+                color: "#000000ff",
+                backgroundColor: "#ffffffff",
+                border: "2px solid #25856fff",
                 borderRadius: "5px",
                 cursor: "pointer",
                 pointerEvents: "auto",
                 marginTop: "10px",
+                fontSize: "1rem",
               }}
             >
               Go Back

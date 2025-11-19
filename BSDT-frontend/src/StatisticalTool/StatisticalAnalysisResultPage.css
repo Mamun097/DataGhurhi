@@ -565,39 +565,40 @@
 .an-container {
   width: 100%;
   min-height: 100vh;
-  background: #f9fafb;
-  padding: 2rem 1rem;
+  background: #f1fff3;
+  padding: 1rem 1rem;
   box-sizing: border-box;
 }
 
 .an-wrapper {
-  max-width: 1100px;
-  margin: 0 auto;
+  max-width: 1000px;
+  margin:auto;
   position: relative;
 }
 
 /* ---------- Header ---------- */
 .page-header {
   text-align: center;
-  /* margin-bottom: 0.5rem; */
+  margin-bottom: 2rem;
 }
 
-.page-title {
-  font-size: 2.8rem;
-  font-weight: 600;
-  color: #0e5b19;
+.an-page-title {
+  font-size: 2.2rem;
+  font-weight: 700;
+  color:  #25856f;
 }
 
 /* ---------- Centering and Card ---------- */
-.content-center {
+.an-content-center {
   display: flex;
   justify-content: center;
   width: 100%;
+  align-items: center;
 }
 
-.form-wrapper {
+.an-form-wrapper {
   width: 100%;
-  max-width: 850px;
+  max-width: 950px;
 }
 
 /* ---------- Error Box ---------- */
@@ -607,7 +608,7 @@
   color: #b91c1c;
   padding: 12px 16px;
   border-radius: 6px;
-  margin-bottom: 1.0rem;
+  margin-bottom: 1.5rem;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -620,21 +621,21 @@
 }
 
 /* ---------- Card Layout ---------- */
-.card {
+.an-card {
   background: #fff;
-  border-radius: 0px;
+  border-radius: 8px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  min-width: 984px;
-  margin-left: -67px;
+  min-width: 800px;
+  margin:auto;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #d3d8df;
-  color: #042316;
+  background: #e4f8ea;
+  color: #1e8258;
   padding: 0.75rem 1.25rem;
   font-weight: 600;
 }
@@ -681,11 +682,11 @@
 }
 
 .an-btn-primary {
-  background: #3b82f6;
+  background:  #288f77;
   color: white;
 }
 .an-btn-primary:hover {
-  background: #2563eb;
+  background: #83c1a8;
 }
 
 .an-btn-success {
@@ -1022,8 +1023,7 @@
 
 /* ---------- Form Section ---------- */
 .form-section {
-  margin-top: -1.0rem;
-  margin-bottom: 5rem;
+  margin-top: 1.25rem;
 }
 
 .form-group {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import axios from "axios";
 import "./register.css"; // reuse same CSS
 import Navbarhome from "../Homepage/navbarhome";
@@ -43,18 +44,6 @@ const ForgotPassword = () => {
     return () => clearInterval(timer);
   }, [otpCooldown]);
 
-  useEffect(() => {
-    localStorage.setItem("language", language);
-  }, [language, defaultTexts]);
-  const getPasswordValidations = (password, confirmPassword) => ({
-    length: password.length >= 8,
-    upper: /[A-Z]/.test(password),
-    lower: /[a-z]/.test(password),
-    number: /[0-9]/.test(password),
-    specialCharacter: /[~`!@#$%^&*(),.?":{}|<>]/.test(password),
-    match: password === confirmPassword && confirmPassword !== "",
-  });
-
   const defaultTexts = React.useMemo(
     () => ({
       title: "Reset Your Password",
@@ -97,6 +86,20 @@ const ForgotPassword = () => {
     }),
     []
   );
+
+  useEffect(() => {
+    localStorage.setItem("language", language);
+  }, [language, defaultTexts]);
+  const getPasswordValidations = (password, confirmPassword) => ({
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    number: /[0-9]/.test(password),
+    specialCharacter: /[~`!@#$%^&*(),.?":{}|<>]/.test(password),
+    match: password === confirmPassword && confirmPassword !== "",
+  });
+
+  
   const [passwordValidations, setPasswordValidations] = useState({
     length: false,
     upper: false,

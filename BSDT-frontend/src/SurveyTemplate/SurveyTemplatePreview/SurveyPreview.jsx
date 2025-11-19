@@ -88,9 +88,9 @@ const SurveyPreview = ({
           style={{
             padding: "8px 20px",
             fontSize: "1rem",
-            color: "#fff",
-            backgroundColor: "#007bff",
-            border: "none",
+            color: "#000000ff",
+            backgroundColor: "#ffffffff",
+            border: "1px solid #0a541cff",
             borderRadius: "5px",
             cursor: "pointer",
             pointerEvents: "auto",
