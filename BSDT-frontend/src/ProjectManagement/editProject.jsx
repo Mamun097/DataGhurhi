@@ -559,7 +559,22 @@ const EditProject = () => {
         <div className="edit-left">
           {/* Back button - takes to home */}
           <div className="mt-2 mb-2">
-            <button onClick={() => navigate("/")} title="Go back to home">
+            <button
+              onClick={() => navigate("/")}
+              title="Go back to home"
+              style={{
+                padding: "8px 20px",
+                fontSize: "1rem",
+                color: "#000000ff",
+                backgroundColor: "#ffffffff",
+                border: "2px solid #25856fff",
+                borderRadius: "5px",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                marginTop: "10px",
+                fontSize: "1rem",
+              }}
+            >
               <i className="bi bi-arrow-left me-2"></i>
               {getLabel("Back")}
             </button>

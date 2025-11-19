@@ -111,9 +111,6 @@ const SurveyForm = ({
     }
   };
 
-  const validateCurrentSection = () => {
-    return true;
-  };
   const handleNext = () => {
     if (currentVisibleIndex < visibleSections.length - 1) {
       setCurrentVisibleIndex((prev) => prev + 1);
@@ -137,8 +134,11 @@ const SurveyForm = ({
   return (
     <>
       <div className="on-screen-view">
-        <div className="d-flex justify-content-between align-items-center mb-3" style={{paddingTop: "100px"}}>
-          <h2 style={{ marginTop:"20 px", color: "#6c757d" }}>Preview Mode</h2>
+        <div
+          className="d-flex justify-content-between align-items-center mb-3"
+          style={{ paddingTop: "100px" }}
+        >
+          <h2 style={{ marginTop: "20 px", color: "#6c757d" }}>Preview Mode</h2>
           <div>
             <button
               onClick={handlePrint}
