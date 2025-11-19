@@ -281,6 +281,15 @@ const Dashboard = () => {
     }
   }, [fetchAdminStats]);
 
+  const handleTabClick = (tabKey) => {
+  setActiveTab(tabKey);
+  const url = new URL(window.location);
+  url.searchParams.set("tab", tabKey);
+  url.searchParams.delete("projectId");
+  url.searchParams.delete("source");
+  window.history.replaceState({}, "", url);
+};
+
   useEffect(() => {
     getuserType;
   }, [userId]);
