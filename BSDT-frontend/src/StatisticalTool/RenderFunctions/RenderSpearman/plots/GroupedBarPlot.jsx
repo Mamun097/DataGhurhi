@@ -29,7 +29,7 @@ const GroupedBarPlot = ({
             captionUnderline: false,
             captionTopMargin: 30,
             xAxisTitle: 'Variables',
-            yAxisTitle: 'Spearman Correlation',
+            yAxisTitle: 'Spearman Correlation', // Fixed: Changed from 'Correlation Coefficient'
             metricType: 'correlation', // 'correlation', 'p_value', or 'p_adjusted'
             xAxisTitleSize: 16,
             yAxisTitleSize: 16,
@@ -63,7 +63,7 @@ const GroupedBarPlot = ({
 
     const settings = propSettings || getDefaultSettings();
 
-    // Generate chart data for Pearson correlation
+    // Generate chart data for Spearman correlation
     const generateChartData = () => {
         // Validate results structure
         if (!results || !results.pairwise_results || !Array.isArray(results.pairwise_results) || results.pairwise_results.length === 0) {
@@ -200,26 +200,50 @@ const GroupedBarPlot = ({
         textAnchor: 'middle'
     });
 
+    // FIXED: Proper y-axis domain handling for different metric types
     const getYAxisDomain = (settings) => {
-        if (settings.yAxisMin !== '' && settings.yAxisMax !== '') {
-            const min = parseFloat(settings.yAxisMin);
-            const max = parseFloat(settings.yAxisMax);
-            if (!isNaN(min) && !isNaN(max) && min < max) {
-                return [min, max];
+        const metricType = settings.metricType || 'correlation';
+        
+        // For correlation, use -1 to 1 range
+        if (metricType === 'correlation') {
+            if (settings.yAxisMin !== '' && settings.yAxisMax !== '') {
+                const min = parseFloat(settings.yAxisMin);
+                const max = parseFloat(settings.yAxisMax);
+                if (!isNaN(min) && !isNaN(max) && min < max) {
+                    return [min, max];
+                }
             }
+            return [-1, 1]; // Default range for correlation coefficients
         }
         
-        // Default range for correlations
-        if (settings.metricType === 'correlation') {
-            return [-1, 1];
-        }
-        
-        // For p-values
-        if (settings.metricType === 'p_value' || settings.metricType === 'p_adjusted') {
-            return [0, 1];
+        // For p-values, use 0 to 1 range
+        if (metricType === 'p_value' || metricType === 'p_adjusted') {
+            if (settings.yAxisMin !== '' && settings.yAxisMax !== '') {
+                const min = parseFloat(settings.yAxisMin);
+                const max = parseFloat(settings.yAxisMax);
+                if (!isNaN(min) && !isNaN(max) && min < max) {
+                    return [min, max];
+                }
+            }
+            return [0, 1]; // Default range for p-values
         }
         
         return ['auto', 'auto'];
+    };
+
+    // FIXED: Get appropriate y-axis title based on metric type
+    const getYAxisTitle = (settings) => {
+        const metricType = settings.metricType || 'correlation';
+        
+        switch (metricType) {
+            case 'p_value':
+                return 'P-Value';
+            case 'p_adjusted':
+                return 'Adjusted P-Value';
+            case 'correlation':
+            default:
+                return 'Spearman Correlation';
+        }
     };
 
     const getGridStroke = (gridColor) => gridColor === 'black' ? '#000000' : '#e5e7eb';
@@ -229,7 +253,7 @@ const GroupedBarPlot = ({
 
         const metricType = settings.metricType || 'correlation';
 
-        // For p-values
+        // For p-values - keep existing logic
         if (metricType === 'p_value' || metricType === 'p_adjusted') {
             if (value < 0.0001 && value !== 0) {
                 return value.toExponential(2);
@@ -237,11 +261,8 @@ const GroupedBarPlot = ({
             return value.toFixed(4);
         }
 
-        // For correlation values (-1 to 1)
-        if (Math.abs(value) < 0.01 && value !== 0) {
-            return value.toExponential(2);
-        }
-        return value.toFixed(3);
+        // For correlation values - ALWAYS show 2 decimal places
+        return value.toFixed(2);
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -365,6 +386,7 @@ const GroupedBarPlot = ({
 
     const { height } = getDimensions(settings.dimensions);
     const yDomain = getYAxisDomain(settings);
+    const yAxisTitle = getYAxisTitle(settings); // FIXED: Use dynamic y-axis title
 
     if (chartData.length === 0) {
         return (
@@ -382,7 +404,7 @@ const GroupedBarPlot = ({
                     {t('No Data Available', 'কোনো ডেটা উপলব্ধ নেই')}
                 </h3>
                 <p style={{ margin: 0, opacity: 0.9, fontSize: '14px' }}>
-                    {t('Please run the Spearman correlation test first', 'প্রথমে পিয়ারসন সম্পর্ক পরীক্ষা চালান')}
+                    {t('Please run the Spearman correlation test first', 'প্রথমে স্পিয়ারম্যান সম্পর্ক পরীক্ষা চালান')}
                 </p>
             </div>
         );
@@ -502,6 +524,8 @@ const GroupedBarPlot = ({
                             }}
                         />
 
+
+
                         <YAxis
                             domain={yDomain}
                             tick={{
@@ -510,8 +534,20 @@ const GroupedBarPlot = ({
                                 fontFamily: settings.fontFamily,
                                 fontWeight: '500'
                             }}
+                            tickFormatter={(value) => {
+                                if (settings.metricType === 'correlation') {
+                                    // For correlation, show 2 decimal places
+                                    return value.toFixed(2);
+                                } else {
+                                    // For p-values, use existing logic
+                                    if (value < 0.0001 && value !== 0) {
+                                        return value.toExponential(2);
+                                    }
+                                    return value.toFixed(4);
+                                }
+                            }}
                             label={{
-                                value: settings.yAxisTitle,
+                                value: yAxisTitle,
                                 angle: -90,
                                 position: 'insideLeft',
                                 offset: settings.yAxisLeftMargin,
@@ -534,7 +570,7 @@ const GroupedBarPlot = ({
                                 stroke: '#9ca3af',
                                 strokeWidth: 1
                             }}
-                        />
+                        />                        
 
                         <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }} />
 
@@ -624,11 +660,10 @@ const GroupedBarPlot = ({
 
                 <p style={{ margin: 0, color: '#6b7280', fontSize: '14px', lineHeight: '1.6' }}>
                     {t(
-                        `This grouped bar chart displays ${settings.metricType === 'correlation' ? 'correlation coefficients' : settings.metricType === 'p_value' ? 'p-values' : 'adjusted p-values'} across different variable comparisons. Each group of bars represents a primary variable, with individual bars showing its relationship with other variables. Self-comparisons are automatically excluded.${settings.showConfidenceIntervals && settings.metricType === 'correlation' ? ' Error bars show 95% confidence intervals.' : ''}`,
-                        `এই গ্রুপড বার চার্টটি বিভিন্ন ভেরিয়েবল তুলনায় ${settings.metricType === 'correlation' ? 'সম্পর্ক সহগ' : settings.metricType === 'p_value' ? 'পি-মান' : 'সমন্বিত পি-মান'} প্রদর্শন করে। প্রতিটি বার গ্রুপ একটি প্রাথমিক ভেরিয়েবল প্রতিনিধিত্ব করে, পৃথক বারগুলি অন্যান্য ভেরিয়েবলের সাথে এর সম্পর্ক দেখায়। স্ব-তুলনা স্বয়ংক্রিয়ভাবে বাদ দেওয়া হয়।${settings.showConfidenceIntervals && settings.metricType === 'correlation' ? ' এরর বারগুলি ৯৫% আত্মবিশ্বাসের ব্যবধান দেখায়।' : ''}`
+                        `This grouped bar chart displays ${settings.metricType === 'correlation' ? 'Spearman correlation coefficients (ρ)' : settings.metricType === 'p_value' ? 'p-values' : 'adjusted p-values'} across different variable comparisons. Each group of bars represents a primary variable, with individual bars showing its relationship with other variables. Self-comparisons are automatically excluded.${settings.showConfidenceIntervals && settings.metricType === 'correlation' ? ' Error bars show 95% confidence intervals.' : ''}`,
+                        `এই গ্রুপড বার চার্টটি বিভিন্ন ভেরিয়েবল তুলনায় ${settings.metricType === 'correlation' ? 'স্পিয়ারম্যান সম্পর্ক সহগ' : settings.metricType === 'p_value' ? 'পি-মান' : 'সমন্বিত পি-মান'} প্রদর্শন করে। প্রতিটি বার গ্রুপ একটি প্রাথমিক ভেরিয়েবল প্রতিনিধিত্ব করে, পৃথক বারগুলি অন্যান্য ভেরিয়েবলের সাথে এর সম্পর্ক দেখায়। স্ব-তুলনা স্বয়ংক্রিয়ভাবে বাদ দেওয়া হয়।${settings.showConfidenceIntervals && settings.metricType === 'correlation' ? ' এরর বারগুলি ৯৫% আত্মবিশ্বাসের ব্যবধান দেখায়।' : ''}`
                     )}
                 </p>
-
             </div>
         </div>
     );
