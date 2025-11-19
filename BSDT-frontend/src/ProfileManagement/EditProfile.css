@@ -1,55 +1,58 @@
 /* === Layout === */
-.profile-layout-container {
+.edit-profile-layout-container {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   background: linear-gradient(360deg, #e0f8e0, #ecf7f3);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI";
   padding: 2rem;
   gap: 1.5rem;
 }
 
-.edit-page-title {
+.edit-profile-page-title {
   font-size: 2rem;
   font-weight: 700;
   color: #25856f;
   text-align: center;
+  margin-top: 20px;
 }
 
 /* === Cards === */
-.info-cards-grid {
+.profile-info-cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 1.5rem;
   align-items: start; /* prevents cards from stretching */
 }
 
-.card.info-card {
+.profile-card.profile-info-card {
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  min-width: 350px;
+  
 }
 
-.card.info-card:hover {
+.profile-card.profile-info-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 /* === Collapsible Header === */
-.collapsible-header {
+.profile-collapsible-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #e8f3e9;
+  background: #d1efd1;
   padding: 1rem 1.2rem;
-  border-bottom: 1px solid #cfe5d2;
+  border-bottom: 1px solid #92c299;
   cursor: pointer;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
 }
 
-.collapsible-header h2 {
+.profile-collapsible-header h2 {
   font-size: 1.1rem;
   margin: 0;
   color: #25856f;
@@ -57,7 +60,7 @@
 }
 
 /* === Basic Info Section === */
-.basic-info-layout {
+.basic-profile-info-layout {
   display: flex;
   align-items: flex-start;
   gap: 1.5rem;
@@ -108,7 +111,7 @@
   transform: scale(1.1);
 }
 
-.basic-info-fields {
+.basic-profile-info-fields {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -116,35 +119,37 @@
 }
 
 /* === Info Fields === */
-.info-fields {
+.profile-info-fields {
   padding: 0.8rem 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
 }
 
-.info-row {
+.profile-info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap; /* allows wrapping on small screens */
+  
 }
 
-.info-label {
+.profile-info-label {
   font-weight: 500;
   color: #235728;
-  min-width: 120px;
+  min-width: 80px;
   flex: 1;
 }
 
-.info-value {
+.profile-info-value {
   color: #4a4a4a;
   flex: 2;
   word-break: break-word;
+  
 }
 
-.edit-input {
+.profile-edit-input {
   flex: 2;
   padding: 5px 8px;
   border: 1px solid #cfe5d2;
@@ -153,7 +158,7 @@
   transition: border 0.2s ease;
 }
 
-.edit-input:focus {
+.profile-edit-input:focus {
   border-color: #367131;
 }
 /* .info-value,
@@ -213,12 +218,12 @@ select {
 }
 
 @media (max-width: 768px) {
-  .basic-info-layout {
+  .basic-profile-info-layout {
     flex-direction: column;
     align-items: center;
   }
 
-  .basic-info-fields {
+  .basic-profile-info-fields {
     width: 100%;
     text-align: left;
   }
@@ -236,12 +241,12 @@ select {
 }
 
 @media (max-width: 480px) {
-  .info-row {
+  .profile-info-row {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  .info-label {
+  .profile-info-label {
     margin-bottom: 2px;
   }
 

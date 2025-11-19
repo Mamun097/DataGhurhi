@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { supabase } from "../../db";
 import {
   Pencil,
   Check,
@@ -11,7 +12,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import "./EditProfile.css";
 import defaultprofile from "./default_dp.png";
+import NavbarAcholder from "./navbarAccountholder";
 import apiClient from "../api";
+
 export default function EditProfile() {
 
   const [profileData, setProfileData] = useState({});
@@ -22,9 +25,10 @@ export default function EditProfile() {
   const [saveStatus, setSaveStatus] = useState("idle");
   const [openSections, setOpenSections] = useState({ basic: true, contact: true});
   const fileInputRef = useRef();
+  const [language, setLanguage] = useState(localStorage.getItem("language") || "en");
 
   //Fetch profile data on mount
-  useEffect(() => {
+
     const fetchProfile = async () => {
       const token = localStorage.getItem("token");
     try {
@@ -46,8 +50,11 @@ export default function EditProfile() {
         console.error("Error fetching profile:", err);
       }
     };
+
+    useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [ ]);
+  
 const updateImageInDB = async (type, imageUrl) => {
     const token = localStorage.getItem("token");
     try {
@@ -79,12 +86,6 @@ const updateImageInDB = async (type, imageUrl) => {
     const updated = { ...profileData, [field]: tempValue };
     setProfileData(updated);
     setIsEditingField(null);
-
-    try {
-      await axios.put("/api/user/profile", { [field]: tempValue });
-    } catch (err) {
-      console.error("Error saving field:", err);
-    }
   };
 
   // Toggle section collapse
@@ -93,27 +94,45 @@ const updateImageInDB = async (type, imageUrl) => {
   };
 
   // Handle profile picture upload
-  const handleImageUpload = async (e) => {
+  const handleImageUpload = async (e,type) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append("profilePic", file);
-
     try {
-      const { data } = await axios.post("/api/user/profile/upload-pic", formData);
-      setProfileData((prev) => ({ ...prev, profilePic: data.url }));
-    } catch (err) {
-      console.error("Image upload failed:", err);
+      const { data, error } = await supabase.storage
+        .from("media")
+        .upload(`profile_pics/${file.name}`, file, { upsert: true });
+
+      if (error) {
+        console.error("Upload failed:", error.message);
+        return;
+      }
+      const urlData = supabase.storage
+        .from("media")
+        .getPublicUrl(`profile_pics/${file.name}`);
+      await updateImageInDB(type, urlData.data.publicUrl);
+      fetchProfile();
+ 
+    } catch (error) {
+      console.error(`Upload failed for ${type} picture:`, error);
     }
   };
 
   // Save full profile
   const handleSaveProfile = async () => {
     setSaveStatus("saving");
+    const token = localStorage.getItem("token");
     try {
-      await axios.put("/api/user/profile", profileData);
+     const response = await apiClient.put(
+        "/api/profile/update-profile", profileData,
+      {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (response.status === 200) {
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
+    fetchProfile();
+      }
     } catch (err) {
       console.error("Error saving profile:", err);
       setSaveStatus("idle");
@@ -152,15 +171,15 @@ console.log(value);
     const isEditing = isEditingField === field;
 
     return (
-      <div key={field} className="info-row">
-        <span className="info-label">{getLabel(field)}:</span>
+      <div key={field} className="profile-info-row">
+        <span className="profile-info-label">{getLabel(field)}:</span>
 
         {isEditing ? (
           field === "gender" ? (
             <select
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
-              className="edit-input"
+              className="profile-edit-input"
             >
               <option value="">Select Gender</option>
               <option value="Male">Male</option>
@@ -173,15 +192,15 @@ console.log(value);
               type={field === "date_of_birth" ? "date" : "text"}
               value={tempValue}
               onChange={(e) => setTempValue(e.target.value)}
-              className="edit-input"
+              className="profile-edit-input"
               autoFocus
             />
           )
         ) : (
-          <span className="info-value">{value || "-"}</span>
+          <span className="profile-info-value">{value || "-"}</span>
         )}
 
-        <div className="edit-buttons">
+        <div className="edit-profile-buttons">
           {isEditing ? (
             <>
               <button onClick={() => handleSave(field)} className="icon-btn save">
@@ -202,14 +221,17 @@ console.log(value);
   };
 
   return (
-    <div className="profile-layout-container">
-      <h1 className="edit-page-title">Manage your personal info here</h1>
+    <div style={{ paddingTop: "90px" }}>
+    <NavbarAcholder language={language}  setLanguage={setLanguage}/>
 
-      <div className="info-cards-grid">
+    <div className="edit-profile-layout-container">
+      <h1 className="edit-profile-page-title">Manage your personal info here</h1>
+
+      <div className="profile-info-cards-grid">
         {Object.entries(groupedFields).map(([section, fields]) => (
-          <div className="card info-card" key={section}>
+          <div className="profile-card profile-info-card" key={section}>
             <div
-              className="card-header collapsible-header"
+              className="card-header profile-collapsible-header"
               onClick={() => handleToggle(section)}
             >
               <h2>
@@ -234,11 +256,11 @@ console.log(value);
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
                   {section === "basic" && (
-                    <div className="basic-info-layout">
+                    <div className="basic-profile-info-layout">
                       <div className="profile-pic-section">
                         <div className="profile-pic-wrapper-large">
                           <img
-                            src={profileData.profilePic || defaultprofile}
+                            src={profilePicUrl || defaultprofile}
                             alt="Profile"
                             className="profile-pic-large"
                           />
@@ -252,20 +274,20 @@ console.log(value);
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
-                            onChange={handleImageUpload}
+                            onChange={(e) => handleImageUpload(e, "profile")}
                             style={{ display: "none" }}
                           />
                         </div>
                       </div>
 
-                      <div className="basic-info-fields">
+                      <div className="basic-profile-info-fields">
                         {fields.map((field) => renderField(field))}
                       </div>
                     </div>
                   )}
 
                   {section !== "basic" && (
-                    <div className="info-fields">
+                    <div className="profile-info-fields">
                       {fields.map((field) => renderField(field))}
                     </div>
                   )}
@@ -295,6 +317,7 @@ console.log(value);
           )}
         </button>
       </div>
+    </div>
     </div>
   );
 }

@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useMemo, useEffect,useRef } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+  useRef,
+} from "react";
+import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -22,6 +29,9 @@ const Dropdown = ({
   const [required, setRequired] = useState(question.required || false);
   const [enableOptionShuffle, setEnableOptionShuffle] = useState(
     question.meta?.enableOptionShuffle || false
+  );
+  const [otherOption, setOtherOption] = useState(
+    question.otherAsOption || false
   );
 
   useEffect(() => {
@@ -446,7 +456,7 @@ const Dropdown = ({
           ))}
         </div>
       )}
-{/* 
+      {/* 
       <input
         type="text"
         className="form-control mb-3"
@@ -476,7 +486,11 @@ const Dropdown = ({
                     >
                       <i
                         className="bi bi-grip-vertical me-2"
-                         style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
+                        style={{
+                          fontSize: "1.2rem",
+                          cursor: "grab",
+                          color: "gray",
+                        }}
                       ></i>
                       <div className="flex-grow-1 me-2">
                         <input
@@ -508,14 +522,64 @@ const Dropdown = ({
           )}
         </Droppable>
       </DragDropContext>
+      {/* Other Option */}
+      {otherOption && (
+        <div className="d-flex align-items-center mb-2 p-1 rounded">
+          {/* Fake drag handle for alignment */}
+          <i
+            className="bi bi-grip-vertical me-2"
+            style={{
+              fontSize: "1.2rem",
+              cursor: "grab",
+              color: "transparent",
+            }}
+          ></i>
+          <div className="flex-grow-1 me-2 d-flex align-items-center gap-2">
+            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
+              {getLabel("Other: ")}
+            </span>
+            <input
+              type="text"
+              className="survey-form-control survey-form-control-sm"
+              disabled
+              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+            />
+          </div>
+          <button
+            className="btn btn-sm btn-outline-danger"
+            onClick={() => {
+              handleOtherOption(false, question.id, setQuestions);
+              setOtherOption(false);
+            }}
+            title={getLabel("Remove Other")}
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+        </div>
+      )}
 
-     <button
-        className="add-option-btn"
-        onClick={addOption}
-      >
-        ➕ {getLabel("Add Option")}
-      </button>
-{/* 
+      {/* Add Option or Add "Other" */}
+      <div className="d-flex gap-2 mt-3">
+        <button type="button" className="add-option-btn" onClick={addOption}>
+          <i className="bi bi-plus-circle me-1"></i>
+          {getLabel("Add Option")}
+        </button>
+
+        {!otherOption && (
+          <button
+            type="button"
+            className="add-option-btn"
+            onClick={() => {
+              handleOtherOption(!otherOption, question.id, setQuestions);
+              setOtherOption(true);
+            }}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            {getLabel('Add "Other"')}
+          </button>
+        )}
+      </div>
+      {/* 
       <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
         <button
           className="btn btn-outline-secondary w-auto"
@@ -584,89 +648,96 @@ const Dropdown = ({
           </label>
         </div>
       </div> */}
-       <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-      {/* Copy */}
-      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
-        <i className="bi bi-copy"></i>
-      </button>
-
-      {/* Delete */}
-      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
-        <i className="bi bi-trash"></i>
-      </button>
-
-      {/* Required */}
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={`requiredSwitchDropdown${question.id}`}
-          checked={required}
-          onChange={handleRequired}
-        />
-        <label
-          className="form-check-label small"
-          htmlFor={`requiredSwitchDropdown${question.id}`}
-        >
-          {getLabel("Required")}
-        </label>
-      </div>
-
-      {/* Three Dots Menu */}
-      <div className="menu-container" ref={menuRef}>
+      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+        {/* Copy */}
         <button
-          className="icon-btn"
-          onClick={() => setShowMenu((prev) => !prev)}
-          title="More Options"
+          className="survey-icon-btn"
+          onClick={handleCopy}
+          title="Copy Question"
         >
-          <i className="bi bi-three-dots-vertical"></i>
+          <i className="bi bi-copy"></i>
         </button>
 
-      {showMenu && (
-        <div className="custom-menu">
-          {/* Shuffle Options */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-shuffle"></i>
-              {getLabel("Shuffle Option Order")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                id={`enableOptionShuffleDropdown${question.id}`}
-                checked={enableOptionShuffle}
-                onChange={handleEnableOptionShuffleToggle}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
+        {/* Delete */}
+        <button
+          className="survey-icon-btn"
+          onClick={handleDelete}
+          title="Delete Question"
+        >
+          <i className="bi bi-trash"></i>
+        </button>
 
-            {/* Add Image */}
-          <label className="menu-item" style={{ cursor: "pointer" }}>
-            <div className="menu-label">
-              <i className="bi bi-image"></i>
-              {getLabel("Add Image")}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleQuestionImageUpload}
-            />
+        {/* Required */}
+        <div className="form-check form-switch mb-0">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitchDropdown${question.id}`}
+            checked={required}
+            onChange={handleRequired}
+          />
+          <label
+            className="form-check-label small"
+            htmlFor={`requiredSwitchDropdown${question.id}`}
+          >
+            {getLabel("Required")}
           </label>
-
-          {/* Translate */}
-          <button className="menu-item" onClick={handleTranslation}>
-            <div className="menu-label">
-              <i className="bi bi-translate"></i>
-              {getLabel("Translate Question")}
-            </div>
-          </button>
         </div>
-      )}
 
+        {/* Three Dots Menu */}
+        <div className="menu-container" ref={menuRef}>
+          <button
+            className="icon-btn"
+            onClick={() => setShowMenu((prev) => !prev)}
+            title="More Options"
+          >
+            <i className="bi bi-three-dots-vertical"></i>
+          </button>
+
+          {showMenu && (
+            <div className="custom-menu">
+              {/* Shuffle Options */}
+              <div className="menu-item">
+                <div className="menu-label">
+                  <i className="bi bi-shuffle"></i>
+                  {getLabel("Shuffle Option Order")}
+                </div>
+                <label className="switch-small">
+                  <input
+                    type="checkbox"
+                    id={`enableOptionShuffleDropdown${question.id}`}
+                    checked={enableOptionShuffle}
+                    onChange={handleEnableOptionShuffleToggle}
+                  />
+                  <span className="slider-small"></span>
+                </label>
+              </div>
+
+              {/* Add Image */}
+              <label className="menu-item" style={{ cursor: "pointer" }}>
+                <div className="menu-label">
+                  <i className="bi bi-image"></i>
+                  {getLabel("Add Image")}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleQuestionImageUpload}
+                />
+              </label>
+
+              {/* Translate */}
+              <button className="menu-item" onClick={handleTranslation}>
+                <div className="menu-label">
+                  <i className="bi bi-translate"></i>
+                  {getLabel("Translate Question")}
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };

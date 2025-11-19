@@ -339,19 +339,22 @@ const SurveyForm = ({ questions, setQuestions, activeTab, language, setLanguage 
         </div>
 
         <div className="position-relative">
-          <div className="btn-outline-secondary align-items-center gap-2">
+          
             <select
               className="form-select form-select-sm"
               style={{
+                zIndex: 1000,
+                top: "110%",
                 width: "140px",
                 display: "inline-block",
                 marginLeft: "0px",
                 marginRight: "0px",
                 backgroundColor: "#ffffff",
                 borderColor: "#4bb77d",
-                borderWidth: "2px",
+                borderWidth: "1.5px",
                 borderRadius: "0.5rem",
-                height: "42px",
+               paddingTop:"1px",
+               maxHeight:"fit-content",
                 fontStyle: "normal",
                 fontWeight: "600",
                 color: "#4bb77d",
@@ -363,7 +366,7 @@ const SurveyForm = ({ questions, setQuestions, activeTab, language, setLanguage 
               <option value="en">{getLabel("English")}</option>
               <option value="bn">{getLabel("Bangla")}</option>
             </select>
-          </div>
+         
         </div>
 
         <div className="position-relative">

@@ -4,7 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from . import views
 
 urlpatterns = [
-    path('', views.analyze_data_api, name='analyze'),
+    path('', views.preview_data, name='preview_data'), 
     path('api/upload-file/', csrf_exempt(views.upload_file), name='api_upload_file'),
     path('api/get-columns/', csrf_exempt(views.get_columns), name='api_get_columns'),
     path('api/analyze/', csrf_exempt(views.analyze_data_api), name='api_analyze'),
@@ -24,6 +24,7 @@ urlpatterns = [
     path("api/save-edited-excel/", views.save_edited_excel, name="save_edited_excel"),
     path("files/", views.list_user_files, name="list_user_files"),
     path("files/<str:filename>/", views.serve_user_file, name="serve_user_file"),
+    path('api/delete-temp-folder/', views.delete_temp_folder, name='delete_temp_folder'),
 
 
 ]

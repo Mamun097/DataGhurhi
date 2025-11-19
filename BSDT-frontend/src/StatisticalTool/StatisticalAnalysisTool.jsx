@@ -5,7 +5,6 @@ import jsPDF from "jspdf";
 import { useNavigate } from 'react-router-dom';
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 // import ChiSquareOptions from './ChiSquareOptions';
-import CrossTabulationOptions from './CrossTabulationOptions';
 import EDABasicsOptions from './EDABasicsOptions';
 // import KruskalOptions from './PlotCustomizers/KruskalOptions';
 import NetworkGraphOptions from './NetworkGraphOptions';
@@ -17,6 +16,7 @@ import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './testSuggestionsModal';
 import * as XLSX from "xlsx";
+
 
 import renderKruskalResults from './RenderFunctions/RenderKruskal/renderKruskalResults';
 import renderChiSquareResults from './RenderFunctions/RenderChiSquare/renderChiSquareResults';
@@ -41,6 +41,8 @@ import {
 import renderPearsonResults from './RenderFunctions/RenderPearson/renderPearsonResults';
 import renderSpearmanResults from './RenderFunctions/RenderSpearman/renderSpearmanResults';
 import renderCramerVResults from './RenderFunctions/RenderCramarV/renderCramerVResults';
+import renderCrossTabulationResults from './RenderFunctions/RenderCrossTabulation/renderCrossTabulationResults';
+
 
 const translations = {
     English: {
@@ -289,6 +291,7 @@ const mapDigits = (text, lang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
+     const API_BASE = 'http://127.0.0.1:8000/api';
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -347,7 +350,7 @@ const StatisticalAnalysisTool = () => {
 
 
             // Call the API to get columns
-            fetch('http://127.0.0.1:8000/api/get-columns/', {
+            fetch(`${API_BASE}/get-columns/`, {
                 method: 'POST',
                 body: formData,
 
@@ -588,7 +591,7 @@ const StatisticalAnalysisTool = () => {
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch('http://127.0.0.1:8000/api/upload-file/', {
+            fetch(`${API_BASE}/upload-file/`, {
                 method: 'POST',
 
                 body: formData,
@@ -812,7 +815,7 @@ const StatisticalAnalysisTool = () => {
             console.log(`${pair[0]}: ${pair[1]}`);
         }
 
-        fetch('http://127.0.0.1:8000/api/analyze/', {
+        fetch(`${API_BASE}/analyze/`, {
             method: 'POST',
             body: formData
 
@@ -937,11 +940,11 @@ const StatisticalAnalysisTool = () => {
 
         <div className="an-wrapper">
             <header className="page-header">
-                <h1 className="page-title">{t.title}</h1>
+                <h1 className="an-page-title">{t.title}</h1>
             </header>
 
-            <div className="content-center">
-                <div className="form-wrapper">
+            <div className="an-content-center">
+                <div className="an-form-wrapper">
                     {/* Error Message */}
                     {/* {errorMessage && (
                         <div className="error-box">
@@ -959,7 +962,7 @@ const StatisticalAnalysisTool = () => {
                     )} */}
 
                     {!results ? (
-                        <div className="card">
+                        <div className="an-card">
                             <div className="card-header">
                                 <div className="header-left">
                                     <svg className="header-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
@@ -972,7 +975,14 @@ const StatisticalAnalysisTool = () => {
                                     </svg>
                                     <span>{t.formTitle}</span>
                                 </div>
-                                <button onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
+                                <button 
+                                // disabled={true}
+                                // // muted
+                                // style={{
+                                    
+                                //     cursor: "not-allowed"
+                                // }}
+                                onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
                                     {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
                                 </button>
                             </div>
@@ -1026,6 +1036,12 @@ const StatisticalAnalysisTool = () => {
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
+                                                                   disabled={true}
+                                                                // muted
+                                                                style={{
+                                                                    opacity: 0.6,
+                                                                    cursor: "not-allowed"
+                                                                }}
                                                                 onClick={handlePreviewClick}
                                                             >
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1038,6 +1054,12 @@ const StatisticalAnalysisTool = () => {
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
+                                                                // disabled={true}
+                                                                // // muted
+                                                                // style={{
+                                                                //     opacity: 0.6,
+                                                                //     cursor: "not-allowed"
+                                                                // }}
                                                                 onClick={() => {
                                                                     const path = "/preprocess";
                                                                     navigate(path, { state: { userId: userId, filename: fileName } });
@@ -1047,6 +1069,7 @@ const StatisticalAnalysisTool = () => {
                                                                     <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
                                                                 </svg>
                                                                 {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
+                                                                
                                                             </button>
 
                                                             <button
@@ -1409,7 +1432,10 @@ const StatisticalAnalysisTool = () => {
                                                         <option value="spearman">{t.tests.spearman}</option>
                                                     </optgroup>
                                                     <optgroup label={t.testGroups.parametric}>
-                                                        <option value="fzt">{t.tests.fzt}</option>
+                                                        <option value="f_test">{t.tests.f_test}</option>
+                                                        <option value="z_test">{t.tests.z_test}</option>
+                                                        <option value="t_test">{t.tests.t_test}</option>
+                                                    <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
                                                     </optgroup>
                                                     <optgroup label={t.testGroups.regression}>
                                                         <option value="linear_regression">{t.tests.linear_regression}</option>
@@ -1424,7 +1450,7 @@ const StatisticalAnalysisTool = () => {
                                                         <option value="anderson">{t.tests.anderson}</option>
                                                         <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
                                                         <option value="chi_square">{t.tests.chi_square}</option>
-                                                        <option value="cramers_heatmap">{t.tests.cramers_heatmap}</option>
+                                                        <option value="cramers">{t.tests.cramers}</option>
                                                         <option value="network_graph">{t.tests.network_graph}</option>
                                                     </optgroup>
                                                 </select>
@@ -1480,7 +1506,7 @@ const StatisticalAnalysisTool = () => {
                                             </div>
                                         ) : null}
 
-                                        {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers_heatmap') && (
+                                        {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
                                             <div style={{ marginBottom: '2rem' }}>
                                                 <h5 className="section-title">{t.selectColumns}</h5>
 
@@ -1802,7 +1828,7 @@ const StatisticalAnalysisTool = () => {
                                                         </h5>
                                                     )} */}
 
-                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers_heatmap", "chi_square"].includes(testType) && (
+                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -1892,289 +1918,7 @@ const StatisticalAnalysisTool = () => {
                                                 )}
 
 
-                                                {testType === 'shapiro' && (
-                                                    <ShapiroWilkOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        colorPalette={colorPalette}
-                                                        setColorPalette={setColorPalette}
-                                                        barWidth={barWidth}
-                                                        setBarWidth={setBarWidth}
-                                                        boxWidth={boxWidth}
-                                                        setBoxWidth={setBoxWidth}
-                                                        violinWidth={violinWidth}
-                                                        setViolinWidth={setViolinWidth}
-                                                        t={t}
-                                                    />
-                                                )}
 
-                                                {testType === 'linear_regression' && (
-                                                    <LinearRegressionOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        colorPalette={colorPalette}
-                                                        setColorPalette={setColorPalette}
-                                                        barWidth={barWidth}
-                                                        setBarWidth={setBarWidth}
-                                                        boxWidth={boxWidth}
-                                                        setBoxWidth={setBoxWidth}
-                                                        violinWidth={violinWidth}
-                                                        setViolinWidth={setViolinWidth}
-                                                        legendFontSize={legendFontSize}
-                                                        setLegendFontSize={setLegendFontSize}
-                                                        lineColor={lineColor}
-                                                        setLineColor={setLineColor}
-                                                        lineStyle={lineStyle}
-                                                        setLineStyle={setLineStyle}
-                                                        lineWidth={lineWidth}
-                                                        setLineWidth={setLineWidth}
-                                                        dotColor={dotColor}
-                                                        setDotColor={setDotColor}
-                                                        dotWidth={dotWidth}
-                                                        setDotWidth={setDotWidth}
-                                                        t={t}
-                                                    />
-                                                )}
-
-                                                {testType === 'kolmogorov' && (
-                                                    <KolmogorovSmirnovOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        ecdfColor={dotColor}            // reuse dotColor for ECDF
-                                                        setEcdfColor={setDotColor}
-                                                        cdfColor={lineColor}            // reuse lineColor for CDF
-                                                        setCdfColor={setLineColor}
-                                                        lineStyle={lineStyle}
-                                                        setLineStyle={setLineStyle}
-                                                        t={t}
-                                                        selectedColumn={column1}
-                                                        setSelectedColumn={setColumn1}
-                                                    />
-                                                )}
-
-                                                {testType === 'anderson' && (
-                                                    <AndersonDarlingOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        scatterColor={dotColor}         // reuse dotColor for scatter
-                                                        setScatterColor={setDotColor}
-                                                        lineColor={lineColor}
-                                                        setLineColor={setLineColor}
-                                                        lineStyle={lineStyle}
-                                                        setLineStyle={setLineStyle}
-                                                        selectedColumn={column1}
-                                                        setSelectedColumn={setColumn1}
-                                                        t={t}
-                                                    />
-                                                )}
-
-                                                {testType === 'fzt' && (
-                                                    <FZTOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        lineWidth={lineWidth}
-                                                        setLineWidth={setLineWidth}
-                                                        lineStyle={lineStyle}
-                                                        setLineStyle={setLineStyle}
-                                                        fCurveColor={fCurveColor}
-                                                        setFCurveColor={setFCurveColor}
-                                                        fLineColor={fLineColor}
-                                                        setFLineColor={setFLineColor}
-                                                        zCurveColor={zCurveColor}
-                                                        setZCurveColor={setZCurveColor}
-                                                        zLineColor={zLineColor}
-                                                        setZLineColor={setZLineColor}
-                                                        tCurveColor={tCurveColor}
-                                                        setTCurveColor={setTCurveColor}
-                                                        tLineColor={tLineColor}
-                                                        setTLineColor={setTLineColor}
-                                                        hist1Color={hist1Color}
-                                                        setHist1Color={setHist1Color}
-                                                        hist2Color={hist2Color}
-                                                        setHist2Color={setHist2Color}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'cross_tabulation' && (
-                                                    <CrossTabulationOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        colorPalette={colorPalette}
-                                                        setColorPalette={setColorPalette}
-                                                        barWidth={barWidth}
-                                                        setBarWidth={setBarWidth}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_distribution' && (
-                                                    <EDADistributionsOptions
-                                                        isFirstTimeAnalysis={isFirstTimeAnalysis}
-                                                        setIsFirstTimeAnalysis={setIsFirstTimeAnalysis}
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        histColor={histColor}
-                                                        setHistColor={setHistColor}
-                                                        kdeColor={kdeColor}
-                                                        setKdeColor={setKdeColor}
-                                                        distColor={distColor}
-                                                        setDistColor={setDistColor}
-                                                        showGrid={showGrid}
-                                                        setShowGrid={setShowGrid}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_swarm' && (
-                                                    <EDASwarmOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        swarmColor={swarmColor}
-                                                        setSwarmColor={setSwarmColor}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {/* {testType === 'eda_pie' && (
-                                                    <PieChartOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        t={t}
-                                                    />
-                                                )} */}
-
-                                                {testType === 'bar_chart' && (
-                                                    <BarChartOptions
-                                                        language={language}
-                                                        setLanguage={setLanguage}
-                                                        imageFormat={imageFormat}
-                                                        setImageFormat={setImageFormat}
-                                                        useDefaultSettings={useDefaultSettings}
-                                                        setUseDefaultSettings={setUseDefaultSettings}
-                                                        labelFontSize={labelFontSize}
-                                                        setLabelFontSize={setLabelFontSize}
-                                                        tickFontSize={tickFontSize}
-                                                        setTickFontSize={setTickFontSize}
-                                                        imageQuality={imageQuality}
-                                                        setImageQuality={setImageQuality}
-                                                        imageSize={imageSize}
-                                                        setImageSize={setImageSize}
-                                                        barColor={barColor}
-                                                        setBarColor={setBarColor}
-                                                        barChartType={barChartType}
-                                                        setBarChartType={setBarChartType}
-                                                        t={t}
-                                                    />
-                                                )}
 
                                                 {testType === 'eda_basics' && (
                                                     <EDABasicsOptions
@@ -2443,6 +2187,7 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     const [pearsonActiveTab, setPearsonActiveTab] = useState('detailed');
     const [spearmanActiveTab, setSpearmanActiveTab] = useState('detailed');    
     const [cramerVActiveTab, setCramerVActiveTab] = useState('detailed');
+    const [crossTabActiveTab, setCrossTabActiveTab] = useState('detailed');
 
     
     // For rendering different results based on test type
@@ -2572,13 +2317,19 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                 setSpearmanActiveTab,
                 results,
                 language
-            );                          
+            );     
+        } else if (testType === 'cross_tabulation') { 
+            return renderCrossTabulationResults(
+                crossTabActiveTab,
+                setCrossTabActiveTab,
+                results,
+                language
+            );                                 
         } else if (testType === 'cramers') {
             return renderCramerVResults(cramerVActiveTab, setCramerVActiveTab, results, language);            
         } else if (testType === 'pearson') {
             return renderPearsonResults(pearsonActiveTab, setPearsonActiveTab, results, language);
-        } else if (testType === 'cross_tabulation') {
-            return renderCrossTabulationResults();
+
         } else if (testType === 'eda_basics') {
             return renderEDABasicsResults();
         } else if (testType === 'similarity') {
@@ -2615,120 +2366,6 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
     };
 
 
-    const renderCrossTabulationResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== 'bn') return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === 'bn' ? 'ক্রস ট্যাবুলেশন বিশ্লেষণ' : 'Cross Tabulation Analysis'}
-                </h2>
-
-                {/* Columns Analyzed */}
-                {columns && columns.length >= 2 && (
-                    <p className="mb-4">
-                        <strong>{language === 'bn' ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{' '}
-                        {columns.map((col, idx) => (
-                            <span key={idx}>
-                                {col}{idx < columns.length - 1 ? (language === 'bn' ? ' এবং ' : ' and ') : ''}
-                            </span>
-                        ))}
-                    </p>
-                )}
-
-
-                {/* Translated Table */}
-                {results.translated_table && (
-                    <div className="mt-8">
-                        <h3 className="text-xl font-semibold mb-3 text-center">
-                            {language === 'bn' ? 'অনুবাদিত টেবিল' : 'Translated Table'}
-                        </h3>
-                        <div className="flex justify-center">
-                            <div className="overflow-auto">
-                                <table className="min-w-max border-collapse border border-gray-300">
-                                    <thead>
-                                        <tr>
-                                            <th className="border border-gray-300 px-3 py-2 bg-gray-100">
-                                                {language === 'bn' ? 'ইন্ডেক্স' : 'Index'}
-                                            </th>
-                                            {Object.keys(results.translated_table[Object.keys(results.translated_table)[0]]).map((col, idx) => (
-                                                <th key={idx} className="border border-gray-300 px-3 py-2 bg-gray-100">
-                                                    {col}
-                                                </th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {Object.entries(results.translated_table).map(([rowLabel, rowData], idx) => (
-                                            <tr key={idx}>
-                                                <td className="border border-gray-300 px-3 py-2 bg-gray-50 font-semibold">
-                                                    {rowLabel}
-                                                </td>
-                                                {Object.values(rowData).map((val, i) => (
-                                                    <td key={i} className="border border-gray-300 px-3 py-2 text-center">
-                                                        {val}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Visualizations */}
-                <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {results.heatmap_path && (
-                        <div className="text-center">
-                            <h4 className="text-lg font-semibold mb-2">
-                                {language === 'bn' ? 'হিটম্যাপ' : 'Heatmap'}
-                            </h4>
-                            <img
-                                src={`http://127.0.0.1:8000/${results.heatmap_path}`}
-                                alt="Heatmap"
-                                className="w-full h-auto object-contain border rounded shadow"
-                            />
-                        </div>
-                    )}
-
-                    {results.barplot_path && (
-                        <div className="text-center">
-                            <h4 className="text-lg font-semibold mb-2">
-                                {language === 'bn' ? 'বারপ্লট' : 'Bar Plot'}
-                            </h4>
-                            <img
-                                src={`http://127.0.0.1:8000/${results.barplot_path}`}
-                                alt="Bar Plot"
-                                className="w-full h-auto object-contain border rounded shadow"
-                            />
-                        </div>
-                    )}
-                </div>
-
-                {/* Summary */}
-                {results.summary && (
-                    <div className="mb-6 bg-gray-100 p-4 rounded shadow">
-                        <h3 className="text-lg font-semibold mb-2">{language === 'bn' ? 'সারাংশ' : 'Summary'}</h3>
-                        <ul className="list-disc list-inside text-gray-800">
-                            <li>{results.summary.total_observations}</li>
-                            <li>{results.summary.most_frequent}</li>
-                            <li>{results.summary.least_frequent}</li>
-                        </ul>
-                    </div>
-                )}
-
-            </>
-        );
-    };
 
     const renderEDABasicsResults = () => {
         const mapDigitIfBengali = (text) => {

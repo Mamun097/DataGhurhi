@@ -1,10 +1,11 @@
-.background-container {
+.sub-background-container {
   padding: 2rem;
   display: flex;
   justify-content: center;
+    background: #f0faf0;
 }
 
-.profile-wrapper {
+.sub-wrapper {
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
@@ -12,10 +13,12 @@
   box-sizing: border-box;
 }
 
-.edit-page-title {
+.sub-page-title {
+  margin-top: 20px;
   font-size: 2rem;
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  color: #25856f;
+  text-align: center;
 }
 
 .subscription-cards-grid {

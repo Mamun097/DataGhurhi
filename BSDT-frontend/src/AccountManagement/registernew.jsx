@@ -5,7 +5,7 @@ import "./register.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import apiClient from "../api";
 
-import Navbarhome from "../Homepage/navbarhome";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { ToastContainer, toast } from "react-toastify";
 const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 const API_URL = "https://translation.googleapis.com/language/translate/v2";
@@ -373,7 +373,7 @@ const Register = () => {
 
   return (
     <div className="register-container">
-      <Navbarhome language={language} setLanguage={setLanguage} />
+      <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div className="register-wrapper">
         <motion.div
           className="feature-card"

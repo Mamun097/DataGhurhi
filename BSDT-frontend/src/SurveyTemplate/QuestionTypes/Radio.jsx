@@ -1,8 +1,7 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import Option from "./QuestionSpecificUtils/OptionClass";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import translateText from "./QuestionSpecificUtils/Translation";
@@ -16,117 +15,144 @@ const Radio = ({
   language,
   setLanguage,
   getLabel,
+  isQuiz,
+  defaultPointValue,
+  totalMarks,
+  setTotalMarks,
 }) => {
-  //console.log(question);
   const [required, setRequired] = useState(question.required || false);
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
   );
+  console.log("Other Option: ", otherOption);
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [enableOptionShuffle, setEnableOptionShuffle] = useState(
     question.meta?.enableOptionShuffle || false
   );
-  const [enableMarks, setEnableMarks] = useState(
-    question.meta?.enableMarks || false
+
+  // Mark for an individual question
+  const [mark, setMark] = useState(question.points || defaultPointValue);
+
+  const handleOptionChange = useCallback(
+    (index, value) => {
+      if (value.includes("\n")) {
+        const lines = value.split("\n").filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          setQuestions((prev) =>
+            prev.map((q) => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[index] = lines[0].trim();
+                const newOptions = lines.slice(1).map((line) => line.trim());
+                currentOptions.splice(index + 1, 0, ...newOptions);
+
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions,
+                  },
+                };
+              }
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions((prev) =>
+            prev.map((q) =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === index ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
+            q.id === question.id
+              ? {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: (q.meta?.options || []).map((opt, i) =>
+                      i === index ? value : opt
+                    ),
+                  },
+                }
+              : q
+          )
+        );
+      }
+    },
+    [question.id, setQuestions]
   );
 
-  const handleOptionChange = useCallback((index, value) => {
-    if (value.includes('\n')) {
-      const lines = value.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        setQuestions(prev =>
-          prev.map(q => {
-            if (q.id === question.id) {
-              const currentOptions = [...(q.meta?.options || [])];
-              currentOptions[index] = { ...currentOptions[index], text: lines[0].trim() };
-              const newOptions = lines.slice(1).map(line => new Option(line.trim(), 0));
-              currentOptions.splice(index + 1, 0, ...newOptions);
-              
-              return {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: currentOptions
-                }
-              };
-            }
-            return q;
-          })
-        );
-      } else if (lines.length === 1) {
-        setQuestions(prev =>
-          prev.map(q =>
-            q.id === question.id
-              ? {
-                  ...q,
-                  meta: {
-                    ...q.meta,
-                    options: (q.meta?.options || []).map((opt, i) =>
-                      i === index ? { ...opt, text: lines[0].trim() } : opt
-                    ),
-                  },
-                }
-              : q
-          )
-        );
-      }
-    } else {
-      setQuestions(prev =>
-        prev.map(q =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === index ? { ...opt, text: value } : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
+  const handleOptionPaste = useCallback(
+    (index, event) => {
+      event.preventDefault();
+      const pastedText = event.clipboardData.getData("text");
 
-  const handleOptionPaste = useCallback((index, event) => {
-    event.preventDefault();
-    const pastedText = event.clipboardData.getData('text');
-    
-    if (pastedText.includes('\n')) {
-      const lines = pastedText.split('\n').filter(line => line.trim() !== '');
-      if (lines.length > 1) {
-        setQuestions(prev =>
-          prev.map(q => {
-            if (q.id === question.id) {
-              const currentOptions = [...(q.meta?.options || [])];
-              currentOptions[index] = { ...currentOptions[index], text: lines[0].trim() };
-              const newOptions = lines.slice(1).map(line => new Option(line.trim(), 0));
-              currentOptions.splice(index + 1, 0, ...newOptions);
-              
-              return {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: currentOptions
-                }
-              };
-            }
-            return q;
-          })
-        );
-      } else if (lines.length === 1) {
-        setQuestions(prev =>
-          prev.map(q =>
+      if (pastedText.includes("\n")) {
+        const lines = pastedText
+          .split("\n")
+          .filter((line) => line.trim() !== "");
+        if (lines.length > 1) {
+          setQuestions((prev) =>
+            prev.map((q) => {
+              if (q.id === question.id) {
+                const currentOptions = [...(q.meta?.options || [])];
+                currentOptions[index] = lines[0].trim();
+                const newOptions = lines.slice(1).map((line) => line.trim());
+                currentOptions.splice(index + 1, 0, ...newOptions);
+
+                return {
+                  ...q,
+                  meta: {
+                    ...q.meta,
+                    options: currentOptions,
+                  },
+                };
+              }
+              return q;
+            })
+          );
+        } else if (lines.length === 1) {
+          setQuestions((prev) =>
+            prev.map((q) =>
+              q.id === question.id
+                ? {
+                    ...q,
+                    meta: {
+                      ...q.meta,
+                      options: (q.meta?.options || []).map((opt, i) =>
+                        i === index ? lines[0].trim() : opt
+                      ),
+                    },
+                  }
+                : q
+            )
+          );
+        }
+      } else {
+        setQuestions((prev) =>
+          prev.map((q) =>
             q.id === question.id
               ? {
                   ...q,
                   meta: {
                     ...q.meta,
                     options: (q.meta?.options || []).map((opt, i) =>
-                      i === index ? { ...opt, text: lines[0].trim() } : opt
+                      i === index ? pastedText : opt
                     ),
                   },
                 }
@@ -134,24 +160,9 @@ const Radio = ({
           )
         );
       }
-    } else {
-      setQuestions(prev =>
-        prev.map(q =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === index ? { ...opt, text: pastedText } : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    }
-  }, [question.id, setQuestions]);
+    },
+    [question.id, setQuestions]
+  );
 
   const handleQuestionImageUpload = useCallback((event) => {
     const file = event.target.files[0];
@@ -185,29 +196,6 @@ const Radio = ({
     setEnableOptionShuffle(newValue);
   }, [enableOptionShuffle, question.id, setQuestions]);
 
-  const handleEnableMarksToggle = useCallback(() => {
-    const newValue = !enableMarks;
-    setQuestions((prev) =>
-      prev.map((q) => {
-        if (q.id === question.id) {
-          const updatedOptions = !newValue
-            ? (q.meta?.options || []).map((opt) => ({ ...opt, value: 0 }))
-            : q.meta?.options || [];
-          return {
-            ...q,
-            meta: {
-              ...q.meta,
-              enableMarks: newValue,
-              options: updatedOptions,
-            },
-          };
-        }
-        return q;
-      })
-    );
-    setEnableMarks(newValue);
-  }, [enableMarks, question.id, setQuestions]);
-
   const handleQuestionChange = useCallback(
     (newText) => {
       setQuestions((prev) =>
@@ -235,7 +223,7 @@ const Radio = ({
               ...q.meta,
               options: [
                 ...currentOptions,
-                new Option(`Option ${currentOptions.length + 1}`, 0),
+                `Option ${currentOptions.length + 1}`,
               ],
             },
           };
@@ -244,29 +232,6 @@ const Radio = ({
       })
     );
   }, [question.id, setQuestions]);
-
-  const updateOptionValue = useCallback(
-    (idx, newValue) => {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q.id === question.id
-            ? {
-                ...q,
-                meta: {
-                  ...q.meta,
-                  options: (q.meta?.options || []).map((opt, i) =>
-                    i === idx
-                      ? { ...opt, value: parseFloat(newValue) || 0 }
-                      : opt
-                  ),
-                },
-              }
-            : q
-        )
-      );
-    },
-    [question.id, setQuestions]
-  );
 
   const removeOption = useCallback(
     (idx) => {
@@ -312,20 +277,15 @@ const Radio = ({
       id: questions.length + 1,
       meta: {
         ...question.meta,
-        options: [
-          ...(question.meta?.options || []).map(
-            (opt) => new Option(opt.text, opt.value ?? 0)
-          ),
-        ],
+        options: [...(question.meta?.options || []).map((opt) => opt)],
         enableOptionShuffle: enableOptionShuffle,
-        enableMarks: enableMarks,
       },
     };
     let updatedQuestions = [...questions];
     updatedQuestions.splice(index + 1, 0, copiedQuestion);
     updatedQuestions = updatedQuestions.map((q, i) => ({ ...q, id: i + 1 }));
     setQuestions(updatedQuestions);
-  }, [question, questions, setQuestions, enableOptionShuffle, enableMarks]);
+  }, [question, questions, setQuestions, enableOptionShuffle]);
 
   const removeImageCb = useCallback(
     (index) => {
@@ -378,7 +338,8 @@ const Radio = ({
     question.text,
     handleOptionChange,
   ]);
-const [showMenu, setShowMenu] = useState(false);
+
+  const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
   // Close on outside click
@@ -392,25 +353,67 @@ const [showMenu, setShowMenu] = useState(false);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Update mark for one particular question
+  const handleQuestionPointValueChange = useCallback(
+    (value) => {
+      const pointValue = parseFloat(value);
+      setMark(isNaN(pointValue) ? 0 : pointValue);
+
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? { ...q, points: isNaN(pointValue) ? 0 : pointValue }
+            : q
+        )
+      );
+    },
+    [setQuestions]
+  );
+
+  // Function to handle correct answer selection in quiz mode
+  const handleCorrectAnswerSelection = useCallback(
+    (optionText) => {
+      if (!isQuiz) return;
+
+      // Set the selected option as the correct answer, and update Points by mark
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: { ...q.meta, correctAnswer: optionText },
+                points: mark,
+              }
+            : q
+        )
+      );
+    },
+    [isQuiz, question.id, setQuestions]
+  );
+
+  // Function to handle correct answer deselection in quiz mode; If the same option is clicked again, it will be deselected
+  const handleCorrectAnswerDeselection = useCallback(
+    (optionText) => () => {
+      if (!isQuiz) return;
+
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id === question.id) {
+            if (q.meta?.correctAnswer === optionText) {
+              const updatedMeta = { ...q.meta };
+              delete updatedMeta.correctAnswer;
+              return { ...q, meta: updatedMeta };
+            }
+          }
+          return q;
+        })
+      );
+    },
+    [isQuiz, question.id, setQuestions]
+  );
+
   return (
     <div className="mb-3 dnd-isolate">
-      {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
-        <label className="ms-2 mb-2 mb-sm-0" style={{ fontSize: "1.2rem" }}>
-          <em>
-            Question No: {index}
-            <hr />
-            Type: <strong>{getLabel("Multiple Choice Question")}</strong>
-          </em>
-        </label>
-        <TagManager
-          questionId={question.id}
-          questionText={question.text}
-          questions={questions}
-          setQuestions={setQuestions}
-          getLabel={getLabel}
-        />
-      </div> */}
-
       {showCropper && selectedFile && (
         <ImageCropper
           file={selectedFile}
@@ -461,15 +464,6 @@ const [showMenu, setShowMenu] = useState(false);
         </div>
       )}
 
-      {/* <input
-        type="text"
-        className="form-control mb-2 mt-2"
-        value={question.text || ""}
-        onChange={(e) => handleQuestionChange(e.target.value)}
-        onFocus={(e) => e.target.select()}
-        placeholder={getLabel("Enter your question here")}
-      /> */}
-
       <DragDropContext onDragEnd={handleDragEnd}>
         <Droppable droppableId={`options-radio-${question.id}`}>
           {(provided) => (
@@ -498,7 +492,11 @@ const [showMenu, setShowMenu] = useState(false);
                         <div className="col-auto" {...prov.dragHandleProps}>
                           <i
                             className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
+                            style={{
+                              fontSize: "1.2rem",
+                              cursor: "grab",
+                              color: "gray",
+                            }}
                           ></i>
                         </div>
                         <div className="col-auto">
@@ -506,45 +504,47 @@ const [showMenu, setShowMenu] = useState(false);
                             className="form-check-input"
                             type="radio"
                             name={`display-radio-${question.id}`}
-                            disabled
+                            disabled={!isQuiz}
+                            checked={question.meta?.correctAnswer === option}
+                            onChange={() => {
+                              handleCorrectAnswerSelection(option);
+                            }}
+                            onClick={handleCorrectAnswerDeselection(option)}
                           />
                         </div>
                         <div className="col">
                           <input
                             type="text"
                             className="survey-form-control survey-form-control-sm"
-                            value={option.text || ""}
-                            onChange={(e) => handleOptionChange(idx, e.target.value)}
+                            value={option || ""}
+                            onChange={(e) =>
+                              handleOptionChange(idx, e.target.value)
+                            }
                             onPaste={(e) => handleOptionPaste(idx, e)}
                             onFocus={(e) => e.target.select()}
                             placeholder={`Option ${idx + 1}`}
                           />
                         </div>
-                        {enableMarks && (
-                          <div
-                            className="col-auto"
-                            style={{ minWidth: "75px", maxWidth: "100px" }}
-                          >
-                            <input
-                              type="number"
-                              className="form-control form-control-sm"
-                              value={option.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                updateOptionValue(
-                                  idx,
-                                  val === "" ? 0 : parseFloat(val) || 0
-                                );
-                              }}
-                              placeholder="Pts"
-                            />
-                          </div>
-                        )}
+
+                        {/* Remove Option Button; If the option was selected as correct answer then
+                            remove it from the question's meta */}
                         <div className="col-auto">
                           <button
-                            className="btn btn-sm btn-outline-secondary w-auto"
-                            onClick={() => removeOption(idx)}
-                            disabled={(question.meta?.options || []).length <= 1}
+                            className="btn btn-sm btn-outline-danger"
+                            onClick={() => {
+                              if (isQuiz) {
+                                handleCorrectAnswerDeselection(option)();
+                              }
+                              removeOption(idx);
+                            }}
+                            disabled={
+                              (question.meta?.options || []).length <= 1
+                            }
+                            title={
+                              (question.meta?.options || []).length <= 1
+                                ? getLabel("At least one option is required.")
+                                : getLabel("Remove Option")
+                            }
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -560,94 +560,127 @@ const [showMenu, setShowMenu] = useState(false);
         </Droppable>
       </DragDropContext>
 
-      <button
-        className="add-option-btn"
-        onClick={addOption}
-      >
-        ➕ {getLabel("Add Option")}
-      </button>
+      {/* Other Option */}
+      {otherOption && (
+        <div className="row g-2 mb-2 align-items-center">
+          <div className="col-auto">
+            <i
+              className="bi bi-grip-vertical"
+              style={{
+                fontSize: "1.2rem",
+                cursor: "grab",
+                color: "transparent",
+              }}
+            ></i>
+          </div>
+          <div className="col-auto">
+            <input
+              className="form-check-input"
+              type="radio"
+              name={`display-radio-${question.id}`}
+              disabled
+            />
+          </div>
+          <div className="col-auto">
+            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
+              {getLabel("Other: ")}
+            </span>
+          </div>
+          <div className="col">
+            <input
+              type="text"
+              className="survey-form-control survey-form-control-sm"
+              disabled
+              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
+            />
+          </div>
+          <div className="col-auto">
+            <button
+              className="btn btn-sm btn-outline-danger"
+              onClick={() => {
+                handleOtherOption(false, question.id, setQuestions);
+                setOtherOption(false);
+              }}
+              title={getLabel("Remove Other")}
+            >
+              <i className="bi bi-trash"></i>
+            </button>
+          </div>
+        </div>
+      )}
 
-      {/* <div className="d-flex flex-wrap align-items-center mt-3 gap-2">
+      {/* Add Option or Add "Other" */}
+      <div className="d-flex gap-2 mt-3">
+        <button type="button" className="add-option-btn" onClick={addOption}>
+          <i className="bi bi-plus-circle me-1"></i>
+          {getLabel("Add Option")}
+        </button>
+
+        {!otherOption && !isQuiz && (
+          <button
+            type="button"
+            className="add-option-btn"
+            onClick={() => {
+              handleOtherOption(!otherOption, question.id, setQuestions);
+              setOtherOption(true);
+            }}
+          >
+            <i className="bi bi-plus-circle me-1"></i>
+            {getLabel('Add "Other"')}
+          </button>
+        )}
+      </div>
+
+      <hr />
+      {/* Mark for an individual question - Quiz feature */}
+      {isQuiz && (
+        <div className="mb-3 d-flex align-items-center gap-3">
+          <label className="fw-bold mb-0">{getLabel("Points:")}</label>
+          <input
+            type="number"
+            className="survey-form-control survey-form-control-sm"
+            style={{ width: "100px" }}
+            value={mark}
+            min={0}
+            onChange={(e) => {
+              handleQuestionPointValueChange(e.target.value);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Selected option will be displayed as "Selected Correct Answer" in quiz mode */}
+      {isQuiz && (
+        <div className="mb-3">
+          <label className="fw-bold">
+            {getLabel("Selected Correct Answer:")}
+          </label>{" "}
+          {question.meta?.correctAnswer || getLabel("None")}
+        </div>
+      )}
+
+      {/* Action Buttons and Toggles */}
+      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
+        {/* Copy */}
         <button
-          className="btn btn-outline-secondary w-auto"
+          className="survey-icon-btn"
           onClick={handleCopy}
           title="Copy Question"
         >
-          <i className="bi bi-clipboard"></i>
+          <i className="bi bi-copy"></i>
         </button>
+
+        {/* Delete */}
         <button
-          className="btn btn-outline-secondary w-auto"
+          className="survey-icon-btn"
           onClick={handleDelete}
           title="Delete Question"
         >
           <i className="bi bi-trash"></i>
         </button>
-        <label className="btn btn-outline-secondary w-auto" title="Add Image">
-          <i className="bi bi-image"></i>
-          <input
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={handleQuestionImageUpload}
-          />
-        </label>
-        <button
-          className="btn btn-outline-secondary w-auto"
-          onClick={handleTranslation}
-          title="Translate Question"
-        >
-          <i className="bi bi-translate"></i>
-        </button>
-      </div>
 
-      <div className="mt-3 border-top pt-3">
-        <div>
-          <label className="switch">
-            <input
-              type="checkbox"
-              onChange={() => {
-                handleOtherOption(!otherOption, question.id, setQuestions);
-                setOtherOption((prev) => !prev);
-              }}
-              checked={otherOption}
-            />
-            <span className="slider"></span>
-          </label>
-          <span className="ms-2 fw-bold">
-            {getLabel("Allow others as option")}
-          </span>
-        </div>
-        <div className="form-check form-switch mb-2">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            id={`enableMarksRadio-${question.id}`}
-            onChange={handleEnableMarksToggle}
-            checked={enableMarks}
-          />
-          <label
-            className="form-check-label"
-            htmlFor={`enableMarksRadio-${question.id}`}
-          >
-            {getLabel("Enable Marking System")}
-          </label>
-        </div>
-        <div className="form-check form-switch mb-2">
-          <input
-            className="form-check-input"
-            type="checkbox"
-            id={`enableOptionShuffleRadio-${question.id}`}
-            onChange={handleEnableOptionShuffleToggle}
-            checked={enableOptionShuffle}
-          />
-          <label
-            className="form-check-label"
-            htmlFor={`enableOptionShuffleRadio-${question.id}`}
-          >
-            {getLabel("Shuffle option order")}
-          </label>
-        </div>
-        <div className="form-check form-switch">
+        {/* Required */}
+        <div className="form-check form-switch mb-0">
           <input
             className="form-check-input"
             type="checkbox"
@@ -656,112 +689,67 @@ const [showMenu, setShowMenu] = useState(false);
             onChange={handleRequired}
           />
           <label
-            className="form-check-label"
+            className="form-check-label small"
             htmlFor={`requiredSwitchRadio-${question.id}`}
           >
             {getLabel("Required")}
           </label>
         </div>
-      </div> */}
-       <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-      {/* Copy */}
-      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
-        <i className="bi bi-copy"></i>
-      </button>
 
-      {/* Delete */}
-      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
-        <i className="bi bi-trash"></i>
-      </button>
-
-      {/* Required */}
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={`requiredSwitchRadio-${question.id}`}
-          checked={required}
-          onChange={handleRequired}
-        />
-        <label
-          className="form-check-label small"
-          htmlFor={`requiredSwitchRadio-${question.id}`}
-        >
-          {getLabel("Required")}
-        </label>
-      </div>
-
-      {/* Three Dots Menu */}
-      <div className="menu-container" ref={menuRef}>
-        <button
-          className="icon-btn"
-          onClick={() => setShowMenu((prev) => !prev)}
-          title="More Options"
-        >
-          <i className="bi bi-three-dots-vertical"></i>
-        </button>
-
-      {showMenu && (
-        <div className="custom-menu">
-          {/* Shuffle Options */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-shuffle"></i>
-              {getLabel("Shuffle Option Order")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                id={`enableOptionShuffleRadio-${question.id}`}
-                checked={enableOptionShuffle}
-                onChange={handleEnableOptionShuffleToggle}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
-
-          {/* enable marking */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-check2-square"></i>
-              {getLabel("Enable Marking System")}
-            </div>
-            <label className="switch-small">
-              <input
-                id={`enableMarksRadio-${question.id}`}
-                onChange={handleEnableMarksToggle}
-                checked={enableMarks}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
-
-            {/* Add Image */}
-          <label className="menu-item" style={{ cursor: "pointer" }}>
-            <div className="menu-label">
-              <i className="bi bi-image"></i>
-              {getLabel("Add Image")}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleQuestionImageUpload}
-            />
-          </label>
-
-          {/* Translate */}
-          <button className="menu-item" onClick={handleTranslation}>
-            <div className="menu-label">
-              <i className="bi bi-translate"></i>
-              {getLabel("Translate Question")}
-            </div>
+        {/* Three Dots Menu */}
+        <div className="menu-container" ref={menuRef}>
+          <button
+            className="icon-btn"
+            onClick={() => setShowMenu((prev) => !prev)}
+            title="More Options"
+          >
+            <i className="bi bi-three-dots-vertical"></i>
           </button>
-        </div>
-      )}
 
+          {showMenu && (
+            <div className="custom-menu">
+              {/* Shuffle Options */}
+              <div className="menu-item">
+                <div className="menu-label">
+                  <i className="bi bi-shuffle"></i>
+                  {getLabel("Shuffle Option Order")}
+                </div>
+                <label className="switch-small">
+                  <input
+                    type="checkbox"
+                    id={`enableOptionShuffleRadio-${question.id}`}
+                    checked={enableOptionShuffle}
+                    onChange={handleEnableOptionShuffleToggle}
+                  />
+                  <span className="slider-small"></span>
+                </label>
+              </div>
+
+              {/* Add Image */}
+              <label className="menu-item" style={{ cursor: "pointer" }}>
+                <div className="menu-label">
+                  <i className="bi bi-image"></i>
+                  {getLabel("Add Image")}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={handleQuestionImageUpload}
+                />
+              </label>
+
+              {/* Translate */}
+              <button className="menu-item" onClick={handleTranslation}>
+                <div className="menu-label">
+                  <i className="bi bi-translate"></i>
+                  {getLabel("Translate Question")}
+                </div>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };

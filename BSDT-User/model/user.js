@@ -93,6 +93,14 @@ async function deleteUser(userId) {
     .eq('user_id', userId)
     return { error };
 }
+// fetch password
+async function fetchPassword(userId) {
+    const { data, error } = await supabase
+    .from('user')
+    .select('password')
+    .eq('user_id', userId)
+    return { data, error };
+}
 // update password
 async function updatePassword(userId, password) {
     const { data, error } = await supabase
@@ -102,10 +110,23 @@ async function updatePassword(userId, password) {
     return { error };
 }
 
-
-
+// fetch secret question and answer
+async function fetchSecretQuestionAndAnswer(userId) {
+    const { data, error } = await supabase
+    .from('user')
+    .select('secret_question, secret_answer')
+    .eq('user_id', userId)
+    return { data, error };
+}
+async function updateSecretQuestionAndAnswer(userId, secretQuestion, secretAnswer) {
+    const { data, error } = await supabase
+    .from('user')
+    .update({ secret_question: secretQuestion, secret_answer: secretAnswer })
+    .eq('user_id', userId)
+    return { error };
+}
 
 module.exports = {
     findUserByEmail,
     createUser, findDesignerByid, updateProfileImage, updateSurveyDesigner,
-    deleteUser, updatePassword};
+    deleteUser, fetchPassword, updatePassword,fetchSecretQuestionAndAnswer,updateSecretQuestionAndAnswer};

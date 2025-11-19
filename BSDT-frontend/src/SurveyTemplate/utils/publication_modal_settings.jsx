@@ -8,6 +8,7 @@ const PublicationSettingsModal = ({
   isLoggedInRequired, 
   shuffleQuestions,
   action, // "publish" or "update"
+  isQuiz,
 }) => {
   const [localIsLoggedIn, setLocalIsLoggedIn] = useState(isLoggedInRequired);
   const [localShuffle, setLocalShuffle] = useState(shuffleQuestions);
@@ -44,8 +45,9 @@ const PublicationSettingsModal = ({
               type="switch"
               id="login-required-switch"
               className="fs-6"
-              label="Require users to be logged in to respond"
+              label={isQuiz ? "Users must be logged in to respond in quiz mode" : "Require users to be logged in to respond"}
               checked={localIsLoggedIn}
+              disabled={isQuiz}
               onChange={(e) => setLocalIsLoggedIn(e.target.checked)}
             />
           </Form.Group>
