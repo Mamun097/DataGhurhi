@@ -1230,7 +1230,7 @@ const SurveyResponses = () => {
       formData.append("file_type", "survey");
 
       const response = await fetch(
-        "http://103.94.135.115:8001/api/upload-preprocessed/",
+        "/api/sa/upload-preprocessed/",
         {
           method: "POST",
           body: formData,
@@ -1243,17 +1243,19 @@ const SurveyResponses = () => {
       const result = await response.json();
 
       if (result.success) {
-        const fixedUrl = result.file_url.replace(/\\/g, "/");
-        console.log("Analysis file URL:", fixedUrl);
+        console.log(result);
+        const fixedUrl = result.file_url;
+        console.log(fixedUrl);
+        // alert("Analysis file URL:", fixedUrl);
 
-        sessionStorage.setItem("fileURL",'http://103.94.135.115:8001/' + fixedUrl || "");
+        sessionStorage.setItem("fileURL" ,fixedUrl || "");
         sessionStorage.setItem("surveyfile", "true");
         sessionStorage.setItem(
           "file_name",
           `survey_${surveyTitle}_responses.xlsx`
         );
         //ask for confirmation before redirecting
-        // alert(fixedUrl)
+         alert(fixedUrl)
         window.location.href = "http://localhost:5173/?tab=analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");
