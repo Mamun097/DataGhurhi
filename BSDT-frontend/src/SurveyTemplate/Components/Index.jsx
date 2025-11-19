@@ -1,5 +1,6 @@
 // src/Pages/Index.jsx
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
@@ -32,6 +33,8 @@ const translateText = async (textArray, targetLang) => {
 
 const Index = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+
   const { survey_id } = useParams();
   const {
     project_id,
@@ -115,6 +118,7 @@ const Index = () => {
 
   // Load survey details or templates
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
     const load = async () => {
       if (useCustom) {
         console.log("Loading custom survey details:", survey_details);
@@ -134,9 +138,7 @@ const Index = () => {
         );
       } else {
         try {
-          const resp = await apiClient.get(
-            "/api/get-saved-survey"
-          );
+          const resp = await apiClient.get("/api/get-saved-survey");
           const data = resp.data;
           setTemplates(data);
 
@@ -181,34 +183,56 @@ const Index = () => {
     return <p className="text-center mt-5">{getLabel("Loading templates…")}</p>;
   }
 
+  const handleBackButton = () => {
+    navigate(`/view-project/${project_id}`, {
+      state: { role: "owner" },
+    });
+  };
+
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-      <div className="container-fluid bg-green py-5" style={{paddingTop:"80 px"}}>
+      <div
+        className="container-fluid bg-green py-5"
+        style={{ paddingTop: "80 px" }}
+      >
         <div className="row">
           {/* Sidebar */}
-         <div className="sidebar-container">
-      <div className="sidebar-content">
-        {!useCustom && surveyStatus !== "published" && (
-          <>
-            <h2 className="sidebar-title">{getLabel("Survey Templates")}</h2>
-            <div className="template-list">
-              {templates.map((tmpl, idx) => (
-                <div
-                  key={tmpl.id}
-                  className={`template-card ${
-                    idx === selectedIndex ? "selected" : ""
-                  }`}
-                  onClick={() => handleSelect(idx)}
+          <div className="sidebar-container">
+            <div className="sidebar-content">
+              {/* Back button - takes to home */}
+              <div className="mt-2 mb-2">
+                <button
+                  onClick={() => handleBackButton()}
+                  title="Go back to Projects}"
                 >
-                  <div className="template-card-body">
-                    <h5 className="template-title">{tmpl.title}</h5>
+                  <i className="bi bi-arrow-left me-2"></i>
+                  {getLabel("Back")}
+                </button>
+              </div>
+
+              {!useCustom && surveyStatus !== "published" && (
+                <>
+                  <h2 className="sidebar-title">
+                    {getLabel("Survey Templates")}
+                  </h2>
+                  <div className="template-list">
+                    {templates.map((tmpl, idx) => (
+                      <div
+                        key={tmpl.id}
+                        className={`template-card ${
+                          idx === selectedIndex ? "selected" : ""
+                        }`}
+                        onClick={() => handleSelect(idx)}
+                      >
+                        <div className="template-card-body">
+                          <h5 className="template-title">{tmpl.title}</h5>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+                </>
+              )}
 
               {!useCustom && surveyStatus === "published" && (
                 <div className="alert alert-warning text-center">
@@ -219,7 +243,7 @@ const Index = () => {
           </div>
 
           {/* Main form */}
-          <div className="col-12 col-md-8 mt-3 bg-transparent gap-3" >
+          <div className="col-12 col-md-8 mt-3 bg-transparent gap-3">
             <SurveyForm
               title={title}
               setTitle={setTitle}

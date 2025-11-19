@@ -33,7 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  ChartColumn
+  ChartColumn,
 } from "lucide-react";
 import CouponManagement from "./AdminComponents/CouponManagement";
 
@@ -57,9 +57,6 @@ const translateText = async (textArray, targetLang) => {
 };
 
 const Dashboard = () => {
-  const [profilePicUrl, setProfilePicUrl] = useState(null);
-  const [values, setValues] = useState({});
-
   const getTabFromURL = () => {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get("tab");
@@ -123,13 +120,11 @@ const Dashboard = () => {
   const [showAdBanner, setShowAdBanner] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
   const [userType, setUserType] = useState("normal");
-  const [availableTokens, setAvailableTokens] = useState(0);
   const userId = localStorage.getItem("userId");
 
   useEffect(() => {
     setUserType(localStorage.getItem("userType"));
   }, [userId]);
-
 
   // Admin states
   const [isAdmin, setIsAdmin] = useState(false);
@@ -300,43 +295,6 @@ const Dashboard = () => {
   const getLabel = (text) =>
     language === "English" ? text : translatedLabels[text] || text;
 
-  const handleImageUpload = async (event, type) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      const { data, error } = await supabase.storage
-        .from("media")
-        .upload(`profile_pics/${file.name}`, file, { upsert: true });
-
-      if (error) {
-        console.error("Upload failed:", error.message);
-        return;
-      }
-      const urlData = supabase.storage
-        .from("media")
-        .getPublicUrl(`profile_pics/${file.name}`);
-      await updateImageInDB(type, urlData.data.publicUrl);
-      getProfile();
-    } catch (error) {
-      console.error(`Upload failed for ${type} picture:`, error);
-    }
-  };
-
-  const updateImageInDB = async (type, imageUrl) => {
-    const token = localStorage.getItem("token");
-    try {
-      await apiClient.put(
-        "/api/profile/update-profile-image",
-        { imageUrl },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-    } catch (error) {
-      console.error("Failed to update ${type} image in DB:", error);
-    }
-  };
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
@@ -369,8 +327,6 @@ const Dashboard = () => {
   }, []);
 
   const getuserType = useCallback(async () => {
-
-
     if (userType === "admin") {
       setIsAdmin(true);
       setActiveTab(getTabFromURL() || "dashboard"); // Set default tab for admin
@@ -391,11 +347,10 @@ const Dashboard = () => {
         sessionStorage.setItem(bannerShownKey, "true");
       }
     }
-
   }, [fetchAdminStats]);
 
   useEffect(() => {
-    getuserType
+    getuserType;
   }, [userId]);
 
   const toggleEdit = () => setIsEditing(!isEditing);
@@ -464,14 +419,6 @@ const Dashboard = () => {
     setShowPremiumModal(false);
   };
 
-  // Handle tab click
-  const handleTabClick = (tabKey) => {
-    if (tabKey === "checkoutpremiumpackages" && !isAdmin) {
-      setShowPremiumModal(true);
-    } else {
-      setActiveTab(tabKey);
-    }
-  };
   //collaborated projects
   const [collaboratedProjects, setCollaboratedProjects] = useState([]);
   const [collabRequests, setCollabRequests] = useState([]);
@@ -527,20 +474,44 @@ const Dashboard = () => {
   const getTabs = () => {
     if (isAdmin) {
       return [
-        { label: "Dashboard", key: "dashboard", icon: <LayoutDashboard size={18} /> },
-        { label: "Customize Packages", key: "customizepackages", icon: <Package size={18} /> },
-        { label: "Manage Coupons", key: "managecoupons", icon: <TicketPercent size={18} /> },
+        {
+          label: "Dashboard",
+          key: "dashboard",
+          icon: <LayoutDashboard size={18} />,
+        },
+        {
+          label: "Customize Packages",
+          key: "customizepackages",
+          icon: <Package size={18} />,
+        },
+        {
+          label: "Manage Coupons",
+          key: "managecoupons",
+          icon: <TicketPercent size={18} />,
+        },
         { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
       return [
         // { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
-        { label: "Projects", key: "projects", icon: <FolderKanban size={18} /> },
+        {
+          label: "Projects",
+          key: "projects",
+          icon: <FolderKanban size={18} />,
+        },
         { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
         // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
-        { label: "Question Bank", key: "questionbank", icon: <Package size={18} /> },
+        {
+          label: "Question Bank",
+          key: "questionbank",
+          icon: <Package size={18} />,
+        },
         { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
-        { label: "Premium Packages", key: "premiumpackages", icon: <Crown size={18} /> },
+        {
+          label: "Premium Packages",
+          key: "premiumpackages",
+          icon: <Crown size={18} />,
+        },
       ];
     }
   };
@@ -606,11 +577,14 @@ const Dashboard = () => {
         userType={userType}
       />
 
-      <div className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}>
+      <div
+        className={`dashboard-container ${isAdmin ? "admin-dashboard" : ""}`}
+      >
         <div className="dashboard-layout">
           <div
-            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${collapsed ? "collapsed" : ""
-              }`}
+            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
+              collapsed ? "collapsed" : ""
+            }`}
           >
             {!isMobile && (
               <div className="sidebar-header">
@@ -638,7 +612,9 @@ const Dashboard = () => {
                 <li key={tab.key}>
                   <div className="tooltip-container">
                     <button
-                      className={`sidebar-btn ${activeTab === tab.key ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
+                      className={`sidebar-btn ${
+                        activeTab === tab.key ? "active" : ""
+                      } ${collapsed ? "collapsed" : ""}`}
                       onClick={() => {
                         if (tab.key === "premiumpackages") {
                           setShowPremiumModal(true);
@@ -651,20 +627,25 @@ const Dashboard = () => {
                       }}
                     >
                       <span className="icon">{tab.icon}</span>
-                      {!collapsed && !isMobile && <span className="label">{tab.label}</span>}
+                      {!collapsed && !isMobile && (
+                        <span className="label">{tab.label}</span>
+                      )}
                     </button>
 
-                    {((window.innerWidth <= 768) || (collapsed && !isMobile)) && (
+                    {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
                       <span className="tooltip-text">{tab.label}</span>
                     )}
                   </div>
                 </li>
               ))}
             </ul>
-
           </div>
 
-          <div className={`projects-section ${collapsed ? "sidebar-collapsed" : ""}`}>
+          <div
+            className={`projects-section ${
+              collapsed ? "sidebar-collapsed" : ""
+            }`}
+          >
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
               <AdminDashboardOverview
@@ -717,7 +698,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -739,7 +720,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -875,7 +856,6 @@ const Dashboard = () => {
                 <StatisticalAnalysisTool />
               </div>
             )}
-
           </div>
         </div>
       </div>
