@@ -1,22 +1,37 @@
 import React, { useState } from "react";
-import { Modal, Button, Form, InputGroup, Row, Col } from "react-bootstrap";
+import { Modal, Button, Form, InputGroup, Row, Col, Tabs, Tab } from "react-bootstrap";
 import { toast } from "react-toastify";
+import { QRCodeCanvas } from "qrcode.react";
 
 const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
   const [copyButtonText, setCopyButtonText] = useState("Copy");
+  const [activeTab, setActiveTab] = useState("link");
 
   const fullUrl = `https://dataghurhi.cse.buet.ac.bd/v/${surveyLink}`;
   const shareText = `Check out this survey: ${surveyTitle}`;
 
+  // --- QR Code Download Logic ---
+  const downloadQRCode = () => {
+    const canvas = document.getElementById("survey-qr-code");
+    if (canvas) {
+      const pngUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+      downloadLink.href = pngUrl;
+      downloadLink.download = `survey-qr-${surveyLink}.png`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+    } else {
+      toast.error("Could not generate image for download.");
+    }
+  };
+
+  // --- Clipboard Logic ---
   const fallbackCopyTextToClipboard = (text) => {
     const textArea = document.createElement("textarea");
     textArea.value = text;
-
-    textArea.style.top = "0";
-    textArea.style.left = "0";
-    textArea.style.position = "fixed";
+    textArea.style.position = "fixed"; // Avoid scrolling to bottom
     textArea.style.opacity = "0";
-
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
@@ -34,11 +49,9 @@ const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
       console.error("Fallback: Unable to copy", err);
       toast.error("Failed to copy link.");
     }
-
     document.body.removeChild(textArea);
   };
 
-  // Main handler that attempts the modern API and uses the fallback if it fails
   const handleCopyToClipboard = () => {
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard
@@ -69,30 +82,15 @@ const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
         console.error("Error sharing natively:", error);
       }
     } else {
-      alert(
-        "Your browser does not support native sharing. Please copy the link manually."
-      );
+      alert("Your browser does not support native sharing.");
     }
   };
 
-  // --- Manual Share Link URLs ---
-  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
-    fullUrl
-  )}&text=${encodeURIComponent(shareText)}`;
-  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
-    fullUrl
-  )}`;
-  const linkedinUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(
-    fullUrl
-  )}&title=${encodeURIComponent(surveyTitle)}&summary=${encodeURIComponent(
-    shareText
-  )}`;
-  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(
-    shareText + " " + fullUrl
-  )}`;
-  const emailUrl = `mailto:?subject=${encodeURIComponent(
-    surveyTitle
-  )}&body=${encodeURIComponent(shareText + "\n\n" + fullUrl)}`;
+  const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(fullUrl)}&text=${encodeURIComponent(shareText)}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(fullUrl)}`;
+  const linkedinUrl = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(fullUrl)}&title=${encodeURIComponent(surveyTitle)}&summary=${encodeURIComponent(shareText)}`;
+  const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + fullUrl)}`;
+  const emailUrl = `mailto:?subject=${encodeURIComponent(surveyTitle)}&body=${encodeURIComponent(shareText + "\n\n" + fullUrl)}`;
 
   return (
     <Modal show={show} onHide={handleClose} centered>
@@ -102,101 +100,103 @@ const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
         </Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <p>Share this link with your respondents to collect responses.</p>
+        <Tabs
+          id="share-survey-tabs"
+          activeKey={activeTab}
+          onSelect={(k) => setActiveTab(k)}
+          className="mb-3 nav-fill"
+        >
+          {/* TAB 1: Link & Social Share */}
+          <Tab eventKey="link" title="Share Link">
+            <div className="pt-2">
+              <p className="text-muted small mb-3">
+                Share this link with your respondents directly or via social media.
+              </p>
+              
+              <Form.Label className="fw-bold">Survey Link</Form.Label>
+              <InputGroup className="mb-4">
+                <Form.Control
+                  type="text"
+                  value={fullUrl}
+                  readOnly
+                  aria-label="Survey Link"
+                  className="bg-light"
+                />
+                <Button variant="primary" onClick={handleCopyToClipboard}>
+                  <i className="bi bi-clipboard-check me-2"></i> {copyButtonText}
+                </Button>
+              </InputGroup>
 
-        {/* The Copy to Clipboard Input Group */}
-        <Form.Label>Survey Link</Form.Label>
-        <InputGroup className="mb-3">
-          <Form.Control
-            type="text"
-            value={fullUrl}
-            readOnly
-            aria-label="Survey Link"
-          />
-          <Button variant="outline-primary" onClick={handleCopyToClipboard}>
-            <i className="bi bi-clipboard-check me-2"></i> {copyButtonText}
-          </Button>
-        </InputGroup>
+              <div className="text-center position-relative mb-4">
+                <hr />
+                <span 
+                  className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small" 
+                  style={{ marginTop: "-1px" }}
+                >
+                  OR SHARE VIA
+                </span>
+              </div>
 
-        <hr />
+              <Row className="text-center g-2">
+                {navigator.share && (
+                  <Col xs={12}>
+                    <Button variant="outline-dark" onClick={handleNativeShare} className="w-100 mb-2">
+                      <i className="bi bi-phone-vibrate me-2"></i> System Share
+                    </Button>
+                  </Col>
+                )}
+                <Col>
+                  <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="btn w-100 text-white" style={{ background: "#1DA1F2" }} title="Twitter">
+                    <i className="bi bi-twitter"></i>
+                  </a>
+                </Col>
+                <Col>
+                  <a href={facebookUrl} target="_blank" rel="noopener noreferrer" className="btn w-100 text-white" style={{ background: "#1877F2" }} title="Facebook">
+                    <i className="bi bi-facebook"></i>
+                  </a>
+                </Col>
+                <Col>
+                  <a href={linkedinUrl} target="_blank" rel="noopener noreferrer" className="btn w-100 text-white" style={{ background: "#0A66C2" }} title="LinkedIn">
+                    <i className="bi bi-linkedin"></i>
+                  </a>
+                </Col>
+                <Col>
+                  <a href={whatsappUrl} target="_blank" rel="noopener noreferrer" className="btn w-100 text-white" style={{ background: "#25D366" }} title="WhatsApp">
+                    <i className="bi bi-whatsapp"></i>
+                  </a>
+                </Col>
+                <Col>
+                  <a href={emailUrl} className="btn w-100 text-white" style={{ background: "#7F7F7F" }} title="Email">
+                    <i className="bi bi-envelope-fill"></i>
+                  </a>
+                </Col>
+              </Row>
+            </div>
+          </Tab>
 
-        {/* Share Buttons Section */}
-        <p className="text-center mb-2">Share via</p>
-        <Row className="text-center g-2">
-          {/* Native Share Button - shown only if the browser supports it */}
-          {navigator.share && (
-            <Col xs={12}>
-              <Button
-                variant="success"
-                onClick={handleNativeShare}
-                className="w-100 mb-2"
-              >
-                <i className="bi bi-phone-vibrate me-2"></i> Share via your
-                Device...
+          {/* TAB 2: QR Code */}
+          <Tab eventKey="qr" title="QR Code">
+            <div className="d-flex flex-column align-items-center pt-3 pb-2">
+              <p className="text-muted small mb-3 text-center">
+                Scan this code to open the survey on mobile devices.
+              </p>
+              
+              <div className="p-3 border rounded bg-white mb-3 shadow-sm">
+                <QRCodeCanvas
+                  id="survey-qr-code"
+                  value={fullUrl}
+                  size={200}
+                  level={"H"} // High error correction level
+                  includeMargin={true}
+                />
+              </div>
+
+              <Button variant="outline-primary" onClick={downloadQRCode}>
+                <i className="bi bi-download me-2"></i> Download QR Code
               </Button>
-            </Col>
-          )}
-
-          {/* Manual Fallback Links */}
-          <Col>
-            <a
-              href={twitterUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-lg w-100"
-              style={{ background: "#1DA1F2", color: "white" }}
-              title="Share on Twitter"
-            >
-              <i className="bi bi-twitter"></i>
-            </a>
-          </Col>
-          <Col>
-            <a
-              href={facebookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-lg w-100"
-              style={{ background: "#1877F2", color: "white" }}
-              title="Share on Facebook"
-            >
-              <i className="bi bi-facebook"></i>
-            </a>
-          </Col>
-          <Col>
-            <a
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-lg w-100"
-              style={{ background: "#0A66C2", color: "white" }}
-              title="Share on LinkedIn"
-            >
-              <i className="bi bi-linkedin"></i>
-            </a>
-          </Col>
-          <Col>
-            <a
-              href={whatsappUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-lg w-100"
-              style={{ background: "#25D366", color: "white" }}
-              title="Share on WhatsApp"
-            >
-              <i className="bi bi-whatsapp"></i>
-            </a>
-          </Col>
-          <Col>
-            <a
-              href={emailUrl}
-              className="btn btn-lg w-100"
-              style={{ background: "#7F7F7F", color: "white" }}
-              title="Share via Email"
-            >
-              <i className="bi bi-envelope-fill"></i>
-            </a>
-          </Col>
-        </Row>
+            </div>
+          </Tab>
+        </Tabs>
       </Modal.Body>
     </Modal>
   );
