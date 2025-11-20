@@ -456,7 +456,7 @@ const Dashboard = () => {
           key: "projects",
           icon: <FolderKanban size={18} />,
         },
-        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> },
+        { label: "Shared with Me", key: "shared", icon: <Users size={18} /> , badge: collabRequests.length},
         // { label: "Collaborated Surveys", key: "collaboratedsurveys", icon: <FileSpreadsheet size={18} /> },
         {
           label: "Question Bank",
@@ -579,6 +579,10 @@ const Dashboard = () => {
                       <span className="icon">{tab.icon}</span>
                       {!collapsed && !isMobile && (
                         <span className="label">{tab.label}</span>
+                      )}
+
+                      {tab.badge > 0 && (
+                        <span className="notification-badge">{tab.badge}</span>
                       )}
                     </button>
 
