@@ -1239,8 +1239,9 @@ const SurveyResponses = () => {
     }
 
     try {
+      const title=surveyTitle.replace(/\s+/g, "_");
       const blob = new Blob([rawCsv], { type: "text/csv" });
-      const file = new File([blob], `survey_${surveyTitle}_responses.csv`, {
+      const file = new File([blob], `survey_${title}_responses.csv`, {
         type: "text/csv",
       });
 
@@ -1249,7 +1250,7 @@ const SurveyResponses = () => {
       formData.append("file_type", "survey");
 
       const response = await fetch(
-        "/api/sa/upload-preprocessed/",
+        "http://127.0.0.1:8000/api/upload-preprocessed/",
         {
           method: "POST",
           body: formData,
@@ -1314,7 +1315,8 @@ const SurveyResponses = () => {
       const workbook = XLSX.read(rawCsv, { type: "string" });
 
       // Save as .xlsx
-      XLSX.writeFile(workbook, `survey_${surveyTitle}_responses.xlsx`);
+      const title=surveyTitle.replace(/\s+/g, "_");
+      XLSX.writeFile(workbook, `survey_${title}_responses.xlsx`);
     } catch (error) {
       console.error("Error generating XLSX from CSV:", error);
     }
