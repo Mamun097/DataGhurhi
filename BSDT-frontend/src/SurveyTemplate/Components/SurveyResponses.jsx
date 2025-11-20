@@ -65,17 +65,36 @@ const translateText = async (textArray, targetLang) => {
 };
 
 const parseCSV = (csvText) => {
-  if (!csvText || typeof csvText !== "string") return { headers: [], rows: [] };
-  const lines = csvText.trim().split(/\r?\n/);
-  if (lines.length === 0) return { headers: [], rows: [] };
-  const headers = lines[0].split(",").map((h) => h.trim().replace(/"/g, ""));
-  const rows = lines
-    .slice(1)
-    .map((line) =>
-      line.split(",").map((cell) => cell.trim().replace(/"/g, ""))
+  if (!csvText || typeof csvText !== "string") {
+    return { headers: [], rows: [] };
+  }
+
+  try {
+    const workbook = XLSX.read(csvText, { type: "string" });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+
+    const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+    if (!data || data.length === 0) {
+      return { headers: [], rows: [] };
+    }
+
+    const headers = (data[0] || []).map((h) =>
+      (h ?? "").toString().trim()
     );
-  return { headers, rows };
+
+    const rows = data.slice(1).map((row) =>
+      headers.map((_, colIdx) => (row[colIdx] ?? "").toString())
+    );
+
+    return { headers, rows };
+  } catch (err) {
+    console.error("Error parsing CSV with XLSX:", err);
+    return { headers: [], rows: [] };
+  }
 };
+
 
 const SurveyResponses = () => {
   const { survey_id } = useParams();
@@ -1266,22 +1285,41 @@ const SurveyResponses = () => {
     }
   };
 
+  // const downloadXLSX = () => {
+  //   if (!responses || !responses.headers || !responses.rows) {
+  //     console.error("No responses data available");
+  //     return;
+  //   }
+
+  //   try {
+  //     const dataForSheet = [responses.headers, ...responses.rows];
+  //     const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
+  //     const wb = XLSX.utils.book_new();
+  //     XLSX.utils.book_append_sheet(wb, ws, "Responses");
+  //     XLSX.writeFile(wb, `survey_${surveyTitle}_responses.xlsx`);
+  //   } catch (error) {
+  //     console.error("Error generating XLSX:", error);
+  //   }
+  // };
+
+
   const downloadXLSX = () => {
-    if (!responses || !responses.headers || !responses.rows) {
-      console.error("No responses data available");
+    if (!rawCsv || rawCsv.trim() === "") {
+      console.error("No raw CSV data available");
       return;
     }
 
     try {
-      const dataForSheet = [responses.headers, ...responses.rows];
-      const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Responses");
-      XLSX.writeFile(wb, `survey_${surveyTitle}_responses.xlsx`);
+      // Parse CSV into a workbook
+      const workbook = XLSX.read(rawCsv, { type: "string" });
+
+      // Save as .xlsx
+      XLSX.writeFile(workbook, `survey_${surveyTitle}_responses.xlsx`);
     } catch (error) {
-      console.error("Error generating XLSX:", error);
+      console.error("Error generating XLSX from CSV:", error);
     }
   };
+
 
   return (
     <div style={{paddingTop:"100px", backgroundColor:"#f0faf0"}}>
