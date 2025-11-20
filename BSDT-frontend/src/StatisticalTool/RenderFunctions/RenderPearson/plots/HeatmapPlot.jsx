@@ -80,66 +80,89 @@ const HeatmapPlot = ({
         }
     }
 
+
+    
+
     const getColor = (value, metricType) => {
         if (value === null) return '#f3f4f6';
 
-        let normalized;
-        
+        // Different color schemes for different metrics
         if (metricType === 'correlation') {
-            // Correlation ranges from -1 to 1
-            normalized = (value + 1) / 2; // Convert to 0-1 range
+            // CORRELATION: Blue (negative) to Red (positive) scheme
+            const normalized = (value + 1) / 2; // Convert -1 to 1 range to 0 to 1
             
-            if (settings.colorScheme === 'coolwarm') {
-                // Standard correlation heatmap colors - blue to red
+            if (settings.colorScheme === 'coolwarm' || settings.colorScheme === 'redblue') {
+                // Blue to White to Red gradient
                 if (value < 0) {
-                    // Negative correlation - blues
+                    // Negative values: Blue scale
                     const intensity = Math.round(255 * (1 - Math.abs(value)));
                     return `rgb(${intensity}, ${intensity}, 255)`;
                 } else {
-                    // Positive correlation - reds
+                    // Positive values: Red scale  
                     const intensity = Math.round(255 * (1 - value));
                     return `rgb(255, ${intensity}, ${intensity})`;
                 }
-            } else if (settings.colorScheme === 'redblue') {
-                // Red for negative, blue for positive (psychology convention)
-                if (value < 0) {
-                    const intensity = Math.round(255 * Math.abs(value));
-                    return `rgb(${intensity}, ${Math.round(intensity * 0.3)}, ${Math.round(intensity * 0.3)})`;
-                } else {
-                    const intensity = Math.round(255 * value);
-                    return `rgb(${Math.round(intensity * 0.3)}, ${Math.round(intensity * 0.3)}, ${intensity})`;
-                }
             } else if (settings.colorScheme === 'greens') {
-                // Use intensity for absolute correlation strength
+                // Green scale for correlation strength
                 const intensity = Math.round(255 * Math.abs(value));
-                return `rgb(${Math.round(intensity * 0.4)}, ${intensity}, ${Math.round(intensity * 0.4)})`;
+                return `rgb(${Math.max(0, 255 - intensity)}, 255, ${Math.max(0, 255 - intensity)})`;
             } else if (settings.colorScheme === 'reds') {
+                // Red scale for correlation strength
                 const intensity = Math.round(255 * Math.abs(value));
-                return `rgb(${intensity}, ${Math.round(intensity * 0.3)}, ${Math.round(intensity * 0.3)})`;
+                return `rgb(255, ${Math.max(0, 255 - intensity)}, ${Math.max(0, 255 - intensity)})`;
             } else if (settings.colorScheme === 'viridis') {
-                const t = (value + 1) / 2; // Convert -1 to 1 range to 0 to 1
+                // Viridis color scheme
+                const t = (value + 1) / 2;
                 const r = Math.round(68 + 187 * t);
                 const g = Math.round(1 + 204 * t);
                 const b = Math.round(84 + 171 * (1 - t));
                 return `rgb(${r}, ${g}, ${b})`;
             }
-        } else if (metricType === 'p_value' || metricType === 'p_adjusted') {
-            // P-values range from 0 to 1
-            normalized = Math.min(1, Math.max(0, value));
-
-            if (settings.colorScheme === 'redblue') {
-                const r = Math.round(255 * (1 - normalized));
-                const g = Math.round(100 * (1 - normalized));
-                const b = Math.round(255 * normalized);
-                return `rgb(${r}, ${g}, ${b})`;
+        } 
+        else if (metricType === 'p_value') {
+            // P-VALUE: Red scheme (significant = bright red)
+            const normalized = Math.min(1, Math.max(0, value));
+            
+            if (settings.colorScheme === 'redblue' || settings.colorScheme === 'reds') {
+                // Red scale: low p-values = bright red, high p-values = light red
+                const intensity = Math.round(255 * (1 - normalized));
+                return `rgb(255, ${200 - intensity}, ${200 - intensity})`;
             } else if (settings.colorScheme === 'greens') {
+                // Green scale for p-values
                 const intensity = Math.round(255 * (1 - normalized));
-                return `rgb(${Math.round(intensity * 0.4)}, ${intensity}, ${Math.round(intensity * 0.4)})`;
-            } else if (settings.colorScheme === 'reds') {
-                const intensity = Math.round(255 * (1 - normalized));
-                return `rgb(${intensity}, ${Math.round(intensity * 0.3)}, ${Math.round(intensity * 0.3)})`;
+                return `rgb(${200 - intensity}, 255, ${200 - intensity})`;
+            } else if (settings.colorScheme === 'coolwarm') {
+                // Blue to Red for p-values
+                const intensity = Math.round(255 * normalized);
+                return `rgb(255, ${intensity}, ${intensity})`;
             } else if (settings.colorScheme === 'viridis') {
-                const t = 1 - normalized;
+                // Viridis for p-values
+                const t = normalized; // Reverse for p-values (low = significant)
+                const r = Math.round(68 + 187 * t);
+                const g = Math.round(1 + 204 * t);
+                const b = Math.round(84 + 171 * (1 - t));
+                return `rgb(${r}, ${g}, ${b})`;
+            }
+        } 
+        else if (metricType === 'p_adjusted') {
+            // ADJUSTED P-VALUE: Blue scheme
+            const normalized = Math.min(1, Math.max(0, value));
+            
+            if (settings.colorScheme === 'redblue' || settings.colorScheme === 'coolwarm') {
+                // Blue scale for adjusted p-values
+                const intensity = Math.round(255 * (1 - normalized));
+                return `rgb(${200 - intensity}, ${200 - intensity}, 255)`;
+            } else if (settings.colorScheme === 'greens') {
+                // Green scale
+                const intensity = Math.round(255 * (1 - normalized));
+                return `rgb(${200 - intensity}, 255, ${200 - intensity})`;
+            } else if (settings.colorScheme === 'reds') {
+                // Red scale
+                const intensity = Math.round(255 * (1 - normalized));
+                return `rgb(255, ${200 - intensity}, ${200 - intensity})`;
+            } else if (settings.colorScheme === 'viridis') {
+                // Viridis
+                const t = normalized;
                 const r = Math.round(68 + 187 * t);
                 const g = Math.round(1 + 204 * t);
                 const b = Math.round(84 + 171 * (1 - t));
@@ -147,7 +170,7 @@ const HeatmapPlot = ({
             }
         }
 
-        return '#3b82f6'; // Fallback color
+        return '#d1d5db'; // Fallback gray color
     };
 
     // Calculate dimensions - use proper cell sizing
@@ -321,18 +344,17 @@ const HeatmapPlot = ({
                             {settings.legendOn && settings.legendPosition === 'right' && (() => {
                                 // Get legend title based on metric type
                                 let legendTitle = settings.legendTitle;
+
                                 let minLegendVal = 0;
                                 let maxLegendVal = 1;
-                                
-                                if (settings.metricType === 'p_value') {
-                                    legendTitle = language === 'bn' ? 'পি-মান' : 'P-value';
-                                } else if (settings.metricType === 'correlation') {
-                                    legendTitle = language === 'bn' ? 'পিয়ারসন সম্পর্ক' : 'Pearson Correlation';
+
+                                if (settings.metricType === 'correlation') {
                                     minLegendVal = -1;
                                     maxLegendVal = 1;
-                                } else if (settings.metricType === 'p_adjusted') {
-                                    legendTitle = language === 'bn' ? 'সমন্বিত পি-মান' : 'Adjusted P-value';
-                                }
+                                } else if (settings.metricType === 'p_value' || settings.metricType === 'p_adjusted') {
+                                    minLegendVal = 0;
+                                    maxLegendVal = 1;
+                                }                                
 
                                 const legendHeight = n * cellSize;
                                 const legendWidth = 20;
@@ -412,15 +434,13 @@ const HeatmapPlot = ({
                                 let legendTitle = settings.legendTitle;
                                 let minLegendVal = 0;
                                 let maxLegendVal = 1;
-                                
-                                if (settings.metricType === 'p_value') {
-                                    legendTitle = language === 'bn' ? 'পি-মান' : 'P-value';
-                                } else if (settings.metricType === 'correlation') {
-                                    legendTitle = language === 'bn' ? 'পিয়ারসন সম্পর্ক' : 'Pearson Correlation';
+
+                                if (settings.metricType === 'correlation') {
                                     minLegendVal = -1;
                                     maxLegendVal = 1;
-                                } else if (settings.metricType === 'p_adjusted') {
-                                    legendTitle = language === 'bn' ? 'সমন্বিত পি-মান' : 'Adjusted P-value';
+                                } else if (settings.metricType === 'p_value' || settings.metricType === 'p_adjusted') {
+                                    minLegendVal = 0;
+                                    maxLegendVal = 1;
                                 }
 
                                 const legendWidth = n * cellSize;

@@ -1432,7 +1432,7 @@ const closePreview= async () =>{
                                             <div className="form-section">
                                                 <h5 className="section-title">{t.selectTest}</h5>
                                                 <label className="form-label">{t.testType}</label>
-                                                <select className="form-select" onChange={(e) => setTestType(e.target.value)}>
+                                                <select className="form-select" value={testType} onChange={(e) => setTestType(e.target.value)}>
                                                     <option value="" disabled>
                                                         {t.selectPrompt}
                                                     </option>
@@ -1479,27 +1479,34 @@ const closePreview= async () =>{
 
                                                 <div className="test-description-hint">{t.selectPrompt}</div>
 
-                                                {/* {testType && t.descriptions[testType] && (
-                                                    <div className="test-description-box">
-                                                        <strong className="test-description-title">
-                                                            {language === "bn" ? "পরীক্ষার বিবরণ:" : "Statistical Test Description:"}
-                                                        </strong>
+                                                    {testType && t.descriptions[testType] && (
+                                                        <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
 
-                                                        <div className="test-description-text">{t.descriptions[testType]}</div>
+                                                            <strong className="block text-gray-800 mb-1">
+                                                                {language === 'bn' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
+                                                            </strong>
+                                                            
+                                                            {/* Description */}
+                                                            <div className="text-xs text-gray-600 mb-2">
+                                                                {t.descriptions[testType]}
+                                                            </div>
 
-                                                        {!testsWithoutDetails.includes(testType) && (
-                                                            <div>
-                                                                <button
+                                                            {/* Button on new line */}
+                                                            
+                                                            {!testsWithoutDetails.includes(testType) && (
+                                                                <div>
+                                                                    <button
                                                                     type="button"
                                                                     onClick={() => setDetailsModalVisible(true)}
-                                                                    className="test-details-link"
-                                                                >
-                                                                    {language === "bn" ? "বিস্তারিত দেখুন" : "More Details"}
-                                                                </button>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )} */}
+                                                                    className="text-blue-600 text-xs underline hover:text-blue-800"
+                                                                    >
+                                                                    {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
+                                                                    </button>
+                                                                </div>
+                                                            )}                                                            
+                                                            
+                                                        </div>
+                                                    )}
 
                                             </div>) : null}
 

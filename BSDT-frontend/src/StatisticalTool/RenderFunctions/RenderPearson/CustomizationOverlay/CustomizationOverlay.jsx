@@ -118,9 +118,16 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         value={settings.metricType}
                                         onChange={(e) => {
                                             const newMetricType = e.target.value;
-                                            const newYAxisTitle = newMetricType === 'p_value' ? 'P-Value' : 'Chi-Square Statistic';
+                                            let newYAxisTitle = 'Value';
+                                            
+                                            if (newMetricType === 'p_value') {
+                                                newYAxisTitle = 'P-Value';
+                                            } else if (newMetricType === 'p_adjusted') {
+                                                newYAxisTitle = 'Adjusted P-Value';
+                                            } else if (newMetricType === 'correlation') {
+                                                newYAxisTitle = 'Pearson Correlation';
+                                            }
 
-                                            // Update both at once
                                             onSettingsChange({
                                                 ...settings,
                                                 metricType: newMetricType,
@@ -128,9 +135,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             });
                                         }}
                                     >
+                                        <option value="correlation">Pearson Correlation</option>
                                         <option value="p_value">P-Value</option>
-                                        <option value="chi2">Chi-Square Statistic</option>
-                                        {/* <option value="p_adjusted">Adjusted P-Value</option> */}
+                                        <option value="p_adjusted">Adjusted P-Value</option>
                                     </select>
                                 </div>
                             )}
@@ -773,6 +780,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         <option value="greens">Greens</option>
                                         <option value="reds">Reds</option>
                                         <option value="viridis">Viridis</option>
+                                        <option value="coolwarm">Cool-Warm</option>
                                     </select>
                                 </div>
 
