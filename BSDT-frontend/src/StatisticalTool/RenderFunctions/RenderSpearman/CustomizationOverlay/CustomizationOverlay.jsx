@@ -118,10 +118,18 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         value={settings.metricType}
                                         onChange={(e) => {
                                             const newMetricType = e.target.value;
-                                            const newYAxisTitle = newMetricType === 'p_value' ? 'P-Value' : 
-                                                                newMetricType === 'chi2' ? 'Chi-Square Statistic' : 
-                                                                'Correlation Coefficient'; 
+                                            let newYAxisTitle = 'Spearman Correlation';
+                                            
+                                            if (newMetricType === 'p_value') {
+                                                newYAxisTitle = 'P-Value';
+                                            } else if (newMetricType === 'p_adjusted') {
+                                                newYAxisTitle = 'Adjusted P-Value';
+                                            } else if (newMetricType === 'correlation') {
+                                                newYAxisTitle = 'Spearman Correlation';
+                                            }
 
+                                            console.log('Updating metric:', newMetricType, 'New Y-axis title:', newYAxisTitle); // Debug log
+                                            
                                             onSettingsChange({
                                                 ...settings,
                                                 metricType: newMetricType,
@@ -129,7 +137,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             });
                                         }}
                                     >
-                                        <option value="correlation">Correlation Coefficient</option>
+                                        <option value="correlation">Spearman Correlation</option>
                                         <option value="p_value">P-Value</option>
                                         <option value="p_adjusted">Adjusted P-Value</option>
                                     </select>

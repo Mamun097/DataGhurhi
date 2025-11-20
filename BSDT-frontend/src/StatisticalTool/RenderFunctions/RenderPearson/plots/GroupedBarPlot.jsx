@@ -209,14 +209,11 @@ const GroupedBarPlot = ({
             }
         }
         
-        // Default range for correlations
+        // Default range based on metric type
         if (settings.metricType === 'correlation') {
-            return [-1, 1];
-        }
-        
-        // For p-values
-        if (settings.metricType === 'p_value' || settings.metricType === 'p_adjusted') {
-            return [0, 1];
+            return [-1, 1]; // Correlation coefficient range
+        } else if (settings.metricType === 'p_value' || settings.metricType === 'p_adjusted') {
+            return [0, 1]; // P-value range
         }
         
         return ['auto', 'auto'];
