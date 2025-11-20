@@ -1225,13 +1225,18 @@ const SurveyResponses = () => {
   };
 
   const downloadCSV = () => {
-    const blob = new Blob([rawCsv], { type: "text/csv;charset=utf-8;" });
+    const BOM = "\uFEFF";
+    const csvWithBOM = BOM + rawCsv;
+
+    const blob = new Blob([csvWithBOM], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
     link.href = url;
     link.download = `survey_${surveyTitle}_responses.csv`;
     link.click();
   };
+
   const handleAnalyzeClick = async () => {
     if (!rawCsv || rawCsv.trim() === "") {
       alert("No responses available to analyze.");
@@ -1285,23 +1290,6 @@ const SurveyResponses = () => {
       alert("Something went wrong while preparing analysis.");
     }
   };
-
-  // const downloadXLSX = () => {
-  //   if (!responses || !responses.headers || !responses.rows) {
-  //     console.error("No responses data available");
-  //     return;
-  //   }
-
-  //   try {
-  //     const dataForSheet = [responses.headers, ...responses.rows];
-  //     const ws = XLSX.utils.aoa_to_sheet(dataForSheet);
-  //     const wb = XLSX.utils.book_new();
-  //     XLSX.utils.book_append_sheet(wb, ws, "Responses");
-  //     XLSX.writeFile(wb, `survey_${surveyTitle}_responses.xlsx`);
-  //   } catch (error) {
-  //     console.error("Error generating XLSX:", error);
-  //   }
-  // };
 
 
   const downloadXLSX = () => {
