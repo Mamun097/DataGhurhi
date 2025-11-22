@@ -11,6 +11,9 @@ import ViewListIcon from "@mui/icons-material/ViewList";
 import AddIcon from "@mui/icons-material/Add";
 import UpdateIcon from "@mui/icons-material/Update";
 import MultipleFolders from "@mui/icons-material/FolderCopyTwoTone";
+import CloseIcon from "@mui/icons-material/Close";
+import { MdPublic } from "react-icons/md";
+import { FaLock } from "react-icons/fa";
 import apiClient from "../../api";
 import "../Dashboard.css";
 import "./projectComponent.css";
@@ -43,6 +46,14 @@ const ProjectTab = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [viewMode, setViewMode] = useState("grid");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    field: "",
+    description: "",
+    privacy_mode: "public",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Array of imported local banner images
   const bannerImages = [
@@ -60,10 +71,90 @@ const ProjectTab = ({
 
   // Function to get banner image for each project
   const getProjectBanner = (project) => {
-    // Use project_id to consistently select the same image for each project
     const seed = project.project_id || 0;
     const imageIndex = seed % bannerImages.length;
     return bannerImages[imageIndex];
+  };
+
+  // Handle modal open
+  const handleOpenModal = () => {
+    setIsModalOpen(true);
+    setFormData({
+      title: "",
+      field: "",
+      description: "",
+      privacy_mode: "public",
+    });
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setFormData({
+      title: "",
+      field: "",
+      description: "",
+      privacy_mode: "public",
+    });
+  };
+
+  // Handle form input changes
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await apiClient.post(
+        "/api/project/create-project",
+        formData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 201) {
+        // Close modal and show success message
+        handleCloseModal();
+        alert(getLabel("Project created successfully"));
+        
+        // Refetch the complete projects list after successful creation
+        setTimeout(async () => {
+          try {
+            const projectsResponse = await apiClient.get("/api/project/my-projects", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            // Handle different possible response structures
+            if (projectsResponse.data?.projects) {
+              setProjects(projectsResponse.data.projects);
+            } else if (Array.isArray(projectsResponse.data)) {
+              setProjects(projectsResponse.data);
+            }
+          } catch (fetchError) {
+            console.error("Error fetching updated projects:", fetchError);
+            // Fallback: reload the page to get fresh data
+            window.location.reload();
+          }
+        }, 500);
+      }
+    } catch (error) {
+      console.error("Error creating project:", error);
+      alert(getLabel("An error occurred while creating the project"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDeleteProject = (projectId) => {
@@ -112,8 +203,8 @@ const ProjectTab = ({
       const matchesPrivacy =
         privacyFilter === "all" || project.privacy_mode === privacyFilter;
       const matchesSearch =
-        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.field.toLowerCase().includes(searchTerm.toLowerCase());
+        (project.title || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.field || "").toLowerCase().includes(searchTerm.toLowerCase());
       return matchesPrivacy && matchesSearch;
     })
     .sort((a, b) => {
@@ -149,7 +240,7 @@ const ProjectTab = ({
             </p>
           </div>
         </div>
-        <button className="btn-create-project" onClick={handleAddProjectClick}>
+        <button className="btn-create-project" onClick={handleOpenModal}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
             <polyline points="2 17 12 22 22 17"></polyline>
@@ -162,7 +253,6 @@ const ProjectTab = ({
       {/* Search and Filter Bar */}
       <div className="projects-toolbar">
         <div className="search-box">
-
           <input
             type="text"
             placeholder={getLabel("Search projects...")}
@@ -353,19 +443,169 @@ const ProjectTab = ({
         </div>
       ) : (
         <div className="empty-state">
-            <div className="empty-illustration">
-              <img src={no_personal_project} alt="No Collaborated Projects" />
-            </div>
+          <div className="empty-illustration">
+            <img src={no_personal_project} alt="No Projects" />
+          </div>
           <h3>{getLabel("No Projects Found")}</h3>
           <p
             className="empty-create-link"
-            onClick={searchTerm ? undefined : handleAddProjectClick}
+            onClick={searchTerm ? undefined : handleOpenModal}
             style={{ cursor: searchTerm ? 'default' : 'pointer' }}
           >
             {searchTerm
               ? getLabel("Try adjusting your search or filters")
               : getLabel("Create your first project to get started")}
           </p>
+        </div>
+      )}
+
+      {/* Create Project Modal - Professional Design */}
+      {isModalOpen && (
+        <div className="modal-overlay-modern" onClick={handleCloseModal}>
+          <div className="modal-content-modern create-project-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header-modern">
+              <h3>
+                <FolderOpenIcon /> {getLabel("Create New Project")}
+              </h3>
+              <IconButton size="small" onClick={handleCloseModal}>
+                <CloseIcon />
+              </IconButton>
+            </div>
+
+            <div className="modal-body-modern">
+              <form onSubmit={handleSubmit} className="project-form-modern">
+                {/* Project Name */}
+                <div className="form-field-modern">
+                  <label htmlFor="title" className="form-label-modern">
+                    {getLabel("Project Name")}
+                  </label>
+                  <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    placeholder={getLabel("Enter project name")}
+                    className="form-input-modern"
+                    required
+                  />
+                </div>
+
+                {/* Research Field */}
+                <div className="form-field-modern">
+                  <label htmlFor="field" className="form-label-modern">
+                    {getLabel("Research Field")}
+                  </label>
+                  <input
+                    type="text"
+                    id="field"
+                    name="field"
+                    value={formData.field}
+                    onChange={handleChange}
+                    placeholder={getLabel("Enter field of project")}
+                    className="form-input-modern"
+                    required
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="form-field-modern">
+                  <label htmlFor="description" className="form-label-modern">
+                    {getLabel("Description")} <span className="optional-text">({getLabel("Optional")})</span>
+                  </label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleChange}
+                    placeholder={getLabel("Describe your project")}
+                    className="form-textarea-modern"
+                    rows="4"
+                  ></textarea>
+                </div>
+
+                {/* Privacy Selection */}
+                <div className="form-field-modern">
+                  <label className="form-label-modern">
+                    {getLabel("Visibility")}
+                  </label>
+                  <div className="privacy-options-modern">
+                    <div 
+                      className={`privacy-card-modern ${formData.privacy_mode === "public" ? "selected" : ""}`}
+                      onClick={() => setFormData({...formData, privacy_mode: "public"})}
+                    >
+                      <input
+                        type="radio"
+                        id="public"
+                        name="privacy_mode"
+                        value="public"
+                        checked={formData.privacy_mode === "public"}
+                        onChange={handleChange}
+                        className="privacy-radio-modern"
+                      />
+                      <div className="privacy-icon-wrapper-modern public">
+                        <MdPublic className="privacy-icon-modern" />
+                      </div>
+                      <div className="privacy-text-modern">
+                        <span className="privacy-label-modern">{getLabel("Public")}</span>
+                        <p className="privacy-description-modern">
+                          {getLabel("Anyone can view this project")}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`privacy-card-modern ${formData.privacy_mode === "private" ? "selected" : ""}`}
+                      onClick={() => setFormData({...formData, privacy_mode: "private"})}
+                    >
+                      <input
+                        type="radio"
+                        id="private"
+                        name="privacy_mode"
+                        value="private"
+                        checked={formData.privacy_mode === "private"}
+                        onChange={handleChange}
+                        className="privacy-radio-modern"
+                      />
+                      <div className="privacy-icon-wrapper-modern private">
+                        <FaLock className="privacy-icon-modern" />
+                      </div>
+                      <div className="privacy-text-modern">
+                        <span className="privacy-label-modern">{getLabel("Private")}</span>
+                        <p className="privacy-description-modern">
+                          {getLabel("Only you and collaborators can view")}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="modal-actions-modern">
+                  <button 
+                    type="button" 
+                    className="btn-modal-modern btn-cancel-modern" 
+                    onClick={handleCloseModal}
+                    disabled={isSubmitting}
+                  >
+                    {getLabel("Cancel")}
+                  </button>
+                  <button 
+                    type="submit" 
+                    className="btn-modal-modern btn-submit-modern"
+                    disabled={isSubmitting}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                      <polyline points="2 17 12 22 22 17"></polyline>
+                      <polyline points="2 12 12 17 22 12"></polyline>
+                    </svg>
+                    <span>{isSubmitting ? getLabel("Creating...") : getLabel("Create Project")}</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       )}
     </div>

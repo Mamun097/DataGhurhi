@@ -760,6 +760,7 @@ const Dashboard = () => {
                 setPrivacyFilter={setPrivacyFilter}
                 handleProjectClick={handleProjectClick}
                 setProjects={setProjects}
+                fetchProjects={fetchProjects}
               />
             )}
 
@@ -771,6 +772,7 @@ const Dashboard = () => {
                 getLabel={getLabel}
                 language={language}
                 onBack={handleBackToProjects}
+                handleReject={handleReject}
               />
             )}
 

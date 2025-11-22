@@ -40,7 +40,7 @@ import banner8 from "./banner/banner8.jpg";
 import banner9 from "./banner/banner9.jpg";
 import banner10 from "./banner/banner10.jpg";
 
-const ProjectDetailsTab = ({ projectId, getLabel, language, onBack }) => {
+const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject}) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
