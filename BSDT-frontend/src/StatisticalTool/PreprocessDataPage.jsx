@@ -78,14 +78,18 @@ const PreprocessDataPage = () => {
   useEffect(() => {
     if (!userId) return;
     fetch(`${API_BASE}/preview-data/`, {
-      method: 'GET',
-      headers: {
-        'userID': userId,
-        'filename': filename,
-        'sheet': sessionStorage.getItem("activesheetname") || '',
-        'Fileurl': sessionStorage.getItem("fileURL") || ''
-      }
-    })
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'userID': userId, // ASCII allowed
+  },
+  body: JSON.stringify({
+    filename,     // Bangla OK
+    sheet: sessionStorage.getItem("activesheetname") || "",
+    Fileurl: sessionStorage.getItem("fileURL") || ''
+  })
+})
+
       .then(r => r.json())
       .then(res => {
         setColumns(res.columns || []);

@@ -148,7 +148,7 @@ useEffect(() => {
     if (!FileURL) return;
     setIsLoading(true);
     try {
-      const resp = await axios.get(FileURL, { responseType: "arraybuffer" });
+      const resp = await axios.get(`http://127.0.0.1:8000${FileURL}`, { responseType: "arraybuffer" });
       const blob = new Blob([resp.data], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
