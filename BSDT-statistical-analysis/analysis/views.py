@@ -6907,14 +6907,18 @@ def preview_data(request):
     import numpy as np
     import os
 
-    if request.method != 'GET':
+    if request.method != 'POST':
         return JsonResponse({'error': 'Only GET is allowed'}, status=405)
 
     user_id = request.headers.get('userID')
-    filename = request.headers.get('filename')
-    requested_sheet = request.headers.get('sheet')  
-    file_url = request.headers.get('Fileurl')
-
+    # filename = request.headers.get('filename')
+    # requested_sheet = request.headers.get('sheet')  
+    # file_url = request.headers.get('Fileurl')
+    data = json.loads(request.body)
+    filename = data.get("filename")
+    requested_sheet = data.get("sheet")
+    file_url = data.get("Fileurl")
+ 
     if not user_id:
         return JsonResponse({'error': 'User ID not provided'}, status=400)
     if not filename:
