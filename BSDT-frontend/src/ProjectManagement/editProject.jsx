@@ -40,7 +40,7 @@ import banner8 from "./banner/banner8.jpg";
 import banner9 from "./banner/banner9.jpg";
 import banner10 from "./banner/banner10.jpg";
 
-const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject}) => {
+const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject, onSurveyDeleted }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -113,7 +113,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
       if (response.status === 200 && response.data?.project) {
         const { title, field, description, privacy_mode } = response.data.project;
         const projectData = { title, field, description, privacy_mode };
-        
+
         setOriginalData(projectData);
         setFormData(projectData);
         setLoading(false);
@@ -312,7 +312,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
         }
       );
       toast.success(getLabel("Project updated successfully!"));
-      
+
       setOriginalData(formData);
       setIsEditing(false);
       fetchProject();
@@ -329,7 +329,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
 
   const handleAddSurveyClick = async () => {
     const result = await Swal.fire({
-      title: '<span style="color: #1e293b; font-weight: 600; font-size: 1.5rem;">'+getLabel("Create New Survey")+'</span>',
+      title: '<span style="color: #1e293b; font-weight: 600; font-size: 1.5rem;">' + getLabel("Create New Survey") + '</span>',
       html: `
         <div style="text-align: left; margin-top: 1rem;">
           <label style="display: block; color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
@@ -345,7 +345,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
       `,
       showCancelButton: true,
       cancelButtonText: getLabel("Cancel"),
-      confirmButtonText: '<span style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>'+getLabel("Create")+'</span>',
+      confirmButtonText: '<span style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' + getLabel("Create") + '</span>',
       customClass: {
         popup: 'survey-modal-popup',
         title: 'survey-modal-title',
@@ -420,6 +420,10 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
       if (response.status === 200) {
         toast.success(getLabel("Survey deleted successfully!"));
         fetchSurveys();
+
+        if (onSurveyDeleted) {
+          onSurveyDeleted();
+        }
       }
     } catch (error) {
       console.error("Error deleting survey:", error);
@@ -567,7 +571,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                     </>
                   )}
                 </span>
-                <div 
+                <div
                   className={`btn-collaborators-wrapper ${!canEdit ? "disabled" : ""}`}
                   onClick={() => {
                     if (canEdit) {
@@ -625,31 +629,31 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
             )}
           </div>
         </div>
-        {accessControl!="viewer" &&
-        (<div className="project-details-actions">
-          {!isEditing ? (
-            <IconButton
-              className={`btn-edit-icon ${!canEdit ? "disabled" : ""}`}
-              onClick={() => canEdit && setIsEditing(true)}
-              disabled={!canEdit}
-              size="small"
-              title={getLabel("Edit Project Details")}
-            >
-              <EditIcon fontSize="small" />
-            </IconButton>
-          ) : (
-            <div className="edit-action-buttons">
-              <button type="button" className="btn-action-header btn-cancel-header" onClick={handleCancel}>
-                <CloseIcon fontSize="small" />
-                <span>{getLabel("Cancel")}</span>
-              </button>
-              <button type="submit" className="btn-action-header btn-save-header" onClick={handleSubmit}>
-                <SaveIcon fontSize="small" />
-                <span>{getLabel("Save")}</span>
-              </button>
-            </div>
-          )}
-        </div>)}
+        {accessControl != "viewer" &&
+          (<div className="project-details-actions">
+            {!isEditing ? (
+              <IconButton
+                className={`btn-edit-icon ${!canEdit ? "disabled" : ""}`}
+                onClick={() => canEdit && setIsEditing(true)}
+                disabled={!canEdit}
+                size="small"
+                title={getLabel("Edit Project Details")}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            ) : (
+              <div className="edit-action-buttons">
+                <button type="button" className="btn-action-header btn-cancel-header" onClick={handleCancel}>
+                  <CloseIcon fontSize="small" />
+                  <span>{getLabel("Cancel")}</span>
+                </button>
+                <button type="submit" className="btn-action-header btn-save-header" onClick={handleSubmit}>
+                  <SaveIcon fontSize="small" />
+                  <span>{getLabel("Save")}</span>
+                </button>
+              </div>
+            )}
+          </div>)}
       </div>
 
       {/* Surveys Section Header */}
@@ -836,7 +840,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
               >
                 <div className="list-left">
                   <div className="list-icon">
-                    <DescriptionIcon/>
+                    <DescriptionIcon />
                   </div>
                   <div className="list-info">
                     <h3 className="list-title">{survey.title}</h3>
@@ -852,32 +856,32 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                       ? getLabel("Published")
                       : getLabel("Draft")}
                   </span>
-                  
-                  {accessControl!="viewer" &&
-                  (<IconButton
-                    className="list-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (canEdit) {
-                        Swal.fire({
-                          title: getLabel("Are you sure?"),
-                          text: getLabel("This action cannot be undone."),
-                          icon: "warning",
-                          showCancelButton: true,
-                          confirmButtonText: getLabel("Yes, delete it!"),
-                          cancelButtonText: getLabel("No, cancel!"),
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            handleDeleteSurvey(survey.survey_id);
-                          }
-                        });
-                      }
-                    }}
-                    size="small"
-                    disabled={!canEdit}
-                  >
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>)}
+
+                  {accessControl != "viewer" &&
+                    (<IconButton
+                      className="list-delete"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (canEdit) {
+                          Swal.fire({
+                            title: getLabel("Are you sure?"),
+                            text: getLabel("This action cannot be undone."),
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonText: getLabel("Yes, delete it!"),
+                            cancelButtonText: getLabel("No, cancel!"),
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              handleDeleteSurvey(survey.survey_id);
+                            }
+                          });
+                        }
+                      }}
+                      size="small"
+                      disabled={!canEdit}
+                    >
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>)}
                 </div>
               </div>
             )
