@@ -482,7 +482,7 @@
   bottom: 24px; /* Bottom gap for floating effect */
   display: flex;
   flex-direction: column;
-  width: 250px;
+  width: 230px;
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
