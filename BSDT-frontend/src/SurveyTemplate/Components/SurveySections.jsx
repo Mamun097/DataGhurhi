@@ -332,15 +332,16 @@ const SurveySections = ({
     );
   };
 
-  console.log(section.autoNumbering, "autoNumbering in checkbox");
   return (
     <div className="survey-section__container container-fluid shadow border bg-transparent rounded p-3 mt-5 mb-3">
       <div className="survey-section__header d-flex justify-content-between align-items-start">
         <div className="flex-grow-1">
-          <h1 className="survey-section__id-display text-left mb-3">
-            <i>{getLabel("Section") || "Section"} </i>
-            {section.id}
-          </h1>
+          {sections.length > 1 && (
+            <h1 className="survey-section__id-display text-left mb-3">
+              <i>{getLabel("Section") || "Section"} </i>
+              {section.id}
+            </h1>
+          )}
           {section.showTitle && (
             <textarea
               className="survey-section__title-input form-control mt-2 mb-4"

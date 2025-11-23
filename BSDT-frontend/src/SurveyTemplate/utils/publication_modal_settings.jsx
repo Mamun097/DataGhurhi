@@ -3,9 +3,9 @@ import { Modal, Button, Form } from "react-bootstrap";
 
 const PublicationSettingsModal = ({
   show, // Boolean to control modal visibility
-  handleClose, 
-  handleConfirm, 
-  isLoggedInRequired, 
+  handleClose,
+  handleConfirm,
+  isLoggedInRequired,
   shuffleQuestions,
   action, // "publish" or "update"
   isQuiz,
@@ -28,9 +28,9 @@ const PublicationSettingsModal = ({
   const buttonText = action === "publish" ? "Publish" : "Update";
 
   return (
-    <Modal 
-      show={show} 
-      onHide={handleClose} 
+    <Modal
+      show={show}
+      onHide={handleClose}
       centered
       dialogClassName="modal-90w modal-dialog-centered"
       backdrop="static"
@@ -45,8 +45,12 @@ const PublicationSettingsModal = ({
               type="switch"
               id="login-required-switch"
               className="fs-6"
-              label={isQuiz ? "Users must be logged in to respond in quiz mode" : "Require users to be logged in to respond"}
-              checked={localIsLoggedIn}
+              label={
+                isQuiz
+                  ? "Users must be logged in to respond in quiz mode"
+                  : "Require users to be logged in to respond"
+              }
+              checked={isQuiz? true : isLoggedInRequired}
               disabled={isQuiz}
               onChange={(e) => setLocalIsLoggedIn(e.target.checked)}
             />
@@ -68,7 +72,11 @@ const PublicationSettingsModal = ({
         <Button variant="outline-danger" onClick={handleClose}>
           Cancel
         </Button>
-        <Button variant="outline-primary" onClick={handleConfirmClick} className="ms-2">
+        <Button
+          variant="outline-primary"
+          onClick={handleConfirmClick}
+          className="ms-2"
+        >
           {buttonText}
         </Button>
       </Modal.Footer>
