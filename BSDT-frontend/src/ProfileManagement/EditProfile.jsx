@@ -35,7 +35,7 @@ export default function EditProfile() {
       const response = await apiClient.get("/api/profile", {
         headers: { Authorization: "Bearer " + token },
       });
-      console.log("Profile response:", response.data);
+      // console.log("Profile response:", response.data);
       if (response.status === 200) {
         setProfileData(response.data.user);
         setProfilePicUrl(response.data.user.image);
@@ -167,7 +167,7 @@ const updateImageInDB = async (type, imageUrl) => {
 
   const renderField = (field) => {
     const value = profileData[field] || "";
-console.log(value);
+    // console.log(value);
     const isEditing = isEditingField === field;
 
     return (

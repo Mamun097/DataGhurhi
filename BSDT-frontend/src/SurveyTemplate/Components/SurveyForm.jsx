@@ -38,54 +38,63 @@ const translateText = async (textArray, targetLang) => {
 const SurveyForm = ({
   title,
   setTitle,
-  sections,
-  setSections,
-  questions,
-  setQuestions,
-  logo: logoFromParent,
-  logoAlignment: logoAlignmentFromParent,
-  logoText: logoTextFromParent,
-  image: imageFromParent,
+  image,
   project_id,
   survey_id,
   surveyStatus,
-  surveyLink,
-  description,
-  setDescription,
   language,
   setLanguage,
-  isLoggedInRequired = false,
-  setIsLoggedInRequired,
   template,
+  survey,
 }) => {
-  console.log("questions in SurveyForm:", questions);
+  const navigate = useNavigate();
+
   // State for the logo
-  const [logo, setLogo] = useState(logoFromParent || null);
+  const [logo, setLogo] = useState(template.logo || null);
   const [logoAlignment, setLogoAlignment] = useState(
-    logoAlignmentFromParent || "center"
+    template.logoAlignment || "center"
   );
-  const [logoText, setLogoText] = useState(logoTextFromParent || "");
+  const [logoText, setLogoText] = useState(template.logoText || "");
 
   // State for the background image
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
-    imageFromParent || ""
+    image || ""
   );
+
+  // State for description
+  const [description, setDescription] = useState(template.description);
+
+  // State for Sections
+  const [sections, setSections] = useState(template.sections);
+
+  // State for Questions
+  const [questions, setQuestions] = useState(template.questions);
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+
+  // State for Collaboration Modal
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
 
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
-  const [shuffleQuestions, setShuffleQuestions] = useState(false);
+  const [shuffleQuestions, setShuffleQuestions] = useState(
+    survey?.shuffle_questions || false
+  );
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
   const [responseCount, setResponseCount] = useState(null);
+  const [surveyLink, setSurveyLink] = useState(survey?.survey_link || null);
+  const [isLoggedInRequired, setIsLoggedInRequired] = useState(
+    survey?.response_user_logged_in_status || null
+  );
 
   // State for survey settings
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  // Functions for Survey Settings Modal
+  const openSettingsModal = () => setShowSettingsModal(true);
+  const closeSettingsModal = () => setShowSettingsModal(false);
 
   // State for Quiz settings
   const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
@@ -112,10 +121,6 @@ const SurveyForm = ({
     template?.quiz_settings?.default_point_value || 0
   );
   const [totalMarks, setTotalMarks] = useState(template?.total_marks || 0);
-
-  // Functions for Survey Settings Modal
-  const openSettingsModal = () => setShowSettingsModal(true);
-  const closeSettingsModal = () => setShowSettingsModal(false);
 
   const labelsToTranslate = useMemo(
     () => [
@@ -236,10 +241,19 @@ const SurveyForm = ({
 
   const getLabel = (text) => translatedLabels[text] || text;
 
-  // useEffect(() => {
-  //   setLogo(logoFromParent || null);
-  //   setCurrentBackgroundImage(imageFromParent || "");
-  // }, [logoFromParent, imageFromParent]);
+  useEffect(() => {
+    if (template) {
+      setTitle(template.title || "Untitled Survey");
+      setSections(template.sections || []);
+      setQuestions(template.questions || []);
+      setLogo(template.logo || null);
+      setLogoAlignment(template.logoAlignment || "left");
+      setLogoText(template.logoText || "");
+      setCurrentBackgroundImage(template.backgroundImage || null);
+      setDescription(template.description || "");
+      setIsLoggedInRequired(template.isLoggedInRequired || false);
+    }
+  }, [template]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -345,6 +359,7 @@ const SurveyForm = ({
   const sendSurveyData = async (url, isLoggedInStatus, isShuffled) => {
     setIsLoading(true);
     const bearerTokenString = localStorage.getItem("token");
+
     let userIdInPayload = null;
 
     if (!bearerTokenString) {
@@ -401,6 +416,7 @@ const SurveyForm = ({
         user_id: userIdInPayload,
         response_user_logged_in_status: isLoggedInStatus,
         shuffle_questions: isShuffled,
+        banner: currentBackgroundImage,
       };
 
       const response = await apiClient.put(url, payload, {

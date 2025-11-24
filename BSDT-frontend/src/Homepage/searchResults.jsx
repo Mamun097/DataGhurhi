@@ -23,7 +23,7 @@ const SearchResults = () => {
     other: "Others",
   });
   const handleProjectClick = (projectId, role,privacy) => {
-    console.log("Project clicked:", projectId, "Role:", role);
+    // console.log("Project clicked:", projectId, "Role:", role);
     navigate(`/view-project/${projectId}/${privacy}`, {
       state: { role: role },
     });

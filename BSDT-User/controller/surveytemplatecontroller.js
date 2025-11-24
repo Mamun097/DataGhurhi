@@ -55,17 +55,27 @@ exports.saveSurveyForm = async (req, res) => {
 
 exports.createSurveyForm = async (req, res) => {
   try {
-    const { survey_id, project_id, survey_template, title, response_user_logged_in_status , shuffle_questions} = req.body;
+    const {
+      survey_id,
+      project_id,
+      survey_template,
+      title,
+      response_user_logged_in_status,
+      shuffle_questions,
+    } = req.body;
     const user_id = req.jwt.id;
-    
+
     // Validate input
     if (!project_id || !survey_template) {
       return res.status(400).json({
         error: "project_id, survey_template, and user_id are required",
       });
     }
-    
-    console.log("response_user_logged_in_status:", response_user_logged_in_status);
+
+    console.log(
+      "response_user_logged_in_status:",
+      response_user_logged_in_status
+    );
 
     const { data: survey_link, error: survey_link_error } = await supabase
       .from("survey")
@@ -97,7 +107,7 @@ exports.createSurveyForm = async (req, res) => {
       .eq("survey_id", survey_id)
       .select("*");
     //update published date or update date
-    if (!isPublished){
+    if (!isPublished) {
       const { error: updateError } = await supabase
         .from("survey")
         .update({ published_date: new Date() })
@@ -108,7 +118,7 @@ exports.createSurveyForm = async (req, res) => {
           .status(500)
           .json({ error: "Failed to update survey published date" });
       }
-    }else{
+    } else {
       const { error: updateError } = await supabase
         .from("survey")
         .update({ last_updated: new Date() })
@@ -154,15 +164,8 @@ exports.createSurveyForm = async (req, res) => {
 
     // Step 3: Insert questions with the correct section_id
     for (const question of survey_template.questions) {
-      const {
-        text,
-        image,
-        section_id,
-        type,
-        privacy,
-        correct_ans,
-        meta,
-      } = question;
+      const { text, image, section_id, type, privacy, correct_ans, meta } =
+        question;
 
       // Get the section_id using the local_section_id
       const sectionId = sectionMapping[section_id];
@@ -287,37 +290,43 @@ exports.deleteSurveyForm = async (req, res) => {
     }
     // check if survey is published
     if (surveyData.survey_status != null) {
-          //Delete questions associated with the survey
-    const { error: questionDeleteError } = await supabase
-      .from("question")
-      .delete()
-      .eq("survey_id", survey_id);
-    if (questionDeleteError) {
-      console.error("Supabase delete error for questions:", questionDeleteError);
-      return res.status(500).json({ error: "Failed to delete questions" });
-    }
-    // Delete sections associated with the survey
-    const { error: sectionDeleteError } = await supabase
-      .from("section")
-      .delete()
-      .eq("survey_id", survey_id);
-    if (sectionDeleteError) {
-      console.error("Supabase delete error for sections:", sectionDeleteError);
-      return res.status(500).json({ error: "Failed to delete sections" });
-    }
-    // Delete the survey
-    const { error: deleteError } = await supabase
-      .from("survey")
-      .delete()
-      .eq("survey_id", survey_id)
-      .eq("user_id", user_id);
-    if (deleteError) {
-      console.error("Supabase delete error for survey:", deleteError);
-      return res.status(500).json({ error: "Failed to delete survey" });
-    }
-    //return success response
-    return res.status(200).json({ message: "Survey deleted successfully" });
-    }else{
+      //Delete questions associated with the survey
+      const { error: questionDeleteError } = await supabase
+        .from("question")
+        .delete()
+        .eq("survey_id", survey_id);
+      if (questionDeleteError) {
+        console.error(
+          "Supabase delete error for questions:",
+          questionDeleteError
+        );
+        return res.status(500).json({ error: "Failed to delete questions" });
+      }
+      // Delete sections associated with the survey
+      const { error: sectionDeleteError } = await supabase
+        .from("section")
+        .delete()
+        .eq("survey_id", survey_id);
+      if (sectionDeleteError) {
+        console.error(
+          "Supabase delete error for sections:",
+          sectionDeleteError
+        );
+        return res.status(500).json({ error: "Failed to delete sections" });
+      }
+      // Delete the survey
+      const { error: deleteError } = await supabase
+        .from("survey")
+        .delete()
+        .eq("survey_id", survey_id)
+        .eq("user_id", user_id);
+      if (deleteError) {
+        console.error("Supabase delete error for survey:", deleteError);
+        return res.status(500).json({ error: "Failed to delete survey" });
+      }
+      //return success response
+      return res.status(200).json({ message: "Survey deleted successfully" });
+    } else {
       //just delete the survey
       console.log("Deleting survey with ID:", survey_id);
       const { error: deleteError } = await supabase
@@ -344,7 +353,6 @@ exports.deleteSurveyForm = async (req, res) => {
       //return success response
       return res.status(200).json({ message: "Survey deleted successfully" });
     }
-
   } catch (err) {
     console.error("Error in deleteSurveyForm:", err);
     return res.status(500).json({ error: "Internal server error" });
@@ -358,9 +366,21 @@ function generateSlug(survey_title, survey_id, survey_status) {
 
   const currentTime = Date.now().toString();
   const randomValue = Math.floor(Math.random() * 1e6).toString();
-  const title_hash = crypto.createHash("sha256").update(survey_title).digest("hex").slice(0, 10);
-  const currentTime_hash = crypto.createHash("sha256").update(currentTime).digest("hex").slice(0, 10);
-  const randomValue_hash = crypto.createHash("sha256").update(randomValue).digest("hex").slice(0,10);
+  const title_hash = crypto
+    .createHash("sha256")
+    .update(survey_title)
+    .digest("hex")
+    .slice(0, 10);
+  const currentTime_hash = crypto
+    .createHash("sha256")
+    .update(currentTime)
+    .digest("hex")
+    .slice(0, 10);
+  const randomValue_hash = crypto
+    .createHash("sha256")
+    .update(randomValue)
+    .digest("hex")
+    .slice(0, 10);
   const final_hash = `${hashValue}-${title_hash}-${currentTime_hash}-${randomValue_hash}`;
 
   return `${final_hash}`;
@@ -378,6 +398,7 @@ exports.getSurvey = async (req, res) => {
       .eq("survey_id", survey_id)
       .single();
 
+    // console.log("Survey Details: ", surveyData);
     if (surveyError) {
       console.error("Supabase select error for survey:", surveyError);
       return res.status(500).json({ error: "Failed to fetch survey" });
@@ -386,35 +407,6 @@ exports.getSurvey = async (req, res) => {
     if (!surveyData) {
       return res.status(404).json({ error: "Survey not found" });
     }
-
-    // // Fetch sections associated with the survey
-    // const { data: sectionsData, error: sectionsError } = await supabase
-    //   .from("section")
-    //   .select("*")
-    //   .eq("survey_id", survey_id);
-
-    // if (sectionsError) {
-    //   console.error("Supabase select error for sections:", sectionsError);
-    //   return res.status(500).json({ error: "Failed to fetch sections" });
-    // }
-
-    // // Fetch questions associated with the survey
-    // const { data: questionsData, error: questionsError } = await supabase
-    //   .from("question")
-    //   .select("*")
-    //   .eq("survey_id", survey_id);
-
-    // if (questionsError) {
-    //   console.error("Supabase select error for questions:", questionsError);
-    //   return res.status(500).json({ error: "Failed to fetch questions" });
-    // }
-
-    // // Combine the data into a single response object
-    // const responseData = {
-    //   ...surveyData,
-    //   sections: sectionsData,
-    //   questions: questionsData,
-    // };
 
     return res.status(200).json(surveyData);
   } catch (err) {
@@ -427,9 +419,9 @@ exports.getResponseCount = async (req, res) => {
   const { survey_id } = req.params;
   const user_id = req.jwt.id;
   res.writeHead(200, {
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache',
-    'Connection': 'keep-alive',
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
   });
   try {
     const { data: survey, error } = await supabase
@@ -453,9 +445,9 @@ exports.getResponseCount = async (req, res) => {
   }
   const sendCount = async () => {
     const { count, error } = await supabase
-      .from('response') 
-      .select('*', { count: 'exact', head: true })
-      .eq('survey_id', survey_id);
+      .from("response")
+      .select("*", { count: "exact", head: true })
+      .eq("survey_id", survey_id);
 
     if (error) {
       console.error("Error fetching count:", error);
@@ -463,31 +455,35 @@ exports.getResponseCount = async (req, res) => {
       res.write(`data: ${JSON.stringify({ count })}\n\n`);
     }
   };
-  
+
   sendCount();
   const channel = supabase.channel(`response-count-${survey_id}`);
-  
+
   channel
     .on(
-      'postgres_changes',
-      { 
-        event: 'INSERT',
-        schema: 'public',
-        table: 'response',
-        filter: `survey_id=eq.${survey_id}`
+      "postgres_changes",
+      {
+        event: "INSERT",
+        schema: "public",
+        table: "response",
+        filter: `survey_id=eq.${survey_id}`,
       },
       (payload) => {
-        console.log('New response detected! Sending updated count.');
+        console.log("New response detected! Sending updated count.");
         sendCount();
       }
     )
     .subscribe((status) => {
-      if (status === 'SUBSCRIBED') {
-        console.log(`Successfully subscribed to realtime updates for survey ${survey_id}`);
+      if (status === "SUBSCRIBED") {
+        console.log(
+          `Successfully subscribed to realtime updates for survey ${survey_id}`
+        );
       }
     });
-  req.on('close', () => {
-    console.log(`Client disconnected from survey ${survey_id} stream. Unsubscribing.`);
+  req.on("close", () => {
+    console.log(
+      `Client disconnected from survey ${survey_id} stream. Unsubscribing.`
+    );
     supabase.removeChannel(channel);
     res.end();
   });
