@@ -22,7 +22,17 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
     }
     return options;
   }, [question]); // Dependency: re-calculate only if the question object changes
+  // 1. Get the text of the last visible option
+  const lastOptionText =
+    shuffledOptions.length > 0
+      ? shuffledOptions[shuffledOptions.length - 1]
+      : "";
 
+  // 2. Check if it contains Bangla characters
+  const isLastOptionBangla = /[\u0980-\u09FF]/.test(lastOptionText);
+
+  // 3. Define the label text
+  const otherLabel = isLastOptionBangla ? "অন্যান্য" : "Other";
   // 2. CHECK IF "OTHER" IS SELECTED
   const isOtherSelected =
     userAnswer && userAnswer !== "" && !shuffledOptions.includes(userAnswer);
@@ -119,8 +129,9 @@ const Dropdown = ({ index, question, userResponse, setUserResponse }) => {
           <option value="" disabled>
             Select an option
           </option>
-          {question.otherAsOption && <option value="__OTHER__">Other</option>}
-
+          {question.otherAsOption && (
+            <option value="__OTHER__">{otherLabel}</option>
+          )}
           {shuffledOptions.map((option, idx) => {
             const optionValue =
               typeof option === "object" && option?.text ? option.text : option;
