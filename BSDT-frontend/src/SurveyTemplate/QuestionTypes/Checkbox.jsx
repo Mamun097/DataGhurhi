@@ -415,6 +415,20 @@ const Checkbox = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const currentOptions = question.meta?.options || [];
+
+  // 1. Get text of last option
+  const lastOptionText =
+    currentOptions.length > 0 ? currentOptions[currentOptions.length - 1] : "";
+
+  // 2. Check for Bangla
+  const isLastOptionBangla = /[\u0980-\u09FF]/.test(lastOptionText);
+
+  // 3. Define the dynamic labels
+  const otherFieldLabel = isLastOptionBangla
+    ? "অন্যান্য: "
+    : getLabel("Other: ");
+
   return (
     <div className="mb-3 dnd-isolate">
       {showCropper && selectedFile && (
@@ -556,15 +570,11 @@ const Checkbox = ({
             ></i>
           </div>
           <div className="col-auto">
-            <input
-              className="form-check-input"
-              type="checkbox"
-              disabled
-            />
+            <input className="form-check-input" type="checkbox" disabled />
           </div>
           <div className="col-auto">
             <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
-              {getLabel("Other: ")}
+              {otherFieldLabel}
             </span>
           </div>
           <div className="col">
