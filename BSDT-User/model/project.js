@@ -31,26 +31,17 @@ async function findProjectById(projectId) {
     .eq("project_id", projectId);
   return { data, error };
 }
-// find survey by project id
+
+// find surveys by project id
 async function findSurveysByProjectId(projectId) {
   const { data, error } = await supabase
     .from("survey")
-    .select("*")
+    .select("survey_id, title, survey_status, created_at, last_updated, banner")
     .eq("project_id", projectId);
+
   return { data, error };
 }
-// create survey for a project id
-// async function createSurvey(projectId, title) {
-//     // console.log("Create Survey: ",projectId, title);
-//   const { data, error } = await supabase.from("survey").insert([
-//     {
-//       project_id: projectId,
-//       title,
-//     },
-//   ]);
 
-//   return { data, error };
-// }
 async function createSurvey(projectId, title, userId) {
   // Check for duplicates
   const { data: existing, error: fetchError } = await supabase
@@ -76,14 +67,22 @@ async function createSurvey(projectId, title, userId) {
   // Insert and return the full row
   const { data, error } = await supabase
     .from("survey")
-    .insert([{ project_id: projectId, title, user_id: userId , created_at: date, last_updated: date}])
+    .insert([
+      {
+        project_id: projectId,
+        title,
+        user_id: userId,
+        created_at: date,
+        last_updated: date,
+      },
+    ])
     .select()
     .single(); // ensures only one row is returned
   //add last updated time to project table
   const { error: projectUpdateError } = await supabase
     .from("survey_project")
-    .update({ last_updated: date})
-    .eq("project_id", projectId,);
+    .update({ last_updated: date })
+    .eq("project_id", projectId);
   if (projectUpdateError) {
     console.error("Supabase update error for project:", projectUpdateError);
     return res
@@ -142,7 +141,6 @@ async function deleteProject(projectId) {
 // collaborators
 
 async function inviteCollaborator(projectId, user_data) {
-
   const { data, error } = await supabase.rpc("get_survey_designer_by_email", {
     u_email: user_data.email,
   });
@@ -165,7 +163,7 @@ async function inviteCollaborator(projectId, user_data) {
     .eq("project_id", projectId)
     .neq("invitation", "declined")
     .single();
-  
+
   if (fetchError && fetchError.code !== "PGRST116") {
     return { error: fetchError };
   }

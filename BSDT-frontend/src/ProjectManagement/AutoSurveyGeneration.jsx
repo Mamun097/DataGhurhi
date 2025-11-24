@@ -26,30 +26,30 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel, canEdit }) => {
   const checkUserSubscription = async () => {
     try {
       const token = localStorage.getItem("token");
-      console.log("Fetching user packages for survey generation...");
+      // console.log("Fetching user packages for survey generation...");
 
       const response = await apiClient.get("/api/get-user-packages", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const packages = response.data.packages;
-      console.log("All packages:", packages);
+      // console.log("All packages:", packages);
       
       const packagesWithSurveys = packages.filter(pkg => {
-        console.log(`Package: ${JSON.stringify(pkg)}`);
+        // console.log(`Package: ${JSON.stringify(pkg)}`);
         return pkg.survey && pkg.survey > 0;
       });
       
-      console.log("Packages with surveys:", packagesWithSurveys);
+      // console.log("Packages with surveys:", packagesWithSurveys);
       
       const validPackages = packagesWithSurveys.filter(pkg => {
         const endDate = new Date(pkg.end_date);
         const today = new Date();
-        console.log(`Package ID: ${pkg.subscription_id}, Survey count: ${pkg.survey}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`);
+        // console.log(`Package ID: ${pkg.subscription_id}, Survey count: ${pkg.survey}, End date: ${endDate}, Today: ${today}, Valid: ${endDate > today}`);
         return endDate > today;
       });
       
-      console.log("Valid packages with surveys:", validPackages);
+      // console.log("Valid packages with surveys:", validPackages);
       
       setAllValidPackages(validPackages);
       
@@ -60,20 +60,20 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel, canEdit }) => {
           return prev;
         }) : null;
       
-      console.log("Selected eligible package:", eligiblePackage);
+      // console.log("Selected eligible package:", eligiblePackage);
 
       if (eligiblePackage) {
         setSubscriptionData(eligiblePackage);
         setIsEligible(true);
-        console.log("User is eligible for survey generation");
+        // console.log("User is eligible for survey generation");
       } else {
         setIsEligible(false);
-        console.log("User is not eligible for survey generation");
+        // console.log("User is not eligible for survey generation");
         
         if (packagesWithSurveys.length > 0) {
-          console.log("Packages with surveys exist but all expired");
+          // console.log("Packages with surveys exist but all expired");
         } else {
-          console.log("No packages with remaining surveys found");
+          // console.log("No packages with remaining surveys found");
         }
       }
     } catch (error) {

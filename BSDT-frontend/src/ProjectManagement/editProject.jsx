@@ -75,6 +75,7 @@ const ProjectDetailsTab = ({
   });
 
   const [surveys, setSurveys] = useState([]);
+
   const [collaborators, setCollaborators] = useState([]);
   const [acceptedCollaborators, setAcceptedCollaborators] = useState([]);
   const [userRole, setUserRole] = useState("");
@@ -242,8 +243,6 @@ const ProjectDetailsTab = ({
         questions = Array.isArray(questions) ? questions : [questions];
       }
 
-      console.log("LLM Questions:", questions);
-
       // 4. preparing survey_template object
       const surveyTemplatePayload = {
         survey_id: survey_id,
@@ -311,7 +310,6 @@ const ProjectDetailsTab = ({
         })
         .then((response) => {
           if (response.status === 200 && response.data.success) {
-            console.log("Survey count reduced successfully:", response.data);
           } else {
             console.error(
               "Failed to reduce survey count:",
@@ -432,7 +430,7 @@ const ProjectDetailsTab = ({
               {
                 state: {
                   project_id: projectId,
-                  survey_details: response.data,
+                  // survey_details: response.data,
                   input_title: result.value,
                 },
               }
@@ -465,12 +463,12 @@ const ProjectDetailsTab = ({
     }
   };
 
-  const handleSurveyClick = (survey_id, survey, survey_title) => {
+  const handleSurveyClick = (survey_id, survey_title, survey_status) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
-        survey_details: survey,
         input_title: survey_title || "Untitled Survey",
+        survey_status: survey_status,
       },
     });
   };
@@ -854,7 +852,11 @@ const ProjectDetailsTab = ({
                 key={survey.survey_id}
                 className="project-card-modern grid"
                 onClick={() =>
-                  handleSurveyClick(survey.survey_id, survey, survey.title)
+                  handleSurveyClick(
+                    survey.survey_id,
+                    survey.title,
+                    survey.survey_status
+                  )
                 }
               >
                 <div
@@ -926,7 +928,11 @@ const ProjectDetailsTab = ({
                 key={survey.survey_id}
                 className="project-card-modern list"
                 onClick={() =>
-                  handleSurveyClick(survey.survey_id, survey, survey.title)
+                  handleSurveyClick(
+                    survey.survey_id,
+                    survey.title,
+                    survey.survey_status
+                  )
                 }
               >
                 <div className="list-left">

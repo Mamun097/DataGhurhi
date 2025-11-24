@@ -111,7 +111,7 @@ const Dashboard = () => {
 }, [location.search]);
 
   const handleAccept = async (projectId) => {
-    console.log("Accepted request:", projectId);
+    // console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -122,7 +122,7 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Invitation accepted successfully");
+        // console.log("Invitation accepted successfully");
         fetchCollaborationRequests();
         fetchCollaboratedProjects(); // Fetch updated collaborated projects
       }
@@ -132,7 +132,7 @@ const Dashboard = () => {
   };
 
   const handleReject = async (projectId) => {
-    console.log("Rejected request:", projectId);
+    // console.log("Rejected request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -143,7 +143,7 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Invitation rejected successfully");
+        // console.log("Invitation rejected successfully");
         fetchCollaborationRequests();
       }
     } catch (error) {
