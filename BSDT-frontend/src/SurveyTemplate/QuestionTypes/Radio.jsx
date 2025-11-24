@@ -34,6 +34,13 @@ const Radio = ({
 
   // Mark for an individual question
   const [mark, setMark] = useState(question.points || defaultPointValue);
+  const currentOptions = question.meta?.options || [];
+  const lastOptionText =
+    currentOptions.length > 0 ? currentOptions[currentOptions.length - 1] : "";
+  const isLastOptionBangla = /[\u0980-\u09FF]/.test(lastOptionText);
+  const otherFieldLabel = isLastOptionBangla
+    ? "অন্যান্য: "
+    : getLabel("Other: ");
 
   const handleOptionChange = useCallback(
     (index, value) => {
@@ -583,7 +590,7 @@ const Radio = ({
           </div>
           <div className="col-auto">
             <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
-              {getLabel("Other: ")}
+              {otherFieldLabel}
             </span>
           </div>
           <div className="col">
