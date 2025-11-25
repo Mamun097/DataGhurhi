@@ -51,9 +51,10 @@ const Index = () => {
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(survey_status);
 
-  const useCustom = surveyStatus === "saved" || surveyStatus === "published";
-  console.log("useCustom: ", useCustom);
-
+  const [useCustom, setUseCustom] = useState(
+    surveyStatus === "saved" || surveyStatus === "published"
+  );
+  console.log("useCustom:", useCustom);
   const labelsToTranslate = [
     "Survey Templates",
     "This survey has already been published.",
@@ -99,82 +100,86 @@ const Index = () => {
   const getLabel = (text) => translatedLabels[text] || text;
 
   // Load saved/published survey details or saved templates
-  useEffect(() => {
-    const load = async () => {
-      if (useCustom) {
-        try {
-          const bearerTokenString = localStorage.getItem("token");
+  const load = async () => {
+    if (useCustom) {
+      try {
+        const bearerTokenString = localStorage.getItem("token");
 
-          if (!bearerTokenString) {
-            toast.error("Authentication token not found. Please log in.");
-            console.error("No bearer token in localStorage");
-            return;
-          }
-
-          const token = bearerTokenString.startsWith("{")
-            ? JSON.parse(bearerTokenString).token
-            : bearerTokenString;
-
-          const resp = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          const data = resp?.data?.data || resp?.data;
-          console.log("Survey data loaded successfully:", data);
-
-          if (!data) {
-            console.warn("Survey data is empty or undefined");
-            toast.warn("Survey data is empty.");
-            return;
-          }
-
-          setSurvey(data);
-          setTitle(data.title || input_title);
-          setTemplate(data.template || null);
-          setBackgroundImage(data.template?.backgroundImage || null);
-          setSurveyStatus(data.survey_status || surveyStatus);
-
-          // toast.success("Survey loaded successfully!");
-        } catch (err) {
-          console.error("Error loading survey:", {
-            message: err.message,
-            status: err.response?.status,
-            statusText: err.response?.statusText,
-            data: err.response?.data,
-            url: err.config?.url,
-          });
-
-          if (err.response?.status === 401) {
-            toast.error("Unauthorized. Please log in again.");
-          } else if (err.response?.status === 404) {
-            toast.error("Survey not found.");
-          } else if (err.response?.status === 500) {
-            toast.error("Server error. Please try again later.");
-          } else {
-            toast.error("Failed to load survey. Please try again.");
-          }
+        if (!bearerTokenString) {
+          toast.error("Authentication token not found. Please log in.");
+          console.error("No bearer token in localStorage");
+          return;
         }
-      } else {
-        try {
-          const resp = await apiClient.get("/api/get-saved-survey");
-          const data = resp.data;
-          setSavedTemplates(data);
 
-          if (data.length > 0) {
-            const first = data[0];
+        const token = bearerTokenString.startsWith("{")
+          ? JSON.parse(bearerTokenString).token
+          : bearerTokenString;
 
-            setTitle(input_title || "Untitled Survey");
-            setTemplate(first.template);
-          }
-        } catch (err) {
-          console.error("Failed to load templates:", err);
+        const resp = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = resp?.data?.data || resp?.data;
+        console.log("Survey data loaded successfully:", data);
+
+        if (!data) {
+          console.warn("Survey data is empty or undefined");
+          toast.warn("Survey data is empty.");
+          return;
+        }
+
+        setSurvey(data);
+        setTitle(data.title || input_title);
+        setTemplate(data.template || null);
+        setBackgroundImage(data.template?.backgroundImage || null);
+        setSurveyStatus(data.survey_status || surveyStatus);
+
+        // toast.success("Survey loaded successfully!");
+      } catch (err) {
+        console.error("Error loading survey:", {
+          message: err.message,
+          status: err.response?.status,
+          statusText: err.response?.statusText,
+          data: err.response?.data,
+          url: err.config?.url,
+        });
+
+        if (err.response?.status === 401) {
+          toast.error("Unauthorized. Please log in again.");
+        } else if (err.response?.status === 404) {
+          toast.error("Survey not found.");
+        } else if (err.response?.status === 500) {
+          toast.error("Server error. Please try again later.");
+        } else {
+          toast.error("Failed to load survey. Please try again.");
         }
       }
-    };
+    } else {
+      try {
+        const resp = await apiClient.get("/api/get-saved-survey");
+        const data = resp.data;
+        setSavedTemplates(data);
 
+        if (data.length > 0) {
+          const first = data[0];
+
+          setTitle(input_title || "Untitled Survey");
+          setTemplate(first.template);
+        }
+      } catch (err) {
+        console.error("Failed to load templates:", err);
+      }
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []); // Always runs on reload
+
+  useEffect(() => {
     load();
   }, [useCustom, survey_id, input_title]);
 
@@ -201,6 +206,27 @@ const Index = () => {
         style={{ paddingTop: "80px", minHeight: "100vh" }}
       >
         <div className="row">
+          <div className="d-none d-md-block col-md-2" />
+          {/* Main form */}
+          <div className="col-12 col-md-8 mt-3 border gap-3">
+            {template && (
+              <SurveyForm
+                load={load}
+                useCustom={useCustom}
+                setUseCustom={setUseCustom}
+                title={title}
+                setTitle={setTitle}
+                image={backgroundImage}
+                project_id={project_id}
+                survey_id={survey_id}
+                surveyStatus={surveyStatus}
+                language={language}
+                setLanguage={setLanguage}
+                template={template}
+                survey={survey}
+              />
+            )}
+          </div>
           {/* Sidebar */}
           <div className="sidebar-container">
             <div className="sidebar-content">
@@ -228,27 +254,8 @@ const Index = () => {
               )}
             </div>
           </div>
-
-          {/* Main form */}
-          <div className="col-12 col-md-8 mt-3 bg-transparent gap-3">
-            {template && (
-              <SurveyForm
-                title={title}
-                setTitle={setTitle}
-                image={backgroundImage}
-                project_id={project_id}
-                survey_id={survey_id}
-                surveyStatus={surveyStatus}
-                language={language}
-                setLanguage={setLanguage}
-                template={template}
-                survey={survey}
-              />
-            )}
-          </div>
-          <div className="d-none d-md-block col-md-2" />
         </div>
-        {/* <ToastContainer position="top-center" autoClose={4000} /> */}
+        <ToastContainer position="top-center" autoClose={2000} newestOnTop />
       </div>
     </>
   );
