@@ -1,4 +1,4 @@
-import React from "react";
+import { useEffect } from "react";
 import "../CSS/SettingsModal.css";
 
 // A helper component to create a consistent toggle switch
@@ -20,6 +20,10 @@ const ToggleSwitch = ({ id, checked, onChange, label, description }) => (
 const SettingsModal = ({
   isOpen,
   onClose,
+  isLoggedInRequired,
+  setIsLoggedInRequired,
+  shuffleQuestions,
+  setShuffleQuestions,
   isQuiz,
   setIsQuiz,
   startTime,
@@ -36,8 +40,21 @@ const SettingsModal = ({
   setSeePointValues,
   defaultPointValue,
   setDefaultPointValue,
-  setIsLoggedInRequired,
 }) => {
+  useEffect(() => {
+    if (isOpen) {
+      // Prevent scrolling on the main page
+      document.body.style.overflow = "hidden";
+    } else {
+      // Restore scrolling when modal is hidden
+      document.body.style.overflow = "unset";
+    }
+
+    // Cleanup: Restore scrolling if component unmounts
+    return () => {
+      document.body.style.overflow = "unset";
+    };
+  }, [isOpen]);
   if (!isOpen) return null;
 
   return (
@@ -51,8 +68,36 @@ const SettingsModal = ({
         </div>
 
         <div className="modal-content">
+          {/* --- Publication Related Switches --- */}
+          <div className="settings-group">
+            <h3 className="settings-heading">Response Collection</h3>
+            <ToggleSwitch
+              id="login-required"
+              label="Is login required?"
+              description="User will be required to log into DataGhurhi to participate"
+              checked={isLoggedInRequired}
+              onChange={(e) => {
+                setIsLoggedInRequired(e.target.checked);
+              }}
+            />
+          </div>
+
+          <div className="settings-group">
+            <h3 className="settings-heading">Presentation</h3>
+            <ToggleSwitch
+              id="shuffle-questions"
+              label="Shuffle Question Order"
+              description=""
+              checked={shuffleQuestions}
+              onChange={(e) => {
+                setShuffleQuestions(e.target.checked);
+              }}
+            />
+          </div>
+
           {/* --- Make this a quiz --- */}
           <div className="settings-group">
+            <h3 className="settings-heading">Make this a quiz</h3>
             <ToggleSwitch
               id="make-quiz"
               label="Quiz"
@@ -60,7 +105,9 @@ const SettingsModal = ({
               checked={isQuiz}
               onChange={(e) => {
                 setIsQuiz(e.target.checked);
-                setIsLoggedInRequired(e.target.checked);
+                setIsLoggedInRequired(
+                  isLoggedInRequired === false ? e.target.checked : true
+                );
               }}
             />
           </div>

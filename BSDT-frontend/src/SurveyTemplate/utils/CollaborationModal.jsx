@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import "../CSS/SettingsModal.css";
 import {
-  Modal,
   Button,
   Form,
   ListGroup,
@@ -8,13 +8,12 @@ import {
   Alert,
   Row,
   Col,
-  InputGroup,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
-import { useCallback } from "react";
 import apiClient from "../../api";
 
-const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
+const CollaborationModal = ({ isOpen, onClose, surveyId, surveyTitle }) => {
+  if (!isOpen) return null;
   const [collaborators, setCollaborators] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
@@ -65,10 +64,10 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
   }, [surveyId]);
 
   useEffect(() => {
-    if (show) {
+    if (isOpen) {
       fetchCollaborators();
     }
-  }, [show, surveyId, fetchCollaborators]);
+  }, [isOpen, surveyId, fetchCollaborators]);
 
   const handleSendInvite = async (e) => {
     e.preventDefault();
@@ -110,15 +109,15 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
     }
     setIsLoading(true);
     try {
-        const token = getAuthToken();
-        await apiClient.delete(
-            `/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
-            {
-                headers: { Authorization: `Bearer ${token}` },
-            }
-        );
-        toast.success("Collaborator removed.");
-        fetchCollaborators();
+      const token = getAuthToken();
+      await apiClient.delete(
+        `/api/survey-collaborator/${surveyId}/remove-collaborator/${collaboratorId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      toast.success("Collaborator removed.");
+      fetchCollaborators();
     } catch (err) {
       const errorMessage =
         err.response?.data?.error || "Failed to remove collaborator.";
@@ -130,114 +129,230 @@ const CollaborationModal = ({ show, handleClose, surveyId, surveyTitle }) => {
   };
 
   return (
-    <Modal
-      show={show}
-      onHide={handleClose}
-      centered
-      size="lg"
-      backdrop="static"
-    >
-      <Modal.Header closeButton>
-        <Modal.Title>Manage Collaborators for "{surveyTitle}"</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <h5 className="ms-1">Send Invitation</h5>
-        <Form onSubmit={handleSendInvite}>
-          <div className="mb-3">
-            <Form.Control
-              type="email"
-              placeholder="Collaborator's Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              disabled={isLoading}
-              required
-            />
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>
+            {"Manage Collaborators for "} {surveyTitle}
+          </h2>
+          <button className="close-btn" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        <div className="modal-content">
+          <div className="settings-group">
+            <h3 className="settings-heading">Send Invitation</h3>
+            <Form onSubmit={handleSendInvite}>
+              <div className="mb-3">
+                <Form.Control
+                  type="email"
+                  placeholder="Collaborator's Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <Form.Select
+                  value={accessRole}
+                  onChange={(e) => setAccessRole(e.target.value)}
+                  disabled={isLoading}
+                  style={{ flex: "0 1 120px" }}
+                >
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </Form.Select>
+              </div>
+              <div className="mb-3">
+                <Button variant="success" type="submit" disabled={isLoading}>
+                  {isLoading ? (
+                    <Spinner as="span" animation="border" size="sm" />
+                  ) : (
+                    "Send"
+                  )}
+                </Button>
+              </div>
+            </Form>
+
+            <hr />
+
+            {error && <Alert variant="danger">{error}</Alert>}
+
+            {/* Using a function to render list items to avoid code duplication */}
+            {["pending", "accepted"].map((status) => {
+              const list =
+                status === "pending"
+                  ? pendingCollaborators
+                  : acceptedCollaborators;
+              const title =
+                status === "pending"
+                  ? "Pending Invitations"
+                  : "Accepted Collaborators";
+              const buttonText = status === "pending" ? "Cancel" : "Remove";
+
+              return (
+                <div key={status}>
+                  <h5 className="mt-4">
+                    {title} ({list.length})
+                  </h5>
+                  {list.length > 0 ? (
+                    <ListGroup variant="flush">
+                      {list.map((collab) => (
+                        <ListGroup.Item
+                          key={collab.user.user_id}
+                          className="px-0"
+                        >
+                          <Row className="align-items-center">
+                            <Col>
+                              <div className="text-truncate">
+                                <strong>{collab.user.name}</strong>
+                                <span className="text-muted d-block d-sm-inline ms-sm-2">
+                                  ({collab.user.email})
+                                </span>
+                              </div>
+                              <em className="text-muted">
+                                {collab.access_role}
+                              </em>
+                            </Col>
+                            <Col xs="auto">
+                              <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() =>
+                                  handleRemoveCollaborator(collab.user.user_id)
+                                }
+                                disabled={isLoading}
+                              >
+                                {buttonText}
+                              </Button>
+                            </Col>
+                          </Row>
+                        </ListGroup.Item>
+                      ))}
+                    </ListGroup>
+                  ) : (
+                    <p className="text-muted">No {status} collaborators.</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <div className="mb-3">
-            <Form.Select
-              value={accessRole}
-              onChange={(e) => setAccessRole(e.target.value)}
-              disabled={isLoading}
-              style={{ flex: "0 1 120px" }}
-            >
-              <option value="editor">Editor</option>
-              <option value="viewer">Viewer</option>
-            </Form.Select>
-          </div>
-          <div className="mb-3">
-            <Button variant="primary" type="submit" disabled={isLoading}>
-              {isLoading ? (
-                <Spinner as="span" animation="border" size="sm" />
-              ) : (
-                "Send"
-              )}
-            </Button>
-          </div>
-        </Form>
-
-        <hr />
-
-        {error && <Alert variant="danger">{error}</Alert>}
-
-        {/* Using a function to render list items to avoid code duplication */}
-        {["pending", "accepted"].map((status) => {
-          const list =
-            status === "pending" ? pendingCollaborators : acceptedCollaborators;
-          const title =
-            status === "pending"
-              ? "Pending Invitations"
-              : "Accepted Collaborators";
-          const buttonText = status === "pending" ? "Cancel" : "Remove";
-
-          return (
-            <div key={status}>
-              <h5 className="mt-4">
-                {title} ({list.length})
-              </h5>
-              {list.length > 0 ? (
-                <ListGroup variant="flush">
-                  {list.map((collab) => (
-                    <ListGroup.Item key={collab.user.user_id} className="px-0">
-                      <Row className="align-items-center">
-                        <Col>
-                          <div className="text-truncate">
-                            <strong>{collab.user.name}</strong>
-                            <span className="text-muted d-block d-sm-inline ms-sm-2">
-                              ({collab.user.email})
-                            </span>
-                          </div>
-                          <em className="text-muted">{collab.access_role}</em>
-                        </Col>
-                        <Col xs="auto">
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() =>
-                              handleRemoveCollaborator(collab.user.user_id)
-                            }
-                            disabled={isLoading}
-                          >
-                            {buttonText}
-                          </Button>
-                        </Col>
-                      </Row>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              ) : (
-                <p className="text-muted">No {status} collaborators.</p>
-              )}
-            </div>
-          );
-        })}
-      </Modal.Body>
-      {/* <Modal.Footer>
-        <Button variant="outline-secondary" onClick={handleClose}>
-          Close
-        </Button>
-      </Modal.Footer> */}
-    </Modal>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default CollaborationModal;
+
+// return (
+//   <Modal
+//     isOpen={isOpen}
+//     onHide={handleClose}
+//     centered
+//     size="lg"
+//     backdrop="static"
+//   >
+//     <Modal.Header closeButton>
+//       <Modal.Title>Manage Collaborators for "{surveyTitle}"</Modal.Title>
+//     </Modal.Header>
+//     <Modal.Body>
+//       <h5 className="ms-1">Send Invitation</h5>
+//       <Form onSubmit={handleSendInvite}>
+//         <div className="mb-3">
+//           <Form.Control
+//             type="email"
+//             placeholder="Collaborator's Email"
+//             value={email}
+//             onChange={(e) => setEmail(e.target.value)}
+//             disabled={isLoading}
+//             required
+//           />
+//         </div>
+//         <div className="mb-3">
+//           <Form.Select
+//             value={accessRole}
+//             onChange={(e) => setAccessRole(e.target.value)}
+//             disabled={isLoading}
+//             style={{ flex: "0 1 120px" }}
+//           >
+//             <option value="editor">Editor</option>
+//             <option value="viewer">Viewer</option>
+//           </Form.Select>
+//         </div>
+//         <div className="mb-3">
+//           <Button variant="primary" type="submit" disabled={isLoading}>
+//             {isLoading ? (
+//               <Spinner as="span" animation="border" size="sm" />
+//             ) : (
+//               "Send"
+//             )}
+//           </Button>
+//         </div>
+//       </Form>
+
+//       <hr />
+
+//       {error && <Alert variant="danger">{error}</Alert>}
+
+//       {/* Using a function to render list items to avoid code duplication */}
+//       {["pending", "accepted"].map((status) => {
+//         const list =
+//           status === "pending" ? pendingCollaborators : acceptedCollaborators;
+//         const title =
+//           status === "pending"
+//             ? "Pending Invitations"
+//             : "Accepted Collaborators";
+//         const buttonText = status === "pending" ? "Cancel" : "Remove";
+
+//         return (
+//           <div key={status}>
+//             <h5 className="mt-4">
+//               {title} ({list.length})
+//             </h5>
+//             {list.length > 0 ? (
+//               <ListGroup variant="flush">
+//                 {list.map((collab) => (
+//                   <ListGroup.Item key={collab.user.user_id} className="px-0">
+//                     <Row className="align-items-center">
+//                       <Col>
+//                         <div className="text-truncate">
+//                           <strong>{collab.user.name}</strong>
+//                           <span className="text-muted d-block d-sm-inline ms-sm-2">
+//                             ({collab.user.email})
+//                           </span>
+//                         </div>
+//                         <em className="text-muted">{collab.access_role}</em>
+//                       </Col>
+//                       <Col xs="auto">
+//                         <Button
+//                           variant="outline-danger"
+//                           size="sm"
+//                           onClick={() =>
+//                             handleRemoveCollaborator(collab.user.user_id)
+//                           }
+//                           disabled={isLoading}
+//                         >
+//                           {buttonText}
+//                         </Button>
+//                       </Col>
+//                     </Row>
+//                   </ListGroup.Item>
+//                 ))}
+//               </ListGroup>
+//             ) : (
+//               <p className="text-muted">No {status} collaborators.</p>
+//             )}
+//           </div>
+//         );
+//       })}
+//     </Modal.Body>
+//     {/* <Modal.Footer>
+//       <Button variant="outline-secondary" onClick={handleClose}>
+//         Close
+//       </Button>
+//     </Modal.Footer> */}
+//   </Modal>
+// );

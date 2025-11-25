@@ -389,6 +389,19 @@ const Dropdown = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  const currentOptions = question.meta?.options || [];
+
+  // 1. Get text of last option
+  const lastOptionText =
+    currentOptions.length > 0 ? currentOptions[currentOptions.length - 1] : "";
+
+  // 2. Check for Bangla
+  const isLastOptionBangla = /[\u0980-\u09FF]/.test(lastOptionText);
+
+  // 3. Define the dynamic labels
+  const otherFieldLabel = isLastOptionBangla
+    ? "অন্যান্য: "
+    : getLabel("Other: ");
   return (
     <div className="mb-3 dnd-isolate">
       {/* <div className="d-flex flex-column flex-sm-row justify-content-sm-between align-items-start align-items-sm-center mb-2">
@@ -536,7 +549,7 @@ const Dropdown = ({
           ></i>
           <div className="flex-grow-1 me-2 d-flex align-items-center gap-2">
             <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
-              {getLabel("Other: ")}
+              {otherFieldLabel}
             </span>
             <input
               type="text"

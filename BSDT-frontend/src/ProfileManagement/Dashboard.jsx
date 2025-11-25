@@ -34,6 +34,8 @@ import {
   Crown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  ChevronDown,
   Menu,
   ChartColumn,
   Folder,
@@ -91,6 +93,7 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [projectSurveys, setProjectSurveys] = useState({});
   const [expandedProjects, setExpandedProjects] = useState(new Set());
+  const [expandedMainTabs, setExpandedMainTabs] = useState(new Set(['projects']));
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -104,7 +107,7 @@ const Dashboard = () => {
     const projectId = urlParams.get("projectId");
     const surveyId = urlParams.get("surveyId");
     const source = urlParams.get("source");
-    
+
     if (tab) {
       setActiveTab(tab);
     }
@@ -126,7 +129,7 @@ const Dashboard = () => {
   }, [location.search]);
 
   const handleAccept = async (projectId) => {
-    console.log("Accepted request:", projectId);
+    // console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -137,7 +140,7 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Invitation accepted successfully");
+        // console.log("Invitation accepted successfully");
         fetchCollaborationRequests();
         fetchCollaboratedProjects();
       }
@@ -147,7 +150,7 @@ const Dashboard = () => {
   };
 
   const handleReject = async (projectId) => {
-    console.log("Rejected request:", projectId);
+    // console.log("Rejected request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -158,7 +161,7 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        console.log("Invitation rejected successfully");
+        // console.log("Invitation rejected successfully");
         fetchCollaborationRequests();
       }
     } catch (error) {
@@ -273,6 +276,19 @@ const Dashboard = () => {
     }
   }, []);
 
+  const toggleMainTabExpansion = (tabKey, e) => {
+  e.stopPropagation();
+  setExpandedMainTabs((prev) => {
+    const newSet = new Set(prev);
+    if (newSet.has(tabKey)) {
+      newSet.delete(tabKey);
+    } else {
+      newSet.add(tabKey);
+    }
+    return newSet;
+  });
+};
+
   const getuserType = useCallback(async () => {
     if (userType === "admin") {
       setIsAdmin(true);
@@ -294,30 +310,55 @@ const Dashboard = () => {
     window.history.replaceState({}, "", url);
   };
 
-  const handleProjectClick = (projectId) => {
-    setSelectedProjectId(projectId);
-    setSelectedSurveyId(null);
-    setActiveTab("projectdetails");
-    setSourceTab("projects");
-    const url = new URL(window.location);
-    url.searchParams.set("tab", "projectdetails");
-    url.searchParams.set("projectId", projectId);
-    url.searchParams.delete("surveyId");
-    url.searchParams.set("source", "projects");
-    window.history.replaceState({}, "", url);
-  };
+const handleProjectClick = (projectId) => {
+  setSelectedProjectId(projectId);
+  setSelectedSurveyId(null);
+  setActiveTab("projectdetails");
+  setSourceTab("projects");
+  
+  // Only ensure the main "Projects" tab is expanded (don't expand the project itself)
+  setExpandedMainTabs((prev) => {
+    const newSet = new Set(prev);
+    newSet.add('projects');
+    return newSet;
+  });
+  
+  // Don't automatically expand the project's dropdown
+  
+  const url = new URL(window.location);
+  url.searchParams.set("tab", "projectdetails");
+  url.searchParams.set("projectId", projectId);
+  url.searchParams.delete("surveyId");
+  url.searchParams.set("source", "projects");
+  window.history.replaceState({}, "", url);
+};
 
-  const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
-    setSelectedProjectId(projectId);
-    setSelectedSurveyId(surveyId);
-    navigate(`/view-survey/${surveyId}`, {
-      state: {
-        project_id: projectId,
-        survey_details: survey,
-        input_title: surveyTitle || "Untitled Survey",
-      },
-    });
-  };
+const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
+  setSelectedProjectId(projectId);
+  setSelectedSurveyId(surveyId);
+  
+  // Ensure the main "Projects" tab is expanded
+  setExpandedMainTabs((prev) => {
+    const newSet = new Set(prev);
+    newSet.add('projects');
+    return newSet;
+  });
+  
+  // Only expand the parent project (to show the survey inside it)
+  setExpandedProjects((prev) => {
+    const newSet = new Set(prev);
+    newSet.add(projectId);
+    return newSet;
+  });
+  
+  navigate(`/view-survey/${surveyId}`, {
+    state: {
+      project_id: projectId,
+      survey_details: survey,
+      input_title: surveyTitle || "Untitled Survey",
+    },
+  });
+};
 
   // Function to refresh surveys for a specific project
   const refreshProjectSurveys = useCallback((projectId) => {
@@ -492,6 +533,8 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Replace your getTabs() function with this updated version:
+
   const getTabs = () => {
     if (isAdmin) {
       return [
@@ -513,21 +556,32 @@ const Dashboard = () => {
         { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
+      // Sort projects lexicographically by title
+      const sortedProjects = [...projects].sort((a, b) =>
+        a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+      );
+
       return [
         {
           label: "Projects",
           key: "projects",
           icon: <FolderKanban size={18} />,
-          hasDropdown: projects.length > 0,
-          children: projects.map(project => {
+          hasDropdown: sortedProjects.length > 0,
+          children: sortedProjects.map(project => {
             const projectSurveysList = projectSurveys[project.project_id] || [];
+
+            // Sort surveys lexicographically by title
+            const sortedSurveys = [...projectSurveysList].sort((a, b) =>
+              a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+            );
+
             return {
               label: project.title,
               key: `project-${project.project_id}`,
               projectId: project.project_id,
               icon: <Folder size={16} />,
-              hasDropdown: projectSurveysList.length > 0,
-              children: projectSurveysList.map(survey => ({
+              hasDropdown: sortedSurveys.length > 0,
+              children: sortedSurveys.map(survey => ({
                 label: survey.title,
                 key: `survey-${survey.survey_id}`,
                 surveyId: survey.survey_id,
@@ -537,13 +591,22 @@ const Dashboard = () => {
             };
           })
         },
-        { label: "Shared with Me", key: "shared", icon: <Users size={18} />, badge: collabRequests.length },
+        {
+          label: "Shared with Me",
+          key: "shared",
+          icon: <Users size={18} />,
+          badge: collabRequests.length
+        },
         {
           label: "Question Bank",
           key: "questionbank",
           icon: <Package size={18} />,
         },
-        { label: "Analysis", key: "analysis", icon: <ChartColumn size={18} /> },
+        {
+          label: "Analysis",
+          key: "analysis",
+          icon: <ChartColumn size={18} />
+        },
         {
           label: "Premium Packages",
           key: "premiumpackages",
@@ -556,6 +619,27 @@ const Dashboard = () => {
   useEffect(() => {
     setCollapsed(isMobile);
   }, [isMobile]);
+
+//   // Add this useEffect after your other useEffect hooks
+// useEffect(() => {
+//   // Auto-expand project when a project is selected
+//   if (selectedProjectId && activeTab === "projectdetails") {
+//     setExpandedProjects(prev => {
+//       const newSet = new Set(prev);
+//       newSet.add(selectedProjectId);
+//       return newSet;
+//     });
+//   }
+  
+//   // Auto-expand project when a survey is being viewed
+//   if (selectedProjectId && selectedSurveyId) {
+//     setExpandedProjects(prev => {
+//       const newSet = new Set(prev);
+//       newSet.add(selectedProjectId);
+//       return newSet;
+//     });
+//   }
+// }, [selectedProjectId, selectedSurveyId, activeTab]);
 
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [passwordValues, setPasswordValues] = useState({
@@ -603,88 +687,104 @@ const Dashboard = () => {
   };
 
   // Render nested menu items
-  const renderMenuItem = (item, level = 0) => {
-    const isExpanded = expandedProjects.has(item.projectId);
-    
-    // Only mark as active if this specific item matches
-    let isActive = false;
-    
-    if (item.surveyId) {
-      // For surveys: only active if this survey is selected
-      isActive = selectedSurveyId === item.surveyId;
-    } else if (item.projectId) {
-      // For projects: only active if this project is selected AND no survey is selected
-      isActive = selectedProjectId === item.projectId && activeTab === "projectdetails" && !selectedSurveyId;
+const renderMenuItem = (item, level = 0) => {
+  const isProjectExpanded = expandedProjects.has(item.projectId);
+  const isMainTabExpanded = expandedMainTabs.has(item.key);
+
+  // Only mark as active if this specific item matches
+  let isActive = false;
+
+  if (item.surveyId) {
+    // For surveys: only active if this survey is selected
+    isActive = selectedSurveyId === item.surveyId;
+  } else if (item.projectId) {
+    // For projects: only active if this project is selected AND no survey is selected
+    isActive = selectedProjectId === item.projectId && activeTab === "projectdetails" && !selectedSurveyId;
+  } else {
+    // For regular tabs (but NOT Projects when viewing project details)
+    if (item.key === "projects") {
+      // Projects tab is active only when activeTab is "projects", not when viewing details
+      isActive = activeTab === "projects";
     } else {
-      // For regular tabs
       isActive = item.key === activeTab;
     }
-    
-    // Check if this item has children (surveys)
-    const hasChildren = item.children && item.children.length > 0;
+  }
 
-    return (
-      <li key={item.key} style={{ marginLeft: level === 0 ? '0' : `${level * 12}px` }}>
-        <div className="tooltip-container">
-          <button
-            className={`sidebar-btn nested-level-${level} ${isActive ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
-            onClick={() => {
-              if (item.key === "premiumpackages") {
-                setShowPremiumModal(true);
-              } else if (item.projectId && !item.surveyId) {
-                // Clicking a project
-                handleProjectClick(item.projectId);
-              } else if (item.surveyId) {
-                // Clicking a survey
-                const project = projects.find(p => p.project_id === item.projectId);
-                const survey = projectSurveys[item.projectId]?.find(s => s.survey_id === item.surveyId);
-                handleSurveyClick(item.projectId, item.surveyId, survey, item.label);
-              } else {
-                handleTabClick(item.key);
-              }
-            }}
-          >
-            <span className="icon">{item.icon}</span>
-            {!collapsed && !isMobile && (
-              <>
-                <span className="label">{item.label}</span>
-                {hasChildren && (
-                  <span 
-                    className="dropdown-toggle"
-                    onClick={(e) => toggleProjectExpansion(item.projectId, e)}
-                  >
-                    {isExpanded ? (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="18 15 12 9 6 15"></polyline>
-                      </svg>
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="6 9 12 15 18 9"></polyline>
-                      </svg>
-                    )}
-                  </span>
-                )}
-              </>
-            )}
-            {item.badge > 0 && (
-              <span className="notification-badge">{item.badge}</span>
-            )}
-          </button>
+  // Check if this is a main tab with children (like Projects)
+  const isMainTabWithChildren = level === 0 && item.hasDropdown && item.children;
+  
+  // Check if this is a project with surveys
+  const hasChildren = item.children && item.children.length > 0;
 
-          {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
-            <span className="tooltip-text">{item.label}</span>
+  return (
+    <li key={item.key} style={{ marginLeft: level === 0 ? '0' : `${level * 12}px` }}>
+      <div className="tooltip-container">
+        <button
+          className={`sidebar-btn nested-level-${level} ${isActive ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
+          onClick={() => {
+            if (item.key === "premiumpackages") {
+              setShowPremiumModal(true);
+            } else if (item.projectId && !item.surveyId) {
+              // Clicking a project
+              handleProjectClick(item.projectId);
+            } else if (item.surveyId) {
+              // Clicking a survey
+              const project = projects.find(p => p.project_id === item.projectId);
+              const survey = projectSurveys[item.projectId]?.find(s => s.survey_id === item.surveyId);
+              handleSurveyClick(item.projectId, item.surveyId, survey, item.label);
+            } else {
+              handleTabClick(item.key);
+            }
+          }}
+        >
+          <span className="icon">{item.icon}</span>
+          {!collapsed && !isMobile && (
+            <>
+              <span className="label">{item.label}</span>
+              {isMainTabWithChildren && (
+                <span 
+                  className="dropdown-toggle"
+                  onClick={(e) => toggleMainTabExpansion(item.key, e)}
+                >
+                  {isMainTabExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </span>
+              )}
+              {hasChildren && !isMainTabWithChildren && (
+                <span 
+                  className="dropdown-toggle"
+                  onClick={(e) => toggleProjectExpansion(item.projectId, e)}
+                >
+                  {isProjectExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                </span>
+              )}
+            </>
           )}
-        </div>
+          {item.badge > 0 && (
+            <span className="notification-badge">{item.badge}</span>
+          )}
+        </button>
 
-        {/* Render children if expanded and not collapsed */}
-        {!collapsed && isExpanded && hasChildren && (
-          <ul className="nested-menu">
-            {item.children.map(child => renderMenuItem(child, level + 1))}
-          </ul>
+        {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
+          <span className="tooltip-text">{item.label}</span>
         )}
-      </li>
-    );
-  };
+      </div>
+
+      {/* Render children for main tabs (like Projects) */}
+      {!collapsed && isMainTabExpanded && isMainTabWithChildren && (
+        <ul className="nested-menu">
+          {item.children.map(child => renderMenuItem(child, level + 1))}
+        </ul>
+      )}
+
+      {/* Render children for projects (surveys) */}
+      {!collapsed && isProjectExpanded && hasChildren && !isMainTabWithChildren && (
+        <ul className="nested-menu">
+          {item.children.map(child => renderMenuItem(child, level + 1))}
+        </ul>
+      )}
+    </li>
+  );
+};
 
   return (
     <div style={{ paddingTop: "80px" }}>
@@ -700,9 +800,8 @@ const Dashboard = () => {
       >
         <div className="dashboard-layout">
           <div
-            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
-              collapsed ? "collapsed" : ""
-            }`}
+            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${collapsed ? "collapsed" : ""
+              }`}
           >
             {!isMobile && (
               <div className="sidebar-header">
@@ -730,9 +829,8 @@ const Dashboard = () => {
           </div>
 
           <div
-            className={`projects-section ${
-              collapsed ? "sidebar-collapsed" : ""
-            }`}
+            className={`projects-section ${collapsed ? "sidebar-collapsed" : ""
+              }`}
           >
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
@@ -786,7 +884,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -808,7 +906,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                                field.toLowerCase().replace(/ /g, "_")
+                              field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
