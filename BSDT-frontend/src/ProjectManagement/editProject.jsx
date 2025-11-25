@@ -40,13 +40,7 @@ import banner8 from "./banner/banner8.jpg";
 import banner9 from "./banner/banner9.jpg";
 import banner10 from "./banner/banner10.jpg";
 
-const ProjectDetailsTab = ({
-  projectId,
-  getLabel,
-  language,
-  onBack,
-  handleReject,
-}) => {
+const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject, onSurveyDeleted }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -354,10 +348,7 @@ const ProjectDetailsTab = ({
 
   const handleAddSurveyClick = async () => {
     const result = await Swal.fire({
-      title:
-        '<span style="color: #1e293b; font-weight: 600; font-size: 1.5rem;">' +
-        getLabel("Create New Survey") +
-        "</span>",
+      title: '<span style="color: #1e293b; font-weight: 600; font-size: 1.5rem;">' + getLabel("Create New Survey") + '</span>',
       html: `
         <div style="text-align: left; margin-top: 1rem;">
           <label style="display: block; color: #64748b; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem;">
@@ -373,10 +364,7 @@ const ProjectDetailsTab = ({
       `,
       showCancelButton: true,
       cancelButtonText: getLabel("Cancel"),
-      confirmButtonText:
-        '<span style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' +
-        getLabel("Create") +
-        "</span>",
+      confirmButtonText: '<span style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' + getLabel("Create") + '</span>',
       customClass: {
         popup: "survey-modal-popup",
         title: "survey-modal-title",
@@ -456,6 +444,10 @@ const ProjectDetailsTab = ({
       if (response.status === 200) {
         toast.success(getLabel("Survey deleted successfully!"));
         fetchSurveys();
+
+        if (onSurveyDeleted) {
+          onSurveyDeleted();
+        }
       }
     } catch (error) {
       console.error("Error deleting survey:", error);
@@ -621,9 +613,7 @@ const ProjectDetailsTab = ({
                   )}
                 </span>
                 <div
-                  className={`btn-collaborators-wrapper ${
-                    !canEdit ? "disabled" : ""
-                  }`}
+                  className={`btn-collaborators-wrapper ${!canEdit ? "disabled" : ""}`}
                   onClick={() => {
                     if (canEdit) {
                       fetchCollaborators();
@@ -694,8 +684,8 @@ const ProjectDetailsTab = ({
             )}
           </div>
         </div>
-        {accessControl != "viewer" && (
-          <div className="project-details-actions">
+        {accessControl != "viewer" &&
+          (<div className="project-details-actions">
             {!isEditing ? (
               <IconButton
                 className={`btn-edit-icon ${!canEdit ? "disabled" : ""}`}
@@ -708,26 +698,17 @@ const ProjectDetailsTab = ({
               </IconButton>
             ) : (
               <div className="edit-action-buttons">
-                <button
-                  type="button"
-                  className="btn-action-header btn-cancel-header"
-                  onClick={handleCancel}
-                >
+                <button type="button" className="btn-action-header btn-cancel-header" onClick={handleCancel}>
                   <CloseIcon fontSize="small" />
                   <span>{getLabel("Cancel")}</span>
                 </button>
-                <button
-                  type="submit"
-                  className="btn-action-header btn-save-header"
-                  onClick={handleSubmit}
-                >
+                <button type="submit" className="btn-action-header btn-save-header" onClick={handleSubmit}>
                   <SaveIcon fontSize="small" />
                   <span>{getLabel("Save")}</span>
                 </button>
               </div>
             )}
-          </div>
-        )}
+          </div>)}
       </div>
 
       {/* Surveys Section Header */}
@@ -954,8 +935,8 @@ const ProjectDetailsTab = ({
                       : getLabel("Draft")}
                   </span>
 
-                  {accessControl != "viewer" && (
-                    <IconButton
+                  {accessControl != "viewer" &&
+                    (<IconButton
                       className="list-delete"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -978,8 +959,7 @@ const ProjectDetailsTab = ({
                       disabled={!canEdit}
                     >
                       <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  )}
+                    </IconButton>)}
                 </div>
               </div>
             )

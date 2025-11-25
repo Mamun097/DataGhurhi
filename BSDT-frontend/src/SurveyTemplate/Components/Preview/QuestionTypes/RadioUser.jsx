@@ -86,12 +86,24 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
     }
     return options;
   }, [question]);
+  // 1. Get the text of the last visible option
+  const lastOptionText =
+    shuffledOptions.length > 0
+      ? shuffledOptions[shuffledOptions.length - 1]
+      : "";
+
+  // 2. Check if it contains Bangla characters
+  const isLastOptionBangla = /[\u0980-\u09FF]/.test(lastOptionText);
+
+  // 3. Define the label text
+  const otherLabel = isLastOptionBangla ? "অন্যান্য" : "Other";
 
   return (
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}{". "}
+        {index}
+        {". "}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -170,7 +182,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
             className="form-check-label pe-2"
             htmlFor={`radio-other-${question.id}`}
           >
-            Other
+            {otherLabel}
           </label>
           <input
             type="text"
