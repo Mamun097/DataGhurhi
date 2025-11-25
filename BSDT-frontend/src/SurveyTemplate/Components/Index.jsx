@@ -1,6 +1,5 @@
 // src/Pages/Index.jsx
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
@@ -33,44 +32,27 @@ const translateText = async (textArray, targetLang) => {
 
 const Index = () => {
   const location = useLocation();
-  const navigate = useNavigate();
 
   const { survey_id } = useParams();
-  const {
-    project_id,
-    survey_details,
-    input_title,
-    response_user_logged_in_status,
-  } = location.state || {};
-  console.log("Survey Details:", survey_details);
+  const { project_id, input_title, survey_status } = location.state || {};
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
 
-  const [templates, setTemplates] = useState([]);
+  const [savedTemplates, setSavedTemplates] = useState([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Props for SurveyForm
+  const [survey, setSurvey] = useState(null);
   const [title, setTitle] = useState(input_title);
-
-  const [sections, setSections] = useState([{ id: 1, title: "Section 1" }]);
-  const [questions, setQuestions] = useState([]);
-
-  // State for logo
-  const [logo, setLogo] = useState(null);
-  const [logoAlignment, setLogoAlignment] = useState("left");
-  const [logoText, setLogoText] = useState("");
-
+  const [template, setTemplate] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState(null);
-  const [surveyStatus, setSurveyStatus] = useState(null);
-  const [surveyLink, setSurveyLink] = useState(null);
-  const [description, setDescription] = useState(null);
-  const [isLoggedInRequired, setIsLoggedInRequired] = useState(
-    response_user_logged_in_status || false
-  );
-  const useCustom = survey_details?.template != null;
+  const [surveyStatus, setSurveyStatus] = useState(survey_status);
+
+  const useCustom = surveyStatus === "saved" || surveyStatus === "published";
+  console.log("useCustom: ", useCustom);
 
   const labelsToTranslate = [
     "Survey Templates",
@@ -116,48 +98,76 @@ const Index = () => {
 
   const getLabel = (text) => translatedLabels[text] || text;
 
-  // Load survey details or templates
+  // Load saved/published survey details or saved templates
   useEffect(() => {
-    //window.scrollTo({ top: 0, behavior: "smooth" });
     const load = async () => {
       if (useCustom) {
-        console.log("Loading custom survey details:", survey_details);
-        // ==== 1) Load from survey_details ====
-        setTitle(input_title || survey_details.title || "Untitled Survey");
-        setSections(survey_details.template.sections || []);
-        setQuestions(survey_details.template.questions || []);
-        setLogo(survey_details.template.logo || null);
-        setLogoAlignment(survey_details.template.logoAlignment || "left");
-        setLogoText(survey_details.template.logoText || "");
-        setBackgroundImage(survey_details.template.backgroundImage || null);
-        setSurveyStatus(survey_details.survey_status || null);
-        setSurveyLink(survey_details.survey_link || null);
-        setDescription(survey_details.template.description || null);
-        setIsLoggedInRequired(
-          survey_details.response_user_logged_in_status || false
-        );
+        try {
+          const bearerTokenString = localStorage.getItem("token");
+
+          if (!bearerTokenString) {
+            toast.error("Authentication token not found. Please log in.");
+            console.error("No bearer token in localStorage");
+            return;
+          }
+
+          const token = bearerTokenString.startsWith("{")
+            ? JSON.parse(bearerTokenString).token
+            : bearerTokenString;
+
+          const resp = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          const data = resp?.data?.data || resp?.data;
+          console.log("Survey data loaded successfully:", data);
+
+          if (!data) {
+            console.warn("Survey data is empty or undefined");
+            toast.warn("Survey data is empty.");
+            return;
+          }
+
+          setSurvey(data);
+          setTitle(data.title || input_title);
+          setTemplate(data.template || null);
+          setBackgroundImage(data.template?.backgroundImage || null);
+          setSurveyStatus(data.survey_status || surveyStatus);
+
+          // toast.success("Survey loaded successfully!");
+        } catch (err) {
+          console.error("Error loading survey:", {
+            message: err.message,
+            status: err.response?.status,
+            statusText: err.response?.statusText,
+            data: err.response?.data,
+            url: err.config?.url,
+          });
+
+          if (err.response?.status === 401) {
+            toast.error("Unauthorized. Please log in again.");
+          } else if (err.response?.status === 404) {
+            toast.error("Survey not found.");
+          } else if (err.response?.status === 500) {
+            toast.error("Server error. Please try again later.");
+          } else {
+            toast.error("Failed to load survey. Please try again.");
+          }
+        }
       } else {
         try {
           const resp = await apiClient.get("/api/get-saved-survey");
           const data = resp.data;
-          setTemplates(data);
+          setSavedTemplates(data);
 
           if (data.length > 0) {
             const first = data[0];
-            setTitle(
-              input_title ||
-                survey_details.title ||
-                first.title ||
-                "Untitled Survey"
-            );
-            setQuestions(first.template);
-            setLogo(null);
-            setLogoAlignment("left");
-            setLogoText("");
-            setBackgroundImage(first.image_url);
-            setIsLoggedInRequired(
-              first.response_user_logged_in_status || false
-            );
+
+            setTitle(input_title || "Untitled Survey");
+            setTemplate(first.template);
           }
         } catch (err) {
           console.error("Failed to load templates:", err);
@@ -166,70 +176,41 @@ const Index = () => {
     };
 
     load();
-  }, [useCustom, survey_details, input_title]);
+  }, [useCustom, survey_id, input_title]);
 
   const handleSelect = (idx) => {
     setSelectedIndex(idx);
-    const tmpl = templates[idx];
+    const tmpl = savedTemplates[idx];
     setTitle(input_title || tmpl.title || "Untitled Survey");
-    setQuestions(tmpl.template);
-    setLogo(null);
-    setLogoAlignment("");
-    setLogoText("");
+    setTemplate(tmpl.template);
     setBackgroundImage(tmpl.image_url);
+
+    setSurvey(null);
+    setTemplate(tmpl.template);
   };
 
-  if (!useCustom && templates.length === 0) {
+  if (!useCustom && savedTemplates.length === 0) {
     return <p className="text-center mt-5">{getLabel("Loading templates…")}</p>;
   }
-
-  const handleBackButton = () => {
-    navigate(`/view-project/${project_id}`, {
-      state: { role: "owner" },
-    });
-  };
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
       <div
         className="container-fluid bg-green py-5"
-        style={{ paddingTop: "80 px" }}
+        style={{ paddingTop: "80px", minHeight: "100vh" }}
       >
         <div className="row">
           {/* Sidebar */}
           <div className="sidebar-container">
             <div className="sidebar-content">
-              {/* Back button - takes to home */}
-              <div className="mt-2 mb-2">
-                <button
-                  onClick={() => handleBackButton()}
-                  style={{
-                    padding: "8px 20px",
-                    fontSize: "1rem",
-                    color: "#000000ff",
-                    backgroundColor: "#ffffffff",
-                    border: "2px solid #25856fff",
-                    borderRadius: "5px",
-                    cursor: "pointer",
-                    pointerEvents: "auto",
-                    marginTop: "10px",
-                    fontSize: "1rem",
-                  }}
-                  title="Go back to Projects}"
-                >
-                  <i className="bi bi-arrow-left me-2"></i>
-                  {getLabel("Back")}
-                </button>
-              </div>
-
-              {!useCustom && surveyStatus !== "published" && (
+              {!useCustom && (
                 <>
                   <h2 className="sidebar-title">
                     {getLabel("Survey Templates")}
                   </h2>
                   <div className="template-list">
-                    {templates.map((tmpl, idx) => (
+                    {savedTemplates.map((tmpl, idx) => (
                       <div
                         key={tmpl.id}
                         className={`template-card ${
@@ -245,44 +226,29 @@ const Index = () => {
                   </div>
                 </>
               )}
-
-              {!useCustom && surveyStatus === "published" && (
-                <div className="alert alert-warning text-center">
-                  {getLabel("This survey has already been published.")}
-                </div>
-              )}
             </div>
           </div>
 
           {/* Main form */}
           <div className="col-12 col-md-8 mt-3 bg-transparent gap-3">
-            <SurveyForm
-              title={title}
-              setTitle={setTitle}
-              sections={sections}
-              setSections={setSections}
-              questions={questions}
-              setQuestions={setQuestions}
-              logo={logo}
-              logoAlignment={logoAlignment}
-              logoText={logoText}
-              image={backgroundImage}
-              project_id={project_id}
-              survey_id={survey_id}
-              surveyStatus={surveyStatus}
-              surveyLink={surveyLink}
-              description={description}
-              setDescription={setDescription}
-              language={language}
-              setLanguage={setLanguage}
-              isLoggedInRequired={isLoggedInRequired}
-              setIsLoggedInRequired={setIsLoggedInRequired}
-              template={survey_details?.template || null}
-            />
+            {template && (
+              <SurveyForm
+                title={title}
+                setTitle={setTitle}
+                image={backgroundImage}
+                project_id={project_id}
+                survey_id={survey_id}
+                surveyStatus={surveyStatus}
+                language={language}
+                setLanguage={setLanguage}
+                template={template}
+                survey={survey}
+              />
+            )}
           </div>
           <div className="d-none d-md-block col-md-2" />
         </div>
-        <ToastContainer position="top-center" autoClose={4000} />
+        {/* <ToastContainer position="top-center" autoClose={4000} /> */}
       </div>
     </>
   );
