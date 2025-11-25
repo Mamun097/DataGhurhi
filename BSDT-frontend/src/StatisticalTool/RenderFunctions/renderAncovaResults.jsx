@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend } from 'recharts';
-import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
+import CustomizationOverlay from './CustomizationOverlay for Ancova/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -64,7 +64,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             referenceLineColor: '#dc2626',
             referenceLineWidth: 2,
             referenceLineStyle: 'dashed',
-            lineWidth: 2
+            lineWidth: 2,
+            legendOn: true, 
+            legendPosition: 'top'
         };
     } else if (plotType === 'Residual') {
         return {
@@ -78,7 +80,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             scatterColor: '#3b82f6',
             referenceLineColor: '#ef4444',
             referenceLineWidth: 2,
-            referenceLineStyle: 'solid'
+            referenceLineStyle: 'solid',
+            legendOn: true, 
+            legendPosition: 'top'
         };
     }
 
@@ -411,7 +415,12 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ComposedChart  
-                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20, 
+                                bottom: 40 
+                            }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -433,7 +442,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -465,6 +474,17 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                        paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                        paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0'
+                                    }}
+                                />
+                            )}                            
                             
                             {/* Regression Lines - Show before scatter points so they're behind */}
                             {settings.showRegressionLines && regressionLineComponents}
@@ -492,7 +512,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                 />
                             ))}
                             
-                            {settings.legendOn && <Legend />}
+                            
                         </ComposedChart>
                     </ResponsiveContainer>
 
@@ -666,7 +686,12 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
                         <ComposedChart  
-                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20, 
+                                bottom: 40 
+                            }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -688,7 +713,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -721,6 +746,17 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                        paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                        paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0'
+                                    }}
+                                />
+                            )}
+
                             {/* Zero Reference Line */}
                             {settings.showReferenceLine && (
                                 <Line
@@ -759,8 +795,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                     }}
                                 />
                             ))}
-                            
-                            {settings.legendOn && <Legend />}
+                                                        
                         </ComposedChart>
                     </ResponsiveContainer>
 

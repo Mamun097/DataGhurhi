@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Scatter, ScatterChart, ComposedChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Scatter, ScatterChart, ComposedChart, Legend } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -55,7 +55,10 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         
         elementWidth: 0.8,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
-        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
+        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
+        legendOn: true, 
+        legendPosition: 'top',
+
     };
 };
 
@@ -372,7 +375,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -403,6 +406,17 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0'
+                                    }}
+                                />
+                            )}
+
                             {/* ECDF Line */}
                             {settings.showECDF && (
                                 <Line
