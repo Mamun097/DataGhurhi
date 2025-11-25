@@ -24,7 +24,7 @@ const Radio = ({
   const [otherOption, setOtherOption] = useState(
     question.otherAsOption || false
   );
-  console.log("Other Option: ", otherOption);
+
   const [showCropper, setShowCropper] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
 
