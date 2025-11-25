@@ -107,3 +107,30 @@ exports.getSurveyCollaborators = async (req, res) => {
     }
 };
 
+exports.removeCollaborator = async (req, res) => {
+    try {
+        const { surveyId, collaboratorId } = req.params;
+        const userId = req.jwt.id; // The ID of the person attempting to remove (the owner)
+
+        // Basic validation
+        if (!surveyId || !collaboratorId) {
+            return res.status(400).json({ error: 'Missing survey ID or collaborator ID' });
+        }
+
+        // Call the Model function
+        const { data, error } = await Collaborator.removeSurveyCollaborator(surveyId, collaboratorId, userId);
+
+        if (error) {
+            console.error("Error removing collaborator:", error);
+            // Use the status code from the model error, or default to 500
+            const status = error.status || 500;
+            return res.status(status).json({ error: error.message || 'Internal server error' });
+        }
+
+        return res.status(200).json({ message: 'Collaborator removed successfully', data });
+
+    } catch (err) {
+        console.error('Error in removeCollaborator controller:', err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};

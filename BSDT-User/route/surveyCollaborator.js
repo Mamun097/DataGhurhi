@@ -18,4 +18,6 @@ router.get('/all-collaborated-surveys', jwtAuthMiddleware, collaboratorControlle
 router.post('/send-survey-collaboration-request', jwtAuthMiddleware, collaboratorController.sendSurveyCollaborationRequest);
 // get all survey collaborators
 router.get('/get-survey-collaborators/:surveyId', jwtAuthMiddleware, collaboratorController.getSurveyCollaborators);
+// remove collaborator
+router.delete('/:surveyId/remove-collaborator/:collaboratorId', jwtAuthMiddleware, collaboratorController.removeCollaborator);
 module.exports = router;
