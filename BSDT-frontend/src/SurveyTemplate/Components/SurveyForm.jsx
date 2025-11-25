@@ -81,21 +81,24 @@ const SurveyForm = ({
   const [showPublicationModal, setShowPublicationModal] = useState(false);
   const [actionType, setActionType] = useState(""); // 'publish' or 'update'
 
-  const [shuffleQuestions, setShuffleQuestions] = useState(
-    survey?.shuffle_questions || false
-  );
+  // State for Survey Share modal.
   const [showShareModal, setShowShareModal] = useState(false);
-  const [responseCount, setResponseCount] = useState(null);
   const [surveyLink, setSurveyLink] = useState(survey?.survey_link || null);
-  const [isLoggedInRequired, setIsLoggedInRequired] = useState(
-    survey?.response_user_logged_in_status || null
-  );
+
+  const [responseCount, setResponseCount] = useState(null);
 
   // State for survey settings
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   // Functions for Survey Settings Modal
   const openSettingsModal = () => setShowSettingsModal(true);
   const closeSettingsModal = () => setShowSettingsModal(false);
+
+  const [isLoggedInRequired, setIsLoggedInRequired] = useState(
+    survey?.response_user_logged_in_status || null
+  );
+  const [shuffleQuestions, setShuffleQuestions] = useState(
+    survey?.shuffle_questions || false
+  );
 
   // State for Quiz settings
   const [isQuiz, setIsQuiz] = useState(template?.is_quiz || false);
@@ -791,8 +794,8 @@ const SurveyForm = ({
         surveyTitle={title}
       />
       <ShareSurveyModal
-        show={showShareModal}
-        handleClose={() => setShowShareModal(false)}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
         surveyLink={surveyLink}
         surveyTitle={title}
       />
