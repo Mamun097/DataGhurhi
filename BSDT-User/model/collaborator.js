@@ -333,6 +333,59 @@ async function getSurveyCollaborators(surveyID, userId) {
   return { data, error: null };
 }
 
+async function removeSurveyCollaborator(surveyId, collaboratorId, requesterId) {
+  try {
+    // 1. Security Check: Verify that the requester is the OWNER of the survey
+    const { data: survey, error: surveyError } = await supabase
+      .from("survey")
+      .select("user_id")
+      .eq("survey_id", surveyId)
+      .single();
+
+    if (surveyError || !survey) {
+      return { 
+        data: null, 
+        error: { message: "Survey not found.", status: 404 } 
+      };
+    }
+
+    if (survey.user_id !== requesterId) {
+      return {
+        data: null,
+        error: { 
+          message: "Unauthorized: Only the survey owner can remove collaborators.", 
+          status: 403 
+        },
+      };
+    }
+
+    // 2. Perform the deletion
+    // We match the survey_id AND the user_id (of the collaborator)
+    const { data, error } = await supabase
+      .from("survey_shared_with_collaborators")
+      .delete()
+      .eq("survey_id", surveyId)
+      .eq("user_id", collaboratorId)
+      .select();
+
+    if (error) {
+      return { 
+        data: null, 
+        error: { message: error.message, status: 500 } 
+      };
+    }
+
+    return { data, error: null };
+
+  } catch (err) {
+    console.error("Unexpected error in removeSurveyCollaborator:", err);
+    return { 
+      data: null, 
+      error: { message: "Internal server error.", status: 500 } 
+    };
+  }
+}
+
 module.exports = {
   acceptInvitation,
   rejectInvitation,
@@ -344,4 +397,5 @@ module.exports = {
   getAllSurveyInvitations,
   sendSurveyCollaborationRequest,
   getSurveyCollaborators,
+  removeSurveyCollaborator,
 };
