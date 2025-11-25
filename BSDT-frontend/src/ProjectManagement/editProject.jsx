@@ -69,6 +69,7 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   });
 
   const [surveys, setSurveys] = useState([]);
+
   const [collaborators, setCollaborators] = useState([]);
   const [acceptedCollaborators, setAcceptedCollaborators] = useState([]);
   const [userRole, setUserRole] = useState("");
@@ -76,8 +77,16 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   const canEdit = userRole === "owner" || userRole === "editor";
 
   const bannerImages = [
-    banner1, banner2, banner3, banner4, banner5,
-    banner6, banner7, banner8, banner9, banner10,
+    banner1,
+    banner2,
+    banner3,
+    banner4,
+    banner5,
+    banner6,
+    banner7,
+    banner8,
+    banner9,
+    banner10,
   ];
 
   const getSurveyBanner = (survey) => {
@@ -90,9 +99,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   const fetchUserAccess = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get(`/api/project/${projectId}/fetchaccess`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(
+        `/api/project/${projectId}/fetchaccess`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200 && response.data?.access_role) {
         setUserRole(response.data.access_role);
       }
@@ -111,7 +123,8 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (response.status === 200 && response.data?.project) {
-        const { title, field, description, privacy_mode } = response.data.project;
+        const { title, field, description, privacy_mode } =
+          response.data.project;
         const projectData = { title, field, description, privacy_mode };
 
         setOriginalData(projectData);
@@ -128,9 +141,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   const fetchSurveys = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get(`/api/project/${projectId}/surveys`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await apiClient.get(
+        `/api/project/${projectId}/surveys`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
       if (response.status === 200) setSurveys(response.data.surveys || []);
     } catch (error) {
       console.error("Error fetching surveys:", error);
@@ -141,9 +157,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   const fetchCollaborators = async () => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get(`/api/project/${projectId}/collaborators`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.get(
+        `/api/project/${projectId}/collaborators`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setCollaborators(response.data.collaborators || []);
       setAcceptedCollaborators(response.data.acceptedCollaborators || []);
     } catch (error) {
@@ -218,8 +237,6 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
         questions = Array.isArray(questions) ? questions : [questions];
       }
 
-      console.log("LLM Questions:", questions);
-
       // 4. preparing survey_template object
       const surveyTemplatePayload = {
         survey_id: survey_id,
@@ -287,9 +304,11 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
         })
         .then((response) => {
           if (response.status === 200 && response.data.success) {
-            console.log("Survey count reduced successfully:", response.data);
           } else {
-            console.error("Failed to reduce survey count:", response.data?.message);
+            console.error(
+              "Failed to reduce survey count:",
+              response.data?.message
+            );
           }
         })
         .catch((error) => {
@@ -347,32 +366,32 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
       cancelButtonText: getLabel("Cancel"),
       confirmButtonText: '<span style="display: flex; align-items: center; gap: 0.5rem;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>' + getLabel("Create") + '</span>',
       customClass: {
-        popup: 'survey-modal-popup',
-        title: 'survey-modal-title',
-        htmlContainer: 'survey-modal-content',
-        confirmButton: 'survey-modal-confirm',
-        cancelButton: 'survey-modal-cancel',
-        actions: 'survey-modal-actions'
+        popup: "survey-modal-popup",
+        title: "survey-modal-title",
+        htmlContainer: "survey-modal-content",
+        confirmButton: "survey-modal-confirm",
+        cancelButton: "survey-modal-cancel",
+        actions: "survey-modal-actions",
       },
       buttonsStyling: false,
       focusConfirm: false,
       didOpen: () => {
-        const input = document.getElementById('survey-title-input');
+        const input = document.getElementById("survey-title-input");
         input.focus();
-        input.addEventListener('keypress', (e) => {
-          if (e.key === 'Enter') {
+        input.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
             Swal.clickConfirm();
           }
         });
       },
       preConfirm: () => {
-        const title = document.getElementById('survey-title-input').value;
+        const title = document.getElementById("survey-title-input").value;
         if (!title) {
           Swal.showValidationMessage(getLabel("Title is required!"));
           return false;
         }
         return title;
-      }
+      },
     });
 
     if (result.isConfirmed && result.value) {
@@ -393,11 +412,13 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
           fetchSurveys();
           setTimeout(() => {
             navigate(
-              `/view-survey/${response.data.data?.survey_id || response.data.survey_id}`,
+              `/view-survey/${
+                response.data.data?.survey_id || response.data.survey_id
+              }`,
               {
                 state: {
                   project_id: projectId,
-                  survey_details: response.data,
+                  // survey_details: response.data,
                   input_title: result.value,
                 },
               }
@@ -414,9 +435,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
   const handleDeleteSurvey = async (surveyId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.delete(`/api/surveytemplate/${surveyId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await apiClient.delete(
+        `/api/surveytemplate/${surveyId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       if (response.status === 200) {
         toast.success(getLabel("Survey deleted successfully!"));
         fetchSurveys();
@@ -431,12 +455,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
     }
   };
 
-  const handleSurveyClick = (survey_id, survey, survey_title) => {
+  const handleSurveyClick = (survey_id, survey_title, survey_status) => {
     navigate(`/view-survey/${survey_id}`, {
       state: {
         project_id: projectId,
-        survey_details: survey,
         input_title: survey_title || "Untitled Survey",
+        survey_status: survey_status,
       },
     });
   };
@@ -469,7 +493,8 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
         await fetchCollaborators();
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.error || getLabel("Failed to add collaborator.");
+      const errorMessage =
+        error.response?.data?.error || getLabel("Failed to add collaborator.");
       toast.error(errorMessage);
     }
   };
@@ -491,14 +516,18 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
 
   const filteredAndSortedSurveys = surveys
     .filter((survey) => {
-      const matchesStatus = filterStatus === "all" || survey.survey_status === filterStatus;
-      const matchesSearch = survey.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus =
+        filterStatus === "all" || survey.survey_status === filterStatus;
+      const matchesSearch = survey.title
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     })
     .sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
-      const isDateField = sortField.includes("updated") || sortField.includes("created");
+      const isDateField =
+        sortField.includes("updated") || sortField.includes("created");
 
       if (isDateField) {
         const aTime = new Date(aVal).getTime();
@@ -507,7 +536,9 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
       } else {
         const aStr = (aVal || "").toString().toLowerCase();
         const bStr = (bVal || "").toString().toLowerCase();
-        return sortOrder === "asc" ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+        return sortOrder === "asc"
+          ? aStr.localeCompare(bStr)
+          : bStr.localeCompare(aStr);
       }
     });
 
@@ -530,22 +561,32 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
               {!isEditing ? (
                 <>
                   <h2 className="project-main-title">{formData.title}</h2>
-                  <p className="project-main-subtitle">{formData.description || getLabel("No description provided")}</p>
+                  <p className="project-main-subtitle">
+                    {formData.description ||
+                      getLabel("No description provided")}
+                  </p>
                 </>
               ) : (
-                <form onSubmit={handleSubmit} className="project-edit-form-inline">
+                <form
+                  onSubmit={handleSubmit}
+                  className="project-edit-form-inline"
+                >
                   <input
                     type="text"
                     className="edit-input-title-inline"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     placeholder={getLabel("Project Name")}
                     required
                   />
                   <textarea
                     className="edit-textarea-desc-inline"
                     value={formData.description}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, description: e.target.value })
+                    }
                     placeholder={getLabel("Description")}
                     rows="2"
                   />
@@ -588,7 +629,9 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                   >
                     <GroupIcon fontSize="small" />
                   </IconButton>
-                  <span className="collaborators-count-badge">{acceptedCollaborators.length}</span>
+                  <span className="collaborators-count-badge">
+                    {acceptedCollaborators.length}
+                  </span>
                 </div>
               </>
             ) : (
@@ -597,7 +640,9 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                   type="text"
                   className="edit-input-field-inline"
                   value={formData.field}
-                  onChange={(e) => setFormData({ ...formData, field: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, field: e.target.value })
+                  }
                   placeholder={getLabel("Research Field")}
                   required
                 />
@@ -608,7 +653,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                       name="privacy_mode"
                       value="public"
                       checked={formData.privacy_mode === "public"}
-                      onChange={(e) => setFormData({ ...formData, privacy_mode: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          privacy_mode: e.target.value,
+                        })
+                      }
                     />
                     <PublicIcon fontSize="small" />
                     <span>{getLabel("Public")}</span>
@@ -619,7 +669,12 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                       name="privacy_mode"
                       value="private"
                       checked={formData.privacy_mode === "private"}
-                      onChange={(e) => setFormData({ ...formData, privacy_mode: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          privacy_mode: e.target.value,
+                        })
+                      }
                     />
                     <LockIcon fontSize="small" />
                     <span>{getLabel("Private")}</span>
@@ -662,17 +717,28 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
           <DescriptionIcon className="surveys-icon" />
           <div>
             <span className="surveys-title">{getLabel("My Surveys")}</span>
-            <p className="surveys-subtitle">{getLabel("Create and manage surveys within this project")}</p>
+            <p className="surveys-subtitle">
+              {getLabel("Create and manage surveys within this project")}
+            </p>
           </div>
         </div>
         <div className="surveys-action-buttons">
           <button
-            className={`btn-survey-action btn-new-survey ${!canEdit ? "disabled" : ""}`}
+            className={`btn-survey-action btn-new-survey ${
+              !canEdit ? "disabled" : ""
+            }`}
             onClick={canEdit ? handleAddSurveyClick : null}
             disabled={!canEdit}
             title={getToolTip}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
               <line x1="12" y1="18" x2="12" y2="12"></line>
@@ -766,7 +832,13 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
               <div
                 key={survey.survey_id}
                 className="project-card-modern grid"
-                onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title)}
+                onClick={() =>
+                  handleSurveyClick(
+                    survey.survey_id,
+                    survey.title,
+                    survey.survey_status
+                  )
+                }
               >
                 <div
                   className="project-banner"
@@ -836,7 +908,13 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
               <div
                 key={survey.survey_id}
                 className="project-card-modern list"
-                onClick={() => handleSurveyClick(survey.survey_id, survey, survey.title)}
+                onClick={() =>
+                  handleSurveyClick(
+                    survey.survey_id,
+                    survey.title,
+                    survey.survey_status
+                  )
+                }
               >
                 <div className="list-left">
                   <div className="list-icon">
@@ -905,13 +983,22 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
 
       {/* Collaborators Modal */}
       {showCollabModal && (
-        <div className="modal-overlay-modern" onClick={() => setShowCollabModal(false)}>
-          <div className="modal-content-modern" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="modal-overlay-modern"
+          onClick={() => setShowCollabModal(false)}
+        >
+          <div
+            className="modal-content-modern"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header-modern">
               <h3>
                 <GroupIcon /> {getLabel("Project Collaborators")}
               </h3>
-              <IconButton size="small" onClick={() => setShowCollabModal(false)}>
+              <IconButton
+                size="small"
+                onClick={() => setShowCollabModal(false)}
+              >
                 <CloseIcon />
               </IconButton>
             </div>
@@ -934,7 +1021,10 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                     <option value="viewer">{getLabel("Viewer")}</option>
                     <option value="editor">{getLabel("Editor")}</option>
                   </select>
-                  <button className="btn-add-collab" onClick={handleAddCollaborator}>
+                  <button
+                    className="btn-add-collab"
+                    onClick={handleAddCollaborator}
+                  >
                     <AddIcon fontSize="small" />
                     <span>{getLabel("Add")}</span>
                   </button>
@@ -943,7 +1033,13 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
 
               <div className="collaborators-list-modern">
                 {collaborators.length === 0 ? (
-                  <p style={{ textAlign: "center", color: "#64748b", padding: "2rem" }}>
+                  <p
+                    style={{
+                      textAlign: "center",
+                      color: "#64748b",
+                      padding: "2rem",
+                    }}
+                  >
                     {getLabel("No collaborators added yet.")}
                   </p>
                 ) : (
@@ -954,15 +1050,21 @@ const ProjectDetailsTab = ({ projectId, getLabel, language, onBack, handleReject
                         <div className="collab-name">{collab.user.name}</div>
                         <div className="collab-email">{collab.user.email}</div>
                       </div>
-                      <div className="collab-role-badge">{collab.access_role}</div>
-                      <div className={`collab-status-badge ${collab.invitation}`}>
+                      <div className="collab-role-badge">
+                        {collab.access_role}
+                      </div>
+                      <div
+                        className={`collab-status-badge ${collab.invitation}`}
+                      >
                         {collab.invitation === "accepted" ? (
                           <>
-                            <CheckCircleIcon fontSize="small" /> {getLabel("Accepted")}
+                            <CheckCircleIcon fontSize="small" />{" "}
+                            {getLabel("Accepted")}
                           </>
                         ) : (
                           <>
-                            <PendingIcon fontSize="small" /> {getLabel("Pending")}
+                            <PendingIcon fontSize="small" />{" "}
+                            {getLabel("Pending")}
                           </>
                         )}
                       </div>

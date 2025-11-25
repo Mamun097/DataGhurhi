@@ -267,7 +267,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
         );
         const popularData = popularResponse.data;
         popularPackageId = popularData.popularPackageId;
-        console.log("Popular Package API Response:", popularData);
+        // console.log("Popular Package API Response:", popularData);
       } catch (popularErr) {
         console.warn("Failed to fetch most popular package, but continuing...");
       }
