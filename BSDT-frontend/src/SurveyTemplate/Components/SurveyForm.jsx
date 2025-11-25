@@ -36,6 +36,9 @@ const translateText = async (textArray, targetLang) => {
 };
 
 const SurveyForm = ({
+  load,
+  useCustom,
+  setUseCustom,
   title,
   setTitle,
   image,
@@ -48,7 +51,7 @@ const SurveyForm = ({
   survey,
 }) => {
   const navigate = useNavigate();
-
+  console.log("SUrvey Status:", surveyStatus);
   // State for the logo
   const [logo, setLogo] = useState(template?.logo ?? null);
   const [logoAlignment, setLogoAlignment] = useState(
@@ -415,34 +418,18 @@ const SurveyForm = ({
 
   const sendSurveyData = async (url, isLoggedInStatus, isShuffled) => {
     setIsLoading(true);
+    let userIdInPayload = null;
     const bearerTokenString = localStorage.getItem("token");
 
-    let userIdInPayload = null;
-
     if (!bearerTokenString) {
-      console.error("No token found in localStorage. Cannot authenticate.");
-      toast.error(
-        getLabel("Authentication error. Please log in again.") ||
-          "Authentication error. Please log in again."
-      );
-      setIsLoading(false);
+      toast.error("Authentication token not found. Please log in.");
+      console.error("No bearer token in localStorage");
       return;
     }
 
-    try {
-      try {
-        const parsedToken = JSON.parse(bearerTokenString);
-        if (parsedToken && typeof parsedToken === "object") {
-          if (parsedToken.id) userIdInPayload = parsedToken.id;
-        }
-      } catch (e) {
-        console.warn(
-          "Token from localStorage is not JSON. 'id' for user_id payload field cannot be extracted this way."
-        );
-      }
-    } catch (e) {
-      console.warn("Error processing token from localStorage:", e);
-    }
+    const token = bearerTokenString.startsWith("{")
+      ? JSON.parse(bearerTokenString).token
+      : bearerTokenString;
 
     try {
       const payload = {
@@ -481,11 +468,7 @@ const SurveyForm = ({
       const response = await apiClient.put(url, payload, {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${
-            bearerTokenString.startsWith("{")
-              ? JSON.parse(bearerTokenString).token
-              : bearerTokenString
-          }`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -500,19 +483,33 @@ const SurveyForm = ({
         //   successMessageKey = "Survey Published successfully!";
         // }
         // toast.success(getLabel(successMessageKey));
-
-        navigate(
-          `/view-survey/${
-            response.data.data?.survey_id || response.data.survey_id
-          }`,
-          {
+        if (!isSave && surveyStatus === "saved") {
+          load();
+          navigate(`/view-survey/${survey_id}`, {
             state: {
-              project_id,
-              input_title: title,
-              survey_status: surveyStatus,
+              project_id: project_id,
+              input_title: title || "Untitled Survey",
+              survey_status: "published",
             },
+          });
+        }
+
+        if (!useCustom) {
+          setUseCustom(true);
+          let status = "";
+          if (isSave) {
+            status = "saved";
+          } else {
+            status = "published";
           }
-        );
+          navigate(`/view-survey/${survey_id}`, {
+            state: {
+              project_id: project_id,
+              input_title: title || "Untitled Survey",
+              survey_status: status,
+            },
+          });
+        }
       } else {
         const action = url.includes("save")
           ? "saving"
