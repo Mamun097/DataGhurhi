@@ -10,7 +10,10 @@ import apiClient from "../../api";
 const Radio = ({ question, setIsEditing,newQuestion, setNewQuestion}) => {
   const [updatedQuestion, setUpdatedQuestion] = useState(question);
   console.log(question  );
-
+const [showCropper, setShowCropper] = useState(false);
+const [selectedFile, setSelectedFile] = useState(null);
+// Mark for an individual question
+const [mark, setMark] = useState(question.points);
 const [showEmailModal, setShowEmailModal] = useState(false);
 const [emailToShare, setEmailToShare] = useState("");
 

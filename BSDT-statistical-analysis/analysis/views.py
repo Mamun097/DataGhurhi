@@ -385,10 +385,10 @@ def analyze_data_api(request):
             
 
             if test_type == 'kruskal':
-                return process_kruskal_test(request, df, col1, col2, user_id)
+                return process_kruskal_test(request, df, col1, col2, user_id, ordinal_mappings)
             
             elif test_type == 'mannwhitney':
-                return process_mannwhitney_test(request, df, col1, col2,user_id)
+                return process_mannwhitney_test(request, df, col1, col2,user_id, ordinal_mappings)
  
             elif test_type == 'pearson':
                 selected_columns = []
@@ -584,7 +584,7 @@ except Exception:  # pragma: no cover
     Translator = None
 
 
-def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
     """
     Performs Kruskal-Wallis H-test and returns analysis results without generating plots.
     Frontend will handle visualization using the returned data.
@@ -667,14 +667,25 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     # Prepare data for frontend plotting
     plot_data = []
     
-    for category in categories:
-        category_data = work.loc[work[col1] == category, col2].values
-        
-        # Calculate statistics for each group
-        # IMPORTANT: Convert all numpy types to Python native types for JSON serialization
+    # Get original categories (encoded)
+    categories = list(work[col1].cat.categories)
+
+    # Map encoded categories → real labels
+    mapped_categories = []
+    for cat in categories:
+        try:
+            mapped_label = ordinal_mappings.get(col1, {}).get(int(cat), str(cat))
+        except:
+            mapped_label = ordinal_mappings.get(col1, {}).get(str(cat), str(cat))
+        mapped_categories.append(mapped_label)
+
+    plot_data = []
+    for orig_cat, mapped_label in zip(categories, mapped_categories):
+        category_data = work.loc[work[col1] == orig_cat, col2].values
+
         plot_data.append({
-            'category': str(category),
-            'values': [float(x) for x in category_data],  # Convert numpy array to list of floats
+            'category': str(mapped_label),   # fixed
+            'values': [float(x) for x in category_data],
             'count': int(len(category_data)),
             'mean': float(np.mean(category_data)),
             'median': float(np.median(category_data)),
@@ -683,7 +694,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
             'max': float(np.max(category_data)),
             'q25': float(np.percentile(category_data, 25)),
             'q75': float(np.percentile(category_data, 75))
-        })
+        }) 
 
     # Prepare response with localized labels
     test_name = 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট'
@@ -712,7 +723,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
 
 
 
-def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
+def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
     """
     Performs Mann-Whitney U test and returns analysis results without generating plots.
     Frontend will handle visualization using the returned data.
@@ -757,15 +768,40 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
 
         # --- 5. Prepare plot data for frontend --- (NEW: instead of generating images)
         plot_data = []
-        
+
         for i, category in enumerate(cats):
-            # Get values for this category (like old backend plots)
             category_data = df[df[col1] == category][col2]
             category_values = category_data.values
-            
-            # Calculate statistics (like what would be shown in plots)
-            plot_data.append({
-                'category': str(category),
+
+            # ------- Fixed ordinal mapping -------
+
+            raw_val = category  
+            mapped_label = raw_val  
+
+            col_map = ordinal_mappings.get(col1, {})
+
+            if col_map:
+                # Try direct match (int)
+                if raw_val in col_map:
+                    mapped_label = col_map[raw_val]
+
+                else:
+                    try:
+                        int_key = int(float(raw_val))
+                        if int_key in col_map:
+                            mapped_label = col_map[int_key]
+                    except:
+                        pass
+
+             
+                if mapped_label == raw_val:
+                    str_key = str(raw_val).strip()
+                    if str_key in col_map:
+                        mapped_label = col_map[str_key]
+
+ 
+            plot_data.append({ 
+                'category': str(mapped_label),
                 'values': [float(x) for x in category_values],
                 'count': int(len(category_values)),
                 'mean': float(np.mean(category_values)),
@@ -777,6 +813,7 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
                 'q75': float(np.percentile(category_values, 75)),
                 'mean_rank': float(avg_ranks[avg_ranks[col1] == category]['__rank'].iloc[0])
             })
+ 
 
         # --- 6. Prepare response --- (Like old backend but with plot_data instead of image_paths)
         result = {
@@ -2266,7 +2303,8 @@ def process_bar_chart_test(request, df: pd.DataFrame, col: str, user_id: str, or
     
     for category_idx, count in counts.items():
         # Use ordinal mapping if available, otherwise use the raw value
-        display_label = ordinal_mappings.get(col, {}).get(str(category_idx), str(category_idx))
+        display_label = ordinal_mappings.get(col, {}).get(int(category_idx), str(category_idx))
+        print(display_label)
         
         categories.append(display_label)
         category_data.append({
@@ -2274,6 +2312,7 @@ def process_bar_chart_test(request, df: pd.DataFrame, col: str, user_id: str, or
             'count': int(count),
             'percentage': float((count / len(work)) * 100)
         })
+
 
     # Sort categories by count (descending) for better visualization
     category_data.sort(key=lambda x: x['count'], reverse=True)
@@ -2344,11 +2383,22 @@ def process_pie_chart(request, df: pd.DataFrame, col: str, user_id: str, ordinal
 
     # Prepare working data
     work = df[[col]].copy()
-    work[col] = work[col].astype(str).fillna('NaN')
-    
-    # Apply ordinal mappings if available
+    work[col] = work[col].fillna('NaN')
+
     if col in ordinal_mappings:
-        work[col] = work[col].map(lambda x: ordinal_mappings[col].get(x, x))
+        def map_value(x):
+            try:
+                if isinstance(x, str) and (x.replace('.', '', 1).isdigit()):
+                    num = float(x)
+                    if num.is_integer():
+                        return ordinal_mappings[col].get(int(num), x)
+                return ordinal_mappings[col].get(x, x)
+            except Exception:
+                return x
+
+        work[col] = work[col].map(map_value)
+
+    work[col] = work[col].astype(str)   
     
     # Calculate value counts
     value_counts = work[col].value_counts()

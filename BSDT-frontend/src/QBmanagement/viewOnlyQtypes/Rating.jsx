@@ -9,7 +9,7 @@ const RatingQuestionView = ({ question, surveyTitle, projectTitle, setNewQuestio
   const scale = question.meta_data?.scale || 5;
   const tags = question.meta_data?.tag || [];
   const questionType = "Rating";
-  const userId = parseInt(localStorage.getItem("userId"), 10);
+  const userId = parseInt(localStorage.getItem("user_id"), 10);
   console.log("User ID from localStorage:", userId);
   console.log("Question ID:", question.user_id);
   const isOwner = question.user_id === userId;
