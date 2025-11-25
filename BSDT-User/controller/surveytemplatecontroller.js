@@ -11,7 +11,7 @@ exports.saveSurveyForm = async (req, res) => {
         .status(400)
         .json({ error: "project_id and survey_template are required" });
     }
-
+    
     // Step 1: Insert survey template into survey table
     const { data: surveyData, error: surveyError } = await supabase
       .from("survey")
@@ -22,6 +22,8 @@ exports.saveSurveyForm = async (req, res) => {
         starting_date: new Date(),
         title: survey_template.title || "Untitled Survey",
         survey_status: "saved",
+        response_user_logged_in_status: survey_template.isLoggedInRequired,
+        shuffle_questions: survey_template.shuffleQuestions,
       })
       .eq("survey_id", survey_id)
       .select("*");
