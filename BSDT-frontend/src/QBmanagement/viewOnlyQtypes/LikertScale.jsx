@@ -17,7 +17,7 @@ const LikertScaleView = ({ question, surveyTitle, projectTitle,newQuestion, setN
   const columns = meta_data.columns?.length ? meta_data.columns : ["Column 1"];
   const tags = meta_data.tag || [];
 
-  const userId = parseInt(localStorage.getItem("userId"), 10);
+  const userId = parseInt(localStorage.getItem("user_id"), 10);
   console.log("User ID from localStorage:", userId);
   console.log("Question ID:", question.user_id);
   const isOwner = question.user_id === userId;
