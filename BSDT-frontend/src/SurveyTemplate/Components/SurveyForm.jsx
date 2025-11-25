@@ -50,25 +50,25 @@ const SurveyForm = ({
   const navigate = useNavigate();
 
   // State for the logo
-  const [logo, setLogo] = useState(template.logo || null);
+  const [logo, setLogo] = useState(template?.logo ?? null);
   const [logoAlignment, setLogoAlignment] = useState(
-    template.logoAlignment || "center"
+    template?.logoAlignment ?? "center"
   );
-  const [logoText, setLogoText] = useState(template.logoText || "");
+  const [logoText, setLogoText] = useState(template?.logoText ?? "");
 
   // State for the background image
   const [currentBackgroundImage, setCurrentBackgroundImage] = useState(
-    image || ""
+    image ?? ""
   );
 
   // State for description
-  const [description, setDescription] = useState(template.description);
+  const [description, setDescription] = useState(template?.description ?? "");
 
   // State for Sections
-  const [sections, setSections] = useState(template.sections);
+  const [sections, setSections] = useState(template?.sections ?? []);
 
   // State for Questions
-  const [questions, setQuestions] = useState(template.questions);
+  const [questions, setQuestions] = useState(template?.questions ?? []);
 
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
@@ -79,10 +79,11 @@ const SurveyForm = ({
 
   // State for the publication modal
   const [showPublicationModal, setShowPublicationModal] = useState(false);
+  const [actionType, setActionType] = useState(""); // 'publish' or 'update'
+
   const [shuffleQuestions, setShuffleQuestions] = useState(
     survey?.shuffle_questions || false
   );
-  const [actionType, setActionType] = useState(""); // 'publish' or 'update'
   const [showShareModal, setShowShareModal] = useState(false);
   const [responseCount, setResponseCount] = useState(null);
   const [surveyLink, setSurveyLink] = useState(survey?.survey_link || null);
@@ -242,18 +243,72 @@ const SurveyForm = ({
   const getLabel = (text) => translatedLabels[text] || text;
 
   useEffect(() => {
-    if (template) {
-      setTitle(template.title || "Untitled Survey");
-      setSections(template.sections || []);
-      setQuestions(template.questions || []);
-      setLogo(template.logo || null);
-      setLogoAlignment(template.logoAlignment || "left");
-      setLogoText(template.logoText || "");
-      setCurrentBackgroundImage(template.backgroundImage || null);
-      setDescription(template.description || "");
-      setIsLoggedInRequired(template.isLoggedInRequired || false);
+    if (template || survey) {
+      const tpl = template || survey?.template || {};
+      const srv = survey || {};
+
+      setSections(tpl.sections ?? srv.sections ?? []);
+      setQuestions(tpl.questions ?? srv.questions ?? []);
+      setLogo(tpl.logo ?? srv.logo ?? null);
+      setLogoAlignment(tpl.logoAlignment ?? srv.logoAlignment ?? "left");
+      setLogoText(tpl.logoText ?? srv.logoText ?? "");
+      setCurrentBackgroundImage(
+        tpl.backgroundImage ?? srv.backgroundImage ?? image ?? ""
+      );
+      setDescription(tpl.description ?? srv.description ?? "");
+      setIsLoggedInRequired(
+        srv.response_user_logged_in_status ?? tpl.isLoggedInRequired ?? false
+      );
+
+      // Quiz related
+      setIsQuiz(tpl.is_quiz ?? srv.is_quiz ?? false);
+      setStartTime(
+        tpl.quiz_settings?.start_time ?? srv.quiz_settings?.start_time ?? null
+      );
+      setEndTime(
+        tpl.quiz_settings?.end_time ?? srv.quiz_settings?.end_time ?? null
+      );
+      setReleaseMarks(
+        tpl.quiz_settings?.release_marks ??
+          srv.quiz_settings?.release_marks ??
+          "immediately"
+      );
+      setSeeMissedQuestions(
+        tpl.quiz_settings?.see_missed_questions ??
+          srv.quiz_settings?.see_missed_questions ??
+          false
+      );
+      setSeeCorrectAnswers(
+        tpl.quiz_settings?.see_correct_answers ??
+          srv.quiz_settings?.see_correct_answers ??
+          false
+      );
+      setSeePointValues(
+        tpl.quiz_settings?.see_point_values ??
+          srv.quiz_settings?.see_point_values ??
+          false
+      );
+      setDefaultPointValue(
+        tpl.quiz_settings?.default_point_value ??
+          srv.quiz_settings?.default_point_value ??
+          0
+      );
+      setTotalMarks(tpl.total_marks ?? srv.total_marks ?? 0);
+
+      // Publication / survey meta
+      setShuffleQuestions(
+        srv.shuffle_questions ?? tpl.shuffle_questions ?? false
+      );
+      setSurveyLink(srv.survey_link ?? tpl.survey_link ?? null);
+      setResponseCount(srv.response_count ?? null);
+
+      // modals / UI flags
+      setShowCollaborationModal(false);
+      setShowPublicationModal(false);
+      setShowShareModal(false);
+      setShowSettingsModal(false);
     }
-  }, [template]);
+  }, [template, survey, image]);
 
   useEffect(() => {
     const loadTranslations = async () => {
@@ -342,10 +397,9 @@ const SurveyForm = ({
     setShowPublicationModal(false);
   };
 
-  const handleConfirmPublication = (isLoggedIn, isShuffled) => {
+  const handleConfirmPublication = () => {
     setShowPublicationModal(false);
-    setIsLoggedInRequired(isLoggedIn);
-    setShuffleQuestions(isShuffled);
+
     let url;
     if (actionType === "publish" || actionType === "update") {
       url = "/api/surveytemplate";
@@ -353,7 +407,7 @@ const SurveyForm = ({
       console.error("Invalid action type for publication.");
       return;
     }
-    sendSurveyData(url, isLoggedIn, isShuffled);
+    sendSurveyData(url, isLoggedInRequired, shuffleQuestions);
   };
 
   const sendSurveyData = async (url, isLoggedInStatus, isShuffled) => {
@@ -411,6 +465,8 @@ const SurveyForm = ({
             end_time: endTime,
             total_marks: totalMarks,
           },
+          isLoggedInRequired: isLoggedInRequired,
+          shuffleQuestions: shuffleQuestions,
         },
         title: title,
         user_id: userIdInPayload,
@@ -434,13 +490,13 @@ const SurveyForm = ({
         const isSave = url.includes("save");
         const isUpdate = surveyStatus === "published";
 
-        let successMessageKey = "Survey updated successfully!";
-        if (isSave) {
-          successMessageKey = "Survey Saved successfully!";
-        } else if (!isUpdate) {
-          successMessageKey = "Survey Published successfully!";
-        }
-        toast.success(getLabel(successMessageKey));
+        // let successMessageKey = "Survey updated successfully!";
+        // if (isSave) {
+        //   successMessageKey = "Survey Saved successfully!";
+        // } else if (!isUpdate) {
+        //   successMessageKey = "Survey Published successfully!";
+        // }
+        // toast.success(getLabel(successMessageKey));
 
         navigate(
           `/view-survey/${
@@ -449,8 +505,8 @@ const SurveyForm = ({
           {
             state: {
               project_id,
-              survey_details: response.data.data,
               input_title: title,
+              survey_status: surveyStatus,
             },
           }
         );
@@ -699,6 +755,10 @@ const SurveyForm = ({
       <SettingsModal
         isOpen={showSettingsModal}
         onClose={closeSettingsModal}
+        isLoggedInRequired={isLoggedInRequired}
+        setIsLoggedInRequired={setIsLoggedInRequired}
+        shuffleQuestions={shuffleQuestions}
+        setShuffleQuestions={setShuffleQuestions}
         isQuiz={isQuiz}
         setIsQuiz={setIsQuiz}
         startTime={startTime}
@@ -715,23 +775,18 @@ const SurveyForm = ({
         setSeePointValues={setSeePointValues}
         defaultPointValue={defaultPointValue}
         setDefaultPointValue={setDefaultPointValue}
-        setIsLoggedInRequired={setIsLoggedInRequired}
       />
 
       <PublicationSettingsModal
-        show={showPublicationModal}
-        handleClose={handleClosePublicationModal}
+        isOpen={showPublicationModal}
+        onClose={handleClosePublicationModal}
         handleConfirm={handleConfirmPublication}
-        isLoggedInRequired={isLoggedInRequired}
-        shuffleQuestions={shuffleQuestions}
-        setShuffleQuestions={setShuffleQuestions}
         action={actionType}
-        isQuiz={isQuiz}
       />
 
       <CollaborationModal
-        show={showCollaborationModal}
-        handleClose={() => setShowCollaborationModal(false)}
+        isOpen={showCollaborationModal}
+        onClose={() => setShowCollaborationModal(false)}
         surveyId={Number(survey_id)}
         surveyTitle={title}
       />

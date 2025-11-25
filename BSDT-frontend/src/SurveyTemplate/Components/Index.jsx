@@ -52,6 +52,7 @@ const Index = () => {
   const [surveyStatus, setSurveyStatus] = useState(survey_status);
 
   const useCustom = surveyStatus === "saved" || surveyStatus === "published";
+  console.log("useCustom: ", useCustom);
 
   const labelsToTranslate = [
     "Survey Templates",
@@ -136,7 +137,7 @@ const Index = () => {
           setBackgroundImage(data.template?.backgroundImage || null);
           setSurveyStatus(data.survey_status || surveyStatus);
 
-          toast.success("Survey loaded successfully!");
+          // toast.success("Survey loaded successfully!");
         } catch (err) {
           console.error("Error loading survey:", {
             message: err.message,
@@ -164,7 +165,9 @@ const Index = () => {
 
           if (data.length > 0) {
             const first = data[0];
+
             setTitle(input_title || "Untitled Survey");
+            setTemplate(first.template);
           }
         } catch (err) {
           console.error("Failed to load templates:", err);
@@ -245,7 +248,7 @@ const Index = () => {
           </div>
           <div className="d-none d-md-block col-md-2" />
         </div>
-        <ToastContainer position="top-center" autoClose={4000} />
+        {/* <ToastContainer position="top-center" autoClose={4000} /> */}
       </div>
     </>
   );
