@@ -69,7 +69,7 @@ export default function SecuritySettings() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (response.status==200) {
-          console.log(response.data);
+          // console.log(response.data);
           setSecurityData({
             secret_question: response.data.secret_question,
             secret_answer: response.data.secret_answer,

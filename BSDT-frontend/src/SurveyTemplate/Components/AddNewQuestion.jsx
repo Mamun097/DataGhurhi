@@ -12,7 +12,6 @@ const AddQuestion = ({
   isQuiz,
 }) => {
   const [showQuestionTypes, setShowQuestionTypes] = useState(false);
-  console.log("isQuiz in AddQuestion:", isQuiz);
   const index = questionInfo ? questionInfo.index : 0;
 
   return (
@@ -51,7 +50,11 @@ const AddQuestion = ({
           {isQuiz ? (
             <div className="row justify-content-center g-2">
               <p className="text-center h6 mt-2 mb-3 mx-3">
-                <b>{getLabel("Only Multiple Choice questions are allowed in quiz mode")}</b>
+                <b>
+                  {getLabel(
+                    "Only Multiple Choice questions are allowed in quiz mode"
+                  )}
+                </b>
               </p>
               <div className="col-12 col-sm-6 col-md-4 col-lg-3">
                 <button

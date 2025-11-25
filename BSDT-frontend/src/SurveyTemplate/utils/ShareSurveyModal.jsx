@@ -12,7 +12,9 @@ import {
 import { toast } from "react-toastify";
 import { QRCodeCanvas } from "qrcode.react";
 
-const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
+const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
+  if (!isOpen) return null;
+
   const [copyButtonText, setCopyButtonText] = useState("Copy");
   const [activeTab, setActiveTab] = useState("link");
 
@@ -145,161 +147,325 @@ const ShareSurveyModal = ({ show, handleClose, surveyLink, surveyTitle }) => {
   )}&body=${encodeURIComponent(shareText + "\n\n" + fullUrl)}`;
 
   return (
-    <Modal show={show} onHide={handleClose} centered>
-      <Modal.Header closeButton>
-        <Modal.Title>
-          <i className="bi bi-share-fill me-2"></i> Share Survey
-        </Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Tabs
-          id="share-survey-tabs"
-          activeKey={activeTab}
-          onSelect={(k) => setActiveTab(k)}
-          className="mb-3 nav-fill"
-        >
-          {/* TAB 1: Link & Social Share */}
-          <Tab eventKey="link" title="Share Link">
-            <div className="pt-2">
-              <p className="text-muted small mb-3">
-                Share this link with your respondents directly or via social
-                media.
-              </p>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>
+            <i className="bi bi-share-fill me-2"></i> Share Survey
+          </h2>
+          <button className="close-btn" onClick={onClose}>
+            ×
+          </button>
+        </div>
 
-              <Form.Label className="fw-bold">Survey Link</Form.Label>
-              <InputGroup className="mb-4">
-                <Form.Control
-                  type="text"
-                  value={fullUrl}
-                  readOnly
-                  aria-label="Survey Link"
-                  className="bg-light"
-                />
-                <Button variant="primary" onClick={handleCopyToClipboard}>
-                  <i className="bi bi-clipboard-check me-2"></i>{" "}
-                  {copyButtonText}
-                </Button>
-              </InputGroup>
+        <div className="modal-content">
+          <div className="settings-group">
+            <Tabs
+              id="share-survey-tabs"
+              activeKey={activeTab}
+              onSelect={(k) => setActiveTab(k)}
+              className="mb-3 nav-fill"
+            >
+              {/* TAB 1: Link & Social Share */}
+              <Tab eventKey="link" title="Share Link">
+                <div className="pt-2">
+                  <p className="text-muted small mb-3">
+                    Share this link with your respondents directly or via social
+                    media.
+                  </p>
 
-              <div className="text-center position-relative mb-4">
-                <hr />
-                <span
-                  className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small"
-                  style={{ marginTop: "-1px" }}
-                >
-                  OR SHARE VIA
-                </span>
-              </div>
-
-              <Row className="text-center g-2">
-                {navigator.share && (
-                  <Col xs={12}>
-                    <Button
-                      variant="outline-dark"
-                      onClick={handleNativeLinkShare}
-                      className="w-100 mb-2"
-                    >
-                      <i className="bi bi-phone-vibrate me-2"></i> System Share
+                  <InputGroup className="mb-4">
+                    <Form.Control
+                      type="text"
+                      value={fullUrl}
+                      readOnly
+                      aria-label="Survey Link"
+                      className="bg-light"
+                    />
+                    <Button variant="primary" onClick={handleCopyToClipboard}>
+                      <i className="bi bi-clipboard-check me-2"></i>{" "}
+                      {copyButtonText}
                     </Button>
-                  </Col>
-                )}
-                <Col>
-                  <a
-                    href={twitterUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn w-100 text-white"
-                    style={{ background: "#1DA1F2" }}
-                    title="Twitter"
-                  >
-                    <i className="bi bi-twitter"></i>
-                  </a>
-                </Col>
-                <Col>
-                  <a
-                    href={facebookUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn w-100 text-white"
-                    style={{ background: "#1877F2" }}
-                    title="Facebook"
-                  >
-                    <i className="bi bi-facebook"></i>
-                  </a>
-                </Col>
-                <Col>
-                  <a
-                    href={linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn w-100 text-white"
-                    style={{ background: "#0A66C2" }}
-                    title="LinkedIn"
-                  >
-                    <i className="bi bi-linkedin"></i>
-                  </a>
-                </Col>
-                <Col>
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn w-100 text-white"
-                    style={{ background: "#25D366" }}
-                    title="WhatsApp"
-                  >
-                    <i className="bi bi-whatsapp"></i>
-                  </a>
-                </Col>
-                <Col>
-                  <a
-                    href={emailUrl}
-                    className="btn w-100 text-white"
-                    style={{ background: "#7F7F7F" }}
-                    title="Email"
-                  >
-                    <i className="bi bi-envelope-fill"></i>
-                  </a>
-                </Col>
-              </Row>
-            </div>
-          </Tab>
+                  </InputGroup>
 
-          {/* TAB 2: QR Code */}
-          <Tab eventKey="qr" title="QR Code">
-            <div className="d-flex flex-column align-items-center pt-3 pb-2">
-              <p className="text-muted small mb-3 text-center">
-                Scan this code to open the survey on mobile devices.
-              </p>
+                  <div className="text-center position-relative mb-4">
+                    <hr />
+                    <span
+                      className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small"
+                      style={{ marginTop: "-1px" }}
+                    >
+                      OR SHARE VIA
+                    </span>
+                  </div>
 
-              <div className="p-3 border rounded bg-white mb-3 shadow-sm">
-                <QRCodeCanvas
-                  id="survey-qr-code"
-                  value={fullUrl}
-                  size={200}
-                  level={"H"}
-                  includeMargin={true}
-                />
-              </div>
+                  <Row className="text-center g-2">
+                    {navigator.share && (
+                      <Col xs={12}>
+                        <Button
+                          variant="outline-dark"
+                          onClick={handleNativeLinkShare}
+                          className="w-100 mb-2"
+                        >
+                          <i className="bi bi-phone-vibrate me-2"></i> Explore
+                          More Options
+                        </Button>
+                      </Col>
+                    )}
+                    <Col>
+                      <a
+                        href={twitterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn w-100 text-white"
+                        style={{ background: "#1DA1F2" }}
+                        title="Twitter"
+                      >
+                        <i className="bi bi-twitter"></i>
+                      </a>
+                    </Col>
+                    <Col>
+                      <a
+                        href={facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn w-100 text-white"
+                        style={{ background: "#1877F2" }}
+                        title="Facebook"
+                      >
+                        <i className="bi bi-facebook"></i>
+                      </a>
+                    </Col>
+                    <Col>
+                      <a
+                        href={linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn w-100 text-white"
+                        style={{ background: "#0A66C2" }}
+                        title="LinkedIn"
+                      >
+                        <i className="bi bi-linkedin"></i>
+                      </a>
+                    </Col>
+                    <Col>
+                      <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn w-100 text-white"
+                        style={{ background: "#25D366" }}
+                        title="WhatsApp"
+                      >
+                        <i className="bi bi-whatsapp"></i>
+                      </a>
+                    </Col>
+                    <Col>
+                      <a
+                        href={emailUrl}
+                        className="btn w-100 text-white"
+                        style={{ background: "#7F7F7F" }}
+                        title="Email"
+                      >
+                        <i className="bi bi-envelope-fill"></i>
+                      </a>
+                    </Col>
+                  </Row>
+                </div>
+              </Tab>
 
-              <div className="d-flex gap-2">
-                <Button variant="outline-primary" onClick={downloadQRCode}>
-                  <i className="bi bi-download me-2"></i> Download
-                </Button>
+              {/* TAB 2: QR Code */}
+              <Tab eventKey="qr" title="QR Code">
+                <div className="d-flex flex-column align-items-center pt-3 pb-2">
+                  <p className="text-muted small mb-3 text-center">
+                    Scan this code to open the survey on mobile devices.
+                  </p>
 
-                {/* Only show this button if browser supports file sharing */}
-                {navigator.canShare && (
-                  <Button variant="success" onClick={handleShareQRCode}>
-                    <i className="bi bi-share-fill me-2"></i> Share Image
-                  </Button>
-                )}
-              </div>
-            </div>
-          </Tab>
-        </Tabs>
-      </Modal.Body>
-    </Modal>
+                  <div className="p-3 border rounded bg-white mb-3 shadow-sm">
+                    <QRCodeCanvas
+                      id="survey-qr-code"
+                      value={fullUrl}
+                      size={200}
+                      level={"H"}
+                      includeMargin={true}
+                    />
+                  </div>
+
+                  <div className="d-flex gap-2">
+                    <Button variant="outline-primary" onClick={downloadQRCode}>
+                      <i className="bi bi-download me-2"></i> Download
+                    </Button>
+
+                    {/* Only show this button if browser supports file sharing */}
+                    {navigator.canShare && (
+                      <Button variant="success" onClick={handleShareQRCode}>
+                        <i className="bi bi-share-fill me-2"></i> Share Image
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </Tab>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
 export default ShareSurveyModal;
+
+// return (
+//   <Modal show={show} onHide={handleClose} centered>
+//     <Modal.Header closeButton>
+//       <Modal.Title>
+//         <i className="bi bi-share-fill me-2"></i> Share Survey
+//       </Modal.Title>
+//     </Modal.Header>
+//     <Modal.Body>
+//       <Tabs
+//         id="share-survey-tabs"
+//         activeKey={activeTab}
+//         onSelect={(k) => setActiveTab(k)}
+//         className="mb-3 nav-fill"
+//       >
+//         {/* TAB 1: Link & Social Share */}
+//         <Tab eventKey="link" title="Share Link">
+//           <div className="pt-2">
+//             <p className="text-muted small mb-3">
+//               Share this link with your respondents directly or via social
+//               media.
+//             </p>
+
+//             <Form.Label className="fw-bold">Survey Link</Form.Label>
+//             <InputGroup className="mb-4">
+//               <Form.Control
+//                 type="text"
+//                 value={fullUrl}
+//                 readOnly
+//                 aria-label="Survey Link"
+//                 className="bg-light"
+//               />
+//               <Button variant="primary" onClick={handleCopyToClipboard}>
+//                 <i className="bi bi-clipboard-check me-2"></i> {copyButtonText}
+//               </Button>
+//             </InputGroup>
+
+//             <div className="text-center position-relative mb-4">
+//               <hr />
+//               <span
+//                 className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small"
+//                 style={{ marginTop: "-1px" }}
+//               >
+//                 OR SHARE VIA
+//               </span>
+//             </div>
+
+//             <Row className="text-center g-2">
+//               {navigator.share && (
+//                 <Col xs={12}>
+//                   <Button
+//                     variant="outline-dark"
+//                     onClick={handleNativeLinkShare}
+//                     className="w-100 mb-2"
+//                   >
+//                     <i className="bi bi-phone-vibrate me-2"></i> System Share
+//                   </Button>
+//                 </Col>
+//               )}
+//               <Col>
+//                 <a
+//                   href={twitterUrl}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="btn w-100 text-white"
+//                   style={{ background: "#1DA1F2" }}
+//                   title="Twitter"
+//                 >
+//                   <i className="bi bi-twitter"></i>
+//                 </a>
+//               </Col>
+//               <Col>
+//                 <a
+//                   href={facebookUrl}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="btn w-100 text-white"
+//                   style={{ background: "#1877F2" }}
+//                   title="Facebook"
+//                 >
+//                   <i className="bi bi-facebook"></i>
+//                 </a>
+//               </Col>
+//               <Col>
+//                 <a
+//                   href={linkedinUrl}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="btn w-100 text-white"
+//                   style={{ background: "#0A66C2" }}
+//                   title="LinkedIn"
+//                 >
+//                   <i className="bi bi-linkedin"></i>
+//                 </a>
+//               </Col>
+//               <Col>
+//                 <a
+//                   href={whatsappUrl}
+//                   target="_blank"
+//                   rel="noopener noreferrer"
+//                   className="btn w-100 text-white"
+//                   style={{ background: "#25D366" }}
+//                   title="WhatsApp"
+//                 >
+//                   <i className="bi bi-whatsapp"></i>
+//                 </a>
+//               </Col>
+//               <Col>
+//                 <a
+//                   href={emailUrl}
+//                   className="btn w-100 text-white"
+//                   style={{ background: "#7F7F7F" }}
+//                   title="Email"
+//                 >
+//                   <i className="bi bi-envelope-fill"></i>
+//                 </a>
+//               </Col>
+//             </Row>
+//           </div>
+//         </Tab>
+
+//         {/* TAB 2: QR Code */}
+//         <Tab eventKey="qr" title="QR Code">
+//           <div className="d-flex flex-column align-items-center pt-3 pb-2">
+//             <p className="text-muted small mb-3 text-center">
+//               Scan this code to open the survey on mobile devices.
+//             </p>
+
+//             <div className="p-3 border rounded bg-white mb-3 shadow-sm">
+//               <QRCodeCanvas
+//                 id="survey-qr-code"
+//                 value={fullUrl}
+//                 size={200}
+//                 level={"H"}
+//                 includeMargin={true}
+//               />
+//             </div>
+
+//             <div className="d-flex gap-2">
+//               <Button variant="outline-primary" onClick={downloadQRCode}>
+//                 <i className="bi bi-download me-2"></i> Download
+//               </Button>
+
+//               {/* Only show this button if browser supports file sharing */}
+//               {navigator.canShare && (
+//                 <Button variant="success" onClick={handleShareQRCode}>
+//                   <i className="bi bi-share-fill me-2"></i> Share Image
+//                 </Button>
+//               )}
+//             </div>
+//           </div>
+//         </Tab>
+//       </Tabs>
+//     </Modal.Body>
+//   </Modal>
+// );
