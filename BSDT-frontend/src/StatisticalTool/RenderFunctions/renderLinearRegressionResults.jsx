@@ -63,10 +63,12 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             scatterOpacity: 0.7,
             scatterColor: '#3b82f6',
             qqLineColor: '#ef4444',
-            referenceLineColor: '#dc2626',
+            referenceLineColor: '#3b82f6',
             referenceLineWidth: 2,
             referenceLineStyle: 'dashed',
-            lineWidth: 2
+            lineWidth: 2,
+            legendOn: true,
+            legendPosition: 'top'
         };
     } else if (plotType === 'Residual') {
         return {
@@ -80,7 +82,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             scatterColor: '#3b82f6',
             referenceLineColor: '#ef4444',
             referenceLineWidth: 2,
-            referenceLineStyle: 'solid'
+            referenceLineStyle: 'solid',
+            legendOn: true,
+            legendPosition: 'top'
         };
     }
 
@@ -456,7 +460,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -488,6 +492,18 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0', 
+                                    
+                                    }}
+                                />
+                            )}                            
                             
                             {/* Scatter Points with CUSTOM SHAPE - Like Wilcoxon */}
                             {settings.showScatterPoints && (
@@ -687,7 +703,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -719,11 +735,22 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0',
+                                    }}
+                                />
+                            )}                            
                             
                             {/* Zero Reference Line */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Zero Reference"
+                                    name="Zero Reference Line"
                                     type="linear"
                                     dataKey="y"
                                     data={zeroReferenceLine}
@@ -739,7 +766,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                             {/* Residual Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name={language === 'বাংলা' ? 'অবশিষ্ট' : 'Residuals'}
+                                    name={language === 'বাংলা' ? 'অবশিষ্ট' : 'Residual Points'}
                                     data={residualData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}

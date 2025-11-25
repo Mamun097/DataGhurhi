@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from 'recharts';
+import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, Legend } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -59,7 +59,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         
         elementWidth: 0.8,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
-        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
+        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
+        legendOn: true, 
+        legendPosition: 'top',
     };
 };
 
@@ -364,7 +366,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -397,9 +399,21 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0'
+                                    }}
+                                />
+                            )}
+
                             {/* Reference Line */}
                             {settings.showReferenceLine && (
                                 <Line
+                                    name="Theoretical Line"
                                     type="linear"
                                     dataKey="y"
                                     data={referenceLineData}
@@ -414,6 +428,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                             {/* Scatter Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
+                                    name="Q-Q Points"
                                     data={scatterData}
                                     fill={settings.scatterColor}
                                     fillOpacity={settings.scatterOpacity}

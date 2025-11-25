@@ -85,7 +85,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             referenceLineStyle: 'solid',
             confidenceBandColor: '#d1d5db',
             confidenceBandOpacity: 0.3,
-            legendOn: true
+            legendOn: true,
+            legendPosition: 'top'
         };
     }
 
@@ -489,19 +490,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                                     />
                                 ))}
                             </Bar>
-                            {settings.showNormalCurve && (
-                                <Line
-                                    data={normalCurveData}
-                                    dataKey="y"
-                                    stroke={settings.normalCurveColor}
-                                    strokeWidth={settings.normalCurveWidth}
-                                    strokeDasharray={settings.normalCurveStyle === 'dashed' ? '5 5' : 
-                                                   settings.normalCurveStyle === 'dotted' ? '2 2' : '0'}
-                                    dot={false}
-                                    name="Normal Distribution"
-                                    isAnimationActive={false}
-                                />
-                            )}
+
                         </ComposedChart>
                     </ResponsiveContainer>
 
@@ -610,7 +599,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -643,10 +632,21 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0'
+                                    }}
+                                />
+                            )}
+
                             {/* Scatter Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Data Points"
+                                    name="Q-Q Points"
                                     data={qqPlotData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
@@ -668,7 +668,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             {/* Reference Line */}
                             {settings.showReferenceLine && linePoints.length > 0 && (
                                 <Line
-                                    name="Reference Line"
+                                    name="Theoretical Line"
                                     dataKey="y"
                                     data={linePoints}
                                     stroke={settings.referenceLineColor || '#ef4444'}

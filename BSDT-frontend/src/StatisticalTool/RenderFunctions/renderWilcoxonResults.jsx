@@ -70,11 +70,12 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             scatterOpacity: 0.7,
             scatterColor: '#3b82f6',
             qqLineColor: '#ef4444',
-            referenceLineColor: '#dc2626',
+            referenceLineColor: '#3b82f6',
             referenceLineWidth: 2,
             referenceLineStyle: 'dashed',
             lineWidth: 2,
-            legendOn: true
+            legendOn: true,
+            legendPosition: 'top'
         };
     } else if (plotType === 'QQ') {
         return {
@@ -92,7 +93,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
             confidenceBandColor: '#d1d5db',
             confidenceBandOpacity: 0.3,
             showConfidenceBand: true,            
-            legendOn: true
+            legendOn: true,
+            legendPosition: 'top'
         };
     }
 
@@ -573,8 +575,13 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 </div>
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <ComposedChart  
-                            margin={{ top: settings.captionOn ? 50 : 30, right: settings.legendOn ? 100 : 20, left: 20, bottom: 40 }}
+                        <ComposedChart                              
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20,                                 
+                                bottom: 40 
+                            }}                            
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -593,10 +600,12 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 type="number"
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+
+
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -604,6 +613,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                     },
                                     dx: settings.xAxisTitleOffset
                                 }}
+
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
@@ -628,7 +638,18 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
-                            
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0',                                     
+                                    }}
+                                />
+                            )}
+
                             {/* FIX: Scatter Points with CUSTOM SHAPE - Like Anderson-Darling */}
                             {settings.showScatterPoints && (
                                 <Scatter
@@ -668,7 +689,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* Reference Line (y = x) */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Reference Line"
+                                    name="Reference Line (y=x)"
                                     type="linear"
                                     dataKey="y"
                                     data={referenceLine}
@@ -810,8 +831,13 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 </div>
                 <div ref={chartRef} style={{ position: 'relative' }}>
                     <ResponsiveContainer width="100%" height={height}>
-                        <ComposedChart  
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                        <ComposedChart                              
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20, 
+                                bottom: 40 
+                            }}                            
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -833,7 +859,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 label={{
                                     value: 'Theoretical Quantiles',
                                     position: 'insideBottom',
-                                    offset: settings.xAxisBottomMargin,
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
@@ -865,11 +891,22 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <Tooltip content={<CustomTooltip />} />
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                    paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                    paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0',
+                                    }}
+                                />
+                            )}                            
                             
                             {/* FIX: Scatter Points with CUSTOM SHAPE */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Data Points"
+                                    name="Q-Q Points"
                                     data={qqPlotData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
@@ -891,7 +928,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* FIX: Reference Line */}
                             {settings.showReferenceLine && linePoints.length > 0 && (
                                 <Line
-                                    name="Reference Line"
+                                    name="Theoretical Line"
                                     dataKey="y"
                                     data={linePoints}
                                     stroke={settings.referenceLineColor || '#ef4444'}

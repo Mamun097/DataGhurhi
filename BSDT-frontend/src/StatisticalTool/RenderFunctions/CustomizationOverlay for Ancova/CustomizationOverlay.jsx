@@ -649,6 +649,8 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         )}
 
 
+
+                    
                         {/* Kolmogorov-Smirnov Specific Settings */}
                         {isKolmogorovPlot && (
                             <>
@@ -684,31 +686,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         <span>{t.showDistributionParameters}</span>
                                     </label>
                                 </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.legendOn}
-                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
-                                    </label>
-                                </div>    
-
-                                {settings.legendOn && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.legendPosition}
-                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                        >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
-                                        </select>
-                                    </div>
-                                )}
 
                                 <div className="setting-row">
                                     <div className="setting-group">
@@ -1193,16 +1170,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </label>
                                 </div>
 
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showReferenceLine}
-                                            onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
-                                        />
-                                        <span>{t.showReferenceLine}</span>
-                                    </label>
-                                </div>
+
 
                                 <div className="setting-group">
                                     <label className="setting-checkbox-label">
@@ -1270,90 +1238,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
                                 </div>
 
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterColor}</label>
-                                        <input
-                                            type="color"
-                                            className="color-picker"
-                                            value={settings.scatterColor}
-                                            onChange={(e) => handleChange('scatterColor', e.target.value)}
-                                        />
-                                    </div>
 
-                                    {settings.showRegressionLines && (
-                                        <div className="setting-group">
-                                            <label className="setting-label">{t.qqLineColor}</label>
-                                            <input
-                                                type="color"
-                                                className="color-picker"
-                                                value={settings.qqLineColor}
-                                                onChange={(e) => handleChange('qqLineColor', e.target.value)}
-                                            />
-                                        </div>
-                                    )}
-                                </div>
 
-                                {settings.showReferenceLine && (
-                                    <div className="setting-row">
-                                        <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineColor}</label>
-                                            <input
-                                                type="color"
-                                                className="color-picker"
-                                                value={settings.referenceLineColor}
-                                                onChange={(e) => handleChange('referenceLineColor', e.target.value)}
-                                            />
-                                        </div>
 
-                                        <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineWidth}</label>
-                                            <input
-                                                type="range"
-                                                className="setting-range"
-                                                value={settings.referenceLineWidth}
-                                                onChange={(e) => handleChange('referenceLineWidth', parseInt(e.target.value))}
-                                                min="1"
-                                                max="5"
-                                                step="1"
-                                            />
-                                            <span className="range-value">{settings.referenceLineWidth}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {settings.showReferenceLine && (
-                                    <div className="setting-row">
-                                        <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineStyle}</label>
-                                            <select
-                                                className="setting-select"
-                                                value={settings.referenceLineStyle}
-                                                onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
-                                            >
-                                                <option value="solid">Solid</option>
-                                                <option value="dashed">Dashed</option>
-                                                <option value="dotted">Dotted</option>
-                                            </select>
-                                        </div>
-
-                                        {settings.showRegressionLines && (
-                                            <div className="setting-group">
-                                                <label className="setting-label">{t.lineWidth}</label>
-                                                <input
-                                                    type="range"
-                                                    className="setting-range"
-                                                    value={settings.lineWidth}
-                                                    onChange={(e) => handleChange('lineWidth', parseInt(e.target.value))}
-                                                    min="1"
-                                                    max="10"
-                                                    step="1"
-                                                />
-                                                <span className="range-value">{settings.lineWidth}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
 
                                                             
 
@@ -1452,15 +1339,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterColor}</label>
-                                        <input
-                                            type="color"
-                                            className="color-picker"
-                                            value={settings.scatterColor}
-                                            onChange={(e) => handleChange('scatterColor', e.target.value)}
-                                        />
-                                    </div>
 
                                     <div className="setting-group">
                                         <label className="setting-label">{t.referenceLineColor}</label>
@@ -1690,7 +1568,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         </div>
                     )}    
                 
-                                            
+                
+                
+                
                 </div>
 
                 <div className="customization-footer">
