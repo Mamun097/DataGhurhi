@@ -98,6 +98,8 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         getDefaultSettings('Horizontal', categoryCount, categoryNames)
     );
 
+    
+
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);
@@ -366,6 +368,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                 angle={-45}
                                 textAnchor="end"
                                 height={60} // Increased height for better label display
+                                interval={0}
                                 tick={{ 
                                     fill: '#000000', 
                                     fontSize: settings.xAxisTickSize, 
@@ -544,6 +547,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                 type="category"
                                 dataKey="name"
                                 width={100}
+                                interval={0}
                                 tick={{ 
                                     fill: '#000000', 
                                     fontSize: settings.yAxisTickSize, 
