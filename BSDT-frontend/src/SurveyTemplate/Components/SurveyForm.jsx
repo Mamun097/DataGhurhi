@@ -51,7 +51,7 @@ const SurveyForm = ({
   survey,
 }) => {
   const navigate = useNavigate();
-  console.log("SUrvey Status:", surveyStatus);
+  
   // State for the logo
   const [logo, setLogo] = useState(template?.logo ?? null);
   const [logoAlignment, setLogoAlignment] = useState(

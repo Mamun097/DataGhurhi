@@ -54,7 +54,7 @@ const Index = () => {
   const [useCustom, setUseCustom] = useState(
     surveyStatus === "saved" || surveyStatus === "published"
   );
-  console.log("useCustom:", useCustom);
+
   const labelsToTranslate = [
     "Survey Templates",
     "This survey has already been published.",
@@ -206,27 +206,6 @@ const Index = () => {
         style={{ paddingTop: "80px", minHeight: "100vh" }}
       >
         <div className="row">
-          <div className="d-none d-md-block col-md-2" />
-          {/* Main form */}
-          <div className="col-12 col-md-8 mt-3 border gap-3">
-            {template && (
-              <SurveyForm
-                load={load}
-                useCustom={useCustom}
-                setUseCustom={setUseCustom}
-                title={title}
-                setTitle={setTitle}
-                image={backgroundImage}
-                project_id={project_id}
-                survey_id={survey_id}
-                surveyStatus={surveyStatus}
-                language={language}
-                setLanguage={setLanguage}
-                template={template}
-                survey={survey}
-              />
-            )}
-          </div>
           {/* Sidebar */}
           <div className="sidebar-container">
             <div className="sidebar-content">
@@ -254,6 +233,29 @@ const Index = () => {
               )}
             </div>
           </div>
+
+          {/* Main form */}
+          <div className="col-12 col-md-8 mt-3 border gap-3">
+            {template && (
+              <SurveyForm
+                load={load}
+                useCustom={useCustom}
+                setUseCustom={setUseCustom}
+                title={title}
+                setTitle={setTitle}
+                image={backgroundImage}
+                project_id={project_id}
+                survey_id={survey_id}
+                surveyStatus={surveyStatus}
+                language={language}
+                setLanguage={setLanguage}
+                template={template}
+                survey={survey}
+              />
+            )}
+          </div>
+
+          <div className="d-none d-md-block col-md-2" />
         </div>
         <ToastContainer position="top-center" autoClose={2000} newestOnTop />
       </div>
