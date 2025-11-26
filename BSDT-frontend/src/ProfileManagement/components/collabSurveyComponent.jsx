@@ -59,8 +59,16 @@ const CollabSurveyTab = ({
   const [survey_details, setSurveyDetails] = useState({});
 
   const bannerImages = [
-    banner1, banner2, banner3, banner4, banner5,
-    banner6, banner7, banner8, banner9, banner10,
+    banner1,
+    banner2,
+    banner3,
+    banner4,
+    banner5,
+    banner6,
+    banner7,
+    banner8,
+    banner9,
+    banner10,
   ];
 
   const getSurveyBanner = (surveyId) => {
@@ -150,16 +158,16 @@ const CollabSurveyTab = ({
         navigate(`/view-survey/${survey_id}`, {
           state: {
             project_id: response.data.project_id,
-            survey_details: response.data,
             input_title: response.data.title || "Untitled Survey",
-            response_user_logged_in_status:
-              response.data.response_user_logged_in_status,
+            survey_status: response.data.survey_status,
           },
         });
       }
     } catch (error) {
       console.error("Failed to fetch survey details:", error);
-      alert(getLabel("Failed to fetch survey details. Please try again later."));
+      alert(
+        getLabel("Failed to fetch survey details. Please try again later.")
+      );
     }
   };
 
@@ -306,7 +314,14 @@ const CollabSurveyTab = ({
             }}
             title={getLabel("View Requests")}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
               <circle cx="12" cy="12" r="3"></circle>
             </svg>
@@ -333,7 +348,11 @@ const CollabSurveyTab = ({
                   className="collab-banner"
                   style={{
                     // backgroundImage: `url(${getSurveyBanner(survey_id)})`,
-                    backgroundImage: survey_details.banner? survey_details.banner : survey_details.backgroundImage? survey_details.backgroundImage : `url(${getSurveyBanner(survey_id)})`,
+                    backgroundImage: survey_details.banner
+                      ? survey_details.banner
+                      : survey_details.backgroundImage
+                      ? survey_details.backgroundImage
+                      : `url(${getSurveyBanner(survey_id)})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}
@@ -428,12 +447,21 @@ const CollabSurveyTab = ({
         >
           <div className="custom-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h5 className="modal-title">{getLabel("Collaboration Requests")}</h5>
+              <h5 className="modal-title">
+                {getLabel("Collaboration Requests")}
+              </h5>
               <button
                 className="btn-modal-close"
                 onClick={() => setShowCollabModal(false)}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <line x1="18" y1="6" x2="6" y2="18"></line>
                   <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
@@ -476,7 +504,14 @@ const CollabSurveyTab = ({
                                 className="btn-accept"
                                 onClick={() => handleAccept(req.survey_id)}
                               >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
                                   <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
                                 {getLabel("Accept")}
@@ -485,7 +520,14 @@ const CollabSurveyTab = ({
                                 className="btn-reject"
                                 onClick={() => handleReject(req.survey_id)}
                               >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
                                   <line x1="18" y1="6" x2="6" y2="18"></line>
                                   <line x1="6" y1="6" x2="18" y2="18"></line>
                                 </svg>
