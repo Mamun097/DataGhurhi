@@ -9,7 +9,7 @@ function formatCsvCell(value) {
     return value
       .filter(item => item !== null && item !== undefined)
       .map(item => formatCsvCell(item))
-      .join('; ');
+      .join('; '); // Semicolon join prevents comma-splitting issues within a cell
   } else if (typeof value === 'object') {
     return JSON.stringify(value);
   }
@@ -98,14 +98,17 @@ exports.getCSV = async (req, res) => {
         sortedRows.forEach(rowText => {
           const columnLabel = `${qText} - ${rowText}`; 
           fieldsConfig.push({
-            label: columnLabel, 
-            value: columnLabel.replace(/[^a-zA-Z0-9\s-]/g, '_') 
+            label: columnLabel, // The text seen in the CSV header (keeps Bangla)
+            // Use Base64 encoding for the internal key. 
+            // This ensures uniqueness even if the text contains special characters.
+            value: Buffer.from(columnLabel).toString('base64') 
           });
         });
       } else {
         fieldsConfig.push({
-          label: qText, 
-          value: qText.replace(/[^a-zA-Z0-9\s]/g, '_') 
+          label: qText, // The text seen in the CSV header (keeps Bangla)
+          // Use Base64 encoding for the internal key
+          value: Buffer.from(qText).toString('base64') 
         });
       }
     });
@@ -118,6 +121,7 @@ exports.getCSV = async (req, res) => {
     // Transform response data into CSV rows
     const csvData = rawResponseEntries.map(entry => {
       const rowOutput = {};
+      // Initialize all columns to null using the Base64 keys
       fieldsConfig.forEach(fc => { rowOutput[fc.value] = null; });
 
       if (!entry.response_data || !Array.isArray(entry.response_data)) {
@@ -138,8 +142,12 @@ exports.getCSV = async (req, res) => {
         if (structure.type === 'matrix' && Array.isArray(uResponse)) {
           uResponse.forEach(item => {
             if (item && typeof item === 'object' && typeof item.row === 'string' && 'column' in item) {
-              const dataKey = `${qText} - ${item.row}`.replace(/[^a-zA-Z0-9\s-]/g, '_');
+              // Re-generate the Base64 key to match the header
+              const rawKey = `${qText} - ${item.row}`;
+              const dataKey = Buffer.from(rawKey).toString('base64');
+              
               const columnValue = Array.isArray(item.column) ? item.column.join('; ') : item.column;
+              
               if (!processedData[dataKey]) {
                 processedData[dataKey] = columnValue;
               } else {
@@ -148,7 +156,8 @@ exports.getCSV = async (req, res) => {
             }
           });
         } else {
-          const dataKey = qText.replace(/[^a-zA-Z0-9\s]/g, '_');
+          // Re-generate the Base64 key to match the header
+          const dataKey = Buffer.from(qText).toString('base64');
           processedData[dataKey] = uResponse;
         }
       });
@@ -165,16 +174,22 @@ exports.getCSV = async (req, res) => {
     // Convert data to CSV format
     const json2csvParser = new Parser({
       fields: fieldsConfig,
-      excelStrings: true,
-      quote: '"',
-      escape: '"',
+      excelStrings: true, // Forces Excel to treat fields as strings (helps with "00123")
+      quote: '"',         // Wraps fields in quotes to prevent comma splitting
+      escape: '"',        // Escapes quotes inside data
+      withBOM: true       // CRITICAL: Adds Byte Order Mark for Excel to recognize Bangla/UTF-8
     });
-    const csv = json2csvParser.parse(csvData); // Generate CSV string
+    
+    // Note: older versions of json2csv might ignore `withBOM` in options. 
+    // We append manually below just to be 100% safe.
+    const csv = json2csvParser.parse(csvData);
 
     // Send CSV as response
     res.header("Content-Type", "text/csv; charset=utf-8");
     res.attachment(`survey_${surveyId}_responses.csv`);
-    return res.status(200).send(csv);
+    
+    // Send with BOM (\uFEFF) to ensure Excel opens UTF-8 correctly
+    return res.status(200).send('\uFEFF' + csv);
 
   } catch (err) {
     // Handle unexpected errors
