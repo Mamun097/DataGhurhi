@@ -1513,27 +1513,6 @@ const closePreview= async () =>{
                                     
                                     {(isPreprocessed || isSurveyData || file) && (
                                         <div className="form-section">
-                                        {testType === "bar_chart" ? (
-                                            <div className="form-group">
-                                                <label className="form-label">
-                                                    {language === "bn"
-                                                        ? "বার চার্ট টাইপ নির্বাচন করুন:"
-                                                        : "Select bar chart type:"}
-                                                </label>
-                                                <select
-                                                    value={barChartType}
-                                                    onChange={(e) => setBarChartType(e.target.value)}
-                                                    className="form-select"
-                                                >
-                                                    <option value="vertical">
-                                                        {language === "bn" ? "উল্লম্ব (Vertical)" : "Vertical"}
-                                                    </option>
-                                                    <option value="horizontal">
-                                                        {language === "bn" ? "অনুভূমিক (Horizontal)" : "Horizontal"}
-                                                    </option>
-                                                </select>
-                                            </div>
-                                        ) : null}
 
                                         {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
                                             <div style={{ marginBottom: '2rem' }}>

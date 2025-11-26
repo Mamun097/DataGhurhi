@@ -341,7 +341,12 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     <ResponsiveContainer width="100%" height={height}>
                         <BarChart
                             data={data}
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20, 
+                                bottom: 60 // Increased from 40 to 60 for better label spacing
+                            }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -360,8 +365,12 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                 dataKey="name"
                                 angle={-45}
                                 textAnchor="end"
-                                height={40}
-                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                height={60} // Increased height for better label display
+                                tick={{ 
+                                    fill: '#000000', 
+                                    fontSize: settings.xAxisTickSize, 
+                                    fontFamily: settings.fontFamily 
+                                }}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -378,7 +387,11 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             />
                             <YAxis
                                 domain={yDomain}
-                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ 
+                                    fill: '#000000', 
+                                    fontSize: settings.yAxisTickSize, 
+                                    fontFamily: settings.fontFamily 
+                                }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -428,7 +441,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             top: settings.captionOn ? '50px' : '30px',
                             left: '80px',
                             right: '20px',
-                            bottom: '80px',
+                            bottom: '80px', // Adjusted for increased bottom margin
                             borderTop: '2px solid #000000',
                             borderRight: '2px solid #000000',
                             pointerEvents: 'none',
@@ -507,9 +520,14 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             <XAxis
                                 type="number"
                                 domain={xDomain}
-                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ 
+                                    fill: '#000000', 
+                                    fontSize: settings.xAxisTickSize, 
+                                    fontFamily: settings.fontFamily 
+                                }}
+                                // FIX: In horizontal chart, X-axis should show count values
                                 label={{
-                                    value: settings.xAxisTitle,
+                                    value: settings.yAxisTitle, // Use Y-axis title for the count values
                                     position: 'insideBottom',
                                     offset: settings.xAxisBottomMargin,
                                     style: {
@@ -526,9 +544,14 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                                 type="category"
                                 dataKey="name"
                                 width={100}
-                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ 
+                                    fill: '#000000', 
+                                    fontSize: settings.yAxisTickSize, 
+                                    fontFamily: settings.fontFamily 
+                                }}
+                                // FIX: In horizontal chart, Y-axis should show category names
                                 label={{
-                                    value: settings.yAxisTitle,
+                                    value: settings.xAxisTitle, // Use X-axis title for the categories
                                     angle: -90,
                                     position: 'insideLeft',
                                     offset: settings.yAxisLeftMargin,
