@@ -88,6 +88,7 @@ const PreprocessDataPage = () => {
     sheet: sessionStorage.getItem("activesheetname") || "",
     Fileurl: sessionStorage.getItem("fileURL") || ''
   })
+ 
 })
 
       .then(r => r.json())
@@ -96,9 +97,10 @@ const PreprocessDataPage = () => {
         setAvailableColumns(res.columns || []);
         setData(res.rows || []);
         setMissingValues(res.missing_values || {});
+         console.log(sessionStorage.getItem("fileURL") );
       })
       .catch(err => console.error("Preview fetch error:", err));
-  }, [userId, sessionStorage.getItem("activesheetname")]);
+  }, [userId, sessionStorage.getItem("activesheetname")], sessionStorage.getItem("fileURL"), data);
 
   // Fetch outlier summary lazily when option selected
   useEffect(() => {
@@ -184,10 +186,13 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/delete-columns/`, {
           method: 'POST',
           headers: {
-            'userID': userId, 'filename': filename, 'sheet': sessionStorage.getItem("activesheetname") || '',
-            'Fileurl': sessionStorage.getItem("fileURL") || '', 'Content-Type': 'application/json'
+            'userID': userId, 'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ columns: columnsToDelete })
+          body: JSON.stringify({ columns: columnsToDelete,
+                                filename,     
+                                sheet: sessionStorage.getItem("activesheetname") || "",
+                                Fileurl: sessionStorage.getItem("fileURL") || '' 
+           })
         })
           .then(r => r.json())
           .then(res => {
@@ -198,6 +203,7 @@ const PreprocessDataPage = () => {
               setData(res.rows || []);
               setColumnsToDelete([]);
               setIsRightPanelOpen(false);
+              alert("column deleted successfully!!!")
             } else alert(res.error || "Error");
           });
         break;
@@ -209,12 +215,17 @@ const PreprocessDataPage = () => {
           method: 'POST',
           headers: {
                         'userID': userId,
-                        'filename': filename,
-                        'sheet': sessionStorage.getItem("activesheetname") || '',
-                        'Fileurl': sessionStorage.getItem("fileURL"),
+                        // 'filename': filename,
+                        // 'sheet': sessionStorage.getItem("activesheetname") || '',
+                        // 'Fileurl': sessionStorage.getItem("fileURL"),
                         'Content-Type': 'application/json',
                       },
-                      body: JSON.stringify({ columns: duplicateColumns }),
+                      body: JSON.stringify({
+                        columns: duplicateColumns,
+                        filename,     
+                        sheet: sessionStorage.getItem("activesheetname") || "",
+                        Fileurl: sessionStorage.getItem("fileURL") || ''
+                       }),
                     })
           .then(r => r.json())
           .then(res => {
@@ -236,10 +247,15 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/handle-missing/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
-            'Fileurl': sessionStorage.getItem("fileURL") || '', 'sheet': sessionStorage.getItem("activesheetname") || ''
+            'Content-Type': 'application/json', 'userID': userId, 
           },
-          body: JSON.stringify({ column: missingColumn, method: missingMethod, missing_spec: missingSpec })
+          body: JSON.stringify({
+            column: missingColumn,
+            method: missingMethod,
+            missing_spec: missingSpec,
+            filename,     
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || '' })
         })
           .then(r => r.json())
           .then(res => {
@@ -259,10 +275,16 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/handle-outliers/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 'Fileurl': sessionStorage.getItem("fileURL") || '',
-            'sheet': sessionStorage.getItem("activesheetname") || ''
+            'Content-Type': 'application/json', 'userID': userId
           },
-          body: JSON.stringify({ column: outlierColumn, method: outlierMethod })
+          body: JSON.stringify({ 
+            column: outlierColumn, 
+            method: outlierMethod,
+            filename,     
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || ''
+
+           })
         })
           .then(r => r.json())
           .then(res => {
@@ -283,10 +305,14 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/rank-column/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
-            'Fileurl': sessionStorage.getItem("fileURL") || '', 'sheet': sessionStorage.getItem("activesheetname") || ''
+            'Content-Type': 'application/json', 'userID': userId, 
           },
-          body: JSON.stringify({ column: rankColumn, mapping: rankMapping })
+          body: JSON.stringify({ 
+            column: rankColumn,
+            mapping: rankMapping,
+            filename,     
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || ''})
         })
           .then(r => r.json())
           .then(res => {
@@ -306,12 +332,15 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/split-column/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
-            'Fileurl': sessionStorage.getItem("fileURL") || '', 'sheet': sessionStorage.getItem("activesheetname") || ''
-          },
+            'Content-Type': 'application/json', 'userID': userId  },
           body: JSON.stringify({
-            column: splitTargetColumn, method: splitMethod,
-            phrases: splitMethod === 'custom' ? customPhrases : [], delete_original: true
+            column: splitTargetColumn, 
+            method: splitMethod,
+            phrases: splitMethod === 'custom' ? customPhrases : [], 
+            delete_original: true,
+            filename,     
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || ''
           })
         })
           .then(r => r.json())
@@ -357,9 +386,12 @@ const PreprocessDataPage = () => {
         fetch(`${API_BASE}/generate-unique-id/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 'filename': filename,
-            'Fileurl': sessionStorage.getItem("fileURL") || '', 'sheet': sessionStorage.getItem("activesheetname") || ''
-          }
+            'Content-Type': 'application/json', 'userID': userId },
+            body: JSON.stringify({
+            filename,     
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || ''
+          })
         })
           .then(r => r.json())
           .then(res => {
@@ -445,11 +477,12 @@ const handleReapply = () => {
         {isPopupOpen && (
           <div className="popup-overlay" onClick={() => setIsPopupOpen(false)}>
             <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-              <h3 className="popup-title">Actions</h3>
+            
               <div className="popup-buttons">
                 <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); downloadAsExcel(data, filename); setIsPopupOpen(false); }}>Download Excel</button>
                 <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/visualization'; setIsPopupOpen(false); }}>Visualize</button>
                 <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); sessionStorage.setItem("preprocessed", "true"); sessionStorage.setItem("file_name", "preprocess_" + filename); window.location.href = 'http://localhost:5173/?tab=analysis'; setIsPopupOpen(false); }}>Analyze</button>
+               <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/saved-files'; setIsPopupOpen(false); }}>My Personal Storage</button>
               </div>
               <button className="popup-close" onClick={() => setIsPopupOpen(false)}>✕</button>
             </div>

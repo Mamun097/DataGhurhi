@@ -6947,7 +6947,25 @@ def save_plot(plt, filename, user_id):
     except Exception as e:
         print(f"Failed to save plot: {filename}. Error: {e}")
         return None
+    
 
+import hashlib
+import os
+import re
+
+def build_safe_filename(original_name):
+     # Clean illegal characters
+    original_name = re.sub(r'[<>:"/\\|?*]', '', original_name).strip()
+    
+    # Hash for uniqueness
+    unique_hash = hashlib.md5(original_name.encode()).hexdigest()[:8]  
+    
+    # Extract extension
+    ext = os.path.splitext(original_name)[1]
+    
+    # Create shorter file name
+    safe_name = f"{unique_hash}{ext}"
+    return safe_name
 
 @csrf_exempt
 def preview_data(request):
@@ -6958,14 +6976,14 @@ def preview_data(request):
     import os
 
     if request.method != 'POST':
-        return JsonResponse({'error': 'Only GET is allowed'}, status=405)
+        return JsonResponse({'error': 'Only POST is allowed'}, status=405)
 
     user_id = request.headers.get('userID')
     # filename = request.headers.get('filename')
     # requested_sheet = request.headers.get('sheet')  
     # file_url = request.headers.get('Fileurl')
     data = json.loads(request.body)
-    filename = data.get("filename")
+    filename = build_safe_filename(data.get("filename"))
     requested_sheet = data.get("sheet")
     file_url = data.get("Fileurl")
  
@@ -6978,7 +6996,7 @@ def preview_data(request):
         return JsonResponse({'error': 'File URL not provided'}, status=400)
 
     folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
-    file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
+    file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", "")) 
 
     try:
         # Read all sheets once; lets us list names and select the active one
@@ -7025,18 +7043,22 @@ def preview_data(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': f'Preview failed: {str(e)}'}, status=500) 
  
+
+
+
 @csrf_exempt
 def delete_columns_api(request):
     try: 
         ##post_method
         ## extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet_name= request.headers.get('sheet')  
-        file_url = request.headers.get('Fileurl')  
-
+        data = json.loads(request.body)
+        filename =data.get("filename")
+        sheet_name = data.get("sheet")
+        file_url = data.get("Fileurl")
+        print(filename) 
         if not user_id:
-            return JsonResponse({'success': False, 'error': 'User ID not provided.'})
+            return JsonResponse({'success': False, 'error': 'User ID not provided.'}) 
         print(f"Received User ID: {user_id}")
 
         if not file_url:
@@ -7044,7 +7066,7 @@ def delete_columns_api(request):
         
         folder_name = f"ID_{user_id}_uploads/temporary_uploads/"
         # Load file safely
-        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", "")) 
         if not os.path.exists(file_path):
             return JsonResponse({'success': False, 'error': 'No uploaded file found.'})
         preprocess_folder_name= f"ID_{user_id}_uploads/temporary_uploads/preprocessed/" 
@@ -7053,7 +7075,7 @@ def delete_columns_api(request):
         os.makedirs(os.path.join(settings.MEDIA_ROOT, folder_name, "preprocessed"), exist_ok=True)
          
         # Define preprocess file path
-        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, 'preprocess_'+ filename)
+        preprocess_file_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, f"preprocess_{filename}")
 
         # Load from preprocess if exists, otherwise from original
         source_path = preprocess_file_path if os.path.exists(preprocess_file_path) else file_path
@@ -7091,8 +7113,10 @@ def delete_columns_api(request):
         df.drop(columns=columns, inplace=True, errors='ignore')
 
         # Save updated sheet
-        df.to_excel(preprocess_file_path, index=False) 
-        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
+        df.to_excel(preprocess_file_path, index=False)
+        print(filename)
+        
+        file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, f"preprocess_{filename}").replace("\\", "/")
 
         return JsonResponse({
             'success': True,
@@ -7181,9 +7205,10 @@ def find_duplicates_api(request):
         if(request.method == 'POST'):
 
             user_id = request.headers.get('userID')
-            filename = request.headers.get('filename')
-            sheet_name= request.headers.get('sheet')
-            file_url = request.headers.get('Fileurl') 
+            data = json.loads(request.body)
+            filename = data.get("filename")
+            sheet_name = data.get("sheet") 
+            file_url = data.get("Fileurl")
             print(f"Received User ID: {user_id}") 
             if not user_id:
                 return JsonResponse({'success': False, 'error': 'User ID not provided.'})
@@ -7290,13 +7315,13 @@ def find_duplicates_api(request):
 @csrf_exempt
 def remove_duplicates(request):
     user_id = request.headers.get('userID') 
-    filename = request.headers.get('filename')
-    sheet_name= request.headers.get('sheet')
-    file_url = request.headers.get('Fileurl')
-    body = json.loads(request.body) 
-    columns = body.get('columns', [])
-    mode = body.get('mode')  # "all" or "selected"
-    selected_indices = body.get('selected', [])
+    data = json.loads(request.body)
+    filename = data.get("filename")
+    sheet_name = data.get("sheet")
+    file_url = data.get("Fileurl")
+    columns = data.get('columns', [])
+    mode = data.get('mode')  # "all" or "selected"
+    selected_indices = data.get('selected', [])
     print(selected_indices)
     print(file_url) 
     try:
@@ -7380,9 +7405,10 @@ def handle_missing_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet_name= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        sheet_name = data.get("sheet")
+        file_url = data.get("Fileurl")
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -7472,9 +7498,10 @@ def outliers_summary_api(request):
         print("Request method:", request.method)
 
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        sheet = data.get("sheet")
+        file_url = data.get("Fileurl")
 
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
@@ -7561,9 +7588,10 @@ def handle_outliers_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        sheet = data.get("sheet")
+        file_url = data.get("Fileurl")
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
@@ -7642,10 +7670,10 @@ def rank_categorical_column_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
-
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        sheet = data.get("sheet")
+        file_url = data.get("Fileurl")
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
         print(f"Received User ID: {user_id}")
@@ -7828,9 +7856,10 @@ def split_column_api(request):
     try:
         # --- Extract metadata ---
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename') 
-        sheet_name = request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        sheet_name = data.get("sheet") 
+        file_url = data.get("Fileurl")
 
         if not user_id or not filename:
             return JsonResponse({'success': False, 'error': 'User ID or filename not provided.'})
@@ -8079,9 +8108,10 @@ def generate_unique_id_column_api(request):
     try:
         # Extract user ID from request headers
         user_id = request.headers.get('userID')
-        filename = request.headers.get('filename')
-        sheet= request.headers.get('sheet')
-        file_url = request.headers.get('Fileurl')
+        data = json.loads(request.body) 
+        filename = data.get("filename")
+        sheet = data.get("sheet")
+        file_url = data.get("Fileurl")
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
@@ -8120,7 +8150,8 @@ def generate_unique_id_column_api(request):
             return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
 
         col_name = 'row_id'
-        df[col_name] = np.arange(1, len(df) + 1)
+        row_id_column = pd.DataFrame({col_name: np.arange(1, len(df) + 1)})
+        df = pd.concat([row_id_column, df], axis=1)
 
         df.to_excel(preprocess_file_path, index=False)
         file_url = os.path.join(settings.MEDIA_URL, preprocess_folder_name, 'preprocess_' + filename).replace("\\", "/")
@@ -8213,12 +8244,11 @@ def save_results_api(request):
             image_paths = data.get('image_paths', [])
             test_name = data.get('test_name', 'general_test')
             user_id = data.get('user_id', 'anonymous')  # optional
-            Excel_filename = os.path.splitext(os.path.basename(data.get('filename', '')))[0]
+            Excel_filename = os.path.splitext(os.path.basename(build_safe_filename(data.get('filename', ''))))[0]
 
-
-            # print(image_paths)
+ 
             # print(test_name)
-            # print(user_id)
+            # print(user_id) 
             # print(Excel_filename)  
 
 

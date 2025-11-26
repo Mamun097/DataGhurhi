@@ -293,7 +293,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     gridRef.current = params;
   }, []);
 
-  // ---------- column defs (memoized) ----------
+  // ---------- column defs ----------
   const columnDefs = useMemo(() => {
   if (!activeSheet) return [];
 
@@ -1116,7 +1116,7 @@ const toggleSelectColumn = useCallback((colId) => {
             key={activeSheetIndex}
             rowData={activeSheet.data}
             columnDefs={columnDefs}
-            defaultColDef={{ minWidth: 90 }}
+            defaultColDef={{ minWidth: 90, sortable:false }}
             onGridReady={onGridReady}
             stopEditingWhenCellsLoseFocus
             rowSelection="multiple"
@@ -1125,6 +1125,7 @@ const toggleSelectColumn = useCallback((colId) => {
             onCellValueChanged={onCellValueChanged}
             onSelectionChanged={onSelectionChanged}
             suppressContextMenu={true}
+            deltaRowDataMode={true}
             getRowId={params => params.data.__rowIdx}
 
             onCellContextMenu={(params) => {
@@ -1143,7 +1144,7 @@ const toggleSelectColumn = useCallback((colId) => {
       </div>
 
       {/* Duplicate remove buttons */}
-      {selectedOption === "remove_duplicates" && (
+      {selectedOption === "remove_duplicates" && duplicateIndices.length>0 &&(
         <div className="duplicate-actions">
           <button className="remove-btn" onClick={() => confirmAndRemove("all")}>
             Remove All Duplicates
