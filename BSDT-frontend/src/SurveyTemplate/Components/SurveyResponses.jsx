@@ -108,6 +108,8 @@ const SurveyResponses = () => {
   const [currentResponse, setCurrentResponse] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [responseCount, setResponseCount] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [tempTitle, setTempTitle] = useState("");
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
@@ -1238,58 +1240,73 @@ const SurveyResponses = () => {
   };
 
   const handleAnalyzeClick = async () => {
-    if (!rawCsv || rawCsv.trim() === "") {
-      alert("No responses available to analyze.");
-      return;
-    }
+  if (!rawCsv || rawCsv.trim() === "") {
+    alert("No responses available to analyze.");
+    return;
+  }
 
-    try {
-      const title=surveyTitle.replace(/\s+/g, "_");
-      const blob = new Blob([rawCsv], { type: "text/csv" });
-      const file = new File([blob], `survey_${title}_responses.csv`, {
-        type: "text/csv",
-      });
+  let baseTitle = surveyTitle.trim().replace(/\s+/g, "_");
 
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("file_type", "survey");
+  if (baseTitle.length > 50) {
+    baseTitle = baseTitle.slice(0, 50);
+  }
 
-      const response = await fetch(
-        "http://127.0.0.1:8000/api/upload-preprocessed/",
-        {
-          method: "POST",
-          body: formData,
-          headers: {
-            userID: localStorage.getItem("user_id") || "",
-          },
-        }
+  const fileName = `survey_${baseTitle}_responses.csv`;
+
+  // Trigger modal popup with auto-truncated title
+  if (fileName.length > 70) {  
+    setTempTitle(baseTitle);
+    setShowModal(true);
+    return;
+  }
+
+  await uploadFile(baseTitle);
+};
+const uploadFile = async (titleToUse) => {
+  try {
+    const blob = new Blob([rawCsv], { type: "text/csv" });
+    const file = new File([blob], `survey_${titleToUse}_responses.csv`, {
+      type: "text/csv",
+    });
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("file_type", "survey");
+
+    const response = await fetch(
+      "http://127.0.0.1:8000/api/upload-preprocessed/",
+      {
+        method: "POST",
+        body: formData,
+        headers: {
+          userID: localStorage.getItem("user_id") || "",
+        },
+      }
+    );
+
+    const result = await response.json();
+
+    if (result.success) {
+      const fixedUrl = result.file_url;
+
+      sessionStorage.setItem("fileURL", fixedUrl || "");
+      sessionStorage.setItem("surveyfile", "true");
+      sessionStorage.setItem(
+        "file_name",
+        `survey_${titleToUse}_responses.xlsx`
       );
 
-      const result = await response.json();
-
-      if (result.success) {
-        console.log(result);
-        const fixedUrl = result.file_url;
-        console.log(fixedUrl);
-        // alert("Analysis file URL:", fixedUrl);
-
-        sessionStorage.setItem("fileURL" ,fixedUrl || "");
-        sessionStorage.setItem("surveyfile", "true");
-        sessionStorage.setItem(
-          "file_name",
-          `survey_${surveyTitle}_responses.xlsx`
-        );
-        //ask for confirmation before redirecting
-         alert(fixedUrl)
-        window.location.href = "http://localhost:5173/?tab=analysis";
-      } else {
-        alert(result.error || "Failed to prepare file for analysis.");
-      }
-    } catch (err) {
-      console.error("Error sending file:", err);
-      alert("Something went wrong while preparing analysis.");
+      setShowModal(false);
+      window.location.href = "http://localhost:5173/?tab=analysis";
+    } else {
+      alert(result.error || "Failed to prepare file for analysis.");
     }
-  };
+  } catch (err) {
+    console.error("Error sending file:", err);
+    alert("Something went wrong while preparing analysis.");
+  }
+};
+
 
 
   const downloadXLSX = () => {
@@ -1309,6 +1326,52 @@ const SurveyResponses = () => {
       console.error("Error generating XLSX from CSV:", error);
     }
   };
+const modalOverlay = {
+  position: "fixed",
+  top: 0,
+  left: 0,
+  width: "100vw",
+  height: "100vh",
+  background: "rgba(0,0,0,0.5)",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: 1000,
+};
+
+const modalBox = {
+  background: "#fff",
+  padding: "20px",
+  borderRadius: "8px",
+  maxWidth: "800px",
+  width: "90%",
+  textAlign: "center",
+  boxShadow: "0px 5px 15px rgba(0,0,0,0.3)",
+};
+
+const modalInput = {
+  padding: "6px",
+  width: "100%",
+  marginBottom: "10px",
+  border: "1px solid #ddd",
+  borderRadius: "4px",
+};
+
+const btnPrimary = {
+  padding: "6px 12px",
+  marginRight: "5px",
+  background: "#007bff",
+  color: "#fff",
+  border: "none",
+  borderRadius: "4px",
+};
+
+const btnCancel = {
+  padding: "6px 12px",
+  background: "#ccc",
+  border: "none",
+  borderRadius: "4px",
+};
 
 
   return (
@@ -1318,7 +1381,7 @@ const SurveyResponses = () => {
       
       maxWidth: "1000px",
       marginLeft: "auto",marginRight:"auto", backgroundColor: "#fff",
-      padding: "30px", borderRadius: "8px",
+      padding: "20px", borderRadius: "8px",
       boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1);"}}>
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3>
@@ -1375,6 +1438,42 @@ const SurveyResponses = () => {
             {activeTab === "individual" && renderIndividualTab()}
           </div>
         )}
+        {showModal && (
+  <div style={modalOverlay}>
+    <div style={modalBox}>
+      <h5>Filename Too Long</h5>
+      <p>
+        We shortened the filename automatically. You can further edit if needed.
+      </p>
+
+      <input
+        type="text"
+        value={tempTitle}
+        onChange={(e) =>
+          setTempTitle(e.target.value.replace(/\s+/g, "_"))
+        }
+        style={modalInput}
+      />
+
+      <p>
+        <b>Preview:</b> survey_{tempTitle}_responses.csv
+      </p>
+
+      <div style={{ marginTop: "10px" }}>
+        <button
+          style={btnPrimary}
+          onClick={() => uploadFile(tempTitle)}
+        >
+          Confirm & Upload
+        </button>
+        <button style={btnCancel} onClick={() => setShowModal(false)}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
       </div>
     </div>
   );
