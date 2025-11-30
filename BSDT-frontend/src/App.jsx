@@ -80,7 +80,7 @@ function App() {
               <Route path="/view-survey/:survey_id" element={<Index />} />
               <Route path="/v/:slug" element={<IndexUser />} />
               {/* <Route path="/user-response-view" element={<ResponseIndex />} /> */}
-              <Route path="/preview" element={<PreviewPage />} />
+              <Route path="/preview" element={<IndexUser />} />
               <Route path="/edit-profile" element={<EditProfile />} />
               <Route path="/security-settings" element={<SecuritySettings />} />
               <Route path="/subscription" element={<SubscriptionPage />} />
