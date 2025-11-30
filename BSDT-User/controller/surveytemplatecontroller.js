@@ -86,10 +86,11 @@ exports.createSurveyForm = async (req, res) => {
 
     //check if the survey_link exists
     const isPublished = survey_link.length > 0 && survey_link[0].survey_link;
-    // get slag
-    const slug = survey_link[0].survey_link
-      ? survey_link[0].survey_link
-      : generateSlug(title, survey_id, "published");
+
+    // // get slag
+    // const slug = survey_link[0].survey_link
+    //   ? survey_link[0].survey_link
+    //   : generateSlug(title, survey_id, "published");
 
     // Step 1: Insert survey template into survey table
     const { data: surveyData, error: surveyError } = await supabase
@@ -99,7 +100,7 @@ exports.createSurveyForm = async (req, res) => {
         user_id,
         banner: survey_template.banner || null,
         template: survey_template,
-        survey_link: slug,
+        // survey_link: slug,
         starting_date: new Date(),
         title: title || "Untitled Survey",
         survey_status: "published",
@@ -257,6 +258,22 @@ exports.createSurveyForm = async (req, res) => {
         .json({ error: "Failed to update project last updated time" });
     }
 
+    //fetch survey slug after publishing
+    const { data: publishedSurveyData, error: publishedSurveyError } =
+      await supabase
+        .from("survey")
+        .select("survey_link")
+        .eq("survey_id", survey_id)
+        .single();
+    if (publishedSurveyError) {
+      console.error(
+        "Supabase select error for published survey:",
+        publishedSurveyError
+      );
+      return res.status(500).json({ error: "Failed to fetch survey link" });
+    }
+    const slug = publishedSurveyData.survey_link;
+
     return res.status(201).json({
       survey_link: slug,
       message: "Survey template created successfully",
@@ -360,33 +377,6 @@ exports.deleteSurveyForm = async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 };
-
-function generateSlug(survey_title, survey_id, survey_status) {
-  const hash = crypto.createHash("sha256");
-  hash.update(`${survey_id}-${survey_status}-${survey_title}`);
-  const hashValue = hash.digest("hex");
-
-  const currentTime = Date.now().toString();
-  const randomValue = Math.floor(Math.random() * 1e6).toString();
-  const title_hash = crypto
-    .createHash("sha256")
-    .update(survey_title)
-    .digest("hex")
-    .slice(0, 10);
-  const currentTime_hash = crypto
-    .createHash("sha256")
-    .update(currentTime)
-    .digest("hex")
-    .slice(0, 10);
-  const randomValue_hash = crypto
-    .createHash("sha256")
-    .update(randomValue)
-    .digest("hex")
-    .slice(0, 10);
-  const final_hash = `${hashValue}-${title_hash}-${currentTime_hash}-${randomValue_hash}`;
-
-  return `${final_hash}`;
-}
 
 exports.getSurvey = async (req, res) => {
   try {
