@@ -1,6 +1,7 @@
 const supabase = require("../db");
 const bcrypt = require("bcryptjs");
 
+
 // create project
 async function createProject(userId, title, field, description, privacy_mode) {
   console.log(userId, title, field, description, privacy_mode);
@@ -42,7 +43,7 @@ async function findSurveysByProjectId(projectId) {
   return { data, error };
 }
 
-async function createSurvey(projectId, title, userId) {
+async function createSurvey(projectId, title, userId, survey_link) {
   // Check for duplicates
   const { data: existing, error: fetchError } = await supabase
     .from("survey")
@@ -74,6 +75,7 @@ async function createSurvey(projectId, title, userId) {
         user_id: userId,
         created_at: date,
         last_updated: date,
+        survey_link: survey_link,
       },
     ])
     .select()

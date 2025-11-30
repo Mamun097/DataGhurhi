@@ -2,6 +2,8 @@ const e = require('express');
 const supabase = require('../db');
 const Project = require('../model/project');
 const { sendCollaboratorInvitation } = require('../services/emailService');
+const crypto = require("crypto");
+
 // const User = require('../model/user');
 
 
@@ -50,7 +52,9 @@ exports.createSurvey = async (req, res) => {
     const projectId = req.params.projectID;
     const { title } = req.body;
     const userId = req.jwt.id;
-    const { data, error } = await Project.createSurvey(projectId, title, userId);
+    //generate slug and insert it to survey table
+    const slug = generateSlug(title, projectId, 'draft');
+    const { data, error } = await Project.createSurvey(projectId, title, userId, slug);
 
     if (error) {
         console.error(error);
@@ -343,4 +347,31 @@ exports.fetchUserAccess = async (req, res) => {
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
+
+function generateSlug(survey_title, survey_id, survey_status) {
+  const hash = crypto.createHash("sha256");
+  hash.update(`${survey_id}-${survey_status}-${survey_title}`);
+  const hashValue = hash.digest("hex");
+
+  const currentTime = Date.now().toString();
+  const randomValue = Math.floor(Math.random() * 1e6).toString();
+  const title_hash = crypto
+    .createHash("sha256")
+    .update(survey_title)
+    .digest("hex")
+    .slice(0, 10);
+  const currentTime_hash = crypto
+    .createHash("sha256")
+    .update(currentTime)
+    .digest("hex")
+    .slice(0, 10);
+  const randomValue_hash = crypto
+    .createHash("sha256")
+    .update(randomValue)
+    .digest("hex")
+    .slice(0, 10);
+  const final_hash = `${hashValue}-${title_hash}-${currentTime_hash}-${randomValue_hash}`;
+
+  return `${final_hash}`;
+}
 
