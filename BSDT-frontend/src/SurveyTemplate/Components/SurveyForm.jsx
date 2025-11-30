@@ -51,7 +51,7 @@ const SurveyForm = ({
   survey,
 }) => {
   const navigate = useNavigate();
-  
+
   // State for the logo
   const [logo, setLogo] = useState(template?.logo ?? null);
   const [logoAlignment, setLogoAlignment] = useState(
@@ -563,6 +563,12 @@ const SurveyForm = ({
 
   // If survey is already published, then sendSurveyData is used, otherwise handleSave is used
   const handlePreview = async () => {
+    const confirmPreview = window.confirm(
+      "Your data will be saved before previewing. Continue?"
+    );
+    if (!confirmPreview) {
+      return;
+    }
     if (surveyStatus !== "published") {
       // Save the survey first
       setIsLoading(true);
@@ -639,6 +645,12 @@ const SurveyForm = ({
             </button>
           </>
         )}
+
+        <button onClick={() => handlePreview()} className="fab-btn">
+          <i className="bi bi-eye"></i>
+          <span className="btn-label">{getLabel("Preview")}</span>
+        </button>
+
         <button
           onClick={() => setShowCollaborationModal(true)}
           className="fab-btn"
@@ -648,13 +660,6 @@ const SurveyForm = ({
         </button>
 
         {surveyStatus == "published" && (
-          <button onClick={() => handlePreview()} className="fab-btn">
-            <i className="bi bi-eye"></i>
-            <span className="btn-label">{getLabel("Preview")}</span>
-          </button>
-        )}
-
-        {surveyLink && (
           <>
             <button onClick={() => setShowShareModal(true)} className="fab-btn">
               <i className="bi bi-share"></i>
@@ -670,6 +675,7 @@ const SurveyForm = ({
             </button>
           </>
         )}
+
         <button onClick={openSettingsModal} className="fab-btn">
           <i className="bi bi-gear"></i>
           <span className="btn-label">{getLabel("Settings")}</span>
