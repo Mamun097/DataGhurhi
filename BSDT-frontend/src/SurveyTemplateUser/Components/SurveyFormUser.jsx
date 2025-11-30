@@ -42,6 +42,7 @@ const SurveyForm = ({
   shuffle = false,
   onSubmit,
   isSubmitting = false,
+  isPreview = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
   
@@ -138,6 +139,8 @@ const SurveyForm = ({
   }, [shuffle, questions, setQuestions, isQuiz, template]);
 
   const validateCurrentSection = () => {
+    if (isPreview) return true;
+
     const currentSection = visibleSections[currentVisibleIndex];
     if (!currentSection) return true;
 
