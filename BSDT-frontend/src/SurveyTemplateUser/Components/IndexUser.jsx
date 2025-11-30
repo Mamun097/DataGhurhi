@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // Combined useParams here
+import { useNavigate, useParams, useLocation } from "react-router-dom"; // Combined useParams here
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyFormUser";
@@ -39,7 +39,14 @@ const isSurveyOpen = (template, setSurveyOpenMessage, setQuizTimeLeft) => {
 
 const Index = () => {
   const navigate = useNavigate();
-  const { slug } = useParams();
+  let isPreview = false;
+  let { slug } = useParams();
+  if (!slug) {
+    const location = useLocation();
+    slug = location.state?.slug;
+    isPreview = true;
+  }
+
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -118,6 +125,9 @@ const Index = () => {
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
+
+    if (isPreview) return;
+
     setIsSubmitting(true);
     const calculatedMarks = handleMarking(userResponse, questions);
     try {
@@ -181,6 +191,7 @@ const Index = () => {
                   shuffle={shuffle}
                   onSubmit={handleSubmit}
                   isSubmitting={isSubmitting}
+                  isPreview={isPreview}
                 />
               </div>
             ) : (

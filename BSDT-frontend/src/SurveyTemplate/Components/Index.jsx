@@ -50,7 +50,7 @@ const Index = () => {
   const [template, setTemplate] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState(null);
   const [surveyStatus, setSurveyStatus] = useState(survey_status);
-
+  
   const [useCustom, setUseCustom] = useState(
     surveyStatus === "saved" || surveyStatus === "published"
   );
@@ -101,63 +101,63 @@ const Index = () => {
 
   // Load saved/published survey details or saved templates
   const load = async () => {
-    if (useCustom) {
-      try {
-        const bearerTokenString = localStorage.getItem("token");
+    try {
+      const bearerTokenString = localStorage.getItem("token");
 
-        if (!bearerTokenString) {
-          toast.error("Authentication token not found. Please log in.");
-          console.error("No bearer token in localStorage");
-          return;
-        }
-
-        const token = bearerTokenString.startsWith("{")
-          ? JSON.parse(bearerTokenString).token
-          : bearerTokenString;
-
-        const resp = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = resp?.data?.data || resp?.data;
-        console.log("Survey data loaded successfully:", data);
-
-        if (!data) {
-          console.warn("Survey data is empty or undefined");
-          toast.warn("Survey data is empty.");
-          return;
-        }
-
-        setSurvey(data);
-        setTitle(data.title || input_title);
-        setTemplate(data.template || null);
-        setBackgroundImage(data.template?.backgroundImage || null);
-        setSurveyStatus(data.survey_status || surveyStatus);
-
-        // toast.success("Survey loaded successfully!");
-      } catch (err) {
-        console.error("Error loading survey:", {
-          message: err.message,
-          status: err.response?.status,
-          statusText: err.response?.statusText,
-          data: err.response?.data,
-          url: err.config?.url,
-        });
-
-        if (err.response?.status === 401) {
-          toast.error("Unauthorized. Please log in again.");
-        } else if (err.response?.status === 404) {
-          toast.error("Survey not found.");
-        } else if (err.response?.status === 500) {
-          toast.error("Server error. Please try again later.");
-        } else {
-          toast.error("Failed to load survey. Please try again.");
-        }
+      if (!bearerTokenString) {
+        toast.error("Authentication token not found. Please log in.");
+        console.error("No bearer token in localStorage");
+        return;
       }
-    } else {
+
+      const token = bearerTokenString.startsWith("{")
+        ? JSON.parse(bearerTokenString).token
+        : bearerTokenString;
+
+      const resp = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = resp?.data?.data || resp?.data;
+      console.log("Survey data loaded successfully:", data);
+
+      if (!data) {
+        console.warn("Survey data is empty or undefined");
+        toast.warn("Survey data is empty.");
+        return;
+      }
+
+      setSurvey(data);
+      setTitle(data.title || input_title);
+      setTemplate(data.template || null);
+      setBackgroundImage(data.template?.backgroundImage || null);
+      setSurveyStatus(data.survey_status || surveyStatus);
+
+      // toast.success("Survey loaded successfully!");
+    } catch (err) {
+      console.error("Error loading survey:", {
+        message: err.message,
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url,
+      });
+
+      if (err.response?.status === 401) {
+        toast.error("Unauthorized. Please log in again.");
+      } else if (err.response?.status === 404) {
+        toast.error("Survey not found.");
+      } else if (err.response?.status === 500) {
+        toast.error("Server error. Please try again later.");
+      } else {
+        toast.error("Failed to load survey. Please try again.");
+      }
+    }
+
+    if (!useCustom) {
       try {
         const resp = await apiClient.get("/api/get-saved-survey");
         const data = resp.data;
