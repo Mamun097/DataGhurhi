@@ -40,6 +40,8 @@ const isSurveyOpen = (template, setSurveyOpenMessage, setQuizTimeLeft) => {
 const Index = () => {
   const navigate = useNavigate();
   const { slug } = useParams();
+  // --- 1. DEFINE UNIQUE STORAGE KEY ---
+  const STORAGE_KEY = `survey_response_draft_${slug}`;
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -53,13 +55,27 @@ const Index = () => {
   const [logo, setLogo] = useState(null);
   const [logoAlignment, setLogoAlignment] = useState("left");
   const [logoText, setLogoText] = useState("");
-  const [userResponse, setUserResponse] = useState([]);
+  const [userResponse, setUserResponse] = useState(() => {
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      return savedData ? JSON.parse(savedData) : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Survey Open/Close related states
   const [isSurveyCurrentlyOpen, setIsSurveyCurrentlyOpen] = useState(null);
   const [surveyOpenMessage, setSurveyOpenMessage] = useState("");
+
+  // Whenever userResponse changes (user answers a question), save to storage
+  useEffect(() => {
+    if (userResponse && userResponse.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(userResponse));
+    }
+  }, [userResponse, STORAGE_KEY]);
 
   useEffect(() => {
     const load = async () => {
@@ -134,6 +150,8 @@ const Index = () => {
         },
         config
       );
+      // On successful submission clear local storage draft
+      localStorage.removeItem(STORAGE_KEY);
       // Survey success props: is_quiz, calculatedMarks, totalMarks
       navigate("/survey-success", {
         state: {
