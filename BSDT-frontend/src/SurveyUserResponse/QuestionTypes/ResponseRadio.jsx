@@ -7,6 +7,8 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
     (response) => response.questionText === question.text
   )?.userResponse;
 
+  const [choseCorrectOption, setChoseCorrectOption] = useState(false);
+
   const [otherOption, setOtherOption] = useState("");
   const [otherSelected, setOtherSelected] = useState(false);
 
@@ -22,12 +24,14 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
   const see_point_values = template.template.is_quiz
     ? template.template.quiz_settings.see_point_values
     : false;
-  
+
   useEffect(() => {
     if (userAnswer === correctAnswer) {
       setObtainedPoints(assignedPoints);
+      setChoseCorrectOption(true);
     } else {
       setObtainedPoints(0);
+      setChoseCorrectOption(false);
     }
   }, [userAnswer, correctAnswer, assignedPoints]);
 
@@ -79,7 +83,69 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
               className="form-check-label pe-2 mt-2"
               htmlFor={`radio-opt-${question.id}-${idx}`}
             >
-              {option || `Option ${idx + 1}`}
+              <>
+                <span
+                  style={{
+                    padding: "6px 20px",
+                    borderRadius: "6px",
+                    display: "inline-block",
+                    backgroundColor:
+                      see_correct_answers &&
+                      choseCorrectOption &&
+                      userAnswer === option
+                        ? "#d4edda"
+                        : see_correct_answers &&
+                          !choseCorrectOption &&
+                          userAnswer === option
+                        ? "#f8d7da"
+                        : see_correct_answers &&
+                          !choseCorrectOption &&
+                          correctAnswer === option
+                        ? "#d4edda"
+                        : "transparent",
+                    boxShadow:
+                      see_correct_answers &&
+                      choseCorrectOption &&
+                      userAnswer === option
+                        ? "0 2px 6px rgba(40, 167, 69, 0.2)"
+                        : see_correct_answers &&
+                          !choseCorrectOption &&
+                          userAnswer === option
+                        ? "0 2px 6px rgba(220, 53, 69, 0.2)"
+                        : see_correct_answers &&
+                          !choseCorrectOption &&
+                          correctAnswer === option
+                        ? "0 2px 6px rgba(40, 167, 69, 0.2)"
+                        : "none",
+                  }}
+                >
+                  {option || `Option ${idx + 1}`}
+                </span>
+                {see_correct_answers &&
+                  choseCorrectOption &&
+                  userAnswer === option && (
+                    <i
+                      className="bi bi-check-circle-fill text-success ms-2 me-2"
+                      style={{ fontSize: "1rem" }}
+                    ></i>
+                  )}
+                {see_correct_answers &&
+                  !choseCorrectOption &&
+                  userAnswer === option && (
+                    <i
+                      className="bi bi-x-circle-fill text-danger ms-2 me-2"
+                      style={{ fontSize: "1rem" }}
+                    ></i>
+                  )}
+                {see_correct_answers &&
+                  !choseCorrectOption &&
+                  correctAnswer === option && (
+                    <i
+                      className="bi bi-check-circle-fill text-success ms-2 me-2"
+                      style={{ fontSize: "1rem" }}
+                    ></i>
+                  )}
+              </>
             </label>
           </div>
         ))}
@@ -111,14 +177,14 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
         </div>
       )}
 
-      {see_correct_answers && correctAnswer && (
+      {/* {see_correct_answers && correctAnswer && (
         <div className="mt-3">
           <strong>Correct Answer: </strong> {correctAnswer}
         </div>
-      )}
+      )} */}
       {see_point_values && assignedPoints !== null && (
         <div className="mt-1">
-          <strong>Points: </strong> {obtainedPoints} / {assignedPoints}
+          <strong>Obtained marks: </strong> {obtainedPoints} / {assignedPoints}
         </div>
       )}
     </div>

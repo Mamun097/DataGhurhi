@@ -3,7 +3,7 @@ const supabase = require("../db");
 exports.submitSurvey = async (req, res) => {
 try {
         const { slug } = req.params;
-        const { userResponse, calculatedMarks } = req.body;
+        const { userResponse, metadata } = req.body;
         const userId = req.jwt?.id; 
 
         // 1. Fetch the survey's rules (ID and login requirement) in one call.
@@ -42,7 +42,7 @@ try {
             // If all checks pass, insert the response with the user's ID.
             const { data, error } = await supabase
                 .from('response')
-                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse , marks:calculatedMarks }])
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse , metadata: metadata }])
                 .select()
                 .single();
                 

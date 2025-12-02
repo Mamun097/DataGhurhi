@@ -431,6 +431,17 @@ const SurveyForm = ({
       ? JSON.parse(bearerTokenString).token
       : bearerTokenString;
 
+    let total = 0;
+    if (isQuiz) {
+      // Calculate total marks from questions
+      questions.forEach((q) => {
+        if (q.points) {
+          total += parseFloat(q.points);
+        }
+      });
+      setTotalMarks(total);
+    }
+
     try {
       const payload = {
         survey_id: survey_id,
@@ -453,7 +464,7 @@ const SurveyForm = ({
             default_point_value: defaultPointValue,
             start_time: startTime,
             end_time: endTime,
-            total_marks: totalMarks,
+            total_marks: total,
           },
           isLoggedInRequired: isLoggedInRequired,
           shuffleQuestions: shuffleQuestions,

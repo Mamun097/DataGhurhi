@@ -11,7 +11,7 @@ exports.saveSurveyForm = async (req, res) => {
         .status(400)
         .json({ error: "project_id and survey_template are required" });
     }
-    
+
     // Step 1: Insert survey template into survey table
     const { data: surveyData, error: surveyError } = await supabase
       .from("survey")
@@ -73,11 +73,6 @@ exports.createSurveyForm = async (req, res) => {
         error: "project_id, survey_template, and user_id are required",
       });
     }
-
-    console.log(
-      "response_user_logged_in_status:",
-      response_user_logged_in_status
-    );
 
     const { data: survey_link, error: survey_link_error } = await supabase
       .from("survey")
