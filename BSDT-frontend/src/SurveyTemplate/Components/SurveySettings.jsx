@@ -41,7 +41,12 @@ const SettingsModal = ({
   defaultPointValue,
   setDefaultPointValue,
 }) => {
+  if (!isOpen) return null;
+
   useEffect(() => {
+    if (isQuiz) {
+      setIsLoggedInRequired(true);
+    }
     if (isOpen) {
       // Prevent scrolling on the main page
       document.body.style.overflow = "hidden";
@@ -55,7 +60,6 @@ const SettingsModal = ({
       document.body.style.overflow = "unset";
     };
   }, [isOpen]);
-  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>

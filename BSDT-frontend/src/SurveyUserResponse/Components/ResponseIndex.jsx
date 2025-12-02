@@ -1,42 +1,34 @@
-import { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "../CSS/SurveyForm.css";
 import ResponseSurveyForm from "./ResponseSurveyForm";
 import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
 
 const ResponseIndex = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  const { template, userResponse, calculatedMarks } = location.state || {};
-
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
 
-  // Disable browser back button to prevent resubmission
-  useEffect(() => {
-    window.history.pushState(null, document.title, window.location.href);
-    window.addEventListener("popstate", handleBackButton);
+  // Values are in localStorage to survive page reloads
+  const savedData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("surveySuccessState"));
+    } catch (e) {
+      return null;
+    }
+  })();
 
-    return () => {
-      window.removeEventListener("popstate", handleBackButton);
-    };
-  }, []);
-
-  const handleBackButton = (event) => {
-    window.alert("Redirecting to Home Page");
-    window.history.pushState(null, document.title, window.location.href);
-    navigate("/");
-  };
+  const template = savedData?.template || null;
+  const userResponse = savedData?.userResponse || null;
+  const calculatedMarks = savedData?.calculatedMarks || null;
+  const totalMarks = savedData?.totalMarks || 0;
 
   return (
     <>
       {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
-      <div className="container-fluid bg-white">
+      <div className="container-fluid bg-green min-vh-100 py-4">
         <div className="row justify-content-center">
-          <div className="col-12 col-md-8">
+          <div className="col-12 col-md-8 border">
             <ResponseSurveyForm
               template={template}
               userResponse={userResponse}

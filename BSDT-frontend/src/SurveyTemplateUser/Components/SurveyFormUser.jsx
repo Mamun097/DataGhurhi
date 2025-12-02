@@ -45,10 +45,10 @@ const SurveyForm = ({
   isPreview = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
-  
+
   // Scroll to top when section changes
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 10, behavior: "smooth" });
   }, [currentVisibleIndex]);
 
   // State and Effect for detecting mobile view ---
@@ -254,7 +254,7 @@ const SurveyForm = ({
       {/* If survey is in quiz mode, make vertical space between timer and content */}
       {isQuiz && quizTimeLeft > 0 && <div style={{ height: "50px" }} />}
 
-      {logo && (
+      {logo && currentVisibleIndex < 1 && (
         <>
           {isMobile || logoAlignment === "center" ? (
             // This block is used for CENTER alignment OR any alignment on MOBILE
@@ -322,7 +322,7 @@ const SurveyForm = ({
       )}
       <hr className="my-4" />
       <div style={{ position: "relative", width: "100%" }}>
-        {backgroundImage ? (
+        {backgroundImage && currentVisibleIndex < 1 ? (
           <>
             <img
               src={backgroundImage}
@@ -360,9 +360,9 @@ const SurveyForm = ({
         )}
       </div>
 
-      {backgroundImage && <hr className="my-4" />}
+      {backgroundImage && currentVisibleIndex < 1 && <hr className="my-4" />}
 
-      {description && (
+      {description && currentVisibleIndex < 1 && (
         <div className="container rounded">
           <Linkify
             componentDecorator={(decoratedHref, decoratedText, key) => (
@@ -413,14 +413,16 @@ const SurveyForm = ({
       </div>
 
       <div className="container d-flex justify-content-between align-items-center my-5">
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={currentVisibleIndex === 0}
-          onClick={handlePrevious}
-        >
-          Previous
-        </button>
+        {currentVisibleIndex > 0 && (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={currentVisibleIndex === 0}
+            onClick={handlePrevious}
+          >
+            Previous
+          </button>
+        )}
 
         <span>
           Page {currentVisibleIndex + 1} of {visibleSections.length}
