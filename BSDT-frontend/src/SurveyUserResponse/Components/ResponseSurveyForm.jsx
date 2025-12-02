@@ -94,7 +94,7 @@ const ResponseSurveyForm = ({ template, userResponse, calculatedMarks }) => {
 
   return (
     <div>
-      {logo && (
+      {logo && currentVisibleIndex < 1 && (
         <>
           {isMobile || logoAlignment === "center" ? (
             // This block is used for CENTER alignment OR any alignment on MOBILE
@@ -161,10 +161,10 @@ const ResponseSurveyForm = ({ template, userResponse, calculatedMarks }) => {
         </>
       )}
 
-      <hr className="my-4" />
+      {currentVisibleIndex < 1 && <hr className="my-4" />}
 
       <div style={{ position: "relative", width: "100%" }}>
-        {backgroundImage ? (
+        {backgroundImage && currentVisibleIndex < 1 ? (
           <>
             <img
               src={backgroundImage}
@@ -202,9 +202,9 @@ const ResponseSurveyForm = ({ template, userResponse, calculatedMarks }) => {
         )}
       </div>
 
-      {backgroundImage && <hr className="my-4" />}
+      {backgroundImage && currentVisibleIndex < 1 && <hr className="my-4" />}
 
-      {description && (
+      {description && currentVisibleIndex < 1 && (
         <div className="container rounded">
           <Linkify
             componentDecorator={(decoratedHref, decoratedText, key) => (
@@ -233,12 +233,12 @@ const ResponseSurveyForm = ({ template, userResponse, calculatedMarks }) => {
         </div>
       )}
 
-      <p
+      {/* <p
         className="text-danger text-center my-3"
         style={{ fontSize: "1.1rem" }}
       >
         * Required fields are marked.
-      </p>
+      </p> */}
 
       <div>
         {visibleSections[currentVisibleIndex] && (
@@ -254,14 +254,16 @@ const ResponseSurveyForm = ({ template, userResponse, calculatedMarks }) => {
       </div>
 
       <div className="container d-flex justify-content-between align-items-center my-5">
-        <button
-          type="button"
-          className="btn btn-secondary"
-          disabled={currentVisibleIndex === 0}
-          onClick={handlePrevious}
-        >
-          Previous
-        </button>
+        {currentVisibleIndex > 0 && (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={currentVisibleIndex === 0}
+            onClick={handlePrevious}
+          >
+            Previous
+          </button>
+        )}
 
         <span>
           Page {currentVisibleIndex + 1} of {visibleSections.length}

@@ -1,3 +1,4 @@
+import ResponseText from "../QuestionTypes/ResponseText";
 import ResponseRadio from "../QuestionTypes/ResponseRadio";
 
 const SurveyQuestions = ({ section, questions, userResponse, template }) => {
@@ -11,6 +12,15 @@ const SurveyQuestions = ({ section, questions, userResponse, template }) => {
       case "radio":
         return (
           <ResponseRadio
+            index={index}
+            question={question}
+            userResponse={userResponse}
+            template={template}
+          />
+        );
+      case "text":
+        return (
+          <ResponseText
             index={index}
             question={question}
             userResponse={userResponse}
