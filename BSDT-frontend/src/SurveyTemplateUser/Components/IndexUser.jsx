@@ -63,6 +63,7 @@ const Index = () => {
   const [userResponse, setUserResponse] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [totalMarks, setTotalMarks] = useState(0);
 
   // Survey Open/Close related states
   const [isSurveyCurrentlyOpen, setIsSurveyCurrentlyOpen] = useState(null);
@@ -101,6 +102,7 @@ const Index = () => {
           setLogoText(surveyData.template.logoText || "");
           setBackgroundImage(surveyData.template.backgroundImage);
           setShuffle(surveyData.shuffle_questions);
+          setTotalMarks(surveyData.template?.quiz_settings?.total_marks || 0);
         } catch (err) {
           console.error("Failed to load template:", err);
           if (err.response) {
@@ -130,28 +132,47 @@ const Index = () => {
 
     setIsSubmitting(true);
     const calculatedMarks = handleMarking(userResponse, questions);
+
+    // If it is a quiz, userResponse will include obtained marks in submission
+    if (template.template.is_quiz) {
+      userResponse.push({
+        questionText: "Obtained Marks",
+        userResponse: calculatedMarks,
+      });
+    }
+
     try {
       const token = localStorage.getItem("token");
       const config = { headers: {} };
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
       await apiClient.post(
         `/api/submit-survey/${slug}`,
         {
           userResponse: userResponse,
-          calculatedMarks: calculatedMarks,
+          metadata: {
+            is_quiz: template.is_quiz || false,
+            obtained_marks: calculatedMarks,
+          },
         },
         config
       );
-      // Survey success props: is_quiz, calculatedMarks, totalMarks
-      navigate("/survey-success", {
-        state: {
+
+      try {
+        const payload = {
           template: template,
           userResponse: userResponse,
           calculatedMarks: calculatedMarks,
-        },
-      });
+          totalMarks: totalMarks,
+        };
+        localStorage.setItem("surveySuccessState", JSON.stringify(payload));
+      } catch (err) {
+        console.error("Failed to save user response view state:", err);
+      }
+
+      navigate("/survey-success");
     } catch (error) {
       console.error("Error submitting survey:", error);
       alert("There was an error submitting your survey. Please try again.");
@@ -171,11 +192,11 @@ const Index = () => {
   return (
     <>
       {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
-      <div className="container-fluid bg-white">
+      <div className="container-fluid bg-green">
         <div className="row justify-content-center">
           {isSurveyCurrentlyOpen ? (
             !submitted ? (
-              <div className="col-12 col-md-8">
+              <div className="col-12 col-md-8 border">
                 <SurveyForm
                   title={title}
                   sections={sections}
