@@ -27,6 +27,7 @@ from sklearn.preprocessing import OrdinalEncoder
 from .forms import AnalysisForm
 from scipy.stats import shapiro, anderson
 from matplotlib.patches import Patch
+from scipy.stats import mannwhitneyu, rankdata
 
 def infer_type(s, thresh=10):
     if pd.api.types.is_numeric_dtype(s):
@@ -366,11 +367,16 @@ def analyze_data_api(request):
              # Process categorical data BEFORE passing to test functions
             print("Converting categorical columns to numerical values...")
             ordinal_mappings = {}
-            categorical_cols = df.select_dtypes(include=['object']).columns
+            categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
-            if not categorical_cols.empty:
+            # For Mann–Whitney, DO NOT ENCODE col1
+            if test_type == 'mannwhitney' and col1 in categorical_cols:
+                categorical_cols.remove(col1)
+
+            if categorical_cols:
                 encoder = OrdinalEncoder()
                 df[categorical_cols] = encoder.fit_transform(df[categorical_cols])
+
                 print(f"Converted categorical columns: {list(categorical_cols)}")
 
                 for i, col in enumerate(categorical_cols):
@@ -584,6 +590,242 @@ except Exception:  # pragma: no cover
     Translator = None
 
 
+@csrf_exempt
+def get_groups(request):
+    """Get unique groups from a column for Mann-Whitney test."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'})
+    
+    user_id = request.POST.get('userID')
+    filename = request.POST.get('filename')
+    file_url = request.POST.get('Fileurl')
+    column_name = request.POST.get('column')
+    
+    if not all([user_id, filename, file_url, column_name]):
+        return JsonResponse({'success': False, 'error': 'Missing required parameters'})
+    
+    try:
+        # Load the file
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
+        
+        # Read the file
+        if filename.lower().endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path)
+        
+        # Check if column exists
+        if column_name not in df.columns:
+            return JsonResponse({'success': False, 'error': f'Column "{column_name}" not found'})
+        
+        # Get unique groups (remove NaN)
+        unique_groups = df[column_name].dropna().astype(str).unique()
+        groups_list = [str(g) for g in unique_groups[:20]]  # Limit to first 20
+        
+        return JsonResponse({
+            'success': True,
+            'groups': groups_list,
+            'total_groups': len(unique_groups)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
+    """
+    Performs Mann-Whitney U test with proper validation.
+    Requirements:
+    - col1: Categorical column with exactly two unique groups
+    - col2: Numerical column
+    """
+    from scipy.stats import mannwhitneyu, rankdata
+    import numpy as np
+    import json
+    
+    try:
+        # Get language
+        lang = request.POST.get('language', 'en')
+        
+        print(f"[DEBUG MANNWHITNEY] Starting Mann-Whitney test")
+        print(f"[DEBUG MANNWHITNEY] Column 1 (categorical): {col1}")
+        print(f"[DEBUG MANNWHITNEY] Column 2 (numerical): {col2}")
+        
+        # Check if columns exist
+        if col1 not in df.columns or col2 not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False, 
+                'error': error_msg
+            })
+        
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
+        
+        print(f"[DEBUG MANNWHITNEY] Raw selected_groups JSON: {selected_groups_json}")
+        
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG MANNWHITNEY] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG MANNWHITNEY] JSON decode error: {e}")
+                selected_groups = []
+        
+        # If no groups selected, use all groups in the column
+        if not selected_groups:
+            unique_groups = sorted(df[col1].dropna().astype(str).unique())
+            print(f"[DEBUG MANNWHITNEY] No groups selected, using all groups: {unique_groups}")
+        else:
+            # Convert selected groups to strings for comparison
+            selected_groups = [str(g) for g in selected_groups]
+            df[col1] = df[col1].astype(str)
+            df = df[df[col1].isin(selected_groups)]
+            unique_groups = selected_groups
+            print(f"[DEBUG MANNWHITNEY] Filtered to selected groups: {unique_groups}")
+        
+        print(f"[DEBUG MANNWHITNEY] DataFrame shape before cleaning: {df.shape}")
+        
+        # IMPORTANT: Do NOT convert col1 to numeric - keep it as categorical for grouping
+        # Only convert col2 to numeric
+        
+        # Check if col2 is numeric, try to convert if not
+        if not pd.api.types.is_numeric_dtype(df[col2]):
+            print(f"[DEBUG MANNWHITNEY] Column 2 is not numeric, attempting conversion...")
+            try:
+                df[col2] = pd.to_numeric(df[col2], errors='coerce')
+                print(f"[DEBUG MANNWHITNEY] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col2}" must be numerical for Mann-Whitney test. Conversion error: {e}'
+                print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Remove NaN values
+        df = df.dropna(subset=[col1, col2])
+        print(f"[DEBUG MANNWHITNEY] DataFrame shape after cleaning: {df.shape}")
+        
+        # Check if we have exactly 2 groups
+        if len(unique_groups) != 2:
+            error_msg = f'Mann-Whitney test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Check group counts
+        group_counts = df[col1].value_counts()
+        print(f"[DEBUG MANNWHITNEY] Group counts: {group_counts.to_dict()}")
+        
+        if any(group_counts < 3):
+            error_msg = f'Each group should have at least 3 observations. Current counts: {group_counts.to_dict()}'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Perform Mann-Whitney test
+        group1_data = df[df[col1] == unique_groups[0]][col2].values
+        group2_data = df[df[col1] == unique_groups[1]][col2].values
+        
+        print(f"[DEBUG MANNWHITNEY] Group 1 ({unique_groups[0]}) data sample: {group1_data[:5] if len(group1_data) > 0 else 'No data'}")
+        print(f"[DEBUG MANNWHITNEY] Group 2 ({unique_groups[1]}) data sample: {group2_data[:5] if len(group2_data) > 0 else 'No data'}")
+        
+        try:
+            print(f"[DEBUG MANNWHITNEY] Performing Mann-Whitney U test...")
+            u_stat, p_value = mannwhitneyu(
+                group1_data,
+                group2_data,
+                alternative="two-sided"
+            )
+            print(f"[DEBUG MANNWHITNEY] Test results - U: {u_stat}, p-value: {p_value}")
+        except Exception as e:
+            error_msg = f'Error performing Mann-Whitney test: {str(e)}'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Calculate rank statistics
+        all_data = np.concatenate([group1_data, group2_data])
+        ranks = rankdata(all_data)
+        
+        # Split ranks back to groups
+        group1_ranks = ranks[:len(group1_data)]
+        group2_ranks = ranks[len(group1_data):]
+        
+        mean_rank1 = np.mean(group1_ranks)
+        mean_rank2 = np.mean(group2_ranks)
+        
+        print(f"[DEBUG MANNWHITNEY] Mean ranks - Group 1: {mean_rank1}, Group 2: {mean_rank2}")
+        
+        # Prepare plot data
+        plot_data = []
+        for i, group in enumerate(unique_groups):
+            group_data = df[df[col1] == group][col2].values
+            group_ranks = group1_ranks if i == 0 else group2_ranks
+            
+            plot_data.append({
+                'category': str(group),
+                'values': [float(x) for x in group_data],
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)) if len(group_data) > 0 else np.nan,
+                'median': float(np.median(group_data)) if len(group_data) > 0 else np.nan,
+                'std': float(np.std(group_data)) if len(group_data) > 1 else np.nan,
+                'min': float(np.min(group_data)) if len(group_data) > 0 else np.nan,
+                'max': float(np.max(group_data)) if len(group_data) > 0 else np.nan,
+                'q25': float(np.percentile(group_data, 25)) if len(group_data) > 0 else np.nan,
+                'q75': float(np.percentile(group_data, 75)) if len(group_data) > 0 else np.nan,
+                'mean_rank': float(mean_rank1 if i == 0 else mean_rank2)
+            })
+        
+        # Prepare response
+        result = {
+            'success': True,
+            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
+            'statistic': float(u_stat),
+            'p_value': float(p_value),
+            'conclusion': 'Significant difference' if p_value < 0.05 else 'No significant difference',
+            'n_groups': len(unique_groups),
+            'total_observations': len(df),
+            'column_names': {
+                'group': str(col1),
+                'value': str(col2)
+            },
+            'groups': unique_groups,
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'mean_ranks': {
+                unique_groups[0]: float(mean_rank1),
+                unique_groups[1]: float(mean_rank2)
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'categories': unique_groups,
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05
+            }
+        }
+        
+        print(f"[DEBUG MANNWHITNEY] Returning successful result")
+        return JsonResponse(result)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f'Unexpected error: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG MANNWHITNEY] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
 def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
     """
     Performs Kruskal-Wallis H-test and returns analysis results without generating plots.
@@ -720,127 +962,6 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         }
     }
     return JsonResponse(response_data)
-
-
-
-def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
-    """
-    Performs Mann-Whitney U test and returns analysis results without generating plots.
-    Frontend will handle visualization using the returned data.
-    """
-    from django.http import JsonResponse
-    from scipy.stats import mannwhitneyu, rankdata
-    import numpy as np
-    import pandas as pd
-
-    try:
-        # --- 1. Setup --- (EXACTLY like old backend)
-        lang = request.POST.get('language', 'en')
-        use_def = request.POST.get('use_default', 'true') == 'true'
-
-        # Language setup (like old backend)
-        def translate(text): 
-            # Simplified translation - you can add googletrans if needed
-            if lang == 'bn':
-                # Basic Bengali translations
-                translations = {
-                    'Significant difference': 'উল্লেখযোগ্য পার্থক্য',
-                    'No significant difference': 'কোনো উল্লেখযোগ্য পার্থক্য নেই',
-                    'Average Rank': 'গড় র‍্যাঙ্ক'
-                }
-                return translations.get(text, text)
-            return text
-        
-        digit_map_bn = str.maketrans('0123456789', '০১২৩৪৫৬৭৮৯')
-        def map_digits(s): return s.translate(digit_map_bn) if lang == 'bn' else s
-
-        # --- 2. Mann–Whitney U test --- (EXACTLY like old backend)
-        u_stat, p_value = mannwhitneyu(df[col1], df[col2], alternative='two-sided')
-        
-        # --- 3. Category labels --- (EXACTLY like old backend)
-        cats = sorted(df[col1].unique())
-        cat_labels = [map_digits(translate(str(c))) for c in cats] if lang == 'bn' else [str(c) for c in cats]
-
-        # --- 4. Rank calculation --- (EXACTLY like old backend)
-        ranks = rankdata(df[col2].values)
-        rdf = df.copy(); rdf['__rank'] = ranks
-        avg_ranks = rdf.groupby(col1)['__rank'].mean().reset_index()
-
-        # --- 5. Prepare plot data for frontend --- (NEW: instead of generating images)
-        plot_data = []
-
-        for i, category in enumerate(cats):
-            category_data = df[df[col1] == category][col2]
-            category_values = category_data.values
-
-            # ------- Fixed ordinal mapping -------
-
-            raw_val = category  
-            mapped_label = raw_val  
-
-            col_map = ordinal_mappings.get(col1, {})
-
-            if col_map:
-                # Try direct match (int)
-                if raw_val in col_map:
-                    mapped_label = col_map[raw_val]
-
-                else:
-                    try:
-                        int_key = int(float(raw_val))
-                        if int_key in col_map:
-                            mapped_label = col_map[int_key]
-                    except:
-                        pass
-
-             
-                if mapped_label == raw_val:
-                    str_key = str(raw_val).strip()
-                    if str_key in col_map:
-                        mapped_label = col_map[str_key]
-
- 
-            plot_data.append({ 
-                'category': str(mapped_label),
-                'values': [float(x) for x in category_values],
-                'count': int(len(category_values)),
-                'mean': float(np.mean(category_values)),
-                'median': float(np.median(category_values)),
-                'std': float(np.std(category_values)),
-                'min': float(np.min(category_values)),
-                'max': float(np.max(category_values)),
-                'q25': float(np.percentile(category_values, 25)),
-                'q75': float(np.percentile(category_values, 75)),
-                'mean_rank': float(avg_ranks[avg_ranks[col1] == category]['__rank'].iloc[0])
-            })
- 
-
-        # --- 6. Prepare response --- (Like old backend but with plot_data instead of image_paths)
-        result = {
-            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
-            'statistic': float(u_stat),
-            'p_value': float(p_value),
-            'conclusion': translate('Significant difference' if p_value < 0.05 else 'No significant difference'),
-            'success': True,
-            'n_groups': len(cats),
-            'total_observations': len(df),
-            'column_names': {
-                'group': str(col1),
-                'value': str(col2)
-            },
-            'plot_data': plot_data,
-            'metadata': {
-                'categories': [str(c) for c in cats],
-                'significant': bool(p_value < 0.05),
-                'alpha': 0.05
-            }
-        }
-
-        print(f"[MannWhitney] result: U={u_stat:.6f}, p={p_value:.6g}, groups={len(cats)}")
-        return JsonResponse(result)
-
-    except Exception as e:
-        return JsonResponse({'success': False, 'error': str(e)})
 
 
 def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):

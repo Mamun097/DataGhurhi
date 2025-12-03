@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
+import CustomizationOverlay from './CustomizationOverlay for Bar_Chart/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -44,6 +44,16 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         barBorderOn: false,
         dataLabelsOn: true,
         elementWidth: 0.8,
+        // In getDefaultSettings function, add:
+        categoryLabelOrientation: 'horizontal', // 'horizontal', 'vertical', 'diagonal'
+        categoryLabelWrap: false,
+        categoryLabelMaxLines: 2,
+        plotMarginTop: 30,
+        plotMarginRight: 20,
+        plotMarginBottom: 40,
+        plotMarginLeft: 20,
+        plotType: plotType,
+        categoryLabelLineHeight: 1.2,
         orientation: plotType === 'Horizontal' ? 'horizontal' : 'vertical',
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
@@ -52,7 +62,11 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         barSpacing: 0.1,
         barRadius: 0,
         // Horizontal bar chart specific
-        barHeight: 0.6
+        barHeight: 0.6,
+        xAxisTickOffset: 0, 
+        yAxisTickOffset: 0,    
+        xAxisTickHorizontalOffset: 0, 
+        yAxisTickHorizontalOffset: 0
     };
 };
 
@@ -98,7 +112,6 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         getDefaultSettings('Horizontal', categoryCount, categoryNames)
     );
 
-    
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
@@ -125,6 +138,234 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         switch (currentPlotType) {
             case 'Vertical': setVerticalSettings(settings); break;
             case 'Horizontal': setHorizontalSettings(settings); break;
+        }
+    };
+
+    const CustomizedAxisTick = (props) => {
+        const { x, y, payload, orientation, categoryLabelOrientation, categoryLabelWrap, categoryLabelMaxLines, categoryLabelLineHeight, fontSize, fontFamily, dy, dx } = props;
+        
+        // Helper function to wrap text
+        const wrapText = (text, maxChars = 12) => {
+            if (!text) return [''];
+            const words = text.toString().split(' ');
+            const lines = [];
+            let currentLine = words[0];
+            
+            for (let i = 1; i < words.length; i++) {
+                const testLine = currentLine + ' ' + words[i];
+                if (testLine.length > maxChars && lines.length < categoryLabelMaxLines - 1) {
+                    lines.push(currentLine);
+                    currentLine = words[i];
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            lines.push(currentLine);
+            return lines;
+        };
+        
+        // For wrapped labels
+        if (categoryLabelWrap) {
+            const lines = wrapText(payload?.value || '', orientation === 'horizontal' ? 12 : 10);
+            
+            if (orientation === 'horizontal') {
+                // X-axis labels (vertical chart)
+                const rotation = categoryLabelOrientation === 'vertical' ? 'rotate(-90)' : 
+                                categoryLabelOrientation === 'diagonal' ? 'rotate(-45)' : '';
+                const textAnchor = categoryLabelOrientation === 'vertical' ? 'end' : 
+                                categoryLabelOrientation === 'diagonal' ? 'end' : 'middle';
+                
+                // FIX 1: Use user's dy prop as BASE, then add wrapped adjustment
+                let userDy = dy !== undefined ? dy : 0;
+                let wrappedAdjustment = 0;
+                
+                if (categoryLabelOrientation === 'vertical') {
+                    wrappedAdjustment = 20 + (lines.length * fontSize * 0.5);
+                } else if (categoryLabelOrientation === 'diagonal') {
+                    wrappedAdjustment = 25 + (lines.length * fontSize * 0.3);
+                } else {
+                    wrappedAdjustment = 20 + ((lines.length - 1) * fontSize * categoryLabelLineHeight * 0.8);
+                }
+                
+                let finalDy = userDy + wrappedAdjustment;
+                
+                // Use dx prop if provided
+                let userDx = dx !== undefined ? dx : 0;
+                let finalDx = userDx;
+                
+                return (
+                    <g transform={`translate(${x},${y})`}>
+                        <text 
+                            x={finalDx}
+                            y={0}
+                            dy={finalDy}
+                            textAnchor={textAnchor}
+                            fontSize={fontSize} 
+                            fontFamily={fontFamily}
+                            transform={rotation}
+                        >
+                            {lines.map((line, index) => (
+                                <tspan 
+                                    key={index} 
+                                    x={finalDx}
+                                    dy={index === 0 ? finalDy : categoryLabelLineHeight * fontSize}
+
+                                >
+                                    {line}
+                                </tspan>
+                            ))}
+                        </text>
+                    </g>
+                );
+            } else {
+                // Y-axis labels (horizontal chart) - WRAPPED
+                // FIX 2: Handle horizontal offset for wrapped labels
+                let textAnchor = 'end';
+                let rotation = '';
+                
+                if (categoryLabelOrientation === 'vertical') {
+                    rotation = 'rotate(-90)';
+                    textAnchor = 'end';
+                } else if (categoryLabelOrientation === 'diagonal') {
+                    rotation = 'rotate(-45)';
+                    textAnchor = 'end';
+                }
+                
+                // Use dx prop as BASE, then add default offset
+                let userDx = dx !== undefined ? dx : 0;
+                let defaultDx = 0;
+                
+                if (categoryLabelOrientation === 'vertical') {
+                    defaultDx = -15;
+                } else if (categoryLabelOrientation === 'diagonal') {
+                    defaultDx = -20;
+                } else {
+                    defaultDx = -10;
+                }
+                
+                let finalDx = userDx + defaultDx;
+                
+                // Use dy prop if provided
+                let userDy = dy !== undefined ? dy : 0;
+                let finalDy = userDy;
+                
+                return (
+                    <g transform={`translate(${x},${y})`}>
+                        <text 
+                            x={finalDx}
+                            y={finalDy}
+                            textAnchor={textAnchor}
+                            fontSize={fontSize} 
+                            fontFamily={fontFamily}
+                            transform={rotation}
+                        >
+                            {lines.map((line, index) => (
+                                <tspan 
+                                    key={index} 
+                                    x={finalDx}
+                                    dy={index === 0 ? finalDy : categoryLabelLineHeight * fontSize}
+                                >
+                                    {line}
+                                </tspan>
+                            ))}
+                        </text>
+                    </g>
+                );
+            }
+        }
+        
+        // For non-wrapped labels
+        if (orientation === 'horizontal') {
+            // X-axis labels (vertical chart)
+            const rotation = categoryLabelOrientation === 'vertical' ? 'rotate(-90)' : 
+                            categoryLabelOrientation === 'diagonal' ? 'rotate(-45)' : '';
+            const textAnchor = categoryLabelOrientation === 'vertical' ? 'end' : 
+                            categoryLabelOrientation === 'diagonal' ? 'end' : 'middle';
+            
+            // Use dy prop directly
+            let userDy = dy !== undefined ? dy : 0;
+            let defaultDy = 16;
+            
+            if (categoryLabelOrientation === 'vertical') {
+                defaultDy = 12;
+            } else if (categoryLabelOrientation === 'diagonal') {
+                defaultDy = 20;
+            }
+            
+            let finalDy = userDy + defaultDy;
+            
+            // Use dx prop if provided
+            let userDx = dx !== undefined ? dx : 0;
+            let finalDx = userDx;
+            
+            return (
+                <g transform={`translate(${x},${y})`}>
+                    <text
+                        x={finalDx}
+                        y={0}
+                        dy={finalDy}
+                        textAnchor={textAnchor}
+                        transform={rotation}
+                        fontSize={fontSize}
+                        fontFamily={fontFamily}
+                    >
+                        {payload?.value || ''}
+                    </text>
+                </g>
+            );
+        } else {
+            // Y-axis labels (horizontal chart)
+            let rotation = '';
+            let textAnchor = 'end';
+            
+            if (categoryLabelOrientation === 'vertical') {
+                rotation = 'rotate(-90)';
+                textAnchor = 'end';
+            } else if (categoryLabelOrientation === 'diagonal') {
+                rotation = 'rotate(-45)';
+                textAnchor = 'end';
+            }
+            
+            // Use dx prop as BASE, then add default offset
+            let userDx = dx !== undefined ? dx : 0;
+            let defaultDx = 0;
+            
+            if (categoryLabelOrientation === 'vertical') {
+                defaultDx = -10;
+            } else if (categoryLabelOrientation === 'diagonal') {
+                defaultDx = -15;
+            } else {
+                defaultDx = -10;
+            }
+            
+            let finalDx = userDx + defaultDx;
+            
+            // Use dy prop as BASE, then add default offset
+            let userDy = dy !== undefined ? dy : 0;
+            let defaultDy = 0;
+            
+            if (categoryLabelOrientation === 'vertical') {
+                defaultDy = 4;
+            } else if (categoryLabelOrientation === 'diagonal') {
+                defaultDy = 8;
+            }
+            
+            let finalDy = userDy + defaultDy;
+            
+            return (
+                <g transform={`translate(${x},${y})`}>
+                    <text
+                        x={finalDx}
+                        y={finalDy}
+                        textAnchor={textAnchor}
+                        transform={rotation}
+                        fontSize={fontSize}
+                        fontFamily={fontFamily}
+                    >
+                        {payload?.value || ''}
+                    </text>
+                </g>
+            );
         }
     };
 
@@ -343,11 +584,16 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     <ResponsiveContainer width="100%" height={height}>
                         <BarChart
                             data={data}
+
                             margin={{ 
-                                top: settings.captionOn ? 50 : 30, 
-                                right: 20, 
-                                left: 20, 
-                                bottom: 60 // Increased from 40 to 60 for better label spacing
+                                top: settings.plotMarginTop + (settings.captionOn ? 20 : 0), 
+                                right: settings.plotMarginRight, 
+                                left: settings.plotMarginLeft, 
+                                bottom: settings.plotMarginBottom + 
+                                    (settings.categoryLabelWrap ? 
+                                    (settings.categoryLabelMaxLines * settings.xAxisTickSize * settings.categoryLabelLineHeight * 1.5) : 
+                                    settings.categoryLabelOrientation === 'vertical' ? 120 : 
+                                    settings.categoryLabelOrientation === 'diagonal' ? 80 : 50)
                             }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
@@ -365,15 +611,26 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             )}
                             <XAxis
                                 dataKey="name"
-                                angle={-45}
-                                textAnchor="end"
-                                height={60} // Increased height for better label display
+                                height={settings.categoryLabelWrap ? 
+                                        Math.max(100, (settings.categoryLabelMaxLines * settings.categoryLabelLineHeight * settings.xAxisTickSize * 2.0)) : 
+                                        settings.categoryLabelOrientation === 'vertical' ? 120 : 
+                                        settings.categoryLabelOrientation === 'diagonal' ? 100 : 60}
                                 interval={0}
-                                tick={{ 
-                                    fill: '#000000', 
-                                    fontSize: settings.xAxisTickSize, 
-                                    fontFamily: settings.fontFamily 
-                                }}
+                                tick={(props) => (
+                                    <CustomizedAxisTick 
+                                        {...props} 
+                                        orientation="horizontal"
+                                        categoryLabelOrientation={settings.categoryLabelOrientation}
+                                        categoryLabelWrap={settings.categoryLabelWrap}
+                                        categoryLabelMaxLines={settings.categoryLabelMaxLines}
+                                        categoryLabelLineHeight={settings.categoryLabelLineHeight}
+                                        fontSize={settings.xAxisTickSize}
+                                        fontFamily={settings.fontFamily}
+                                        // Pass offset props
+                                        dy={settings.xAxisTickOffset || 0}
+                                        dx={settings.xAxisTickHorizontalOffset || 0}
+                                    />                            
+                                )}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -390,11 +647,19 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             />
                             <YAxis
                                 domain={yDomain}
-                                tick={{ 
-                                    fill: '#000000', 
-                                    fontSize: settings.yAxisTickSize, 
-                                    fontFamily: settings.fontFamily 
-                                }}
+                                tick={(props) => (
+                                    <CustomizedAxisTick 
+                                        {...props} 
+                                        orientation="vertical"
+                                        categoryLabelOrientation="horizontal" // Y-axis doesn't need special orientation
+                                        categoryLabelWrap={false}
+                                        fontSize={settings.yAxisTickSize}
+                                        fontFamily={settings.fontFamily}
+                                        // Pass offset props
+                                        dy={settings.yAxisTickOffset || 0}
+                                        dx={settings.yAxisTickHorizontalOffset || 0}
+                                    />
+                                )}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -438,19 +703,24 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     </ResponsiveContainer>
 
                     {/* PLOT BORDER OVERLAY */}
+
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '80px',
-                            right: '20px',
-                            bottom: '80px', // Adjusted for increased bottom margin
+                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
+                            left: settings.plotMarginLeft + 
+                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
+                            right: settings.plotMarginRight,
+                            bottom: settings.plotMarginBottom + 
+                                (settings.categoryLabelWrap ? 
+                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
                             borderTop: '2px solid #000000',
                             borderRight: '2px solid #000000',
                             pointerEvents: 'none',
                             zIndex: 0
                         }} />
                     )}
+
                 </div>
             </div>
         );
@@ -504,7 +774,15 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                         <BarChart
                             data={data}
                             layout="vertical"
-                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                            margin={{ 
+                                top: settings.plotMarginTop + (settings.captionOn ? 20 : 0), 
+                                right: settings.plotMarginRight, 
+                                left: settings.plotMarginLeft + 
+                                    (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0), 
+                                bottom: settings.plotMarginBottom + 
+                                    (settings.categoryLabelWrap ? 
+                                    (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0)
+                            }}
                             style={settings.borderOn ? { border: '2px solid black' } : {}}
                         >
                             {settings.captionOn && (
@@ -523,11 +801,19 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             <XAxis
                                 type="number"
                                 domain={xDomain}
-                                tick={{ 
-                                    fill: '#000000', 
-                                    fontSize: settings.xAxisTickSize, 
-                                    fontFamily: settings.fontFamily 
-                                }}
+                                tick={(props) => (
+                                    <CustomizedAxisTick 
+                                        {...props} 
+                                        orientation="horizontal"
+                                        categoryLabelOrientation="horizontal"
+                                        categoryLabelWrap={false}
+                                        fontSize={settings.xAxisTickSize}
+                                        fontFamily={settings.fontFamily}
+                                        // Pass offset props
+                                        dy={settings.xAxisTickOffset || 0}
+                                        dx={settings.xAxisTickHorizontalOffset || 0}
+                                    />
+                                )}
                                 // FIX: In horizontal chart, X-axis should show count values
                                 label={{
                                     value: settings.yAxisTitle, // Use Y-axis title for the count values
@@ -546,13 +832,31 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                             <YAxis
                                 type="category"
                                 dataKey="name"
-                                width={100}
+                                width={settings.categoryLabelWrap ? 
+                                    Math.max(180, settings.categoryLabelMaxLines * 60) : 
+                                    settings.categoryLabelOrientation === 'vertical' ? 
+                                    (Math.max(150, (settings.categoryLabels || []).reduce((max, label) => 
+                                        Math.max(max, (label || '').length * 10), 150))) : 
+                                    settings.categoryLabelOrientation === 'diagonal' ? 120 : 100}
                                 interval={0}
-                                tick={{ 
-                                    fill: '#000000', 
-                                    fontSize: settings.yAxisTickSize, 
-                                    fontFamily: settings.fontFamily 
-                                }}
+                                tick={(props) => (
+                                    <CustomizedAxisTick 
+                                        {...props} 
+                                        orientation="vertical"
+                                        categoryLabelOrientation={settings.categoryLabelOrientation}
+                                        categoryLabelWrap={settings.categoryLabelWrap}
+                                        categoryLabelMaxLines={settings.categoryLabelMaxLines}
+                                        categoryLabelLineHeight={settings.categoryLabelLineHeight}
+                                        fontSize={settings.yAxisTickSize}
+                                        fontFamily={settings.fontFamily}
+                                        // Add bar height info for proper alignment
+                                        barHeight={settings.barHeight}
+                                        barSpacing={settings.barSpacing}
+                                        // Pass offset props
+                                        dy={settings.yAxisTickOffset || 0}
+                                        dx={settings.yAxisTickHorizontalOffset || 0}
+                                    />
+                                )}                     
                                 // FIX: In horizontal chart, Y-axis should show category names
                                 label={{
                                     value: settings.xAxisTitle, // Use X-axis title for the categories
@@ -597,19 +901,25 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     </ResponsiveContainer>
 
                     {/* PLOT BORDER OVERLAY */}
+
+
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '100px',
-                            right: '20px',
-                            bottom: '80px',
+                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
+                            left: settings.plotMarginLeft + 
+                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
+                            right: settings.plotMarginRight,
+                            bottom: settings.plotMarginBottom + 
+                                (settings.categoryLabelWrap ? 
+                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
                             borderTop: '2px solid #000000',
                             borderRight: '2px solid #000000',
                             pointerEvents: 'none',
                             zIndex: 0
                         }} />
                     )}
+
                 </div>
             </div>
         );

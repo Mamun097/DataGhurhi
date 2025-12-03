@@ -27,7 +27,13 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         dataLabelsOn: true,
         borderOn: false,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
-        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
+        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
+        pieXPosition: 50,
+        pieYPosition: 50,
+        legendXPosition: 100,
+        legendYPosition: 50,
+        dataLabelPosition: 'outside'
+      
     };
 };
 
@@ -264,6 +270,69 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         return language === 'বাংলা' ? mapDigitIfBengali(label) : label;
     };
 
+    // ADD THIS NEW FUNCTION for custom label rendering
+    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
+        const settings = pieSettings;
+        const RADIAN = Math.PI / 180;
+        
+        // If data labels are off, return null
+        if (!settings.dataLabelsOn) return null;
+        
+        // Determine label text
+        let labelText = '';
+        const entry = plotData[index];
+        
+        if (settings.showCount && settings.showPercentage) {
+            labelText = `${entry.count} (${entry.percentage.toFixed(1)}%)`;
+        } else if (settings.showCount) {
+            labelText = `${entry.count}`;
+        } else if (settings.showPercentage) {
+            labelText = `${entry.percentage.toFixed(1)}%`;
+        }
+        
+        // Convert to Bengali if needed
+        labelText = language === 'বাংলা' ? mapDigitIfBengali(labelText) : labelText;
+        
+        if (settings.dataLabelPosition === 'inside') {
+            // For inside labels - position at the center of each slice
+            const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+            
+            return (
+                <text
+                    x={x}
+                    y={y}
+                    fill="white"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={12}
+                    fontWeight="bold"
+                >
+                    {labelText}
+                </text>
+            );
+        } else {
+            // For outside labels - use default positioning
+            const radius = outerRadius * 1.1;
+            const x = cx + radius * Math.cos(-midAngle * RADIAN);
+            const y = cy + radius * Math.sin(-midAngle * RADIAN);
+            
+            return (
+                <text
+                    x={x}
+                    y={y}
+                    fill="#333"
+                    textAnchor={x > cx ? 'start' : 'end'}
+                    dominantBaseline="central"
+                    fontSize={12}
+                >
+                    {labelText}
+                </text>
+            );
+        }
+    };
+
     const renderPieChart = () => {
         const settings = pieSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -311,7 +380,7 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                     <ResponsiveContainer width="100%" height={height}>
                         <PieChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                            style={settings.borderOn ? { border: '2px solid black', borderRadius: '8px' } : {}}
+                            style={settings.plotBorderOn ? { border: '2px solid black', borderRadius: '8px' } : {}} // ← CHANGE: settings.plotBorderOn
                         >
                             {settings.captionOn && (
                                 <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
@@ -320,34 +389,36 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                             )}
                             <Pie
                                 data={data}
-                                cx="50%"
-                                cy="50%"
+                                cx={`${settings.pieXPosition || 50}%`}
+                                cy={`${settings.pieYPosition || 50}%`}
                                 innerRadius={settings.innerRadius + '%'}
                                 outerRadius={settings.outerRadius}
                                 paddingAngle={2}
                                 dataKey="value"
-                                label={settings.dataLabelsOn ? renderLabel : false}
-                                labelLine={settings.dataLabelsOn}
+                                label={settings.dataLabelsOn ? renderCustomizedLabel : false} // ← CHANGE to renderCustomizedLabel
+                                labelLine={settings.dataLabelsOn && settings.dataLabelPosition === 'outside'} // ← Only show label line for outside
                             >
                                 {data.map((entry, index) => (
                                     <Cell 
                                         key={`cell-${index}`} 
                                         fill={entry.fill}
-                                        stroke="#ffffff"
-                                        strokeWidth={2}
                                     />
                                 ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                             {settings.legendOn && (
                                 <Legend 
-                                    layout="vertical"
-                                    verticalAlign="middle"
-                                    align={settings.legendPosition}
-                                    wrapperStyle={{
-                                        paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
-                                        paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
-                                    }}
+                                layout="vertical"
+                                verticalAlign="middle"
+                                align={settings.legendPosition}
+                                wrapperStyle={{
+                                    position: 'absolute',
+                                    left: `${settings.legendXPosition || 100}%`,
+                                    top: `${settings.legendYPosition || 50}%`,
+                                    transform: 'translate(-100%, -50%)',
+                                    paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
+                                    paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
+                                }}
                                     formatter={(value, entry) => {
                                         const item = data.find(d => d.name === value);
                                         if (item && (settings.showCount || settings.showPercentage)) {
