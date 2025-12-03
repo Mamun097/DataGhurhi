@@ -46,7 +46,8 @@ const Index = () => {
     slug = location.state?.slug;
     isPreview = true;
   }
-
+  
+  const STORAGE_KEY = `survey_response_${slug}`;
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
