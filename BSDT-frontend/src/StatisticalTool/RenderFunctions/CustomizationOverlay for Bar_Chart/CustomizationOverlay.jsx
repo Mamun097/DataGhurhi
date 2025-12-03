@@ -114,7 +114,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         distributionLineWidth: language === 'বাংলা' ? 'লাইন প্রস্থ' : 'Line Width',
         distributionCurveWidth: language === 'বাংলা' ? 'বক্ররেখার প্রস্থ' : 'Curve Width',
         distributionFill: language === 'বাংলা' ? 'বক্ররেখা ভরাট' : 'Fill Distribution',
-        distributionFillColor: language === 'বাংলা' ? 'ভরাট রং' : 'Fill Color'
+        distributionFillColor: language === 'বাংলা' ? 'ভরাট রং' : 'Fill Color'                
     };
 
     const gridStyles = [
@@ -392,6 +392,65 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             </div>
 
+
+
+                            <div className="customization-section">
+                                <h4 className="section-title">{language === 'বাংলা' ? 'টিক লেবেল স্থানান্তর' : 'Tick Label Offset'}</h4>
+
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{language === 'বাংলা' ? 'X অক্ষ টিক উল্লম্ব স্থানান্তর' : 'X-Axis Tick Vertical Offset'}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.xAxisTickOffset}
+                                            onChange={(e) => handleChange('xAxisTickOffset', parseInt(e.target.value))}
+                                            min="-50"
+                                            max="50"
+                                        />
+                                    </div>
+
+                                    <div className="setting-group">
+                                        <label className="setting-label">{language === 'বাংলা' ? 'Y অক্ষ টিক উল্লম্ব স্থানান্তর' : 'Y-Axis Tick Vertical Offset'}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.yAxisTickOffset}
+                                            onChange={(e) => handleChange('yAxisTickOffset', parseInt(e.target.value))}
+                                            min="-50"
+                                            max="50"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{language === 'বাংলা' ? 'X অক্ষ টিক অনুভূমিক স্থানান্তর' : 'X-Axis Tick Horizontal Offset'}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.xAxisTickHorizontalOffset}
+                                            onChange={(e) => handleChange('xAxisTickHorizontalOffset', parseInt(e.target.value))}
+                                            min="-50"
+                                            max="50"
+                                        />
+                                    </div>
+
+                                    <div className="setting-group">
+                                        <label className="setting-label">{language === 'বাংলা' ? 'Y অক্ষ টিক অনুভূমিক স্থানান্তর' : 'Y-Axis Tick Horizontal Offset'}</label>
+                                        <input
+                                            type="number"
+                                            className="setting-input"
+                                            value={settings.yAxisTickHorizontalOffset}
+                                            onChange={(e) => handleChange('yAxisTickHorizontalOffset', parseInt(e.target.value))}
+                                            min="-50"
+                                            max="50"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+
                             <div className="setting-row">
                                 <div className="setting-group">
                                     <label className="setting-label">{t.xAxisTickSize}</label>
@@ -494,7 +553,124 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             </div>
                         </div>
+
                     )}
+
+                    {/* Category Label Orientation */}
+                    <div className="customization-section">
+                        <h4 className="section-title">{language === 'বাংলা' ? 'ক্যাটাগরি লেবেল অভিযোজন' : 'Category Label Orientation'}</h4>
+                        
+                        <div className="setting-group">
+                            <label className="setting-label">{language === 'বাংলা' ? 'লেবেল অভিযোজন' : 'Label Orientation'}</label>
+                            <select
+                                className="setting-select"
+                                value={settings.categoryLabelOrientation}
+                                onChange={(e) => handleChange('categoryLabelOrientation', e.target.value)}
+                            >
+                                <option value="horizontal">Horizontal</option>
+                                <option value="diagonal">Diagonal (45°)</option>
+                                <option value="vertical">Vertical (90°)</option>
+                            </select>
+                        </div>
+
+                        {/* Wrap Controls */}
+                        <div className="setting-group">
+                            <label className="setting-checkbox-label">
+                                <input
+                                type="checkbox"
+                                checked={settings.categoryLabelWrap}
+                                onChange={(e) => handleChange('categoryLabelWrap', e.target.checked)}
+                                />
+                                <span>{language === 'বাংলা' ? 'লেবেল মোড়ান' : 'Wrap Labels'}</span>
+                            </label>
+                        </div>
+
+                        {settings.categoryLabelWrap && (
+                        <div className="setting-row">
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'সর্বোচ্চ লাইন' : 'Max Lines'}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.categoryLabelMaxLines}
+                                    onChange={(e) => handleChange('categoryLabelMaxLines', parseInt(e.target.value))}
+                                    min="1"
+                                    max="5"
+                                />
+                            </div>
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'লাইন উচ্চতা' : 'Line Height'}</label>
+                                <input
+                                    type="range"
+                                    className="setting-range"
+                                    value={settings.categoryLabelLineHeight}
+                                    onChange={(e) => handleChange('categoryLabelLineHeight', parseFloat(e.target.value))}
+                                    min="1"
+                                    max="2"
+                                    step="0.1"
+                                />
+                                <span className="range-value">{settings.categoryLabelLineHeight.toFixed(1)}</span>
+                            </div>
+                        </div>
+                        )}
+
+                    </div>
+
+                    {/* Plot Margins */}
+                    <div className="customization-section">
+                        <h4 className="section-title">{language === 'বাংলা' ? 'প্লট মার্জিন' : 'Plot Margins'}</h4>
+                        
+                        <div className="setting-row">
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'উপরের মার্জিন' : 'Top Margin'}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.plotMarginTop}
+                                    onChange={(e) => handleChange('plotMarginTop', parseInt(e.target.value))}
+                                    min="0"
+                                    max="200"
+                                />
+                            </div>
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'ডান মার্জিন' : 'Right Margin'}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.plotMarginRight}
+                                    onChange={(e) => handleChange('plotMarginRight', parseInt(e.target.value))}
+                                    min="0"
+                                    max="200"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="setting-row">
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'নিচের মার্জিন' : 'Bottom Margin'}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.plotMarginBottom}
+                                    onChange={(e) => handleChange('plotMarginBottom', parseInt(e.target.value))}
+                                    min="0"
+                                    max="200"
+                                />
+                            </div>
+                            <div className="setting-group">
+                                <label className="setting-label">{language === 'বাংলা' ? 'বাম মার্জিন' : 'Left Margin'}</label>
+                                <input
+                                    type="number"
+                                    className="setting-input"
+                                    value={settings.plotMarginLeft}
+                                    onChange={(e) => handleChange('plotMarginLeft', parseInt(e.target.value))}
+                                    min="0"
+                                    max="200"
+                                />
+                            </div>
+                        </div>
+                    </div>                    
+
 
                     {/* Grid Settings */}
                     {plotType !== 'Pie' && (
@@ -586,7 +762,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         </div>
 
                         {/* Bar Border On */}
-                        {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Rank' || plotType === 'Histogram') && ( 
+                        {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Rank' || plotType === 'Histogram' || plotType === 'Vertical' || plotType === 'Horizontal') && ( 
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
                                     <input
@@ -600,7 +776,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         )}
 
                         {/* Data Labels On */}
-                        {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Histogram' || plotType === 'Box') && (
+                        {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Histogram' || plotType === 'Box' || plotType === 'Vertical' || plotType === 'Horizontal') && (
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
                                     <input
@@ -648,245 +824,37 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </div>
                         )}
 
-    
-
-                        {plotType === 'Scatter' && (
+                        {/* Bar Chart Specific Settings */}
+                        {(plotType === 'Vertical' || plotType === 'Horizontal') && (
                             <>
-                                {/* Common Scatter Settings */}
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showScatterPoints}
-                                            onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
-                                        />
-                                        <span>{t.showScatterPoints}</span>
-                                    </label>
-                                </div>
 
                                 <div className="setting-group">
                                     <label className="setting-checkbox-label">
                                         <input
                                             type="checkbox"
-                                            checked={settings.showRegressionLines}
-                                            onChange={(e) => handleChange('showRegressionLines', e.target.checked)}
+                                            checked={settings.showPercentage}
+                                            onChange={(e) => handleChange('showPercentage', e.target.checked)}
                                         />
-                                        <span>{t.showRegressionLines}</span>
-                                    </label>
-                                </div>
-
-
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showCriticalValues}
-                                            onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
-                                        />
-                                        <span>{t.showCriticalValues}</span>
+                                        <span>{t.showPercentage}</span>
                                     </label>
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.legendOn}
-                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
-                                    </label>
-                                </div>    
-
-                                {settings.legendOn && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.legendPosition}
-                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                        >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
-                                        </select>
-                                    </div>
-                                )}
-
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterSize}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.scatterSize}
-                                            onChange={(e) => handleChange('scatterSize', parseInt(e.target.value))}
-                                            min="2"
-                                            max="20"
-                                            step="1"
-                                        />
-                                        <span className="range-value">{settings.scatterSize}</span>
-                                    </div>
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterOpacity}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.scatterOpacity}
-                                            onChange={(e) => handleChange('scatterOpacity', parseFloat(e.target.value))}
-                                            min="0.1"
-                                            max="1"
-                                            step="0.1"
-                                        />
-                                        <span className="range-value">{settings.scatterOpacity.toFixed(1)}</span>
-                                    </div>
+                                    <label className="setting-label">{t.barRadius}</label>
+                                    <input
+                                        type="range"
+                                        className="setting-range"
+                                        value={settings.barRadius}
+                                        onChange={(e) => handleChange('barRadius', parseInt(e.target.value))}
+                                        min="0"
+                                        max="20"
+                                        step="1"
+                                    />
+                                        <span className="range-value">{settings.barRadius}</span>
                                 </div>
-
-
-
-
-
-                                                            
 
                             </>
-                        )}            
-                        
-                        {/* Residual Plot Specific Settings */}
-                        {plotType === 'Residual' && (
-                            <>
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showScatterPoints}
-                                            onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
-                                        />
-                                        <span>{t.showScatterPoints}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showReferenceLine}
-                                            onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
-                                        />
-                                        <span>{t.showReferenceLine}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showCriticalValues}
-                                            onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
-                                        />
-                                        <span>{t.showCriticalValues}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.legendOn}
-                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
-                                        />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
-                                    </label>
-                                </div>    
-
-                                {settings.legendOn && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.legendPosition}
-                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                        >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
-                                        </select>
-                                    </div>
-                                )}
-
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterSize}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.scatterSize}
-                                            onChange={(e) => handleChange('scatterSize', parseInt(e.target.value))}
-                                            min="2"
-                                            max="20"
-                                            step="1"
-                                        />
-                                        <span className="range-value">{settings.scatterSize}</span>
-                                    </div>
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.scatterOpacity}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.scatterOpacity}
-                                            onChange={(e) => handleChange('scatterOpacity', parseFloat(e.target.value))}
-                                            min="0.1"
-                                            max="1"
-                                            step="0.1"
-                                        />
-                                        <span className="range-value">{settings.scatterOpacity.toFixed(1)}</span>
-                                    </div>
-                                </div>
-
-                                <div className="setting-row">
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineColor}</label>
-                                        <input
-                                            type="color"
-                                            className="color-picker"
-                                            value={settings.referenceLineColor}
-                                            onChange={(e) => handleChange('referenceLineColor', e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineWidth}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.referenceLineWidth}
-                                            onChange={(e) => handleChange('referenceLineWidth', parseInt(e.target.value))}
-                                            min="1"
-                                            max="5"
-                                            step="1"
-                                        />
-                                        <span className="range-value">{settings.referenceLineWidth}</span>
-                                    </div>
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineStyle}</label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.referenceLineStyle}
-                                            onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
-                                        >
-                                            <option value="solid">Solid</option>
-                                            <option value="dashed">Dashed</option>
-                                            <option value="dotted">Dotted</option>
-                                        </select>
-                                    </div>
-
-                                </div>
-                            </>
-                        )}                                    
+                        )}
 
 
                     </div>
@@ -919,9 +887,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         </div>
                     )}    
                 
-                
-                
-                
+                                            
                 </div>
 
                 <div className="customization-footer">

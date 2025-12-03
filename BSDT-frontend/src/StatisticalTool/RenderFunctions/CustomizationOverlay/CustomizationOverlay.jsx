@@ -833,132 +833,91 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </>
                         )}
 
-                        {/* Bar Chart Specific Settings */}
-                        {(plotType === 'Vertical' || plotType === 'Horizontal') && (
-                            <>
 
+                        {plotType === 'Pie' && (
+                        <>
+                            {/* Add this after the existing pie settings */}
+                            <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showPercentage}
-                                            onChange={(e) => handleChange('showPercentage', e.target.checked)}
-                                        />
-                                        <span>{t.showPercentage}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-label">{t.barRadius}</label>
+                                    <label className="setting-label">Pie Chart Horizontal Position</label>
                                     <input
                                         type="range"
                                         className="setting-range"
-                                        value={settings.barRadius}
-                                        onChange={(e) => handleChange('barRadius', parseInt(e.target.value))}
+                                        value={settings.pieXPosition || 50}
+                                        onChange={(e) => handleChange('pieXPosition', parseInt(e.target.value))}
                                         min="0"
-                                        max="20"
-                                        step="1"
+                                        max="100"
                                     />
-                                        <span className="range-value">{settings.barRadius}</span>
+                                    <span className="range-value">{settings.pieXPosition || 50}%</span>
                                 </div>
-
-                            </>
-                        )}
-
-                        {plotType === 'Pie' && (
-                            <>
+                                <div className="setting-group">
+                                    <label className="setting-label">Pie Chart Vertical Position</label>
+                                    <input
+                                        type="range"
+                                        className="setting-range"
+                                        value={settings.pieYPosition || 50}
+                                        onChange={(e) => handleChange('pieYPosition', parseInt(e.target.value))}
+                                        min="0"
+                                        max="100"
+                                    />
+                                    <span className="range-value">{settings.pieYPosition || 50}%</span>
+                                </div>
+                            </div>
+                            
+                            {/* Remove the existing legendPosition select and replace with: */}
+                            <div className="setting-row">
+                                <div className="setting-group">
+                                    <label className="setting-label">Legend Horizontal Position</label>
+                                    <input
+                                        type="range"
+                                        className="setting-range"
+                                        value={settings.legendXPosition || 100}
+                                        onChange={(e) => handleChange('legendXPosition', parseInt(e.target.value))}
+                                        min="0"
+                                        max="100"
+                                    />
+                                    <span className="range-value">{settings.legendXPosition || 100}%</span>
+                                </div>
+                                <div className="setting-group">
+                                    <label className="setting-label">Legend Vertical Position</label>
+                                    <input
+                                        type="range"
+                                        className="setting-range"
+                                        value={settings.legendYPosition || 50}
+                                        onChange={(e) => handleChange('legendYPosition', parseInt(e.target.value))}
+                                        min="0"
+                                        max="100"
+                                    />
+                                    <span className="range-value">{settings.legendYPosition || 50}%</span>
+                                </div>
                                 <div className="setting-group">
                                     <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.legendOn}
-                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
-                                        />
-                                        <span>{t.legendOn}</span>
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.dataLabelsOn}
+                                        onChange={(e) => handleChange('dataLabelsOn', e.target.checked)}
+                                    />
+                                    <span>{t.dataLabelsOn}</span>
                                     </label>
-                                </div>
+                                </div>                            
+                            </div>
 
+                            {settings.dataLabelsOn && (
                                 <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showPercentage}
-                                            onChange={(e) => handleChange('showPercentage', e.target.checked)}
-                                        />
-                                        <span>{t.showPercentage}</span>
-                                    </label>
+                                    <label className="setting-label">Data Label Position</label>
+                                    <select
+                                        className="setting-select"
+                                        value={settings.dataLabelPosition || 'outside'}
+                                        onChange={(e) => handleChange('dataLabelPosition', e.target.value)}
+                                    >
+                                        <option value="outside">Outside</option>
+                                        <option value="inside">Inside</option>
+                                    </select>
                                 </div>
+                            )}
 
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.showCount}
-                                            onChange={(e) => handleChange('showCount', e.target.checked)}
-                                        />
-                                        <span>{t.showCount}</span>
-                                    </label>
-                                </div>
-
-                                <div className="setting-group">
-                                    <label className="setting-checkbox-label">
-                                        <input
-                                            type="checkbox"
-                                            checked={settings.innerRadius > 0}
-                                            onChange={(e) => handleChange('innerRadius', e.target.checked ? 40 : 0)}
-                                        />
-                                        <span>{t.donutChart}</span>
-                                    </label>
-                                </div>
-
-                                {settings.legendOn && (
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.legendPosition}</label>
-                                        <select
-                                            className="setting-select"
-                                            value={settings.legendPosition}
-                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
-                                        >
-                                            {legendPositions.map(pos => (
-                                                <option key={pos.value} value={pos.value}>{pos.label}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                )}
-
-                                <div className="setting-row">
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.innerRadius}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={settings.innerRadius}
-                                            onChange={(e) => handleChange('innerRadius', parseInt(e.target.value))}
-                                            min="0"
-                                            max="80"
-                                            step="5"
-                                        />
-                                        <span className="range-value">{settings.innerRadius}%</span>
-                                    </div>
-
-                                    <div className="setting-group">
-                                        <label className="setting-label">{t.outerRadius}</label>
-                                        <input
-                                            type="range"
-                                            className="setting-range"
-                                            value={parseInt(settings.outerRadius)}
-                                            onChange={(e) => handleChange('outerRadius', `${e.target.value}%`)}
-                                            min="50"
-                                            max="100"
-                                            step="5"
-                                        />
-                                        <span className="range-value">{settings.outerRadius}</span>
-                                    </div>
-                                </div>
-
-
-                            </>
-                        )}
+                        </>
+                        )}                        
                     
                         {/* Anderson-Darling Specific Settings */}
                         {plotType === 'QQ' && (

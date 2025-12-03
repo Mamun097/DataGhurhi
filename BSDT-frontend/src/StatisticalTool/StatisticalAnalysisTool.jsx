@@ -133,6 +133,14 @@ const translations = {
         aboutTitle: "About This Tool",
         aboutText: "This statistical analysis tool allows you to perform various statistical tests on your Excel data:",
         kruskalTitle: "Kruskal-Wallis H-test",
+        mannwhitneyGroupError: 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.',
+        selectGroupsPrompt: 'Select 2 Groups',
+        groupsAvailable: 'groups available',
+        selectedGroups: 'Selected Groups',
+        clearSelection: 'Clear Selection',
+        youMustSelect: 'You must select exactly 2 groups',
+        groupsLoading: 'Loading groups...',
+        mannwhitneyHelp: 'Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.',        
         languageToggle: "বাংলা",
         downloadLabel: "Format",
         useDefaultSettings: "Use default plot settings?",
@@ -246,6 +254,14 @@ const translations = {
         aboutTitle: "এই টুল সম্পর্কে",
         aboutText: "এই পরিসংখ্যানগত বিশ্লেষণ টুল আপনাকে আপনার এক্সেল ডেটাতে বিভিন্ন পরিসংখ্যানগত পরীক্ষা করতে দেয়:",
         kruskalTitle: "ক্রুসকাল-ওয়ালিস এইচ-টেস্ট",
+        mannwhitneyGroupError: 'ম্যান-হুইটনি পরীক্ষার জন্য ঠিক ২টি গ্রুপ প্রয়োজন। দয়া করে ২টি গ্রুপ নির্বাচন করুন।',
+        selectGroupsPrompt: '২টি গ্রুপ নির্বাচন করুন',
+        groupsAvailable: 'টি গ্রুপ উপলব্ধ',
+        selectedGroups: 'নির্বাচিত গ্রুপসমূহ',
+        clearSelection: 'সিলেকশন ক্লিয়ার করুন',
+        youMustSelect: 'আপনাকে ২টি গ্রুপ নির্বাচন করতে হবে',
+        groupsLoading: 'গ্রুপ লোড হচ্ছে...',
+        mannwhitneyHelp: 'ম্যান-হুইটনি পরীক্ষার জন্য ২টি গ্রুপ নির্বাচন করুন। শুধুমাত্র সংখ্যাসূচক ডেটার জন্য প্রযোজ্য।',        
         languageToggle: "English",
         downloadLabel: "ফরম্যাট",
         useDefaultSettings: "ডিফল্ট প্লট সেটিংস ব্যবহার করবেন?",
@@ -554,12 +570,12 @@ const StatisticalAnalysisTool = () => {
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-
-
-
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [selectedGroups, setSelectedGroups] = useState([]);    
+    const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
 
     const testsWithoutDetails = [
         'eda_basics',
@@ -570,12 +586,64 @@ const StatisticalAnalysisTool = () => {
         'similarity',
     ];
 
+    // Function to fetch groups when column1 changes for Mann-Whitney
+    const fetchGroupsForColumn = async (columnName) => {
+        if (!columnName || !fileURL || testType !== 'mannwhitney') {
+            setAvailableGroups([]);
+            setSelectedGroups([]);
+            return;
+        }
+        
+        try {
+            // Fetch a preview of the data to get unique groups
+            const formData = new FormData();
+            formData.append('filename', fileName);
+            formData.append('userID', userId);
+            formData.append('Fileurl', sessionStorage.getItem("fileURL") || "");
+            formData.append('column', columnName);
+            
+            
+            const response = await fetch(`${API_BASE}/get-groups/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                setAvailableGroups(data.groups || []);
+                
+                // Auto-select first 2 groups if available
+                if (data.groups.length >= 2) {
+                    setSelectedGroups(data.groups.slice(0, 2));
+                } else {
+                    setSelectedGroups([]);
+                }
+            } else {
+                setAvailableGroups([]);
+                setSelectedGroups([]);
+            }
+        } catch (error) {
+            console.error("Error fetching groups:", error);
+            setAvailableGroups([]);
+            setSelectedGroups([]);
+        }
+    };
+
+
+    
     // Add this useEffect to sync tempSelectedColumns when menu opens
     useEffect(() => {
         if (showColumnMenu) {
             setTempSelectedColumns(selectedColumns);
         }
     }, [showColumnMenu, selectedColumns]);
+
+    useEffect(() => {
+        if (testType === 'mannwhitney' && column1 && fileURL) {
+            fetchGroupsForColumn(column1);
+        }
+    }, [column1, testType, fileURL]);
+
 
 
     // Handle file selection async
@@ -644,6 +712,14 @@ const StatisticalAnalysisTool = () => {
             return;
         }
 
+        // Add validation for Mann-Whitney
+        if (testType === 'mannwhitney') {
+            if (selectedGroups.length !== 2) {
+                setErrorMessage(t.mannwhitneyGroupError || 'Please select exactly 2 groups for Mann-Whitney test');
+                return;
+            }
+        }        
+
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
 
@@ -678,6 +754,12 @@ const StatisticalAnalysisTool = () => {
         } else if (testType === 'similarity') {
             formData.append('column1', column1);
             formData.append('column2', column2);
+    // In the formData preparation section, add:
+        }else if (testType === 'mannwhitney') {
+            formData.append('column1', column1);
+            formData.append('column2', column2); 
+            formData.append('selected_groups', JSON.stringify(selectedGroups));
+                    
         } else if (testType === 'eda_basics') {
         } else if (testType === 'network_graph') {
 
@@ -1868,6 +1950,149 @@ const closePreview= async () =>{
                                                     </div>
                                                 )}
 
+
+                                                {testType === 'mannwhitney' && column1 && (
+                                                    <div className="form-group">
+                                                        <label className="form-label">{t.selectGroups}</label>
+                                                        
+                                                        {/* Selected Groups Display */}
+                                                        {selectedGroups.length > 0 && (
+                                                            <div style={{
+                                                                marginBottom: '1rem',
+                                                                padding: '0.75rem',
+                                                                backgroundColor: '#f0f9ff',
+                                                                border: '1px solid #bae6fd',
+                                                                borderRadius: '0.5rem'
+                                                            }}>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                    <span style={{ fontWeight: '600', color: '#0369a1' }}>
+                                                                        {t.selectedGroups}: {selectedGroups.join(', ')}
+                                                                    </span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => setSelectedGroups([])}
+                                                                        style={{
+                                                                            background: 'none',
+                                                                            border: 'none',
+                                                                            color: '#dc2626',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.875rem'
+                                                                        }}
+                                                                    >
+                                                                        {t.clearGroups}
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Group Selection Dropdown */}
+                                                        <div style={{ position: 'relative' }}>
+                                                            <button
+                                                                type="button"
+                                                                className="form-select"
+                                                                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
+                                                                style={{
+                                                                    textAlign: 'left',
+                                                                    cursor: 'pointer',
+                                                                    display: 'flex',
+                                                                    justifyContent: 'space-between',
+                                                                    alignItems: 'center'
+                                                                }}
+                                                            >
+                                                                <span>
+                                                                    {availableGroups.length === 0 
+                                                                        ? 'Loading groups...' 
+                                                                        : `Select 2 groups (${availableGroups.length} available)`
+                                                                    }
+                                                                </span>
+                                                                <span>▼</span>
+                                                            </button>
+                                                            
+                                                            {groupDropdownOpen && availableGroups.length > 0 && (
+                                                                <div style={{
+                                                                    position: 'absolute',
+                                                                    top: '100%',
+                                                                    left: 0,
+                                                                    right: 0,
+                                                                    backgroundColor: 'white',
+                                                                    border: '1px solid #d1d5db',
+                                                                    borderRadius: '0.5rem',
+                                                                    maxHeight: '200px',
+                                                                    overflowY: 'auto',
+                                                                    zIndex: 1000,
+                                                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                                }}>
+                                                                    {availableGroups.map((group, index) => {
+                                                                        const isSelected = selectedGroups.includes(group);
+                                                                        return (
+                                                                            <div
+                                                                                key={index}
+                                                                                onClick={() => {
+                                                                                    if (isSelected) {
+                                                                                        setSelectedGroups(prev => prev.filter(g => g !== group));
+                                                                                    } else {
+                                                                                        if (selectedGroups.length < 2) {
+                                                                                            setSelectedGroups(prev => [...prev, group]);
+                                                                                        } else {
+                                                                                            // Replace the first selected group
+                                                                                            setSelectedGroups(prev => [prev[1], group]);
+                                                                                        }
+                                                                                    }
+                                                                                }}
+                                                                                style={{
+                                                                                    padding: '0.75rem',
+                                                                                    cursor: 'pointer',
+                                                                                    backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                    borderBottom: index < availableGroups.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: '0.5rem'
+                                                                                }}
+                                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : '#f3f4f6'}
+                                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white'}
+                                                                            >
+                                                                                <div style={{
+                                                                                    width: '1rem',
+                                                                                    height: '1rem',
+                                                                                    borderRadius: '0.25rem',
+                                                                                    border: '2px solid',
+                                                                                    borderColor: isSelected ? '#3b82f6' : '#9ca3af',
+                                                                                    backgroundColor: isSelected ? '#3b82f6' : 'transparent',
+                                                                                    display: 'flex',
+                                                                                    alignItems: 'center',
+                                                                                    justifyContent: 'center'
+                                                                                }}>
+                                                                                    {isSelected && (
+                                                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                        </svg>
+                                                                                    )}
+                                                                                </div>
+                                                                                <span>{group}</span>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        
+                                                        {/* Validation Message */}
+                                                        {selectedGroups.length > 0 && selectedGroups.length !== 2 && (
+                                                            <div style={{
+                                                                marginTop: '0.5rem',
+                                                                padding: '0.5rem',
+                                                                backgroundColor: '#fef2f2',
+                                                                border: '1px solid #fecaca',
+                                                                borderRadius: '0.375rem',
+                                                                color: '#dc2626',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                ⚠️ {t.mannwhitneyGroupError}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {requiredFields.col2 && (
                                                     <div className="form-group">
                                                         <label className="form-label">{t.column2}</label>
@@ -2039,6 +2264,8 @@ const closePreview= async () =>{
                                                 )}
                                             </div>
                                         )}
+
+
 
                                         {requiredFields.refValue && (
                                             <div className="form-group">
