@@ -35,12 +35,12 @@ const TextUser = ({ index, question, userResponse, setUserResponse }) => {
         </div>
       )}
       <textarea
-        rows="3"
+        rows="1"
         type="text"
         className="form-control mt-3"
         value={userAnswer}
         onFocus={(e) => e.target.select()}
-        disabled={question.disabled}
+        disabled={true}
         aria-label="Text input"
       />
       {error && <small className="text-danger">{error}</small>}

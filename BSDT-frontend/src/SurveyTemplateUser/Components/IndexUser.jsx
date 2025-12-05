@@ -46,7 +46,7 @@ const Index = () => {
     slug = location.state?.slug;
     isPreview = true;
   }
-  
+
   const STORAGE_KEY = `survey_response_${slug}`;
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
@@ -99,7 +99,7 @@ const Index = () => {
             `/api/fetch-survey-user/${slug}`,
             config
           );
-
+          console.log("Fetched survey data:", response.data);
           const surveyData = response.data.data;
           setTemplate(surveyData);
 
@@ -123,7 +123,10 @@ const Index = () => {
           if (err.response) {
             if (err.response.data?.status === "LOGIN_REQUIRED") {
               alert(err.response.data.message);
-              navigate("/"); // Redirect to login or home
+              navigate("/");
+            } else if (err.response.data?.status === "ALREADY_SUBMITTED") {
+              alert(err.response.data.message);
+              navigate("/");
             } else {
               alert(
                 err.response.data.message || "This survey could not be loaded."
