@@ -72,7 +72,7 @@ const SurveyForm = ({
 
   // State for Questions
   const [questions, setQuestions] = useState(template?.questions ?? []);
-
+  console.log("Questions:", questions);
   // State for the translated labels
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [isLoading, setIsLoading] = useState(false);

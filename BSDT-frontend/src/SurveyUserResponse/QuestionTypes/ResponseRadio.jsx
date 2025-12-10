@@ -24,14 +24,33 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
   const see_point_values = template.template.is_quiz
     ? template.template.quiz_settings.see_point_values
     : false;
-
+  console.log("Questions: ", question);
   useEffect(() => {
-    if (userAnswer === correctAnswer) {
-      setObtainedPoints(assignedPoints);
-      setChoseCorrectOption(true);
+    if (!question.meta?.advanceMarkingEnabled) {
+      if (userAnswer === correctAnswer) {
+        setObtainedPoints(assignedPoints);
+        setChoseCorrectOption(true);
+      } else {
+        setObtainedPoints(0);
+        setChoseCorrectOption(false);
+      }
     } else {
-      setObtainedPoints(0);
-      setChoseCorrectOption(false);
+      if (userAnswer) {
+        const optionIndex = options.findIndex((opt) => opt === userAnswer);
+        if (optionIndex !== -1) {
+          const optionPoints =
+            question.meta.advanceMarkingOptions?.[optionIndex]?.points || 0;
+          setObtainedPoints(optionPoints);
+          if (optionPoints === assignedPoints) {
+            setChoseCorrectOption(true);
+          } else {
+            setChoseCorrectOption(false);
+          }
+        } else {
+          setObtainedPoints(0);
+          setChoseCorrectOption(false);
+        }
+      }
     }
   }, [userAnswer, correctAnswer, assignedPoints]);
 

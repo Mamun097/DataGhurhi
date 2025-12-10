@@ -34,6 +34,11 @@ const Radio = ({
 
   // Mark for an individual question
   const [mark, setMark] = useState(question.points || defaultPointValue);
+
+  const [advanceMarkingEnabled, setAdvanceMarkingEnabled] = useState(
+    question.meta?.advanceMarkingEnabled || false
+  );
+
   const currentOptions = question.meta?.options || [];
   const lastOptionText =
     currentOptions.length > 0 ? currentOptions[currentOptions.length - 1] : "";
@@ -41,6 +46,59 @@ const Radio = ({
   const otherFieldLabel = isLastOptionBangla
     ? "অন্যান্য: "
     : getLabel("Other: ");
+
+  // When advance marking is enabled, each option has a corresponding entry in optionSpecificMarks
+  useEffect(() => {
+    // Removes correctAnswer from question meta and points from question when advance marking is enabled
+    if (advanceMarkingEnabled) {
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id === question.id) {
+            const updatedMeta = { ...q.meta };
+            delete updatedMeta.correctAnswer;
+            return { ...q, meta: updatedMeta, points: 0 };
+          }
+          return q;
+        })
+      );
+    }
+    // If question.meta.optionSpecificMarks exists, no change needed
+    if (advanceMarkingEnabled && question.meta?.optionSpecificMarks) {
+      return;
+    }
+
+    if (advanceMarkingEnabled) {
+      // Initialize optionSpecificMarks with zeros for each option
+      const initialMarks = currentOptions.map(() => "0");
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q.id === question.id
+            ? {
+                ...q,
+                meta: {
+                  ...q.meta,
+                  optionSpecificMarks: initialMarks,
+                  advanceMarkingEnabled: true,
+                },
+              }
+            : q
+        )
+      );
+    } else {
+      // Remove optionSpecificMarks when advance marking is disabled
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id === question.id) {
+            const updatedMeta = { ...q.meta };
+            delete updatedMeta.optionSpecificMarks;
+            delete updatedMeta.advanceMarkingEnabled;
+            return { ...q, meta: updatedMeta };
+          }
+          return q;
+        })
+      );
+    }
+  }, [advanceMarkingEnabled, question.id, setQuestions]);
 
   const handleOptionChange = useCallback(
     (index, value) => {
@@ -419,6 +477,25 @@ const Radio = ({
     [isQuiz, question.id, setQuestions]
   );
 
+  const updateOptionSpecificMarks = useCallback(
+    (optionIndex, markValue) => {
+      setQuestions((prev) =>
+        prev.map((q) => {
+          if (q.id === question.id) {
+            const newMarks = [...(q.meta?.optionSpecificMarks || [])];
+            newMarks[optionIndex] = markValue;
+            return {
+              ...q,
+              meta: { ...q.meta, optionSpecificMarks: newMarks },
+            };
+          }
+          return q;
+        })
+      );
+    },
+    [question.id, setQuestions]
+  );
+
   return (
     <div className="mb-3 dnd-isolate">
       {showCropper && selectedFile && (
@@ -511,8 +588,11 @@ const Radio = ({
                             className="form-check-input"
                             type="radio"
                             name={`display-radio-${question.id}`}
-                            disabled={!isQuiz}
-                            checked={question.meta?.correctAnswer === option}
+                            disabled={!(isQuiz && !advanceMarkingEnabled)}
+                            checked={
+                              question.meta?.correctAnswer === option &&
+                              !advanceMarkingEnabled
+                            }
                             onChange={() => {
                               handleCorrectAnswerSelection(option);
                             }}
@@ -531,6 +611,23 @@ const Radio = ({
                             onFocus={(e) => e.target.select()}
                             placeholder={`Option ${idx + 1}`}
                           />
+                        </div>
+                        <div className="col-auto">
+                          {/* If quiz and advance marking enabled then add small text(floating number) input field that will be used for marks for that individual option */}
+                          {isQuiz && advanceMarkingEnabled && (
+                            <input
+                              type="text"
+                              className="survey-form-control survey-form-control-sm ms-2"
+                              style={{ width: "90px", display: "inline-block" }}
+                              placeholder={getLabel("Marks")}
+                              value={`${
+                                question.meta?.optionSpecificMarks?.[idx] || ""
+                              }`}
+                              onChange={(e) =>
+                                updateOptionSpecificMarks(idx, e.target.value)
+                              }
+                            />
+                          )}
                         </div>
 
                         {/* Remove Option Button; If the option was selected as correct answer then
@@ -640,7 +737,7 @@ const Radio = ({
 
       <hr />
       {/* Mark for an individual question - Quiz feature */}
-      {isQuiz && (
+      {isQuiz && !advanceMarkingEnabled && (
         <div className="mb-3 d-flex align-items-center gap-3">
           <label className="fw-bold mb-0">{getLabel("Points:")}</label>
           <input
@@ -657,7 +754,7 @@ const Radio = ({
       )}
 
       {/* Selected option will be displayed as "Selected Correct Answer" in quiz mode */}
-      {isQuiz && (
+      {isQuiz && !advanceMarkingEnabled && (
         <div className="mb-3">
           <label className="fw-bold">
             {getLabel("Selected Correct Answer:")}
@@ -753,6 +850,23 @@ const Radio = ({
                   {getLabel("Translate Question")}
                 </div>
               </button>
+
+              {/* Advance Marking - Future Feature Placeholder */}
+              <div className="menu-item">
+                <div className="menu-label">
+                  <i className="bi bi-sliders2"></i>
+                  {getLabel("Advance Marking")}
+                </div>
+                <label className="switch-small">
+                  <input
+                    type="checkbox"
+                    id={`advanceMarkingRadio-${question.id}`}
+                    checked={advanceMarkingEnabled}
+                    onChange={() => setAdvanceMarkingEnabled((prev) => !prev)}
+                  />
+                  <span className="slider-small"></span>
+                </label>
+              </div>
             </div>
           )}
         </div>

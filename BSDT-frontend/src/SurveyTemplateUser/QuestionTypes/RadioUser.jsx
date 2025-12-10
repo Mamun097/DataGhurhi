@@ -77,6 +77,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
   const shuffledOptions = useMemo(() => {
     const options = question.meta?.options || [];
     if (question.meta?.enableOptionShuffle === true) {
+      console.log("Shuffling options for question:", question.text);
       const shuffled = [...options];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
