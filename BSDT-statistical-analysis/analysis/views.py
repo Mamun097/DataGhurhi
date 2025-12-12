@@ -7439,10 +7439,10 @@ def remove_duplicates(request):
     data = json.loads(request.body)
     filename = data.get("filename")
     sheet_name = data.get("sheet")
-    file_url = data.get("Fileurl")
+    file_url = data.get('Fileurl') 
     columns = data.get('columns', [])
     mode = data.get('mode')  # "all" or "selected"
-    selected_indices = data.get('selected', [])
+    selected_indices = data.get('selected', []) 
     print(selected_indices)
     print(file_url) 
     try:
