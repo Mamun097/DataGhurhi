@@ -100,6 +100,16 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         getDefaultSettings('Rank', categoryCount, categoryNames)
     );
 
+
+    if (results.is_explanation) {
+        return (
+            <div className="info-box">
+                <p>{results.message}</p>
+            </div>
+        );
+    }
+
+
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);

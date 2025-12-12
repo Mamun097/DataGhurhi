@@ -133,7 +133,7 @@ const translations = {
         aboutTitle: "About This Tool",
         aboutText: "This statistical analysis tool allows you to perform various statistical tests on your Excel data:",
         kruskalTitle: "Kruskal-Wallis H-test",
-        mannwhitneyGroupError: 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.',
+        mannwhitneyGroupError: 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.',        
         selectGroupsPrompt: 'Select 2 Groups',
         groupsAvailable: 'groups available',
         selectedGroups: 'Selected Groups',
@@ -577,6 +577,11 @@ const StatisticalAnalysisTool = () => {
     const [selectedGroups, setSelectedGroups] = useState([]);    
     const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
 
+    const [numericColumns, setNumericColumns] = useState([]);
+    const [categoricalColumns, setCategoricalColumns] = useState([]);
+    const [columnTypesLoaded, setColumnTypesLoaded] = useState(false);
+    const [columnTypesError, setColumnTypesError] = useState('');    
+
     const testsWithoutDetails = [
         'eda_basics',
         'eda_distribution',
@@ -585,6 +590,47 @@ const StatisticalAnalysisTool = () => {
         'bar_chart',
         'similarity',
     ];
+
+    const fetchColumnTypes = async () => {
+        if (!fileURL || !testType || testType !== 'kruskal') {
+            return;
+        }
+        
+        try {
+            setColumnTypesError('');
+            const formData = new FormData();
+            formData.append('filename', fileName);
+            formData.append('userID', userId);
+            formData.append('Fileurl', sessionStorage.getItem("fileURL") || "");
+            
+            const response = await fetch(`${API_BASE}/get-column-types/`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                setNumericColumns(data.numeric_columns || []);
+                setCategoricalColumns(data.categorical_columns || []);
+                setColumnTypesLoaded(true);
+                
+                // Auto-select first categorical and numeric columns if available
+                if (data.categorical_columns.length > 0) {
+                    setColumn1(data.categorical_columns[0]);
+                }
+                if (data.numeric_columns.length > 0) {
+                    setColumn2(data.numeric_columns[0]);
+                }
+            } else {
+                setColumnTypesError(data.error || 'Failed to analyze column types');
+                setColumnTypesLoaded(true);
+            }
+        } catch (error) {
+            console.error("Error fetching column types:", error);
+            setColumnTypesError('Error analyzing column types');
+            setColumnTypesLoaded(true);
+        }
+    };
 
     // Function to fetch groups when column1 changes for Mann-Whitney
     const fetchGroupsForColumn = async (columnName) => {
@@ -637,6 +683,20 @@ const StatisticalAnalysisTool = () => {
             setTempSelectedColumns(selectedColumns);
         }
     }, [showColumnMenu, selectedColumns]);
+
+    // Add this useEffect
+    useEffect(() => {
+        if ((testType === 'kruskal' || testType === 'mannwhitney' || testType === 'wilcoxon' || testType === 'linear_regression') && fileURL) {
+            fetchColumnTypes();
+        } else {
+            // Reset column types when not using these tests
+            setNumericColumns([]);
+            setCategoricalColumns([]);
+            setColumnTypesLoaded(false);
+            setColumnTypesError('');
+        }
+    }, [testType, fileURL]);
+
 
     useEffect(() => {
         if (testType === 'mannwhitney' && column1 && fileURL) {
@@ -713,12 +773,88 @@ const StatisticalAnalysisTool = () => {
         }
 
         // Add validation for Mann-Whitney
+        // Update your handleSubmit validation for Mann-Whitney
         if (testType === 'mannwhitney') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'ম্যান-হুইটনি পরীক্ষার জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'Mann-Whitney test requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+            
             if (selectedGroups.length !== 2) {
                 setErrorMessage(t.mannwhitneyGroupError || 'Please select exactly 2 groups for Mann-Whitney test');
                 return;
             }
-        }        
+        }
+
+        // Add Kruskal-specific validation
+        if (testType === 'kruskal') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'Kruskal-Wallis test requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+        }
 
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
@@ -966,8 +1102,9 @@ const StatisticalAnalysisTool = () => {
             case 'shapiro':
             case 'kolmogorov':
             case 'anderson':
+            case 'mannwhitney':                
             case 'kruskal':
-                return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
+                return { col2: false, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'fzt':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'eda_distribution':
@@ -1918,7 +2055,134 @@ const closePreview= async () =>{
                                                         </h5>
                                                     )} */}
 
-                                                {!["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
+                                                {/* For Kruskal test - special column type handling */}
+                                                {testType === 'kruskal' && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Column 1 - Categorical (Grouping variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : categoricalColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? "এই ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                            : "No categorical columns found in this file."}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => setColumn1(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
+                                                                                : "Select a categorical column"}
+                                                                        </option>
+                                                                        {categoricalColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
+                                                                            : `${categoricalColumns.length} categorical columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Column 2 - Numerical (Value variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? "এই ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                            : "No numeric columns found in this file."}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column2}
+                                                                        onChange={(e) => setColumn2(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
+                                                                                : "Select a numeric column"}
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* For other tests - keep existing code */}
+                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -1948,148 +2212,311 @@ const closePreview= async () =>{
                                                             )}
                                                         </select>
                                                     </div>
-                                                )}
-
-
-                                                {testType === 'mannwhitney' && column1 && (
-                                                    <div className="form-group">
-                                                        <label className="form-label">{t.selectGroups}</label>
+                                                )}                                              
+                        
+                                                {/* For Mann-Whitney test - special column type handling with grouping */}
+                                                {testType === 'mannwhitney' && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
                                                         
-                                                        {/* Selected Groups Display */}
-                                                        {selectedGroups.length > 0 && (
-                                                            <div style={{
-                                                                marginBottom: '1rem',
-                                                                padding: '0.75rem',
-                                                                backgroundColor: '#f0f9ff',
-                                                                border: '1px solid #bae6fd',
-                                                                borderRadius: '0.5rem'
-                                                            }}>
-                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                                    <span style={{ fontWeight: '600', color: '#0369a1' }}>
-                                                                        {t.selectedGroups}: {selectedGroups.join(', ')}
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Column 1 - Categorical (Grouping variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : categoricalColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? "এই ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                            : "No categorical columns found in this file."}
                                                                     </span>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => setSelectedGroups([])}
-                                                                        style={{
-                                                                            background: 'none',
-                                                                            border: 'none',
-                                                                            color: '#dc2626',
-                                                                            cursor: 'pointer',
-                                                                            fontSize: '0.875rem'
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => {
+                                                                            setColumn1(e.target.value);
+                                                                            // Clear selected groups when column changes
+                                                                            setSelectedGroups([]);
                                                                         }}
                                                                     >
-                                                                        {t.clearGroups}
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {/* Group Selection Dropdown */}
-                                                        <div style={{ position: 'relative' }}>
-                                                            <button
-                                                                type="button"
-                                                                className="form-select"
-                                                                onClick={() => setGroupDropdownOpen(!groupDropdownOpen)}
-                                                                style={{
-                                                                    textAlign: 'left',
-                                                                    cursor: 'pointer',
-                                                                    display: 'flex',
-                                                                    justifyContent: 'space-between',
-                                                                    alignItems: 'center'
-                                                                }}
-                                                            >
-                                                                <span>
-                                                                    {availableGroups.length === 0 
-                                                                        ? 'Loading groups...' 
-                                                                        : `Select 2 groups (${availableGroups.length} available)`
-                                                                    }
-                                                                </span>
-                                                                <span>▼</span>
-                                                            </button>
-                                                            
-                                                            {groupDropdownOpen && availableGroups.length > 0 && (
-                                                                <div style={{
-                                                                    position: 'absolute',
-                                                                    top: '100%',
-                                                                    left: 0,
-                                                                    right: 0,
-                                                                    backgroundColor: 'white',
-                                                                    border: '1px solid #d1d5db',
-                                                                    borderRadius: '0.5rem',
-                                                                    maxHeight: '200px',
-                                                                    overflowY: 'auto',
-                                                                    zIndex: 1000,
-                                                                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-                                                                }}>
-                                                                    {availableGroups.map((group, index) => {
-                                                                        const isSelected = selectedGroups.includes(group);
-                                                                        return (
-                                                                            <div
-                                                                                key={index}
-                                                                                onClick={() => {
-                                                                                    if (isSelected) {
-                                                                                        setSelectedGroups(prev => prev.filter(g => g !== group));
-                                                                                    } else {
-                                                                                        if (selectedGroups.length < 2) {
-                                                                                            setSelectedGroups(prev => [...prev, group]);
-                                                                                        } else {
-                                                                                            // Replace the first selected group
-                                                                                            setSelectedGroups(prev => [prev[1], group]);
-                                                                                        }
-                                                                                    }
-                                                                                }}
-                                                                                style={{
-                                                                                    padding: '0.75rem',
-                                                                                    cursor: 'pointer',
-                                                                                    backgroundColor: isSelected ? '#dbeafe' : 'white',
-                                                                                    borderBottom: index < availableGroups.length - 1 ? '1px solid #e5e7eb' : 'none',
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: '0.5rem'
-                                                                                }}
-                                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : '#f3f4f6'}
-                                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white'}
-                                                                            >
-                                                                                <div style={{
-                                                                                    width: '1rem',
-                                                                                    height: '1rem',
-                                                                                    borderRadius: '0.25rem',
-                                                                                    border: '2px solid',
-                                                                                    borderColor: isSelected ? '#3b82f6' : '#9ca3af',
-                                                                                    backgroundColor: isSelected ? '#3b82f6' : 'transparent',
-                                                                                    display: 'flex',
-                                                                                    alignItems: 'center',
-                                                                                    justifyContent: 'center'
-                                                                                }}>
-                                                                                    {isSelected && (
-                                                                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
-                                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                                                                        </svg>
-                                                                                    )}
-                                                                                </div>
-                                                                                <span>{group}</span>
-                                                                            </div>
-                                                                        );
-                                                                    })}
-                                                                </div>
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
+                                                                                : "Select a categorical column"}
+                                                                        </option>
+                                                                        {categoricalColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
+                                                                            : `${categoricalColumns.length} categorical columns found`}
+                                                                    </div>
+                                                                </>
                                                             )}
                                                         </div>
-                                                        
-                                                        {/* Validation Message */}
-                                                        {selectedGroups.length > 0 && selectedGroups.length !== 2 && (
-                                                            <div style={{
-                                                                marginTop: '0.5rem',
-                                                                padding: '0.5rem',
-                                                                backgroundColor: '#fef2f2',
-                                                                border: '1px solid #fecaca',
-                                                                borderRadius: '0.375rem',
-                                                                color: '#dc2626',
-                                                                fontSize: '0.875rem'
-                                                            }}>
-                                                                ⚠️ {t.mannwhitneyGroupError}
+
+                                                        {/* Group Selection (only show when a categorical column is selected) */}
+                                                        {column1 && (
+                                                            <div className="form-group">
+                                                                <label className="form-label">
+                                                                    {language === "বাংলা" ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
+                                                                    <span className="required-star">*</span>
+                                                                </label>
+                                                                
+                                                                {/* Selected Groups Display */}
+                                                                {selectedGroups.length > 0 && (
+                                                                    <div style={{
+                                                                        marginBottom: '1rem',
+                                                                        padding: '0.75rem',
+                                                                        backgroundColor: '#f0f9ff',
+                                                                        border: '1px solid #bae6fd',
+                                                                        borderRadius: '0.5rem'
+                                                                    }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                            <span style={{ fontWeight: '600', color: '#0369a1' }}>
+                                                                                {t.selectedGroups || 'Selected Groups'}: {selectedGroups.join(', ')}
+                                                                            </span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setSelectedGroups([])}
+                                                                                style={{
+                                                                                    background: 'none',
+                                                                                    border: 'none',
+                                                                                    color: '#dc2626',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.875rem',
+                                                                                    padding: '0.25rem 0.5rem',
+                                                                                    borderRadius: '0.25rem'
+                                                                                }}
+                                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                            >
+                                                                                {t.clearSelection || 'Clear'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Group Selection Dropdown */}
+                                                                <div style={{ position: 'relative' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="form-select"
+                                                                        onClick={() => {
+                                                                            if (column1 && availableGroups.length > 0) {
+                                                                                setGroupDropdownOpen(!groupDropdownOpen);
+                                                                            }
+                                                                        }}
+                                                                        style={{
+                                                                            textAlign: 'left',
+                                                                            cursor: availableGroups.length > 0 ? 'pointer' : 'not-allowed',
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            alignItems: 'center',
+                                                                            opacity: availableGroups.length > 0 ? 1 : 0.7
+                                                                        }}
+                                                                    >
+                                                                        <span>
+                                                                            {availableGroups.length === 0 
+                                                                                ? (column1 ? t.groupsLoading || 'Loading groups...' : 'Select a categorical column first')
+                                                                                : `Select 2 groups (${availableGroups.length} ${t.groupsAvailable || 'available'})`
+                                                                            }
+                                                                        </span>
+                                                                        <span>▼</span>
+                                                                    </button>
+                                                                    
+                                                                    {groupDropdownOpen && availableGroups.length > 0 && (
+                                                                        <div style={{
+                                                                            position: 'absolute',
+                                                                            top: '100%',
+                                                                            left: 0,
+                                                                            right: 0,
+                                                                            backgroundColor: 'white',
+                                                                            border: '1px solid #d1d5db',
+                                                                            borderRadius: '0.5rem',
+                                                                            maxHeight: '200px',
+                                                                            overflowY: 'auto',
+                                                                            zIndex: 1000,
+                                                                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                                        }}>
+                                                                            {availableGroups.map((group, index) => {
+                                                                                const isSelected = selectedGroups.includes(group);
+                                                                                return (
+                                                                                    <div
+                                                                                        key={index}
+                                                                                        onClick={() => {
+                                                                                            if (isSelected) {
+                                                                                                setSelectedGroups(prev => prev.filter(g => g !== group));
+                                                                                            } else {
+                                                                                                if (selectedGroups.length < 2) {
+                                                                                                    setSelectedGroups(prev => [...prev, group]);
+                                                                                                } else {
+                                                                                                    // Replace the first selected group
+                                                                                                    setSelectedGroups(prev => [prev[1], group]);
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                        style={{
+                                                                                            padding: '0.75rem',
+                                                                                            cursor: 'pointer',
+                                                                                            backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                            borderBottom: index < availableGroups.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.5rem'
+                                                                                        }}
+                                                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : '#f3f4f6'}
+                                                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white'}
+                                                                                    >
+                                                                                        <div style={{
+                                                                                            width: '1rem',
+                                                                                            height: '1rem',
+                                                                                            borderRadius: '0.25rem',
+                                                                                            border: '2px solid',
+                                                                                            borderColor: isSelected ? '#3b82f6' : '#9ca3af',
+                                                                                            backgroundColor: isSelected ? '#3b82f6' : 'transparent',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            justifyContent: 'center'
+                                                                                        }}>
+                                                                                            {isSelected && (
+                                                                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                                </svg>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <span>{group}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* Validation Message */}
+                                                                {selectedGroups.length > 0 && selectedGroups.length !== 2 && (
+                                                                    <div style={{
+                                                                        marginTop: '0.5rem',
+                                                                        padding: '0.75rem',
+                                                                        backgroundColor: '#fef2f2',
+                                                                        border: '1px solid #fecaca',
+                                                                        borderRadius: '0.375rem',
+                                                                        color: '#dc2626',
+                                                                        fontSize: '0.875rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.5rem'
+                                                                    }}>
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                            <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                        </svg>
+                                                                        ⚠️ {t.mannwhitneyGroupError || 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups.'}
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Help text */}
+                                                                <div style={{
+                                                                    marginTop: '0.5rem',
+                                                                    padding: '0.5rem',
+                                                                    backgroundColor: '#f8fafc',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    borderRadius: '0.375rem',
+                                                                    color: '#64748b',
+                                                                    fontSize: '0.75rem'
+                                                                }}>
+                                                                    {t.mannwhitneyHelp || 'Select exactly 2 groups for Mann-Whitney test. The test will compare these two groups.'}
+                                                                </div>
                                                             </div>
                                                         )}
+
+                                                        {/* Column 2 - Numerical (Value variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? "এই ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                            : "No numeric columns found in this file."}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column2}
+                                                                        onChange={(e) => setColumn2(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
+                                                                                : "Select a numeric column"}
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 )}
 

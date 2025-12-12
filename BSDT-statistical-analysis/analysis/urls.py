@@ -8,6 +8,7 @@ urlpatterns = [
     path('api/upload-file/', csrf_exempt(views.upload_file), name='api_upload_file'),
     path('api/get-columns/', csrf_exempt(views.get_columns), name='api_get_columns'),
     path('api/get-groups/', csrf_exempt(views.get_groups), name='api_get_groups'),
+    path('api/get-column-types/', csrf_exempt(views.get_column_types), name='api_get_column_types'),
     path('api/analyze/', csrf_exempt(views.analyze_data_api), name='api_analyze'),
     path('api/preview-data/', views.preview_data, name='preview_data'), 
     path('api/delete-columns/', views.delete_columns_api, name='delete_columns_api'),
