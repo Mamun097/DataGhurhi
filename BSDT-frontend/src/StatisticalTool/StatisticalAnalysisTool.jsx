@@ -2411,7 +2411,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : categoricalColumns.length === 0 ? (
 
 
                                                                 <div className="no-columns-warning">
@@ -2469,7 +2469,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : numericColumns.length === 0  ? (
 
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2581,7 +2581,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : categoricalColumns.length === 0 ? (
 
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2833,7 +2833,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : numericColumns.length === 0 ? (
 
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2915,7 +2915,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : numericColumns.length === 0  ? (
 
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2980,7 +2980,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 || (categoricalColumns.length === 0 && (testType === 'kruskal' || testType === 'mannwhitney')) ? (
+                                                            ) : numericColumns.length === 0 ? (
 
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
