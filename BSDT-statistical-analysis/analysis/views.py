@@ -141,6 +141,7 @@ def upload_file(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
 
+
 @csrf_exempt
 def get_columns(request):
     user_id = request.POST.get('userID')
@@ -188,7 +189,8 @@ def get_columns(request):
                 col_str = col_str[1:-1].strip()
             return col_str
         
-        normalized_cols = [normalize_column(col) for col in cols]
+        normalized_cols = [canonicalize_column(col) for col in cols]
+
 
         return JsonResponse({
             'success': True,
@@ -202,6 +204,22 @@ def get_columns(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
+
+import re
+
+def canonicalize_column(col: str) -> str:
+    """
+    Create a stable, comparable column key:
+    - remove newlines
+    - collapse multiple spaces
+    - strip
+    """
+    if col is None:
+        return col
+    col = str(col)
+    col = col.replace('\n', ' ').replace('\r', ' ')
+    col = re.sub(r'\s+', ' ', col)  # collapse whitespace
+    return col.strip()
 
 
 def normalize_column_name(col: str, df: pd.DataFrame) -> str:
@@ -241,6 +259,7 @@ def normalize_column_name(col: str, df: pd.DataFrame) -> str:
     # If still not found, return the cleaned version
     return col_clean
 
+
 def validate_and_get_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[str, bool, str]:
     """
     Validate column name and return normalized version.
@@ -263,6 +282,7 @@ def validate_and_get_column(col: str, df: pd.DataFrame, test_name: str = "") -> 
             return normalized_col, False, f"Column '{col}' not found in dataset. Available columns: {list(df.columns)}"
     
     return normalized_col, True, ""
+
 
 # def get_columns(request):
 #     if request.method == 'POST' and request.FILES.get('file'):
@@ -381,6 +401,13 @@ def analyze_data_api(request):
                 df = pd.read_csv(file_path)
                 active_sheet = 'Sheet1'
             
+            original_columns = df.columns.tolist()
+            df.columns = [canonicalize_column(c) for c in df.columns]
+
+            # Optional debug
+            print("Original columns:", original_columns)
+            print("Normalized columns:", df.columns.tolist())
+
             # Get test parameters
             if request.content_type == 'application/json':
                 body = json.loads(request.body)
@@ -411,42 +438,40 @@ def analyze_data_api(request):
             print(f"Received test_type: {test_type}, col1: {col1}, col2: {col2}, col3: {col3}")
             
             # Helper function to normalize column names
+
             def normalize_column_name(col: str, df: pd.DataFrame) -> str:
                 """
-                Normalize column name by removing quotes and matching with actual DataFrame columns.
+                Normalize column name and match it to actual DataFrame columns.
+                Handles:
+                - quotes
+                - newlines
+                - extra whitespace
+                - case differences
                 """
                 if not col:
                     return col
-                
-                # Remove surrounding quotes if present
+
+                # Step 1: strip quotes first (frontend artifacts)
                 col_clean = col.strip()
                 if (col_clean.startswith('"') and col_clean.endswith('"')) or \
-                   (col_clean.startswith("'") and col_clean.endswith("'")):
-                    col_clean = col_clean[1:-1].strip()
-                
-                # Try to match with existing columns (exact match first)
+                (col_clean.startswith("'") and col_clean.endswith("'")):
+                    col_clean = col_clean[1:-1]
+
+                # Step 2: canonicalize (NEWLINES + SPACES)
+                col_clean = canonicalize_column(col_clean)
+
+                # Step 3: exact match
                 if col_clean in df.columns:
                     return col_clean
-                
-                # Try case-insensitive match
+
+                # Step 4: case-insensitive canonical match
                 for actual_col in df.columns:
-                    if str(actual_col).strip().lower() == col_clean.lower():
+                    if canonicalize_column(actual_col).lower() == col_clean.lower():
                         return actual_col
-                
-                # Try matching without extra whitespace
-                for actual_col in df.columns:
-                    if str(actual_col).strip() == col_clean:
-                        return actual_col
-                
-                # If still not found, try with quotes
-                for quote in ['"', "'"]:
-                    quoted = f"{quote}{col_clean}{quote}"
-                    if quoted in df.columns:
-                        return quoted
-                
-                # If still not found, return the cleaned version
+
                 return col_clean
-            
+
+
             # Helper function to validate column
             def validate_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[bool, str, str]:
                 """
