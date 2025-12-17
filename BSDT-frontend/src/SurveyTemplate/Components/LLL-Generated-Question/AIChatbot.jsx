@@ -8,6 +8,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   const [currentStep, setCurrentStep] = useState("greeting");
   const [questionType, setQuestionType] = useState(null);
   const [metadata, setMetadata] = useState({});
+  const [language, setLanguage] = useState("");
   const [additionalInfo, setAdditionalInfo] = useState("");
   const chatContainerRef = useRef(null);
 
@@ -21,6 +22,11 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
     { id: "datetime", label: "Date/Time" },
     { id: "likert", label: "Likert Scale" },
     { id: "tickboxGrid", label: "Multiple Choice Grid" }
+  ];
+
+  const languageOptions = [
+    { id: "english", label: "English" },
+    { id: "bangla", label: "Bangla" }
   ];
 
   useEffect(() => {
@@ -102,10 +108,10 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
         break;
       case "text":
       case "datetime":
-        // These types don't need additional metadata
-        nextMessage = "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question?";
-        setCurrentStep("additionalInfo");
-        break;
+        // These types don't need additional metadata, go to language selection
+        setCurrentStep("language");
+        addMessage("bot", "What language would you like for your question?", languageOptions);
+        return;
     }
 
     addMessage("bot", nextMessage, nextOptions);
@@ -143,6 +149,16 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
         break; }
     }
 
+    // Move to language selection step
+    setCurrentStep("language");
+    addMessage("bot", "What language would you like for your question?", languageOptions);
+  };
+
+  const handleLanguageSelect = (languageId) => {
+    const selectedLanguage = languageOptions.find(lang => lang.id === languageId);
+    setLanguage(languageId);
+    addMessage("user", selectedLanguage.label);
+
     // Move to additional info step
     setCurrentStep("additionalInfo");
     addMessage("bot", "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)");
@@ -178,8 +194,8 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
     }
 
     setMetadata(updatedMetadata);
-    setCurrentStep("additionalInfo");
-    addMessage("bot", "As an LLM, I can generate your desired question if you provide me with the best contexts. Would you like to provide any additional specifications for this question? (Optional)");
+    setCurrentStep("language");
+    addMessage("bot", "What language would you like for your question?", languageOptions);
   };
 
   const handleAdditionalInfo = (info) => {
@@ -214,21 +230,15 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
   const handleGenerate = () => {
     apiClient.get("/api/reduce-question-count", {
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${localStorage.getItem("token")}`
       }
     })
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
+        // ✅ Access data directly from response.data
+        const data = response.data;
+
         if (data.success) {
           console.log("Question count reduced successfully:", data);
-          // You might want to update UI state here with the new question count
-          // e.g., setQuestionCount(data.updated_question_count);
         } else {
           console.error("Failed to reduce question count:", data.message);
           alert(data.message || "Failed to reduce question count.");
@@ -236,17 +246,19 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
       })
       .catch(error => {
         console.error("Error calling API:", error);
+        console.error("Error response:", error.response?.data);
         alert("An error occurred while reducing question count.");
       });
 
     const questionData = {
       type: questionType,
       metadata: metadata,
+      language: language,
       additionalInfo: additionalInfo
     };
 
     onGenerate(questionData);
-};
+  };
 
   const handleSkip = () => {
     if (currentStep === "additionalInfo") {
@@ -259,6 +271,7 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
 
   const isInputDisabled = () => {
     return currentStep === "greeting" ||
+      currentStep === "language" ||
       (currentStep === "metadata" && !messages.some(m =>
         m.options && m.options.some(o => o.id === "custom")
       ));
@@ -289,6 +302,8 @@ const AIChatbot = ({ onClose, onGenerate, getLabel }) => {
                         handleOptionSelect(option.id);
                       } else if (currentStep === "metadata") {
                         handleMetadataSelect(option.id);
+                      } else if (currentStep === "language") {
+                        handleLanguageSelect(option.id);
                       }
                     }}
                   >
