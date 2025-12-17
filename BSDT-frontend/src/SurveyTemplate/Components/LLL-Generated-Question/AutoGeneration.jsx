@@ -105,49 +105,102 @@ const AutoGeneration = ({ addGeneratedQuestion, questionInfo, getLabel}) => {
     }
   };
 
-  const handleGenerateQuestion = async (questionData) => {
-    setShowChatbot(false);
-    setIsLoading(true);
-    setLoadingPhase("initial");
+  // const handleGenerateQuestion = async (questionData) => {
+  //   setShowChatbot(false);
+  //   setIsLoading(true);
+  //   setLoadingPhase("initial");
     
-    try {
-      //console.log("Question Data:", questionData);
-      //console.log("Question Info:", questionInfo);
+  //   try {
+  //     console.log("Question Data:", questionData);
+  //     console.log("Question Info:", questionInfo);
 
-      const response = await apiClient.post("/api/generate-question-with-llm/", {
+  //     const response = await apiClient.post(
+  //       "/api/generate-question-with-llm/",
+  //       { questionData, questionInfo },
+  //       {
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+
+
+  //     if (!response.ok) {
+  //       throw new Error(`API call failed with status: ${response.status}`);
+  //     }
+
+  //     const generatedQuestion = await response.json();
+  //     //console.log(generatedQuestion);
+      
+  //     // Simulate processing delay
+  //     await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+  //     // Show the "almost there" message
+  //     setLoadingPhase("almost-there");
+  //     await new Promise((resolve) => setTimeout(resolve, 4000));
+      
+  //     // Add the generated question to the survey
+  //     addGeneratedQuestion(generatedQuestion);
+  //     //console.log("Generated question added:", generatedQuestion);
+      
+  //     // Refresh subscription data after successful generation
+  //     checkUserSubscription();
+      
+  //   } catch (error) {
+  //     //console.error("Error generating question:", error);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  const handleGenerateQuestion = async (questionData) => {
+  setShowChatbot(false);
+  setIsLoading(true);
+  setLoadingPhase("initial");
+  
+  try {
+    console.log("Question Data:", questionData);
+    console.log("Question Info:", questionInfo);
+
+    // ✅ Axios returns data directly in response.data
+    const response = await apiClient.post(
+      "/api/generate-question-with-llm/",
+      { questionData, questionInfo },
+      {
         headers: {
-            'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ questionData, questionInfo }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`API call failed with status: ${response.status}`);
       }
+    );
 
-      const generatedQuestion = await response.json();
-      //console.log(generatedQuestion);
-      
-      // Simulate processing delay
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      
-      // Show the "almost there" message
-      setLoadingPhase("almost-there");
-      await new Promise((resolve) => setTimeout(resolve, 4000));
-      
-      // Add the generated question to the survey
-      addGeneratedQuestion(generatedQuestion);
-      //console.log("Generated question added:", generatedQuestion);
-      
-      // Refresh subscription data after successful generation
-      checkUserSubscription();
-      
-    } catch (error) {
-      //console.error("Error generating question:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // ✅ Access data directly from response.data (no .json() needed)
+    const generatedQuestion = response.data;
+    console.log("Generated question:", generatedQuestion);
+    
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    
+    // Show the "almost there" message
+    setLoadingPhase("almost-there");
+    await new Promise((resolve) => setTimeout(resolve, 4000));
+    
+    // Add the generated question to the survey
+    addGeneratedQuestion(generatedQuestion);
+    console.log("Generated question added:", generatedQuestion);
+    
+    // Refresh subscription data after successful generation
+    await checkUserSubscription();
+    
+  } catch (error) {
+    console.error("Error generating question:", error);
+    console.error("Error response:", error.response?.data); // Log server error
+    
+    // Show error message to user
+    alert(error.response?.data?.error || "Failed to generate question. Please try again.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
