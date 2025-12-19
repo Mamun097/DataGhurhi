@@ -177,12 +177,19 @@ const NavbarAcholder = ({
       <div className="NavbarAcholderTopSection">
         <div className="NavbarAcholderLogoSection">
           <div className="NavbarAcholderLogoItem">
-            <img
-              src={logo_dataghurhi}
-              alt="DataGhurhi logo"
-              onClick={() => navigate("/")}
-            />
-            <span>DataGhurhi</span>
+           <div className="LogoWithBeta">
+    <img
+      src={logo_dataghurhi}
+      alt="DataGhurhi logo"
+      className="MainLogo"
+      onClick={() => navigate("/")}
+    />
+
+    {/* Subscript Beta */}
+    <span className="LogoBetaTag">Beta</span>
+  </div>
+
+  <span>DataGhurhi</span>
           </div>
         </div>
 

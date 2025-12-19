@@ -272,7 +272,7 @@ const Register = () => {
     setIsLoading(true);
     try {
       toast.success(`🎉 ${t("registrationSuccess")}`);
-      setTimeout(() => (window.location.href = "/login"), 3000);
+      setTimeout(() => (window.location.href = "/"), 3000);
     } catch {
       toast.error("❌ Something went wrong.");
     } finally {
@@ -621,7 +621,7 @@ const Register = () => {
             )}
           </form>
           <p className="login-link">
-            {t("alreadyAccount")} <a href="/login">{t("login")}</a>
+            {t("alreadyAccount")} <a href="/">{t("login")}</a>
           </p>
         </motion.div>
       </div>
