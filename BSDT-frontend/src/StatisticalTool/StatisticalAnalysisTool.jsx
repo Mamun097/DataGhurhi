@@ -573,14 +573,22 @@ const StatisticalAnalysisTool = () => {
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
 
-    const [availableGroups, setAvailableGroups] = useState([]);
-    const [selectedGroups, setSelectedGroups] = useState([]);    
-    const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);
+    const [columnTypesCache, setColumnTypesCache] = useState({});
+    const [isFetchingColumnTypes, setIsFetchingColumnTypes] = useState(false);
+    const [lastFetchedFile, setLastFetchedFile] = useState('');
 
     const [numericColumns, setNumericColumns] = useState([]);
     const [categoricalColumns, setCategoricalColumns] = useState([]);
     const [columnTypesLoaded, setColumnTypesLoaded] = useState(false);
     const [columnTypesError, setColumnTypesError] = useState('');    
+
+    const [availableGroups, setAvailableGroups] = useState([]);
+    const [selectedGroups, setSelectedGroups] = useState([]);    
+    const [groupDropdownOpen, setGroupDropdownOpen] = useState(false);    
+
+    // Add these near your other state declarations
+    const [groupsCache, setGroupsCache] = useState({});
+    const [isFetchingGroups, setIsFetchingGroups] = useState(false);
 
     const testsWithoutDetails = [
         'eda_basics',
@@ -592,34 +600,91 @@ const StatisticalAnalysisTool = () => {
     ];
 
     const fetchColumnTypes = async () => {
-        if (!fileURL || !testType || testType !== 'kruskal') {
+        // If already fetching, don't start another request
+        if (isFetchingColumnTypes) {
+            console.log("[DEBUG] Already fetching column types, skipping...");
+            return;
+        }
+        
+        // Create a cache key based on the file URL
+        const cacheKey = sessionStorage.getItem("fileURL") || "";
+        
+        // Check if we already have cached data for this file
+        if (columnTypesCache[cacheKey] && columnTypesCache[cacheKey].timestamp > Date.now() - 30000) { // 30 second cache
+            console.log("[DEBUG] Using cached column types");
+            const cachedData = columnTypesCache[cacheKey];
+            setNumericColumns(cachedData.numeric_columns || []);
+            setCategoricalColumns(cachedData.categorical_columns || []);
+            setColumnTypesLoaded(true);
+            setColumnTypesError('');
+            return;
+        }
+        
+        // Check if we've already fetched for this file recently
+        if (lastFetchedFile === cacheKey && columnTypesLoaded) {
+            console.log("[DEBUG] Already loaded column types for this file");
+            return;
+        }
+        
+        if (!cacheKey) {
+            console.log("[DEBUG] No file URL, cannot fetch column types");
             return;
         }
         
         try {
+            setIsFetchingColumnTypes(true);
             setColumnTypesError('');
+            
             const formData = new FormData();
             formData.append('filename', fileName);
             formData.append('userID', userId);
-            formData.append('Fileurl', sessionStorage.getItem("fileURL") || "");
+            formData.append('Fileurl', cacheKey);
             
+            console.log("[DEBUG] Fetching column types...");
             const response = await fetch(`${API_BASE}/get-column-types/`, {
                 method: 'POST',
                 body: formData
             });
             
             const data = await response.json();
+            
             if (data.success) {
+                // Cache the results
+                const newCache = {
+                    ...columnTypesCache,
+                    [cacheKey]: {
+                        numeric_columns: data.numeric_columns || [],
+                        categorical_columns: data.categorical_columns || [],
+                        timestamp: Date.now()
+                    }
+                };
+                setColumnTypesCache(newCache);
+                
+                // Update state
                 setNumericColumns(data.numeric_columns || []);
                 setCategoricalColumns(data.categorical_columns || []);
                 setColumnTypesLoaded(true);
+                setLastFetchedFile(cacheKey);
                 
-                // Auto-select first categorical and numeric columns if available
-                if (data.categorical_columns.length > 0) {
-                    setColumn1(data.categorical_columns[0]);
-                }
-                if (data.numeric_columns.length > 0) {
-                    setColumn2(data.numeric_columns[0]);
+                console.log("[DEBUG] Column types loaded successfully");
+                
+                // Auto-select first columns based on test type
+                if (testType === 'kruskal' || testType === 'mannwhitney') {
+                    if (data.categorical_columns.length > 0 && !column1) {
+                        setColumn1(data.categorical_columns[0]);
+                    }
+                    if (data.numeric_columns.length > 0 && !column2) {
+                        setColumn2(data.numeric_columns[0]);
+                    }
+                } else if (testType === 'wilcoxon' || testType === 'linear_regression') {
+                    if (data.numeric_columns.length > 0 && !column1) {
+                        setColumn1(data.numeric_columns[0]);
+                    }
+                    if (data.numeric_columns.length > 1 && !column2) {
+                        // Don't auto-select the same column
+                        const secondCol = data.numeric_columns[1] || data.numeric_columns[0];
+                        setColumn2(secondCol);
+                    }
                 }
             } else {
                 setColumnTypesError(data.error || 'Failed to analyze column types');
@@ -629,54 +694,123 @@ const StatisticalAnalysisTool = () => {
             console.error("Error fetching column types:", error);
             setColumnTypesError('Error analyzing column types');
             setColumnTypesLoaded(true);
+        } finally {
+            setIsFetchingColumnTypes(false);
         }
     };
 
-    // Function to fetch groups when column1 changes for Mann-Whitney
+    // Function to fetch groups when column1 changes for Mann-Whitney    
     const fetchGroupsForColumn = async (columnName) => {
-        if (!columnName || !fileURL || testType !== 'mannwhitney') {
+        console.log("[DEBUG] fetchGroupsForColumn called with:", {
+            columnName,
+            testType,
+            sessionFileURL: sessionStorage.getItem("fileURL"),
+            fileName
+        });
+        
+        // Don't check fileURL state - use sessionStorage directly
+        const fileUrlKey = sessionStorage.getItem("fileURL") || "";
+        
+        if (!columnName || !fileUrlKey) {
+            console.log("[DEBUG] Missing column or file URL");
             setAvailableGroups([]);
             setSelectedGroups([]);
             return;
         }
         
+        if (testType !== 'mannwhitney') {
+            console.log("[DEBUG] Not Mann-Whitney test");
+            return;
+        }
+        
+        // Create a cache key
+        const cacheKey = `${fileUrlKey}_${columnName}`;
+        
+        console.log("[DEBUG] Cache key:", cacheKey);
+        
+        // Check cache first
+        if (groupsCache[cacheKey] && groupsCache[cacheKey].timestamp > Date.now() - 30000) {
+            console.log("[DEBUG] Using cached groups");
+            const cachedData = groupsCache[cacheKey];
+            setAvailableGroups(cachedData.groups || []);
+            
+            // Auto-select first 2 groups if available
+            if (cachedData.groups.length >= 2 && selectedGroups.length === 0) {
+                setSelectedGroups(cachedData.groups.slice(0, 2));
+            }
+            return;
+        }
+        
+        // Check if already fetching
+        if (isFetchingGroups) {
+            console.log("[DEBUG] Already fetching groups");
+            return;
+        }
+        
         try {
-            // Fetch a preview of the data to get unique groups
+            setIsFetchingGroups(true);
+            console.log("[DEBUG] Starting API call for groups...");
+            
             const formData = new FormData();
             formData.append('filename', fileName);
             formData.append('userID', userId);
-            formData.append('Fileurl', sessionStorage.getItem("fileURL") || "");
+            formData.append('Fileurl', fileUrlKey);
             formData.append('column', columnName);
             
+            console.log("[DEBUG] API request data:", {
+                filename: fileName,
+                userId,
+                fileUrl: fileUrlKey,
+                column: columnName
+            });
             
             const response = await fetch(`${API_BASE}/get-groups/`, {
                 method: 'POST',
                 body: formData
             });
             
+            console.log("[DEBUG] API response status:", response.status);
             const data = await response.json();
+            console.log("[DEBUG] API response data:", data);
+            
             if (data.success) {
+                // Cache the results
+                const newCache = {
+                    ...groupsCache,
+                    [cacheKey]: {
+                        groups: data.groups || [],
+                        timestamp: Date.now(),
+                        total_groups: data.total_groups
+                    }
+                };
+                setGroupsCache(newCache);
+                
+                // Update state
+                console.log("[DEBUG] Setting available groups:", data.groups);
                 setAvailableGroups(data.groups || []);
                 
                 // Auto-select first 2 groups if available
                 if (data.groups.length >= 2) {
+                    console.log("[DEBUG] Auto-selecting groups:", data.groups.slice(0, 2));
                     setSelectedGroups(data.groups.slice(0, 2));
                 } else {
                     setSelectedGroups([]);
                 }
             } else {
+                console.error("[DEBUG] API error:", data.error);
                 setAvailableGroups([]);
                 setSelectedGroups([]);
             }
         } catch (error) {
-            console.error("Error fetching groups:", error);
+            console.error("[DEBUG] Fetch error:", error);
             setAvailableGroups([]);
             setSelectedGroups([]);
+        } finally {
+            console.log("[DEBUG] Fetch complete");
+            setIsFetchingGroups(false);
         }
     };
 
-
-    
     // Add this useEffect to sync tempSelectedColumns when menu opens
     useEffect(() => {
         if (showColumnMenu) {
@@ -684,27 +818,131 @@ const StatisticalAnalysisTool = () => {
         }
     }, [showColumnMenu, selectedColumns]);
 
-    // Add this useEffect
+    // Update this useEffect to be smarter about when to fetch
     useEffect(() => {
-        if ((testType === 'kruskal' || testType === 'mannwhitney' || testType === 'wilcoxon' || testType === 'linear_regression') && fileURL) {
-            fetchColumnTypes();
-        } else {
-            // Reset column types when not using these tests
-            setNumericColumns([]);
-            setCategoricalColumns([]);
-            setColumnTypesLoaded(false);
-            setColumnTypesError('');
+        const cacheKey = sessionStorage.getItem("fileURL") || "";        
+        // Only fetch if:
+        // 1. We have a file URL
+        // 2. The test type requires column filtering
+        // 3. We haven't already loaded column types for this file recently
+        // 4. We're not currently fetching
+        const needsColumnFiltering = ['kruskal', 'mannwhitney', 'wilcoxon', 'linear_regression'].includes(testType);
+        
+        if (cacheKey && needsColumnFiltering && !isFetchingColumnTypes) {
+            const hasCache = columnTypesCache[cacheKey] && 
+                            columnTypesCache[cacheKey].timestamp > Date.now() - 30000;
+            
+            if (!hasCache && lastFetchedFile !== cacheKey) {
+                console.log(`[DEBUG] Fetching column types for ${testType}`);
+                fetchColumnTypes();
+            } else if (hasCache && (!columnTypesLoaded || lastFetchedFile !== cacheKey)) {
+                // Load from cache
+                console.log(`[DEBUG] Loading column types from cache for ${testType}`);
+                const cachedData = columnTypesCache[cacheKey];
+                setNumericColumns(cachedData.numeric_columns || []);
+                setCategoricalColumns(cachedData.categorical_columns || []);
+                setColumnTypesLoaded(true);
+                setLastFetchedFile(cacheKey);
+            }
+        } else if (!needsColumnFiltering) {
+            // Reset column types when not needed (but keep them in cache)
+            console.log(`[DEBUG] Test ${testType} doesn't need column filtering`);
         }
     }, [testType, fileURL]);
 
 
     useEffect(() => {
-        if (testType === 'mannwhitney' && column1 && fileURL) {
-            fetchGroupsForColumn(column1);
+        const savedCache = localStorage.getItem('columnTypesCache');
+        if (savedCache) {
+            try {
+                setColumnTypesCache(JSON.parse(savedCache));
+            } catch (e) {
+                console.error("Error loading column types cache:", e);
+            }
         }
-    }, [column1, testType, fileURL]);
+    }, []);
+
+    // Save cache to localStorage when it changes
+    useEffect(() => {
+        if (Object.keys(columnTypesCache).length > 0) {
+            localStorage.setItem('columnTypesCache', JSON.stringify(columnTypesCache));
+        }
+    }, [columnTypesCache]);
+
+    // Add this debug useEffect
+    useEffect(() => {
+        console.log("[DEBUG] fileURL state:", fileURL);
+        console.log("[DEBUG] sessionStorage fileURL:", sessionStorage.getItem("fileURL"));
+        console.log("[DEBUG] Mann-Whitney conditions:", {
+            testType,
+            column1,
+            hasFileURL: !!fileURL,
+            hasSessionFileURL: !!sessionStorage.getItem("fileURL"),
+            isFetchingGroups
+        });
+    }, [testType, column1, fileURL, isFetchingGroups]);    
+
+    // Update the useEffect for groups
+    useEffect(() => {
+        console.log("[DEBUG] Groups useEffect triggered:", {
+            testType,
+            column1,
+            sessionFileURL: sessionStorage.getItem("fileURL"),
+            isFetchingGroups
+        });
+        
+        const fileUrlKey = sessionStorage.getItem("fileURL") || "";
+        
+        if (testType === 'mannwhitney' && column1 && fileUrlKey) {
+            console.log("[DEBUG] Conditions met for fetching groups");
+            const cacheKey = `${fileUrlKey}_${column1}`;
+            
+            // Check cache first
+            if (groupsCache[cacheKey] && groupsCache[cacheKey].timestamp > Date.now() - 30000) {
+                console.log("[DEBUG] Loading groups from cache");
+                const cachedData = groupsCache[cacheKey];
+                setAvailableGroups(cachedData.groups || []);
+                
+                if (cachedData.groups.length >= 2 && selectedGroups.length === 0) {
+                    setSelectedGroups(cachedData.groups.slice(0, 2));
+                }
+            } else {
+                console.log("[DEBUG] Cache miss - fetching groups");
+                if (!isFetchingGroups) {
+                    // Small delay to ensure UI updates first
+                    setTimeout(() => {
+                        fetchGroupsForColumn(column1);
+                    }, 100);
+                }
+            }
+        } else {
+            console.log("[DEBUG] Conditions NOT met - clearing groups");
+            setAvailableGroups([]);
+            setSelectedGroups([]);
+            setGroupDropdownOpen(false);
+        }
+    }, [column1, testType, groupsCache, isFetchingGroups]);
 
 
+    
+    // Initialize groups cache from localStorage
+    useEffect(() => {
+        const savedGroupsCache = localStorage.getItem('groupsCache');
+        if (savedGroupsCache) {
+            try {
+                setGroupsCache(JSON.parse(savedGroupsCache));
+            } catch (e) {
+                console.error("Error loading groups cache:", e);
+            }
+        }
+    }, []);
+
+    // Save groups cache to localStorage when it changes
+    useEffect(() => {
+        if (Object.keys(groupsCache).length > 0) {
+            localStorage.setItem('groupsCache', JSON.stringify(groupsCache));
+        }
+    }, [groupsCache]);
 
     // Handle file selection async
     const handleFileChange = async (e) => {
@@ -855,6 +1093,85 @@ const StatisticalAnalysisTool = () => {
                 return;
             }
         }
+
+        // Add validation for Wilcoxon
+        if (testType === 'wilcoxon') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে ২টি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select 2 numeric columns.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length < 2) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'উইলকক্সন পরীক্ষার জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Wilcoxon test requires at least 2 numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'First column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Linear Regression
+        if (testType === 'linear_regression') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে স্বাধীন এবং নির্ভরশীল চলক নির্বাচন করুন।' 
+                        : 'Please select independent and dependent variables.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length < 2) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'রৈখিক রিগ্রেশনের জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Linear regression requires at least 2 numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'স্বাধীন চলকটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Independent variable must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্ভরশীল চলকটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Dependent variable must be a numeric column.'
+                );
+                return;
+            }
+        }        
+
 
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
@@ -1104,6 +1421,8 @@ const StatisticalAnalysisTool = () => {
             case 'anderson':
             case 'mannwhitney':                
             case 'kruskal':
+            case 'wilcoxon':
+            case 'linear_regression':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'fzt':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
@@ -2082,12 +2401,19 @@ const closePreview= async () =>{
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
+
+
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
+
+
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2134,12 +2460,17 @@ const closePreview= async () =>{
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
+
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
                                                                 </div>
-                                                            ) : numericColumns.length === 0 ? (
+                                                            ) : numericColumns.length === 0  ? (
+
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2182,7 +2513,7 @@ const closePreview= async () =>{
                                                 )}
 
                                                 {/* For other tests - keep existing code */}
-                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
+                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -2241,12 +2572,17 @@ const closePreview= async () =>{
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
+
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
+
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2268,6 +2604,7 @@ const closePreview= async () =>{
                                                                             setColumn1(e.target.value);
                                                                             // Clear selected groups when column changes
                                                                             setSelectedGroups([]);
+                                                                            setGroupDropdownOpen(false);
                                                                         }}
                                                                     >
                                                                         <option value="">
@@ -2338,29 +2675,37 @@ const closePreview= async () =>{
                                                                         type="button"
                                                                         className="form-select"
                                                                         onClick={() => {
-                                                                            if (column1 && availableGroups.length > 0) {
+                                                                            if (column1 && availableGroups.length > 0 && !isFetchingGroups) {
                                                                                 setGroupDropdownOpen(!groupDropdownOpen);
                                                                             }
                                                                         }}
                                                                         style={{
                                                                             textAlign: 'left',
-                                                                            cursor: availableGroups.length > 0 ? 'pointer' : 'not-allowed',
+                                                                            cursor: (column1 && availableGroups.length > 0 && !isFetchingGroups) ? 'pointer' : 'not-allowed',
                                                                             display: 'flex',
                                                                             justifyContent: 'space-between',
                                                                             alignItems: 'center',
-                                                                            opacity: availableGroups.length > 0 ? 1 : 0.7
+                                                                            opacity: (column1 && !isFetchingGroups) ? 1 : 0.7
                                                                         }}
                                                                     >
                                                                         <span>
-                                                                            {availableGroups.length === 0 
-                                                                                ? (column1 ? t.groupsLoading || 'Loading groups...' : 'Select a categorical column first')
-                                                                                : `Select 2 groups (${availableGroups.length} ${t.groupsAvailable || 'available'})`
-                                                                            }
+                                                                            {isFetchingGroups ? (
+                                                                                <>
+                                                                                    <div className="spinner small" style={{ display: 'inline-block', marginRight: '0.5rem' }}></div>
+                                                                                    {language === "বাংলা" ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
+                                                                                </>
+                                                                            ) : availableGroups.length === 0 ? (
+                                                                                column1 
+                                                                                    ? (language === "বাংলা" ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
+                                                                                    : (language === "বাংলা" ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
+                                                                            ) : (
+                                                                                `Select 2 groups (${availableGroups.length} ${language === "বাংলা" ? "টি উপলব্ধ" : "available"})`
+                                                                            )}
                                                                         </span>
-                                                                        <span>▼</span>
+                                                                        {availableGroups.length > 0 && !isFetchingGroups && <span>▼</span>}
                                                                     </button>
                                                                     
-                                                                    {groupDropdownOpen && availableGroups.length > 0 && (
+                                                                    {groupDropdownOpen && availableGroups.length > 0 && !isFetchingGroups && (
                                                                         <div style={{
                                                                             position: 'absolute',
                                                                             top: '100%',
@@ -2374,6 +2719,9 @@ const closePreview= async () =>{
                                                                             zIndex: 1000,
                                                                             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
                                                                         }}>
+
+
+
                                                                             {availableGroups.map((group, index) => {
                                                                                 const isSelected = selectedGroups.includes(group);
                                                                                 return (
@@ -2428,6 +2776,8 @@ const closePreview= async () =>{
                                                                     )}
                                                                 </div>
                                                                 
+
+
                                                                 {/* Validation Message */}
                                                                 {selectedGroups.length > 0 && selectedGroups.length !== 2 && (
                                                                     <div style={{
@@ -2473,12 +2823,18 @@ const closePreview= async () =>{
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
+
+
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
+
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2513,6 +2869,166 @@ const closePreview= async () =>{
                                                                         {language === "বাংলা" 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* For Wilcoxon and Linear Regression - both require numeric columns */}
+                                                {(testType === 'wilcoxon' || testType === 'linear_regression') && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Dynamic labels based on test type */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {testType === 'wilcoxon' 
+                                                                    ? (language === "বাংলা" ? "প্রথম কলাম (সংখ্যাগত)" : "First Column (Numeric)")
+                                                                    : (language === "বাংলা" ? "স্বাধীন চলক (পূর্বাভাসক)" : "Independent Variable (Predictor)")
+                                                                }
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : numericColumns.length === 0  ? (
+
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'wilcoxon' 
+                                                                            ? (language === "বাংলা" 
+                                                                                ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                            : (language === "বাংলা" 
+                                                                                ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => setColumn1(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {testType === 'wilcoxon' 
+                                                                                ? (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
+                                                                                : (language === "বাংলা" ? "স্বাধীন চলক নির্বাচন করুন" : "Select independent variable")
+                                                                            }
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {testType === 'wilcoxon' 
+                                                                    ? (language === "বাংলা" ? "দ্বিতীয় কলাম (সংখ্যাগত)" : "Second Column (Numeric)")
+                                                                    : (language === "বাংলা" ? "নির্ভরশীল চলক (প্রতিক্রিয়া)" : "Dependent Variable (Response)")
+                                                                }
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'wilcoxon' 
+                                                                            ? (language === "বাংলা" 
+                                                                                ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                            : (language === "বাংলা" 
+                                                                                ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column2}
+                                                                        onChange={(e) => setColumn2(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {testType === 'wilcoxon' 
+                                                                                ? (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
+                                                                                : (language === "বাংলা" ? "নির্ভরশীল চলক নির্বাচন করুন" : "Select dependent variable")
+                                                                            }
+                                                                        </option>
+                                                                        {numericColumns
+                                                                            .filter(col => col !== column1)
+                                                                            .map((col, idx) => (
+                                                                                <option key={idx} value={col}>
+                                                                                    {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                </option>
+                                                                            ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {testType === 'wilcoxon' 
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "উইলকক্সন পরীক্ষা জোড়া ডেটার জন্য (যেমন: চিকিৎসার পূর্ব-পরবর্তী)"
+                                                                                : "Wilcoxon test is for paired data (e.g., before-after treatment)")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "মডেল: Y = a + bX, যেখানে X স্বাধীন চলক এবং Y নির্ভরশীল চলক"
+                                                                                : "Model: Y = a + bX, where X is independent and Y is dependent")
+                                                                        }
                                                                     </div>
                                                                 </>
                                                             )}

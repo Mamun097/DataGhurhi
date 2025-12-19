@@ -141,6 +141,7 @@ def upload_file(request):
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
 
+
 @csrf_exempt
 def get_columns(request):
     user_id = request.POST.get('userID')
@@ -188,7 +189,8 @@ def get_columns(request):
                 col_str = col_str[1:-1].strip()
             return col_str
         
-        normalized_cols = [normalize_column(col) for col in cols]
+        normalized_cols = [canonicalize_column(col) for col in cols]
+
 
         return JsonResponse({
             'success': True,
@@ -202,6 +204,22 @@ def get_columns(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
+
+import re
+
+def canonicalize_column(col: str) -> str:
+    """
+    Create a stable, comparable column key:
+    - remove newlines
+    - collapse multiple spaces
+    - strip
+    """
+    if col is None:
+        return col
+    col = str(col)
+    col = col.replace('\n', ' ').replace('\r', ' ')
+    col = re.sub(r'\s+', ' ', col)  # collapse whitespace
+    return col.strip()
 
 
 def normalize_column_name(col: str, df: pd.DataFrame) -> str:
@@ -241,6 +259,7 @@ def normalize_column_name(col: str, df: pd.DataFrame) -> str:
     # If still not found, return the cleaned version
     return col_clean
 
+
 def validate_and_get_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[str, bool, str]:
     """
     Validate column name and return normalized version.
@@ -263,6 +282,7 @@ def validate_and_get_column(col: str, df: pd.DataFrame, test_name: str = "") -> 
             return normalized_col, False, f"Column '{col}' not found in dataset. Available columns: {list(df.columns)}"
     
     return normalized_col, True, ""
+
 
 # def get_columns(request):
 #     if request.method == 'POST' and request.FILES.get('file'):
@@ -381,6 +401,13 @@ def analyze_data_api(request):
                 df = pd.read_csv(file_path)
                 active_sheet = 'Sheet1'
             
+            original_columns = df.columns.tolist()
+            df.columns = [canonicalize_column(c) for c in df.columns]
+
+            # Optional debug
+            print("Original columns:", original_columns)
+            print("Normalized columns:", df.columns.tolist())
+
             # Get test parameters
             if request.content_type == 'application/json':
                 body = json.loads(request.body)
@@ -411,42 +438,40 @@ def analyze_data_api(request):
             print(f"Received test_type: {test_type}, col1: {col1}, col2: {col2}, col3: {col3}")
             
             # Helper function to normalize column names
+
             def normalize_column_name(col: str, df: pd.DataFrame) -> str:
                 """
-                Normalize column name by removing quotes and matching with actual DataFrame columns.
+                Normalize column name and match it to actual DataFrame columns.
+                Handles:
+                - quotes
+                - newlines
+                - extra whitespace
+                - case differences
                 """
                 if not col:
                     return col
-                
-                # Remove surrounding quotes if present
+
+                # Step 1: strip quotes first (frontend artifacts)
                 col_clean = col.strip()
                 if (col_clean.startswith('"') and col_clean.endswith('"')) or \
-                   (col_clean.startswith("'") and col_clean.endswith("'")):
-                    col_clean = col_clean[1:-1].strip()
-                
-                # Try to match with existing columns (exact match first)
+                (col_clean.startswith("'") and col_clean.endswith("'")):
+                    col_clean = col_clean[1:-1]
+
+                # Step 2: canonicalize (NEWLINES + SPACES)
+                col_clean = canonicalize_column(col_clean)
+
+                # Step 3: exact match
                 if col_clean in df.columns:
                     return col_clean
-                
-                # Try case-insensitive match
+
+                # Step 4: case-insensitive canonical match
                 for actual_col in df.columns:
-                    if str(actual_col).strip().lower() == col_clean.lower():
+                    if canonicalize_column(actual_col).lower() == col_clean.lower():
                         return actual_col
-                
-                # Try matching without extra whitespace
-                for actual_col in df.columns:
-                    if str(actual_col).strip() == col_clean:
-                        return actual_col
-                
-                # If still not found, try with quotes
-                for quote in ['"', "'"]:
-                    quoted = f"{quote}{col_clean}{quote}"
-                    if quoted in df.columns:
-                        return quoted
-                
-                # If still not found, return the cleaned version
+
                 return col_clean
-            
+
+
             # Helper function to validate column
             def validate_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[bool, str, str]:
                 """
@@ -836,6 +861,37 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     work = work.dropna(subset=[col1, col2])
     print(f"[Kruskal] after dropna: {len(work)} rows")
 
+    # Check if there are enough rows
+    if len(work) == 0:
+        return JsonResponse({
+            'success': False, 
+            'error': 'No valid data after removing missing values.'
+        })
+
+    # Check if all values in col2 are identical
+    unique_values = work[col2].nunique()
+    if unique_values == 1:
+        # All values are identical - Kruskal-Wallis cannot be performed
+        warning_message_en = "All values in the numeric column are identical. The Kruskal-Wallis test requires variation in the data to compute ranks. When all values are the same, all ranks will be tied, making the test statistically invalid."
+        
+        warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন যাতে র্যাঙ্ক নির্ধারণ করা যায়। যখন সকল মান একই থাকে, সকল র্যাঙ্ক সমান হয়ে যায়, ফলে পরীক্ষাটি পরিসংখ্যানগতভাবে অবৈধ হয়ে পড়ে।"
+        
+        warning_message = warning_message_bn if language == 'bn' else warning_message_en
+        
+        return JsonResponse({
+            'success': True,
+            'identical_values': True,
+            'warning_message': warning_message,
+            'language': language,
+            'identical_value': float(work[col2].iloc[0]),  # The single value that repeats
+            'n_observations': int(len(work)),
+            'column_names': {
+                'group': str(col1),
+                'value': str(col2)
+            },
+            'test': 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট'
+        })
+
     # Ensure grouping column is categorical
     if not pd.api.types.is_categorical_dtype(work[col1]):
         work[col1] = work[col1].astype('category')
@@ -915,6 +971,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     
     response_data = {
         'success': True,
+        'identical_values': False,  # This is the normal case
         'test': test_name,
         'language': language,
         'statistic': float(stat),
@@ -992,9 +1049,6 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
         
         print(f"[DEBUG MANNWHITNEY] DataFrame shape before cleaning: {df.shape}")
         
-        # IMPORTANT: Do NOT convert col1 to numeric - keep it as categorical for grouping
-        # Only convert col2 to numeric
-        
         # Check if col2 is numeric, try to convert if not
         if not pd.api.types.is_numeric_dtype(df[col2]):
             print(f"[DEBUG MANNWHITNEY] Column 2 is not numeric, attempting conversion...")
@@ -1045,15 +1099,53 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
                 'groups': list(group_counts.index),
                 'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
             })
-
         
-        # Perform Mann-Whitney test
+        # Get group data
         group1_data = df[df[col1] == unique_groups[0]][col2].values
         group2_data = df[df[col1] == unique_groups[1]][col2].values
         
         print(f"[DEBUG MANNWHITNEY] Group 1 ({unique_groups[0]}) data sample: {group1_data[:5] if len(group1_data) > 0 else 'No data'}")
         print(f"[DEBUG MANNWHITNEY] Group 2 ({unique_groups[1]}) data sample: {group2_data[:5] if len(group2_data) > 0 else 'No data'}")
         
+        # ============================================================
+        # NEW: CHECK IF ALL VALUES ARE IDENTICAL
+        # ============================================================
+        all_values = np.concatenate([group1_data, group2_data])
+        unique_values = np.unique(all_values)
+        
+        if len(unique_values) == 1:
+            # All values are identical - Mann-Whitney cannot be performed
+            print(f"[DEBUG MANNWHITNEY] All values are identical: {unique_values[0]}")
+            
+            warning_message_en = "All values in the numeric column are identical. The Mann-Whitney test requires variation in the data to compute ranks. When all values are the same, all ranks will be tied, making the test statistically invalid."
+            
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। ম্যান-হুইটনি পরীক্ষার জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন যাতে র্যাঙ্ক নির্ধারণ করা যায়। যখন সকল মান একই থাকে, সকল র্যাঙ্ক সমান হয়ে যায়, ফলে পরীক্ষাটি পরিসংখ্যানগতভাবে অবৈধ হয়ে পড়ে।"
+            
+            warning_message = warning_message_bn if lang == 'bn' else warning_message_en
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message,
+                'language': lang,
+                'identical_value': float(unique_values[0]),  # The single value that repeats
+                'n_observations': int(len(df)),
+                'column_names': {
+                    'group': str(col1),
+                    'value': str(col2)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট'
+            })
+        # ============================================================
+        # END OF NEW CHECK
+        # ============================================================
+        
+        # Perform Mann-Whitney test
         try:
             print(f"[DEBUG MANNWHITNEY] Performing Mann-Whitney U test...")
             u_stat, p_value = mannwhitneyu(
@@ -1106,6 +1198,7 @@ def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, us
         # Prepare response
         result = {
             'success': True,
+            'identical_values': False,  # Normal case
             'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
             'statistic': float(u_stat),
             'p_value': float(p_value),
