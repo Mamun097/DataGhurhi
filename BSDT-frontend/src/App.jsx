@@ -32,6 +32,7 @@ import EditProfile from "./ProfileManagement/EditProfile";
 import SecuritySettings from "./ProfileManagement/SecuritySettings";
 import SubscriptionPage from "./ProfileManagement/SubscriptionPage";
 import FileExplorer from "./StatisticalTool/FolderView";
+import LandingLogin from "./Homepage/landinglogin";
 
 function App() {
   const token = localStorage.getItem("token");
@@ -72,6 +73,7 @@ function App() {
               <Route path="/home" element={<Dashboard />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/addproject" element={<AddProject />} />
+              
               {/* <Route
                 path="/view-project/:projectId"
                 element={<EditProject />}
@@ -101,9 +103,10 @@ function App() {
             </>
           ) : (
             <>
-              <Route path="/" element={<Home />} />
-              <Route path="/home" element={<Home />} />
-              <Route path="*" element={<Navigate to="/login" />} />
+              {/* <Route path="/" element={<Home />} /> */}
+              <Route path="/home" element={<LandingLogin  />} />
+              <Route path="*" element={<Navigate to="/" />} />
+              <Route path="/" element={<LandingLogin />} />
             </>
           )}
 
