@@ -291,15 +291,15 @@ const ProjectDetailsTab = ({
       await fetchSurveys();
 
       // 6. redirecting to the survey
-      setTimeout(() => {
-        navigate(`/view-survey/${survey_id}`, {
-          state: {
-            project_id: projectId,
-            input_title: surveyMeta.topic,
-            survey_details: resSave.data.data,
-          },
-        });
-      }, 3000);
+      // setTimeout(() => {
+      //   navigate(`/view-survey/${survey_id}`, {
+      //     state: {
+      //       project_id: projectId,
+      //       input_title: surveyMeta.topic,
+      //       survey_details: resSave.data.data,
+      //     },
+      //   });
+      // }, 3000);
 
       // reducing survey count
       apiClient
