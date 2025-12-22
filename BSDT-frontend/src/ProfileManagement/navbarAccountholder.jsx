@@ -12,10 +12,9 @@ import {
   FaQuestionCircle,
   FaSearch,
   FaChartBar,
-  FaCreditCard
+  FaCreditCard,
 } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
-
 
 import logo_dataghurhi from "../assets/logos/dataghurhi.png";
 import "./navbarAcholder.css";
@@ -36,23 +35,19 @@ const translateText = async (textArray, targetLang) => {
   }
 };
 
-const logOut  = async () => {
-
-   try {
-     const formData = new FormData();
-    formData.append("user_id",  localStorage.getItem("user_id"));
-    // Delete temporary uploads folder
-      await fetch(
-        "http://127.0.0.1:8000/api/delete-temp-folder/",
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-  localStorage.clear();
-  sessionStorage.clear();
-  localStorage.setItem("language", "English");
-  window.location.href = "/";
+const logOut = async () => {
+  try {
+    const formData = new FormData();
+    formData.append("user_id", localStorage.getItem("user_id"));
+    const url = import.meta.env.VITE_API_URL + "/api/delete-temp-folder/";
+    await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+    localStorage.clear();
+    sessionStorage.clear();
+    localStorage.setItem("language", "English");
+    window.location.href = "/";
   } catch (err) {
     console.error("Error logging out:", err);
   }
@@ -94,7 +89,6 @@ const NavbarAcholder = ({
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-      
         const res = await apiClient.get("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -144,8 +138,7 @@ const NavbarAcholder = ({
     setLanguage(newLang);
   };
 
-  
-   const handleSearch = async () => {
+  const handleSearch = async () => {
     if (searchQuery.trim()) {
       try {
         const response = await apiClient.get("/api/search", {
@@ -171,60 +164,63 @@ const NavbarAcholder = ({
     }
   };
 
-
   return (
     <motion.nav className="NavbarAcholderContainer">
       <div className="NavbarAcholderTopSection">
         <div className="NavbarAcholderLogoSection">
           <div className="NavbarAcholderLogoItem">
-           <div className="LogoWithBeta">
-    <img
-      src={logo_dataghurhi}
-      alt="DataGhurhi logo"
-      className="MainLogo"
-      onClick={() => navigate("/")}
-    />
+            <div className="LogoWithBeta">
+              <img
+                src={logo_dataghurhi}
+                alt="DataGhurhi logo"
+                className="MainLogo"
+                onClick={() => navigate("/")}
+              />
 
-    {/* Subscript Beta */}
-    <span className="LogoBetaTag">Beta</span>
-  </div>
+              {/* Subscript Beta */}
+              <span className="LogoBetaTag">Beta</span>
+            </div>
 
-  <span>DataGhurhi</span>
+            <span>DataGhurhi</span>
           </div>
         </div>
 
         {/* Search + Language inline */}
 
         {/* Language Switch now inline with search */}
-        
 
-          <div className="NavbarAcholderSearchWrapper">
-            <div className="NavbarAcholderSearchSection">
-              <select
-                className="NavbarAcholderSearchFilter"
-                value={searchFilter}
-                onChange={(e) => setSearchFilter(e.target.value)}
-              >
-                <option value="all">{getLabel("All")}</option>
-                <option value="project">{getLabel("Project")}</option>
-                <option value="survey">{getLabel("Survey")}</option>
-                <option value="account">{getLabel("Account")}</option>
-              </select>
+        <div className="NavbarAcholderSearchWrapper">
+          <div className="NavbarAcholderSearchSection">
+            <select
+              className="NavbarAcholderSearchFilter"
+              value={searchFilter}
+              onChange={(e) => setSearchFilter(e.target.value)}
+            >
+              <option value="all">{getLabel("All")}</option>
+              <option value="project">{getLabel("Project")}</option>
+              <option value="survey">{getLabel("Survey")}</option>
+              <option value="account">{getLabel("Account")}</option>
+            </select>
 
-              <div className="NavbarAcholderSearchBox">
-                <input
-                  type="text"
-                  placeholder={getLabel("Search for projects, surveys, accounts...")}
-                  className="NavbarAcholderSearchInput"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                />
-                <FaSearch className="NavbarAcholderSearchIcon" onClick={handleSearch} />
-              </div>
+            <div className="NavbarAcholderSearchBox">
+              <input
+                type="text"
+                placeholder={getLabel(
+                  "Search for projects, surveys, accounts..."
+                )}
+                className="NavbarAcholderSearchInput"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              />
+              <FaSearch
+                className="NavbarAcholderSearchIcon"
+                onClick={handleSearch}
+              />
             </div>
           </div>
-          <div className="NavbarAcholderLangSwitchInline" >
+        </div>
+        <div className="NavbarAcholderLangSwitchInline">
           <label className="NavbarAcholderSwitch">
             <input
               type="checkbox"
@@ -243,8 +239,8 @@ const NavbarAcholder = ({
           </div>
         </div>
 
-          {/* NAVIGATION MENU */}
-          {/* <ul
+        {/* NAVIGATION MENU */}
+        {/* <ul
             className={`NavbarAcholderNavList ${
               isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
             }`}
@@ -258,28 +254,27 @@ const NavbarAcholder = ({
 
        
           </ul> */}
-          {/* Profile dropdown always last */}
+        {/* Profile dropdown always last */}
 
-          <div className="NavbarAcholderProfile">
-            <div className="NavbarAcholderAvatarWrap">
-              <IconButton
-                onClick={(e) => setAnchorEl(e.currentTarget)}
-                sx={{ p: 0 }}
-              >
-                {profilePicUrl ? (
-                  <Avatar alt={name} src={profilePicUrl} />
-                ) : (
-                  <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
-                )}
-              </IconButton>
+        <div className="NavbarAcholderProfile">
+          <div className="NavbarAcholderAvatarWrap">
+            <IconButton
+              onClick={(e) => setAnchorEl(e.currentTarget)}
+              sx={{ p: 0 }}
+            >
+              {profilePicUrl ? (
+                <Avatar alt={name} src={profilePicUrl} />
+              ) : (
+                <Avatar>{name?.[0]?.toUpperCase() || "U"}</Avatar>
+              )}
+            </IconButton>
 
-              <div className="NavbarAcholderUserName">
-                {name?.trim().split(" ").slice(-1)[0] || "User"}
-              </div>
-            
-    
-          <Menu
-           anchorEl={anchorEl}
+            <div className="NavbarAcholderUserName">
+              {name?.trim().split(" ").slice(-1)[0] || "User"}
+            </div>
+
+            <Menu
+              anchorEl={anchorEl}
               open={open}
               onClose={() => setAnchorEl(null)}
               onClick={() => setAnchorEl(null)}
@@ -293,63 +288,78 @@ const NavbarAcholder = ({
                 },
               }}
             >
-        {token && (
-          <>
-            {/* Go to Profile */}
-            <MenuItem onClick={() => (window.location.href = "/edit-profile")}>
-              <IoPersonCircle style={{ marginRight: "8px" }} />
-              {getLabel("Profile")}
-            </MenuItem>
+              {token && (
+                <>
+                  {/* Go to Profile */}
+                  <MenuItem
+                    onClick={() => (window.location.href = "/edit-profile")}
+                  >
+                    <IoPersonCircle style={{ marginRight: "8px" }} />
+                    {getLabel("Profile")}
+                  </MenuItem>
 
-            {/* Security */}
-            <MenuItem onClick={() => (window.location.href = "/security-settings")}>
-              <FaLock style={{ marginRight: "8px" }} />
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {getLabel("Security")}
-              </span>
-            </MenuItem>
-            {/* Subscription */}
-            <MenuItem onClick={() => (window.location.href = "/subscription")}>
-              <FaCreditCard style={{ marginRight: "8px" }} />
-              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                {getLabel("Subscription")}
-              </span>
-            </MenuItem>
-            {/* Divider */}
-            <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
-</>
-)}
+                  {/* Security */}
+                  <MenuItem
+                    onClick={() =>
+                      (window.location.href = "/security-settings")
+                    }
+                  >
+                    <FaLock style={{ marginRight: "8px" }} />
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      {getLabel("Security")}
+                    </span>
+                  </MenuItem>
+                  {/* Subscription */}
+                  <MenuItem
+                    onClick={() => (window.location.href = "/subscription")}
+                  >
+                    <FaCreditCard style={{ marginRight: "8px" }} />
+                    <span
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                      }}
+                    >
+                      {getLabel("Subscription")}
+                    </span>
+                  </MenuItem>
+                  {/* Divider */}
+                  <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
+                </>
+              )}
 
+              {/* About */}
+              <MenuItem onClick={() => (window.location.href = "/about")}>
+                <FaInfoCircle style={{ marginRight: "8px" }} />
+                {getLabel("About")}
+              </MenuItem>
 
-    
+              {/* FAQ */}
+              <MenuItem onClick={() => (window.location.href = "/faq")}>
+                <FaQuestionCircle style={{ marginRight: "8px" }} />
+                {getLabel("FAQ")}
+              </MenuItem>
 
-            {/* About */}
-            <MenuItem onClick={() => (window.location.href = "/about")}>
-              <FaInfoCircle style={{ marginRight: "8px" }} />
-              {getLabel("About")}
-            </MenuItem>
+              {token && (
+                <>
+                  {/* Divider */}
+                  <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
 
-            {/* FAQ */}
-            <MenuItem onClick={() => (window.location.href = "/faq")}>
-              <FaQuestionCircle style={{ marginRight: "8px" }} />
-              {getLabel("FAQ")}
-            </MenuItem>
-
-        {token && (
-          <>
-            {/* Divider */}
-            <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
-
-            {/* Logout */}
-            <MenuItem onClick={logOut}>
-              <FaSignOutAlt style={{ marginRight: "8px" }} />
-              {getLabel("Logout")}
-            </MenuItem>
-              </>
-        )}
-          </Menu>
-
-    
+                  {/* Logout */}
+                  <MenuItem onClick={logOut}>
+                    <FaSignOutAlt style={{ marginRight: "8px" }} />
+                    {getLabel("Logout")}
+                  </MenuItem>
+                </>
+              )}
+            </Menu>
           </div>
         </div>
       </div>
