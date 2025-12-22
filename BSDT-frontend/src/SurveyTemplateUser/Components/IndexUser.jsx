@@ -10,7 +10,7 @@ import CustomLoader from "../Utils/CustomLoader";
 import SurveyNotOpen from "../Utils/SurveyNotOpen";
 
 // helper to check if survey is open
-const isSurveyOpen = (template, setSurveyOpenMessage, setQuizTimeLeft) => {
+const isSurveyOpen = (template, setSurveyOpenMessage) => {
   if (!template) return false;
   if (!template.template.is_quiz) return true; // Not a quiz, so always open
 
@@ -46,7 +46,7 @@ const Index = () => {
     slug = location.state?.slug;
     isPreview = true;
   }
-  
+
   const STORAGE_KEY = `survey_response_${slug}`;
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
@@ -63,6 +63,7 @@ const Index = () => {
   const [logoText, setLogoText] = useState("");
   const [userResponse, setUserResponse] = useState(() => {
     try {
+      if (isPreview) return [];
       const savedData = localStorage.getItem(STORAGE_KEY);
       return savedData ? JSON.parse(savedData) : [];
     } catch (e) {
@@ -204,14 +205,76 @@ const Index = () => {
     return <CustomLoader />;
   }
 
+  const handleGoBack = () => {
+    window.history.back();
+  };
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <>
       {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
       <div className="container-fluid bg-green">
         <div className="row justify-content-center">
+          {isPreview && (
+            <div className="col-12 col-md-8 border my-5 p-3">
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  backgroundColor: "#72b366ff",
+                  color: "#212529",
+                  textAlign: "center",
+                  padding: "8px",
+                  zIndex: 1050,
+                  fontWeight: "bold",
+                }}
+              >
+                Preview Mode - Responses will not be recorded.
+              </div>
+              <div>
+                <button
+                  onClick={handleGoBack}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: "1rem",
+                    color: "#000000ff",
+                    backgroundColor: "#ffffffff",
+                    border: "2px solid #25856fff",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                    marginTop: "10px",
+                    fontSize: "1rem",
+                  }}
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={handlePrint}
+                  style={{
+                    padding: "8px 20px",
+                    fontSize: "1rem",
+                    color: "#fff",
+                    backgroundColor: "#25856fff",
+                    border: "2px solid #25856fff",
+                    borderRadius: "5px",
+                    cursor: "pointer",
+                    pointerEvents: "auto",
+                    marginTop: "10px",
+                    marginLeft: "10px",
+                  }}
+                >
+                  Print All Questions
+                </button>
+              </div>
+            </div>
+          )}
           {isSurveyCurrentlyOpen ? (
             !submitted ? (
-              <div className="col-12 col-md-8 border">
+              <div className="col-12 col-md-8 border my-5">
                 <SurveyForm
                   title={title}
                   sections={sections}
