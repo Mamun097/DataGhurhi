@@ -247,8 +247,31 @@ const SurveyForm = ({
   return (
     <div>
       {/* If survey is in quiz mode, show timer here */}
-      {isQuiz && quizTimeLeft > 0 && (
+      {!isPreview && isQuiz && quizTimeLeft > 0 && (
         <QuizTimer durationInMinutes={quizTimeLeft} onTimeUp={handleTimeUp} />
+      )}
+      {isPreview && isQuiz && quizTimeLeft > 0 && (
+        <div
+          style={{
+            position: "fixed",
+            top: "10px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 2050,
+            padding: "8px 16px",
+            borderRadius: "8px",
+            backgroundColor: "#212529",
+            color: "white",
+            fontFamily: "monospace",
+            fontSize: "1.1rem",
+            fontWeight: "bold",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+          }}
+          role="timer"
+          aria-live="assertive"
+        >
+          Time Left: xx:xx:xx
+        </div>
       )}
 
       {/* If survey is in quiz mode, make vertical space between timer and content */}
