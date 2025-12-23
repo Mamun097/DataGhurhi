@@ -54,7 +54,7 @@ const translateText = async (textArray, targetLang) => {
   if (!GOOGLE_API_KEY) return textArray;
   try {
     const response = await axios.post(
-      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      `s://translatiohttpn.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
       { q: textArray, target: targetLang, format: "text" }
     );
     return response.data.data.translations.map((t) => t.translatedText);
@@ -1272,7 +1272,7 @@ const SurveyResponses = () => {
       formData.append("file_type", "survey");
 
       const response = await fetch(
-        "http://127.0.0.1:8000/api/upload-preprocessed/",
+        "/api/sa/upload-preprocessed/",
         {
           method: "POST",
           body: formData,
@@ -1295,7 +1295,7 @@ const SurveyResponses = () => {
         );
 
         setShowModal(false);
-        window.location.href = "http://localhost:5173/?tab=analysis";
+        window.location.href = "/?tab=analysis";
       } else {
         alert(result.error || "Failed to prepare file for analysis.");
       }

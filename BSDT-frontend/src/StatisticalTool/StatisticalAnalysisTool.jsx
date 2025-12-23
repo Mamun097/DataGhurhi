@@ -307,8 +307,7 @@ const mapDigits = (text, lang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
-     const API_BASE = 'http://127.0.0.1:8000/api';
-     const API_WORKBOOK='http://127.0.0.1:8000'
+    const API_BASE = '/api/sa';   
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -410,7 +409,7 @@ const StatisticalAnalysisTool = () => {
             sessionStorage.removeItem("preprocessed");
         }
 
-        fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
+        fileUrl = `${API_BASE}${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
 
 
@@ -1495,7 +1494,7 @@ const closePreview= async () =>{
                                             <h3>Data Preview</h3>
                                             
 
-                                                <PreviewTable workbookUrl={`http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+                                                <PreviewTable workbookUrl={`${API_BASE}${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
                                         
                                         </div>
                                     </div>
@@ -3782,14 +3781,14 @@ const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSu
                     <div className="bg-white rounded-lg shadow-md p-4 mb-6">
                         <div className="relative">
                             <img
-                                src={`http://127.0.0.1:8000/${results.image_path}`}
+                                src={`${API_BASE}${results.image_path}`}
                                 alt={language === 'bn' ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
                                 className="w-full h-auto object-contain"
                             />
                             <button
                                 onClick={async () => {
                                     try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
+                                        const response = await fetch(`${API_BASE}${results.image_path}`);
                                         const blob = await response.blob();
                                         const url = window.URL.createObjectURL(blob);
                                         const link = document.createElement('a');

@@ -33,7 +33,7 @@ const [language, setLanguage] = useState(() => localStorage.getItem("language") 
   const fetchFiles = async (folderPath) => {
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/files?user_id=${userId}${
+        `/api/sa/files?user_id=${userId}${
           folderPath ? `&path=${folderPath}` : ""
         }`
       );
@@ -47,7 +47,7 @@ const [language, setLanguage] = useState(() => localStorage.getItem("language") 
   const goBack = (index) => setPathStack(pathStack.slice(0, index + 1));
 
 const handleDownload = (file) => {
-  const url = `http://127.0.0.1:8000/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
+  const url = `/api/sa/files/${encodeURIComponent(file.name)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
   fetch(url)
     .then((res) => res.blob())
     .then((blob) => {
@@ -78,7 +78,7 @@ const handleDownload = (file) => {
     const fileURL = `/media/ID_${userId}_uploads/saved_files/${file.name}`;
     sessionStorage.setItem("file_name", file.name);
     sessionStorage.setItem("fileURL", fileURL);
-    window.location.href = "http://localhost:5173/?tab=analysis";
+    window.location.href = "/?tab=analysis";
 
 
   };
@@ -133,7 +133,7 @@ const handleDownload = (file) => {
             >
               {["jpg", "jpeg", "png", "gif"].includes(file.type) ? (
                 <img
-                  src={`http://127.0.0.1:8000/files/${file.name}?user_id=${userId}&path=${currentPath}`}
+                  src={`/api/sa/files/${file.name}?user_id=${userId}&path=${currentPath}`}
                   alt={file.name}
                   className="file-thumbnail"
                 />

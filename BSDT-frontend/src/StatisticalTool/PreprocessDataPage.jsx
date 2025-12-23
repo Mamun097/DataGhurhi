@@ -10,8 +10,9 @@ import {Files ,SlidersVertical} from "lucide-react";
 
 const PreprocessDataPage = () => {
  
-  const API_BASE = 'http://127.0.0.1:8000/api';
-  const API_WORKBOOK='http://127.0.0.1:8000'
+  const API_BASE = '/api/sa';
+  //const API_BASE = 'http://127.0.0.1:8000/api';
+  //const API_WORKBOOK='http://127.0.0.1:8000'
   const [data, setData] = useState([]);
   const filename = sessionStorage.getItem('file_name') || 'latest_uploaded.xlsx';
   const [columns, setColumns] = useState([]);
@@ -481,7 +482,7 @@ const handleReapply = () => {
               <div className="popup-buttons">
                 <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); downloadAsExcel(data, filename); setIsPopupOpen(false); }}>Download Excel</button>
                 <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/visualization'; setIsPopupOpen(false); }}>Visualize</button>
-                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); sessionStorage.setItem("preprocessed", "true"); sessionStorage.setItem("file_name", "preprocess_" + filename); window.location.href = 'http://localhost:5173/?tab=analysis'; setIsPopupOpen(false); }}>Analyze</button>
+                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); sessionStorage.setItem("preprocessed", "true"); sessionStorage.setItem("file_name", "preprocess_" + filename); window.location.href = '/?tab=analysis'; setIsPopupOpen(false); }}>Analyze</button>
                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/saved-files'; setIsPopupOpen(false); }}>My Personal Storage</button>
               </div>
               <button className="popup-close" onClick={() => setIsPopupOpen(false)}>✕</button>
@@ -711,7 +712,8 @@ const handleReapply = () => {
       
         
         <PreviewTable
-          workbookUrl={`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`}
+          workbookUrl={`${API_BASE}${sessionStorage.getItem("fileURL")}`}
+          //workbookUrl={`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`}
           columns={columns}
           duplicateIndices={duplicateIndices}
           setData={setData}

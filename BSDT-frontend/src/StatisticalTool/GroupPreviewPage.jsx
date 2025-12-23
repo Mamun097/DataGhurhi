@@ -1,6 +1,9 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 
+const base = import.meta.env.VITE_SA_API_BASE;
+// const API_BASE = '/api/sa'; 
+
 const GroupPreviewPage = () => {
   const { state } = useLocation();
   const { previewData, downloadUrl, filename } = state || {};
@@ -41,6 +44,7 @@ const GroupPreviewPage = () => {
       <div className="mt-6">
         <a
           href={`http://127.0.0.1:8000${downloadUrl}`}
+          // href={`${API_BASE}${downloadUrl}`}
           className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
           download
         >
