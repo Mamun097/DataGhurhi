@@ -10,7 +10,7 @@ import {
   Tab,
 } from "react-bootstrap";
 import { toast } from "react-toastify";
-import { QRCodeCanvas } from "qrcode.react";
+//import { QRCodeCanvas } from "qrcode.react";
 
 const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
   if (!isOpen) return null;

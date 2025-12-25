@@ -17,29 +17,6 @@ const SimilarityOptions = ({
 }) => {
     return (
         <div className="mt-4 border-t pt-4">
-            <h4 className="font-semibold text-lg mb-3">{t.similarityTitle || t.tests.similarity}</h4>
-
-            {/* Output Format (Optional if visuals added later) */}
-            <label className="block mb-2">{t.downloadLabel}</label>
-            <select
-                value={imageFormat}
-                onChange={(e) => setImageFormat(e.target.value)}
-                className="mb-4 border p-2 rounded w-full"
-            >
-                <option value="png">PNG</option>
-                <option value="jpg">JPG</option>
-                <option value="pdf">PDF</option>
-                <option value="tiff">TIFF</option>
-            </select>
-
-            {/* Default Settings */}
-            <label className="block mb-2">{t.useDefaultSettings}</label>
-            <input
-                type="checkbox"
-                checked={useDefaultSettings}
-                onChange={(e) => setUseDefaultSettings(e.target.checked)}
-                className="mb-4"
-            />
 
             {!useDefaultSettings && (
                 <div className="bg-white shadow rounded-lg p-6 mt-4 border border-gray-200">

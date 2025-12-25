@@ -669,14 +669,14 @@ const StatisticalAnalysisTool = () => {
                 console.log("[DEBUG] Column types loaded successfully");
                 
                 // Auto-select first columns based on test type
-                if (testType === 'kruskal' || testType === 'mannwhitney') {
+                if (testType === 'kruskal' || testType === 'mannwhitney' || testType === 'eda_swarm') {
                     if (data.categorical_columns.length > 0 && !column1) {
                         setColumn1(data.categorical_columns[0]);
                     }
                     if (data.numeric_columns.length > 0 && !column2) {
                         setColumn2(data.numeric_columns[0]);
                     }
-                } else if (testType === 'wilcoxon' || testType === 'linear_regression') {
+                } else if (testType === 'wilcoxon' || testType === 'linear_regression' || testType === 'similarity') {
                     if (data.numeric_columns.length > 0 && !column1) {
                         setColumn1(data.numeric_columns[0]);
                     }
@@ -685,7 +685,19 @@ const StatisticalAnalysisTool = () => {
                         const secondCol = data.numeric_columns[1] || data.numeric_columns[0];
                         setColumn2(secondCol);
                     }
+                } else if (testType === 'bar_chart' || testType === 'eda_pie') {
+                    if (data.categorical_columns.length > 0 && !column1) {
+                        setColumn1(data.categorical_columns[0]);
+                    }
+
+                } else if (testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson' || testType === 'eda_distribution') {
+                    if (data.numeric_columns.length > 0 && !column1) {
+                        setColumn1(data.numeric_columns[0]);
+                    }
+
                 }
+
+
             } else {
                 setColumnTypesError(data.error || 'Failed to analyze column types');
                 setColumnTypesLoaded(true);
@@ -826,7 +838,11 @@ const StatisticalAnalysisTool = () => {
         // 2. The test type requires column filtering
         // 3. We haven't already loaded column types for this file recently
         // 4. We're not currently fetching
-        const needsColumnFiltering = ['kruskal', 'mannwhitney', 'wilcoxon', 'linear_regression'].includes(testType);
+        const needsColumnFiltering = [
+            'kruskal', 'mannwhitney', 'wilcoxon', 'linear_regression', 
+            'bar_chart', 'eda_pie', 'shapiro', 'kolmogorov', 
+            'anderson', 'eda_distribution', 'eda_swarm', 'similarity'
+        ].includes(testType);
         
         if (cacheKey && needsColumnFiltering && !isFetchingColumnTypes) {
             const hasCache = columnTypesCache[cacheKey] && 
@@ -1172,6 +1188,263 @@ const StatisticalAnalysisTool = () => {
             }
         }        
 
+        // Add validation for Bar Chart
+        if (testType === 'bar_chart') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন।' 
+                        : 'Please select a categorical column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'বার চার্টের জন্য ফাইলে শ্রেণীবদ্ধ কলাম প্রয়োজন।'
+                        : 'Bar chart requires categorical columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'Selected column must be a categorical column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Pie Chart
+        if (testType === 'eda_pie') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন।' 
+                        : 'Please select a categorical column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'পাই চার্টের জন্য ফাইলে শ্রেণীবদ্ধ কলাম প্রয়োজন।'
+                        : 'Pie chart requires categorical columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'Selected column must be a categorical column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Shapiro test
+        if (testType === 'shapiro') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select a numeric column.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'শাপিরো-উইল্ক পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Shapiro-Wilk test requires numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Selected column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Kolmogorov test
+        if (testType === 'kolmogorov') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select a numeric column.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'কোলমোগোরভ-স্মিরনভ পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Kolmogorov-Smirnov test requires numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Selected column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Anderson-Darling test
+        if (testType === 'anderson') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select a numeric column.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'অ্যান্ডারসন-ডার্লিং পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Anderson-Darling test requires numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Selected column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for EDA Distribution plot
+        if (testType === 'eda_distribution') {
+            if (!column1) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select a numeric column.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'বন্টন প্লটের জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Distribution plot requires numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Selected column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Swarm Plot
+        if (testType === 'eda_swarm') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'সোয়ার্ম প্লটের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'Swarm plot requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Similarity test
+        if (testType === 'similarity') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে ২টি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select 2 numeric columns.'
+                );
+                return;
+            }
+            
+            if (numericColumns.length < 2) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'সাদৃশ্য পরীক্ষার জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
+                        : 'Similarity test requires at least 2 numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'First column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+        }        
 
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
@@ -1423,21 +1696,16 @@ const StatisticalAnalysisTool = () => {
             case 'kruskal':
             case 'wilcoxon':
             case 'linear_regression':
+            case 'eda_pie':
+            case 'bar_chart':
+            case 'eda_distribution':
+            case 'eda_swarm':
+            case 'similarity':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'fzt':
                 return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
-            case 'eda_distribution':
-                return { col2: false, col3: false, refValue: false, heatmapSize: false };
-            case 'eda_swarm':
-                return { col2: true, col3: false, refValue: false, heatmapSize: false };
-            case 'eda_pie':
-                return { col2: false, col3: false, refValue: false, heatmapSize: false };
-            case 'bar_chart': // New Code for Bar Chart
-                return { col2: false, col3: false, refValue: false, heatmapSize: false };
             case 'eda_basics':
-                return { col2: false, col3: false, refValue: false, heatmapSize: false };
-            case 'similarity':
-                return { col2: true, col3: false, refValue: false, heatmapSize: false, multiColumn: false };
+                return { col2: false, col3: false, refValue: false, heatmapSize: false };        
             default:
                 return { col2: true, col3: false, refValue: false, heatmapSize: false };
         }
@@ -2374,146 +2642,9 @@ const closePreview= async () =>{
                                                         </h5>
                                                     )} */}
 
-                                                {/* For Kruskal test - special column type handling */}
-                                                {testType === 'kruskal' && (
-                                                    <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
-                                                        
-                                                        {columnTypesError && (
-                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
-                                                                <div className="error-icon">
-                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
-                                                                        <path
-                                                                            fillRule="evenodd"
-                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                                                            clipRule="evenodd"
-                                                                        />
-                                                                    </svg>
-                                                                </div>
-                                                                <div className="error-text">{columnTypesError}</div>
-                                                            </div>
-                                                        )}
-                                                        
-                                                        {/* Column 1 - Categorical (Grouping variable) */}
-                                                        <div className="form-group">
-                                                            <label className="form-label">
-                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
-                                                                <span className="required-star">*</span>
-                                                            </label>
-                                                            
-
-
-                                                            {!columnTypesLoaded ? (
-                                                                <div className="loading-placeholder">
-                                                                    <div className="spinner small"></div>
-                                                                    {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
-                                                                    }
-                                                                </div>
-                                                            ) : categoricalColumns.length === 0 ? (
-
-
-                                                                <div className="no-columns-warning">
-                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
-                                                                    </svg>
-                                                                    <span>
-                                                                        {language === "বাংলা" 
-                                                                            ? "এই ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
-                                                                            : "No categorical columns found in this file."}
-                                                                    </span>
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <select
-                                                                        className="form-select"
-                                                                        value={column1}
-                                                                        onChange={(e) => setColumn1(e.target.value)}
-                                                                    >
-                                                                        <option value="">
-                                                                            {language === "বাংলা" 
-                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
-                                                                                : "Select a categorical column"}
-                                                                        </option>
-                                                                        {categoricalColumns.map((col, idx) => (
-                                                                            <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
-                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
-                                                                            : `${categoricalColumns.length} categorical columns found`}
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Column 2 - Numerical (Value variable) */}
-                                                        <div className="form-group">
-                                                            <label className="form-label">
-                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
-                                                                <span className="required-star">*</span>
-                                                            </label>
-                                                            
-
-                                                            {!columnTypesLoaded ? (
-                                                                <div className="loading-placeholder">
-                                                                    <div className="spinner small"></div>
-                                                                    {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
-                                                                    }
-                                                                </div>
-                                                            ) : numericColumns.length === 0  ? (
-
-                                                                <div className="no-columns-warning">
-                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                        <circle cx="12" cy="12" r="10"></circle>
-                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
-                                                                    </svg>
-                                                                    <span>
-                                                                        {language === "বাংলা" 
-                                                                            ? "এই ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
-                                                                            : "No numeric columns found in this file."}
-                                                                    </span>
-                                                                </div>
-                                                            ) : (
-                                                                <>
-                                                                    <select
-                                                                        className="form-select"
-                                                                        value={column2}
-                                                                        onChange={(e) => setColumn2(e.target.value)}
-                                                                    >
-                                                                        <option value="">
-                                                                            {language === "বাংলা" 
-                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
-                                                                                : "Select a numeric column"}
-                                                                        </option>
-                                                                        {numericColumns.map((col, idx) => (
-                                                                            <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
-                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
-                                                                            : `${numericColumns.length} numeric columns found`}
-                                                                    </div>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )}
 
                                                 {/* For other tests - keep existing code */}
-                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
+                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && testType !== 'bar_chart' && testType !== 'eda_pie' && testType !== 'shapiro' && testType !== 'kolmogorov' && testType !== 'anderson' && testType !== 'eda_distribution' && testType !== 'eda_swarm' && testType !== 'similarity' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -2544,7 +2675,239 @@ const closePreview= async () =>{
                                                         </select>
                                                     </div>
                                                 )}                                              
-                        
+
+                                                {/* Combined component for tests requiring 1 categorical + 1 numeric column (Kruskal, Swarm Plot) */}
+                                                {(testType === 'kruskal' || testType === 'eda_swarm') && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Dynamic labels based on test type */}
+                                                        {/* Column 1 - Categorical variable */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {testType === 'kruskal'
+                                                                    ? (language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)")
+                                                                    : (language === "বাংলা" ? "শ্রেণীবদ্ধ কলাম (X-অক্ষ)" : "Categorical Column (X-axis)")
+                                                                }
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : categoricalColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'kruskal'
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                                : "Kruskal-Wallis test requires categorical columns. No categorical columns found in the file.")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "সোয়ার্ম প্লটের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                                : "Swarm plot requires categorical columns. No categorical columns found in the file.")
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => setColumn1(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
+                                                                                : "Select a categorical column"}
+                                                                        </option>
+                                                                        {categoricalColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
+                                                                            : `${categoricalColumns.length} categorical columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Column 2 - Numerical variable */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {testType === 'kruskal'
+                                                                    ? (language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)")
+                                                                    : (language === "বাংলা" ? "সংখ্যাগত কলাম (Y-অক্ষ)" : "Numeric Column (Y-axis)")
+                                                                }
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'kruskal'
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Kruskal-Wallis test requires numeric columns. No numeric columns found in the file.")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "সোয়ার্ম প্লটের জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Swarm plot requires numeric columns. No numeric columns found in the file.")
+                                                                        }
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column2}
+                                                                        onChange={(e) => setColumn2(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
+                                                                                : "Select a numeric column"}
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Test-specific Information */}
+                                                        {testType === 'kruskal' && (
+                                                            <div style={{ 
+                                                                marginTop: '1rem', 
+                                                                padding: '0.75rem', 
+                                                                backgroundColor: '#f0f9ff', 
+                                                                border: '1px solid #bae6fd',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                    </svg>
+                                                                    <div>
+                                                                        <strong style={{ color: '#0369a1' }}>
+                                                                            {language === "বাংলা" ? "ক্রুসকাল-ওয়ালিস পরীক্ষা নির্দেশনা" : "Kruskal-Wallis Test Guidelines"}
+                                                                        </strong>
+                                                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "দুই বা ততোধিক স্বাধীন গোষ্ঠীর মধ্যকার পার্থক্য পরীক্ষা করে"
+                                                                                    : "Tests for differences between two or more independent groups"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "নন-প্যারামেট্রিক (স্বাভাবিক বন্টনের প্রয়োজন নেই)"
+                                                                                    : "Non-parametric (doesn't require normal distribution)"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "প্রতিটি গোষ্ঠীতে কমপক্ষে ৫টি পর্যবেক্ষণ সুপারিশকৃত"
+                                                                                    : "At least 5 observations per group recommended"}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {testType === 'eda_swarm' && (
+                                                            <div style={{ 
+                                                                marginTop: '1rem', 
+                                                                padding: '0.75rem', 
+                                                                backgroundColor: '#f0f9ff', 
+                                                                border: '1px solid #bae6fd',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                    </svg>
+                                                                    <div>
+                                                                        <strong style={{ color: '#0369a1' }}>
+                                                                            {language === "বাংলা" ? "সোয়ার্ম প্লট নির্দেশনা" : "Swarm Plot Guidelines"}
+                                                                        </strong>
+                                                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "প্রতিটি শ্রেণীর মধ্যে ডেটা পয়েন্টের বন্টন দেখায়"
+                                                                                    : "Shows distribution of data points within each category"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "ওভারল্যাপিং পয়েন্টগুলি উপরে-নীচে সাজানো হয়"
+                                                                                    : "Overlapping points are arranged vertically to avoid overlap"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "ছোট থেকে মাঝারি নমুনার জন্য আদর্শ (n < 100)"
+                                                                                    : "Ideal for small to medium samples (n < 100)"}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
                                                 {/* For Mann-Whitney test - special column type handling with grouping */}
                                                 {testType === 'mannwhitney' && (
                                                     <div className="form-section">
@@ -2876,8 +3239,8 @@ const closePreview= async () =>{
                                                     </div>
                                                 )}
 
-                                                {/* For Wilcoxon and Linear Regression - both require numeric columns */}
-                                                {(testType === 'wilcoxon' || testType === 'linear_regression') && (
+                                                {/* Combined component for tests requiring both numeric columns */}
+                                                {(testType === 'wilcoxon' || testType === 'linear_regression' || testType === 'similarity') && (
                                                     <div className="form-section">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         
@@ -2901,12 +3264,13 @@ const closePreview= async () =>{
                                                             <label className="form-label">
                                                                 {testType === 'wilcoxon' 
                                                                     ? (language === "বাংলা" ? "প্রথম কলাম (সংখ্যাগত)" : "First Column (Numeric)")
-                                                                    : (language === "বাংলা" ? "স্বাধীন চলক (পূর্বাভাসক)" : "Independent Variable (Predictor)")
+                                                                    : testType === 'linear_regression'
+                                                                    ? (language === "বাংলা" ? "স্বাধীন চলক (পূর্বাভাসক)" : "Independent Variable (Predictor)")
+                                                                    : (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম" : "First Numeric Column")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
-
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
@@ -2915,8 +3279,7 @@ const closePreview= async () =>{
                                                                         : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
-                                                            ) : numericColumns.length === 0  ? (
-
+                                                            ) : numericColumns.length === 0 ? (
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2928,9 +3291,13 @@ const closePreview= async () =>{
                                                                             ? (language === "বাংলা" 
                                                                                 ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
-                                                                            : (language === "বাংলা" 
+                                                                            : testType === 'linear_regression'
+                                                                            ? (language === "বাংলা" 
                                                                                 ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                            : (language === "বাংলা" 
+                                                                                ? `সাদৃশ্য পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Similarity test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                         }
                                                                     </span>
                                                                 </div>
@@ -2944,7 +3311,9 @@ const closePreview= async () =>{
                                                                         <option value="">
                                                                             {testType === 'wilcoxon' 
                                                                                 ? (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
-                                                                                : (language === "বাংলা" ? "স্বাধীন চলক নির্বাচন করুন" : "Select independent variable")
+                                                                                : testType === 'linear_regression'
+                                                                                ? (language === "বাংলা" ? "স্বাধীন চলক নির্বাচন করুন" : "Select independent variable")
+                                                                                : (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
                                                                             }
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
@@ -2966,12 +3335,13 @@ const closePreview= async () =>{
                                                             <label className="form-label">
                                                                 {testType === 'wilcoxon' 
                                                                     ? (language === "বাংলা" ? "দ্বিতীয় কলাম (সংখ্যাগত)" : "Second Column (Numeric)")
-                                                                    : (language === "বাংলা" ? "নির্ভরশীল চলক (প্রতিক্রিয়া)" : "Dependent Variable (Response)")
+                                                                    : testType === 'linear_regression'
+                                                                    ? (language === "বাংলা" ? "নির্ভরশীল চলক (প্রতিক্রিয়া)" : "Dependent Variable (Response)")
+                                                                    : (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম" : "Second Numeric Column")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
-
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
@@ -2981,7 +3351,6 @@ const closePreview= async () =>{
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
-
                                                                 <div className="no-columns-warning">
                                                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                         <circle cx="12" cy="12" r="10"></circle>
@@ -2993,9 +3362,13 @@ const closePreview= async () =>{
                                                                             ? (language === "বাংলা" 
                                                                                 ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
-                                                                            : (language === "বাংলা" 
+                                                                            : testType === 'linear_regression'
+                                                                            ? (language === "বাংলা" 
                                                                                 ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
+                                                                            : (language === "বাংলা" 
+                                                                                ? `সাদৃশ্য পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
+                                                                                : `Similarity test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                         }
                                                                     </span>
                                                                 </div>
@@ -3009,7 +3382,9 @@ const closePreview= async () =>{
                                                                         <option value="">
                                                                             {testType === 'wilcoxon' 
                                                                                 ? (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
-                                                                                : (language === "বাংলা" ? "নির্ভরশীল চলক নির্বাচন করুন" : "Select dependent variable")
+                                                                                : testType === 'linear_regression'
+                                                                                ? (language === "বাংলা" ? "নির্ভরশীল চলক নির্বাচন করুন" : "Select dependent variable")
+                                                                                : (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
                                                                             }
                                                                         </option>
                                                                         {numericColumns
@@ -3025,13 +3400,331 @@ const closePreview= async () =>{
                                                                             ? (language === "বাংলা" 
                                                                                 ? "উইলকক্সন পরীক্ষা জোড়া ডেটার জন্য (যেমন: চিকিৎসার পূর্ব-পরবর্তী)"
                                                                                 : "Wilcoxon test is for paired data (e.g., before-after treatment)")
-                                                                            : (language === "বাংলা" 
+                                                                            : testType === 'linear_regression'
+                                                                            ? (language === "বাংলা" 
                                                                                 ? "মডেল: Y = a + bX, যেখানে X স্বাধীন চলক এবং Y নির্ভরশীল চলক"
                                                                                 : "Model: Y = a + bX, where X is independent and Y is dependent")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "দুইটি সংখ্যাগত ভেক্টরের মধ্যে সাদৃশ্য ও দূরত্ব পরিমাপ করে"
+                                                                                : "Measures similarity and distance between two numeric vectors")
                                                                         }
                                                                     </div>
                                                                 </>
                                                             )}
+                                                        </div>
+
+                                                        {/* Similarity test specific information */}
+                                                        {testType === 'similarity' && (
+                                                            <div style={{ 
+                                                                marginTop: '1rem', 
+                                                                padding: '0.75rem', 
+                                                                backgroundColor: '#f0f9ff', 
+                                                                border: '1px solid #bae6fd',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                    </svg>
+                                                                    <div>
+                                                                        <strong style={{ color: '#0369a1' }}>
+                                                                            {language === "বাংলা" ? "সাদৃশ্য পরীক্ষা নির্দেশনা" : "Similarity Test Guidelines"}
+                                                                        </strong>
+                                                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "কসাইন সাদৃশ্য: ১ এর কাছাকাছি মান বেশি সাদৃশ্য নির্দেশ করে"
+                                                                                    : "Cosine similarity: Values near 1 indicate high similarity"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "দূরত্ব মেট্রিক: ০ এর কাছাকাছি মান কম দূরত্ব নির্দেশ করে"
+                                                                                    : "Distance metrics: Values near 0 indicate low distance"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "পিয়ারসন ও স্পিয়ারম্যান: -১ থেকে +১ পর্যন্ত, +১ সম্পূর্ণ সম্পর্ক"
+                                                                                    : "Pearson & Spearman: -1 to +1, +1 indicates perfect correlation"}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Combined component for tests requiring 1 categorical column (Bar Chart, Pie Chart) */}
+                                                {(testType === 'bar_chart' || testType === 'eda_pie') && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Column 1 - Categorical column */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "শ্রেণীবদ্ধ কলাম" : "Categorical Column"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : categoricalColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'bar_chart' 
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "বার চার্টের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                                : "Bar chart requires categorical columns. No categorical columns found in the file.")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "পাই চার্টের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
+                                                                                : "Pie chart requires categorical columns. No categorical columns found in the file.")}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => setColumn1(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
+                                                                                : "Select a categorical column"}
+                                                                        </option>
+                                                                        {categoricalColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
+                                                                            : `${categoricalColumns.length} categorical columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Pie Chart Specific Information */}
+                                                        {testType === 'eda_pie' && (
+                                                            <div style={{ 
+                                                                marginTop: '1rem', 
+                                                                padding: '0.75rem', 
+                                                                backgroundColor: '#f0f9ff', 
+                                                                border: '1px solid #bae6fd',
+                                                                borderRadius: '0.5rem',
+                                                                fontSize: '0.875rem'
+                                                            }}>
+                                                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                    </svg>
+                                                                    <div>
+                                                                        <strong style={{ color: '#0369a1' }}>
+                                                                            {language === "বাংলা" ? "পাই চার্ট নির্দেশনা" : "Pie Chart Guidelines"}
+                                                                        </strong>
+                                                                        <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "পাই চার্ট ১০টি বা কম শ্রেণীর জন্য উপযুক্ত"
+                                                                                    : "Pie charts work best with 10 or fewer categories"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "প্রতিটি অংশ মোটের শতাংশ দেখায়"
+                                                                                    : "Each slice shows percentage of the total"}
+                                                                            </li>
+                                                                            <li>
+                                                                                {language === "বাংলা" 
+                                                                                    ? "১০+ শ্রেণীর জন্য বার চার্ট ভালো বিকল্প"
+                                                                                    : "For 10+ categories, consider using a bar chart instead"}
+                                                                            </li>
+                                                                        </ul>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {/* Combined component for tests requiring 1 numeric column (Shapiro, Kolmogorov, Anderson, EDA Distribution) */}
+                                                {(testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson' || testType === 'eda_distribution') && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Column 1 - Numeric column */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "সংখ্যাগত কলাম" : "Numeric Column"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {testType === 'shapiro' 
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "শাপিরো-উইল্ক পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Shapiro-Wilk test requires numeric columns. No numeric columns found in the file.")
+                                                                            : testType === 'kolmogorov'
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "কোলমোগোরভ-স্মিরনভ পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Kolmogorov-Smirnov test requires numeric columns. No numeric columns found in the file.")
+                                                                            : testType === 'anderson'
+                                                                            ? (language === "বাংলা" 
+                                                                                ? "অ্যান্ডারসন-ডার্লিং পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Anderson-Darling test requires numeric columns. No numeric columns found in the file.")
+                                                                            : (language === "বাংলা" 
+                                                                                ? "বন্টন প্লটের জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
+                                                                                : "Distribution plot requires numeric columns. No numeric columns found in the file.")}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => setColumn1(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
+                                                                                : "Select a numeric column"}
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Test-specific Information */}
+                                                        <div style={{ 
+                                                            marginTop: '1rem', 
+                                                            padding: '0.75rem', 
+                                                            backgroundColor: '#f0f9ff', 
+                                                            border: '1px solid #bae6fd',
+                                                            borderRadius: '0.5rem',
+                                                            fontSize: '0.875rem'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                    <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                </svg>
+                                                                <div>
+                                                                    <strong style={{ color: '#0369a1' }}>
+                                                                        {testType === 'shapiro'
+                                                                            ? (language === "বাংলা" ? "শাপিরো-উইল্ক পরীক্ষা নির্দেশনা" : "Shapiro-Wilk Test Guidelines")
+                                                                            : testType === 'kolmogorov'
+                                                                            ? (language === "বাংলা" ? "কোলমোগোরভ-স্মিরনভ পরীক্ষা নির্দেশনা" : "Kolmogorov-Smirnov Test Guidelines")
+                                                                            : testType === 'anderson'
+                                                                            ? (language === "বাংলা" ? "অ্যান্ডারসন-ডার্লিং পরীক্ষা নির্দেশনা" : "Anderson-Darling Test Guidelines")
+                                                                            : (language === "বাংলা" ? "বন্টন বিশ্লেষণ নির্দেশনা" : "Distribution Analysis Guidelines")}
+                                                                    </strong>
+                                                                    <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                        <li>
+                                                                            {testType === 'shapiro'
+                                                                                ? (language === "বাংলা" 
+                                                                                    ? "ছোট নমুনার জন্য সবচেয়ে শক্তিশালী স্বাভাবিকতা পরীক্ষা (n < 50)"
+                                                                                    : "Most powerful normality test for small samples (n < 50)")
+                                                                                : testType === 'kolmogorov'
+                                                                                ? (language === "বাংলা" 
+                                                                                    ? "বড় নমুনার জন্য উপযুক্ত (n > 50)"
+                                                                                    : "Suitable for large samples (n > 50)")
+                                                                                : testType === 'anderson'
+                                                                                ? (language === "বাংলা" 
+                                                                                    ? "বিভিন্ন স্বাভাবিকতা স্তরের জন্য সমালোচনামূলক মান প্রদান করে"
+                                                                                    : "Provides critical values for different normality levels")
+                                                                                : (language === "বাংলা" 
+                                                                                    ? "ডেটার বন্টন ও আকৃতি বিশ্লেষণ করে"
+                                                                                    : "Analyzes the distribution and shape of data")}
+                                                                        </li>
+                                                                        <li>
+                                                                            {testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson'
+                                                                                ? (language === "বাংলা" 
+                                                                                    ? "স্বাভাবিক বন্টন যাচাই করে (p < 0.05 = স্বাভাবিক নয়)"
+                                                                                    : "Tests for normal distribution (p < 0.05 = not normal)")
+                                                                                : (language === "বাংলা" 
+                                                                                    ? "হিস্টোগ্রাম, KDE এবং সারাংশ পরিসংখ্যান দেখায়"
+                                                                                    : "Shows histogram, KDE and summary statistics")}
+                                                                        </li>
+                                                                        <li>
+                                                                            {testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson'
+                                                                                ? (language === "বাংলা" 
+                                                                                    ? "কমপক্ষে ৩টি পর্যবেক্ষণ প্রয়োজন"
+                                                                                    : "Requires at least 3 observations")
+                                                                                : (language === "বাংলা" 
+                                                                                    ? "কমপক্ষে ১০টি পর্যবেক্ষণ সুপারিশকৃত"
+                                                                                    : "At least 10 observations recommended")}
+                                                                        </li>
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
