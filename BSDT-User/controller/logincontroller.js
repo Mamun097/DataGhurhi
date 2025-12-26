@@ -75,12 +75,13 @@ exports.login = async (req, res) => {
     }
     const user = data[0];
     // Check if password is correct
+    console.log(user);
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
         return res.status(401).json({ error: 'Incorrect password' });
     }
    let token = jwt.sign({ email: user.email, id: user.user_id }, process.env.JWT_SECRET_USER);
 //    res.setHeader('Authorization', `Bearer ${token}`);
-    return res.status(200).json({ message: 'Login successful', token , user_id: user.user_id });
+    return res.status(200).json({ message: 'Login successful', token , user_id: user.user_id, user_type: user.user_type });
 }
     

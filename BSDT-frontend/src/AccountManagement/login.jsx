@@ -109,7 +109,9 @@ const Login = () => {
       if (response.status === 200) {
         toast.success(`✅ ${t("loginSuccess")} ${formData.email}`);
         localStorage.setItem("token", response.data.token);
-        localStorage.setItem("role", "user");
+        // localStorage.setItem("role", "user");
+        // console.log("User type from response:", response.data.user_type);
+        localStorage.setItem("user_type", response.data.user_type || "normal");
         localStorage.setItem("user_id", response.data.user_id);
         console.log(localStorage.getItem("token"));
 
