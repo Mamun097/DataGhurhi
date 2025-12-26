@@ -71,7 +71,7 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
       const num = parseInt(value);
       setSurveyMeta((prev) => ({ ...prev, numQuestions: isNaN(num) ? 10 : num }));
       setStep("questionTypes");
-      addMessage("bot", "What type of questions? (e.g., Mixed, MCQ, Text, Rating, Linear Scale, Checkbox, Dropdown, Date/Time, Likert Scale, Multiple Choice Grid)");
+      addMessage("bot", "What type of questions? (e.g., Mixed, Radio, Text, Rating, Linear Scale, Checkbox, Dropdown, Date/Time, Likert Scale, Multiple Choice Grid)");
     } else if (step === "questionTypes") {
       setSurveyMeta((prev) => ({ ...prev, questionTypes: value }));
       setStep("confirm");
