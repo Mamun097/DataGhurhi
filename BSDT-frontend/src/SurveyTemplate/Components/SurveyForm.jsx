@@ -435,8 +435,16 @@ const SurveyForm = ({
     if (isQuiz) {
       // Calculate total marks from questions
       questions.forEach((q) => {
-        if (q.points) {
-          total += parseFloat(q.points);
+        if (q.meta && q.meta.advanceMarkingEnabled) {
+          // if advanced marking is enabled, pick the highest from optionSpecificMarks
+          if (q.meta.optionSpecificMarks && q.meta.optionSpecificMarks.length) {
+            const maxMark = Math.max(...q.meta.optionSpecificMarks);
+            total += parseFloat(maxMark);
+          }
+        } else {
+          if (q.points) {
+            total += parseFloat(q.points);
+          }
         }
       });
       setTotalMarks(total);
