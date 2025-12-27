@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -13,11 +13,9 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
   const [otherSelected, setOtherSelected] = useState(false);
 
   const options = question.meta.options || [];
-  const assignedPoints = template.template.is_quiz ? question.points : null;
+  const [assignedPoints, setAssignedPoints] = useState(0);
   const [obtainedPoints, setObtainedPoints] = useState(0);
-  const correctAnswer = template.template.is_quiz
-    ? question.meta.correctAnswer
-    : null;
+  const [correctAnswer, setCorrectAnswer] = useState("");
   const see_correct_answers = template.template.is_quiz
     ? template.template.quiz_settings.see_correct_answers
     : false;
@@ -26,12 +24,46 @@ const ResponseRadio = ({ index, question, userResponse, template }) => {
     : false;
 
   useEffect(() => {
-    if (userAnswer === correctAnswer) {
-      setObtainedPoints(assignedPoints);
-      setChoseCorrectOption(true);
+    if (!question.meta?.advanceMarkingEnabled) {
+      if (userAnswer === correctAnswer) {
+        setAssignedPoints(question.points || 0);
+        setObtainedPoints(assignedPoints);
+        setChoseCorrectOption(true);
+      } else {
+        setAssignedPoints(question.points || 0);
+        setObtainedPoints(0);
+        setChoseCorrectOption(false);
+      }
     } else {
-      setObtainedPoints(0);
-      setChoseCorrectOption(false);
+      if (userAnswer) {
+        const maxMark = Math.max(...(question.meta.optionSpecificMarks || []));
+        setAssignedPoints(maxMark);
+        // Find the index of the option with maxMark
+        const correctAnsIndex = question.meta.optionSpecificMarks.findIndex(
+          (mark) => Number(mark) === maxMark
+        );
+
+        const correctAns = options[correctAnsIndex];
+        setCorrectAnswer(correctAns);
+        const correctAnsPoints =
+          question.meta.optionSpecificMarks?.[correctAnsIndex] || 0;
+
+        const optionIndex = options.findIndex((opt) => opt === userAnswer);
+        if (optionIndex !== -1) {
+          const optionPoints =
+            question.meta.optionSpecificMarks?.[optionIndex] || 0;
+          setObtainedPoints(optionPoints);
+
+          if (optionPoints === correctAnsPoints) {
+            setChoseCorrectOption(true);
+          } else {
+            setChoseCorrectOption(false);
+          }
+        } else {
+          setObtainedPoints(0);
+          setChoseCorrectOption(false);
+        }
+      }
     }
   }, [userAnswer, correctAnswer, assignedPoints]);
 
