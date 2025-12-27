@@ -1,3 +1,5 @@
+// FIXED VERSION - Key changes marked with // FIX comments
+
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -100,6 +102,48 @@ const Dashboard = () => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [showCollabModal, setShowCollabModal] = useState(false);
 
+  // FIX 1: Initialize userType from localStorage immediately - using "user_type" key
+  const userId = localStorage.getItem("userId");
+  const [userType, setUserType] = useState(localStorage.getItem("user_type") || "normal");
+  
+  // FIX 2: Add isAdmin state and initialize it properly
+  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // FIX 3: Admin states
+  const [adminStats, setAdminStats] = useState({
+    totalUsers: 0,
+    activeSurveys: 0,
+    totalResponses: 0,
+    premiumUsers: 0,
+    recentActivities: [],
+  });
+
+  // FIX 4: Update userType whenever it changes in localStorage - using "user_type" key
+  useEffect(() => {
+    const storedUserType = localStorage.getItem("user_type");
+    console.log("Checking user_type from localStorage:", storedUserType); // Debug log
+    if (storedUserType) {
+      setUserType(storedUserType);
+    }
+  }, [userId]);
+
+  // FIX 5: Set isAdmin based on userType changes
+  useEffect(() => {
+    console.log("Current userType:", userType); // Debug log
+    const adminStatus = userType === "admin";
+    setIsAdmin(adminStatus);
+    
+    // Set initial tab based on user type
+    if (!getTabFromURL()) {
+      setActiveTab(adminStatus ? "dashboard" : "projects");
+    }
+    
+    // Fetch admin stats if user is admin
+    if (adminStatus) {
+      fetchAdminStats();
+    }
+  }, [userType]);
+
   // Sync state with URL parameters whenever location changes
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
@@ -129,7 +173,6 @@ const Dashboard = () => {
   }, [location.search]);
 
   const handleAccept = async (projectId) => {
-    // console.log("Accepted request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -140,7 +183,6 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        // console.log("Invitation accepted successfully");
         fetchCollaborationRequests();
         fetchCollaboratedProjects();
       }
@@ -150,7 +192,6 @@ const Dashboard = () => {
   };
 
   const handleReject = async (projectId) => {
-    // console.log("Rejected request:", projectId);
     const token = localStorage.getItem("token");
     try {
       const response = await apiClient.post(
@@ -161,7 +202,6 @@ const Dashboard = () => {
         }
       );
       if (response.status === 200) {
-        // console.log("Invitation rejected successfully");
         fetchCollaborationRequests();
       }
     } catch (error) {
@@ -172,22 +212,6 @@ const Dashboard = () => {
   // Premium feature states
   const [showAdBanner, setShowAdBanner] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
-  const [userType, setUserType] = useState("normal");
-  const userId = localStorage.getItem("userId");
-
-  useEffect(() => {
-    setUserType(localStorage.getItem("userType"));
-  }, [userId]);
-
-  // Admin states
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [adminStats, setAdminStats] = useState({
-    totalUsers: 0,
-    activeSurveys: 0,
-    totalResponses: 0,
-    premiumUsers: 0,
-    recentActivities: [],
-  });
 
   const loadTranslations = async () => {
     if (language === "English") {
@@ -277,28 +301,20 @@ const Dashboard = () => {
   }, []);
 
   const toggleMainTabExpansion = (tabKey, e) => {
-  e.stopPropagation();
-  setExpandedMainTabs((prev) => {
-    const newSet = new Set(prev);
-    if (newSet.has(tabKey)) {
-      newSet.delete(tabKey);
-    } else {
-      newSet.add(tabKey);
-    }
-    return newSet;
-  });
-};
+    e.stopPropagation();
+    setExpandedMainTabs((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(tabKey)) {
+        newSet.delete(tabKey);
+      } else {
+        newSet.add(tabKey);
+      }
+      return newSet;
+    });
+  };
 
-  const getuserType = useCallback(async () => {
-    if (userType === "admin") {
-      setIsAdmin(true);
-      setActiveTab(getTabFromURL() || "dashboard");
-      fetchAdminStats();
-    } else {
-      setIsAdmin(false);
-      setActiveTab(getTabFromURL() || "projects");
-    }
-  }, [fetchAdminStats]);
+  // FIX 6: Remove the problematic getuserType function - it's no longer needed
+  // The logic is now handled by the useEffect hooks above
 
   const handleTabClick = (tabKey) => {
     setActiveTab(tabKey);
@@ -310,57 +326,51 @@ const Dashboard = () => {
     window.history.replaceState({}, "", url);
   };
 
-const handleProjectClick = (projectId) => {
-  setSelectedProjectId(projectId);
-  setSelectedSurveyId(null);
-  setActiveTab("projectdetails");
-  setSourceTab("projects");
-  
-  // Only ensure the main "Projects" tab is expanded (don't expand the project itself)
-  setExpandedMainTabs((prev) => {
-    const newSet = new Set(prev);
-    newSet.add('projects');
-    return newSet;
-  });
-  
-  // Don't automatically expand the project's dropdown
-  
-  const url = new URL(window.location);
-  url.searchParams.set("tab", "projectdetails");
-  url.searchParams.set("projectId", projectId);
-  url.searchParams.delete("surveyId");
-  url.searchParams.set("source", "projects");
-  window.history.replaceState({}, "", url);
-};
+  const handleProjectClick = (projectId) => {
+    setSelectedProjectId(projectId);
+    setSelectedSurveyId(null);
+    setActiveTab("projectdetails");
+    setSourceTab("projects");
+    
+    setExpandedMainTabs((prev) => {
+      const newSet = new Set(prev);
+      newSet.add('projects');
+      return newSet;
+    });
+    
+    const url = new URL(window.location);
+    url.searchParams.set("tab", "projectdetails");
+    url.searchParams.set("projectId", projectId);
+    url.searchParams.delete("surveyId");
+    url.searchParams.set("source", "projects");
+    window.history.replaceState({}, "", url);
+  };
 
-const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
-  setSelectedProjectId(projectId);
-  setSelectedSurveyId(surveyId);
-  
-  // Ensure the main "Projects" tab is expanded
-  setExpandedMainTabs((prev) => {
-    const newSet = new Set(prev);
-    newSet.add('projects');
-    return newSet;
-  });
-  
-  // Only expand the parent project (to show the survey inside it)
-  setExpandedProjects((prev) => {
-    const newSet = new Set(prev);
-    newSet.add(projectId);
-    return newSet;
-  });
-  
-  navigate(`/view-survey/${surveyId}`, {
-    state: {
-      project_id: projectId,
-      survey_details: survey,
-      input_title: surveyTitle || "Untitled Survey",
-    },
-  });
-};
+  const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
+    setSelectedProjectId(projectId);
+    setSelectedSurveyId(surveyId);
+    
+    setExpandedMainTabs((prev) => {
+      const newSet = new Set(prev);
+      newSet.add('projects');
+      return newSet;
+    });
+    
+    setExpandedProjects((prev) => {
+      const newSet = new Set(prev);
+      newSet.add(projectId);
+      return newSet;
+    });
+    
+    navigate(`/view-survey/${surveyId}`, {
+      state: {
+        project_id: projectId,
+        survey_details: survey,
+        input_title: surveyTitle || "Untitled Survey",
+      },
+    });
+  };
 
-  // Function to refresh surveys for a specific project
   const refreshProjectSurveys = useCallback((projectId) => {
     fetchProjectSurveys(projectId);
   }, []);
@@ -394,10 +404,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
       console.error("Error fetching surveys for project:", error);
     }
   };
-
-  useEffect(() => {
-    getuserType;
-  }, [userId]);
 
   const toggleEdit = () => setIsEditing(!isEditing);
 
@@ -441,7 +447,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     }
   }, [isAdmin, fetchProjects]);
 
-  // Fetch surveys for all projects when projects are loaded
   useEffect(() => {
     if (!isAdmin && projects.length > 0) {
       projects.forEach(project => {
@@ -479,7 +484,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     setShowPremiumModal(false);
   };
 
-  //collaborated projects
   const [collaboratedProjects, setCollaboratedProjects] = useState([]);
   const [collabRequests, setCollabRequests] = useState([]);
 
@@ -533,8 +537,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Replace your getTabs() function with this updated version:
-
   const getTabs = () => {
     if (isAdmin) {
       return [
@@ -556,7 +558,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
         { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
-      // Sort projects lexicographically by title
       const sortedProjects = [...projects].sort((a, b) =>
         a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
       );
@@ -570,7 +571,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
           children: sortedProjects.map(project => {
             const projectSurveysList = projectSurveys[project.project_id] || [];
 
-            // Sort surveys lexicographically by title
             const sortedSurveys = [...projectSurveysList].sort((a, b) =>
               a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
             );
@@ -620,27 +620,6 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     setCollapsed(isMobile);
   }, [isMobile]);
 
-//   // Add this useEffect after your other useEffect hooks
-// useEffect(() => {
-//   // Auto-expand project when a project is selected
-//   if (selectedProjectId && activeTab === "projectdetails") {
-//     setExpandedProjects(prev => {
-//       const newSet = new Set(prev);
-//       newSet.add(selectedProjectId);
-//       return newSet;
-//     });
-//   }
-  
-//   // Auto-expand project when a survey is being viewed
-//   if (selectedProjectId && selectedSurveyId) {
-//     setExpandedProjects(prev => {
-//       const newSet = new Set(prev);
-//       newSet.add(selectedProjectId);
-//       return newSet;
-//     });
-//   }
-// }, [selectedProjectId, selectedSurveyId, activeTab]);
-
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [passwordValues, setPasswordValues] = useState({
     old_password: "",
@@ -686,105 +665,95 @@ const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     }
   };
 
-  // Render nested menu items
-const renderMenuItem = (item, level = 0) => {
-  const isProjectExpanded = expandedProjects.has(item.projectId);
-  const isMainTabExpanded = expandedMainTabs.has(item.key);
+  const renderMenuItem = (item, level = 0) => {
+    const isProjectExpanded = expandedProjects.has(item.projectId);
+    const isMainTabExpanded = expandedMainTabs.has(item.key);
 
-  // Only mark as active if this specific item matches
-  let isActive = false;
+    let isActive = false;
 
-  if (item.surveyId) {
-    // For surveys: only active if this survey is selected
-    isActive = selectedSurveyId === item.surveyId;
-  } else if (item.projectId) {
-    // For projects: only active if this project is selected AND no survey is selected
-    isActive = selectedProjectId === item.projectId && activeTab === "projectdetails" && !selectedSurveyId;
-  } else {
-    // For regular tabs (but NOT Projects when viewing project details)
-    if (item.key === "projects") {
-      // Projects tab is active only when activeTab is "projects", not when viewing details
-      isActive = activeTab === "projects";
+    if (item.surveyId) {
+      isActive = selectedSurveyId === item.surveyId;
+    } else if (item.projectId) {
+      isActive = selectedProjectId === item.projectId && activeTab === "projectdetails" && !selectedSurveyId;
     } else {
-      isActive = item.key === activeTab;
+      if (item.key === "projects") {
+        isActive = activeTab === "projects";
+      } else {
+        isActive = item.key === activeTab;
+      }
     }
-  }
 
-  // Check if this is a main tab with children (like Projects)
-  const isMainTabWithChildren = level === 0 && item.hasDropdown && item.children;
-  
-  // Check if this is a project with surveys
-  const hasChildren = item.children && item.children.length > 0;
+    const isMainTabWithChildren = level === 0 && item.hasDropdown && item.children;
+    const hasChildren = item.children && item.children.length > 0;
 
-  return (
-    <li key={item.key} style={{ marginLeft: level === 0 ? '0' : `${level * 12}px` }}>
-      <div className="tooltip-container">
-        <button
-          className={`sidebar-btn nested-level-${level} ${isActive ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
-          onClick={() => {
-            if (item.key === "premiumpackages") {
-              setShowPremiumModal(true);
-            } else if (item.projectId && !item.surveyId) {
-              // Clicking a project
-              handleProjectClick(item.projectId);
-            } else if (item.surveyId) {
-              // Clicking a survey
-              const project = projects.find(p => p.project_id === item.projectId);
-              const survey = projectSurveys[item.projectId]?.find(s => s.survey_id === item.surveyId);
-              handleSurveyClick(item.projectId, item.surveyId, survey, item.label);
-            } else {
-              handleTabClick(item.key);
-            }
-          }}
-        >
-          <span className="icon">{item.icon}</span>
-          {!collapsed && !isMobile && (
-            <>
-              <span className="label">{item.label}</span>
-              {isMainTabWithChildren && (
-                <span 
-                  className="dropdown-toggle"
-                  onClick={(e) => toggleMainTabExpansion(item.key, e)}
-                >
-                  {isMainTabExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </span>
-              )}
-              {hasChildren && !isMainTabWithChildren && (
-                <span 
-                  className="dropdown-toggle"
-                  onClick={(e) => toggleProjectExpansion(item.projectId, e)}
-                >
-                  {isProjectExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                </span>
-              )}
-            </>
+    return (
+      <li key={item.key} style={{ marginLeft: level === 0 ? '0' : `${level * 12}px` }}>
+        <div className="tooltip-container">
+          <button
+            className={`sidebar-btn nested-level-${level} ${isActive ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
+            onClick={() => {
+              if (item.key === "premiumpackages") {
+                setShowPremiumModal(true);
+              } else if (item.projectId && !item.surveyId) {
+                handleProjectClick(item.projectId);
+              } else if (item.surveyId) {
+                const project = projects.find(p => p.project_id === item.projectId);
+                const survey = projectSurveys[item.projectId]?.find(s => s.survey_id === item.surveyId);
+                handleSurveyClick(item.projectId, item.surveyId, survey, item.label);
+              } else {
+                handleTabClick(item.key);
+              }
+            }}
+          >
+            <span className="icon">{item.icon}</span>
+            {!collapsed && !isMobile && (
+              <>
+                <span className="label">{item.label}</span>
+                {isMainTabWithChildren && (
+                  <span 
+                    className="dropdown-toggle"
+                    onClick={(e) => toggleMainTabExpansion(item.key, e)}
+                  >
+                    {isMainTabExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </span>
+                )}
+                {hasChildren && !isMainTabWithChildren && (
+                  <span 
+                    className="dropdown-toggle"
+                    onClick={(e) => toggleProjectExpansion(item.projectId, e)}
+                  >
+                    {isProjectExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </span>
+                )}
+              </>
+            )}
+            {item.badge > 0 && (
+              <span className="notification-badge">{item.badge}</span>
+            )}
+          </button>
+
+          {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
+            <span className="tooltip-text">{item.label}</span>
           )}
-          {item.badge > 0 && (
-            <span className="notification-badge">{item.badge}</span>
-          )}
-        </button>
+        </div>
 
-        {(window.innerWidth <= 768 || (collapsed && !isMobile)) && (
-          <span className="tooltip-text">{item.label}</span>
+        {!collapsed && isMainTabExpanded && isMainTabWithChildren && (
+          <ul className="nested-menu">
+            {item.children.map(child => renderMenuItem(child, level + 1))}
+          </ul>
         )}
-      </div>
 
-      {/* Render children for main tabs (like Projects) */}
-      {!collapsed && isMainTabExpanded && isMainTabWithChildren && (
-        <ul className="nested-menu">
-          {item.children.map(child => renderMenuItem(child, level + 1))}
-        </ul>
-      )}
+        {!collapsed && isProjectExpanded && hasChildren && !isMainTabWithChildren && (
+          <ul className="nested-menu">
+            {item.children.map(child => renderMenuItem(child, level + 1))}
+          </ul>
+        )}
+      </li>
+    );
+  };
 
-      {/* Render children for projects (surveys) */}
-      {!collapsed && isProjectExpanded && hasChildren && !isMainTabWithChildren && (
-        <ul className="nested-menu">
-          {item.children.map(child => renderMenuItem(child, level + 1))}
-        </ul>
-      )}
-    </li>
-  );
-};
+  // FIX 7: Add console log to help debug
+  console.log("Dashboard render - isAdmin:", isAdmin, "userType:", userType, "activeTab:", activeTab);
 
   return (
     <div style={{ paddingTop: "80px" }}>

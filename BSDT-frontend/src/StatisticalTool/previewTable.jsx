@@ -21,9 +21,13 @@ import "./previewTable.css";
 import { ModuleRegistry, AllCommunityModule } from "ag-grid-community";
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+
 const HEADER_ROWS = 1;
-const DEFAULT_ROWS = 10000;
-const DEFAULT_COLS = 1000;
+const DEFAULT_ROWS = 10000; 
+const DEFAULT_COLS = 1000; 
+
+// chunk size for streaming rows into the grid
+const CHUNK_SIZE = 5000; 
 
 const PreviewTable = ({
   setData,
@@ -40,9 +44,9 @@ const PreviewTable = ({
   workbookUrl,
   multiSheetData,
 }) => {
+  const API_BASE = "http://127.0.0.1:8000/api";
 
-   const API_BASE = 'http://127.0.0.1:8000/api';
-  // ---------- state + refs ----------
+
   const [sheets, setSheets] = useState([]);
   const sheetsRef = useRef(sheets);
   useEffect(() => {
@@ -71,6 +75,9 @@ const PreviewTable = ({
     sessionStorage.getItem("file_name") || "edited.xlsx"
   );
 
+  // loading progress for chunked loads
+  const [loadingProgress, setLoadingProgress] = useState({ loading: false, loaded: 0, total: 0 });
+
   // context menu + dragging
   const [contextMenu, setContextMenu] = useState({
     visible: false,
@@ -82,22 +89,23 @@ const PreviewTable = ({
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
-// ---------- header context menu state ----------
-const [headerContextMenu, setHeaderContextMenu] = useState({
-  visible: false,
-  x: 0,
-  y: 0,
-  colId: null,
-});
+
+  // header context menu state 
+  const [headerContextMenu, setHeaderContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    colId: null,
+  });
 
   // copy / paste cache
   const [copiedRows, setCopiedRows] = useState([]);
 
-  // history for undo/redo (deep snapshots)
+  // history for undo/redo 
   const historyRef = useRef([]);
   const historyIndexRef = useRef(-1);
 
-  // ---------- helpers ----------
+  //helpers 
   const getExcelColumnName = (num) => {
     let name = "";
     let n = num;
@@ -111,46 +119,171 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
   const generateColumns = (numCols) =>
     Array.from({ length: numCols }, (_, i) => getExcelColumnName(i));
 
-  const createEmptyRows = (numRows, columns, headerRowData = null) =>
-    Array.from({ length: numRows }, (_, i) => {
-      const obj = { __rowIdx: i };
-      columns.forEach((col, j) => {
-        obj[col] = headerRowData && i === 0 ? headerRowData[j] || "" : "";
-      });
-      return obj;
+  // Create minimal rows
+  const createMinimalRows = (columns, headerRowData = []) => {
+    const headerObj = { __rowIdx: 0 };
+    columns.forEach((col, i) => {
+      headerObj[col] = headerRowData[i] ?? "";
     });
+    return [headerObj];
+  };
 
-  // ---------- sheet loader ----------
+  // ensure row object exists at index, lazily create
+  const ensureRowExists = (sheet, rowIndex) => {
+    if (!sheet.data[rowIndex]) {
+      const newRow = { __rowIdx: rowIndex };
+      sheet.columns.forEach((c) => (newRow[c] = ""));
+      sheet.data[rowIndex] = newRow;
+    }
+    return sheet.data[rowIndex];
+  };
+
+ 
+  const escapeRegExp = (s) => {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  };
+
+
+  const findMatchesInSheet = (sheet, needleText, opts = { matchCase: false, matchWhole: false }) => {
+    const results = [];
+    if (!sheet || !needleText) return results;
+    const needle = opts.matchCase ? needleText : needleText.toLowerCase();
+    for (let r = HEADER_ROWS; r < sheet.data.length; r++) {
+      const row = sheet.data[r];
+      if (!row) continue;
+      sheet.columns.forEach((col) => {
+        const val = row[col];
+        if (typeof val !== "string") return;
+        const compare = opts.matchCase ? val : val.toLowerCase();
+        if ((opts.matchWhole && compare === needle) || (!opts.matchWhole && compare.includes(needle))) {
+          results.push({ rowIndex: r, col });
+        }
+      });
+    }
+    return results;
+  };
+
+  // CHUNKED LOADER
+  // Streams rows into AG-Grid using applyTransaction
+  const loadRowsInChunks = useCallback(
+    async (api, rows, onProgress) => {
+      if (!api || !rows || rows.length === 0) {
+        onProgress && onProgress(1, 1);
+        return;
+      }
+
+      // make a shallow copy so we can slice without side-effects
+      const total = rows.length;
+      let index = 0;
+
+      // use a macro-task loop (setTimeout) to avoid blocking UI
+      return new Promise((resolve) => {
+        const step = () => {
+          // compute slice
+          const end = Math.min(index + CHUNK_SIZE, total);
+          const slice = rows.slice(index, end);
+
+          try {
+            // Add chunk to grid
+            api.applyTransaction({ add: slice });
+          } catch (e) {
+            // fallback: if transaction failed (older grid states), try setRowData for remaining
+            console.warn("applyTransaction failed during chunked load, falling back to setRowData for remainder", e);
+            // combine existing rows + remaining slice
+            try {
+              const existing = api.getModel().rowsToDisplay ? api.getModel().rowsToDisplay : [];
+            } catch {}
+            api.setRowData(rows);
+            onProgress && onProgress(total, total);
+            return resolve();
+          }
+
+          index = end;
+          onProgress && onProgress(index, total);
+
+          if (index < total) {
+            // schedule next chunk on next event loop tick
+            setTimeout(step, 0);
+          } else {
+            resolve();
+          }
+        };
+
+        // Kick off
+        setTimeout(step, 0);
+      });
+    },
+    []
+  );
+
+  // sheet loader
   useEffect(() => {
     const loadWorkbook = async () => {
       try {
+       
+        const finalizeAndStream = async (processedSheets, defaultIdx = 0) => {
+          setSheets(processedSheets);
+
+      
+          const idx = defaultIdx >= 0 && defaultIdx < processedSheets.length ? defaultIdx : 0;
+          setActiveSheetIndex(idx);
+
+          historyRef.current = processedSheets.map((sh, i) => ({
+            sheetIndex: i,
+            data: JSON.parse(JSON.stringify(sh.data)),
+          }));
+          historyIndexRef.current = historyRef.current.length - 1;
+
+       
+          const api = gridApiRef.current;
+          if (api && processedSheets[idx]) {
+         
+            try {
+              api.setRowData([]);
+            } catch (e) {
+            
+            }
+
+         
+            setLoadingProgress({ loading: true, loaded: 0, total: processedSheets[idx].data.length });
+
+            await loadRowsInChunks(api, processedSheets[idx].data, (loaded, total) => {
+              setLoadingProgress({ loading: true, loaded, total });
+            });
+
+           
+            setLoadingProgress({ loading: false, loaded: processedSheets[idx].data.length, total: processedSheets[idx].data.length });
+          }
+        };
+
         // multi-sheet JSON input
         if (multiSheetData && multiSheetData.length > 0) {
           const processedSheets = multiSheetData.map((sh) => {
-            const keys = Object.keys(sh.rows?.[0] || {});
-            const cols = generateColumns(Math.max(keys.length, DEFAULT_COLS));
-            const headerRow = Object.values(sh.rows?.[0] || {});
+            const firstRow = sh.rows?.[0] || {};
+            const keys = Object.keys(firstRow);
+        
+            const cols = generateColumns(Math.max(keys.length, 1)+10);
+            const headerRow = Object.values(firstRow || []);
 
-            const bodyRows = sh.rows.slice(1).map((r) => {
-              const obj = {};
-              cols.forEach((col, i) => (obj[col] = r[keys[i]] || ""));
+            const bodyRows = (sh.rows || []).slice(1).map((r, idx) => {
+              const obj = { __rowIdx: idx + 1 };
+              cols.forEach((col, i) => (obj[col] = r[keys[i]] ?? ""));
               return obj;
             });
 
-            const data = createEmptyRows(DEFAULT_ROWS, cols, headerRow);
-            bodyRows.forEach((r, i) => Object.assign(data[i + 1], r));
+            const data = createMinimalRows(cols, headerRow);
+            bodyRows.forEach((r) => data.push(r));
 
             return {
               id: Math.random(),
-              name: sh.name,
+              name: sh.name || `Sheet${Math.random().toString(36).slice(2, 7)}`,
               columns: cols,
               data,
             };
           });
 
-          setSheets(processedSheets);
           const defaultIdx = processedSheets.findIndex((s) => s.name === defaultSheetName);
-          setActiveSheetIndex(defaultIdx === -1 ? 0 : defaultIdx);
+          await finalizeAndStream(processedSheets, defaultIdx === -1 ? 0 : defaultIdx);
           return;
         }
 
@@ -163,18 +296,17 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
           const processedSheets = wb.SheetNames.map((name) => {
             const ws = wb.Sheets[name];
             const aoa = XLSX.utils.sheet_to_json(ws, { header: 1 });
-
-            const cols = generateColumns(Math.max(aoa[0]?.length || 10, DEFAULT_COLS));
             const headerRow = aoa[0] || [];
+            const cols = generateColumns(Math.max(headerRow.length, 1)+10);
 
-            const bodyRows = aoa.slice(1).map((r) => {
-              const obj = {};
-              cols.forEach((col, i) => (obj[col] = r[i] || ""));
+            const bodyRows = aoa.slice(1).map((r, idx) => {
+              const obj = { __rowIdx: idx + 1 };
+              cols.forEach((col, i) => (obj[col] = r[i] ?? ""));
               return obj;
             });
 
-            const data = createEmptyRows(DEFAULT_ROWS, cols, headerRow);
-            bodyRows.forEach((r, i) => Object.assign(data[i + 1], r));
+            const data = createMinimalRows(cols, headerRow);
+            bodyRows.forEach((r) => data.push(r));
 
             return {
               id: Math.random(),
@@ -184,51 +316,70 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
             };
           });
 
-          setSheets(processedSheets);
+          await finalizeAndStream(processedSheets, 0);
           return;
         }
 
         // initial direct JSON rows
         if (initialData && initialData.length > 0) {
-          const keys = Object.keys(initialData[0]);
-          const cols = generateColumns(Math.max(keys.length, DEFAULT_COLS));
-
+          const firstObj = initialData[0];
+          const keys = Object.keys(firstObj);
+          const cols = generateColumns(Math.max(keys.length, 1)+10 ); // add extra cols
           const headerRow = keys;
-          const bodyRows = initialData.map((r) => {
-            const obj = {};
-            cols.forEach((col, i) => (obj[col] = r[keys[i]] || ""));
+
+          const bodyRows = initialData.map((r, idx) => {
+            const obj = { __rowIdx: idx + 1 };
+            cols.forEach((col, i) => (obj[col] = r[keys[i]] ?? ""));
             return obj;
           });
 
-          const data = createEmptyRows(DEFAULT_ROWS, cols, headerRow);
-          bodyRows.forEach((r, i) => Object.assign(data[i + 1], r));
+          const data = createMinimalRows(cols, headerRow);
+          bodyRows.forEach((r) => data.push(r));
 
-          setSheets([
-            {
-              id: Date.now(),
-              name: "Sheet1",
-              columns: cols,
-              data,
-            },
-          ]);
+          const sheet = {
+            id: Date.now(),
+            name: "Sheet1",
+            columns: cols,
+            data,
+          };
+
+          await finalizeAndStream([sheet], 0);
         }
       } catch (err) {
         console.error("Workbook load error:", err);
+        setLoadingProgress({ loading: false, loaded: 0, total: 0 });
       }
     };
 
     loadWorkbook();
+  
   }, [workbookUrl, multiSheetData, initialData, workbookFile, defaultSheetName]);
 
-  // initialize history baseline when sheets load
-  useEffect(() => {
-    if (sheets && sheets.length > 0 && historyRef.current.length === 0) {
-      historyRef.current = [JSON.parse(JSON.stringify(sheets))];
-      historyIndexRef.current = 0;
-    }
-  }, [sheets]);
+  
+  const pushToHistory = useCallback(
+    (sheetIndex) => {
+  
+      const sheet = sheetsRef.current[sheetIndex];
+      if (!sheet) return;
 
-  // ---------- maps (duplicate/outlier/find) ----------
+      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
+      historyRef.current.push({
+        sheetIndex,
+        data: JSON.parse(JSON.stringify(sheet.data)),
+      });
+      historyIndexRef.current++;
+    },
+    []
+  );
+
+
+  const onGridReady = useCallback((params) => {
+    gridApiRef.current = params.api;
+    columnApiRef.current = params.columnApi;
+    gridRef.current = params;
+  }, []);
+
+  //column defs
   const activeSheet = sheets[activeSheetIndex];
 
   const duplicateMap = useMemo(() => {
@@ -273,114 +424,95 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     if (gridApiRef.current) gridApiRef.current.refreshCells({ force: true });
   }, [duplicateMap, outlierMap, matches]);
 
-  // ---------- history helpers ----------
-  const pushToHistory = useCallback((newSheets) => {
-    // snapshot deep
-    const snapshot = JSON.parse(JSON.stringify(newSheets));
-    // trim forward history
-    historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1);
-    historyRef.current.push(snapshot);
-    historyIndexRef.current++;
-    sheetsRef.current = snapshot;
-    setSheets(snapshot);
-  }, []);
-
-  // ---------- grid ready ----------
-  const onGridReady = useCallback((params) => {
-    gridApiRef.current = params.api;
-    columnApiRef.current = params.columnApi;
-    // expose api on ref for external access
-    gridRef.current = params;
-  }, []);
-
-  // ---------- column defs ----------
   const columnDefs = useMemo(() => {
-  if (!activeSheet) return [];
+    if (!activeSheet) return [];
 
-  const rowNum = {
-    headerName: "#",
-    pinned: "left",
-    width: 60,
-    editable: false,
-    valueGetter: (p) => p.node.rowIndex + 1,
-  };
+    const rowNum = {
+      headerName: "#",
+      pinned: "left",
+      width: 60,
+      editable: false,
+      valueGetter: (p) => p.node.rowIndex + 1,
+    };
 
-  const cols = activeSheet.columns.map((col) => ({
-    field: col,
-    colId: col,
-    headerName: col,
-    editable: true,
-    resizable: true,
+    const cols = activeSheet.columns.map((col) => ({
+      field: col,
+      colId: col,
+      headerName: col,
+      editable: true,
+      resizable: true,
 
-    // highlight header when selected -> headerClass returns class name
-    headerClass: (params) => (selectedColumns.includes(col) ? "selected-header" : ""),
+      headerClass: (params) => (selectedColumns.includes(col) ? "selected-header" : ""),
 
-    cellClassRules: {
-      "dup-cell": (p) => {
-        const r = p.data?.__rowIdx;
-        return duplicateMap[`${r}-${col}`];
+      cellClassRules: {
+        "dup-cell": (p) => {
+          const r = p.data?.__rowIdx;
+          return duplicateMap[`${r}-${col}`];
+        },
+        "outlier-cell": (p) => {
+          const r = p.data?.__rowIdx;
+          return outlierMap[`${r}-${col}`];
+        },
+        "match-cell": (p) => {
+          const r = p.data?.__rowIdx;
+          return matches.some((m) => m.rowIndex === r && m.col === col);
+        },
+        "selected-col": (p) => {
+          return selectedColumns.includes(col);
+        },
       },
-      "outlier-cell": (p) => {
-        const r = p.data?.__rowIdx;
-        return outlierMap[`${r}-${col}`];
+
+      cellRenderer: (p) => {
+        if (!findText || typeof p.value !== "string") return p.value;
+        try {
+          const reg = new RegExp(findText, matchCase ? "g" : "gi");
+          const html = p.value.replace(
+            reg,
+            (m) => `<span style="background:yellow;font-weight:bold">${m}</span>`
+          );
+          return <span dangerouslySetInnerHTML={{ __html: html }} />;
+        } catch {
+          return p.value;
+        }
       },
-      "match-cell": (p) => {
-        const r = p.data?.__rowIdx;
-        return matches.some((m) => m.rowIndex === r && m.col === col);
-      },
-      // NEW: highlight cell when its column is selected
-      "selected-col": (p) => {
-        return selectedColumns.includes(col);
-      },
-    },
+    }));
 
-    cellRenderer: (p) => {
-      if (!findText || typeof p.value !== "string") return p.value;
-      try {
-        const reg = new RegExp(findText, matchCase ? "g" : "gi");
-        const html = p.value.replace(reg, (m) => `<span style="background:yellow;font-weight:bold">${m}</span>`);
-        return <span dangerouslySetInnerHTML={{ __html: html }} />;
-      } catch {
-        return p.value;
-      }
-    },
-  }));
+    return [rowNum, ...cols];
+  }, [activeSheet, duplicateMap, outlierMap, findText, matchCase, matches, selectedColumns]);
 
-  return [rowNum, ...cols];
-}, [activeSheet, duplicateMap, outlierMap, findText, matchCase, matches, selectedColumns]);
-
-
-  // ---------- cell editing: use transactions to update single row ----------
+  //cell editing
   const onCellValueChanged = useCallback(
     (params) => {
       const { rowIndex, colDef, newValue } = params;
       const sheet = sheetsRef.current[activeSheetIndex];
       if (!sheet) return;
 
-      // update underlying sheet model shallowly then push transaction to grid
-      // create updated object (grid row objects are references in our model)
-      const updatedRow = { ...sheet.data[rowIndex], [colDef.field]: newValue };
+      ensureRowExists(sheet, rowIndex);
 
-      // update in-memory sheet data
-      const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-      newSheets[activeSheetIndex].data[rowIndex] = updatedRow;
+      sheet.data[rowIndex] = { ...sheet.data[rowIndex], [colDef.field]: newValue, __rowIdx: rowIndex };
 
-      // apply transaction to grid (update row)
+     
       const api = gridApiRef.current;
       try {
-        api.applyTransaction({ update: [updatedRow] });
+        api.applyTransaction({ update: [sheet.data[rowIndex]] });
       } catch (e) {
-        // fallback: setRowData
-        api.setRowData(newSheets[activeSheetIndex].data);
+        api.setRowData(sheet.data);
       }
 
-      // push history snapshot
-      pushToHistory(newSheets);
+      // push only changed sheet snapshot
+      pushToHistory(activeSheetIndex);
+
+      // trigger react state update shallowly 
+      setSheets((prev) => {
+        const next = [...prev];
+        next[activeSheetIndex] = { ...sheet };
+        return next;
+      });
     },
     [activeSheetIndex, pushToHistory]
   );
 
-  // ---------- delete single / multiple rows using transactions ----------
+  //delete single / multiple rows using transactions
   const deleteSingleRow = useCallback(
     (rowIndex) => {
       if (rowIndex < HEADER_ROWS) return;
@@ -388,23 +520,26 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
       const sheet = sheetsRef.current[activeSheetIndex];
       if (!sheet) return;
 
-      const rowObj = sheet.data[rowIndex];
-      if (!rowObj) return;
+      if (!sheet.data[rowIndex]) return;
 
-      // create new sheets snapshot
-      const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-      const removed = newSheets[activeSheetIndex].data.splice(rowIndex, 1);
+      // remove the row object
+      const newData = sheet.data.filter((_, idx) => idx !== rowIndex).map((r, idx) => ({ ...r, __rowIdx: idx }));
+      sheet.data = newData;
 
-      // inform grid via transaction
       if (api) {
         try {
-          api.applyTransaction({ remove: removed });
+          api.setRowData(newData);
         } catch {
-          api.setRowData(newSheets[activeSheetIndex].data);
+          api.setRowData(newData);
         }
       }
 
-      pushToHistory(newSheets);
+      pushToHistory(activeSheetIndex);
+      setSheets((prev) => {
+        const next = [...prev];
+        next[activeSheetIndex] = { ...sheet };
+        return next;
+      });
     },
     [activeSheetIndex, pushToHistory]
   );
@@ -415,28 +550,29 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
       const sheet = sheetsRef.current[activeSheetIndex];
       if (!sheet) return;
 
-      const toRemove = rows.map((r) => sheet.data[r]).filter(Boolean);
-      if (!toRemove.length) return;
-
-      const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-      // filter by index set
       const removeSet = new Set(rows);
-      newSheets[activeSheetIndex].data = newSheets[activeSheetIndex].data.filter((_, idx) => !removeSet.has(idx));
+      const newData = sheet.data.filter((_, idx) => !removeSet.has(idx)).map((r, idx) => ({ ...r, __rowIdx: idx }));
+      sheet.data = newData;
 
       if (api) {
         try {
-          api.applyTransaction({ remove: toRemove });
+          api.setRowData(newData);
         } catch {
-          api.setRowData(newSheets[activeSheetIndex].data);
+          api.setRowData(newData);
         }
       }
 
-      pushToHistory(newSheets);
+      pushToHistory(activeSheetIndex);
+      setSheets((prev) => {
+        const next = [...prev];
+        next[activeSheetIndex] = { ...sheet };
+        return next;
+      });
     },
     [activeSheetIndex, pushToHistory]
   );
 
-  // ---------- selection handlers (duplicate removal) ----------
+  // duplicate removal
   const [selectedDuplicates, setSelectedDuplicates] = useState([]);
   const onSelectionChanged = (params) => {
     const idxs = params.api
@@ -446,62 +582,109 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     setSelectedDuplicates(idxs);
   };
 
-  const confirmAndRemove = (mode) => {
-    if (
-      !window.confirm(
-        mode === "all" ? "Remove ALL duplicate rows?" : `Remove ${selectedDuplicates.length} selected duplicates?`
-      )
+ 
+const confirmAndRemove = async (mode) => {
+  if (
+    !window.confirm(
+      mode === "all" ? "Remove ALL duplicate rows?" : `Remove ${selectedDuplicates.length} selected duplicates?`
     )
-      return;
+  )
+    return;
 
-    fetch(`${API_BASE}/remove-duplicates/`, {
+  try {
+    const res = await fetch(`${API_BASE}/remove-duplicates/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         userID: localStorage.getItem("user_id"),
-        filename: sessionStorage.getItem("file_name"),
-        sheet: sheets[activeSheetIndex]?.name,
-        Fileurl: sessionStorage.getItem("fileURL"),
+
       },
       body: JSON.stringify({
         columns,
         mode,
         selected: selectedDuplicates,
+         filename: sessionStorage.getItem("file_name"),
+        sheet: sheets[activeSheetIndex]?.name,
+        Fileurl: sessionStorage.getItem("fileURL"),
       }),
-    })
-      .then((r) => r.json())
-      .then((res) => {
-        if (!res.success) return alert(res.error || "Failed.");
+    });
 
-        const active = sheetsRef.current[activeSheetIndex];
-        const letters = active.columns;
-        const headerNames = columns;
+    const json = await res.json();
+    if (!json.success) return alert(json.error || "Failed.");
 
-        const letterRow = Object.fromEntries(letters.map((L, i) => [L, headerNames?.[i] || ""]));
-        const body = (res.rows || []).map((r) => {
-          const o = {};
-          const keys = Object.keys(r);
-          letters.forEach((L, i) => (o[L] = keys[i] ? r[keys[i]] : ""));
-          return o;
+    
+    const active = sheetsRef.current[activeSheetIndex];
+    const letters = active.columns;
+    const headerNames = columns;
+
+    const letterRow = Object.fromEntries(letters.map((L, i) => [L, headerNames?.[i] || ""]));
+    const body = (json.rows || []).map((r) => {
+      const o = {};
+      const keys = Object.keys(r);
+      letters.forEach((L, i) => (o[L] = keys[i] ? r[keys[i]] : ""));
+      return o;
+    });
+
+    while (body.length + 1 < 128) body.push(Object.fromEntries(letters.map((L) => [L, ""])));
+
+    const rebuilt = [
+      Object.assign({ __rowIdx: 0 }, letterRow),
+      ...body.map((row, idx) => ({ __rowIdx: idx + 1, ...row })),
+    ];
+
+    // update in-memory sheets
+    const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
+    newSheets[activeSheetIndex].data = rebuilt;
+    sheetsRef.current = newSheets;
+    setSheets(newSheets);
+
+    // update grid safely:
+    const api = gridApiRef.current ?? gridRef.current?.api;
+
+    // prefer setRowData when available 
+    if (api && typeof api.setRowData === "function") {
+      try {
+        api.setRowData(rebuilt);
+      } catch (err) {
+        console.warn("setRowData failed, falling back to chunked loader", err);
+        // fallback to chunked loader below
+        if (typeof loadRowsInChunks === "function") {
+          await (async () => {
+            try {
+              api.setRowData([]); // clear first if possible
+            } catch {}
+            await loadRowsInChunks(api, rebuilt, (loaded, total) => {
+              // optionally update small progress state or ignore
+            });
+          })();
+        }
+      }
+    } else if (api && typeof api.applyTransaction === "function" && typeof loadRowsInChunks === "function") {
+    
+      try {
+       
+        try {
+          api.setRowData([]);
+        } catch {}
+        await loadRowsInChunks(api, rebuilt, (loaded, total) => {
+        
         });
+      } catch (err) {
+        console.error("chunked fallback failed:", err);
+   
+      }
+    } else {
+     
+      console.warn("Grid API not available; updated sheets in memory only.");
+    }
 
-        // pad rows like original code
-        while (body.length + 1 < 128) body.push(Object.fromEntries(letters.map((L) => [L, ""])));
-
-        const rebuilt = [letterRow, ...body];
-        const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-        newSheets[activeSheetIndex].data = rebuilt;
-
-        // update grid via setRowData because whole sheet replaced
-        const api = gridApiRef.current;
-        if (api) api.setRowData(rebuilt);
-
-        pushToHistory(newSheets);
-        setSelectedDuplicates([]);
-        alert(res.message);
-      })
-      .catch((e) => alert("Error: " + e.message));
-  };
+    pushToHistory(activeSheetIndex);
+    setSelectedDuplicates([]);
+    alert(json.message);
+  } catch (e) {
+    alert("Error: " + (e.message || e));
+  }
+};
 
   // copy selected rows
   const copySelectedRows = useCallback(() => {
@@ -519,7 +702,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     navigator.clipboard.writeText(tsvText).catch(() => alert("Clipboard access denied. Please allow permission."));
   }, [activeSheet]);
 
-  // ---------- paste from clipboard into target row using transaction ----------
+  // paste from clipboard into target row using transaction
   const handleClipboardPaste = useCallback(
     async (targetRowIndex = 0) => {
       try {
@@ -544,10 +727,10 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
         rows.forEach((colsData, offset) => {
           const rowIndex = targetRowIndex + offset;
 
+          // lazily create row if not exists
           if (!sh.data[rowIndex]) {
-            // create empty row object with all columns
-            const newRow = Object.fromEntries(sh.columns.map((c) => [c, ""]));
-            newRow.__rowIdx = rowIndex;
+            const newRow = { __rowIdx: rowIndex };
+            sh.columns.forEach((c) => (newRow[c] = ""));
             sh.data[rowIndex] = newRow;
             addedRows.push(sh.data[rowIndex]);
           }
@@ -572,7 +755,14 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
           }
         }
 
-        pushToHistory(newSheets);
+        // push only changed sheet snapshot
+        pushToHistory(activeSheetIndex);
+
+        setSheets((prev) => {
+          const next = [...prev];
+          next[activeSheetIndex] = { ...sh };
+          return next;
+        });
       } catch (err) {
         alert("Unable to read clipboard. Browser permission required.");
       }
@@ -580,7 +770,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     [activeSheetIndex, pushToHistory]
   );
 
-  // undo / redo using historyRef 
+  // undo / redo using per-sheet historyRef 
   const getFocusedCellInfo = useCallback(() => {
     const api = gridApiRef.current;
     if (!api) return null;
@@ -599,7 +789,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     try {
       api.setFocusedCell(cell.rowIndex, cell.colId);
     } catch {
-      // ignore
+   
     }
   }, []);
 
@@ -607,35 +797,44 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     if (historyIndexRef.current <= 0) return;
     const focused = getFocusedCellInfo();
     historyIndexRef.current--;
-    const snapshot = JSON.parse(JSON.stringify(historyRef.current[historyIndexRef.current]));
-    sheetsRef.current = snapshot;
-    setSheets(snapshot);
-    const sheet = snapshot[activeSheetIndex];
+    const snapshot = historyRef.current[historyIndexRef.current];
+    if (!snapshot) return;
+    const { sheetIndex, data } = snapshot;
+    // restore only that sheet's data
+    const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
+    newSheets[sheetIndex].data = JSON.parse(JSON.stringify(data));
+    sheetsRef.current = newSheets;
+    setSheets(newSheets);
+
     const api = gridApiRef.current;
-    if (api && sheet) {
-      api.setRowData(sheet.data);
+    if (api && newSheets[sheetIndex]) {
+      api.setRowData(newSheets[sheetIndex].data);
       setTimeout(() => restoreFocus(focused), 10);
     } else {
       setTimeout(() => restoreFocus(focused), 50);
     }
-  }, [activeSheetIndex, getFocusedCellInfo, restoreFocus]);
+  }, [getFocusedCellInfo, restoreFocus]);
 
   const redo = useCallback(() => {
     if (historyIndexRef.current >= historyRef.current.length - 1) return;
     const focused = getFocusedCellInfo();
     historyIndexRef.current++;
-    const snapshot = JSON.parse(JSON.stringify(historyRef.current[historyIndexRef.current]));
-    sheetsRef.current = snapshot;
-    setSheets(snapshot);
-    const sheet = snapshot[activeSheetIndex];
+    const snapshot = historyRef.current[historyIndexRef.current];
+    if (!snapshot) return;
+    const { sheetIndex, data } = snapshot;
+    const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
+    newSheets[sheetIndex].data = JSON.parse(JSON.stringify(data));
+    sheetsRef.current = newSheets;
+    setSheets(newSheets);
+
     const api = gridApiRef.current;
-    if (api && sheet) {
-      api.setRowData(sheet.data);
+    if (api && newSheets[sheetIndex]) {
+      api.setRowData(newSheets[sheetIndex].data);
       setTimeout(() => restoreFocus(focused), 10);
     } else {
       setTimeout(() => restoreFocus(focused), 50);
     }
-  }, [activeSheetIndex, getFocusedCellInfo, restoreFocus]);
+  }, [getFocusedCellInfo, restoreFocus]);
 
   // keyboard shortcuts
   useEffect(() => {
@@ -665,10 +864,11 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [undo, redo, copySelectedRows, handleClipboardPaste]);
 
-  // ---------- add / rename / delete sheet ----------
+  // add / rename / delete sheet 
   const addNewSheet = useCallback(() => {
-    const cols = generateColumns(DEFAULT_COLS);
-    const rows = createEmptyRows(DEFAULT_ROWS, cols);
+    // create a small blank sheet with 1 header row
+    const cols = generateColumns(10); // default to 10 columns for a new sheet
+    const rows = createMinimalRows(cols, []);
 
     const newSheet = {
       id: Date.now(),
@@ -678,7 +878,10 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     };
 
     const updatedSheets = [...sheetsRef.current, newSheet];
-    pushToHistory(updatedSheets);
+    setSheets(updatedSheets);
+    sheetsRef.current = updatedSheets;
+    // push baseline snapshot for this new sheet
+    pushToHistory(updatedSheets.length - 1);
     setActiveSheetIndex(updatedSheets.length - 1);
   }, [pushToHistory]);
 
@@ -687,20 +890,26 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     if (!newName) return;
     const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
     newSheets[index].name = newName;
-    pushToHistory(newSheets);
+    setSheets(newSheets);
+    sheetsRef.current = newSheets;
   };
 
   const deleteSheet = (index) => {
     if (sheetsRef.current.length === 1) return alert("Cannot delete the last sheet!");
     if (!window.confirm("Delete this sheet?")) return;
     const newSheets = JSON.parse(JSON.stringify(sheetsRef.current)).filter((_, i) => i !== index);
-    pushToHistory(newSheets);
+    setSheets(newSheets);
+    sheetsRef.current = newSheets;
+    // adjust active sheet
     if (activeSheetIndex >= index && activeSheetIndex > 0) {
       setActiveSheetIndex((prev) => prev - 1);
     }
+    // basic history trim
+    historyRef.current = historyRef.current.filter((h) => h.sheetIndex !== index);
+    historyIndexRef.current = Math.min(historyIndexRef.current, historyRef.current.length - 1);
   };
 
-  // ---------- find & replace ----------
+  //  find & replace 
   const findMatchesFn = useCallback(() => {
     if (!activeSheet || !findText.trim()) {
       setMatches([]);
@@ -713,7 +922,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
 
     for (let r = HEADER_ROWS; r < activeSheet.data.length; r++) {
       const row = activeSheet.data[r];
-
+      if (!row) continue;
       activeSheet.columns.forEach((col) => {
         const val = row[col];
         if (typeof val !== "string") return;
@@ -744,8 +953,8 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
       updated[m.rowIndex][m.col] = old.replace(new RegExp(findText, matchCase ? "g" : "gi"), replaceText);
     }
 
-    const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-    newSheets[activeSheetIndex].data = updated;
+    const sheet = sheetsRef.current[activeSheetIndex];
+    sheet.data = updated;
 
     // apply transaction update for single row
     const api = gridApiRef.current;
@@ -755,7 +964,13 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
       api.setRowData(updated);
     }
 
-    pushToHistory(newSheets);
+    pushToHistory(activeSheetIndex);
+
+    setSheets((prev) => {
+      const next = [...prev];
+      next[activeSheetIndex] = { ...sheet };
+      return next;
+    });
 
     setTimeout(() => {
       findMatchesFn();
@@ -767,40 +982,87 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     }, 100);
   }, [matches, replaceIndex, activeSheet, activeSheetIndex, findText, replaceText, matchCase, findMatchesFn, pushToHistory]);
 
-  const handleReplaceAll = () => {
-    if (!activeSheet || !findText.trim()) return;
+  // handleReplaceAll
+  const handleReplaceAll = async () => {
+    if (!sheetsRef.current.length || !findText.trim()) return;
 
-    const updated = activeSheet.data.map((row) => {
-      const o = { ...row };
-      activeSheet.columns.forEach((c) => {
-        if (typeof o[c] === "string") {
-          const flags = matchCase ? "g" : "gi";
-          const pattern = matchWhole ? `^${findText}$` : findText;
-          o[c] = o[c].replace(new RegExp(pattern, flags), replaceText);
-        }
+    try {
+   
+      const sheet = JSON.parse(JSON.stringify(sheetsRef.current[activeSheetIndex]));
+      if (!sheet) return;
+
+      const patternText = matchWhole ? `^${escapeRegExp(findText)}$` : escapeRegExp(findText);
+      const flags = matchCase ? "g" : "gi";
+      const re = new RegExp(patternText, flags);
+
+    
+      const updated = sheet.data.map((row, idx) => {
+        if (idx < HEADER_ROWS) return { ...row }; // keep header row intact
+        const o = { ...row };
+        sheet.columns.forEach((c) => {
+          if (typeof o[c] === "string" && findText.length > 0) {
+            o[c] = o[c].replace(re, replaceText);
+          }
+        });
+        return o;
       });
-      return o;
-    });
 
-    const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
-    newSheets[activeSheetIndex].data = updated;
+      // update in-memory sheet and sheetsRef
+      sheet.data = updated;
+      const newSheets = JSON.parse(JSON.stringify(sheetsRef.current));
+      newSheets[activeSheetIndex] = { ...sheet };
+      sheetsRef.current = newSheets;
 
-    // full-set (replace) because many rows may change
-    const api = gridApiRef.current;
-    if (api) api.setRowData(updated);
-    pushToHistory(newSheets);
+  
+      const api = gridApiRef.current;
+      const bodyRows = updated.slice(HEADER_ROWS);
+      try {
+        if (api) {
+       
+          api.applyTransaction({ update: bodyRows });
+        } else {
 
-    setTimeout(() => {
-      findMatchesFn();
-      const first = matches[0];
-      if (!first) return;
-      api?.ensureIndexVisible(first.rowIndex);
-      api?.setFocusedCell(first.rowIndex, first.col);
-      api?.startEditingCell({ rowIndex: first.rowIndex, colKey: first.col });
-    }, 120);
+        }
+      } catch (e) {
+
+        if (api) api.setRowData(updated);
+      }
+
+      // push history snapshot and update React state so UI reflects new sheet
+      pushToHistory(activeSheetIndex);
+      setSheets((prev) => {
+        const next = [...prev];
+        next[activeSheetIndex] = { ...sheet };
+        return next;
+      });
+
+   
+      const newMatches = findMatchesInSheet(sheet, findText, { matchCase, matchWhole });
+      setMatches(newMatches);
+      setTotalMatches(newMatches.length);
+      setReplaceIndex(0);
+
+      // focus first match if present
+      if (newMatches.length > 0 && api) {
+        const first = newMatches[0];
+        // ensure it's visible and focus cell
+        setTimeout(() => {
+          try {
+            api.ensureIndexVisible(first.rowIndex);
+            api.setFocusedCell(first.rowIndex, first.col);
+            api.startEditingCell({ rowIndex: first.rowIndex, colKey: first.col });
+          } catch {
+          
+          }
+        }, 50);
+      }
+    } catch (err) {
+      console.error("Replace All failed:", err);
+      alert("Replace All failed. See console for details.");
+    }
   };
 
-  // ---------- save / export ----------
+  //save / export 
   const trimEmptyRows = (rows) => {
     const empty = (row) => Object.values(row).every((v) => v === "" || v == null);
     let end = rows.length;
@@ -860,7 +1122,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     }
   };
 
-  // UI handlers 
+
   const handleSelectColumn = (colId) => {
     setSelectedColumns((prev) => (prev.includes(colId) ? prev : [...prev, colId]));
   };
@@ -870,7 +1132,7 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     const newCols = [...selectedColumns];
     const newData = activeSheet.data.map((row) => {
       const obj = { __rowIdx: row.__rowIdx };
-      newCols.forEach((col) => (obj[col] = row[col]));
+      newCols.forEach((col) => (obj[col] = row[col] ?? ""));
       return obj;
     });
 
@@ -882,12 +1144,14 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     };
 
     const updatedSheets = [...sheetsRef.current, newSheet];
-    pushToHistory(updatedSheets);
+    setSheets(updatedSheets);
+    sheetsRef.current = updatedSheets;
+    pushToHistory(updatedSheets.length - 1);
     setActiveSheetIndex(updatedSheets.length - 1);
     setSelectedColumns([]);
   };
 
-  // ---------- context menu handling ----------
+  //  context menu handling ----------
   useEffect(() => {
     const hide = () =>
       setContextMenu((prev) => ({
@@ -897,90 +1161,80 @@ const [headerContextMenu, setHeaderContextMenu] = useState({
     window.addEventListener("click", hide);
     return () => window.removeEventListener("click", hide);
   }, []);
-useEffect(() => {
-  const container = document.querySelector(".preview-table-container");
 
-  if (!container) return;
+  useEffect(() => {
+    const container = document.querySelector(".preview-table-container");
 
-  // capture phase so this runs before React's synthetic handler that prevented default
-  const onHeaderContext = (e) => {
+    if (!container) return;
+
+    const onHeaderContext = (e) => {
+      try {
+        const headerCell = e.target.closest(".ag-header-cell");
+        if (!headerCell) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const colId = headerCell.getAttribute("col-id");
+        if (!colId) return;
+
+        setHeaderContextMenu({
+          visible: true,
+          x: e.clientX,
+          y: e.clientY,
+          colId,
+        });
+
+        setContextMenu((m) => ({ ...m, visible: false }));
+      } catch (err) {
+      
+      }
+    };
+
+    container.addEventListener("contextmenu", onHeaderContext, { capture: true });
+
+    const hide = () => setHeaderContextMenu((m) => ({ ...m, visible: false }));
+    window.addEventListener("click", hide);
+
+    return () => {
+      container.removeEventListener("contextmenu", onHeaderContext, { capture: true });
+      window.removeEventListener("click", hide);
+    };
+  }, []);
+
+  const isColumnPinned = (colId) => {
     try {
-      const headerCell = e.target.closest(".ag-header-cell");
-      if (!headerCell) return;
-
-      // prevent default browser menu and stop event propagation
-      e.preventDefault();
-      e.stopPropagation();
-
-      // ag-grid sets 'col-id' attribute on header cell
-      const colId = headerCell.getAttribute("col-id");
-      if (!colId) return;
-
-      setHeaderContextMenu({
-        visible: true,
-        x: e.clientX,
-        y: e.clientY,
-        colId,
-      });
-
-      // also hide the normal cell context menu if open
-      setContextMenu((m) => ({ ...m, visible: false }));
-    } catch (err) {
-      // ignore
+      const state = columnApiRef.current?.getColumnState?.() || [];
+      const c = state.find((s) => s.colId === colId);
+      return !!(c && (c.pinned === "left" || c.pinned === "right"));
+    } catch {
+      return false;
     }
   };
 
-  container.addEventListener("contextmenu", onHeaderContext, { capture: true });
-
-  // hide when clicking anywhere
-  const hide = () => setHeaderContextMenu((m) => ({ ...m, visible: false }));
-  window.addEventListener("click", hide);
-
-  return () => {
-    container.removeEventListener("contextmenu", onHeaderContext, { capture: true });
-    window.removeEventListener("click", hide);
-  };
-}, []);
-
-  const isColumnPinned = (colId) => {
-  try {
-    const state = columnApiRef.current?.getColumnState?.() || [];
-    const c = state.find((s) => s.colId === colId);
-    return !!(c && (c.pinned === "left" || c.pinned === "right"));
-  } catch {
-    return false;
-  }
-};
-
-const pinColumn = useCallback((colId) => {
-  try {
-    if (!columnApiRef.current) return;
-    const pinned = isColumnPinned(colId);
-    // If currently pinned -> unpin, else pin left by default
-    columnApiRef.current.setColumnPinned(colId, pinned ? null : "left");
-    // refresh visuals
-    gridApiRef.current?.refreshHeader?.();
-    gridApiRef.current?.refreshCells?.({ force: true });
-  } catch (e) {
-    console.error("Pin column error:", e);
-  } finally {
-    // hide header menu after action
-    setHeaderContextMenu((m) => ({ ...m, visible: false }));
-  }
-}, []);
-
-const toggleSelectColumn = useCallback((colId) => {
-  setSelectedColumns((prev) => {
-    const next = prev.includes(colId) ? prev.filter((c) => c !== colId) : [...prev, colId];
-    // refresh header and cells to apply classes immediately
-    setTimeout(() => {
+  const pinColumn = useCallback((colId) => {
+    try {
+      if (!columnApiRef.current) return;
+      const pinned = isColumnPinned(colId);
+      columnApiRef.current.setColumnPinned(colId, pinned ? null : "left");
       gridApiRef.current?.refreshHeader?.();
       gridApiRef.current?.refreshCells?.({ force: true });
-    }, 0);
-    return next;
-  });
-  setHeaderContextMenu((m) => ({ ...m, visible: false }));
-}, []);
+    } catch (e) {
+      console.error("Pin column error:", e);
+    } finally {
+      setHeaderContextMenu((m) => ({ ...m, visible: false }));
+    }
+  }, []);
+
+  const toggleSelectColumn = useCallback((colId) => {
+    setSelectedColumns((prev) => {
+      const next = prev.includes(colId) ? prev.filter((c) => c !== colId) : [...prev, colId];
+      setTimeout(() => {
+        gridApiRef.current?.refreshHeader?.();
+        gridApiRef.current?.refreshCells?.({ force: true });
+      }, 0);
+      return next;
+    });
+    setHeaderContextMenu((m) => ({ ...m, visible: false }));
+  }, []);
 
 
   return (
@@ -1043,6 +1297,19 @@ const toggleSelectColumn = useCallback((colId) => {
         <button onClick={() => setShowFindPanel(true)}>
           <Search size={16} /> Find and Replace
         </button>
+
+        {/* Loading progress UI */}
+        {loadingProgress.loading ? (
+          <div style={{ marginLeft: 12, fontSize: 13 }}>
+            Loading rows: {loadingProgress.loaded} / {loadingProgress.total}
+          </div>
+        ) : (
+          loadingProgress.total > 0 && (
+            <div style={{ marginLeft: 12, fontSize: 13, color: "#666" }}>
+              Loaded {loadingProgress.total.toLocaleString()} rows
+            </div>
+          )
+        )}
       </div>
 
       {/* Find & Replace Panel */}
@@ -1109,6 +1376,7 @@ const toggleSelectColumn = useCallback((colId) => {
         onContextMenu={(e) => e.preventDefault()}
         onPaste={(e) => e.stopPropagation()}
         onCopy={(e) => e.stopPropagation()}
+        style={{ height: "60vh", width: "100%" }}
       >
         {activeSheet && (
           <AgGridReact
@@ -1116,7 +1384,8 @@ const toggleSelectColumn = useCallback((colId) => {
             key={activeSheetIndex}
             rowData={activeSheet.data}
             columnDefs={columnDefs}
-            defaultColDef={{ minWidth: 90, sortable:false }}
+            deltaRowDataMode={false}
+            defaultColDef={{ minWidth: 90, sortable: false }}
             onGridReady={onGridReady}
             stopEditingWhenCellsLoseFocus
             rowSelection="multiple"
@@ -1125,9 +1394,7 @@ const toggleSelectColumn = useCallback((colId) => {
             onCellValueChanged={onCellValueChanged}
             onSelectionChanged={onSelectionChanged}
             suppressContextMenu={true}
-            deltaRowDataMode={true}
-            getRowId={params => params.data.__rowIdx}
-
+            getRowId={(params) => String(params.data.__rowIdx)}
             onCellContextMenu={(params) => {
               params.event.preventDefault();
               setContextMenu({
@@ -1139,12 +1406,14 @@ const toggleSelectColumn = useCallback((colId) => {
             }}
             undoRedoCellEditing={true}
             undoRedoCellEditingLimit={50}
+            animateRows={false}
+            suppressAnimationFrame={true}
           />
         )}
       </div>
 
       {/* Duplicate remove buttons */}
-      {selectedOption === "remove_duplicates" && duplicateIndices.length>0 &&(
+      {selectedOption === "remove_duplicates" && duplicateIndices.length > 0 && (
         <div className="duplicate-actions">
           <button className="remove-btn" onClick={() => confirmAndRemove("all")}>
             Remove All Duplicates
@@ -1156,32 +1425,32 @@ const toggleSelectColumn = useCallback((colId) => {
         </div>
       )}
 
-{/* HEADER CONTEXT MENU */}
-{headerContextMenu.visible && (
-  <div
-    className="my-header-context-menu"
-    style={{
-      position: "fixed",
-      top: headerContextMenu.y,
-      left: headerContextMenu.x,
-      background: "white",
-      border: "1px solid #ccc",
-      borderRadius: 6,
-      zIndex: 200000,
-      width: 220,
-      boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
-      padding: 6,
-    }}
-    onMouseDown={(e) => e.stopPropagation()}
-  >
-    <div
-      className="my-context-item"
-      onClick={() => toggleSelectColumn(headerContextMenu.colId)}
-      style={{ padding: "8px 10px" }}
-    >
-      {selectedColumns.includes(headerContextMenu.colId) ? "Unselect Column" : `Select Column "${headerContextMenu.colId}"`}
-    </div>
-              {/* CREATE SHEET */}
+      {/* HEADER CONTEXT MENU */}
+      {headerContextMenu.visible && (
+        <div
+          className="my-header-context-menu"
+          style={{
+            position: "fixed",
+            top: headerContextMenu.y,
+            left: headerContextMenu.x,
+            background: "white",
+            border: "1px solid #ccc",
+            borderRadius: 6,
+            zIndex: 200000,
+            width: 220,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.18)",
+            padding: 6,
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <div
+            className="my-context-item"
+            onClick={() => toggleSelectColumn(headerContextMenu.colId)}
+            style={{ padding: "8px 10px" }}
+          >
+            {selectedColumns.includes(headerContextMenu.colId) ? "Unselect Column" : `Select Column "${headerContextMenu.colId}"`}
+          </div>
+
           {selectedColumns.length > 0 && (
             <div
               className="my-context-item"
@@ -1192,22 +1461,11 @@ const toggleSelectColumn = useCallback((colId) => {
             >
               Create Sheet from Selected Columns ({selectedColumns.length})
             </div>
-)}
+          )}
 
-    <div style={{ height: 8 }} />
-
-    {/* <div
-      className="my-context-item"
-      onClick={() => pinColumn(headerContextMenu.colId)}
-      style={{ padding: "8px 10px", display: "flex", alignItems: "center", gap: 8 }}
-    >
-      {/* Show pin/unpin based on current state */}
-      {/* <span style={{ fontSize: 14 }}>{isColumnPinned(headerContextMenu.colId) ? "📌" : "📍"}</span>
-      <span>{isColumnPinned(headerContextMenu.colId) ? "Unpin Column" : " Pin Column"}</span>
-    </div> */} 
-  </div>
-)}
-
+          <div style={{ height: 8 }} />
+        </div>
+      )}
 
       {/* CONTEXT MENU */}
       {contextMenu.visible && (
@@ -1243,7 +1501,6 @@ const toggleSelectColumn = useCallback((colId) => {
           onMouseUp={() => setIsDragging(false)}
           onMouseLeave={() => setIsDragging(false)}
         >
-          {/* SELECT COLUMN */}
           {contextMenu.colId && (
             <div
               className="my-context-item"
@@ -1256,7 +1513,6 @@ const toggleSelectColumn = useCallback((colId) => {
             </div>
           )}
 
-          {/* CREATE SHEET */}
           {selectedColumns.length > 0 && (
             <div
               className="my-context-item"
@@ -1301,7 +1557,6 @@ const toggleSelectColumn = useCallback((colId) => {
 
           <hr style={{ margin: "6px 0", borderTop: "1px dashed #ccc" }} />
 
-          {/* DELETE ROW */}
           {contextMenu.rowIndex >= HEADER_ROWS && (
             <div
               className="my-context-item"
@@ -1314,7 +1569,6 @@ const toggleSelectColumn = useCallback((colId) => {
             </div>
           )}
 
-          {/* DELETE SELECTED ROWS */}
           {gridApiRef.current &&
             gridApiRef.current.getSelectedNodes().length > 1 &&
             (() => {

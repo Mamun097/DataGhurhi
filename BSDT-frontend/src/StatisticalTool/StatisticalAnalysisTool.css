@@ -1240,3 +1240,56 @@
     color: #6b7280;
     font-style: italic;
 }
+
+/* Column type analysis styles */
+.loading-placeholder {
+    padding: 1rem;
+    background-color: #f7fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #4a5568;
+}
+
+.no-columns-warning {
+    padding: 1rem;
+    background-color: #fffaf0;
+    border: 1px solid #fed7aa;
+    border-radius: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    color: #c05621;
+}
+
+.no-columns-warning svg {
+    color: #dd6b20;
+    flex-shrink: 0;
+}
+
+.column-count-hint {
+    font-size: 0.75rem;
+    color: #718096;
+    margin-top: 0.25rem;
+    padding-left: 0.25rem;
+}
+
+.required-star {
+    color: #e53e3e;
+    margin-left: 0.25rem;
+}
+
+/* Form section spacing */
+.form-section {
+    margin-bottom: 2rem;
+}
+
+.form-section h5 {
+    margin-bottom: 1rem;
+    color: #2d3748;
+    font-weight: 600;
+}

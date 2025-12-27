@@ -144,18 +144,15 @@ def upload_file(request):
 
 @csrf_exempt
 def get_columns(request):
-    
     user_id = request.POST.get('userID')
     filename = request.POST.get('filename')
     active_sheet_name = request.POST.get('activeSheet')  
-    file_url= request.POST.get('Fileurl')
-
+    file_url = request.POST.get('Fileurl')
 
     if not file_url:
         return JsonResponse({'success': False, 'error': 'File URL not provided'})
 
     user_folder = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
-    
     save_path = user_folder 
 
     if not user_id:
@@ -183,10 +180,23 @@ def get_columns(request):
                     'user_id': user_id
                 })
 
+        # Normalize column names by stripping quotes
+        def normalize_column(col):
+            col_str = str(col)
+            # Remove surrounding quotes if present
+            if (col_str.startswith('"') and col_str.endswith('"')) or \
+               (col_str.startswith("'") and col_str.endswith("'")):
+                col_str = col_str[1:-1].strip()
+            return col_str
+        
+        normalized_cols = [canonicalize_column(col) for col in cols]
+
+
         return JsonResponse({
             'success': True,
             'user_id': user_id,
-            'columns': cols,
+            'columns': normalized_cols,  # Send normalized columns to frontend
+            'original_columns': cols,    # Keep original for debugging
             'sheet_names': sheet_names,
             'active_sheet_used': used_sheet,
             'filename': filename,
@@ -194,6 +204,84 @@ def get_columns(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e), 'user_id': user_id})
+
+import re
+
+def canonicalize_column(col: str) -> str:
+    """
+    Create a stable, comparable column key:
+    - remove newlines
+    - collapse multiple spaces
+    - strip
+    """
+    if col is None:
+        return col
+    col = str(col)
+    col = col.replace('\n', ' ').replace('\r', ' ')
+    col = re.sub(r'\s+', ' ', col)  # collapse whitespace
+    return col.strip()
+
+
+def normalize_column_name(col: str, df: pd.DataFrame) -> str:
+    """
+    Normalize column name by removing quotes and matching with actual DataFrame columns.
+    
+    Args:
+        col: Column name as received from frontend (may have quotes)
+        df: DataFrame to match against
+        
+    Returns:
+        Normalized column name that exists in df.columns
+    """
+    if not col:
+        return col
+    
+    # Remove surrounding quotes if present
+    col_clean = col.strip()
+    if (col_clean.startswith('"') and col_clean.endswith('"')) or \
+       (col_clean.startswith("'") and col_clean.endswith("'")):
+        col_clean = col_clean[1:-1].strip()
+    
+    # Try to match with existing columns (exact match first)
+    if col_clean in df.columns:
+        return col_clean
+    
+    # Try case-insensitive match
+    for actual_col in df.columns:
+        if str(actual_col).strip().lower() == col_clean.lower():
+            return actual_col
+    
+    # Try matching without extra whitespace
+    for actual_col in df.columns:
+        if str(actual_col).strip() == col_clean:
+            return actual_col
+    
+    # If still not found, return the cleaned version
+    return col_clean
+
+
+def validate_and_get_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[str, bool, str]:
+    """
+    Validate column name and return normalized version.
+    
+    Returns:
+        tuple: (normalized_column, is_valid, error_message)
+    """
+    if not col:
+        return col, False, f"No column specified for {test_name}"
+    
+    normalized_col = normalize_column_name(col, df)
+    
+    if normalized_col not in df.columns:
+        # Try to find the exact match with quotes
+        if f'"{normalized_col}"' in df.columns:
+            return f'"{normalized_col}"', True, ""
+        elif f"'{normalized_col}'" in df.columns:
+            return f"'{normalized_col}'", True, ""
+        else:
+            return normalized_col, False, f"Column '{col}' not found in dataset. Available columns: {list(df.columns)}"
+    
+    return normalized_col, True, ""
 
 
 # def get_columns(request):
@@ -281,23 +369,17 @@ def analyze_data_api(request):
             filename = request.POST.get('file_name')
             sheet_name= request.POST.get('sheet_name')
             file_url= request.POST.get('Fileurl') 
-            # print(f"Received filename: {filename}")
-
-                      
-            # print(f"Received user_id: {user_id}")
+            
             if not user_id:
                 return JsonResponse({'success': False, 'error': 'User ID not provided'})
 
-            # Load the  DataFrame of file name
-
-
+            # Load the DataFrame
             file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", "")) 
             if not os.path.exists(file_path):
                 return JsonResponse({'success': False, 'error': 'No uploaded file found for this user'}, status=404)
 
             lower = filename.lower()
             if lower.endswith(('.xls', '.xlsx', '.xlsm', '.xlsb', '.ods')):
-
                 try:
                     xls = pd.ExcelFile(file_path)
                     sheet_names = xls.sheet_names
@@ -305,7 +387,6 @@ def analyze_data_api(request):
                     return JsonResponse({'success': False, 'error': f'Failed to read workbook: {e}'}, status=400)
 
                 if sheet_name:
-                    # Validate requested sheet
                     if sheet_name not in sheet_names:
                         return JsonResponse({
                             'success': False,
@@ -314,23 +395,22 @@ def analyze_data_api(request):
                     df = pd.read_excel(xls, sheet_name=sheet_name)
                     active_sheet = sheet_name
                 else:
-                    # Fallback to the first sheet
                     df = pd.read_excel(xls, sheet_name=sheet_names[0] if sheet_names else 0)
                     active_sheet = sheet_names[0] if sheet_names else 'Sheet1'
             else:
-                # Non-Excel (e.g., CSV) -> treat as a single sheet
                 df = pd.read_csv(file_path)
                 active_sheet = 'Sheet1'
             
-            # if df.empty:
-            #     return JsonResponse({'success': False, 'error': 'The uploaded file is empty'}, status=400)
-            # print(f"DataFrame loaded with {len(df)} rows and {len(df.columns)} columns")
+            original_columns = df.columns.tolist()
+            df.columns = [canonicalize_column(c) for c in df.columns]
 
-            
+            # Optional debug
+            print("Original columns:", original_columns)
+            print("Normalized columns:", df.columns.tolist())
 
+            # Get test parameters
             if request.content_type == 'application/json':
                 body = json.loads(request.body)
-                
                 test_type = body.get('test_type', '')
                 col1 = body.get('column1', '')
                 col2 = body.get('column2', '')
@@ -357,21 +437,94 @@ def analyze_data_api(request):
 
             print(f"Received test_type: {test_type}, col1: {col1}, col2: {col2}, col3: {col3}")
             
-            # Validate columns
-            if not col1 or col1 not in df.columns:
-                raise ValueError("Please select a valid first column")
-            
-            if test_type in ['kruskal', 'pearson', 'ttest_ind', 'mannwhitney'] and (not col2 or col2 not in df.columns):
-                raise ValueError("Please select a valid second column")
+            # Helper function to normalize column names
 
-             # Process categorical data BEFORE passing to test functions
+            def normalize_column_name(col: str, df: pd.DataFrame) -> str:
+                """
+                Normalize column name and match it to actual DataFrame columns.
+                Handles:
+                - quotes
+                - newlines
+                - extra whitespace
+                - case differences
+                """
+                if not col:
+                    return col
+
+                # Step 1: strip quotes first (frontend artifacts)
+                col_clean = col.strip()
+                if (col_clean.startswith('"') and col_clean.endswith('"')) or \
+                (col_clean.startswith("'") and col_clean.endswith("'")):
+                    col_clean = col_clean[1:-1]
+
+                # Step 2: canonicalize (NEWLINES + SPACES)
+                col_clean = canonicalize_column(col_clean)
+
+                # Step 3: exact match
+                if col_clean in df.columns:
+                    return col_clean
+
+                # Step 4: case-insensitive canonical match
+                for actual_col in df.columns:
+                    if canonicalize_column(actual_col).lower() == col_clean.lower():
+                        return actual_col
+
+                return col_clean
+
+
+            # Helper function to validate column
+            def validate_column(col: str, df: pd.DataFrame, test_name: str = "") -> tuple[bool, str, str]:
+                """
+                Validate column name and return normalized version.
+                Returns: (is_valid, normalized_column, error_message)
+                """
+                if not col:
+                    return False, col, f"No column specified for {test_name}"
+                
+                normalized_col = normalize_column_name(col, df)
+                
+                if normalized_col not in df.columns:
+                    # Check if original exists
+                    if col in df.columns:
+                        return True, col, ""
+                    else:
+                        return False, normalized_col, f"Column '{col}' not found in dataset. Available columns: {list(df.columns)}"
+                
+                return True, normalized_col, ""
+            
+            # Normalize all column names
+            col1_valid, col1_norm, col1_error = validate_column(col1, df, test_type)
+            if col1 and not col1_valid:
+                return JsonResponse({'success': False, 'error': col1_error})
+            
+            col2_valid, col2_norm, col2_error = validate_column(col2, df, test_type)
+            if col2 and not col2_valid:
+                return JsonResponse({'success': False, 'error': col2_error})
+            
+            col3_valid, col3_norm, col3_error = validate_column(col3, df, test_type)
+            if col3 and not col3_valid:
+                return JsonResponse({'success': False, 'error': col3_error})
+            
+            col_group_valid, col_group_norm, col_group_error = validate_column(col_group, df, test_type)
+            if col_group and not col_group_valid:
+                return JsonResponse({'success': False, 'error': col_group_error})
+            
+            col_covariate_valid, col_covariate_norm, col_covariate_error = validate_column(col_covariate, df, test_type)
+            if col_covariate and not col_covariate_valid:
+                return JsonResponse({'success': False, 'error': col_covariate_error})
+            
+            col_outcome_valid, col_outcome_norm, col_outcome_error = validate_column(col_outcome, df, test_type)
+            if col_outcome and not col_outcome_valid:
+                return JsonResponse({'success': False, 'error': col_outcome_error})
+            
+            # Process categorical data BEFORE passing to test functions
             print("Converting categorical columns to numerical values...")
             ordinal_mappings = {}
             categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
 
             # For Mann–Whitney, DO NOT ENCODE col1
-            if test_type == 'mannwhitney' and col1 in categorical_cols:
-                categorical_cols.remove(col1)
+            if test_type == 'mannwhitney' and col1_norm in categorical_cols:
+                categorical_cols.remove(col1_norm)
 
             if categorical_cols:
                 encoder = OrdinalEncoder()
@@ -380,29 +533,29 @@ def analyze_data_api(request):
                 print(f"Converted categorical columns: {list(categorical_cols)}")
 
                 for i, col in enumerate(categorical_cols):
-                    categories = encoder.categories_[i]  # Use the fitted encoder's categories_
+                    categories = encoder.categories_[i]
                     ordinal_mappings[col] = {idx: cat for idx, cat in enumerate(categories)}
 
                 print(ordinal_mappings)
-
-
             
-            print(f"DataFrame head after conversion:\n{df[[col1, col2]].head() if col2 in df.columns else df[[col1]].head()}")
+            print(f"DataFrame head after conversion:\n{df[[col1_norm, col2_norm]].head() if col2_norm in df.columns else df[[col1_norm]].head()}")
             
-
+            # Route to appropriate test function with NORMALIZED column names
             if test_type == 'kruskal':
-                return process_kruskal_test(request, df, col1, col2, user_id, ordinal_mappings)
+                return process_kruskal_test(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)
             
             elif test_type == 'mannwhitney':
-                return process_mannwhitney_test(request, df, col1, col2,user_id, ordinal_mappings)
+                return process_mannwhitney_test(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)
  
             elif test_type == 'pearson':
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
-                        if value in df.columns:
-                            selected_columns.append(value)
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Pearson")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
                 print("Selected columns for Pearson:", selected_columns)
                 return process_pearson_test(request, df, selected_columns, user_id)
 
@@ -411,79 +564,74 @@ def analyze_data_api(request):
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
-                        if value in df.columns:
-                            selected_columns.append(value)
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Spearman")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
                 print("Selected columns for Spearman:", selected_columns)
                 return process_spearman_test(request, df, selected_columns, user_id)
           
             elif test_type == 'wilcoxon':
-                return process_wilcoxon_test(request, df, col1, col2,user_id)
+                return process_wilcoxon_test(request, df, col1_norm, col2_norm, user_id)
       
             elif test_type == 'shapiro':
-                return process_shapiro_test(request, df, col1, user_id)
+                return process_shapiro_test(request, df, col1_norm, user_id)
             
             elif test_type == 'linear_regression':
-                return process_linear_regression_test(request, df, col1, col2,user_id)
+                return process_linear_regression_test(request, df, col1_norm, col2_norm, user_id)
             
             elif test_type == 'anova':
-                return process_anova_test(request, df, col1, col2, user_id)
+                return process_anova_test(request, df, col1_norm, col2_norm, user_id)
             
             elif test_type == 'ancova':
-                col_group = request.POST.get('primary_col')
-                col_covariate = request.POST.get('secondary_col')
-                col_outcome = request.POST.get('dependent_col')
-                return process_ancova_test(request, df, col_group, col_covariate, col_outcome, user_id)
+                return process_ancova_test(request, df, col_group_norm, col_covariate_norm, col_outcome_norm, user_id)
 
             elif test_type == 'kolmogorov':
                 column = request.POST.get('column')
-                return process_ks_test(request, df, column, user_id)
+                valid, norm_column, error = validate_column(column, df, "Kolmogorov")
+                if not valid:
+                    return JsonResponse({'success': False, 'error': error})
+                return process_ks_test(request, df, norm_column, user_id)
 
             elif test_type == 'anderson':
                 column = request.POST.get('column')
-                return process_anderson_darling_test(request, df, column, user_id)            
+                valid, norm_column, error = validate_column(column, df, "Anderson")
+                if not valid:
+                    return JsonResponse({'success': False, 'error': error})
+                return process_anderson_darling_test(request, df, norm_column, user_id)            
 
             elif test_type == 'f_test':                
-                col_group = request.POST.get('column1')  
-                col_value = request.POST.get('column2')  
-                return process_f_test(request, df, col_group, col_value, user_id)
+                return process_f_test(request, df, col1_norm, col2_norm, user_id)
             
             elif test_type == 'z_test':
-                col_group = request.POST.get('column1')  
-                col_value = request.POST.get('column2')                
-                return process_z_test(request, df, col_group, col_value, user_id)  
+                return process_z_test(request, df, col1_norm, col2_norm, user_id)  
             
             elif test_type == 't_test':
-                col_group = request.POST.get('column1')  
-                col_value = request.POST.get('column2')                
-                return process_t_test(request, df, col_group, col_value, user_id)
+                return process_t_test(request, df, col1_norm, col2_norm, user_id)
             
             elif test_type == 'fzt_visualization':
-                col_group = request.POST.get('column1')  
-                col_value = request.POST.get('column2')                
-                return process_fzt_visualization(request, df, col_group, col_value, user_id)
+                return process_fzt_visualization(request, df, col1_norm, col2_norm, user_id)
 
             elif test_type == 'cross_tabulation':
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
-                        if value in df.columns:
-                            selected_columns.append(value)
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Cross-Tabulation")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
                 print("Selected columns for Cross-Tabulation:", selected_columns)
                 return process_cross_tabulation(request, df, selected_columns, user_id)
 
             elif test_type == 'eda_distribution':
-                column = request.POST.get('column1')
-                return process_eda_distribution(request, df, column, user_id)
+                return process_eda_distribution(request, df, col1_norm, user_id)
 
             elif test_type == 'eda_swarm':
-                column1 = request.POST.get('column1')  
-                column2 = request.POST.get('column2')  
-                return process_eda_swarm_plot(request, df, column1, column2, user_id)
+                return process_eda_swarm_plot(request, df, col1_norm, col2_norm, user_id)
             
             elif test_type == 'eda_pie':
-                col = request.POST.get('column1')
-                return process_pie_chart(request, df, col, user_id,ordinal_mappings)
+                return process_pie_chart(request, df, col1_norm, user_id, ordinal_mappings)
 
             elif test_type == 'eda_basics':
                 return process_eda_basics(request, df, user_id)
@@ -496,42 +644,22 @@ def analyze_data_api(request):
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
-                        if value in df.columns:
-                            selected_columns.append(value)
-                print("Selected columns for Chi-Square www :", selected_columns )
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Chi-Square")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
+                print("Selected columns for Chi-Square:", selected_columns)
                 return process_chi_square(request, df, selected_columns, user_id)
-
-                # categorical_mappings = {}  
-
-                # for col in selected_columns:
-                #     if df[col].dtype == 'object' or pd.api.types.is_categorical_dtype(df[col]):
-                #         df[col], mapping = pd.factorize(df[col])
-                #         categorical_mappings[col] = {i: val for i, val in enumerate(mapping)}
-                #         print(f"Converted column '{col}': {categorical_mappings[col]}")
-
-                # print("Categorical mappings:", categorical_mappings)
-                # selected_columns = [col for col in [col1, col2, col3] if col]
-                # print(f"Selected columns for Chi-Square www : {selected_columns}")
-                
-                # # Pass the mappings to the function
-                # return process_chi_square(request, df, selected_columns, user_id, categorical_mappings)
-
-            #elif test_type == 'cramers_heatmap':
-                #selected_columns = []
-                #for key in request.POST:
-                    #if key.startswith("column"):
-                        #value = request.POST[key]
-                        #if value in df.columns:
-                            #selected_columns.append(value)
-                #return process_cramers_heatmap(request,selected_columns, df, user_id)
 
             elif test_type == 'cramers':
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column"):
                         value = request.POST[key]
-                        if value in df.columns:
-                            selected_columns.append(value)
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Cramer's V")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
                 print("Selected columns for Cramer's V:", selected_columns)
                 return process_cramers_test(request, df, selected_columns, user_id)
 
@@ -539,24 +667,27 @@ def analyze_data_api(request):
                 selected_columns = []
                 for key in request.POST:
                     if key.startswith("column") and request.POST[key] in df.columns:
-                        selected_columns.append(request.POST[key])
+                        value = request.POST[key]
+                        if value:
+                            valid, norm_value, error = validate_column(value, df, "Network Graph")
+                            if valid and norm_value in df.columns:
+                                selected_columns.append(norm_value)
                 return process_network_graph(request, df, selected_columns, user_id)
 
             elif test_type == 'bar_chart':
-                col = request.POST.get('column1')
                 orientation = request.POST.get('orientation', 'vertical')
-                return process_bar_chart_test(request, df, col, user_id, orientation, ordinal_mappings)
+                return process_bar_chart_test(request, df, col1_norm, user_id, orientation, ordinal_mappings)
             
-
-            return render(request, 'analysis/results.html', {
-                'results': results,
-                'columns': [col1, col2, col3] if col3 else [col1, col2],
-                'active_sheet': active_sheet,
-                'media_url': settings.MEDIA_URL,
-                'plot_path': plot_path,
-                'test_type': test_type
-            })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Unknown test type: {test_type}'
+                })
+                
         except Exception as e:
+            import traceback
+            error_details = traceback.format_exc()
+            print(f"Error in analyze_data_api: {str(e)}\n{error_details}")
             return JsonResponse({
                 'success': False,
                 'error': str(e)
@@ -564,7 +695,6 @@ def analyze_data_api(request):
     else:
         form = AnalysisForm(columns=[])
     return render(request, 'analysis/upload.html', {'form': form})
-
 
 # views.py (or wherever your view lives)
 
@@ -632,198 +762,65 @@ def get_groups(request):
         return JsonResponse({'success': False, 'error': str(e)})
 
 
-def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
+@csrf_exempt
+def get_column_types(request):
     """
-    Performs Mann-Whitney U test with proper validation.
-    Requirements:
-    - col1: Categorical column with exactly two unique groups
-    - col2: Numerical column
+    Analyze columns in a file and categorize them as numeric or categorical.
+    Returns separate lists for numeric and categorical columns.
     """
-    from scipy.stats import mannwhitneyu, rankdata
-    import numpy as np
-    import json
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Method not allowed'})
+    
+    user_id = request.POST.get('userID')
+    filename = request.POST.get('filename')
+    file_url = request.POST.get('Fileurl')
+    
+    if not all([user_id, filename, file_url]):
+        return JsonResponse({'success': False, 'error': 'Missing required parameters'})
     
     try:
-        # Get language
-        lang = request.POST.get('language', 'en')
+        # Load the file
+        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
         
-        print(f"[DEBUG MANNWHITNEY] Starting Mann-Whitney test")
-        print(f"[DEBUG MANNWHITNEY] Column 1 (categorical): {col1}")
-        print(f"[DEBUG MANNWHITNEY] Column 2 (numerical): {col2}")
-        
-        # Check if columns exist
-        if col1 not in df.columns or col2 not in df.columns:
-            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
-            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
-            return JsonResponse({
-                'success': False, 
-                'error': error_msg
-            })
-        
-        # Get selected groups from request
-        selected_groups = []
-        selected_groups_json = request.POST.get('selected_groups', '')
-        
-        print(f"[DEBUG MANNWHITNEY] Raw selected_groups JSON: {selected_groups_json}")
-        
-        if selected_groups_json:
-            try:
-                selected_groups = json.loads(selected_groups_json)
-                print(f"[DEBUG MANNWHITNEY] Parsed selected groups: {selected_groups}")
-            except json.JSONDecodeError as e:
-                print(f"[DEBUG MANNWHITNEY] JSON decode error: {e}")
-                selected_groups = []
-        
-        # If no groups selected, use all groups in the column
-        if not selected_groups:
-            unique_groups = sorted(df[col1].dropna().astype(str).unique())
-            print(f"[DEBUG MANNWHITNEY] No groups selected, using all groups: {unique_groups}")
+        # Read the file (first 500 rows only)
+        if filename.lower().endswith('.csv'):
+            df = pd.read_csv(file_path, nrows=500)
         else:
-            # Convert selected groups to strings for comparison
-            selected_groups = [str(g) for g in selected_groups]
-            df[col1] = df[col1].astype(str)
-            df = df[df[col1].isin(selected_groups)]
-            unique_groups = selected_groups
-            print(f"[DEBUG MANNWHITNEY] Filtered to selected groups: {unique_groups}")
+            df = pd.read_excel(file_path, nrows=500)
         
-        print(f"[DEBUG MANNWHITNEY] DataFrame shape before cleaning: {df.shape}")
-        
-        # IMPORTANT: Do NOT convert col1 to numeric - keep it as categorical for grouping
-        # Only convert col2 to numeric
-        
-        # Check if col2 is numeric, try to convert if not
-        if not pd.api.types.is_numeric_dtype(df[col2]):
-            print(f"[DEBUG MANNWHITNEY] Column 2 is not numeric, attempting conversion...")
-            try:
-                df[col2] = pd.to_numeric(df[col2], errors='coerce')
-                print(f"[DEBUG MANNWHITNEY] Column 2 converted to numeric")
-            except Exception as e:
-                error_msg = f'Column "{col2}" must be numerical for Mann-Whitney test. Conversion error: {e}'
-                print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
-                return JsonResponse({
-                    'success': False,
-                    'error': error_msg
-                })
-        
-        # Remove NaN values
-        df = df.dropna(subset=[col1, col2])
-        print(f"[DEBUG MANNWHITNEY] DataFrame shape after cleaning: {df.shape}")
-        
-        # Check if we have exactly 2 groups
-        if len(unique_groups) != 2:
-            error_msg = f'Mann-Whitney test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
-            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            })
-        
-        # Check group counts
-        group_counts = df[col1].value_counts()
-        print(f"[DEBUG MANNWHITNEY] Group counts: {group_counts.to_dict()}")
-        
-        if any(group_counts < 3):
-            error_msg = f'Each group should have at least 3 observations. Current counts: {group_counts.to_dict()}'
-            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            })
-        
-        # Perform Mann-Whitney test
-        group1_data = df[df[col1] == unique_groups[0]][col2].values
-        group2_data = df[df[col1] == unique_groups[1]][col2].values
-        
-        print(f"[DEBUG MANNWHITNEY] Group 1 ({unique_groups[0]}) data sample: {group1_data[:5] if len(group1_data) > 0 else 'No data'}")
-        print(f"[DEBUG MANNWHITNEY] Group 2 ({unique_groups[1]}) data sample: {group2_data[:5] if len(group2_data) > 0 else 'No data'}")
-        
-        try:
-            print(f"[DEBUG MANNWHITNEY] Performing Mann-Whitney U test...")
-            u_stat, p_value = mannwhitneyu(
-                group1_data,
-                group2_data,
-                alternative="two-sided"
-            )
-            print(f"[DEBUG MANNWHITNEY] Test results - U: {u_stat}, p-value: {p_value}")
-        except Exception as e:
-            error_msg = f'Error performing Mann-Whitney test: {str(e)}'
-            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
-            return JsonResponse({
-                'success': False,
-                'error': error_msg
-            })
-        
-        # Calculate rank statistics
-        all_data = np.concatenate([group1_data, group2_data])
-        ranks = rankdata(all_data)
-        
-        # Split ranks back to groups
-        group1_ranks = ranks[:len(group1_data)]
-        group2_ranks = ranks[len(group1_data):]
-        
-        mean_rank1 = np.mean(group1_ranks)
-        mean_rank2 = np.mean(group2_ranks)
-        
-        print(f"[DEBUG MANNWHITNEY] Mean ranks - Group 1: {mean_rank1}, Group 2: {mean_rank2}")
-        
-        # Prepare plot data
-        plot_data = []
-        for i, group in enumerate(unique_groups):
-            group_data = df[df[col1] == group][col2].values
-            group_ranks = group1_ranks if i == 0 else group2_ranks
-            
-            plot_data.append({
-                'category': str(group),
-                'values': [float(x) for x in group_data],
-                'count': int(len(group_data)),
-                'mean': float(np.mean(group_data)) if len(group_data) > 0 else np.nan,
-                'median': float(np.median(group_data)) if len(group_data) > 0 else np.nan,
-                'std': float(np.std(group_data)) if len(group_data) > 1 else np.nan,
-                'min': float(np.min(group_data)) if len(group_data) > 0 else np.nan,
-                'max': float(np.max(group_data)) if len(group_data) > 0 else np.nan,
-                'q25': float(np.percentile(group_data, 25)) if len(group_data) > 0 else np.nan,
-                'q75': float(np.percentile(group_data, 75)) if len(group_data) > 0 else np.nan,
-                'mean_rank': float(mean_rank1 if i == 0 else mean_rank2)
-            })
-        
-        # Prepare response
-        result = {
+        # Initialize lists
+        numeric_columns = []
+        categorical_columns = []
+
+        # --- NEW, FIXED, RELIABLE TYPE DETECTION ---
+        for col in df.columns:
+            series = df[col]
+
+            # Convert to numeric where possible
+            numeric_series = pd.to_numeric(series, errors='coerce')
+            numeric_ratio = numeric_series.notna().mean()  # % numeric values
+
+            # Treat as numeric if at least 90% of values are numeric
+            if numeric_ratio >= 0.9:
+                numeric_columns.append(col)
+            else:
+                categorical_columns.append(col)
+        # --------------------------------------------
+
+        return JsonResponse({
             'success': True,
-            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
-            'statistic': float(u_stat),
-            'p_value': float(p_value),
-            'conclusion': 'Significant difference' if p_value < 0.05 else 'No significant difference',
-            'n_groups': len(unique_groups),
-            'total_observations': len(df),
-            'column_names': {
-                'group': str(col1),
-                'value': str(col2)
-            },
-            'groups': unique_groups,
-            'group_sizes': {
-                unique_groups[0]: int(len(group1_data)),
-                unique_groups[1]: int(len(group2_data))
-            },
-            'mean_ranks': {
-                unique_groups[0]: float(mean_rank1),
-                unique_groups[1]: float(mean_rank2)
-            },
-            'plot_data': plot_data,
-            'metadata': {
-                'categories': unique_groups,
-                'significant': bool(p_value < 0.05),
-                'alpha': 0.05
-            }
-        }
-        
-        print(f"[DEBUG MANNWHITNEY] Returning successful result")
-        return JsonResponse(result)
+            'numeric_columns': numeric_columns,
+            'categorical_columns': categorical_columns,
+            'all_columns': list(df.columns),
+            'total_numeric': len(numeric_columns),
+            'total_categorical': len(categorical_columns)
+        })
         
     except Exception as e:
-        import traceback
-        error_msg = f'Unexpected error: {str(e)}\n{traceback.format_exc()}'
-        print(f"[DEBUG MANNWHITNEY] Critical error: {error_msg}")
-        return JsonResponse({'success': False, 'error': str(e)})
+        return JsonResponse({
+            'success': False,
+            'error': f'Error analyzing column types: {str(e)}'
+        })
 
 
 def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
@@ -863,6 +860,37 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     work = df[[col1, col2]].copy()
     work = work.dropna(subset=[col1, col2])
     print(f"[Kruskal] after dropna: {len(work)} rows")
+
+    # Check if there are enough rows
+    if len(work) == 0:
+        return JsonResponse({
+            'success': False, 
+            'error': 'No valid data after removing missing values.'
+        })
+
+    # Check if all values in col2 are identical
+    unique_values = work[col2].nunique()
+    if unique_values == 1:
+        # All values are identical - Kruskal-Wallis cannot be performed
+        warning_message_en = "All values in the numeric column are identical. The Kruskal-Wallis test requires variation in the data to compute ranks. When all values are the same, all ranks will be tied, making the test statistically invalid."
+        
+        warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন যাতে র্যাঙ্ক নির্ধারণ করা যায়। যখন সকল মান একই থাকে, সকল র্যাঙ্ক সমান হয়ে যায়, ফলে পরীক্ষাটি পরিসংখ্যানগতভাবে অবৈধ হয়ে পড়ে।"
+        
+        warning_message = warning_message_bn if language == 'bn' else warning_message_en
+        
+        return JsonResponse({
+            'success': True,
+            'identical_values': True,
+            'warning_message': warning_message,
+            'language': language,
+            'identical_value': float(work[col2].iloc[0]),  # The single value that repeats
+            'n_observations': int(len(work)),
+            'column_names': {
+                'group': str(col1),
+                'value': str(col2)
+            },
+            'test': 'Kruskal-Wallis H-test' if language == 'en' else 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট'
+        })
 
     # Ensure grouping column is categorical
     if not pd.api.types.is_categorical_dtype(work[col1]):
@@ -943,6 +971,7 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
     
     response_data = {
         'success': True,
+        'identical_values': False,  # This is the normal case
         'test': test_name,
         'language': language,
         'statistic': float(stat),
@@ -962,6 +991,249 @@ def process_kruskal_test(request, df: pd.DataFrame, col1: str, col2: str, user_i
         }
     }
     return JsonResponse(response_data)
+
+
+def process_mannwhitney_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str, ordinal_mappings):
+    """
+    Performs Mann-Whitney U test with proper validation.
+    Requirements:
+    - col1: Categorical column with exactly two unique groups
+    - col2: Numerical column
+    """
+    from scipy.stats import mannwhitneyu, rankdata
+    import numpy as np
+    import json
+    
+    try:
+        # Get language
+        lang = request.POST.get('language', 'en')
+        
+        print(f"[DEBUG MANNWHITNEY] Starting Mann-Whitney test")
+        print(f"[DEBUG MANNWHITNEY] Column 1 (categorical): {col1}")
+        print(f"[DEBUG MANNWHITNEY] Column 2 (numerical): {col2}")
+        
+        # Check if columns exist
+        if col1 not in df.columns or col2 not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False, 
+                'error': error_msg
+            })
+        
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
+        
+        print(f"[DEBUG MANNWHITNEY] Raw selected_groups JSON: {selected_groups_json}")
+        
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG MANNWHITNEY] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG MANNWHITNEY] JSON decode error: {e}")
+                selected_groups = []
+        
+        # If no groups selected, use all groups in the column
+        if not selected_groups:
+            unique_groups = sorted(df[col1].dropna().astype(str).unique())
+            print(f"[DEBUG MANNWHITNEY] No groups selected, using all groups: {unique_groups}")
+        else:
+            # Convert selected groups to strings for comparison
+            selected_groups = [str(g) for g in selected_groups]
+            df[col1] = df[col1].astype(str)
+            df = df[df[col1].isin(selected_groups)]
+            unique_groups = selected_groups
+            print(f"[DEBUG MANNWHITNEY] Filtered to selected groups: {unique_groups}")
+        
+        print(f"[DEBUG MANNWHITNEY] DataFrame shape before cleaning: {df.shape}")
+        
+        # Check if col2 is numeric, try to convert if not
+        if not pd.api.types.is_numeric_dtype(df[col2]):
+            print(f"[DEBUG MANNWHITNEY] Column 2 is not numeric, attempting conversion...")
+            try:
+                df[col2] = pd.to_numeric(df[col2], errors='coerce')
+                print(f"[DEBUG MANNWHITNEY] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col2}" must be numerical for Mann-Whitney test. Conversion error: {e}'
+                print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Remove NaN values
+        df = df.dropna(subset=[col1, col2])
+        print(f"[DEBUG MANNWHITNEY] DataFrame shape after cleaning: {df.shape}")
+        
+        # Check if we have exactly 2 groups
+        if len(unique_groups) != 2:
+            error_msg = f'Mann-Whitney test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Check group counts
+        group_counts = df[col1].value_counts()
+        print(f"[DEBUG MANNWHITNEY] Group counts: {group_counts.to_dict()}")
+        
+        if any(group_counts < 3):
+            explanation = (
+                "Mann-Whitney U Test requires:\n"
+                "• A categorical column with exactly 2 groups\n"
+                "• A numerical column\n"
+                "• Each group must have at least 3 observations\n\n"
+                f"Current group counts: {group_counts.to_dict()}\n"
+                "One or both groups have fewer than 3 observations, so the test cannot be performed."
+            )
+
+            print("[DEBUG MANNWHITNEY] Not enough observations. Returning explanation instead of error.")
+
+            return JsonResponse({
+                'success': True,        # IMPORTANT: keep true
+                'is_explanation': True, # FRONTEND USES THIS FLAG
+                'message': explanation,
+                'groups': list(group_counts.index),
+                'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
+            })
+        
+        # Get group data
+        group1_data = df[df[col1] == unique_groups[0]][col2].values
+        group2_data = df[df[col1] == unique_groups[1]][col2].values
+        
+        print(f"[DEBUG MANNWHITNEY] Group 1 ({unique_groups[0]}) data sample: {group1_data[:5] if len(group1_data) > 0 else 'No data'}")
+        print(f"[DEBUG MANNWHITNEY] Group 2 ({unique_groups[1]}) data sample: {group2_data[:5] if len(group2_data) > 0 else 'No data'}")
+        
+        # ============================================================
+        # NEW: CHECK IF ALL VALUES ARE IDENTICAL
+        # ============================================================
+        all_values = np.concatenate([group1_data, group2_data])
+        unique_values = np.unique(all_values)
+        
+        if len(unique_values) == 1:
+            # All values are identical - Mann-Whitney cannot be performed
+            print(f"[DEBUG MANNWHITNEY] All values are identical: {unique_values[0]}")
+            
+            warning_message_en = "All values in the numeric column are identical. The Mann-Whitney test requires variation in the data to compute ranks. When all values are the same, all ranks will be tied, making the test statistically invalid."
+            
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। ম্যান-হুইটনি পরীক্ষার জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন যাতে র্যাঙ্ক নির্ধারণ করা যায়। যখন সকল মান একই থাকে, সকল র্যাঙ্ক সমান হয়ে যায়, ফলে পরীক্ষাটি পরিসংখ্যানগতভাবে অবৈধ হয়ে পড়ে।"
+            
+            warning_message = warning_message_bn if lang == 'bn' else warning_message_en
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message,
+                'language': lang,
+                'identical_value': float(unique_values[0]),  # The single value that repeats
+                'n_observations': int(len(df)),
+                'column_names': {
+                    'group': str(col1),
+                    'value': str(col2)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট'
+            })
+        # ============================================================
+        # END OF NEW CHECK
+        # ============================================================
+        
+        # Perform Mann-Whitney test
+        try:
+            print(f"[DEBUG MANNWHITNEY] Performing Mann-Whitney U test...")
+            u_stat, p_value = mannwhitneyu(
+                group1_data,
+                group2_data,
+                alternative="two-sided"
+            )
+            print(f"[DEBUG MANNWHITNEY] Test results - U: {u_stat}, p-value: {p_value}")
+        except Exception as e:
+            error_msg = f'Error performing Mann-Whitney test: {str(e)}'
+            print(f"[DEBUG MANNWHITNEY] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Calculate rank statistics
+        all_data = np.concatenate([group1_data, group2_data])
+        ranks = rankdata(all_data)
+        
+        # Split ranks back to groups
+        group1_ranks = ranks[:len(group1_data)]
+        group2_ranks = ranks[len(group1_data):]
+        
+        mean_rank1 = np.mean(group1_ranks)
+        mean_rank2 = np.mean(group2_ranks)
+        
+        print(f"[DEBUG MANNWHITNEY] Mean ranks - Group 1: {mean_rank1}, Group 2: {mean_rank2}")
+        
+        # Prepare plot data
+        plot_data = []
+        for i, group in enumerate(unique_groups):
+            group_data = df[df[col1] == group][col2].values
+            group_ranks = group1_ranks if i == 0 else group2_ranks
+            
+            plot_data.append({
+                'category': str(group),
+                'values': [float(x) for x in group_data],
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)) if len(group_data) > 0 else np.nan,
+                'median': float(np.median(group_data)) if len(group_data) > 0 else np.nan,
+                'std': float(np.std(group_data)) if len(group_data) > 1 else np.nan,
+                'min': float(np.min(group_data)) if len(group_data) > 0 else np.nan,
+                'max': float(np.max(group_data)) if len(group_data) > 0 else np.nan,
+                'q25': float(np.percentile(group_data, 25)) if len(group_data) > 0 else np.nan,
+                'q75': float(np.percentile(group_data, 75)) if len(group_data) > 0 else np.nan,
+                'mean_rank': float(mean_rank1 if i == 0 else mean_rank2)
+            })
+        
+        # Prepare response
+        result = {
+            'success': True,
+            'identical_values': False,  # Normal case
+            'test': 'Mann-Whitney U Test' if lang == 'en' else 'ম্যান-হুইটনি ইউ টেস্ট',
+            'statistic': float(u_stat),
+            'p_value': float(p_value),
+            'conclusion': 'Significant difference' if p_value < 0.05 else 'No significant difference',
+            'n_groups': len(unique_groups),
+            'total_observations': len(df),
+            'column_names': {
+                'group': str(col1),
+                'value': str(col2)
+            },
+            'groups': unique_groups,
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'mean_ranks': {
+                unique_groups[0]: float(mean_rank1),
+                unique_groups[1]: float(mean_rank2)
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'categories': unique_groups,
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05
+            }
+        }
+        
+        print(f"[DEBUG MANNWHITNEY] Returning successful result")
+        return JsonResponse(result)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f'Unexpected error: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG MANNWHITNEY] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 def process_wilcoxon_test(request, df: pd.DataFrame, col1: str, col2: str, user_id: str):
@@ -7439,10 +7711,10 @@ def remove_duplicates(request):
     data = json.loads(request.body)
     filename = data.get("filename")
     sheet_name = data.get("sheet")
-    file_url = data.get("Fileurl")
+    file_url = data.get('Fileurl') 
     columns = data.get('columns', [])
     mode = data.get('mode')  # "all" or "selected"
-    selected_indices = data.get('selected', [])
+    selected_indices = data.get('selected', []) 
     print(selected_indices)
     print(file_url) 
     try:

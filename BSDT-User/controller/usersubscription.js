@@ -94,7 +94,7 @@ exports.reduceQuestionCount = async (req, res) => {
             });
         }
 
-        console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
+        // console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
 
         if (!allSubscriptions || allSubscriptions.length === 0) {
             return res.status(404).json({
@@ -108,11 +108,11 @@ exports.reduceQuestionCount = async (req, res) => {
             const endDate = subscription.end_date;
             const questionCount = subscription.question;
 
-            console.log(`Checking subscription ${subscription.subscription_id}:`);
-            console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
-            console.log(`  Question Count: ${questionCount} (type: ${typeof questionCount})`);
-            console.log(`  Is Active: ${endDate >= currentDate}`);
-            console.log(`  Has Questions: ${questionCount && parseInt(questionCount) > 0}`);
+            // console.log(`Checking subscription ${subscription.subscription_id}:`);
+            // console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
+            // console.log(`  Question Count: ${questionCount} (type: ${typeof questionCount})`);
+            // console.log(`  Is Active: ${endDate >= currentDate}`);
+            // console.log(`  Has Questions: ${questionCount && parseInt(questionCount) > 0}`);
 
             return endDate >= currentDate &&
                 questionCount !== null &&
@@ -120,7 +120,7 @@ exports.reduceQuestionCount = async (req, res) => {
                 parseInt(questionCount) > 0;
         });
 
-        console.log("Active packages with questions:", JSON.stringify(activePackagesWithQuestions, null, 2));
+        // console.log("Active packages with questions:", JSON.stringify(activePackagesWithQuestions, null, 2));
 
         if (activePackagesWithQuestions.length === 0) {
             return res.status(404).json({
@@ -183,8 +183,8 @@ exports.reduceSurveyCount = async (req, res) => {
         const userId = req.jwt.id;
         const currentDate = new Date().toISOString().split('T')[0];
 
-        console.log("User ID:", userId);
-        console.log("Current Date:", currentDate);
+        // console.log("User ID:", userId);
+        // console.log("Current Date:", currentDate);
 
         // Get all subscriptions for the user
         const { data: allSubscriptions, error: allError } = await supabase
@@ -200,7 +200,7 @@ exports.reduceSurveyCount = async (req, res) => {
             });
         }
 
-        console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
+        // console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
 
         if (!allSubscriptions || allSubscriptions.length === 0) {
             return res.status(404).json({
@@ -214,11 +214,11 @@ exports.reduceSurveyCount = async (req, res) => {
             const endDate = subscription.end_date;
             const surveyCount = subscription.survey;
 
-            console.log(`Checking subscription ${subscription.subscription_id}:`);
-            console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
-            console.log(`  Survey Count: ${surveyCount} (type: ${typeof surveyCount})`);
-            console.log(`  Is Active: ${endDate >= currentDate}`);
-            console.log(`  Has Surveys: ${surveyCount && parseInt(surveyCount) > 0}`);
+            // console.log(`Checking subscription ${subscription.subscription_id}:`);
+            // console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
+            // console.log(`  Survey Count: ${surveyCount} (type: ${typeof surveyCount})`);
+            // console.log(`  Is Active: ${endDate >= currentDate}`);
+            // console.log(`  Has Surveys: ${surveyCount && parseInt(surveyCount) > 0}`);
 
             return endDate >= currentDate &&
                 surveyCount !== null &&
@@ -226,7 +226,7 @@ exports.reduceSurveyCount = async (req, res) => {
                 parseInt(surveyCount) > 0;
         });
 
-        console.log("Active packages with surveys:", JSON.stringify(activePackagesWithSurveys, null, 2));
+        // console.log("Active packages with surveys:", JSON.stringify(activePackagesWithSurveys, null, 2));
 
         if (activePackagesWithSurveys.length === 0) {
             return res.status(404).json({
@@ -242,8 +242,8 @@ exports.reduceSurveyCount = async (req, res) => {
         const packageToUpdate = activePackagesWithSurveys[0];
         const currentSurveyCount = parseInt(packageToUpdate.survey);
 
-        console.log("Package to update:", JSON.stringify(packageToUpdate, null, 2));
-        console.log("Current survey count:", currentSurveyCount);
+        // console.log("Package to update:", JSON.stringify(packageToUpdate, null, 2));
+        // console.log("Current survey count:", currentSurveyCount);
 
         // Update the survey field by reducing it by 1
         const { data: updatedData, error: updateError } = await supabase
@@ -262,7 +262,7 @@ exports.reduceSurveyCount = async (req, res) => {
             });
         }
 
-        console.log("Update successful:", JSON.stringify(updatedData, null, 2));
+        // console.log("Update successful:", JSON.stringify(updatedData, null, 2));
 
         res.status(200).json({
             success: true,
@@ -289,8 +289,8 @@ exports.reduceTagCount = async (req, res) => {
         const userId = req.jwt.id;
         const currentDate = new Date().toISOString().split('T')[0];
 
-        console.log("User ID:", userId);
-        console.log("Current Date:", currentDate);
+        // console.log("User ID:", userId);
+        // console.log("Current Date:", currentDate);
 
         // Get all subscriptions for the user
         const { data: allSubscriptions, error: allError } = await supabase
@@ -306,7 +306,7 @@ exports.reduceTagCount = async (req, res) => {
             });
         }
 
-        console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
+        // console.log("All user subscriptions:", JSON.stringify(allSubscriptions, null, 2));
 
         if (!allSubscriptions || allSubscriptions.length === 0) {
             return res.status(404).json({
@@ -320,11 +320,11 @@ exports.reduceTagCount = async (req, res) => {
             const endDate = subscription.end_date;
             const tagCount = subscription.tag;
 
-            console.log(`Checking subscription ${subscription.subscription_id}:`);
-            console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
-            console.log(`  Tag Count: ${tagCount} (type: ${typeof tagCount})`);
-            console.log(`  Is Active: ${endDate >= currentDate}`);
-            console.log(`  Has Tags: ${tagCount && parseInt(tagCount) > 0}`);
+            // console.log(`Checking subscription ${subscription.subscription_id}:`);
+            // console.log(`  End Date: ${endDate}, Current Date: ${currentDate}`);
+            // console.log(`  Tag Count: ${tagCount} (type: ${typeof tagCount})`);
+            // console.log(`  Is Active: ${endDate >= currentDate}`);
+            // console.log(`  Has Tags: ${tagCount && parseInt(tagCount) > 0}`);
 
             return endDate >= currentDate &&
                 tagCount !== null &&
@@ -332,7 +332,7 @@ exports.reduceTagCount = async (req, res) => {
                 parseInt(tagCount) > 0;
         });
 
-        console.log("Active packages with tags:", JSON.stringify(activePackagesWithTags, null, 2));
+        // console.log("Active packages with tags:", JSON.stringify(activePackagesWithTags, null, 2));
 
         if (activePackagesWithTags.length === 0) {
             return res.status(404).json({
@@ -348,8 +348,8 @@ exports.reduceTagCount = async (req, res) => {
         const packageToUpdate = activePackagesWithTags[0];
         const currentTagCount = parseInt(packageToUpdate.tag);
 
-        console.log("Package to update:", JSON.stringify(packageToUpdate, null, 2));
-        console.log("Current tag count:", currentTagCount);
+        // console.log("Package to update:", JSON.stringify(packageToUpdate, null, 2));
+        // console.log("Current tag count:", currentTagCount);
 
         // Update the tag field by reducing it by 1
         const { data: updatedData, error: updateError } = await supabase
@@ -368,7 +368,7 @@ exports.reduceTagCount = async (req, res) => {
             });
         }
 
-        console.log("Update successful:", JSON.stringify(updatedData, null, 2));
+        // console.log("Update successful:", JSON.stringify(updatedData, null, 2));
 
         res.status(200).json({
             success: true,

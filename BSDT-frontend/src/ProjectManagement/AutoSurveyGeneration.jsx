@@ -2,6 +2,7 @@ import React from "react";
 import { useState, useEffect } from "react";
 import AISurveyChatbot from "../SurveyTemplate/Components/LLL-Generated-Question/AISurveyChatbot";
 import PremiumPackagesModal from "../ProfileManagement/PremiumFeatures/PremiumPackagesModal";
+import LoadingOverlay from "./LoadingOverlay";
 import "./AutoSurveyGeneration.css";
 import apiClient from "../api";
 
@@ -13,6 +14,8 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel, canEdit }) => {
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [allValidPackages, setAllValidPackages] = useState([]);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingPhase, setLoadingPhase] = useState("initial");
 
   // Check user subscription on component mount
   useEffect(() => {
@@ -99,12 +102,26 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel, canEdit }) => {
 
   const handleGenerateSurvey = async (surveyMeta) => {
     setShowSurveyChatbot(false);
+    setIsLoading(true);
+    setLoadingPhase("initial");
     
     try {
+      // Simulate processing delay
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      
+      // Show the "almost there" message
+      setLoadingPhase("almost-there");
+      await new Promise((resolve) => setTimeout(resolve, 4000));
+      
+      // Call the actual survey generation
       await onGenerateSurvey(surveyMeta);
-      checkUserSubscription();
+      
+      // Refresh subscription data after successful generation
+      await checkUserSubscription();
     } catch (error) {
       console.error("Error generating survey:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -260,6 +277,8 @@ const AutoSurveyGeneration = ({ onGenerateSurvey, getLabel, canEdit }) => {
           getLabel={getLabel}
         />
       )}
+      
+      {isLoading && <LoadingOverlay phase={loadingPhase} />}
     </>
   );
 };

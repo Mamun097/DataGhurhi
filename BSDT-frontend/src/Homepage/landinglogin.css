@@ -1,0 +1,264 @@
+.dg-container {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #c0f5e6, #f9ffff);
+  font-family: "Poppins", sans-serif;
+}
+
+/* LEFT SIDE */
+.dg-left {
+  width: 65%;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+}
+
+/* HERO ROW */
+.dg-hero-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* Logo wrapper */
+.dg-logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+/* Wrap for positioning */
+.dg-logo-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Beta Version text */
+.dg-beta-version {
+  position: absolute;
+  bottom: -4px;   /* pushes below logo tail */
+  right: -1px;    /* aligns near the tail */
+  font-size: 14px;
+  color: #c43c3c;   /* matches your logo red */
+  font-weight: 700;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.dg-logo-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dg-logo {
+  width: 100px;  /* adjust if needed */
+  height: auto;
+}
+.dg-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #034631;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+}
+
+.dg-brand {
+  color: #00856b;
+}
+
+
+/* Language Toggle */
+.dg-lang {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.dg-switch {
+  width: 46px;
+  height: 21px;
+  position: relative;
+}
+.dg-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.dg-slider {
+  position: absolute;
+  inset: 0;
+  background: #094737;
+  border-radius: 30px;
+  transition: 0.3s;
+}
+.dg-slider:before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #12f0cc;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.dg-switch input:checked + .dg-slider {
+  background: #00785a;
+}
+.dg-switch input:checked + .dg-slider:before {
+  transform: translateX(25px);
+}
+.dg-lang-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #045b44;
+}
+.dg-lang-text :active {
+  opacity: 1;
+  font-weight: bold;
+  color: #ff004c;
+}
+/* Slide Card */
+.dg-slide-card {
+  display: flex;
+  gap: 25px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(14px);
+  padding: 30px 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  min-height: max-content;
+}
+.dg-slide-img {
+  margin: auto;
+  max-width: 45%;
+  max-height: 65%;
+  align-items: center;
+}
+.dg-slide-text {
+  width: 55%;
+}
+.dg-slide-text h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+  color: #03382c;
+  font-weight: 700;
+}
+.dg-slide-text ul {
+  padding-left: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #31423c;
+}
+
+/* CTA Buttons */
+.dg-cta {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+.dg-btn {
+  padding: 8px 16px;
+  border-radius: 7px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.dg-btn-primary {
+  background: #006d56;
+  color: white;
+}
+.dg-btn-outline {
+  background: transparent;
+  color: #006d56;
+  border: 2px solid #006d56;
+}
+.dg-btn-outline:hover {
+  background: #006d56;
+  color: #fff;
+}
+
+/* RIGHT SIDE - LOGIN */
+.dg-right {
+  width: 35%;
+  background: linear-gradient(135deg, #eaeeec, #c8e6d7);
+  padding: 100px 20px;
+  box-shadow: -6px 0 20px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+}
+.dg-login-box {
+  flex: 1;
+  padding: 90px 40px;
+  text-align: center;
+  background: #bce9d6cc;
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+}
+.dg-login-title {
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  text-align: center;
+  font-weight: 700;
+  color: #03382c;
+}
+.dg-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dg-form input {
+  padding: 12px;
+  border: 1.6px solid #cde8df;
+  border-radius: 8px;
+  outline: none;
+}
+.dg-form input:focus {
+  border-color: #1aa986;
+}
+.dg-pass-box {
+  position: relative;
+}
+.dg-eye {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.6;
+}
+.dg-eye:hover {
+  opacity: 1;
+}
+.dg-error {
+  color: red;
+  font-size: 0.75rem;
+}
+.dg-link {
+  text-align: center;
+  font-size: 0.82rem;
+}
+.dg-link a {
+  color: #006d56;
+  font-weight: 600;
+}
+.dg-forgot {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #444;
+}
+
+/* 📱 Mobile Responsive */
+@media(max-width: 900px) {
+  .dg-container { flex-direction: column; height: auto; }
+  .dg-left, .dg-right { width: 100%; }
+  .dg-slide-card { flex-direction: column; text-align: center; }
+  .dg-slide-img { width: 100%; }
+  .dg-slide-text { width: 100%; }
+}

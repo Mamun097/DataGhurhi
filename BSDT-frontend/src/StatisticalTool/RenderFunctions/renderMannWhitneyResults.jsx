@@ -68,6 +68,210 @@ const fontFamilyOptions = [
 ];
 
 const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab, results, language, user_id, testType, filename, columns) => {
+
+
+    const renderIdenticalValuesWarning = (results, language, columns) => {
+        const mapDigitIfBengali = (text) => {
+            if (!text) return '';
+            if (language !== 'বাংলা') return text;
+            const digitMapBn = {
+                '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+                '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
+                '.': '.'
+            };
+            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+        };
+
+        return (
+            <div className="stats-results-container stats-fade-in">
+                <div className="stats-header">
+                    <h2 className="stats-title">
+                        {results.test || (language === 'বাংলা' ? 'ম্যান-হুইটনি ইউ টেস্ট' : 'Mann-Whitney U Test')}
+                    </h2>
+                </div>
+
+                <div className="stats-identical-values-warning">
+                    <div className="stats-warning-icon">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2">
+                            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.346 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    
+                    <h3 className="stats-warning-title">
+                        {language === 'বাংলা' ? 'পরিসংখ্যানগত পরীক্ষার প্রয়োজন নেই' : 'Statistical Test Not Required'}
+                    </h3>
+                    
+                    <div className="stats-warning-card">
+                        <p>
+                            {language === 'বাংলা' ? 
+                                'আপনার ডেটার সকল মান একই। ম্যান-হুইটনি পরীক্ষা চালানোর প্রয়োজন নেই, কারণ উভয় গোষ্ঠীর মান অভিন্ন।' :
+                                'All values in your data are identical. Mann-Whitney test is not required because both groups have the same values.'
+                            }
+                        </p>
+                        
+                        <div className="stats-simple-summary">
+                            <div className="stats-summary-item">
+                                <span className="stats-summary-label">{language === 'বাংলা' ? 'সকল মান:' : 'All values:'}</span>
+                                <span className="stats-summary-value">{mapDigitIfBengali(results.identical_value || '0')}</span>
+                            </div>
+                            <div className="stats-summary-item">
+                                <span className="stats-summary-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ:' : 'Total observations:'}</span>
+                                <span className="stats-summary-value">{mapDigitIfBengali(results.n_observations || '0')}</span>
+                            </div>
+                        </div>
+                        
+                        {/* Group information */}
+                        <div className="stats-groups-info">
+                            <h4>{language === 'বাংলা' ? 'গোষ্ঠীর তথ্য' : 'Group Information'}</h4>
+                            <div className="stats-groups-list">
+                                {results.groups && results.group_sizes && results.groups.map((group, idx) => (
+                                    <div key={idx} className="stats-group-item">
+                                        <span className="stats-group-name">{group}:</span>
+                                        <span className="stats-group-count">
+                                            {mapDigitIfBengali(results.group_sizes[group] || 0)} {language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'observations'}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="stats-explanation">
+                        <h4>{language === 'বাংলা' ? 'কেন এই পরীক্ষা চালানো যায়নি?' : 'Why the test cannot be performed?'}</h4>
+                        <p>
+                            {language === 'বাংলা' ? 
+                                'ম্যান-হুইটনি পরীক্ষাটি র্যাঙ্কিং-ভিত্তিক। যখন সকল মান একই হয়, তখন সকল র্যাঙ্ক একই হয়ে যায় এবং পরিসংখ্যানগতভাবে কোন পার্থক্য বিশ্লেষণ করা যায় না।' :
+                                'The Mann-Whitney test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.'
+                            }
+                        </p>
+                    </div>
+                </div>
+
+                <style jsx="true">{`
+                    .stats-identical-values-warning {
+                        text-align: center;
+                        padding: 40px 20px;
+                        max-width: 800px;
+                        margin: 0 auto;
+                    }
+                    
+                    .stats-warning-icon {
+                        margin-bottom: 20px;
+                    }
+                    
+                    .stats-warning-title {
+                        color: #d97706;
+                        font-size: 24px;
+                        font-weight: 600;
+                        margin: 0 0 24px 0;
+                    }
+                    
+                    .stats-warning-card {
+                        background: #fffbeb;
+                        border: 2px solid #fbbf24;
+                        border-radius: 12px;
+                        padding: 30px;
+                        margin-bottom: 30px;
+                    }
+                    
+                    .stats-warning-card p {
+                        font-size: 18px;
+                        color: #92400e;
+                        line-height: 1.6;
+                        margin-bottom: 20px;
+                    }
+                    
+                    .stats-simple-summary {
+                        display: flex;
+                        justify-content: center;
+                        gap: 40px;
+                        margin-top: 20px;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .stats-summary-item {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                    }
+                    
+                    .stats-summary-label {
+                        font-size: 14px;
+                        color: #6b7280;
+                        margin-bottom: 4px;
+                    }
+                    
+                    .stats-summary-value {
+                        font-size: 24px;
+                        font-weight: 700;
+                        color: #059669;
+                        font-family: 'Courier New', monospace;
+                    }
+                    
+                    .stats-groups-info {
+                        margin-top: 30px;
+                        padding-top: 20px;
+                        border-top: 1px solid #fbbf24;
+                    }
+                    
+                    .stats-groups-info h4 {
+                        color: #92400e;
+                        margin: 0 0 16px 0;
+                        font-size: 18px;
+                    }
+                    
+                    .stats-groups-list {
+                        display: flex;
+                        justify-content: center;
+                        gap: 40px;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .stats-group-item {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        padding: 12px 20px;
+                        background: white;
+                        border-radius: 8px;
+                        border: 1px solid #fbbf24;
+                    }
+                    
+                    .stats-group-name {
+                        font-weight: 600;
+                        color: #374151;
+                        margin-bottom: 4px;
+                    }
+                    
+                    .stats-group-count {
+                        color: #059669;
+                        font-size: 16px;
+                    }
+                    
+                    .stats-explanation {
+                        background: #f9fafb;
+                        border-radius: 10px;
+                        padding: 24px;
+                        margin-top: 30px;
+                        text-align: left;
+                    }
+                    
+                    .stats-explanation h4 {
+                        color: #374151;
+                        margin: 0 0 12px 0;
+                        font-size: 18px;
+                    }
+                    
+                    .stats-explanation p {
+                        color: #4b5563;
+                        line-height: 1.6;
+                        margin: 0;
+                    }
+                `}</style>
+            </div>
+        );
+    };
+    
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
         if (language !== 'বাংলা') return text;
@@ -79,6 +283,45 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return text.toString().split('').map(char => digitMapBn[char] || char).join('');
     };
 
+    // DEBUG: Log the results structure
+    console.log("Mann-Whitney Results:", results);
+    console.log("Has identical_values?", results?.identical_values);
+    
+    // Check if results is null or undefined
+    if (!results) {
+        return (
+            <div className="stats-loading">
+                <div className="stats-spinner"></div>
+                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+            </div>
+        );
+    }
+    
+    // Check for loading state
+    if (results.loading) {
+        return (
+            <div className="stats-loading">
+                <div className="stats-spinner"></div>
+                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+            </div>
+        );
+    }
+    
+    // Check if results has success property
+    if (results.success === false) {
+        return (
+            <div className="stats-error">
+                <div className="stats-error-icon">⚠️</div>
+                <h3>{language === 'বাংলা' ? 'ত্রুটি' : 'Error'}</h3>
+                <p>{results.error || (language === 'বাংলা' ? 'একটি ত্রুটি ঘটেছে।' : 'An error occurred.')}</p>
+            </div>
+        );
+    }
+    
+    if (results.hasOwnProperty('identical_values') && results.identical_values === true) {
+        return renderIdenticalValuesWarning(results, language, columns);
+    }
+    
     const activeTab = mannWhitneyActiveTab;
     const setActiveTab = setMannWhitneyActiveTab;
 
@@ -99,6 +342,16 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
     const [rankSettings, setRankSettings] = React.useState(
         getDefaultSettings('Rank', categoryCount, categoryNames)
     );
+
+
+    if (results.is_explanation) {
+        return (
+            <div className="info-box">
+                <p>{results.message}</p>
+            </div>
+        );
+    }
+
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
