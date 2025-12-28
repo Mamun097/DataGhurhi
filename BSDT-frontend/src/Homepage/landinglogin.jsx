@@ -133,6 +133,7 @@ const LandingLogin = () => {
       const res = await apiClient.post("/api/login", formData, { withCredentials: true });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", "user");
+      localStorage.setItem("user_type", res.data.user_type || "normal");
       localStorage.setItem("user_id", res.data.user_id);
       toast.success("Login Success");
       setTimeout(() => (window.location.href = "/dashboard"), 1500);

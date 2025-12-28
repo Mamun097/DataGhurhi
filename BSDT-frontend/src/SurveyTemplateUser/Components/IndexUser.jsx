@@ -140,7 +140,7 @@ const Index = () => {
             `/api/fetch-survey-user/${slug}`,
             config
           );
-
+          console.log("Fetched survey data:", response.data);
           const surveyData = response.data.data;
           setTemplate(surveyData);
 
@@ -160,10 +160,19 @@ const Index = () => {
           setTotalMarks(surveyData.template?.quiz_settings?.total_marks || 0);
         } catch (err) {
           console.error("Failed to load template:", err);
-          // Handle errors (redirects/alerts)
-          if (err.response?.data?.status === "LOGIN_REQUIRED") {
-            alert(err.response.data.message);
-            navigate("/");
+          if (err.response) {
+            if (err.response.data?.status === "LOGIN_REQUIRED") {
+              alert(err.response.data.message);
+              navigate("/");
+            } else if (err.response.data?.status === "ALREADY_SUBMITTED") {
+              alert(err.response.data.message);
+              navigate("/");
+            } else {
+              alert(
+                err.response.data.message || "This survey could not be loaded."
+              );
+              navigate("/");
+            }
           } else {
             navigate("/");
           }

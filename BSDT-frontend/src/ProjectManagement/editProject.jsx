@@ -253,8 +253,7 @@ const ProjectDetailsTab = ({
         survey_template: {
           title: surveyMeta.topic,
           description: null,
-          backgroundImage:
-            "https://external-content.duckduckgo.com/iu/?u=https%3A%2F%2Fwww.pixelstalk.net%2Fwp-content%2Fuploads%2F2016%2F10%2FBlank-Wallpaper-HD.jpg&f=1&nofb=1",
+          backgroundImage: null,
           sections: [{ id: 1, title: "Section 1" }],
           questions: questions.map((q, i) => ({
             id: i + 1,

@@ -333,7 +333,7 @@ const SurveySections = ({
   };
 
   return (
-    <div className="survey-section__container container-fluid shadow border bg-transparent rounded p-3 mt-5 mb-3">
+    <div className="survey-section__container container-fluid shadow border bg-transparent p-3 mt-5 mb-3">
       <div className="survey-section__header d-flex justify-content-between align-items-start">
         <div className="flex-grow-1">
           {sections.length > 1 && (
