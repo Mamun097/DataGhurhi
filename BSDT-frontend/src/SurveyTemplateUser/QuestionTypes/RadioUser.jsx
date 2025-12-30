@@ -130,10 +130,19 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
       {/* Radio Options */}
       <div>
         {shuffledOptions.map((option, idx) => (
-          <div key={idx} className="form-check mb-3 ps-2 ms-3">
+          <div
+            key={idx}
+            // className="form-check mb-3 ps-2 ms-3"
+            className="form-check p-2 mb-2 ms-2"
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              alignItems: "flex-start",
+            }}
+          >
             <input
               type="radio"
-              className="form-check-input me-2"
+              className="form-check-input"
               name={`radio-${question.id}`}
               id={`radio-opt-${question.id}-${idx}`}
               value={option}
@@ -145,10 +154,26 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
               onClick={handleAnswerClick}
               required={question.required}
               disabled={question.disabled}
+              style={{
+                cursor: question.disabled ? "not-allowed" : "pointer",
+                alignSelf: "flex-start",
+                flex: "0 0 auto",
+                width: "1.25rem",
+                height: "1.25rem",
+                marginTop: "0.35rem",
+              }}
             />
             <label
               className="form-check-label pe-2 mt-2"
               htmlFor={`radio-opt-${question.id}-${idx}`}
+              style={{
+                fontSize: "1rem",
+                cursor: question.disabled ? "not-allowed" : "pointer",
+                flex: "1 1 0",
+                whiteSpace: "normal",
+                margin: 0,
+                lineHeight: 1.2,
+              }}
             >
               {option || `Option ${idx + 1}`}
             </label>
@@ -156,43 +181,64 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
         ))}
       </div>
       {question.otherAsOption && (
-        <div className="form-check mb-3 ps-2 ms-3 d-flex align-items-center">
-          <input
-            type="radio"
-            value={otherOption}
-            checked={userAnswer === otherOption}
-            onChange={(e) => {
-              handleAnswerChange(e);
-              setOtherSelected((prev) => !prev);
+        <>
+          <div
+            className="form-check mb-3 ps-2 ms-3"
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
             }}
-            onClick={(e) => {
-              handleAnswerClick(e);
-              if (userAnswer === otherOption) {
-                setOtherSelected(false); // Set to false when deselecting "Other"
-              }
-            }}
-            required={question.required}
-            disabled={question.disabled}
-            className="form-check-input me-2"
-            name={`radio-${question.id}`}
-            id={`radio-other-${question.id}`}
-          />
-          <label
-            className="form-check-label pe-2"
-            htmlFor={`radio-other-${question.id}`}
           >
-            {otherLabel}
-          </label>
+            <input
+              type="radio"
+              value={otherOption}
+              checked={userAnswer === otherOption}
+              onChange={(e) => {
+                handleAnswerChange(e);
+                setOtherSelected((prev) => !prev);
+              }}
+              onClick={(e) => {
+                handleAnswerClick(e);
+                if (userAnswer === otherOption) {
+                  setOtherSelected(false); // Set to false when deselecting "Other"
+                }
+              }}
+              required={question.required}
+              disabled={question.disabled}
+              className="form-check-input me-2"
+              name={`radio-${question.id}`}
+              id={`radio-other-${question.id}`}
+              style={{
+                flex: "0 0 auto",
+                marginTop: "0.35rem",
+                cursor: question.disabled ? "not-allowed" : "pointer",
+              }}
+            />
+            <label
+              className="form-check-label pe-2"
+              htmlFor={`radio-other-${question.id}`}
+              style={{
+                flex: "1 1 auto",
+                margin: 0,
+                lineHeight: 1.2,
+                cursor: question.disabled ? "not-allowed" : "pointer",
+              }}
+            >
+              {otherLabel}
+            </label>
+          </div>
           <input
             type="text"
-            className="form-control ms-2"
+            className="form-control"
             style={{ maxWidth: "300px" }}
             placeholder="Write your own option"
             value={otherOption}
             onChange={handleEditOtherOption}
             required={otherSelected}
           />
-        </div>
+        </>
       )}
     </div>
   );
