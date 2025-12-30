@@ -242,3 +242,31 @@ margin-bottom: 20px;
   background: rgba(0, 0, 0, 0.04);
 }
 
+.duplicate-info-banner{
+  background-color: #fbdfdf;
+  color: #611703;
+  border: 1px solid #ffeeba;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.ag-toolbar .toolbar-item {
+  display: flex;
+  flex-direction: column;
+  border-right: auto;
+  align-items: center;
+  font-size: 11px;
+  color: #444;
+  cursor: pointer;
+  min-width: 44px;
+}
+
+.ag-toolbar .toolbar-item span {
+  margin-top: 2px;
+}
+
+.ag-toolbar .toolbar-item:hover {
+  color: #000;
+}

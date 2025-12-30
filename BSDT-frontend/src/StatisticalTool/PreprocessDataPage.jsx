@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useRef, useCallback, use } from 'react';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -49,7 +49,8 @@ const PreprocessDataPage = () => {
   const panelRef = useRef(null);
   const draggingRef = useRef(null);
   const resizingRef = useRef(null);
-
+  const [workbookUrl, setWorkbookUrl] = useState('');
+  const [prefixInput, setPrefixInput] = useState('');
   // Language
   const [language, setLanguage] = useState(() => localStorage.getItem("language") || "English");
   useEffect(() => localStorage.setItem("language", language), [language]);
@@ -111,10 +112,12 @@ const PreprocessDataPage = () => {
       headers: {
         'Content-Type': 'application/json',
         'userID': userId,
-        'filename': filename,
-        'sheet': sessionStorage.getItem("activesheetname") || '',
-        'Fileurl': sessionStorage.getItem("fileURL") || ''
-      }
+      },
+       body: JSON.stringify({ 
+        filename,     
+        sheet: sessionStorage.getItem("activesheetname") || "",
+        Fileurl: sessionStorage.getItem("fileURL") || '' 
+           })
     })
       .then(r => r.json())
       .then(s => {
@@ -199,12 +202,14 @@ const PreprocessDataPage = () => {
           .then(res => {
             if (res.success) {
               sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []);
-              setAvailableColumns(res.columns || []);
+              setColumns(res.columns || []); 
+              setAvailableColumns(res.columns || []); 
               setData(res.rows || []);
-              setColumnsToDelete([]);
+              
               setIsRightPanelOpen(false);
               alert("column deleted successfully!!!")
+              setColumnsToDelete([]);
+              console.log(sessionStorage.getItem("fileURL") );
             } else alert(res.error || "Error");
           });
         break;
@@ -225,7 +230,7 @@ const PreprocessDataPage = () => {
                         columns: duplicateColumns,
                         filename,     
                         sheet: sessionStorage.getItem("activesheetname") || "",
-                        Fileurl: sessionStorage.getItem("fileURL") || ''
+                        Fileurl: sessionStorage.getItem("fileURL") || '' 
                        }),
                     })
           .then(r => r.json())
@@ -391,7 +396,8 @@ const PreprocessDataPage = () => {
             body: JSON.stringify({
             filename,     
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || ''
+            Fileurl: sessionStorage.getItem("fileURL") || '',
+            prefix: prefixInput
           })
         })
           .then(r => r.json())
@@ -408,7 +414,11 @@ const PreprocessDataPage = () => {
       default:
         alert("Unknown option");
     }
+    setWorkbookUrl(`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`);
   };
+  useEffect(() => {
+    setWorkbookUrl(`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`);
+  }, [data]);
 const handleReapply = () => {
   if (selectedOption && selectedOption !== "open") {
     setIsRightPanelOpen(true);
@@ -429,39 +439,48 @@ const handleReapply = () => {
           </div>
 
           <div className="topbar-right">
-           <div className="select-wrap">
-              <select
-                className="select-input"
-                value={selectedOption}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setSelectedOption(value);
-                  if (value !== "open") setIsRightPanelOpen(true);
-                }}
-              >
-                <option value="open">Preprocessing Menu</option>
-                <option value="delete_column">Delete Column</option>
-                <option value="remove_duplicates">Remove Duplicates</option>
-                <option value="handle_missing">Handle Missing</option>
-                <option value="handle_outliers">Handle Outliers</option>
-                <option value="rank_column">Rank Column</option>
-                <option value="split_column">Split Column</option>
-                <option value="generate_id">Generate Unique ID</option>
-              </select>
- </div>
-            {/* customize icon */}
+          <div className="select-wrap">
+            <select
+              className="select-input"
+              value={selectedOption}
+
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedOption(value);
+                if (value !== "open") {
+                  setIsRightPanelOpen(true);
+                }
+              }}
+                  onClick={() => {
+                if (selectedOption !== "open") {
+                  setIsRightPanelOpen(true);
+                }
+              }}
+            >
+              <option value="open">Preprocessing Menu</option>
+              <option value="delete_column">Delete Column</option>
+              <option value="remove_duplicates">Remove Duplicates</option>
+              <option value="handle_missing">Handle Missing</option>
+              <option value="handle_outliers">Handle Outliers</option>
+              <option value="rank_column">Rank Column</option>
+              <option value="split_column">Split Column</option>
+              <option value="generate_id">Generate Unique ID</option>
+            </select>
+          </div>
+
+            {/* customize icon
             <div className="customize-icon-container">
               <button
                 className="customize-icon-btn"
                 onClick={handleReapply}
               >
                 <SlidersVertical size={20}  />  {/* smaller icon */}
-              </button>
+              {/* </button>
 
               <div className="customize-tooltip">
                 Reapply
               </div>
-            </div>
+            </div> */} 
 
            
 
@@ -692,9 +711,17 @@ const handleReapply = () => {
 
                 {/* Generate ID */}
                 {selectedOption === 'generate_id' && (
+                  <>
                   <div className="panel-section">
                     <p className="panel-info">This will add a <strong>row_id</strong> column (1..N).</p>
                   </div>
+                  <div className="panel-section">
+                    <label className="panel-label">Prefix (optional) </label>
+                    <p style={{fontSize:"small", color:"gray"}}>Prefix will be added before the numeric ID. E.g., "ID_" will generate IDs like "ID_1", "ID_2", ...
+                  </p>
+                    <input className="text-input" value={prefixInput} onChange={(e) => setPrefixInput(e.target.value)} />
+                  </div>
+                  </>
                 )}
 
               </details>
@@ -712,11 +739,13 @@ const handleReapply = () => {
       
         
         <PreviewTable
-          workbookUrl={`${API_BASE}${sessionStorage.getItem("fileURL")}`}
-          //workbookUrl={`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`}
+          workbookUrl={workbookUrl}
+          setWorkbookUrl={setWorkbookUrl}
           columns={columns}
           duplicateIndices={duplicateIndices}
+          duplicateColumns={duplicateColumns}
           setData={setData}
+          initialData={data}
           setIsPreviewModalOpen={() => {}}
           isPreviewModalOpen={false}
           outlierCells={outlierCells}

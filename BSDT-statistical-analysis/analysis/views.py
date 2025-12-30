@@ -7515,7 +7515,7 @@ def delete_columns_api(request):
             'success': True,
             'message': f'Deleted columns: {columns}',
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'rows': df.fillna("").astype(str).to_dict(orient='records'), 
             'file_url': file_url
         })
 
@@ -7747,6 +7747,20 @@ def remove_duplicates(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
         before = len(df)
+        # Normalize dataframe column names
+        df.columns = (
+            df.columns
+            .astype(str)
+            .str.strip()                 # remove leading/trailing spaces
+            .str.replace(r'\s+', ' ', regex=True)  # collapse multiple spaces
+        )
+        # Normalize input column names
+        columns = [
+            str(c).strip().replace('_', ' ')
+            for c in columns
+        ]
+
+
 
         if mode == "all":
             # If columns not given, use all columns
@@ -7962,7 +7976,7 @@ def outliers_summary_api(request):
                     'value': safe_value
                 })
 
-        # print(num_cols)
+        # print(num_cols)  
         # print(outliers_summary)
         # print(outlier_cells) 
 
@@ -8111,7 +8125,18 @@ def rank_categorical_column_api(request):
             return JsonResponse({'success': False, 'error': 'Invalid column or mapping.'})
 
         new_col = col + '_ranked'
-        df[new_col] = df[col].map(mapping)
+        # df[new_col] = df[col].map(mapping)
+        
+
+        # Get index of original column
+        col_index = df.columns.get_loc(col) 
+
+        # Create ranked values
+        ranked_series = df[col].map(mapping)
+
+        # Insert ranked column right after original
+        df.insert(col_index + 1, new_col, ranked_series)
+
 
         df.to_excel(preprocess_file_path, index=False)
 
@@ -8121,7 +8146,7 @@ def rank_categorical_column_api(request):
             'success': True,
             'message': f"Column '{col}' ranked into '{new_col}'",
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'rows': df.fillna("").astype(str).to_dict(orient='records'),
             'file_url': file_url
         })
 
@@ -8321,41 +8346,89 @@ def split_column_api(request):
                 i += 1
             return Counter(result)
 
-        # --- Helper: extract main label before parentheses ---
-        def extract_main_label(text):
+       
+        # --- Split Logic ---
+        def extract_labels(text, method): 
             if pd.isna(text):
                 return []
-            # Split by comma outside parentheses
-            items = re.split(r',\s*(?![^()]*\))', text)
-            main_labels = []
-            for item in items:
-                main = re.split(r'\(', item)[0].strip().lower()  # main part before '('
-                if main:
-                    main_labels.append(main)
-            return main_labels
 
-        # --- Split Logic ---
-        if method == 'comma':
-            # Step 1: split and normalize main labels
-            split_data = df[column].apply(extract_main_label)
-            all_labels = sorted({label for sublist in split_data for label in sublist})
+            text = str(text)
 
-            # Step 2: one-hot encode
+            if method == 'comma':
+                items = re.split(r',\s*(?![^()]*\))', text)
+                return [
+                    re.split(r'\(', item)[0].strip().lower()
+                    for item in items
+                    if item.strip()
+                ]
+
+            elif method == 'semicolon':
+                return [
+                    item.strip().lower()
+                    for item in text.split(';')
+                    if item.strip()
+                ]
+
+            elif method == 'tags':
+                return [
+                    tag.strip().lower()
+                    for tag in re.findall(r'<(.*?)>', text)
+                    if tag.strip()
+                ]
+
+            elif method == 'custom':
+                return []  # handled separately
+
+            return []
+
+        # if method == 'comma':
+        #     # Step 1: split and normalize main labels
+        #     split_data = df[column].apply(extract_main_label)
+        #     all_labels = sorted({label for sublist in split_data for label in sublist})
+
+        #     # Step 2: one-hot encode
+        #     df_split = pd.DataFrame()
+        #     for label in all_labels:
+        #         df_split[f"{column}[{label}]"] = split_data.apply(lambda x: 1 if label in x else 0)
+
+        #     new_cols = df_split.columns.tolist()
+
+        # elif method == 'semicolon': 
+        #     df_split = df[column].astype(str).str.split(';', expand=True)
+        #     df_split.columns = [f"{column}[{i}]" for i in df_split.columns]
+        #     new_cols = df_split.columns.tolist()
+
+        # elif method == 'tags':
+        #     df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
+        #     df_split.columns = [f"{column}[{col.strip()}]" for col in df_split.columns]
+        #     new_cols = df_split.columns.tolist()
+
+
+        if method in ['comma', 'semicolon', 'tags']:
+
+            # Step 1: extract labels
+            split_data = df[column].apply(lambda x: extract_labels(x, method))
+
+            # Step 2: collect unique labels
+            all_labels = sorted(
+                {label for sublist in split_data for label in sublist}
+            )
+
+            if not all_labels:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No valid values found to split.'
+                })
+
+            # Step 3: one-hot encode 
             df_split = pd.DataFrame()
             for label in all_labels:
-                df_split[f"{column}[{label}]"] = split_data.apply(lambda x: 1 if label in x else 0)
+                df_split[f"{column}[{label}]"] = split_data.apply(
+                    lambda x: 1 if label in x else 0
+                )
 
             new_cols = df_split.columns.tolist()
 
-        elif method == 'semicolon':
-            df_split = df[column].astype(str).str.split(';', expand=True)
-            df_split.columns = [f"{column}[{col.strip()}]" for col in df_split.columns]
-            new_cols = df_split.columns.tolist()
-
-        elif method == 'tags':
-            df_split = df[column].astype(str).str.extractall(r'<(.*?)>').unstack().droplevel(0, axis=1)
-            df_split.columns = [f"{column}[{col.strip()}]" for col in df_split.columns]
-            new_cols = df_split.columns.tolist()
 
         elif method == 'custom' and phrases:
             df_split = pd.DataFrame()
@@ -8505,6 +8578,7 @@ def generate_unique_id_column_api(request):
         filename = data.get("filename")
         sheet = data.get("sheet")
         file_url = data.get("Fileurl")
+        prefix = data.get("prefix")
 
         if not user_id:
             return JsonResponse({'success': False, 'error': 'User ID not provided.'})
@@ -8543,6 +8617,8 @@ def generate_unique_id_column_api(request):
             return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
 
         col_name = 'row_id'
+        if prefix:
+            col_name = f"{prefix}_row_id" 
         row_id_column = pd.DataFrame({col_name: np.arange(1, len(df) + 1)})
         df = pd.concat([row_id_column, df], axis=1)
 
@@ -8553,7 +8629,7 @@ def generate_unique_id_column_api(request):
             'success': True,
             'message': f"Column '{col_name}' added with unique IDs.",
             'columns': df.columns.tolist(),
-            'rows': df.head(100).fillna("").astype(str).to_dict(orient='records'),
+            'rows': df.fillna("").astype(str).to_dict(orient='records'),
             'file_url': file_url,
         })
 

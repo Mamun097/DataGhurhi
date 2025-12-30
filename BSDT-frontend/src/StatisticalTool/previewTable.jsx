@@ -15,6 +15,11 @@ import {
   Plus,
   Save,
   CloudUpload,
+  Copy, 
+  ClipboardPaste,
+   Undo2,
+    Redo2 
+
 } from "lucide-react";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import "./previewTable.css";
@@ -37,11 +42,12 @@ const PreviewTable = ({
   outlierCells = [],
   selectedOption = "",
   duplicateIndices = [],
-
+  duplicateColumns,
   workbookFile,
   defaultSheetName,
   initialData,
   workbookUrl,
+ setWorkbookUrl,
   multiSheetData,
 }) => {
   //const API_BASE = "http://127.0.0.1:8000/api";
@@ -353,7 +359,61 @@ const PreviewTable = ({
 
     loadWorkbook();
   
-  }, [workbookUrl, multiSheetData, initialData, workbookFile, defaultSheetName]);
+  }, [workbookUrl, multiSheetData, initialData, workbookFile, defaultSheetName, columns]);
+const ensureBlankRowsAtEnd = (sheet, count = 10) => {
+  if (!sheet || !Array.isArray(sheet.data)) return sheet;
+
+  const cols = sheet.columns;
+  if (!cols) return sheet;
+
+  // remove header
+  const header = sheet.data[0];
+  const body = sheet.data.slice(1);
+
+  // count trailing blanks
+  let trailing = 0;
+  for (let i = body.length - 1; i >= 0; i--) {
+    const row = body[i];
+    const empty = cols.every((c) => row[c] === "" || row[c] == null);
+    if (empty) trailing++;
+    else break;
+  }
+
+  const need = Math.max(0, count - trailing);
+
+  for (let i = 0; i < need; i++) {
+    const newRow = { __rowIdx: body.length + 1 + i };
+    cols.forEach((c) => (newRow[c] = ""));
+    body.push(newRow);
+  }
+
+  // rebuild data with correct indexes
+  sheet.data = [
+    { ...header, __rowIdx: 0 },
+    ...body.map((r, i) => ({ __rowIdx: i + 1, ...r })),
+  ];
+
+  return sheet;
+};
+useEffect(() => {
+  const active = sheetsRef.current[activeSheetIndex];
+  if (!active) return;
+
+  // fix padding
+  const clone = { ...active, data: [...active.data] };
+  ensureBlankRowsAtEnd(clone, 10);
+
+  // if changed, update sheet + grid
+  if (clone.data.length !== active.data.length) {
+    const newSheets = [...sheetsRef.current];
+    newSheets[activeSheetIndex] = clone;
+    sheetsRef.current = newSheets;
+    setSheets(newSheets);
+
+    const api = gridApiRef.current;
+    if (api?.setRowData) api.setRowData(clone.data);
+  }
+}, [sheets, activeSheetIndex]);
 
   
   const pushToHistory = useCallback(
@@ -600,7 +660,7 @@ const confirmAndRemove = async (mode) => {
 
       },
       body: JSON.stringify({
-        columns,
+        columns:duplicateColumns,
         mode,
         selected: selectedDuplicates,
          filename: sessionStorage.getItem("file_name"),
@@ -610,6 +670,8 @@ const confirmAndRemove = async (mode) => {
     });
 
     const json = await res.json();
+    sessionStorage.setItem("fileURL", json.file_url);
+    setWorkbookUrl(json.file_url);
     if (!json.success) return alert(json.error || "Failed.");
 
     
@@ -680,7 +742,10 @@ const confirmAndRemove = async (mode) => {
 
     pushToHistory(activeSheetIndex);
     setSelectedDuplicates([]);
+    duplicateIndices.length = 0; // clear duplicates
+    selectedOption=""; // reset mode
     alert(json.message);
+
   } catch (e) {
     alert("Error: " + (e.message || e));
   }
@@ -745,15 +810,51 @@ const confirmAndRemove = async (mode) => {
           updatedRows.push(sh.data[rowIndex]);
         });
 
-        // apply transactions: update existing rows, add new rows if needed
         if (api) {
           try {
-            if (updatedRows.length) api.applyTransaction({ update: updatedRows });
-            if (addedRows.length) api.applyTransaction({ add: addedRows });
-          } catch {
-            api.setRowData(sh.data);
+
+            const existingIds = new Set();
+            try {
+              api.forEachNode((node) => {
+                if (node && node.data && node.data.__rowIdx != null) existingIds.add(String(node.data.__rowIdx));
+              });
+            } catch (e) {
+        
+            }
+
+
+            const toUpdate = [];
+            const toAddFromUpdated = [];
+
+            updatedRows.forEach((r) => {
+              const id = String(r.__rowIdx);
+              if (existingIds.has(id)) toUpdate.push(r);
+              else toAddFromUpdated.push(r);
+            });
+
+        
+            const toAdd = [...addedRows, ...toAddFromUpdated];
+
+          
+            if (toUpdate.length) {
+              api.applyTransaction({ update: toUpdate });
+            }
+            if (toAdd.length) {
+            
+              api.applyTransaction({ add: toAdd });
+            }
+          } catch (err) {
+            
+            console.warn("Transaction update/add failed, falling back to setRowData:", err);
+            try {
+              api.setRowData(sh.data);
+            } catch (e2) {
+        
+              console.error("setRowData fallback failed:", e2);
+            }
           }
         }
+
 
         // push only changed sheet snapshot
         pushToHistory(activeSheetIndex);
@@ -1346,9 +1447,16 @@ const confirmAndRemove = async (mode) => {
 
         {totalMatches > 0 && <div className="match-count">{totalMatches} matches found</div>}
       </div>
+      {duplicateIndices.length > 0 && selectedOption === "remove_duplicates" && (
+        <div className="duplicate-info-banner">
+          Found {duplicateIndices.length} duplicate rows. You can remove duplicates using the buttons below.
+        </div>
+      )}
+    
 
       {/* Sheet Tabs */}
       <div className="sheet-tabs">
+        
         {sheets.map((sh, i) => (
           <div key={sh.id} className="sheet-tab-wrapper">
             <button className={`sheet-tab ${i === activeSheetIndex ? "active" : ""}`} onClick={() => setActiveSheetIndex(i)}>
@@ -1368,6 +1476,43 @@ const confirmAndRemove = async (mode) => {
         <button className="sheet-tab add-sheet-btn" onClick={addNewSheet}>
           <Plus size={14} /> Add Sheet
         </button>
+        <div
+      className="ag-toolbar"
+      style={{
+        display: "flex",
+        alignItems: "center",
+        marginLeft:"auto",
+        width: "fit-content",
+        gap: 20,
+        padding: "6px 12px",
+        background: "#f9f9f9",
+        border: "1px solid #ddd",
+        borderRadius: "6px 6px",
+      }}
+    >
+      <div className="toolbar-item" onClick={copySelectedRows}>
+        <Copy size={18} />
+        <span>Copy</span>
+      </div>
+
+      <div
+        className="toolbar-item"
+        onClick={() => handleClipboardPaste()}
+      >
+        <ClipboardPaste size={18} />
+        <span>Paste</span>
+      </div>
+
+      <div className="toolbar-item" onClick={undo}>
+        <Undo2 size={18} />
+        <span>Undo</span>
+      </div>
+
+      <div className="toolbar-item" onClick={redo}>
+        <Redo2 size={18} />
+        <span>Redo</span>
+      </div>
+    </div>
       </div>
 
       {/* Table */}
@@ -1533,7 +1678,7 @@ const confirmAndRemove = async (mode) => {
                 setContextMenu({ visible: false });
               }}
             >
-              📄 Copy Selected Row(s)
+              <Copy size={15} /> Copy Selected Row(s)
             </div>
 
             <div
@@ -1543,7 +1688,7 @@ const confirmAndRemove = async (mode) => {
                 setContextMenu({ visible: false });
               }}
             >
-              📥 Paste from Clipboard
+              <ClipboardPaste size={15} /> Paste from Clipboard
             </div>
 
             <div className="my-context-item" onClick={undo}>
@@ -1565,7 +1710,7 @@ const confirmAndRemove = async (mode) => {
                 setContextMenu((m) => ({ ...m, visible: false }));
               }}
             >
-              Delete This Row
+              <Trash2 size={15}/> Delete This Row
             </div>
           )}
 
@@ -1586,7 +1731,7 @@ const confirmAndRemove = async (mode) => {
                       setContextMenu((m) => ({ ...m, visible: false }));
                     }}
                   >
-                    Delete {rows.length} Selected Rows
+                   <Trash2 size={15}/> Delete {rows.length} Selected Rows
                   </div>
                 );
             })()}
