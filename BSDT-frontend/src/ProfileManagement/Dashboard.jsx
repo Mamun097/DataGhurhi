@@ -85,8 +85,12 @@ const Dashboard = () => {
 
   const [activeTab, setActiveTab] = useState(getTabFromURL() || "projects");
   const [sourceTab, setSourceTab] = useState(null);
-  const [selectedProjectId, setSelectedProjectId] = useState(getProjectIdFromURL());
-  const [selectedSurveyId, setSelectedSurveyId] = useState(getSurveyIdFromURL());
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    getProjectIdFromURL()
+  );
+  const [selectedSurveyId, setSelectedSurveyId] = useState(
+    getSurveyIdFromURL()
+  );
   const [privacyFilter, setPrivacyFilter] = useState("all");
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
@@ -95,7 +99,9 @@ const Dashboard = () => {
   const [projects, setProjects] = useState([]);
   const [projectSurveys, setProjectSurveys] = useState({});
   const [expandedProjects, setExpandedProjects] = useState(new Set());
-  const [expandedMainTabs, setExpandedMainTabs] = useState(new Set(['projects']));
+  const [expandedMainTabs, setExpandedMainTabs] = useState(
+    new Set(["projects"])
+  );
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
@@ -104,11 +110,13 @@ const Dashboard = () => {
 
   // FIX 1: Initialize userType from localStorage immediately - using "user_type" key
   const userId = localStorage.getItem("userId");
-  const [userType, setUserType] = useState(localStorage.getItem("user_type") || "normal");
-  
+  const [userType, setUserType] = useState(
+    localStorage.getItem("user_type") || "normal"
+  );
+
   // FIX 2: Add isAdmin state and initialize it properly
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
   // FIX 3: Admin states
   const [adminStats, setAdminStats] = useState({
     totalUsers: 0,
@@ -132,12 +140,12 @@ const Dashboard = () => {
     console.log("Current userType:", userType); // Debug log
     const adminStatus = userType === "admin";
     setIsAdmin(adminStatus);
-    
+
     // Set initial tab based on user type
     if (!getTabFromURL()) {
       setActiveTab(adminStatus ? "dashboard" : "projects");
     }
-    
+
     // Fetch admin stats if user is admin
     if (adminStatus) {
       fetchAdminStats();
@@ -331,13 +339,13 @@ const Dashboard = () => {
     setSelectedSurveyId(null);
     setActiveTab("projectdetails");
     setSourceTab("projects");
-    
+
     setExpandedMainTabs((prev) => {
       const newSet = new Set(prev);
-      newSet.add('projects');
+      newSet.add("projects");
       return newSet;
     });
-    
+
     const url = new URL(window.location);
     url.searchParams.set("tab", "projectdetails");
     url.searchParams.set("projectId", projectId);
@@ -349,19 +357,19 @@ const Dashboard = () => {
   const handleSurveyClick = (projectId, surveyId, survey, surveyTitle) => {
     setSelectedProjectId(projectId);
     setSelectedSurveyId(surveyId);
-    
+
     setExpandedMainTabs((prev) => {
       const newSet = new Set(prev);
-      newSet.add('projects');
+      newSet.add("projects");
       return newSet;
     });
-    
+
     setExpandedProjects((prev) => {
       const newSet = new Set(prev);
       newSet.add(projectId);
       return newSet;
     });
-    
+
     navigate(`/view-survey/${surveyId}`, {
       state: {
         project_id: projectId,
@@ -391,9 +399,12 @@ const Dashboard = () => {
   const fetchProjectSurveys = async (projectId) => {
     const token = localStorage.getItem("token");
     try {
-      const response = await apiClient.get(`/api/project/${projectId}/surveys`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
+      const response = await apiClient.get(
+        `/api/project/${projectId}/surveys`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
       if (response.status === 200) {
         setProjectSurveys((prev) => ({
           ...prev,
@@ -449,7 +460,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!isAdmin && projects.length > 0) {
-      projects.forEach(project => {
+      projects.forEach((project) => {
         fetchProjectSurveys(project.project_id);
       });
     }
@@ -559,7 +570,7 @@ const Dashboard = () => {
       ];
     } else {
       const sortedProjects = [...projects].sort((a, b) =>
-        a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+        a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
       );
 
       return [
@@ -568,11 +579,11 @@ const Dashboard = () => {
           key: "projects",
           icon: <FolderKanban size={18} />,
           hasDropdown: sortedProjects.length > 0,
-          children: sortedProjects.map(project => {
+          children: sortedProjects.map((project) => {
             const projectSurveysList = projectSurveys[project.project_id] || [];
 
             const sortedSurveys = [...projectSurveysList].sort((a, b) =>
-              a.title.localeCompare(b.title, undefined, { sensitivity: 'base' })
+              a.title.localeCompare(b.title, undefined, { sensitivity: "base" })
             );
 
             return {
@@ -581,21 +592,21 @@ const Dashboard = () => {
               projectId: project.project_id,
               icon: <Folder size={16} />,
               hasDropdown: sortedSurveys.length > 0,
-              children: sortedSurveys.map(survey => ({
+              children: sortedSurveys.map((survey) => ({
                 label: survey.title,
                 key: `survey-${survey.survey_id}`,
                 surveyId: survey.survey_id,
                 projectId: project.project_id,
                 icon: <FileText size={14} />,
-              }))
+              })),
             };
-          })
+          }),
         },
         {
           label: "Shared with Me",
           key: "shared",
           icon: <Users size={18} />,
-          badge: collabRequests.length
+          badge: collabRequests.length,
         },
         {
           label: "Question Bank",
@@ -605,7 +616,12 @@ const Dashboard = () => {
         {
           label: "Analysis",
           key: "analysis",
-          icon: <ChartColumn size={18} />
+          icon: <ChartColumn size={18} />,
+        },
+        {
+          label: "Saved Files",
+          key: "saved-files",
+          icon: <Folder size={18} />,
         },
         {
           label: "Premium Packages",
@@ -674,7 +690,10 @@ const Dashboard = () => {
     if (item.surveyId) {
       isActive = selectedSurveyId === item.surveyId;
     } else if (item.projectId) {
-      isActive = selectedProjectId === item.projectId && activeTab === "projectdetails" && !selectedSurveyId;
+      isActive =
+        selectedProjectId === item.projectId &&
+        activeTab === "projectdetails" &&
+        !selectedSurveyId;
     } else {
       if (item.key === "projects") {
         isActive = activeTab === "projects";
@@ -683,23 +702,40 @@ const Dashboard = () => {
       }
     }
 
-    const isMainTabWithChildren = level === 0 && item.hasDropdown && item.children;
+    const isMainTabWithChildren =
+      level === 0 && item.hasDropdown && item.children;
     const hasChildren = item.children && item.children.length > 0;
 
     return (
-      <li key={item.key} style={{ marginLeft: level === 0 ? '0' : `${level * 12}px` }}>
+      <li
+        key={item.key}
+        style={{ marginLeft: level === 0 ? "0" : `${level * 12}px` }}
+      >
         <div className="tooltip-container">
           <button
-            className={`sidebar-btn nested-level-${level} ${isActive ? "active" : ""} ${collapsed ? "collapsed" : ""}`}
+            className={`sidebar-btn nested-level-${level} ${
+              isActive ? "active" : ""
+            } ${collapsed ? "collapsed" : ""}`}
             onClick={() => {
               if (item.key === "premiumpackages") {
                 setShowPremiumModal(true);
+              } else if (item.key === "saved-files") {
+                navigate("/saved-files");
               } else if (item.projectId && !item.surveyId) {
                 handleProjectClick(item.projectId);
               } else if (item.surveyId) {
-                const project = projects.find(p => p.project_id === item.projectId);
-                const survey = projectSurveys[item.projectId]?.find(s => s.survey_id === item.surveyId);
-                handleSurveyClick(item.projectId, item.surveyId, survey, item.label);
+                const project = projects.find(
+                  (p) => p.project_id === item.projectId
+                );
+                const survey = projectSurveys[item.projectId]?.find(
+                  (s) => s.survey_id === item.surveyId
+                );
+                handleSurveyClick(
+                  item.projectId,
+                  item.surveyId,
+                  survey,
+                  item.label
+                );
               } else {
                 handleTabClick(item.key);
               }
@@ -710,19 +746,27 @@ const Dashboard = () => {
               <>
                 <span className="label">{item.label}</span>
                 {isMainTabWithChildren && (
-                  <span 
+                  <span
                     className="dropdown-toggle"
                     onClick={(e) => toggleMainTabExpansion(item.key, e)}
                   >
-                    {isMainTabExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    {isMainTabExpanded ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
                   </span>
                 )}
                 {hasChildren && !isMainTabWithChildren && (
-                  <span 
+                  <span
                     className="dropdown-toggle"
                     onClick={(e) => toggleProjectExpansion(item.projectId, e)}
                   >
-                    {isProjectExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    {isProjectExpanded ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
                   </span>
                 )}
               </>
@@ -739,21 +783,31 @@ const Dashboard = () => {
 
         {!collapsed && isMainTabExpanded && isMainTabWithChildren && (
           <ul className="nested-menu">
-            {item.children.map(child => renderMenuItem(child, level + 1))}
+            {item.children.map((child) => renderMenuItem(child, level + 1))}
           </ul>
         )}
 
-        {!collapsed && isProjectExpanded && hasChildren && !isMainTabWithChildren && (
-          <ul className="nested-menu">
-            {item.children.map(child => renderMenuItem(child, level + 1))}
-          </ul>
-        )}
+        {!collapsed &&
+          isProjectExpanded &&
+          hasChildren &&
+          !isMainTabWithChildren && (
+            <ul className="nested-menu">
+              {item.children.map((child) => renderMenuItem(child, level + 1))}
+            </ul>
+          )}
       </li>
     );
   };
 
   // FIX 7: Add console log to help debug
-  console.log("Dashboard render - isAdmin:", isAdmin, "userType:", userType, "activeTab:", activeTab);
+  console.log(
+    "Dashboard render - isAdmin:",
+    isAdmin,
+    "userType:",
+    userType,
+    "activeTab:",
+    activeTab
+  );
 
   return (
     <div style={{ paddingTop: "80px" }}>
@@ -769,8 +823,9 @@ const Dashboard = () => {
       >
         <div className="dashboard-layout">
           <div
-            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${collapsed ? "collapsed" : ""
-              }`}
+            className={`sidebar-menu ${isMobile ? "mobile-horizontal" : ""} ${
+              collapsed ? "collapsed" : ""
+            }`}
           >
             {!isMobile && (
               <div className="sidebar-header">
@@ -798,8 +853,9 @@ const Dashboard = () => {
           </div>
 
           <div
-            className={`projects-section ${collapsed ? "sidebar-collapsed" : ""
-              }`}
+            className={`projects-section ${
+              collapsed ? "sidebar-collapsed" : ""
+            }`}
           >
             {/* Admin Dashboard Overview */}
             {isAdmin && activeTab === "dashboard" && (
@@ -853,7 +909,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -875,7 +931,7 @@ const Dashboard = () => {
                             name={field.toLowerCase().replace(/ /g, "_")}
                             value={
                               editedValues[
-                              field.toLowerCase().replace(/ /g, "_")
+                                field.toLowerCase().replace(/ /g, "_")
                               ] || ""
                             }
                             onChange={handleInputChange}
@@ -966,17 +1022,21 @@ const Dashboard = () => {
             )}
 
             {/* Project Details Tab */}
-            {!isAdmin && activeTab === "projectdetails" && selectedProjectId && (
-              <ProjectDetailsTab
-                key={`${selectedProjectId}-${sourceTab}-${location.search}`}
-                projectId={selectedProjectId}
-                getLabel={getLabel}
-                language={language}
-                onBack={handleBackToProjects}
-                handleReject={handleReject}
-                onSurveyDeleted={() => refreshProjectSurveys(selectedProjectId)}
-              />
-            )}
+            {!isAdmin &&
+              activeTab === "projectdetails" &&
+              selectedProjectId && (
+                <ProjectDetailsTab
+                  key={`${selectedProjectId}-${sourceTab}-${location.search}`}
+                  projectId={selectedProjectId}
+                  getLabel={getLabel}
+                  language={language}
+                  onBack={handleBackToProjects}
+                  handleReject={handleReject}
+                  onSurveyDeleted={() =>
+                    refreshProjectSurveys(selectedProjectId)
+                  }
+                />
+              )}
 
             {/* Shared with Me Tab */}
             {!isAdmin && activeTab === "shared" && (
