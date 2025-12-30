@@ -1,3 +1,4 @@
+/* --- General Layout --- */
 .file-explorer {
   background-color: #f8f9fa;
   padding: 1.5rem 2rem;
@@ -15,10 +16,14 @@
   font-weight: 500;
 }
 
+/* --- Breadcrumb --- */
 .breadcrumb {
   font-size: 0.9rem;
   margin-bottom: 1.2rem;
   color: #5f6368;
+  display: flex;
+  flex-wrap: wrap; /* Allows wrapping on small screens */
+  gap: 5px;
 }
 
 .breadcrumb-item {
@@ -30,14 +35,21 @@
   color: #1a73e8;
 }
 
-/* File Grid */
-.file-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 1.2rem;
+.breadcrumb-item:not(:last-child)::after {
+  content: "/";
+  margin-left: 5px;
+  color: #dadce0;
 }
 
-/* File Card */
+/* --- File Grid --- */
+.file-grid {
+  display: grid;
+  /* Auto-fill with a minimum width ensures responsiveness */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+}
+
+/* --- File Card --- */
 .file-card {
   background-color: #fff;
   border-radius: 10px;
@@ -46,119 +58,129 @@
   box-shadow: 0 1px 3px rgba(60, 64, 67, 0.2);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   position: relative;
+  cursor: pointer; /* Indicates it's clickable */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 140px; /* Fixed height for consistency */
 }
 
 .file-card:hover {
-  transform: scale(1.03);
-  box-shadow: 0 3px 8px rgba(60, 64, 67, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(60, 64, 67, 0.15);
+  z-index: 5;
 }
 
 .folder-card {
-  background-color: #e8f0fe;
+  background-color: #e8f0fe; /* Light blue for folders */
 }
 
-/* Icon/Thumbnail */
+/* --- Icon/Thumbnail --- */
 .file-preview {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 80px;
+  flex-grow: 1; /* Takes up remaining space */
+  overflow: hidden;
 }
 
 .icon {
-  width: 38px;
-  height: 38px;
+  width: 48px;
+  height: 48px;
 }
 
-.icon.folder {
-  color: #fbbc04;
-}
-
-.icon.image {
-  color: #34a853;
-}
-
-.icon.pdf {
-  color: #ea4335;
-}
-
-.icon.doc {
-  color: #4285f4;
-}
-
-.icon.default {
-  color: #5f6368;
-}
+.icon.folder { color: #fbbc04; }
+.icon.image { color: #34a853; }
+.icon.pdf { color: #ea4335; }
+.icon.doc { color: #4285f4; }
+.icon.default { color: #5f6368; }
 
 .file-thumbnail {
   width: 100%;
-  height: 70px;
-  object-fit: cover;
-  border-radius: 8px;
+  height: 100%;
+  max-height: 90px;
+  object-fit: cover; /* Crops nicely */
+  border-radius: 6px;
 }
 
+/* --- File Info --- */
 .file-info {
-  margin-top: 0.6rem;
+  margin-top: 0.8rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  height: 24px;
 }
 
 .file-name {
   font-size: 0.85rem;
   font-weight: 500;
-  color: #202124;
+  color: #3c4043;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 80%;
+  text-align: left;
 }
 
-/* Action Menu */
+/* --- Action Menu --- */
 .menu-btn {
   background: transparent;
   border: none;
   cursor: pointer;
   color: #5f6368;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-btn:hover {
+  background-color: rgba(95, 99, 104, 0.1);
 }
 
 .file-menu {
   position: absolute;
-  top: 95%;
+  top: 40px; /* Positioned relative to card */
   right: 10px;
   background: white;
-  box-shadow: 0 2px 8px rgba(60, 64, 67, 0.25);
-  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
   z-index: 100;
   width: 160px;
   display: flex;
   flex-direction: column;
+  padding: 5px 0;
+  animation: fadeIn 0.1s ease-in;
 }
 
 .file-menu button {
-  padding: 8px 12px;
+  padding: 10px 16px;
   background: none;
   border: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   cursor: pointer;
-  color: #202124;
-  font-size: 0.85rem;
+  color: #3c4043;
+  font-size: 0.9rem;
   text-align: left;
+  width: 100%;
 }
 
 .file-menu button:hover {
   background: #f1f3f4;
 }
 
-/* File Details Modal */
+/* --- Details Modal --- */
 .details-modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(32, 33, 36, 0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -167,42 +189,199 @@
 
 .details-content {
   background: white;
-  padding: 1.5rem;
-  border-radius: 10px;
-  width: 320px;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   position: relative;
-}
-
-.details-content h3 {
-  margin-bottom: 1rem;
-  font-size: 1.2rem;
-}
-
-.details-content p {
-  font-size: 0.9rem;
-  margin: 6px 0;
 }
 
 .close-btn {
   position: absolute;
-  right: 10px;
-  top: 10px;
+  right: 15px;
+  top: 15px;
   background: transparent;
   border: none;
   cursor: pointer;
   color: #5f6368;
 }
-.back-button {
-  background: #e8f0fe;
+
+/* --- NEW: File Viewer Overlay (The Popup) --- */
+.file-viewer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.85); /* Dark background like Drive */
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.file-viewer-container {
+  width: 80%;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+.file-viewer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  color: #f1f3f4;
+  background: rgba(0, 0, 0, 0.6);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.file-viewer-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viewer-actions {
+  display: flex;
+  gap: 20px;
+}
+
+.viewer-actions button {
+  background: none;
   border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
+  color: #e8eaed;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.viewer-actions button:hover {
+  color: white;
+}
+
+.file-viewer-content {
+  flex: 1;
+  background: rgba(32, 33, 36, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
+  position: relative;
+}
+
+/* Image inside viewer */
+.viewer-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+}
+
+/* PDF/Iframe inside viewer */
+.viewer-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+/* Placeholder for unknown files */
+.viewer-placeholder {
+  text-align: center;
+  color: #e8eaed;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.download-btn-lg {
+  padding: 10px 24px;
+  background-color: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 4px;
   font-weight: 500;
   cursor: pointer;
-  margin-bottom: 10px;
-  transition: background 0.2s;
+  margin-top: 10px;
 }
-.back-button:hover {
-  background: #d0e2ff;
+
+/* --- Mobile Responsiveness --- */
+@media screen and (max-width: 768px) {
+  .file-explorer {
+    padding: 1rem;
+  }
+  
+  .header {
+    font-size: 1.2rem;
+  }
+
+  /* Make grid smaller on phones to fit 2 items per row */
+  .file-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.8rem;
+  }
+  
+  .file-card {
+    padding: 0.8rem;
+    height: 130px;
+  }
+
+  .file-name {
+    font-size: 0.8rem;
+  }
+
+  /* Full screen viewer on mobile */
+  .file-viewer-container {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  
+  .file-viewer-header {
+    border-radius: 0;
+    padding: 10px;
+  }
+  
+  .file-viewer-content {
+    border-radius: 0;
+  }
+  
+  .viewer-image {
+    width: 100%; /* Ensure width fits on mobile */
+  }
+
+  .file-menu {
+    position: fixed;
+    top: auto;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    animation: slideUp 0.2s ease-out;
+    padding-bottom: 20px; /* Safe area for swipe bar */
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
 }

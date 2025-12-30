@@ -142,7 +142,13 @@ const Checkbox = ({ index, question, userResponse, setUserResponse }) => {
           return (
             <div
               key={idx}
-              className="form-check d-flex align-items-center gap-2 p-2 mb-2 ms-2"
+              // className="form-check d-flex align-items-center gap-2 p-2 mb-2 ms-2"
+              className="form-check p-2 mb-2 ms-2"
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                alignItems: "flex-start",
+              }}
             >
               <input
                 type="checkbox"
@@ -157,6 +163,11 @@ const Checkbox = ({ index, question, userResponse, setUserResponse }) => {
                 disabled={question.disabled}
                 style={{
                   cursor: question.disabled ? "not-allowed" : "pointer",
+                  alignSelf: "flex-start",
+                  flex: "0 0 auto",
+                  width: "1.25rem",
+                  height: "1.25rem",
+                  marginTop: "0.35rem",
                 }}
               />
               <label
@@ -165,6 +176,10 @@ const Checkbox = ({ index, question, userResponse, setUserResponse }) => {
                 style={{
                   fontSize: "1rem",
                   cursor: question.disabled ? "not-allowed" : "pointer",
+                  flex: "1 1 0",
+                  whiteSpace: "normal",
+                  margin: 0,
+                  lineHeight: 1.9,
                 }}
               >
                 {optionValue || `Option ${idx + 1}`}
@@ -175,39 +190,66 @@ const Checkbox = ({ index, question, userResponse, setUserResponse }) => {
       </div>
 
       {question.otherAsOption && (
-        <div className="form-check mb-3 ps-2 ms-3 d-flex align-items-center">
-          <input
-            type="checkbox"
-            value={otherOption}
-            checked={userAnswer ? userAnswer.includes(otherOption) : false}
-            onChange={(e) => {
-              setOtherSelected((prev) => !prev);
-              handleAnswerChange(e);
+        <>
+          <div
+            className="form-check mb-3 ps-2 ms-3"
+            style={{
+              display: "flex",
+              gap: "0.75rem",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
             }}
-            required={
-              question.required && (!userAnswer || userAnswer.length === 0)
-            }
-            disabled={question.disabled}
-            className="form-check-input me-2"
-            name={`checkbox-${question.id}`}
-            id={`checkbox-other-${question.id}`}
-          />
-          <label
-            className="form-check-label pe-2"
-            htmlFor={`checkbox-other-${question.id}`}
           >
-            {otherLabel}
-          </label>
+            <input
+              type="checkbox"
+              value={otherOption}
+              checked={userAnswer ? userAnswer.includes(otherOption) : false}
+              onChange={(e) => {
+                setOtherSelected((prev) => !prev);
+                handleAnswerChange(e);
+              }}
+              required={
+                question.required && (!userAnswer || userAnswer.length === 0)
+              }
+              disabled={question.disabled}
+              className="form-check-input"
+              name={`checkbox-${question.id}`}
+              id={`checkbox-other-${question.id}`}
+              style={{
+                flex: "0 0 auto",
+                marginTop: "0.35rem",
+                cursor: question.disabled ? "not-allowed" : "pointer",
+              }}
+            />
+
+            <label
+              className="form-check-label"
+              htmlFor={`checkbox-other-${question.id}`}
+              style={{
+                flex: "1 1 auto",
+                margin: 0,
+                lineHeight: 1.9,
+                cursor: question.disabled ? "not-allowed" : "pointer",
+              }}
+            >
+              {otherLabel}
+            </label>
+          </div>
           <input
             type="text"
-            className="form-control ms-2"
-            style={{ maxWidth: "300px" }}
+            className="form-control"
+            style={{
+              maxWidth: "300px",
+              // marginLeft: "1.1rem",
+              // marginTop: "0.25rem",
+            }}
             placeholder="Write your own option"
             value={otherOption}
             onChange={handleEditOtherOption}
             required={otherSelected}
+            disabled={!otherSelected}
           />
-        </div>
+        </>
       )}
     </div>
   );
