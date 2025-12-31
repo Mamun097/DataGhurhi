@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { Modal, Button, Form } from "react-bootstrap";
+import { QRCodeCanvas } from "qrcode.react";
 import "../CSS/SurveyForm.css";
 import SurveyForm from "../Components/SurveyFormUser";
-import NavbarAcholder from "../../ProfileManagement/navbarAccountholder";
-import { handleMarking } from "../Utils/handleMarking";
 import apiClient from "../../api";
 import CustomLoader from "../Utils/CustomLoader";
 import SurveyNotOpen from "../Utils/SurveyNotOpen";
-import Linkify from "react-linkify";
 
 // --- IMPORTS FOR PRINT VIEW RENDERING ---
 import Checkbox from "../QuestionTypes/CheckboxUser";
@@ -48,12 +47,11 @@ const isSurveyOpen = (template, setSurveyOpenMessage) => {
   return true;
 };
 
-// Helper function to render questions specifically for the print view
 const renderPreviewQuestion = (question, index) => {
   const staticProps = {
     question,
     index,
-    userResponse: [], // Empty for blank print, or pass actual response if needed
+    userResponse: [],
     setUserResponse: () => {},
   };
 
@@ -92,9 +90,6 @@ const Index = () => {
   }
 
   const STORAGE_KEY = `survey_response_${slug}`;
-  const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "English"
-  );
   const [template, setTemplate] = useState(undefined);
   const [title, setTitle] = useState(null);
   const [sections, setSections] = useState([]);
@@ -121,7 +116,14 @@ const Index = () => {
   const [isSurveyCurrentlyOpen, setIsSurveyCurrentlyOpen] = useState(null);
   const [surveyOpenMessage, setSurveyOpenMessage] = useState("");
 
-  // Whenever userResponse changes (user answers a question), save to storage
+  // --- PRINT SETTINGS STATE ---
+  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [printIncludeQR, setPrintIncludeQR] = useState(false);
+  const [printIncludeURL, setPrintIncludeURL] = useState(false);
+
+  // --- FIX: Force the correct public URL format ---
+  const publicSurveyLink = `https://dataghurhi.cse.buet.ac.bd/v/${slug}`;
+
   useEffect(() => {
     if (userResponse && userResponse.length > 0) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(userResponse));
@@ -140,7 +142,6 @@ const Index = () => {
             `/api/fetch-survey-user/${slug}`,
             config
           );
-          console.log("Fetched survey data:", response.data);
           const surveyData = response.data.data;
           setTemplate(surveyData);
 
@@ -161,19 +162,6 @@ const Index = () => {
         } catch (err) {
           console.error("Failed to load template:", err);
           if (err.response) {
-            if (err.response.data?.status === "LOGIN_REQUIRED") {
-              alert(err.response.data.message);
-              navigate("/");
-            } else if (err.response.data?.status === "ALREADY_SUBMITTED") {
-              alert(err.response.data.message);
-              navigate("/");
-            } else {
-              alert(
-                err.response.data.message || "This survey could not be loaded."
-              );
-              navigate("/");
-            }
-          } else {
             navigate("/");
           }
         }
@@ -234,7 +222,17 @@ const Index = () => {
   };
 
   const handleGoBack = () => window.history.back();
-  const handlePrint = () => window.print();
+
+  const handlePrintClick = () => {
+    setShowPrintModal(true);
+  };
+
+  const handleConfirmPrint = () => {
+    setShowPrintModal(false);
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
 
   if (
     template === undefined ||
@@ -247,13 +245,54 @@ const Index = () => {
   return (
     <>
       {/* ================================================================
+        PRINT OPTIONS MODAL
+        ================================================================
+      */}
+      <Modal
+        show={showPrintModal}
+        onHide={() => setShowPrintModal(false)}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>Print Options</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                id="check-qr"
+                label="Include QR Code"
+                checked={printIncludeQR}
+                onChange={(e) => setPrintIncludeQR(e.target.checked)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Check
+                type="checkbox"
+                id="check-url"
+                label="Include Survey Link (URL)"
+                checked={printIncludeURL}
+                onChange={(e) => setPrintIncludeURL(e.target.checked)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowPrintModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="primary" onClick={handleConfirmPrint}>
+            Print Now
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ================================================================
         1. ON-SCREEN VIEW 
-        Class "d-print-none" is a Bootstrap utility that hides this 
-        entire block when printing.
         ================================================================
       */}
       <div className="d-print-none">
-        {/* <NavbarAcholder language={language} setLanguage={setLanguage} /> */}
         <div className="container-fluid bg-green">
           <div className="row justify-content-center">
             {isPreview && (
@@ -286,7 +325,7 @@ const Index = () => {
                     Go Back
                   </button>
                   <button
-                    onClick={handlePrint}
+                    onClick={handlePrintClick}
                     style={{
                       padding: "8px 20px",
                       marginTop: "10px",
@@ -339,22 +378,52 @@ const Index = () => {
 
       {/* ================================================================
         2. PRINTABLE VIEW 
-        Class "d-none" hides it on screen.
-        Class "d-print-block" shows it ONLY during printing.
         ================================================================
       */}
-      <div className="d-none d-print-block">
-        {logo && (
-          <img
-            src={logo}
-            alt="Logo"
-            style={{ maxHeight: "100px", marginBottom: "20px" }}
-          />
-        )}
-        <h1>{title || "Untitled Survey"}</h1>
+      <div className="d-none d-print-block print-container">
+        {/* --- HEADER (Logo + Title) --- */}
+        <div className="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            {logo && (
+              <img
+                src={logo}
+                alt="Logo"
+                style={{
+                  maxHeight: "80px",
+                  marginBottom: "10px",
+                  display: "block",
+                }}
+              />
+            )}
+            <h1>{title || "Untitled Survey"}</h1>
+          </div>
+
+          {/* --- QR / URL SECTION --- */}
+          <div className="text-end">
+            {printIncludeQR && (
+              <div className="mb-2">
+                {/* QR Code now uses publicSurveyLink */}
+                <QRCodeCanvas value={publicSurveyLink} size={100} />
+              </div>
+            )}
+            {printIncludeURL && (
+              <div
+                style={{
+                  fontSize: "10px",
+                  color: "#555",
+                  maxWidth: "200px",
+                  wordBreak: "break-all",
+                }}
+              >
+                {/* Text now uses publicSurveyLink */}
+                {publicSurveyLink}
+              </div>
+            )}
+          </div>
+        </div>
+
         <hr />
 
-        {/* Loop through ALL sections (ignoring pagination) */}
         {(sections || []).map((section) => (
           <div key={`print-sec-${section.id}`} className="mt-4">
             <h2
@@ -369,12 +438,12 @@ const Index = () => {
               {section.title || `Section ${section.id}`}
             </h2>
 
-            {/* Render all questions for this section */}
             {(questions || [])
               .filter((q) => q.section === section.id)
               .map((question, index) => (
                 <div
                   key={`print-q-${question.id}`}
+                  className="print-question-wrapper"
                   style={{
                     pageBreakInside: "avoid",
                     marginBottom: "15px",
@@ -390,11 +459,42 @@ const Index = () => {
         ))}
       </div>
 
-      {/* Helper CSS to ensure background colors are printed if user settings allow */}
+      {/* ================================================================
+         CSS & PRINT STYLES
+         ================================================================
+      */}
       <style>
         {`
           @media print {
-            body { -webkit-print-color-adjust: exact; }
+            body { 
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+            }
+            
+            /* Alignment fix for checkboxes during print */
+            .print-container .form-check {
+              display: flex !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              text-align: left !important;
+              padding-left: 0 !important; 
+            }
+            
+            .print-container .form-check-input {
+              float: none !important;
+              margin-right: 10px !important;
+              margin-left: 0 !important;
+            }
+
+            .print-container .form-check-label {
+              text-align: left !important;
+              width: auto !important;
+            }
+            
+            .print-question-wrapper div {
+               text-align: left !important;
+               justify-content: flex-start !important;
+            }
           }
         `}
       </style>
