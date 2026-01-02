@@ -368,8 +368,6 @@ exports.fetchUserAccess = async (req, res) => {
     }
 };
 
-const crypto = require('crypto');
-
 function generateSlug() {
   // Generate 3 random bytes (which becomes 6 Hex characters)
   const buffer = crypto.randomBytes(3);
