@@ -48,20 +48,40 @@ exports.getAllSurveys = async (req, res) => {
 
 // create survey
 exports.createSurvey = async (req, res) => {
-    
     const projectId = req.params.projectID;
     const { title } = req.body;
     const userId = req.jwt.id;
-    //generate slug and insert it to survey table
-    const slug = generateSlug(title, projectId, 'draft');
-    const { data, error } = await Project.createSurvey(projectId, title, userId, slug);
 
-    if (error) {
+    let attempts = 0;
+    const maxAttempts = 5; // Retry up to 5 times if we hit a duplicate
+
+    while (attempts < maxAttempts) {
+        // 1. Generate a new xxx-xxx slug
+        const slug = generateSlug();
+
+        // 2. Attempt to create in DB
+        const { data, error } = await Project.createSurvey(projectId, title, userId, slug);
+
+        // Success: Return immediately
+        if (!error) {
+            return res.status(201).json({ data, message: 'Survey created successfully' });
+        }
+
+        // Error Handling:
+        // If error code is '23505' (Unique Violation), it means the slug exists.
+        // We simply increment attempts and loop again to try a new slug.
+        if (error.code === '23505') {
+            attempts++;
+            continue;
+        }
+
+        // If it's any OTHER error, stop and report it.
         console.error(error);
-        return res.status(400).json({ error: error.message || "Unknown error" }); // send only message
+        return res.status(400).json({ error: error.message || "Unknown error" });
     }
 
-    return res.status(201).json({ data, message: 'Survey created successfully' });
+    // If we failed 5 times in a row (extremely unlikely)
+    return res.status(500).json({ error: "Could not generate a unique survey link. Please try again." });
 };
 
 exports.updateProject = async (req, res) => {
@@ -348,30 +368,13 @@ exports.fetchUserAccess = async (req, res) => {
     }
 };
 
-function generateSlug(survey_title, survey_id, survey_status) {
-  const hash = crypto.createHash("sha256");
-  hash.update(`${survey_id}-${survey_status}-${survey_title}`);
-  const hashValue = hash.digest("hex");
+const crypto = require('crypto');
 
-  const currentTime = Date.now().toString();
-  const randomValue = Math.floor(Math.random() * 1e6).toString();
-  const title_hash = crypto
-    .createHash("sha256")
-    .update(survey_title)
-    .digest("hex")
-    .slice(0, 10);
-  const currentTime_hash = crypto
-    .createHash("sha256")
-    .update(currentTime)
-    .digest("hex")
-    .slice(0, 10);
-  const randomValue_hash = crypto
-    .createHash("sha256")
-    .update(randomValue)
-    .digest("hex")
-    .slice(0, 10);
-  const final_hash = `${hashValue}-${title_hash}-${currentTime_hash}-${randomValue_hash}`;
-
-  return `${final_hash}`;
+function generateSlug() {
+  // Generate 3 random bytes (which becomes 6 Hex characters)
+  const buffer = crypto.randomBytes(3);
+  const token = buffer.toString('hex'); 
+  
+  // Format as 3-3 (e.g., "a1f-4b9")
+  return `${token.slice(0, 3)}-${token.slice(3, 6)}`;
 }
-
