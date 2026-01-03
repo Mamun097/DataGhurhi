@@ -7,12 +7,11 @@ const DateTimeQuestion = ({
   question,
   userResponse,
   setUserResponse,
+  showNumbering,
 }) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
-
-  console.log("question: ", question);
 
   // Modified handleAnswerChange to update existing response or add new one
   const handleAnswerChange = (e) => {
@@ -39,7 +38,7 @@ const DateTimeQuestion = ({
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}{". "}
+        {showNumbering ? `${index}. ` : ""}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>

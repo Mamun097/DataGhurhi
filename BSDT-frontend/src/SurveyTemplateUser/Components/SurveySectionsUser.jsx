@@ -12,11 +12,11 @@ const SurveySections = ({
     <div className="container mb-3 survey-section-user-view">
       {sections.length !== 1 && (
         <div>
-          <h4 className="text-left">
+          {/* <h4 className="text-left">
             <i>Section </i>
             {section.id}
-          </h4>
-          <hr style={{ borderTop: "1px solid #ccc" }} />
+          </h4> */}
+          {/* <hr style={{ borderTop: "1px solid #ccc" }} /> */}
           {section.title && (
             <p
               style={{

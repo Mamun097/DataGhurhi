@@ -47,12 +47,13 @@ const isSurveyOpen = (template, setSurveyOpenMessage) => {
   return true;
 };
 
-const renderPreviewQuestion = (question, index) => {
+const renderPreviewQuestion = (question, index, showNumbering) => {
   const staticProps = {
     question,
     index,
     userResponse: [],
     setUserResponse: () => {},
+    showNumbering
   };
 
   switch (question.type) {
@@ -452,7 +453,7 @@ const Index = () => {
                     borderRadius: "4px",
                   }}
                 >
-                  {renderPreviewQuestion(question, index + 1)}
+                  {renderPreviewQuestion(question, index + 1, section.autoNumbering)}
                 </div>
               ))}
           </div>

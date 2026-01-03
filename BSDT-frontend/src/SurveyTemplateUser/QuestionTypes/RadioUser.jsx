@@ -2,7 +2,13 @@ import React, { useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const Radio = ({ index, question, userResponse, setUserResponse }) => {
+const Radio = ({
+  index,
+  question,
+  userResponse,
+  setUserResponse,
+  showNumbering,
+}) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
@@ -77,7 +83,6 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
   const shuffledOptions = useMemo(() => {
     const options = question.meta?.options || [];
     if (question.meta?.enableOptionShuffle === true) {
-      console.log("Shuffling options for question:", question.text);
       const shuffled = [...options];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -101,8 +106,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}
-        {". "}
+        {showNumbering ? `${index}. ` : ""}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
