@@ -231,7 +231,7 @@ const Checkbox = ({
               className="form-check-label"
               htmlFor={`checkbox-other-${question.id}`}
               style={{
-                flex: "1 1 auto",
+                //flex: "1 1 auto",
                 margin: 0,
                 lineHeight: 1.9,
                 cursor: question.disabled ? "not-allowed" : "pointer",
@@ -239,21 +239,23 @@ const Checkbox = ({
             >
               {otherLabel}
             </label>
+            <input
+              type="text"
+              className="form-control"
+              style={{
+                maxWidth: "190px",
+                maxHeight: "2.5rem",
+                flex: "1 1 auto",
+                // marginLeft: "1.1rem",
+                // marginTop: "0.25rem",
+              }}
+              placeholder= {isLastOptionBangla ? "নিজের অপশন লিখুন" : "Type your option"}
+              value={otherOption}
+              onChange={handleEditOtherOption}
+              required={otherSelected}
+              disabled={!otherSelected}
+            />
           </div>
-          <input
-            type="text"
-            className="form-control"
-            style={{
-              maxWidth: "300px",
-              // marginLeft: "1.1rem",
-              // marginTop: "0.25rem",
-            }}
-            placeholder="Write your own option"
-            value={otherOption}
-            onChange={handleEditOtherOption}
-            required={otherSelected}
-            disabled={!otherSelected}
-          />
         </>
       )}
     </div>

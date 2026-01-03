@@ -187,7 +187,7 @@ const Radio = ({
       {question.otherAsOption && (
         <>
           <div
-            className="form-check mb-3 ps-2 ms-3"
+            className="form-check mb-3 ps-2 ms-2"
             style={{
               display: "flex",
               gap: "0.75rem",
@@ -211,7 +211,7 @@ const Radio = ({
               }}
               required={question.required}
               disabled={question.disabled}
-              className="form-check-input me-2"
+              className="form-check-input"
               name={`radio-${question.id}`}
               id={`radio-other-${question.id}`}
               style={{
@@ -224,24 +224,29 @@ const Radio = ({
               className="form-check-label pe-2"
               htmlFor={`radio-other-${question.id}`}
               style={{
-                flex: "1 1 auto",
+                // flex: "1 1 auto",
                 margin: 0,
-                lineHeight: 1.2,
+                lineHeight: 1.9,
                 cursor: question.disabled ? "not-allowed" : "pointer",
               }}
             >
               {otherLabel}
             </label>
+            <input
+              type="text"
+              className="form-control"
+              style={{
+                maxWidth: "190px",
+                maxHeight: "2.5rem",
+                flex: "1 1 auto",
+              }}
+              placeholder={isLastOptionBangla ? "নিজের অপশন লিখুন" : "Type your option"}
+              value={otherOption}
+              onChange={handleEditOtherOption}
+              required={otherSelected}
+              disabled={!otherSelected}
+            />
           </div>
-          <input
-            type="text"
-            className="form-control"
-            style={{ maxWidth: "300px" }}
-            placeholder="Write your own option"
-            value={otherOption}
-            onChange={handleEditOtherOption}
-            required={otherSelected}
-          />
         </>
       )}
     </div>
