@@ -2,7 +2,13 @@ import React, { useMemo } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const LikertScale = ({ index, question, userResponse, setUserResponse }) => {
+const LikertScale = ({
+  index,
+  question,
+  userResponse,
+  setUserResponse,
+  showNumbering,
+}) => {
   // Columns remain as they are, with a fallback
   const columns = question.meta?.columns?.length
     ? question.meta.columns
@@ -97,8 +103,7 @@ const LikertScale = ({ index, question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2 me-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}
-        {". "}
+        {showNumbering ? `${index}. ` : ""}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
