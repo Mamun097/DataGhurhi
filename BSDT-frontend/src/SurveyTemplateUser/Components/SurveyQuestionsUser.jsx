@@ -20,6 +20,9 @@ const SurveyQuestions = ({
     (q) => String(q.section) === String(section.id)
   );
 
+  // Determine if auto-numbering is enabled for the section
+  const showNumbering = section.autoNumbering;
+
   const renderQuestionComponent = (question, index) => {
     switch (question.type) {
       case "radio":
@@ -29,6 +32,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "text":
@@ -38,6 +42,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "likert":
@@ -47,6 +52,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "rating":
@@ -56,6 +62,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "linearScale":
@@ -65,6 +72,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "datetime":
@@ -74,6 +82,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "dropdown":
@@ -83,6 +92,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "tickboxGrid":
@@ -92,6 +102,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       case "checkbox":
@@ -101,6 +112,7 @@ const SurveyQuestions = ({
             question={question}
             userResponse={userResponse}
             setUserResponse={setUserResponse}
+            showNumbering={showNumbering}
           />
         );
       default:
@@ -110,7 +122,7 @@ const SurveyQuestions = ({
   };
 
   return (
-    <div >
+    <div>
       {sectionQuestions.map((question, index) => (
         <div
           className="mt-4 mb-4 bg-light rounded"
