@@ -381,11 +381,11 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                       </h6>
                       <h2
                         style={{
-                          fontSize: "18px", // Increased slightly for readability
+                          fontSize: "12px", 
                           fontWeight: "800",
                           lineHeight: "1.3",
                           color: "#333",
-                          marginBottom: "0",
+                          marginBottom: "20px",
                           wordWrap: "break-word",
                         }}
                       >
@@ -400,7 +400,7 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         flexDirection: "column",
                         alignItems: "center",
                         justifyContent: "center",
-                        padding: "15px",
+                        padding: "10px",
                         background: "#f8f9fa",
                         borderRadius: "12px",
                         border: "1px dashed #ced4da",
