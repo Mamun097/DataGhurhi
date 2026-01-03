@@ -12,16 +12,58 @@ import {
 import { toast } from "react-toastify";
 import { QRCodeCanvas } from "qrcode.react";
 
-const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
-  if (!isOpen) return null;
+// Imports for PDF generation
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 
+// Import Logo
+import dataghurhiLogo from "../../assets/logos/dataghurhi.png";
+
+const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
   const [copyButtonText, setCopyButtonText] = useState("Copy");
   const [activeTab, setActiveTab] = useState("link");
+
+  if (!isOpen) return null;
 
   const fullUrl = `https://dataghurhi.cse.buet.ac.bd/v/${surveyLink}`;
   const shareText = `Check out this survey: ${surveyTitle}`;
 
-  //1. Download Logic (Same as before)
+  const handleDownloadPdf = async () => {
+    const posterElement = document.getElementById("survey-poster-container");
+    if (!posterElement) return;
+
+    try {
+      toast.info("Generating PDF...");
+
+      // Capture with high scale for print quality (300 DPI+)
+      const canvas = await html2canvas(posterElement, {
+        scale: 5, // Increased scale for sharp text/QR
+        useCORS: true,
+        logging: false,
+        scrollX: 0, // Prevents image shifting if scrolled
+        scrollY: 0,
+        backgroundColor: "#ffffff", // Ensures white background
+      });
+
+      const imgData = canvas.toDataURL("image/png");
+
+      // Initialize PDF (A4 size: 210mm x 297mm)
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      // Add image to PDF (stretch to fit A4 exactly)
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      // Save
+      pdf.save(`Survey-Poster-${surveyLink}.pdf`);
+      toast.success("PDF Downloaded!");
+    } catch (error) {
+      console.error("PDF Error:", error);
+      toast.error("Failed to generate PDF.");
+    }
+  };
+
   const downloadQRCode = () => {
     const canvas = document.getElementById("survey-qr-code");
     if (canvas) {
@@ -35,22 +77,16 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
     }
   };
 
-  //2. Native Image Share Logic
   const handleShareQRCode = () => {
     const canvas = document.getElementById("survey-qr-code");
     if (!canvas) return;
 
-    // Convert Canvas to Blob (binary data)
     canvas.toBlob(async (blob) => {
       if (!blob) {
         toast.error("Error generating image data.");
         return;
       }
-
-      // Create a File object from the Blob
       const file = new File([blob], "survey-qr.png", { type: "image/png" });
-
-      // Check if the browser supports sharing files
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
           await navigator.share({
@@ -60,10 +96,8 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
             url: fullUrl,
           });
         } catch (error) {
-          if (error.name !== "AbortError") {
-            console.error("Error sharing image:", error);
+          if (error.name !== "AbortError")
             toast.error("Could not share image.");
-          }
         }
       } else {
         toast.warning("Your browser doesn't support sharing images directly.");
@@ -71,7 +105,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
     }, "image/png");
   };
 
-  //Clipboard Logic
   const fallbackCopyTextToClipboard = (text) => {
     const textArea = document.createElement("textarea");
     textArea.value = text;
@@ -80,15 +113,12 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
     document.body.appendChild(textArea);
     textArea.focus();
     textArea.select();
-
     try {
       const successful = document.execCommand("copy");
       if (successful) {
         setCopyButtonText("Copied!");
         toast.success("Link copied to clipboard!");
         setTimeout(() => setCopyButtonText("Copy"), 2000);
-      } else {
-        toast.error("Copying the link failed.");
       }
     } catch (err) {
       console.error("Fallback: Unable to copy", err);
@@ -105,9 +135,7 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
           toast.success("Link copied to clipboard!");
           setTimeout(() => setCopyButtonText("Copy"), 2000);
         })
-        .catch((err) => {
-          fallbackCopyTextToClipboard(fullUrl);
-        });
+        .catch(() => fallbackCopyTextToClipboard(fullUrl));
     } else {
       fallbackCopyTextToClipboard(fullUrl);
     }
@@ -127,7 +155,7 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
     }
   };
 
-  // --- Social Links ---
+  // Social Links
   const twitterUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(
     fullUrl
   )}&text=${encodeURIComponent(shareText)}`;
@@ -166,20 +194,17 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
               onSelect={(k) => setActiveTab(k)}
               className="mb-3 nav-fill"
             >
-              {/* TAB 1: Link & Social Share */}
-              <Tab eventKey="link" title="Share Link">
+              {/* TAB 1: Link */}
+              <Tab eventKey="link" title="Survey Link">
                 <div className="pt-2">
                   <p className="text-muted small mb-3">
-                    Share this link with your respondents directly or via social
-                    media.
+                    Share this link directly or via social media.
                   </p>
-
                   <InputGroup className="mb-4">
                     <Form.Control
                       type="text"
                       value={fullUrl}
                       readOnly
-                      aria-label="Survey Link"
                       className="bg-light"
                     />
                     <Button variant="primary" onClick={handleCopyToClipboard}>
@@ -187,7 +212,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                       {copyButtonText}
                     </Button>
                   </InputGroup>
-
                   <div className="text-center position-relative mb-4">
                     <hr />
                     <span
@@ -197,7 +221,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                       OR SHARE VIA
                     </span>
                   </div>
-
                   <Row className="text-center g-2">
                     {navigator.share && (
                       <Col xs={12}>
@@ -218,7 +241,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         rel="noopener noreferrer"
                         className="btn w-100 text-white"
                         style={{ background: "#1DA1F2" }}
-                        title="Twitter"
                       >
                         <i className="bi bi-twitter"></i>
                       </a>
@@ -230,7 +252,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         rel="noopener noreferrer"
                         className="btn w-100 text-white"
                         style={{ background: "#1877F2" }}
-                        title="Facebook"
                       >
                         <i className="bi bi-facebook"></i>
                       </a>
@@ -242,7 +263,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         rel="noopener noreferrer"
                         className="btn w-100 text-white"
                         style={{ background: "#0A66C2" }}
-                        title="LinkedIn"
                       >
                         <i className="bi bi-linkedin"></i>
                       </a>
@@ -254,7 +274,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         rel="noopener noreferrer"
                         className="btn w-100 text-white"
                         style={{ background: "#25D366" }}
-                        title="WhatsApp"
                       >
                         <i className="bi bi-whatsapp"></i>
                       </a>
@@ -264,7 +283,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                         href={emailUrl}
                         className="btn w-100 text-white"
                         style={{ background: "#7F7F7F" }}
-                        title="Email"
                       >
                         <i className="bi bi-envelope-fill"></i>
                       </a>
@@ -279,7 +297,6 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                   <p className="text-muted small mb-3 text-center">
                     Scan this code to open the survey on mobile devices.
                   </p>
-
                   <div className="p-3 border rounded bg-white mb-3 shadow-sm">
                     <QRCodeCanvas
                       id="survey-qr-code"
@@ -289,19 +306,168 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
                       includeMargin={true}
                     />
                   </div>
-
                   <div className="d-flex gap-2">
                     <Button variant="outline-primary" onClick={downloadQRCode}>
                       <i className="bi bi-download me-2"></i> Download
                     </Button>
-
-                    {/* Only show this button if browser supports file sharing */}
                     {navigator.canShare && (
                       <Button variant="success" onClick={handleShareQRCode}>
                         <i className="bi bi-share-fill me-2"></i> Share Image
                       </Button>
                     )}
                   </div>
+                </div>
+              </Tab>
+
+              {/* TAB 3: Poster / Flyer */}
+              <Tab eventKey="poster" title="Poster (Print)">
+                <div className="d-flex flex-column align-items-center pt-3 pb-2">
+                  <p className="text-muted small mb-3 text-center">
+                    A printable flyer format. Click "Download PDF" to print.
+                  </p>
+
+                  {/* POSTER TEMPLATE CONTAINER */}
+                  <div
+                    id="survey-poster-container"
+                    className="border shadow-sm mb-3 bg-white"
+                    style={{
+                      width: "300px", // Preview width
+                      height: "424px", // A4 Aspect Ratio (1:1.414)
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {/* 1. Header Accent Bar */}
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "10px",
+                        background: "linear-gradient(90deg, #2c3e50, #25856f)",
+                      }}
+                    ></div>
+
+                    {/* 2. Logo Section */}
+                    <div className="mt-3 mb-2">
+                      <img
+                        src={dataghurhiLogo}
+                        alt="DataGhurhi Logo"
+                        style={{ height: "45px", objectFit: "contain" }}
+                      />
+                    </div>
+
+                    {/* 3. Title Section */}
+                    <div
+                      style={{
+                        padding: "0 15px",
+                        textAlign: "center",
+                        flexGrow: 1,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <h6
+                        className="text-uppercase text-secondary mb-2"
+                        style={{
+                          fontSize: "9px",
+                          letterSpacing: "3px",
+                          fontWeight: "600",
+                        }}
+                      >
+                        Participate In
+                      </h6>
+                      <h2
+                        style={{
+                          fontSize: "18px", // Increased slightly for readability
+                          fontWeight: "800",
+                          lineHeight: "1.3",
+                          color: "#333",
+                          marginBottom: "0",
+                          wordWrap: "break-word",
+                        }}
+                      >
+                        {surveyTitle}
+                      </h2>
+                    </div>
+
+                    {/* 4. QR Code Section */}
+                    <div
+                      style={{
+                        display: "flex", // Centering Fix
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        padding: "15px",
+                        background: "#f8f9fa",
+                        borderRadius: "12px",
+                        border: "1px dashed #ced4da",
+                        marginBottom: "20px",
+                        width: "fit-content", // Ensures box wraps QR tightly
+                        margin: "0 auto 20px auto", // Force horizontal centering
+                      }}
+                    >
+                      <QRCodeCanvas
+                        value={fullUrl}
+                        size={160}
+                        level={"H"}
+                        includeMargin={false}
+                        fgColor="#25856f"
+                      />
+                      <div
+                        style={{
+                          marginTop: "8px",
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          color: "#25856f",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        Scan To Participate
+                      </div>
+                    </div>
+
+                    {/* 5. Footer URL Section */}
+                    <div
+                      style={{
+                        width: "100%",
+                        background: "#2c3e50",
+                        color: "white",
+                        padding: "15px 10px",
+                        textAlign: "center",
+                        marginTop: "auto",
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontSize: "9px",
+                          marginBottom: "5px",
+                          opacity: 0.8,
+                        }}
+                      >
+                        OR VISIT THE LINK
+                      </p>
+                      <div
+                        style={{
+                          fontSize: "9px",
+                          fontWeight: "bold",
+                          fontFamily: "monospace",
+                          wordBreak: "break-all",
+                          color: "#fff",
+                        }}
+                      >
+                        {fullUrl}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Button */}
+                  <Button variant="danger" onClick={handleDownloadPdf}>
+                    <i className="bi bi-file-earmark-pdf-fill me-2"></i>{" "}
+                    Download PDF
+                  </Button>
                 </div>
               </Tab>
             </Tabs>
@@ -313,159 +479,3 @@ const ShareSurveyModal = ({ isOpen, onClose, surveyLink, surveyTitle }) => {
 };
 
 export default ShareSurveyModal;
-
-// return (
-//   <Modal show={show} onHide={handleClose} centered>
-//     <Modal.Header closeButton>
-//       <Modal.Title>
-//         <i className="bi bi-share-fill me-2"></i> Share Survey
-//       </Modal.Title>
-//     </Modal.Header>
-//     <Modal.Body>
-//       <Tabs
-//         id="share-survey-tabs"
-//         activeKey={activeTab}
-//         onSelect={(k) => setActiveTab(k)}
-//         className="mb-3 nav-fill"
-//       >
-//         {/* TAB 1: Link & Social Share */}
-//         <Tab eventKey="link" title="Share Link">
-//           <div className="pt-2">
-//             <p className="text-muted small mb-3">
-//               Share this link with your respondents directly or via social
-//               media.
-//             </p>
-
-//             <Form.Label className="fw-bold">Survey Link</Form.Label>
-//             <InputGroup className="mb-4">
-//               <Form.Control
-//                 type="text"
-//                 value={fullUrl}
-//                 readOnly
-//                 aria-label="Survey Link"
-//                 className="bg-light"
-//               />
-//               <Button variant="primary" onClick={handleCopyToClipboard}>
-//                 <i className="bi bi-clipboard-check me-2"></i> {copyButtonText}
-//               </Button>
-//             </InputGroup>
-
-//             <div className="text-center position-relative mb-4">
-//               <hr />
-//               <span
-//                 className="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small"
-//                 style={{ marginTop: "-1px" }}
-//               >
-//                 OR SHARE VIA
-//               </span>
-//             </div>
-
-//             <Row className="text-center g-2">
-//               {navigator.share && (
-//                 <Col xs={12}>
-//                   <Button
-//                     variant="outline-dark"
-//                     onClick={handleNativeLinkShare}
-//                     className="w-100 mb-2"
-//                   >
-//                     <i className="bi bi-phone-vibrate me-2"></i> System Share
-//                   </Button>
-//                 </Col>
-//               )}
-//               <Col>
-//                 <a
-//                   href={twitterUrl}
-//                   target="_blank"
-//                   rel="noopener noreferrer"
-//                   className="btn w-100 text-white"
-//                   style={{ background: "#1DA1F2" }}
-//                   title="Twitter"
-//                 >
-//                   <i className="bi bi-twitter"></i>
-//                 </a>
-//               </Col>
-//               <Col>
-//                 <a
-//                   href={facebookUrl}
-//                   target="_blank"
-//                   rel="noopener noreferrer"
-//                   className="btn w-100 text-white"
-//                   style={{ background: "#1877F2" }}
-//                   title="Facebook"
-//                 >
-//                   <i className="bi bi-facebook"></i>
-//                 </a>
-//               </Col>
-//               <Col>
-//                 <a
-//                   href={linkedinUrl}
-//                   target="_blank"
-//                   rel="noopener noreferrer"
-//                   className="btn w-100 text-white"
-//                   style={{ background: "#0A66C2" }}
-//                   title="LinkedIn"
-//                 >
-//                   <i className="bi bi-linkedin"></i>
-//                 </a>
-//               </Col>
-//               <Col>
-//                 <a
-//                   href={whatsappUrl}
-//                   target="_blank"
-//                   rel="noopener noreferrer"
-//                   className="btn w-100 text-white"
-//                   style={{ background: "#25D366" }}
-//                   title="WhatsApp"
-//                 >
-//                   <i className="bi bi-whatsapp"></i>
-//                 </a>
-//               </Col>
-//               <Col>
-//                 <a
-//                   href={emailUrl}
-//                   className="btn w-100 text-white"
-//                   style={{ background: "#7F7F7F" }}
-//                   title="Email"
-//                 >
-//                   <i className="bi bi-envelope-fill"></i>
-//                 </a>
-//               </Col>
-//             </Row>
-//           </div>
-//         </Tab>
-
-//         {/* TAB 2: QR Code */}
-//         <Tab eventKey="qr" title="QR Code">
-//           <div className="d-flex flex-column align-items-center pt-3 pb-2">
-//             <p className="text-muted small mb-3 text-center">
-//               Scan this code to open the survey on mobile devices.
-//             </p>
-
-//             <div className="p-3 border rounded bg-white mb-3 shadow-sm">
-//               <QRCodeCanvas
-//                 id="survey-qr-code"
-//                 value={fullUrl}
-//                 size={200}
-//                 level={"H"}
-//                 includeMargin={true}
-//               />
-//             </div>
-
-//             <div className="d-flex gap-2">
-//               <Button variant="outline-primary" onClick={downloadQRCode}>
-//                 <i className="bi bi-download me-2"></i> Download
-//               </Button>
-
-//               {/* Only show this button if browser supports file sharing */}
-//               {navigator.canShare && (
-//                 <Button variant="success" onClick={handleShareQRCode}>
-//                   <i className="bi bi-share-fill me-2"></i> Share Image
-//                 </Button>
-//               )}
-//             </div>
-//           </div>
-//         </Tab>
-//       </Tabs>
-//     </Modal.Body>
-//   </Modal>
-// );
