@@ -49,6 +49,18 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         yAxisLeftMargin: language === 'বাংলা' ? 'Y অক্ষ বামের মার্জিন' : 'Y-Axis Left Margin',
         variableLabels: language === 'বাংলা' ? 'ভেরিয়েবল লেবেল' : 'Variable Labels',
         metricType: language === 'বাংলা' ? 'প্রদর্শনের জন্য মেট্রিক' : 'Metric to Display',
+        scatterSettings: language === 'বাংলা' ? 'স্ক্যাটার সেটিংস' : 'Scatter Settings',
+        xVariable: language === 'বাংলা' ? 'X ভেরিয়েবল' : 'X Variable',
+        yVariable: language === 'বাংলা' ? 'Y ভেরিয়েবল' : 'Y Variable',
+        pointSize: language === 'বাংলা' ? 'বিন্দুর আকার' : 'Point Size',
+        pointColor: language === 'বাংলা' ? 'বিন্দুর রং' : 'Point Color',
+        pointBorderColor: language === 'বাংলা' ? 'বিন্দু বর্ডার রং' : 'Point Border Color',
+        pointBorderWidth: language === 'বাংলা' ? 'বিন্দু বর্ডার প্রস্থ' : 'Point Border Width',
+        showRegressionLine: language === 'বাংলা' ? 'রিগ্রেশন লাইন দেখান' : 'Show Regression Line',
+        backgroundColor: language === 'বাংলা' ? 'পটভূমির রং' : 'Background Color',
+        regressionLineColor: language === 'বাংলা' ? 'রিগ্রেশন লাইনের রং' : 'Regression Line Color',
+        regressionLineWidth: language === 'বাংলা' ? 'রিগ্রেশন লাইনের প্রস্থ' : 'Regression Line Width',
+        regressionLineStyle: language === 'বাংলা' ? 'রিগ্রেশন লাইন স্টাইল' : 'Regression Line Style'
     };
 
     const gridStyles = [
@@ -174,6 +186,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </p>
                             </div>
                         )}
+
+
+
 
                         {plotType !== 'Heatmap' &&
                             (<div className="setting-group">
@@ -861,6 +876,160 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             ))}
                         </div>)}
+
+                    {plotType === 'Scatter Plot' && (
+                        <>
+                            <div className="customization-section">
+                                <h4 className="section-title">{t.scatterSettings}</h4>
+                                
+                                <div className="setting-group">
+                                    <label className="setting-label">{t.xVariable}</label>
+                                    <select
+                                        className="setting-select"
+                                        value={settings.xVariable || ''}
+                                        onChange={(e) => handleChange('xVariable', e.target.value)}
+                                    >
+                                        <option value="">{t.auto}</option>
+                                        {results?.scatter_plot?.numeric_columns?.map(col => (
+                                            <option key={`x-${col}`} value={col}>{col}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                
+                                <div className="setting-group">
+                                    <label className="setting-label">{t.yVariable}</label>
+                                    <select
+                                        className="setting-select"
+                                        value={settings.yVariable || ''}
+                                        onChange={(e) => handleChange('yVariable', e.target.value)}
+                                    >
+                                        <option value="">{t.auto}</option>
+                                        {results?.scatter_plot?.numeric_columns
+                                            ?.filter(col => col !== settings.xVariable)
+                                            .map(col => (
+                                                <option key={`y-${col}`} value={col}>{col}</option>
+                                            ))
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="customization-section">
+                                <h4 className="section-title">{t.appearance}</h4>
+                                
+                                <div className="setting-group">
+                                    <label className="setting-label">{t.backgroundColor}</label>
+                                    <input
+                                        type="color"
+                                        className="color-picker"
+                                        value={settings.backgroundColor || '#ffffff'}
+                                        onChange={(e) => handleChange('backgroundColor', e.target.value)}
+                                    />
+                                </div>
+                                
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.pointSize}</label>
+                                        <input
+                                            type="range"
+                                            className="setting-range"
+                                            value={settings.pointSize || 6}
+                                            onChange={(e) => handleChange('pointSize', parseInt(e.target.value))}
+                                            min="3"
+                                            max="15"
+                                            step="1"
+                                        />
+                                        <span className="range-value">{settings.pointSize || 6}</span>
+                                    </div>
+                                    
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.pointBorderWidth}</label>
+                                        <input
+                                            type="range"
+                                            className="setting-range"
+                                            value={settings.pointBorderWidth || 1}
+                                            onChange={(e) => handleChange('pointBorderWidth', parseInt(e.target.value))}
+                                            min="0"
+                                            max="5"
+                                            step="1"
+                                        />
+                                        <span className="range-value">{settings.pointBorderWidth || 1}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.pointColor}</label>
+                                        <input
+                                            type="color"
+                                            className="color-picker"
+                                            value={settings.pointColor || '#3b82f6'}
+                                            onChange={(e) => handleChange('pointColor', e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.pointBorderColor}</label>
+                                        <input
+                                            type="color"
+                                            className="color-picker"
+                                            value={settings.pointBorderColor || '#1d4ed8'}
+                                            onChange={(e) => handleChange('pointBorderColor', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                                
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.regressionLineColor}</label>
+                                        <input
+                                            type="color"
+                                            className="color-picker"
+                                            value={settings.regressionLineColor || '#ef4444'}
+                                            onChange={(e) => handleChange('regressionLineColor', e.target.value)}
+                                        />
+                                    </div>
+                                    
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.regressionLineWidth}</label>
+                                        <input
+                                            type="range"
+                                            className="setting-range"
+                                            value={settings.regressionLineWidth || 2}
+                                            onChange={(e) => handleChange('regressionLineWidth', parseInt(e.target.value))}
+                                            min="1"
+                                            max="5"
+                                            step="1"
+                                        />
+                                        <span className="range-value">{settings.regressionLineWidth || 2}</span>
+                                    </div>
+                                </div>
+                                
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.showRegressionLine !== false}
+                                            onChange={(e) => handleChange('showRegressionLine', e.target.checked)}
+                                        />
+                                        <span>{t.showRegressionLine}</span>
+                                    </label>
+                                </div>
+                                
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.gridOn !== false}
+                                            onChange={(e) => handleChange('gridOn', e.target.checked)}
+                                        />
+                                        <span>{t.gridOn}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
                 </div>
 
                 <div className="customization-footer">

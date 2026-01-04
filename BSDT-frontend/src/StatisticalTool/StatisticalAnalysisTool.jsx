@@ -669,7 +669,7 @@ const StatisticalAnalysisTool = () => {
                 console.log("[DEBUG] Column types loaded successfully");
                 
                 // Auto-select first columns based on test type
-                if (testType === 'kruskal' || testType === 'mannwhitney' || testType === 'eda_swarm' || testType === 'anova') {
+                if (testType === 'kruskal' || testType === 'mannwhitney' || testType === 'eda_swarm' || testType === 'anova' || testType === 'f_test' || testType === 'z_test' || testType === 't_test' || testType === 'fzt_visualization') {
                     if (data.categorical_columns.length > 0 && !column1) {
                         setColumn1(data.categorical_columns[0]);
                     }
@@ -724,7 +724,7 @@ const StatisticalAnalysisTool = () => {
         }
     };
 
-    // Function to fetch groups when column1 changes for Mann-Whitney    
+    // Function to fetch groups when column1 changes for tests requiring exactly 2 groups
     const fetchGroupsForColumn = async (columnName) => {
         console.log("[DEBUG] fetchGroupsForColumn called with:", {
             columnName,
@@ -743,8 +743,11 @@ const StatisticalAnalysisTool = () => {
             return;
         }
         
-        if (testType !== 'mannwhitney') {
-            console.log("[DEBUG] Not Mann-Whitney test");
+        // Check if this test type requires exactly 2 groups
+        const testsRequiringTwoGroups = ['mannwhitney', 'f_test', 'z_test', 't_test', 'fzt_visualization'];
+        
+        if (!testsRequiringTwoGroups.includes(testType)) {
+            console.log("[DEBUG] Not a test requiring 2 groups");
             return;
         }
         
@@ -851,11 +854,12 @@ const StatisticalAnalysisTool = () => {
         // 2. The test type requires column filtering
         // 3. We haven't already loaded column types for this file recently
         // 4. We're not currently fetching
+
         const needsColumnFiltering = [
             'kruskal', 'mannwhitney', 'wilcoxon', 'linear_regression', 
             'bar_chart', 'eda_pie', 'shapiro', 'kolmogorov', 
             'anderson', 'eda_distribution', 'eda_swarm', 'similarity',
-            'anova', 'ancova'
+            'anova', 'ancova', 'f_test', 'z_test', 't_test', 'fzt_visualization'  // Add FZT tests
         ].includes(testType);
         
         if (cacheKey && needsColumnFiltering && !isFetchingColumnTypes) {
@@ -923,7 +927,10 @@ const StatisticalAnalysisTool = () => {
         
         const fileUrlKey = sessionStorage.getItem("fileURL") || "";
         
-        if (testType === 'mannwhitney' && column1 && fileUrlKey) {
+        // Check if this test type requires exactly 2 groups
+        const testsRequiringTwoGroups = ['mannwhitney', 'f_test', 'z_test', 't_test', 'fzt_visualization'];
+        
+        if (testsRequiringTwoGroups.includes(testType) && column1 && fileUrlKey) {
             console.log("[DEBUG] Conditions met for fetching groups");
             const cacheKey = `${fileUrlKey}_${column1}`;
             
@@ -1557,6 +1564,198 @@ const StatisticalAnalysisTool = () => {
             }
         }
 
+        // Add validation for F-test
+        if (testType === 'f_test') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'এফ-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'F-test requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (selectedGroups.length !== 2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'এফ-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
+                        : 'Please select exactly 2 groups for F-test.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for Z-test
+        if (testType === 'z_test') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'জেড-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'Z-test requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (selectedGroups.length !== 2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'জেড-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
+                        : 'Please select exactly 2 groups for Z-test.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for T-test
+        if (testType === 't_test') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'টি-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'T-test requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (selectedGroups.length !== 2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'টি-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
+                        : 'Please select exactly 2 groups for T-test.'
+                );
+                return;
+            }
+        }
+
+        // Add validation for FZT Combined test
+        if (testType === 'fzt_visualization') {
+            if (!column1 || !column2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
+                        : 'Please select both a categorical and a numeric column.'
+                );
+                return;
+            }
+            
+            if (categoricalColumns.length === 0 || numericColumns.length === 0) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'এফ/জেড/টি সম্মিলিত বিশ্লেষণের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
+                        : 'F/Z/T combined analysis requires both categorical and numeric columns in the file.'
+                );
+                return;
+            }
+            
+            if (!categoricalColumns.includes(column1)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
+                        : 'First column must be a categorical column.'
+                );
+                return;
+            }
+            
+            if (!numericColumns.includes(column2)) {
+                setErrorMessage(
+                    language === 'বাংলা'
+                        ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
+                        : 'Second column must be a numeric column.'
+                );
+                return;
+            }
+            
+            if (selectedGroups.length !== 2) {
+                setErrorMessage(
+                    language === 'বাংলা' 
+                        ? 'এফ/জেড/টি সম্মিলিত বিশ্লেষণের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
+                        : 'Please select exactly 2 groups for F/Z/T combined analysis.'
+                );
+                return;
+            }
+        }
+
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
 
@@ -1583,9 +1782,10 @@ const StatisticalAnalysisTool = () => {
             formData.append('column2', column2);            
         } else if (testType === 'kolmogorov' || testType === 'anderson') {
             formData.append('column', column1);
-        } else if (testType === 'fzt') {
-            formData.append('primary_col', column1);
-            formData.append('secondary_col', column2);
+        } else if (testType === 'f_test' || testType === 'z_test' || testType === 't_test' || testType === 'fzt_visualization') {
+            formData.append('column1', column1);
+            formData.append('column2', column2);
+            formData.append('selected_groups', JSON.stringify(selectedGroups));
         } else if (testType === 'eda_distribution' || testType === 'eda_pie') {
             formData.append('column', column1);
         } else if (testType === 'eda_swarm') {
@@ -1815,9 +2015,11 @@ const StatisticalAnalysisTool = () => {
             case 'similarity':
             case 'anova':
             case 'ancova':                    
+            case 'f_test':
+            case 'z_test':
+            case 't_test':
+            case 'fzt_visualization':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
-            case 'fzt':
-                return { col2: true, col3: false, refValue: false, heatmapSize: false, bengaliOptions: true };
             case 'eda_basics':
                 return { col2: false, col3: false, refValue: false, heatmapSize: false };        
             default:
@@ -2758,7 +2960,7 @@ const closePreview= async () =>{
 
 
                                                 {/* For other tests - keep existing code */}
-                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && testType !== 'bar_chart' && testType !== 'eda_pie' && testType !== 'shapiro' && testType !== 'kolmogorov' && testType !== 'anderson' && testType !== 'eda_distribution' && testType !== 'eda_swarm' && testType !== 'similarity' && testType !== 'anova' && testType !== 'ancova' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
+                                                {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && testType !== 'bar_chart' && testType !== 'eda_pie' && testType !== 'shapiro' && testType !== 'kolmogorov' && testType !== 'anderson' && testType !== 'eda_distribution' && testType !== 'eda_swarm' && testType !== 'similarity' && testType !== 'anova' && testType !== 'ancova' && testType !== 'f_test' && testType !== 'z_test' && testType !== 't_test' && testType !== 'fzt_visualization' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
                                                         <h5 className="section-title">{t.selectColumns}</h5>
                                                         <label className="form-label">
@@ -4124,6 +4326,471 @@ const closePreview= async () =>{
                                                         </div>
                                                     </div>
                                                 )}
+
+                                                {/* For F, Z, T tests and combined visualization - requires 1 categorical with exactly 2 groups + 1 numeric */}
+                                                {(testType === 'f_test' || testType === 'z_test' || testType === 't_test' || testType === 'fzt_visualization') && (
+                                                    <div className="form-section">
+                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        
+                                                        {columnTypesError && (
+                                                            <div className="error-box" style={{ marginBottom: '1rem' }}>
+                                                                <div className="error-icon">
+                                                                    <svg viewBox="0 0 20 20" fill="currentColor">
+                                                                        <path
+                                                                            fillRule="evenodd"
+                                                                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                                            clipRule="evenodd"
+                                                                        />
+                                                                    </svg>
+                                                                </div>
+                                                                <div className="error-text">{columnTypesError}</div>
+                                                            </div>
+                                                        )}
+                                                        
+                                                        {/* Column 1 - Categorical (Grouping variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : categoricalColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? `${
+                                                                                testType === 'f_test' ? 'এফ-টেস্ট' :
+                                                                                testType === 'z_test' ? 'জেড-টেস্ট' :
+                                                                                testType === 't_test' ? 'টি-টেস্ট' :
+                                                                                'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'
+                                                                            } এর জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।` 
+                                                                            : `${
+                                                                                testType === 'f_test' ? 'F-test' :
+                                                                                testType === 'z_test' ? 'Z-test' :
+                                                                                testType === 't_test' ? 'T-test' :
+                                                                                'F/Z/T combined analysis'
+                                                                            } requires categorical columns. No categorical columns found in the file.`}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column1}
+                                                                        onChange={(e) => {
+                                                                            setColumn1(e.target.value);
+                                                                            // Clear selected groups when column changes
+                                                                            setSelectedGroups([]);
+                                                                            setGroupDropdownOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
+                                                                                : "Select a categorical column"}
+                                                                        </option>
+                                                                        {categoricalColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
+                                                                            : `${categoricalColumns.length} categorical columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Group Selection (only show when a categorical column is selected) */}
+                                                        {column1 && (
+                                                            <div className="form-group">
+                                                                <label className="form-label">
+                                                                    {language === "বাংলা" ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
+                                                                    <span className="required-star">*</span>
+                                                                </label>
+                                                                
+                                                                {/* Selected Groups Display */}
+                                                                {selectedGroups.length > 0 && (
+                                                                    <div style={{
+                                                                        marginBottom: '1rem',
+                                                                        padding: '0.75rem',
+                                                                        backgroundColor: '#f0f9ff',
+                                                                        border: '1px solid #bae6fd',
+                                                                        borderRadius: '0.5rem'
+                                                                    }}>
+                                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                                            <span style={{ fontWeight: '600', color: '#0369a1' }}>
+                                                                                {t.selectedGroups || 'Selected Groups'}: {selectedGroups.join(', ')}
+                                                                            </span>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => setSelectedGroups([])}
+                                                                                style={{
+                                                                                    background: 'none',
+                                                                                    border: 'none',
+                                                                                    color: '#dc2626',
+                                                                                    cursor: 'pointer',
+                                                                                    fontSize: '0.875rem',
+                                                                                    padding: '0.25rem 0.5rem',
+                                                                                    borderRadius: '0.25rem'
+                                                                                }}
+                                                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
+                                                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                                                            >
+                                                                                {t.clearSelection || 'Clear'}
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Group Selection Dropdown */}
+                                                                <div style={{ position: 'relative' }}>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="form-select"
+                                                                        onClick={() => {
+                                                                            if (column1 && availableGroups.length > 0 && !isFetchingGroups) {
+                                                                                setGroupDropdownOpen(!groupDropdownOpen);
+                                                                            }
+                                                                        }}
+                                                                        style={{
+                                                                            textAlign: 'left',
+                                                                            cursor: (column1 && availableGroups.length > 0 && !isFetchingGroups) ? 'pointer' : 'not-allowed',
+                                                                            display: 'flex',
+                                                                            justifyContent: 'space-between',
+                                                                            alignItems: 'center',
+                                                                            opacity: (column1 && !isFetchingGroups) ? 1 : 0.7
+                                                                        }}
+                                                                    >
+                                                                        <span>
+                                                                            {isFetchingGroups ? (
+                                                                                <>
+                                                                                    <div className="spinner small" style={{ display: 'inline-block', marginRight: '0.5rem' }}></div>
+                                                                                    {language === "বাংলা" ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
+                                                                                </>
+                                                                            ) : availableGroups.length === 0 ? (
+                                                                                column1 
+                                                                                    ? (language === "বাংলা" ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
+                                                                                    : (language === "বাংলা" ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
+                                                                            ) : (
+                                                                                `Select 2 groups (${availableGroups.length} ${language === "বাংলা" ? "টি উপলব্ধ" : "available"})`
+                                                                            )}
+                                                                        </span>
+                                                                        {availableGroups.length > 0 && !isFetchingGroups && <span>▼</span>}
+                                                                    </button>
+                                                                    
+                                                                    {groupDropdownOpen && availableGroups.length > 0 && !isFetchingGroups && (
+                                                                        <div style={{
+                                                                            position: 'absolute',
+                                                                            top: '100%',
+                                                                            left: 0,
+                                                                            right: 0,
+                                                                            backgroundColor: 'white',
+                                                                            border: '1px solid #d1d5db',
+                                                                            borderRadius: '0.5rem',
+                                                                            maxHeight: '200px',
+                                                                            overflowY: 'auto',
+                                                                            zIndex: 1000,
+                                                                            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+                                                                        }}>
+                                                                            {availableGroups.map((group, index) => {
+                                                                                const isSelected = selectedGroups.includes(group);
+                                                                                return (
+                                                                                    <div
+                                                                                        key={index}
+                                                                                        onClick={() => {
+                                                                                            if (isSelected) {
+                                                                                                setSelectedGroups(prev => prev.filter(g => g !== group));
+                                                                                            } else {
+                                                                                                if (selectedGroups.length < 2) {
+                                                                                                    setSelectedGroups(prev => [...prev, group]);
+                                                                                                } else {
+                                                                                                    // Replace the first selected group
+                                                                                                    setSelectedGroups(prev => [prev[1], group]);
+                                                                                                }
+                                                                                            }
+                                                                                        }}
+                                                                                        style={{
+                                                                                            padding: '0.75rem',
+                                                                                            cursor: 'pointer',
+                                                                                            backgroundColor: isSelected ? '#dbeafe' : 'white',
+                                                                                            borderBottom: index < availableGroups.length - 1 ? '1px solid #e5e7eb' : 'none',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: '0.5rem'
+                                                                                        }}
+                                                                                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : '#f3f4f6'}
+                                                                                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = isSelected ? '#dbeafe' : 'white'}
+                                                                                    >
+                                                                                        <div style={{
+                                                                                            width: '1rem',
+                                                                                            height: '1rem',
+                                                                                            borderRadius: '0.25rem',
+                                                                                            border: '2px solid',
+                                                                                            borderColor: isSelected ? '#3b82f6' : '#9ca3af',
+                                                                                            backgroundColor: isSelected ? '#3b82f6' : 'transparent',
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            justifyContent: 'center'
+                                                                                        }}>
+                                                                                            {isSelected && (
+                                                                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                                                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                                                                </svg>
+                                                                                            )}
+                                                                                        </div>
+                                                                                        <span>{group}</span>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                
+                                                                {/* Validation Message */}
+                                                                {selectedGroups.length > 0 && selectedGroups.length !== 2 && (
+                                                                    <div style={{
+                                                                        marginTop: '0.5rem',
+                                                                        padding: '0.75rem',
+                                                                        backgroundColor: '#fef2f2',
+                                                                        border: '1px solid #fecaca',
+                                                                        borderRadius: '0.375rem',
+                                                                        color: '#dc2626',
+                                                                        fontSize: '0.875rem',
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: '0.5rem'
+                                                                    }}>
+                                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                            <circle cx="12" cy="12" r="10"></circle>
+                                                                            <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                            <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                        </svg>
+                                                                        ⚠️ {language === "বাংলা" 
+                                                                            ? `${testType === 'f_test' ? 'এফ-টেস্ট' :
+                                                                            testType === 'z_test' ? 'জেড-টেস্ট' :
+                                                                            testType === 't_test' ? 'টি-টেস্ট' :
+                                                                            'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'} এর জন্য ঠিক ২টি গ্রুপ প্রয়োজন। দয়া করে ২টি গ্রুপ নির্বাচন করুন।`
+                                                                            : `${testType === 'f_test' ? 'F-test' :
+                                                                            testType === 'z_test' ? 'Z-test' :
+                                                                            testType === 't_test' ? 'T-test' :
+                                                                            'F/Z/T combined analysis'} requires exactly 2 groups. Please select 2 groups.`}
+                                                                    </div>
+                                                                )}
+                                                                
+                                                                {/* Help text */}
+                                                                <div style={{
+                                                                    marginTop: '0.5rem',
+                                                                    padding: '0.5rem',
+                                                                    backgroundColor: '#f8fafc',
+                                                                    border: '1px solid #e2e8f0',
+                                                                    borderRadius: '0.375rem',
+                                                                    color: '#64748b',
+                                                                    fontSize: '0.75rem'
+                                                                }}>
+                                                                    {language === "বাংলা" 
+                                                                        ? `${testType === 'f_test' ? 'এফ-টেস্ট' :
+                                                                        testType === 'z_test' ? 'জেড-টেস্ট' :
+                                                                        testType === 't_test' ? 'টি-টেস্ট' :
+                                                                        'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'} এর জন্য ২টি গ্রুপ নির্বাচন করুন। পরীক্ষাটি এই দুই গ্রুপের তুলনা করবে।`
+                                                                        : `Select exactly 2 groups for ${testType === 'f_test' ? 'F-test' :
+                                                                        testType === 'z_test' ? 'Z-test' :
+                                                                        testType === 't_test' ? 'T-test' :
+                                                                        'F/Z/T combined analysis'}. The test will compare these two groups.`}
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Column 2 - Numerical (Value variable) */}
+                                                        <div className="form-group">
+                                                            <label className="form-label">
+                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
+                                                                <span className="required-star">*</span>
+                                                            </label>
+                                                            
+                                                            {!columnTypesLoaded ? (
+                                                                <div className="loading-placeholder">
+                                                                    <div className="spinner small"></div>
+                                                                    {isFetchingColumnTypes 
+                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                    }
+                                                                </div>
+                                                            ) : numericColumns.length === 0 ? (
+                                                                <div className="no-columns-warning">
+                                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                                                        <line x1="12" y1="16" x2="12" y2="16"></line>
+                                                                    </svg>
+                                                                    <span>
+                                                                        {language === "বাংলা" 
+                                                                            ? `${
+                                                                                testType === 'f_test' ? 'এফ-টেস্ট' :
+                                                                                testType === 'z_test' ? 'জেড-টেস্ট' :
+                                                                                testType === 't_test' ? 'টি-টেস্ট' :
+                                                                                'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'
+                                                                            } এর জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।` 
+                                                                            : `${
+                                                                                testType === 'f_test' ? 'F-test' :
+                                                                                testType === 'z_test' ? 'Z-test' :
+                                                                                testType === 't_test' ? 'T-test' :
+                                                                                'F/Z/T combined analysis'
+                                                                            } requires numeric columns. No numeric columns found in the file.`}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <>
+                                                                    <select
+                                                                        className="form-select"
+                                                                        value={column2}
+                                                                        onChange={(e) => setColumn2(e.target.value)}
+                                                                    >
+                                                                        <option value="">
+                                                                            {language === "বাংলা" 
+                                                                                ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
+                                                                                : "Select a numeric column"}
+                                                                        </option>
+                                                                        {numericColumns.map((col, idx) => (
+                                                                            <option key={idx} value={col}>
+                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <div className="column-count-hint">
+                                                                        {language === "বাংলা" 
+                                                                            ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
+                                                                            : `${numericColumns.length} numeric columns found`}
+                                                                    </div>
+                                                                </>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Test-specific Information */}
+                                                        <div style={{ 
+                                                            marginTop: '1rem', 
+                                                            padding: '0.75rem', 
+                                                            backgroundColor: '#f0f9ff', 
+                                                            border: '1px solid #bae6fd',
+                                                            borderRadius: '0.5rem',
+                                                            fontSize: '0.875rem'
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
+                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0369a1" strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10"></circle>
+                                                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                                                    <line x1="12" y1="8" x2="12" y2="8"></line>
+                                                                </svg>
+                                                                <div>
+                                                                    <strong style={{ color: '#0369a1' }}>
+                                                                        {testType === 'f_test'
+                                                                            ? (language === "বাংলা" ? "এফ-টেস্ট নির্দেশনা" : "F-Test Guidelines")
+                                                                            : testType === 'z_test'
+                                                                            ? (language === "বাংলা" ? "জেড-টেস্ট নির্দেশনা" : "Z-Test Guidelines")
+                                                                            : testType === 't_test'
+                                                                            ? (language === "বাংলা" ? "টি-টেস্ট নির্দেশনা" : "T-Test Guidelines")
+                                                                            : (language === "বাংলা" ? "এফ/জেড/টি সম্মিলিত বিশ্লেষণ নির্দেশনা" : "F/Z/T Combined Analysis Guidelines")}
+                                                                    </strong>
+                                                                    <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
+                                                                        {testType === 'f_test' && (
+                                                                            <>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "দুইটি গ্রুপের ভ্যারিয়েন্স (বিচ্ছুরণ) তুলনা করে"
+                                                                                        : "Compares variances (spread) between two groups"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "স্বাভাবিক বন্টন ও স্বাধীন নমুনা প্রয়োজন"
+                                                                                        : "Requires normal distribution and independent samples"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "ফর্মুলা: F = (গ্রুপ ১ এর ভ্যারিয়েন্স) / (গ্রুপ ২ এর ভ্যারিয়েন্স)"
+                                                                                        : "Formula: F = (Group 1 variance) / (Group 2 variance)"}
+                                                                                </li>
+                                                                            </>
+                                                                        )}
+                                                                        {testType === 'z_test' && (
+                                                                            <>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "বড় নমুনার জন্য (n > 30) গড় মানের পার্থক্য পরীক্ষা করে"
+                                                                                        : "Tests for mean differences in large samples (n > 30)"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "জনসংখ্যার ভ্যারিয়েন্স জানা থাকলে ব্যবহার করা হয়"
+                                                                                        : "Used when population variance is known"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "স্বাভাবিক বন্টনের জন্য সবচেয়ে শক্তিশালী"
+                                                                                        : "Most powerful for normal distributions"}
+                                                                                </li>
+                                                                            </>
+                                                                        )}
+                                                                        {testType === 't_test' && (
+                                                                            <>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "ছোট নমুনার জন্য (n < 30) গড় মানের পার্থক্য পরীক্ষা করে"
+                                                                                        : "Tests for mean differences in small samples (n < 30)"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "জনসংখ্যার ভ্যারিয়েন্স অজানা থাকলে ব্যবহার করা হয়"
+                                                                                        : "Used when population variance is unknown"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "ওয়েলচের টি-টেস্ট (অসম ভ্যারিয়েন্সের জন্য উপযুক্ত)"
+                                                                                        : "Welch's t-test (suitable for unequal variances)"}
+                                                                                </li>
+                                                                            </>
+                                                                        )}
+                                                                        {testType === 'fzt_visualization' && (
+                                                                            <>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "একসাথে তিনটি পরীক্ষার ফলাফল প্রদর্শন করে"
+                                                                                        : "Displays results of all three tests simultaneously"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "সম্মিলিত হিস্টোগ্রাম ও ডিস্ট্রিবিউশন প্লট"
+                                                                                        : "Combined histogram and distribution plots"}
+                                                                                </li>
+                                                                                <li>
+                                                                                    {language === "বাংলা" 
+                                                                                        ? "বিস্তারিত পরিসংখ্যান ও ভিজ্যুয়ালাইজেশন"
+                                                                                        : "Detailed statistics and visualizations"}
+                                                                                </li>
+                                                                            </>
+                                                                        )}
+                                                                    </ul>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
 
                                                 {requiredFields.col2 && (
                                                     <div className="form-group">
