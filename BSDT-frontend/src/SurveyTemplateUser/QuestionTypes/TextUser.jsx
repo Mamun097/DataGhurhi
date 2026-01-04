@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
@@ -13,6 +13,8 @@ const TextUser = ({
     userResponse.find((response) => response.questionText === question.text)
       ?.userResponse || "";
   const [error, setError] = useState("");
+
+  const isLongAnswer = question.meta?.responseType === "long";
 
   const handleChange = (e) => {
     const newValue = e.target.value;
@@ -59,12 +61,14 @@ const TextUser = ({
           return num === valNum;
         case "Not Equal To":
           return num !== valNum;
-        case "Between":
+        case "Between": {
           const [min, max] = validationText.split(",").map(parseFloat);
           return num >= min && num <= max;
-        case "Not Between":
+        }
+        case "Not Between": {
           const [min2, max2] = validationText.split(",").map(parseFloat);
           return num < min2 || num > max2;
+        }
         default:
           return true;
       }
@@ -74,13 +78,15 @@ const TextUser = ({
           return value.includes(validationText);
         case "Does Not Contain":
           return !value.includes(validationText);
-        case "Email":
+        case "Email": {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
           return emailRegex.test(value);
-        case "URL":
+        }
+        case "URL": {
           const urlRegex =
-            /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([\/\w .-]*)*\/?$/;
+            /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/;
           return urlRegex.test(value);
+        }
         default:
           return true;
       }
@@ -115,7 +121,7 @@ const TextUser = ({
     return true;
   };
 
-  const validate = () => {
+  const validate = useCallback(() => {
     if (question.required && !userAnswer.trim()) {
       setError("This field is required.");
       return;
@@ -134,11 +140,11 @@ const TextUser = ({
       }
     }
     setError("");
-  };
+  }, [userAnswer, question]);
 
   useEffect(() => {
     validate();
-  }, [userAnswer, question]);
+  }, [validate]);
 
   return (
     <div className="mt-2 ms-2 me-2">
@@ -147,6 +153,7 @@ const TextUser = ({
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
+
       {question.imageUrls && question.imageUrls.length > 0 && (
         <div className="mt-4 mb-4">
           {question.imageUrls.map((img, idx) => (
@@ -165,17 +172,34 @@ const TextUser = ({
           ))}
         </div>
       )}
-      <textarea
-        rows="3"
-        type="text"
-        className="form-control mt-3"
-        value={userAnswer}
-        onChange={handleChange}
-        onFocus={(e) => e.target.select()}
-        disabled={question.disabled}
-        aria-label="Text input"
-      />
-      {error && <small className="text-danger">{error}</small>}
+
+      {isLongAnswer ? (
+        <textarea
+          rows={3}
+          className="form-control mt-3"
+          style={{ maxWidth: "720px", width: "100%" }}
+          value={userAnswer}
+          onChange={handleChange}
+          onFocus={(e) => e.target.select()}
+          disabled={question.disabled}
+          placeholder="Your answer"
+          aria-label="Paragraph answer"
+        />
+      ) : (
+        <input
+          type="text"
+          className="form-control form-control-sm mt-3"
+          style={{ maxWidth: "720px", width: "100%" }}
+          value={userAnswer}
+          onChange={handleChange}
+          onFocus={(e) => e.target.select()}
+          disabled={question.disabled}
+          placeholder="Your answer"
+          aria-label="Short answer"
+        />
+      )}
+
+      {error && <small className="text-danger mt-1 d-block">{error}</small>}
     </div>
   );
 };
