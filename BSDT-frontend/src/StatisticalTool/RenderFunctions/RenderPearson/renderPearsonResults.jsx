@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import GroupedBarPlot from './plots/GroupedBarPlot';
+import ScatterPlot from './plots/ScatterPlot';
 import {
     mapDigitIfBengali,
     formatValue,
@@ -204,6 +205,58 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const [heatmapSettings, setHeatmapSettings] = useState(getHeatmapDefaultSettings());
     const [groupedBarSettings, setGroupedBarSettings] = useState(getGroupedBarDefaultSettings());
 
+
+    const getScatterDefaultSettings = () => {
+        const numericCols = results.scatter_plot?.numeric_columns || [];
+        const defaultX = results.scatter_plot?.default_x || '';
+        const defaultY = results.scatter_plot?.default_y || '';
+        
+        return {
+            dimensions: '800x600',
+            fontFamily: 'Times New Roman',
+            captionOn: false,
+            captionText: '',
+            captionSize: 18,
+            captionBold: false,
+            captionItalic: false,
+            captionUnderline: false,
+            captionTopMargin: 30,
+            xAxisTitle: defaultX || 'X Variable',
+            yAxisTitle: defaultY || 'Y Variable',
+            xAxisTitleSize: 16,
+            yAxisTitleSize: 16,
+            xAxisTitleBold: false,
+            xAxisTitleItalic: false,
+            xAxisTitleUnderline: false,
+            yAxisTitleBold: false,
+            yAxisTitleItalic: false,
+            yAxisTitleUnderline: false,
+            xAxisTickSize: 12,
+            yAxisTickSize: 12,
+            xAxisBottomMargin: 0,
+            yAxisLeftMargin: 0,
+            gridOn: true,
+            gridStyle: '3 3',
+            gridColor: 'gray',
+            gridOpacity: 0.3,
+            borderOn: false,
+            plotBorderOn: false,
+            dataLabelsOn: false,
+            backgroundColor: 'white',
+            pointSize: 6,
+            pointColor: '#3b82f6',
+            pointBorderColor: '#1d4ed8',
+            pointBorderWidth: 1,
+            showRegressionLine: true,
+            xVariable: defaultX,
+            yVariable: defaultY,
+            numeric_columns: numericCols // Add numeric columns to settings
+        };
+    };
+
+    // Initialize scatter plot settings
+    const [scatterSettings, setScatterSettings] = useState(getScatterDefaultSettings());
+
     const setCurrentSettings = (settings) => {
         switch (currentPlotType) {
             case 'heatmap':
@@ -212,10 +265,15 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
             case 'grouped':
                 setGroupedBarSettings(settings);
                 break;
+            case 'scatter':
+                setScatterSettings(settings);
+                break;
             default:
                 break;
         }
     };
+
+
 
     if (!results) {
         return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
@@ -429,6 +487,12 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     >
                         {t('Heatmap', 'হিটম্যাপ')}
                     </button>
+                    <button
+                        className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('scatter')}
+                    >
+                        {t('Scatter Plot', 'স্ক্যাটার প্লট')}
+                    </button>                    
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
@@ -793,26 +857,51 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     </div>
                 )}
 
+
+
+
+                {activeTab === 'scatter' && (
+                    <div className="stats-plot-wrapper active">
+                        <ScatterPlot
+                            results={results}
+                            language={language}
+                            settings={scatterSettings}
+                            onSettingsChange={setScatterSettings}
+                            openCustomization={openCustomization}
+                            handleDownload={handleDownload}
+                            downloadMenuOpen={downloadMenuOpen}
+                            setDownloadMenuOpen={setDownloadMenuOpen}
+                            chartRef={chartRef}
+                        />
+                    </div>
+                )}
+
+
                 <CustomizationOverlay
                     isOpen={overlayOpen}
                     onClose={() => setOverlayOpen(false)}
                     plotType={
                         currentPlotType === 'heatmap' ? 'Heatmap' :
-                        currentPlotType === 'grouped' ? 'Grouped Bar' : 'Heatmap'
+                        currentPlotType === 'grouped' ? 'Grouped Bar' :
+                        currentPlotType === 'scatter' ? 'Scatter Plot' : 'Heatmap'
                     }
                     settings={
                         currentPlotType === 'heatmap' ? heatmapSettings :
-                        currentPlotType === 'grouped' ? groupedBarSettings : heatmapSettings
+                        currentPlotType === 'grouped' ? groupedBarSettings :
+                        currentPlotType === 'scatter' ? scatterSettings :
+                        currentPlotType === 'scatter' ? scatterSettings : heatmapSettings
                     }
                     onSettingsChange={
                         currentPlotType === 'heatmap' ? setHeatmapSettings :
-                        currentPlotType === 'grouped' ? setGroupedBarSettings : setHeatmapSettings
+                        currentPlotType === 'grouped' ? setGroupedBarSettings :
+                        currentPlotType === 'scatter' ? setScatterSettings : setHeatmapSettings
                     }
                     language={language === 'bn' ? 'বাংলা' : 'English'}
                     fontFamilyOptions={fontFamilyOptions}
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :
-                        currentPlotType === 'grouped' ? getGroupedBarDefaultSettings() : getHeatmapDefaultSettings()
+                        currentPlotType === 'grouped' ? getGroupedBarDefaultSettings() :
+                        currentPlotType === 'scatter' ? getScatterDefaultSettings() : getHeatmapDefaultSettings()
                     }
                     results={results}
                 />
