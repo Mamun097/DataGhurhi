@@ -4116,8 +4116,6 @@ def process_fzt_visualization(request, df, col_group, col_value, user_id):
 
 
 
-
-
 def process_pearson_test(request, df, selected_columns, user_id):
     from scipy.stats import pearsonr
     import numpy as np
@@ -4151,6 +4149,64 @@ def process_pearson_test(request, df, selected_columns, user_id):
                 return float(x)
             except Exception:
                 return None
+
+        def prepare_scatter_plot_data(var1, var2, data):
+            """Prepare scatter plot data for a pair of variables"""
+            # Ensure numeric data
+            s1 = pd.to_numeric(data[var1], errors='coerce')
+            s2 = pd.to_numeric(data[var2], errors='coerce')
+            
+            # Remove pairs where either is NaN
+            mask = s1.notna() & s2.notna()
+            s1_clean, s2_clean = s1[mask], s2[mask]
+            
+            if len(s1_clean) < 2:
+                return None
+            
+            # Calculate regression line
+            try:
+                slope, intercept, r_value, p_value_reg, std_err = stats.linregress(s1_clean, s2_clean)
+                regression_data = {
+                    'slope': float(slope),
+                    'intercept': float(intercept),
+                    'r_squared': float(r_value**2),
+                    'p_value': float(p_value_reg)
+                }
+            except Exception as e:
+                print(f"[Pearson] Regression calculation warning: {e}")
+                regression_data = {
+                    'slope': 0,
+                    'intercept': 0,
+                    'r_squared': 0,
+                    'p_value': 1.0
+                }
+            
+            # Calculate basic statistics for each variable
+            return {
+                'variable1': str(var1),
+                'variable2': str(var2),
+                'sample1': {
+                    'name': str(var1),
+                    'values': [float(x) for x in s1_clean],
+                    'count': int(len(s1_clean)),
+                    'mean': float(np.mean(s1_clean)),
+                    'median': float(np.median(s1_clean)),
+                    'std': float(np.std(s1_clean)),
+                    'min': float(np.min(s1_clean)),
+                    'max': float(np.max(s1_clean))
+                },
+                'sample2': {
+                    'name': str(var2),
+                    'values': [float(x) for x in s2_clean],
+                    'count': int(len(s2_clean)),
+                    'mean': float(np.mean(s2_clean)),
+                    'median': float(np.median(s2_clean)),
+                    'std': float(np.std(s2_clean)),
+                    'min': float(np.min(s2_clean)),
+                    'max': float(np.max(s2_clean))
+                },
+                'regression': regression_data
+            }
 
         def pearson_one_pair(var_a, var_b):
             """
@@ -4227,6 +4283,7 @@ def process_pearson_test(request, df, selected_columns, user_id):
         n_vars = len(vars_list)
         pairwise_results = []
         all_p_values = []
+        scatter_plot_data = []  # NEW: Store scatter plot data for each pair
         
         for i in range(n_vars):
             for j in range(i + 1, n_vars):
@@ -4249,8 +4306,14 @@ def process_pearson_test(request, df, selected_columns, user_id):
                     all_p_values.append(result['p_value'])
                 else:
                     all_p_values.append(np.nan)
+                
+                # NEW: Prepare scatter plot data for this pair
+                scatter_data = prepare_scatter_plot_data(var1, var2, df)
+                if scatter_data:
+                    scatter_plot_data.append(scatter_data)
 
         print(f"[Pearson] Completed {len(pairwise_results)} pairwise tests")
+        print(f"[Pearson] Prepared {len(scatter_plot_data)} scatter plots")
 
         # ── 4) Apply FDR correction ────────────────────────────────────────
         p_array = np.array(all_p_values, dtype=float)
@@ -4387,89 +4450,7 @@ def process_pearson_test(request, df, selected_columns, user_id):
                             'p_adjusted': result['p_adjusted']
                         })
 
-        # ── 10) Identify numeric columns for scatter plot ─────────────────
-        numeric_columns = []
-        numeric_column_stats = {}
-        
-        for var in vars_list:
-            try:
-                col_data = pd.to_numeric(df[var], errors='coerce')
-                valid_count = col_data.notna().sum()
-                
-                if valid_count >= 2:  # Need at least 2 observations
-                    numeric_columns.append(var)
-                    
-                    # Store basic stats for this column
-                    clean_data = col_data.dropna()
-                    numeric_column_stats[var] = {
-                        'min': float(clean_data.min()) if len(clean_data) > 0 else None,
-                        'max': float(clean_data.max()) if len(clean_data) > 0 else None,
-                        'mean': float(clean_data.mean()) if len(clean_data) > 0 else None,
-                        'std': float(clean_data.std()) if len(clean_data) > 0 else None,
-                        'count': int(valid_count)
-                    }
-            except Exception as e:
-                print(f"[Pearson] Error checking numeric column {var}: {e}")
-                continue
-        
-        # Default scatter plot uses first two numeric columns
-        default_x = None
-        default_y = None
-        scatter_data = []
-        regression_line = []
-        
-        if len(numeric_columns) >= 2:
-            default_x = numeric_columns[0]
-            default_y = numeric_columns[1]
-            
-            # Prepare scatter data for default pair
-            x_data = pd.to_numeric(df[default_x], errors='coerce')
-            y_data = pd.to_numeric(df[default_y], errors='coerce')
-            
-            # Create aligned DataFrame and drop NAs
-            aligned_df = pd.DataFrame({
-                'x': x_data,
-                'y': y_data
-            }).dropna()
-            
-            if len(aligned_df) >= 2:
-                # Prepare scatter points
-                scatter_data = [
-                    {'x': float(row['x']), 'y': float(row['y'])} 
-                    for _, row in aligned_df.iterrows()
-                ]
-                
-                # Calculate linear regression
-                try:
-                    x_array = aligned_df['x'].values
-                    y_array = aligned_df['y'].values
-                    
-                    slope, intercept = np.polyfit(x_array, y_array, 1)
-                    
-                    # Generate regression line points
-                    x_min, x_max = np.min(x_array), np.max(x_array)
-                    x_reg = np.linspace(x_min, x_max, 20)
-                    y_reg = slope * x_reg + intercept
-                    
-                    regression_line = [
-                        {'x': float(x), 'y': float(y)} 
-                        for x, y in zip(x_reg, y_reg)
-                    ]
-                    
-                    # Also calculate R² for display
-                    y_pred = slope * x_array + intercept
-                    ss_res = np.sum((y_array - y_pred) ** 2)
-                    ss_tot = np.sum((y_array - np.mean(y_array)) ** 2)
-                    r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-                    
-                except Exception as e:
-                    print(f"[Pearson] Error calculating regression line: {e}")
-                    regression_line = []
-                    r_squared = None
-            else:
-                r_squared = None
-        
-        # ── 11) Prepare final response ─────────────────────────────────────
+        # ── 10) Prepare final response ─────────────────────────────────────
         test_name = 'Pearson Correlation Test' if lang == 'en' else 'পিয়ারসন সম্পর্ক পরীক্ষা'
         
         response_data = {
@@ -4482,34 +4463,22 @@ def process_pearson_test(request, df, selected_columns, user_id):
             'variable_stats': variable_stats,
             'pairwise_results': pairwise_results,
             'blocks': blocks,
+            'scatter_plot_data': scatter_plot_data,  # NEW: Add scatter plot data
+            'selected_scatter_pair': None,  # NEW: Currently selected scatter plot pair
             'correlation_matrix': [[float(val) for val in row] for row in corr_matrix.tolist()],
             'p_value_matrix': [[float(val) for val in row] for row in p_matrix.tolist()],
             'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
             'plot_data': plot_data,
             'table_columns': table_columns,
-            'scatter_plot': {
-                'available': len(numeric_columns) >= 2,
-                'numeric_columns': numeric_columns,
-                'numeric_column_stats': numeric_column_stats,  # Add stats for axis scaling
-                'default_x': default_x,
-                'default_y': default_y,
-                'current_x': default_x,
-                'current_y': default_y,
-                'data': scatter_data,
-                'regression_line': regression_line,
-                'r_squared': r_squared if 'r_squared' in locals() else None
-            },
             'metadata': {
                 'fdr_correction': 'Benjamini-Hochberg',
                 'alpha': 0.05,
                 'total_observations': int(len(df)),
-                'confidence_level': 0.95,
-                'numeric_variables_count': len(numeric_columns)
+                'confidence_level': 0.95
             }
         }
 
         print(f"[Pearson] Response prepared successfully with {len(pairwise_results)} comparisons")
-        print(f"[Pearson] Numeric columns identified: {numeric_columns}")
         return JsonResponse(response_data)
 
     except Exception as e:
@@ -4524,255 +4493,6 @@ def process_pearson_test(request, df, selected_columns, user_id):
             'traceback': traceback_msg
         })
 
-
-@csrf_exempt
-def get_scatter_data(request):
-    """API endpoint to fetch scatter plot data for specific variable pairs"""
-    import numpy as np
-    import pandas as pd
-    from django.http import JsonResponse
-    from scipy.stats import pearsonr
-    import os
-    from django.conf import settings
-    
-    try:
-        # Get parameters
-        x_variable = request.POST.get('x_variable')
-        y_variable = request.POST.get('y_variable')
-        user_id = request.POST.get('user_id')
-        df_id = request.POST.get('df_id')
-        file_url = request.POST.get('file_url')
-        
-        print(f"[Scatter API] Request received: X={x_variable}, Y={y_variable}, User={user_id}")
-        
-        if not all([x_variable, y_variable, user_id]):
-            return JsonResponse({
-                'success': False,
-                'error': 'Missing required parameters'
-            })
-        
-        # Load the dataframe - IMPORTANT: You need to get the actual file path
-        # This depends on how you're storing user files
-        if not file_url:
-            # Try to get the file path from session or database
-            # You need to implement this based on your storage system
-            from django.contrib.sessions.models import Session
-            import json
-            
-            try:
-                session = Session.objects.get(session_key=request.session.session_key)
-                session_data = session.get_decoded()
-                file_url = session_data.get('current_file_url')
-                print(f"[Scatter API] Got file URL from session: {file_url}")
-            except:
-                return JsonResponse({
-                    'success': False,
-                    'error': 'File URL not found in session'
-                })
-        
-        file_path = os.path.join(settings.MEDIA_ROOT, file_url.replace("/media/", ""))
-        print(f"[Scatter API] File path: {file_path}")
-        
-        if not os.path.exists(file_path):
-            return JsonResponse({
-                'success': False,
-                'error': f'File not found at path: {file_path}'
-            })
-        
-        # Read the file
-        try:
-            if file_path.lower().endswith('.csv'):
-                df = pd.read_csv(file_path)
-            else:
-                df = pd.read_excel(file_path)
-            print(f"[Scatter API] File loaded successfully. Shape: {df.shape}")
-        except Exception as e:
-            return JsonResponse({
-                'success': False,
-                'error': f'Error reading file: {str(e)}'
-            })
-        
-        # Check if variables exist
-        if x_variable not in df.columns:
-            return JsonResponse({
-                'success': False,
-                'error': f'Variable "{x_variable}" not found in DataFrame. Available columns: {list(df.columns)}'
-            })
-        
-        if y_variable not in df.columns:
-            return JsonResponse({
-                'success': False,
-                'error': f'Variable "{y_variable}" not found in DataFrame'
-            })
-        
-        print(f"[Scatter API] Variables found in DataFrame")
-        
-        # Check if columns are numeric using the same logic as get_column_types
-        def is_column_numeric(series):
-            """Check if a column is numeric using the same logic as get_column_types"""
-            try:
-                numeric_series = pd.to_numeric(series, errors='coerce')
-                numeric_count = numeric_series.notna().sum()
-                total_count = len(series)
-                numeric_ratio = numeric_count / total_count if total_count > 0 else 0
-                
-                print(f"[Scatter API] Numeric check: count={numeric_count}, total={total_count}, ratio={numeric_ratio:.2f}")
-                
-                # Require at least 2 valid numeric values
-                return numeric_count >= 2 and numeric_ratio >= 0.5  # Reduced threshold for testing
-            except Exception as e:
-                print(f"[Scatter API] Error checking numeric: {str(e)}")
-                return False
-        
-        # Check both columns are numeric
-        x_series = df[x_variable]
-        y_series = df[y_variable]
-        
-        if not is_column_numeric(x_series):
-            print(f"[Scatter API] X column '{x_variable}' is not numeric")
-            # Try to show sample data to debug
-            sample_x = x_series.head(5).tolist()
-            print(f"[Scatter API] Sample X values: {sample_x}")
-            return JsonResponse({
-                'success': False,
-                'error': f'Column "{x_variable}" is not numeric. Sample values: {sample_x}'
-            })
-        
-        if not is_column_numeric(y_series):
-            print(f"[Scatter API] Y column '{y_variable}' is not numeric")
-            sample_y = y_series.head(5).tolist()
-            print(f"[Scatter API] Sample Y values: {sample_y}")
-            return JsonResponse({
-                'success': False,
-                'error': f'Column "{y_variable}" is not numeric. Sample values: {sample_y}'
-            })
-        
-        print(f"[Scatter API] Both columns are numeric")
-        
-        # Get numeric data
-        x_data = pd.to_numeric(df[x_variable], errors='coerce')
-        y_data = pd.to_numeric(df[y_variable], errors='coerce')
-        
-        print(f"[Scatter API] X valid values: {x_data.notna().sum()}/{len(x_data)}")
-        print(f"[Scatter API] Y valid values: {y_data.notna().sum()}/{len(y_data)}")
-        
-        # Create aligned DataFrame
-        aligned_df = pd.DataFrame({
-            'x': x_data,
-            'y': y_data
-        }).dropna()
-        
-        print(f"[Scatter API] Aligned data points: {len(aligned_df)}")
-        
-        if len(aligned_df) < 2:
-            return JsonResponse({
-                'success': False,
-                'error': f'Insufficient data points (need at least 2, got {len(aligned_df)})'
-            })
-        
-        # Prepare scatter points
-        scatter_data = []
-        for _, row in aligned_df.iterrows():
-            try:
-                scatter_data.append({
-                    'x': float(row['x']), 
-                    'y': float(row['y'])
-                })
-            except Exception as e:
-                print(f"[Scatter API] Error converting point: {e}")
-                continue
-        
-        print(f"[Scatter API] Converted {len(scatter_data)} scatter points")
-        
-        # Calculate statistics
-        x_array = aligned_df['x'].values.astype(float)
-        y_array = aligned_df['y'].values.astype(float)
-        
-        print(f"[Scatter API] X array range: {np.min(x_array):.2f} to {np.max(x_array):.2f}")
-        print(f"[Scatter API] Y array range: {np.min(y_array):.2f} to {np.max(y_array):.2f}")
-        
-        # Calculate linear regression
-        try:
-            slope, intercept = np.polyfit(x_array, y_array, 1)
-            print(f"[Scatter API] Regression: slope={slope:.4f}, intercept={intercept:.4f}")
-        except Exception as e:
-            print(f"[Scatter API] Error in polyfit: {e}")
-            slope, intercept = 0, 0
-        
-        # Generate regression line points
-        x_min, x_max = np.min(x_array), np.max(x_array)
-        x_reg = np.linspace(x_min, x_max, 20)
-        y_reg = slope * x_reg + intercept
-        
-        regression_line = []
-        for x, y in zip(x_reg, y_reg):
-            regression_line.append({'x': float(x), 'y': float(y)})
-        
-        # Calculate R²
-        try:
-            y_pred = slope * x_array + intercept
-            ss_res = np.sum((y_array - y_pred) ** 2)
-            ss_tot = np.sum((y_array - np.mean(y_array)) ** 2)
-            r_squared = 1 - (ss_res / ss_tot) if ss_tot != 0 else 0
-            print(f"[Scatter API] R² = {r_squared:.4f}")
-        except:
-            r_squared = 0
-        
-        # Calculate Pearson correlation
-        try:
-            correlation, p_value = pearsonr(x_array, y_array)
-            print(f"[Scatter API] Correlation: {correlation:.4f}, p-value: {p_value:.4f}")
-        except:
-            correlation, p_value = 0, 1
-        
-        # Get column stats for axis scaling
-        x_stats = {
-            'min': float(np.min(x_array)),
-            'max': float(np.max(x_array)),
-            'mean': float(np.mean(x_array)),
-            'std': float(np.std(x_array))
-        }
-        
-        y_stats = {
-            'min': float(np.min(y_array)),
-            'max': float(np.max(y_array)),
-            'mean': float(np.mean(y_array)),
-            'std': float(np.std(y_array))
-        }
-        
-        print(f"[Scatter API] Successfully prepared response")
-        
-        return JsonResponse({
-            'success': True,
-            'x_variable': x_variable,
-            'y_variable': y_variable,
-            'scatter_data': scatter_data,
-            'regression_line': regression_line,
-            'statistics': {
-                'slope': float(slope),
-                'intercept': float(intercept),
-                'r_squared': float(r_squared),
-                'correlation': float(correlation),
-                'p_value': float(p_value),
-                'n_observations': len(aligned_df)
-            },
-            'axis_stats': {
-                'x': x_stats,
-                'y': y_stats
-            }
-        })
-        
-    except Exception as e:
-        import traceback
-        error_msg = str(e)
-        traceback_msg = traceback.format_exc()
-        print(f"[Scatter Plot API] Error: {error_msg}")
-        print(f"[Scatter Plot API] Traceback: {traceback_msg}")
-        return JsonResponse({
-            'success': False,
-            'error': error_msg,
-            'traceback': traceback_msg
-        })
 
 
 def process_spearman_test(request, df, selected_columns, user_id):

@@ -1,688 +1,569 @@
-import React, { useState, useEffect } from 'react';
-import { mapDigitIfBengali, fetchScatterData } from '../utils';
+import React from 'react';
+import {
+    ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, 
+    Tooltip, ResponsiveContainer, Legend, Line, ComposedChart
+} from 'recharts';
 
 const ScatterPlot = ({
     results,
     language,
     settings,
+    onSettingsChange,
     openCustomization,
     handleDownload,
     downloadMenuOpen,
     setDownloadMenuOpen,
     chartRef,
-    onSettingsChange,
-    user_id,
-    df_id,
-    file_url
+    selectedPairIndex,
+    onPairChange
 }) => {
-    const mapDigit = (text) => mapDigitIfBengali(text, language);
-    
-    // State for selected variables
-    const [selectedX, setSelectedX] = useState(settings.xVariable || results.scatter_plot?.default_x);
-    const [selectedY, setSelectedY] = useState(settings.yVariable || results.scatter_plot?.default_y);
-    const [scatterData, setScatterData] = useState(results.scatter_plot?.data || []);
-    const [regressionLine, setRegressionLine] = useState(results.scatter_plot?.regression_line || []);
-    const [isLoading, setIsLoading] = useState(false);
-    const [axisValues, setAxisValues] = useState({
-        x: { min: 0, max: 1 },
-        y: { min: 0, max: 1 }
-    });
-    
-    const numericColumns = results.scatter_plot?.numeric_columns || [];
-    const isAvailable = results.scatter_plot?.available;
+    const t = (en, bn) => (language === 'bn' ? bn : en);
+    const fmt = (v, digits = 4) => {
+        if (v === null || v === undefined) return 'N/A';
+        return parseFloat(v).toFixed(digits);
+    };
 
-    // Fetch new scatter data when variables change
-    useEffect(() => {
-        const fetchNewData = async () => {
-            if (selectedX && selectedY && selectedX !== selectedY) {
-                setIsLoading(true);
-                try {
-                    const response = await fetchScatterData(selectedX, selectedY, user_id, df_id, file_url);
-                    
-                    if (response?.success) {
-                        setScatterData(response.scatter_data);
-                        setRegressionLine(response.regression_line);
-                        
-                        // Update axis values for ticks
-                        if (response.axis_stats) {
-                            setAxisValues({
-                                x: response.axis_stats.x,
-                                y: response.axis_stats.y
-                            });
-                        }
-                        
-                        // Update settings with new axis titles
-                        onSettingsChange({
-                            ...settings,
-                            xVariable: selectedX,
-                            yVariable: selectedY,
-                            xAxisTitle: selectedX,
-                            yAxisTitle: selectedY
-                        });
-                    } else {
-                        console.error('Failed to fetch scatter data:', response?.error);
-                    }
-                } catch (error) {
-                    console.error('Error fetching scatter data:', error);
-                } finally {
-                    setIsLoading(false);
-                }
-            }
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div style={{
+                    backgroundColor: 'white',
+                    padding: '12px',
+                    border: '2px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}>
+                    <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
+                        {t('Data Point', 'ডেটা পয়েন্ট')}
+                    </p>
+                    {payload.map((entry, index) => (
+                        <p key={index} style={{ margin: 0, color: entry.color }}>
+                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
+
+    const getDimensions = (dimensionString) => {
+        const [width, height] = dimensionString.split('x').map(Number);
+        let finalWidth = width;
+        let finalHeight = height - 100;
+        return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
+    };
+
+    const getTextStyle = (bold, italic, underline, fontFamily) => {
+        return {
+            fontWeight: bold ? 'bold' : 'normal',
+            fontStyle: italic ? 'italic' : 'normal',
+            textDecoration: underline ? 'underline' : 'none',
+            fontFamily: fontFamily
         };
+    };
 
-        // Only fetch if variables are different from current settings
-        if (selectedX !== settings.xVariable || selectedY !== settings.yVariable) {
-            fetchNewData();
-        }
-    }, [selectedX, selectedY, user_id, df_id, file_url]);
+    const getCaptionStyle = (settings) => {
+        return {
+            fontSize: settings.captionSize,
+            ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline, settings.fontFamily),
+            fill: '#374151',
+            textAnchor: 'middle'
+        };
+    };
 
-    // Initialize with default data if available
-    useEffect(() => {
-        if (results.scatter_plot?.data) {
-            setScatterData(results.scatter_plot.data);
-            setRegressionLine(results.scatter_plot.regression_line);
-            
-            // Calculate initial axis values
-            if (results.scatter_plot.data.length > 0) {
-                const xValues = results.scatter_plot.data.map(d => d.x);
-                const yValues = results.scatter_plot.data.map(d => d.y);
-                setAxisValues({
-                    x: {
-                        min: Math.min(...xValues),
-                        max: Math.max(...xValues)
-                    },
-                    y: {
-                        min: Math.min(...yValues),
-                        max: Math.max(...yValues)
-                    }
-                });
+    const getYAxisDomain = (settings, data, dataKey) => {
+        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+            const min = parseFloat(settings.yAxisMin);
+            const max = parseFloat(settings.yAxisMax);
+            if (!isNaN(min) && !isNaN(max)) {
+                return [min, max];
             }
         }
-    }, [results.scatter_plot]);
+        
+        // Auto calculate based on data
+        if (data && data.length > 0) {
+            const values = data.map(d => d[dataKey]).filter(v => v !== null && v !== undefined);
+            if (values.length > 0) {
+                const dataMin = Math.min(...values);
+                const dataMax = Math.max(...values);
+                const padding = Math.abs((dataMax - dataMin) * 0.1);
+                return [dataMin - padding, dataMax + padding];
+            }
+        }
+        
+        return ['auto', 'auto'];
+    };
 
-    if (!isAvailable) {
+    const getGridStroke = (gridColor) => {
+        return gridColor === 'black' ? '#000000' : '#e5e7eb';
+    };
+
+    const renderScatterChart = () => {
+        const { height } = getDimensions(settings.dimensions);
+        
+        const pair = results.scatter_plot_data[selectedPairIndex];
+        if (!pair) return null;
+
+        const sample1 = pair.sample1?.values || [];
+        const sample2 = pair.sample2?.values || [];
+        
+        const scatterData = sample1.map((val, index) => ({
+            x: val,
+            y: sample2[index],
+            pair: index + 1
+        }));
+
+        // Get regression data
+        const regressionData = pair.regression || {};
+        const minX = Math.min(...scatterData.map(p => p.x));
+        const maxX = Math.max(...scatterData.map(p => p.x));
+        
+        const regressionLine = [
+            { 
+                x: minX, 
+                y: regressionData.slope * minX + regressionData.intercept 
+            },
+            { 
+                x: maxX, 
+                y: regressionData.slope * maxX + regressionData.intercept 
+            }
+        ];
+
+        // Reference line (y = x)
+        const minVal = Math.min(minX, Math.min(...scatterData.map(p => p.y)));
+        const maxVal = Math.max(maxX, Math.max(...scatterData.map(p => p.y)));
+        const referenceLine = [
+            { x: minVal, y: minVal },
+            { x: maxVal, y: maxVal }
+        ];
+
+        const yDomain = getYAxisDomain(settings, scatterData, 'y');
+
+        // Find correlation result for this pair
+        const correlationResult = results.pairwise_results.find(r => 
+            (r.variable1 === pair.variable1 && r.variable2 === pair.variable2) ||
+            (r.variable1 === pair.variable2 && r.variable2 === pair.variable1)
+        );
+
         return (
-            <div className="plot-placeholder" style={{ 
-                padding: '40px', 
-                textAlign: 'center', 
+            <div style={{ position: 'relative', width: '100%' }}>
+                {/* Pair Selection Dropdown */}
+                <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <label style={{ fontWeight: 'bold', color: '#374151' }}>
+                            {t('Select Variable Pair:', 'ভেরিয়েবল জোড়া নির্বাচন করুন:')}
+                        </label>
+                        <select
+                            value={selectedPairIndex}
+                            onChange={(e) => onPairChange(parseInt(e.target.value))}
+                            style={{
+                                padding: '8px 12px',
+                                border: '2px solid #e5e7eb',
+                                borderRadius: '8px',
+                                backgroundColor: 'white',
+                                color: '#374151',
+                                fontSize: '14px',
+                                minWidth: '250px'
+                            }}
+                        >
+                            {results.scatter_plot_data.map((pairData, index) => {
+                                const corr = results.pairwise_results.find(r => 
+                                    (r.variable1 === pairData.variable1 && r.variable2 === pairData.variable2) ||
+                                    (r.variable1 === pairData.variable2 && r.variable2 === pairData.variable1)
+                                );
+                                const corrValue = corr ? fmt(corr.correlation, 3) : 'N/A';
+                                return (
+                                    <option key={index} value={index}>
+                                        {pairData.variable1} vs {pairData.variable2} (r = {corrValue})
+                                    </option>
+                                );
+                            })}
+                        </select>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="customize-btn" onClick={() => openCustomization('scatter')}>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                            </svg>
+                            {t('Customize', 'কাস্টমাইজ করুন')}
+                        </button>
+                        <div style={{ position: 'relative' }}>
+                            <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                {t('Download', 'ডাউনলোড করুন')}
+                            </button>
+                            {downloadMenuOpen && (
+                                <div className="download-menu">
+                                    <button onClick={() => handleDownload('png')}>PNG</button>
+                                    <button onClick={() => handleDownload('jpg')}>JPG</button>
+                                    <button onClick={() => handleDownload('jpeg')}>JPEG</button>
+                                    <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                </div>
+                            )}
+
+
+
+                        </div>
+                    </div>
+                </div>
+
+                {/* Correlation Stats Summary */}
+                {correlationResult && (
+                    <div style={{
+                        marginBottom: '20px',
+                        padding: '16px',
+                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+                        borderRadius: '12px',
+                        borderLeft: '4px solid #3b82f6'
+                    }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+                            <div>
+                                <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}>
+                                    {t('Pearson Correlation', 'পিয়ারসন সম্পর্ক')}
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: correlationResult.correlation >= 0.7 ? '#059669' : 
+                                    correlationResult.correlation >= 0.3 ? '#3b82f6' : '#dc2626' }}>
+                                    {fmt(correlationResult.correlation, 4)}
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}>
+                                    {t('P-value', 'পি-মান')}
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: correlationResult.p_value < 0.05 ? '#059669' : '#dc2626' }}>
+                                    {fmt(correlationResult.p_value, 6)}
+                                    <span style={{ fontSize: '14px', marginLeft: '8px', color: '#6b7280' }}>
+                                        {correlationResult.p_value < 0.05 ? t('Significant', 'উল্লেখযোগ্য') : t('Not Significant', 'অ-উল্লেখযোগ্য')}
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}>
+                                    {t('Sample Size (n)', 'নমুনা আকার')}
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#4b5563' }}>
+                                    {correlationResult.n}
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}>
+                                    {t('R²', 'আর-স্কোয়ার্ড')}
+                                </div>
+                                <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>
+                                    {fmt(regressionData.r_squared, 4)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Scatter Plot */}
+                <div ref={chartRef} style={{ position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <ComposedChart
+                            margin={{ 
+                                top: settings.captionOn ? 50 : 30, 
+                                right: 20, 
+                                left: 20, 
+                                bottom: 40 
+                            }}
+                            style={settings.borderOn ? { border: '2px solid black' } : {}}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                type="number"
+                                dataKey="x"
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.xAxisTitle,
+                                    position: 'insideBottom',
+                                    offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    },
+                                    dx: settings.xAxisTitleOffset
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
+                            />
+                            <YAxis
+                                type="number"
+                                dataKey="y"
+                                domain={yDomain}
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: settings.yAxisTitle,
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    offset: settings.yAxisLeftMargin,
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    },
+                                    dy: settings.yAxisTitleOffset
+                                }}
+                                axisLine={{ strokeWidth: 2 }}
+                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
+                            />
+                            <Tooltip content={<CustomTooltip />} />
+
+                            {settings.legendOn && (
+                                <Legend 
+                                    verticalAlign={settings.legendPosition === 'top' ? 'top' : 'bottom'}
+                                    align="center"
+                                    wrapperStyle={{
+                                        paddingTop: settings.legendPosition === 'top' ? '10px' : '0',
+                                        paddingBottom: settings.legendPosition === 'bottom' ? '10px' : '0',
+                                    }}
+                                />
+                            )}
+
+                            {/* Scatter Points */}
+                            {settings.showScatterPoints && (
+                                <Scatter
+                                    name={t('Data Points', 'ডেটা পয়েন্ট')}
+                                    data={scatterData}
+                                    fill={settings.scatterColor}
+                                    fillOpacity={settings.scatterOpacity}
+                                    shape={(props) => {
+                                        const { cx, cy } = props;
+                                        return (
+                                            <circle
+                                                cx={cx}
+                                                cy={cy}
+                                                r={settings.scatterSize / 2}
+                                                fill={settings.scatterColor}
+                                                fillOpacity={settings.scatterOpacity}
+                                            />
+                                        );
+                                    }}
+                                />
+                            )}
+
+                            {/* Regression Line */}
+                            {settings.showRegressionLines && regressionLine.length > 0 && (
+                                <Line
+                                    name={t('Regression Line', 'রিগ্রেশন লাইন')}
+                                    type="linear"
+                                    dataKey="y"
+                                    data={regressionLine}
+                                    stroke={settings.regressionLineColor}
+                                    strokeWidth={settings.lineWidth}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                    connectNulls={true}
+                                />
+                            )}
+
+                            {/* Reference Line (y = x) */}
+                            {settings.showReferenceLine && referenceLine.length > 0 && (
+                                <Line
+                                    name={t('Reference Line (y=x)', 'রেফারেন্স লাইন (y=x)')}
+                                    type="linear"
+                                    dataKey="y"
+                                    data={referenceLine}
+                                    stroke={settings.referenceLineColor}
+                                    strokeWidth={settings.referenceLineWidth}
+                                    strokeDasharray={settings.referenceLineStyle === 'dashed' ? '5 5' : 
+                                        settings.referenceLineStyle === 'dotted' ? '2 2' : '0'}
+                                    dot={false}
+                                    isAnimationActive={false}
+                                    connectNulls={true}
+                                />
+                            )}
+                        </ComposedChart>
+                    </ResponsiveContainer>
+
+                    {/* Plot Border Overlay */}
+                    {settings.plotBorderOn && (
+                        <div style={{
+                            position: 'absolute',
+                            top: settings.captionOn ? '50px' : '30px',
+                            left: '80px',
+                            right: '20px',
+                            bottom: '80px',
+                            borderTop: '2px solid #000000',
+                            borderRight: '2px solid #000000',
+                            pointerEvents: 'none',
+                            zIndex: 0
+                        }} />
+                    )}
+                </div>
+
+                {/* Additional Statistics */}
+                <div style={{ marginTop: '30px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+                    {/* Sample 1 Statistics */}
+                    <div style={{
+                        padding: '20px',
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        <h4 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #3b82f6', paddingBottom: '8px' }}>
+                            {pair.sample1.name}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Mean', 'গড়')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample1.mean)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Std Dev', 'মানক বিচ্যুতি')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample1.std)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Min', 'ন্যূনতম')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample1.min)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Max', 'সর্বোচ্চ')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample1.max)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Median', 'মধ্যমা')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample1.median)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Count', 'সংখ্যা')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{pair.sample1.count}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sample 2 Statistics */}
+                    <div style={{
+                        padding: '20px',
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        <h4 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #10b981', paddingBottom: '8px' }}>
+                            {pair.sample2.name}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Mean', 'গড়')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample2.mean)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Std Dev', 'মানক বিচ্যুতি')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample2.std)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Min', 'ন্যূনতম')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample2.min)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Max', 'সর্বোচ্চ')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample2.max)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Median', 'মধ্যমা')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(pair.sample2.median)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Count', 'সংখ্যা')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{pair.sample2.count}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Regression Statistics */}
+                    <div style={{
+                        padding: '20px',
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid #e5e7eb',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        <h4 style={{ margin: '0 0 16px 0', color: '#374151', borderBottom: '2px solid #ef4444', paddingBottom: '8px' }}>
+                            {t('Regression Analysis', 'রিগ্রেশন বিশ্লেষণ')}
+                        </h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Slope', 'ঢাল')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(regressionData.slope)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Intercept', 'ইন্টারসেপ্ট')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(regressionData.intercept)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('R²', 'আর-স্কোয়ার্ড')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(regressionData.r_squared)}</div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('Regression p-value', 'রিগ্রেশন পি-মান')}</div>
+                                <div style={{ fontSize: '16px', fontWeight: 'bold', color: regressionData.p_value < 0.05 ? '#059669' : '#dc2626' }}>
+                                    {fmt(regressionData.p_value, 6)}
+                                </div>
+                            </div>
+                            {correlationResult && (
+                                <>
+                                    <div>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('95% CI Lower', '৯৫% সিআই নিম্ন')}</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(correlationResult.ci_lower)}</div>
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '4px' }}>{t('95% CI Upper', '৯৫% সিআই উচ্চ')}</div>
+                                        <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#374151' }}>{fmt(correlationResult.ci_upper)}</div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    if (!results.scatter_plot_data || results.scatter_plot_data.length === 0) {
+        return (
+            <div style={{
+                padding: '40px',
+                textAlign: 'center',
                 background: '#f9fafb',
-                borderRadius: '8px',
-                border: '1px dashed #d1d5db'
+                borderRadius: '12px',
+                border: '2px dashed #d1d5db'
             }}>
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" style={{ margin: '0 auto 16px' }}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" style={{ marginBottom: '16px' }}>
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                 </svg>
-                <h3 style={{ color: '#6b7280', marginBottom: '8px' }}>
-                    {language === 'bn' ? 'স্ক্যাটার প্লট উপলব্ধ নয়' : 'Scatter Plot Not Available'}
+                <h3 style={{ color: '#374151', marginBottom: '8px' }}>
+                    {t('No Scatter Plot Data Available', 'স্ক্যাটার প্লট ডেটা উপলব্ধ নেই')}
                 </h3>
-                <p style={{ color: '#9ca3af', fontSize: '14px' }}>
-                    {language === 'bn' 
-                        ? 'স্ক্যাটার প্লটের জন্য কমপক্ষে দুটি সংখ্যাসূচক ভেরিয়েবল প্রয়োজন।'
-                        : 'Scatter plot requires at least two numeric variables.'}
+                <p style={{ color: '#6b7280' }}>
+                    {t('Scatter plots are generated for variable pairs with sufficient data. Try selecting different variables or check your data.', 
+                        'পর্যাপ্ত ডেটা সহ ভেরিয়েবল জোড়ার জন্য স্ক্যাটার প্লট তৈরি করা হয়েছে। বিভিন্ন ভেরিয়েবল নির্বাচন করুন বা আপনার ডেটা পরীক্ষা করুন।')}
                 </p>
             </div>
         );
     }
 
-    if (scatterData.length === 0) {
-        return (
-            <div className="plot-placeholder">
-                <p>
-                    {language === 'bn' 
-                        ? 'নির্বাচিত ভেরিয়েবলগুলির জন্য পর্যাপ্ত ডেটা নেই'
-                        : 'Insufficient data for selected variables'}
-                </p>
-            </div>
-        );
-    }
-
-    // Calculate dimensions
-    const [baseWidth, baseHeight] = settings.dimensions ? 
-        settings.dimensions.split('x').map(Number) : [800, 600];
-    
-    const leftMargin = settings.yAxisLeftMargin || 80;
-    const rightMargin = 40;
-    const topMargin = 60;
-    const bottomMargin = settings.xAxisBottomMargin || 80;
-    
-    const plotWidth = baseWidth - leftMargin - rightMargin;
-    const plotHeight = baseHeight - topMargin - bottomMargin;
-
-    // Calculate data bounds with padding
-    const xMin = axisValues.x.min;
-    const xMax = axisValues.x.max;
-    const yMin = axisValues.y.min;
-    const yMax = axisValues.y.max;
-    
-    const xRange = xMax - xMin;
-    const yRange = yMax - yMin;
-    
-    const paddingX = xRange * 0.05;
-    const paddingY = yRange * 0.05;
-    
-    const plotXMin = xMin - paddingX;
-    const plotXMax = xMax + paddingX;
-    const plotYMin = yMin - paddingY;
-    const plotYMax = yMax + paddingY;
-    
-    const plotXRange = plotXMax - plotXMin;
-    const plotYRange = plotYMax - plotYMin;
-
-    // Scale functions
-    const scaleX = (value) => leftMargin + ((value - plotXMin) / plotXRange) * plotWidth;
-    const scaleY = (value) => topMargin + plotHeight - ((value - plotYMin) / plotYRange) * plotHeight;
-
-    // Generate tick values for X and Y axes
-    const generateTicks = (min, max, count = 5) => {
-        const ticks = [];
-        for (let i = 0; i <= count; i++) {
-            const value = min + ((max - min) * i) / count;
-            ticks.push(value);
-        }
-        return ticks;
-    };
-
-    const xTicks = generateTicks(plotXMin, plotXMax, 5);
-    const yTicks = generateTicks(plotYMin, plotYMax, 5);
-
-    return (
-        <div style={{ position: 'relative', width: '100%' }}>
-            {/* Header with variable selection and buttons */}
-            <div style={{
-                marginBottom: '20px',
-                padding: '16px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px'
-            }}>
-                {/* Variable Selection */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
-                    <div style={{ flex: 1 }}>
-                        <label style={{ 
-                            display: 'block', 
-                            fontSize: '14px', 
-                            fontWeight: '500',
-                            color: '#475569',
-                            marginBottom: '4px'
-                        }}>
-                            {language === 'bn' ? 'X ভেরিয়েবল' : 'X Variable'}
-                        </label>
-                        <select
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                fontSize: '14px',
-                                backgroundColor: 'white'
-                            }}
-                            value={selectedX}
-                            onChange={(e) => setSelectedX(e.target.value)}
-                            disabled={isLoading}
-                        >
-                            <option value="">{language === 'bn' ? 'একটি ভেরিয়েবল নির্বাচন করুন' : 'Select a variable'}</option>
-                            {numericColumns.map(col => (
-                                <option key={`x-${col}`} value={col}>{col}</option>
-                            ))}
-                        </select>
-                    </div>
-                    
-                    <div style={{ flex: 1 }}>
-                        <label style={{ 
-                            display: 'block', 
-                            fontSize: '14px', 
-                            fontWeight: '500',
-                            color: '#475569',
-                            marginBottom: '4px'
-                        }}>
-                            {language === 'bn' ? 'Y ভেরিয়েবল' : 'Y Variable'}
-                        </label>
-                        <select
-                            style={{
-                                width: '100%',
-                                padding: '8px 12px',
-                                border: '1px solid #cbd5e1',
-                                borderRadius: '6px',
-                                fontSize: '14px',
-                                backgroundColor: 'white'
-                            }}
-                            value={selectedY}
-                            onChange={(e) => setSelectedY(e.target.value)}
-                            disabled={isLoading}
-                        >
-                            <option value="">{language === 'bn' ? 'একটি ভেরিয়েবল নির্বাচন করুন' : 'Select a variable'}</option>
-                            {numericColumns
-                                .filter(col => col !== selectedX)
-                                .map(col => (
-                                    <option key={`y-${col}`} value={col}>{col}</option>
-                                ))
-                            }
-                        </select>
-                    </div>
-                </div>
-                
-                {/* Buttons - Right aligned */}
-                <div style={{ 
-                    display: 'flex', 
-                    gap: '8px', 
-                    alignItems: 'center',
-                    flexShrink: 0 
-                }}>
-                    {isLoading && (
-                        <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '8px',
-                            color: '#64748b',
-                            fontSize: '14px'
-                        }}>
-                            <div className="spinner" style={{
-                                width: '16px',
-                                height: '16px',
-                                border: '2px solid #e2e8f0',
-                                borderTopColor: '#3b82f6',
-                                borderRadius: '50%',
-                                animation: 'spin 1s linear infinite'
-                            }}></div>
-                            {language === 'bn' ? 'লোড হচ্ছে...' : 'Loading...'}
-                        </div>
-                    )}
-                    
-                    {/* Customize Button */}
-                    <button 
-                        className="customize-btn" 
-                        onClick={() => openCustomization('scatter')}
-                        disabled={isLoading}
-                        style={{
-                            padding: '8px 16px',
-                            backgroundColor: '#3b82f6',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '500'
-                        }}
-                    >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="3"></circle>
-                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
-                        </svg>
-                        {language === 'bn' ? 'কাস্টমাইজ' : 'Customize'}
-                    </button>
-                    
-                    {/* Download Button with Menu */}
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="customize-btn"
-                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
-                            disabled={isLoading}
-                            style={{
-                                padding: '8px 16px',
-                                backgroundColor: '#10b981',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                fontSize: '14px',
-                                fontWeight: '500'
-                            }}
-                        >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                            </svg>
-                            {language === 'bn' ? 'ডাউনলোড' : 'Download'}
-                        </button>
-                        {downloadMenuOpen && (
-                            <div style={{
-                                position: 'absolute',
-                                top: '100%',
-                                right: 0,
-                                marginTop: '8px',
-                                backgroundColor: 'white',
-                                border: '1px solid #e2e8f0',
-                                borderRadius: '6px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                zIndex: 100,
-                                minWidth: '100px'
-                            }}>
-                                <button 
-                                    onClick={() => handleDownload('png')}
-                                    style={{
-                                        width: '100%',
-                                        padding: '8px 12px',
-                                        border: 'none',
-                                        background: 'none',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        color: '#374151'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.backgroundColor = '#f8fafc'}
-                                    onMouseLeave={(e) => e.currentTarget.backgroundColor = 'white'}
-                                >
-                                    PNG
-                                </button>
-                                <button 
-                                    onClick={() => handleDownload('jpg')}
-                                    style={{
-                                        width: '100%',
-                                        padding: '8px 12px',
-                                        border: 'none',
-                                        background: 'none',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        color: '#374151',
-                                        borderTop: '1px solid #f1f5f9'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.backgroundColor = '#f8fafc'}
-                                    onMouseLeave={(e) => e.currentTarget.backgroundColor = 'white'}
-                                >
-                                    JPG
-                                </button>
-                                <button 
-                                    onClick={() => handleDownload('pdf')}
-                                    style={{
-                                        width: '100%',
-                                        padding: '8px 12px',
-                                        border: 'none',
-                                        background: 'none',
-                                        textAlign: 'left',
-                                        cursor: 'pointer',
-                                        fontSize: '13px',
-                                        color: '#374151',
-                                        borderTop: '1px solid #f1f5f9'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.backgroundColor = '#f8fafc'}
-                                    onMouseLeave={(e) => e.currentTarget.backgroundColor = 'white'}
-                                >
-                                    PDF
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Chart */}
-            <div
-                ref={chartRef}
-                style={{
-                    width: baseWidth,
-                    height: baseHeight,
-                    position: 'relative',
-                    ...(settings.borderOn ? {
-                        border: '1px solid black',
-                        padding: '20px'
-                    } : { padding: '20px' }),
-                    backgroundColor: settings.backgroundColor || 'white'
-                }}
-            >
-                {/* Caption */}
-                {settings.captionOn && (
-                    <div
-                        style={{
-                            textAlign: 'center',
-                            marginTop: `${settings.captionTopMargin}px`,
-                            marginBottom: '10px',
-                            fontSize: `${settings.captionSize}px`,
-                            fontFamily: settings.fontFamily,
-                            fontWeight: settings.captionBold ? 'bold' : 'normal',
-                            fontStyle: settings.captionItalic ? 'italic' : 'normal',
-                            textDecoration: settings.captionUnderline ? 'underline' : 'none',
-                            color: '#1f2937'
-                        }}
-                    >
-                        {settings.captionText || `${selectedX} vs ${selectedY}`}
-                    </div>
-                )}
-
-                {/* SVG Container */}
-                <svg
-                    width={baseWidth}
-                    height={baseHeight}
-                    style={{ display: 'block' }}
-                >
-                    {/* Grid Lines */}
-                    {settings.gridOn && (
-                        <g>
-                            {/* Horizontal grid lines */}
-                            {yTicks.map((value, idx) => {
-                                const y = scaleY(value);
-                                return (
-                                    <line
-                                        key={`h-grid-${idx}`}
-                                        x1={leftMargin}
-                                        y1={y}
-                                        x2={leftMargin + plotWidth}
-                                        y2={y}
-                                        stroke={settings.gridColor}
-                                        strokeWidth="1"
-                                        strokeDasharray={settings.gridStyle}
-                                        opacity={settings.gridOpacity}
-                                    />
-                                );
-                            })}
-                            
-                            {/* Vertical grid lines */}
-                            {xTicks.map((value, idx) => {
-                                const x = scaleX(value);
-                                return (
-                                    <line
-                                        key={`v-grid-${idx}`}
-                                        x1={x}
-                                        y1={topMargin}
-                                        x2={x}
-                                        y2={topMargin + plotHeight}
-                                        stroke={settings.gridColor}
-                                        strokeWidth="1"
-                                        strokeDasharray={settings.gridStyle}
-                                        opacity={settings.gridOpacity}
-                                    />
-                                );
-                            })}
-                        </g>
-                    )}
-
-                    {/* Plot Border */}
-                    {settings.plotBorderOn && (
-                        <rect
-                            x={leftMargin}
-                            y={topMargin}
-                            width={plotWidth}
-                            height={plotHeight}
-                            fill="none"
-                            stroke="#374151"
-                            strokeWidth="1"
-                        />
-                    )}
-
-                    {/* X-axis */}
-                    <line
-                        x1={leftMargin}
-                        y1={topMargin + plotHeight}
-                        x2={leftMargin + plotWidth}
-                        y2={topMargin + plotHeight}
-                        stroke="#374151"
-                        strokeWidth="2"
-                    />
-                    
-                    {/* Y-axis */}
-                    <line
-                        x1={leftMargin}
-                        y1={topMargin}
-                        x2={leftMargin}
-                        y2={topMargin + plotHeight}
-                        stroke="#374151"
-                        strokeWidth="2"
-                    />
-
-                    {/* X-axis Ticks and Labels */}
-                    {xTicks.map((value, idx) => {
-                        const x = scaleX(value);
-                        return (
-                            <g key={`x-tick-${idx}`}>
-                                <line
-                                    x1={x}
-                                    y1={topMargin + plotHeight}
-                                    x2={x}
-                                    y2={topMargin + plotHeight + 5}
-                                    stroke="#374151"
-                                    strokeWidth="1"
-                                />
-                                <text
-                                    x={x}
-                                    y={topMargin + plotHeight + 20}
-                                    textAnchor="middle"
-                                    fontSize={settings.xAxisTickSize || 12}
-                                    fontFamily={settings.fontFamily || 'Times New Roman'}
-                                    fill="#374151"
-                                >
-                                    {mapDigit(value.toFixed(2))}
-                                </text>
-                            </g>
-                        );
-                    })}
-
-                    {/* Y-axis Ticks and Labels */}
-                    {yTicks.map((value, idx) => {
-                        const y = scaleY(value);
-                        return (
-                            <g key={`y-tick-${idx}`}>
-                                <line
-                                    x1={leftMargin - 5}
-                                    y1={y}
-                                    x2={leftMargin}
-                                    y2={y}
-                                    stroke="#374151"
-                                    strokeWidth="1"
-                                />
-                                <text
-                                    x={leftMargin - 8}
-                                    y={y + 4}
-                                    textAnchor="end"
-                                    fontSize={settings.yAxisTickSize || 12}
-                                    fontFamily={settings.fontFamily || 'Times New Roman'}
-                                    fill="#374151"
-                                >
-                                    {mapDigit(value.toFixed(2))}
-                                </text>
-                            </g>
-                        );
-                    })}
-
-
-                    {settings.showRegressionLine && regressionLine.length > 0 && (
-                        <polyline
-                            points={regressionLine.map(point => 
-                                `${scaleX(point.x)},${scaleY(point.y)}`
-                            ).join(' ')}
-                            fill="none"
-                            stroke={settings.regressionLineColor || '#ef4444'}
-                            strokeWidth={settings.regressionLineWidth || 2}
-                            strokeDasharray={settings.regressionLineStyle || "5,5"}
-                        />
-                    )}
-
-                    {scatterData.map((point, idx) => (
-                        <circle
-                            key={idx}
-                            cx={scaleX(point.x)}
-                            cy={scaleY(point.y)}
-                            r={settings.pointSize || 6}
-                            fill={settings.pointColor || '#3b82f6'}
-                            stroke={settings.pointBorderColor || '#1d4ed8'}
-                            strokeWidth={settings.pointBorderWidth || 1}
-                            style={{ cursor: 'pointer' }}
-                        />
-                    ))}
-
-                    {/* X-axis title */}
-                    <text
-                        x={leftMargin + plotWidth / 2}
-                        y={topMargin + plotHeight + 50}
-                        textAnchor="middle"
-                        fontSize={settings.xAxisTitleSize || 16}
-                        fontFamily={settings.fontFamily || 'Times New Roman'}
-                        fontWeight={settings.xAxisTitleBold ? 'bold' : 'normal'}
-                        fontStyle={settings.xAxisTitleItalic ? 'italic' : 'normal'}
-                        textDecoration={settings.xAxisTitleUnderline ? 'underline' : 'none'}
-                        fill="#374151"
-                    >
-                        {settings.xAxisTitle || selectedX}
-                    </text>
-
-                    {/* Y-axis title */}
-                    <text
-                        x={leftMargin - 50}
-                        y={topMargin + plotHeight / 2}
-                        textAnchor="middle"
-                        transform={`rotate(-90, ${leftMargin - 50}, ${topMargin + plotHeight / 2})`}
-                        fontSize={settings.yAxisTitleSize || 16}
-                        fontFamily={settings.fontFamily || 'Times New Roman'}
-                        fontWeight={settings.yAxisTitleBold ? 'bold' : 'normal'}
-                        fontStyle={settings.yAxisTitleItalic ? 'italic' : 'normal'}
-                        textDecoration={settings.yAxisTitleUnderline ? 'underline' : 'none'}
-                        fill="#374151"
-                    >
-                        {settings.yAxisTitle || selectedY}
-                    </text>
-                </svg>
-            </div>
-
-            {/* Statistics Panel */}
-            <div style={{
-                marginTop: '24px',
-                padding: '20px',
-                background: 'linear-gradient(135deg, #f6f8fb 0%, #e9ecf3 100%)',
-                borderRadius: '12px',
-                border: '2px solid #e5e7eb'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <h4 style={{ margin: 0, color: '#1f2937', fontSize: '16px', fontWeight: '600' }}>
-                        {language === 'bn' ? 'স্ক্যাটার প্লট তথ্য' : 'Scatter Plot Information'}
-                    </h4>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px', fontWeight: '500' }}>
-                            {language === 'bn' ? 'ভেরিয়েবল' : 'Variables'}
-                        </p>
-                        <p style={{ margin: 0, color: '#1f2937', fontSize: '14px' }}>
-                            <strong>X:</strong> {selectedX}<br />
-                            <strong>Y:</strong> {selectedY}
-                        </p>
-                    </div>
-                    <div>
-                        <p style={{ margin: '0 0 8px 0', color: '#6b7280', fontSize: '14px', fontWeight: '500' }}>
-                            {language === 'bn' ? 'ডেটা পয়েন্ট' : 'Data Points'}
-                        </p>
-                        <p style={{ margin: 0, color: '#1f2937', fontSize: '14px' }}>
-                            {scatterData.length} {language === 'bn' ? 'পর্যবেক্ষণ' : 'observations'}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+    return renderScatterChart();
 };
 
 export default ScatterPlot;

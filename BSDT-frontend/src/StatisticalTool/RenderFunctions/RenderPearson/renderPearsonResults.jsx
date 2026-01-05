@@ -2,7 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import GroupedBarPlot from './plots/GroupedBarPlot';
-import ScatterPlot from './plots/ScatterPlot';
+import ScatterPlot from './plots/ScatterPlot'; // NEW: Import ScatterPlot component
 import {
     mapDigitIfBengali,
     formatValue,
@@ -26,9 +26,22 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
     const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
+    
+    // NEW: State for scatter plot
+    const [selectedPairIndex, setSelectedPairIndex] = useState(0);
+    const [scatterSettings, setScatterSettings] = useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
+
+    // NEW: Initialize scatter plot settings
+    useEffect(() => {
+        if (results.scatter_plot_data && results.scatter_plot_data.length > 0) {
+            const firstPair = results.scatter_plot_data[0];
+            const defaultSettings = getScatterDefaultSettings(firstPair);
+            setScatterSettings(defaultSettings);
+        }
+    }, [results.scatter_plot_data]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -90,6 +103,105 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
         { value: 'Trebuchet MS', label: 'Trebuchet MS' },
         { value: 'Impact', label: 'Impact' }
     ];
+
+    // NEW: Get default settings for scatter plot
+    const getScatterDefaultSettings = (pair) => {
+        if (!pair) {
+            return {
+                dimensions: '800x600',
+                fontFamily: 'Times New Roman',
+                captionOn: false,
+                captionText: '',
+                captionSize: 22,
+                captionBold: false,
+                captionItalic: false,
+                captionUnderline: false,
+                captionTopMargin: 0,
+                xAxisTitle: pair?.sample1?.name || 'Variable 1',
+                yAxisTitle: pair?.sample2?.name || 'Variable 2',
+                xAxisTitleSize: 16,
+                yAxisTitleSize: 16,
+                xAxisTitleBold: false,
+                xAxisTitleItalic: false,
+                xAxisTitleUnderline: false,
+                yAxisTitleBold: false,
+                yAxisTitleItalic: false,
+                yAxisTitleUnderline: false,
+                xAxisTickSize: 16,
+                yAxisTickSize: 16,
+                xAxisBottomMargin: -40,
+                yAxisLeftMargin: 0,
+                yAxisMin: 'auto',
+                yAxisMax: 'auto',
+                gridOn: true,
+                gridStyle: '3 3',
+                gridColor: 'gray',
+                gridOpacity: 1.0,
+                borderOn: false,
+                plotBorderOn: false,
+                showScatterPoints: true,
+                showRegressionLines: true,
+                showReferenceLine: true,
+                scatterSize: 6,
+                scatterOpacity: 0.7,
+                scatterColor: '#3b82f6',
+                regressionLineColor: '#ef4444',
+                referenceLineColor: '#dc2626',
+                referenceLineWidth: 2,
+                referenceLineStyle: 'dashed',
+                lineWidth: 2,
+                legendOn: true,
+                legendPosition: 'top'
+            };
+        }
+        
+        return {
+            dimensions: '800x600',
+            fontFamily: 'Times New Roman',
+            captionOn: false,
+            captionText: '',
+            captionSize: 22,
+            captionBold: false,
+            captionItalic: false,
+            captionUnderline: false,
+            captionTopMargin: 0,
+            xAxisTitle: pair.sample1.name,
+            yAxisTitle: pair.sample2.name,
+            xAxisTitleSize: 16,
+            yAxisTitleSize: 16,
+            xAxisTitleBold: false,
+            xAxisTitleItalic: false,
+            xAxisTitleUnderline: false,
+            yAxisTitleBold: false,
+            yAxisTitleItalic: false,
+            yAxisTitleUnderline: false,
+            xAxisTickSize: 16,
+            yAxisTickSize: 16,
+            xAxisBottomMargin: -40,
+            yAxisLeftMargin: 0,
+            yAxisMin: 'auto',
+            yAxisMax: 'auto',
+            gridOn: true,
+            gridStyle: '3 3',
+            gridColor: 'gray',
+            gridOpacity: 1.0,
+            borderOn: false,
+            plotBorderOn: false,
+            showScatterPoints: true,
+            showRegressionLines: true,
+            showReferenceLine: true,
+            scatterSize: 6,
+            scatterOpacity: 0.7,
+            scatterColor: '#3b82f6',
+            regressionLineColor: '#ef4444',
+            referenceLineColor: '#dc2626',
+            referenceLineWidth: 2,
+            referenceLineStyle: 'dashed',
+            lineWidth: 2,
+            legendOn: true,
+            legendPosition: 'top'
+        };
+    };
 
     const getHeatmapDefaultSettings = () => {
         return {
@@ -205,58 +317,6 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const [heatmapSettings, setHeatmapSettings] = useState(getHeatmapDefaultSettings());
     const [groupedBarSettings, setGroupedBarSettings] = useState(getGroupedBarDefaultSettings());
 
-
-    const getScatterDefaultSettings = () => {
-        const numericCols = results.scatter_plot?.numeric_columns || [];
-        const defaultX = results.scatter_plot?.default_x || '';
-        const defaultY = results.scatter_plot?.default_y || '';
-        
-        return {
-            dimensions: '800x600',
-            fontFamily: 'Times New Roman',
-            captionOn: false,
-            captionText: '',
-            captionSize: 18,
-            captionBold: false,
-            captionItalic: false,
-            captionUnderline: false,
-            captionTopMargin: 30,
-            xAxisTitle: defaultX || 'X Variable',
-            yAxisTitle: defaultY || 'Y Variable',
-            xAxisTitleSize: 16,
-            yAxisTitleSize: 16,
-            xAxisTitleBold: false,
-            xAxisTitleItalic: false,
-            xAxisTitleUnderline: false,
-            yAxisTitleBold: false,
-            yAxisTitleItalic: false,
-            yAxisTitleUnderline: false,
-            xAxisTickSize: 12,
-            yAxisTickSize: 12,
-            xAxisBottomMargin: 0,
-            yAxisLeftMargin: 0,
-            gridOn: true,
-            gridStyle: '3 3',
-            gridColor: 'gray',
-            gridOpacity: 0.3,
-            borderOn: false,
-            plotBorderOn: false,
-            dataLabelsOn: false,
-            backgroundColor: 'white',
-            pointSize: 6,
-            pointColor: '#3b82f6',
-            pointBorderColor: '#1d4ed8',
-            pointBorderWidth: 1,
-            showRegressionLine: true,
-            xVariable: defaultX,
-            yVariable: defaultY,
-            numeric_columns: numericCols // Add numeric columns to settings
-        };
-    };
-
-    // Initialize scatter plot settings
-    const [scatterSettings, setScatterSettings] = useState(getScatterDefaultSettings());
-
     const setCurrentSettings = (settings) => {
         switch (currentPlotType) {
             case 'heatmap':
@@ -272,8 +332,6 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                 break;
         }
     };
-
-
 
     if (!results) {
         return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
@@ -377,6 +435,14 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
         if (absCorr >= 0.5) return t('Moderate', 'মধ্যম');
         if (absCorr >= 0.3) return t('Weak', 'দুর্বল');
         return t('Very Weak', 'অত্যন্ত দুর্বল');
+    };
+
+    // NEW: Handle scatter pair selection
+    const handleScatterPairChange = (index) => {
+        setSelectedPairIndex(index);
+        const pair = results.scatter_plot_data[index];
+        const newSettings = getScatterDefaultSettings(pair);
+        setScatterSettings(newSettings);
     };
 
     return (
@@ -488,16 +554,18 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                         {t('Heatmap', 'হিটম্যাপ')}
                     </button>
                     <button
-                        className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('scatter')}
-                    >
-                        {t('Scatter Plot', 'স্ক্যাটার প্লট')}
-                    </button>                    
-                    <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
                         {t('Grouped Bar', 'গ্রুপড বার')}
+                    </button>
+                    {/* NEW: Scatter Plot Tab */}
+                    <button
+                        className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('scatter')}
+                        disabled={!results.scatter_plot_data || results.scatter_plot_data.length === 0}
+                    >
+                        {t('Scatter Plot', 'স্ক্যাটার প্লট')}
                     </button>
                 </div>
 
@@ -857,10 +925,8 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     </div>
                 )}
 
-
-
-
-                {activeTab === 'scatter' && (
+                {/* NEW: Scatter Plot Tab */}
+                {activeTab === 'scatter' && results.scatter_plot_data && results.scatter_plot_data.length > 0 && (
                     <div className="stats-plot-wrapper active">
                         <ScatterPlot
                             results={results}
@@ -872,10 +938,12 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                             downloadMenuOpen={downloadMenuOpen}
                             setDownloadMenuOpen={setDownloadMenuOpen}
                             chartRef={chartRef}
+                            selectedPairIndex={selectedPairIndex}
+                            onPairChange={handleScatterPairChange}
+                            activeTab={activeTab}
                         />
                     </div>
                 )}
-
 
                 <CustomizationOverlay
                     isOpen={overlayOpen}
@@ -883,12 +951,11 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     plotType={
                         currentPlotType === 'heatmap' ? 'Heatmap' :
                         currentPlotType === 'grouped' ? 'Grouped Bar' :
-                        currentPlotType === 'scatter' ? 'Scatter Plot' : 'Heatmap'
+                        currentPlotType === 'scatter' ? 'Scatter' : 'Heatmap'
                     }
                     settings={
                         currentPlotType === 'heatmap' ? heatmapSettings :
                         currentPlotType === 'grouped' ? groupedBarSettings :
-                        currentPlotType === 'scatter' ? scatterSettings :
                         currentPlotType === 'scatter' ? scatterSettings : heatmapSettings
                     }
                     onSettingsChange={
@@ -901,7 +968,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :
                         currentPlotType === 'grouped' ? getGroupedBarDefaultSettings() :
-                        currentPlotType === 'scatter' ? getScatterDefaultSettings() : getHeatmapDefaultSettings()
+                        currentPlotType === 'scatter' ? () => getScatterDefaultSettings(results.scatter_plot_data[selectedPairIndex]) : getHeatmapDefaultSettings()
                     }
                     results={results}
                 />

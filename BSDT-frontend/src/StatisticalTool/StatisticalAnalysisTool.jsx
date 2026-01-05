@@ -839,6 +839,7 @@ const StatisticalAnalysisTool = () => {
         }
     };
 
+
     // Add this useEffect to sync tempSelectedColumns when menu opens
     useEffect(() => {
         if (showColumnMenu) {
@@ -884,7 +885,6 @@ const StatisticalAnalysisTool = () => {
         }
     }, [testType, fileURL]);
 
-
     useEffect(() => {
         const savedCache = localStorage.getItem('columnTypesCache');
         if (savedCache) {
@@ -902,6 +902,7 @@ const StatisticalAnalysisTool = () => {
             localStorage.setItem('columnTypesCache', JSON.stringify(columnTypesCache));
         }
     }, [columnTypesCache]);
+
 
     // Add this debug useEffect
     useEffect(() => {
@@ -959,8 +960,6 @@ const StatisticalAnalysisTool = () => {
             setGroupDropdownOpen(false);
         }
     }, [column1, testType, groupsCache, isFetchingGroups]);
-
-
     
     // Initialize groups cache from localStorage
     useEffect(() => {
