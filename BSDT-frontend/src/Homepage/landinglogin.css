@@ -254,6 +254,13 @@
   color: #444;
 }
 
+.dg-recaptcha {
+  margin: 5px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 /* 📱 Mobile Responsive */
 @media(max-width: 900px) {
   .dg-container { flex-direction: column; height: auto; }

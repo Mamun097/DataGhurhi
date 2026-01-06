@@ -4,6 +4,9 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 import SurveySections from "./SurveySectionsUser";
 import Linkify from "react-linkify";
 import QuizTimer from "../Utils/QuizTimer";
+import ReCAPTCHA from "react-google-recaptcha";
+
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 const isSectionVisible = (section, userResponse) => {
   const triggerQuestion = section.triggerQuestionText;
@@ -45,6 +48,13 @@ const SurveyForm = ({
   isPreview = false,
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
+
+  // NEW: reCAPTCHA state
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const recaptchaRef = useRef(null);
+
+  // NEW: Check if user is logged in
+  const isLoggedIn = !!localStorage.getItem("token");
 
   // Scroll to top when section changes
   useEffect(() => {
@@ -205,6 +215,11 @@ const SurveyForm = ({
     return true;
   };
 
+  // NEW: Handle reCAPTCHA change
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+  };
+
   {
     /** Two ways to submit the form.
      * 1. Regular submit button
@@ -214,8 +229,19 @@ const SurveyForm = ({
   // Central function for the submission logic
   const submitSurvey = (event = null) => {
     if (validateCurrentSection()) {
+      // NEW: Check reCAPTCHA only for non-logged-in users and non-preview mode
+      // if (!isPreview && !isLoggedIn && !recaptchaToken) {
+      //   alert("Please complete the reCAPTCHA verification before submitting.");
+      //   return;
+      // }
+      if (!isPreview && !recaptchaToken) {
+        alert("Please complete the reCAPTCHA verification before submitting.");
+        return;
+      }
+
       if (onSubmit) {
-        onSubmit(event);
+        // NEW: Pass recaptcha token as second parameter
+        onSubmit(event, recaptchaToken);
       }
     }
   };
@@ -389,7 +415,7 @@ const SurveyForm = ({
         <div className="container rounded">
           <Linkify
             componentDecorator={(decoratedHref, decoratedText, key) => (
-              <a
+              <a              
                 target="_blank"
                 rel="noopener noreferrer"
                 href={decoratedHref}
@@ -434,6 +460,18 @@ const SurveyForm = ({
           />
         )}
       </div>
+
+      {/* NEW: Show reCAPTCHA only on last page, for non-logged-in users, and not in preview */}
+      {!isPreview &&  
+       currentVisibleIndex === visibleSections.length - 1 && (
+        <div className="container d-flex justify-content-center my-4">
+          <ReCAPTCHA
+            ref={recaptchaRef}
+            sitekey={RECAPTCHA_SITE_KEY}
+            onChange={handleRecaptchaChange}
+          />
+        </div>
+      )}
 
       <div className="container d-flex justify-content-between align-items-center my-5">
         {currentVisibleIndex > 0 && (

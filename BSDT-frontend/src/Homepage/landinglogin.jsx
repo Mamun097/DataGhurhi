@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
-import "./landinglogin.css"; // NEW CSS file (I'll provide if needed)
+import "./landinglogin.css";
 import { ToastContainer, toast } from "react-toastify";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import apiClient from "../api";
+import ReCAPTCHA from "react-google-recaptcha";
 
 // LOGOS & SLIDES from Landing Page
 import logo_dataghurhi from "../assets/logos/dataghurhi.png";
@@ -45,6 +46,7 @@ const slidesEnglish = [
 ];
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 // Translation Fn
 const translateText = async (textArr, lang) => {
@@ -72,6 +74,7 @@ const LandingLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [emailError, setEmailError] = useState("");
+  const [recaptchaToken, setRecaptchaToken] = useState(null);
 
   const togglePasswordVisibility = () => setShowPassword((p) => !p);
 
@@ -125,20 +128,34 @@ const LandingLogin = () => {
     }
   };
 
+  const handleRecaptchaChange = (token) => {
+    setRecaptchaToken(token);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
     if (emailError) return toast.error("Enter valid email");
+    
+    if (!recaptchaToken) {
+      return toast.error("Please complete the reCAPTCHA verification");
+    }
 
     try {
-      const res = await apiClient.post("/api/login", formData, { withCredentials: true });
+      const res = await apiClient.post("/api/login", {
+        ...formData,
+        recaptchaToken
+      }, { withCredentials: true });
+      
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", "user");
       localStorage.setItem("user_type", res.data.user_type || "normal");
       localStorage.setItem("user_id", res.data.user_id);
       toast.success("Login Success");
       setTimeout(() => (window.location.href = "/dashboard"), 1500);
-    } catch {
+    } catch (error) {
       toast.error("Wrong email or password");
+      setRecaptchaToken(null); // Reset reCAPTCHA on error
     }
   };
 
@@ -171,7 +188,7 @@ const LandingLogin = () => {
       </>
     ) : (
       <>
-        <span className="dg-brand">ডাটাঘুড়ি</span>তে স্বাগতম
+        <span className="dg-brand">ডাটাঘুড়ি</span>তে স্বাগতম
       </>
     )}
   </h1>
@@ -269,14 +286,23 @@ const LandingLogin = () => {
         </span>
       </div>
 
-      <button className="dg-btn dg-btn-primary">
+      {/* reCAPTCHA */}
+      <div className="dg-recaptcha">
+        <ReCAPTCHA
+          sitekey={RECAPTCHA_SITE_KEY}
+          onChange={handleRecaptchaChange}
+          hl={language === "বাংলা" ? "bn" : "en"}
+        />
+      </div>
+
+      <button className="dg-btn dg-btn-primary" type="submit">
         {language === "English" ? "Log In" : translatedButton.login}
       </button>
 
     </form>
 
     <p className="dg-link">
-      {language === "English" ?"Don’t have an account?" : "কোন অ্যাকাউন্ট নেই"} <a href="/signup">Sign Up</a>
+      {language === "English" ?"Don't have an account?" : "কোন অ্যাকাউন্ট নেই"} <a href="/signup">Sign Up</a>
     </p>
     <a href="/forgot-password" className="dg-forgot">
       Forgot Password?
@@ -284,7 +310,6 @@ const LandingLogin = () => {
 </div>
   </motion.div>
 </div>
-
 
   );
 };
