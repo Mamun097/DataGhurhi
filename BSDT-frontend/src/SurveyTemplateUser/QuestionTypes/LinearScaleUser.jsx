@@ -7,6 +7,7 @@ const LinearScaleQuestion = ({
   question,
   userResponse,
   setUserResponse,
+  showNumbering,
 }) => {
   // Default min and max values
   const minValue = question.min || 1;
@@ -56,7 +57,7 @@ const LinearScaleQuestion = ({
           wordBreak: "break-word",
         }}
       >
-        {index}{". "}
+        {showNumbering ? `${index}. ` : ""}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>

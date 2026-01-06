@@ -2,7 +2,13 @@ import React, { useMemo, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 
-const Radio = ({ index, question, userResponse, setUserResponse }) => {
+const Radio = ({
+  index,
+  question,
+  userResponse,
+  setUserResponse,
+  showNumbering,
+}) => {
   const userAnswer = userResponse.find(
     (response) => response.questionText === question.text
   )?.userResponse;
@@ -77,7 +83,6 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
   const shuffledOptions = useMemo(() => {
     const options = question.meta?.options || [];
     if (question.meta?.enableOptionShuffle === true) {
-      console.log("Shuffling options for question:", question.text);
       const shuffled = [...options];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -101,8 +106,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
     <div className="mt-2 ms-2">
       {/* Question Text */}
       <h5 className="mb-2" style={{ fontSize: "1.2rem" }}>
-        {index}
-        {". "}
+        {showNumbering ? `${index}. ` : ""}
         {question.text || "Untitled Question"}
         {question.required && <span className="text-danger ms-1">*</span>}
       </h5>
@@ -183,7 +187,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
       {question.otherAsOption && (
         <>
           <div
-            className="form-check mb-3 ps-2 ms-3"
+            className="form-check mb-3 ps-2 ms-2"
             style={{
               display: "flex",
               gap: "0.75rem",
@@ -207,7 +211,7 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
               }}
               required={question.required}
               disabled={question.disabled}
-              className="form-check-input me-2"
+              className="form-check-input"
               name={`radio-${question.id}`}
               id={`radio-other-${question.id}`}
               style={{
@@ -220,24 +224,29 @@ const Radio = ({ index, question, userResponse, setUserResponse }) => {
               className="form-check-label pe-2"
               htmlFor={`radio-other-${question.id}`}
               style={{
-                flex: "1 1 auto",
+                // flex: "1 1 auto",
                 margin: 0,
-                lineHeight: 1.2,
+                lineHeight: 1.9,
                 cursor: question.disabled ? "not-allowed" : "pointer",
               }}
             >
               {otherLabel}
             </label>
+            <input
+              type="text"
+              className="form-control"
+              style={{
+                maxWidth: "190px",
+                maxHeight: "2.5rem",
+                flex: "1 1 auto",
+              }}
+              placeholder={isLastOptionBangla ? "নিজের অপশন লিখুন" : "Type your option"}
+              value={otherOption}
+              onChange={handleEditOtherOption}
+              required={otherSelected}
+              disabled={!otherSelected}
+            />
           </div>
-          <input
-            type="text"
-            className="form-control"
-            style={{ maxWidth: "300px" }}
-            placeholder="Write your own option"
-            value={otherOption}
-            onChange={handleEditOtherOption}
-            required={otherSelected}
-          />
         </>
       )}
     </div>

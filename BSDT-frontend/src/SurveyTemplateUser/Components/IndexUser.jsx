@@ -19,6 +19,7 @@ import RadioQuestion from "../QuestionTypes/RadioUser";
 import RatingQuestion from "../QuestionTypes/RatingUser";
 import Text from "../QuestionTypes/TextUser";
 import TickBoxGrid from "../QuestionTypes/TickBoxGridUser";
+import { handleMarking } from "../Utils/handleMarking";
 
 const isSurveyOpen = (template, setSurveyOpenMessage) => {
   if (!template) return false;
@@ -47,12 +48,13 @@ const isSurveyOpen = (template, setSurveyOpenMessage) => {
   return true;
 };
 
-const renderPreviewQuestion = (question, index) => {
+const renderPreviewQuestion = (question, index, showNumbering) => {
   const staticProps = {
     question,
     index,
     userResponse: [],
     setUserResponse: () => {},
+    showNumbering,
   };
 
   switch (question.type) {
@@ -452,7 +454,11 @@ const Index = () => {
                     borderRadius: "4px",
                   }}
                 >
-                  {renderPreviewQuestion(question, index + 1)}
+                  {renderPreviewQuestion(
+                    question,
+                    index + 1,
+                    section.autoNumbering
+                  )}
                 </div>
               ))}
           </div>

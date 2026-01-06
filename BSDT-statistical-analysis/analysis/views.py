@@ -4150,6 +4150,64 @@ def process_pearson_test(request, df, selected_columns, user_id):
             except Exception:
                 return None
 
+        def prepare_scatter_plot_data(var1, var2, data):
+            """Prepare scatter plot data for a pair of variables"""
+            # Ensure numeric data
+            s1 = pd.to_numeric(data[var1], errors='coerce')
+            s2 = pd.to_numeric(data[var2], errors='coerce')
+            
+            # Remove pairs where either is NaN
+            mask = s1.notna() & s2.notna()
+            s1_clean, s2_clean = s1[mask], s2[mask]
+            
+            if len(s1_clean) < 2:
+                return None
+            
+            # Calculate regression line
+            try:
+                slope, intercept, r_value, p_value_reg, std_err = stats.linregress(s1_clean, s2_clean)
+                regression_data = {
+                    'slope': float(slope),
+                    'intercept': float(intercept),
+                    'r_squared': float(r_value**2),
+                    'p_value': float(p_value_reg)
+                }
+            except Exception as e:
+                print(f"[Pearson] Regression calculation warning: {e}")
+                regression_data = {
+                    'slope': 0,
+                    'intercept': 0,
+                    'r_squared': 0,
+                    'p_value': 1.0
+                }
+            
+            # Calculate basic statistics for each variable
+            return {
+                'variable1': str(var1),
+                'variable2': str(var2),
+                'sample1': {
+                    'name': str(var1),
+                    'values': [float(x) for x in s1_clean],
+                    'count': int(len(s1_clean)),
+                    'mean': float(np.mean(s1_clean)),
+                    'median': float(np.median(s1_clean)),
+                    'std': float(np.std(s1_clean)),
+                    'min': float(np.min(s1_clean)),
+                    'max': float(np.max(s1_clean))
+                },
+                'sample2': {
+                    'name': str(var2),
+                    'values': [float(x) for x in s2_clean],
+                    'count': int(len(s2_clean)),
+                    'mean': float(np.mean(s2_clean)),
+                    'median': float(np.median(s2_clean)),
+                    'std': float(np.std(s2_clean)),
+                    'min': float(np.min(s2_clean)),
+                    'max': float(np.max(s2_clean))
+                },
+                'regression': regression_data
+            }
+
         def pearson_one_pair(var_a, var_b):
             """
             Perform Pearson correlation for one pair of variables.
@@ -4225,6 +4283,7 @@ def process_pearson_test(request, df, selected_columns, user_id):
         n_vars = len(vars_list)
         pairwise_results = []
         all_p_values = []
+        scatter_plot_data = []  # NEW: Store scatter plot data for each pair
         
         for i in range(n_vars):
             for j in range(i + 1, n_vars):
@@ -4247,8 +4306,14 @@ def process_pearson_test(request, df, selected_columns, user_id):
                     all_p_values.append(result['p_value'])
                 else:
                     all_p_values.append(np.nan)
+                
+                # NEW: Prepare scatter plot data for this pair
+                scatter_data = prepare_scatter_plot_data(var1, var2, df)
+                if scatter_data:
+                    scatter_plot_data.append(scatter_data)
 
         print(f"[Pearson] Completed {len(pairwise_results)} pairwise tests")
+        print(f"[Pearson] Prepared {len(scatter_plot_data)} scatter plots")
 
         # ── 4) Apply FDR correction ────────────────────────────────────────
         p_array = np.array(all_p_values, dtype=float)
@@ -4398,6 +4463,8 @@ def process_pearson_test(request, df, selected_columns, user_id):
             'variable_stats': variable_stats,
             'pairwise_results': pairwise_results,
             'blocks': blocks,
+            'scatter_plot_data': scatter_plot_data,  # NEW: Add scatter plot data
+            'selected_scatter_pair': None,  # NEW: Currently selected scatter plot pair
             'correlation_matrix': [[float(val) for val in row] for row in corr_matrix.tolist()],
             'p_value_matrix': [[float(val) for val in row] for row in p_matrix.tolist()],
             'p_adjusted_matrix': [[float(val) for val in row] for row in p_adjusted_matrix.tolist()],
@@ -4425,6 +4492,7 @@ def process_pearson_test(request, df, selected_columns, user_id):
             'error': error_msg,
             'traceback': traceback_msg
         })
+
 
 
 def process_spearman_test(request, df, selected_columns, user_id):
