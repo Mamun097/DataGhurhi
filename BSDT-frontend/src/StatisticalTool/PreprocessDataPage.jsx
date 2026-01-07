@@ -805,6 +805,7 @@ const PreprocessDataPage = () => {
                   <div className="panel-section">
                     <p className="panel-info">
                       Assign aliases to column headers.
+                      You can use alias names in analysis instead of original.
                     </p>
 
                     <div

@@ -1,4 +1,5 @@
 import os
+import csv
 import matplotlib  as mpl
 import uuid
 import matplotlib.font_manager as fm
@@ -9068,7 +9069,7 @@ def create_alias_api(request):
         
         save_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, alias_filename)
         
-        df_aliases.to_csv(save_path, index=False)
+        df_aliases.to_csv(save_path, index=False, quoting=csv.QUOTE_ALL)
 
         # 5. Generate URL (if needed for frontend download/viewing)
         file_url_alias = os.path.join(settings.MEDIA_URL, preprocess_folder_name, alias_filename).replace("\\", "/")
