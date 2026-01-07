@@ -9083,3 +9083,38 @@ def create_alias_api(request):
     except Exception as e:
         import traceback
         return JsonResponse({'success': False, 'error': f"{str(e)}"})
+
+## fetch saved alias for the files.
+
+@csrf_exempt
+def get_alias_api(request):
+    try:
+        user_id = request.headers.get('userID')
+        data = json.loads(request.body)
+        filename = data.get("filename") # The ORIGINAL filename (e.g., data.xlsx)
+        
+        if not user_id or not filename:
+            return JsonResponse({'success': False, 'error': 'Missing parameters.'})
+
+        # Construct the expected path for the alias file
+        base_name = os.path.splitext(filename)[0]
+        alias_filename = f"{base_name}_col_aliases.csv"
+        
+        alias_path = os.path.join(
+            settings.MEDIA_ROOT, 
+            f"ID_{user_id}_uploads/temporary_uploads/preprocessed/", 
+            alias_filename
+        )
+
+        if not os.path.exists(alias_path):
+            return JsonResponse({'success': True, 'aliases': {}}) # No aliases found, return empty
+
+        # Read CSV and convert to Dictionary { "Original": "Alias" }
+        df = pd.read_csv(alias_path)
+        # Assuming CSV has columns: 'original_column', 'aliases'
+        alias_dict = pd.Series(df.aliases.values, index=df.original_column).to_dict()
+
+        return JsonResponse({'success': True, 'aliases': alias_dict})
+
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

@@ -117,6 +117,34 @@ const PreprocessDataPage = () => {
     if (location.state?.userId) setUserId(location.state.userId);
   }, [location.state]);
 
+  // Fetch existing aliases on load
+  useEffect(() => {
+    if (!userId || !filename) return;
+
+    const fetchAliases = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/get-alias/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            userID: userId,
+          },
+          body: JSON.stringify({ filename }),
+        });
+
+        const res = await response.json();
+        if (res.success && res.aliases) {
+          // Pre-fill the state with existing aliases
+          setColumnAliases(res.aliases);
+        }
+      } catch (error) {
+        console.error("Could not load existing aliases:", error);
+      }
+    };
+
+    fetchAliases();
+  }, [userId, filename]);
+
   useEffect(() => {
     if (!userId) return;
     fetch(`${API_BASE}/preview-data/`, {
@@ -776,8 +804,7 @@ const PreprocessDataPage = () => {
                 {selectedOption === "create_alias" && (
                   <div className="panel-section">
                     <p className="panel-info">
-                      Assign aliases to column headers. These will be saved in a
-                      separate file for use in graphs/labels.
+                      Assign aliases to column headers.
                     </p>
 
                     <div
@@ -812,6 +839,7 @@ const PreprocessDataPage = () => {
                             className="text-input"
                             style={{ width: "100%" }}
                             placeholder="Enter aliases, separated by commas"
+                            // This line ensures existing aliases are shown
                             value={columnAliases[col] || ""}
                             onChange={(e) => {
                               const val = e.target.value;
