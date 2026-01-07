@@ -2,7 +2,7 @@ const e = require('express');
 const supabase = require('../db');
 const Project = require('../model/project');
 const { sendCollaboratorInvitation } = require('../services/emailService');
-const crypto = require("crypto");
+const { generateSlug } = require('../services/generateSlug');
 
 // const User = require('../model/user');
 
@@ -367,12 +367,3 @@ exports.fetchUserAccess = async (req, res) => {
         res.status(500).json({ error: "Server error: " + error.message });
     }
 };
-
-function generateSlug() {
-  // Generate 3 random bytes (which becomes 6 Hex characters)
-  const buffer = crypto.randomBytes(3);
-  const token = buffer.toString('hex'); 
-  
-  // Format as 3-3 (e.g., "a1f-4b9")
-  return `${token.slice(0, 3)}-${token.slice(3, 6)}`;
-}
