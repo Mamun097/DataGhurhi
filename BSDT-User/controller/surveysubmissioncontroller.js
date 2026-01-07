@@ -1,9 +1,10 @@
 const supabase = require("../db");
+const axios = require('axios'); // Make sure axios is installed: npm install axios
 
 exports.submitSurvey = async (req, res) => {
-try {
+    try {
         const { slug } = req.params;
-        const { userResponse, metadata } = req.body;
+        const { userResponse, metadata, recaptchaToken } = req.body; // NEW: Extract recaptchaToken
         const userId = req.jwt?.id; 
 
         // 1. Fetch the survey's rules (ID and login requirement) in one call.
@@ -18,6 +19,37 @@ try {
         }
 
         const surveyId = survey.survey_id;
+
+        // NEW: Verify reCAPTCHA for non-logged-in users
+        if (!userId) {
+            // User is not logged in, verify reCAPTCHA
+            if (!recaptchaToken) {
+                return res.status(400).json({ error: 'reCAPTCHA verification is required.' });
+            }
+
+            try {
+                const recaptchaResponse = await axios.post(
+                    'https://www.google.com/recaptcha/api/siteverify',
+                    null,
+                    {
+                        params: {
+                            secret: process.env.RECAPTCHA_SECRET_KEY,
+                            response: recaptchaToken
+                        }
+                    }
+                );
+
+                if (!recaptchaResponse.data.success) {
+                    return res.status(400).json({ 
+                        error: 'reCAPTCHA verification failed. Please try again.' 
+                    });
+                }
+            } catch (recaptchaError) {
+                console.error('reCAPTCHA verification error:', recaptchaError);
+                return res.status(500).json({ error: 'reCAPTCHA verification failed' });
+            }
+        }
+        // If userId exists, user is logged in - skip reCAPTCHA verification
 
         if (survey.response_user_logged_in_status === true) {
             // --- PROTECTED SURVEY SUBMISSION ---
@@ -56,7 +88,7 @@ try {
             // otherwise it will be saved as NULL. This is why the column must be nullable.
             const { data, error } = await supabase
                 .from('response')
-                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse }])
+                .insert([{ survey_id: surveyId, user_id: userId, response_data: userResponse, metadata: metadata }])
                 .select()
                 .single();
 

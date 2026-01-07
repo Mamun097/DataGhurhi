@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import DeleteIcon from "@mui/icons-material/Delete";
+import FileCopyIcon from "@mui/icons-material/FileCopy";
 import IconButton from "@mui/material/IconButton";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import LockIcon from "@mui/icons-material/Lock";
@@ -441,6 +442,24 @@ const ProjectDetailsTab = ({
         console.error("Error creating survey:", error);
         toast.error(getLabel("Failed to create survey."));
       }
+    }
+  };
+
+  const handleCopySurvey = async (surveyId) => {
+    const token = localStorage.getItem("token");
+    try {
+      const response = await apiClient.put(
+        `/api/surveytemplate/copy/${surveyId}`,
+        { projectId: Number(projectId) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (response.status === 201) {
+        toast.success(getLabel("Survey copied successfully!"));
+        fetchSurveys();
+      }
+    } catch (error) {
+      console.error("Error copying survey:", error);
+      toast.error(getLabel("Failed to copy survey."));
     }
   };
 
@@ -887,30 +906,32 @@ const ProjectDetailsTab = ({
                   </div>
 
                   {canEdit && (
-                    <IconButton
-                      className="delete-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        Swal.fire({
-                          title: getLabel("Are you sure?"),
-                          text: getLabel("This action cannot be undone."),
-                          icon: "warning",
-                          showCancelButton: true,
-                          confirmButtonText: getLabel("Yes, delete it!"),
-                          cancelButtonText: getLabel("No, cancel!"),
-
-                          confirmButtonColor: "#1e9a20ff",
-                          cancelButtonColor: "#bb2c2cff",
-                        }).then((result) => {
-                          if (result.isConfirmed) {
-                            handleDeleteSurvey(survey.survey_id);
-                          }
-                        });
-                      }}
-                      size="small"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
+                    <div className="card-actions-overlay">
+                      <IconButton
+                        className="action-btn delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          Swal.fire({
+                            title: getLabel("Are you sure?"),
+                            text: getLabel("This action cannot be undone."),
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonText: getLabel("Yes, delete it!"),
+                            cancelButtonText: getLabel("No, cancel!"),
+                            confirmButtonColor: "#1e9a20ff",
+                            cancelButtonColor: "#bb2c2cff",
+                          }).then((result) => {
+                            if (result.isConfirmed) {
+                              handleDeleteSurvey(survey.survey_id);
+                            }
+                          });
+                        }}
+                        size="small"
+                        title={getLabel("Delete Survey")}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </div>
                   )}
                 </div>
 
@@ -920,6 +941,30 @@ const ProjectDetailsTab = ({
                       <DescriptionIcon></DescriptionIcon>
                     </div>
                     <h3 className="project-title">{survey.title}</h3>
+                    <IconButton
+                      className="action-btn copy-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        Swal.fire({
+                          title: getLabel(
+                            "Do you want to duplicate this survey?"
+                          ),
+                          showCancelButton: true,
+                          confirmButtonText: getLabel("Yes"),
+                          cancelButtonText: getLabel("No"),
+                          confirmButtonColor: "#1e9a20ff",
+                          cancelButtonColor: "#bb2c2cff",
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleCopySurvey(survey.survey_id);
+                          }
+                        });
+                      }}
+                      size="small"
+                      title={getLabel("Duplicate Survey")}
+                    >
+                      <FileCopyIcon fontSize="small" />
+                    </IconButton>
                   </div>
 
                   <div className="project-meta">

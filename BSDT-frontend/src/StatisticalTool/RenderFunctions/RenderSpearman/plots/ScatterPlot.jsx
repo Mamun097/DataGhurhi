@@ -224,7 +224,7 @@ const ScatterPlot = ({
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
                             <div>
                                 <div style={{ fontWeight: 'bold', color: '#374151', marginBottom: '4px' }}>
-                                    {t('Pearson Correlation', 'পিয়ারসন সম্পর্ক')}
+                                    {t('Spearman Correlation', 'স্পিয়ারম্যান সম্পর্ক')}
                                 </div>
                                 <div style={{ fontSize: '24px', fontWeight: 'bold', color: correlationResult.correlation >= 0.7 ? '#059669' : 
                                     correlationResult.correlation >= 0.3 ? '#3b82f6' : '#dc2626' }}>

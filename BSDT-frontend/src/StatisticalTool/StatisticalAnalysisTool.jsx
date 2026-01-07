@@ -14,7 +14,7 @@ import statTestDetails from './stat_tests_details';
 import './StatisticalAnalysisResultPage.css';
 import apiClient from '../api';
 import PreviewTable from './previewTable';
-import TestSuggestionsModal from './testSuggestionsModal';
+import TestSuggestionsModal from './TestSuggestions';
 import * as XLSX from "xlsx";
 
 
@@ -341,6 +341,8 @@ const StatisticalAnalysisTool = () => {
     const [showColumnMenu, setShowColumnMenu] = useState(false);
     const [tempSelectedColumns, setTempSelectedColumns] = useState([]);
 
+    const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+
     // Generate Again Functionality
     const [isFirstTimeAnalysis, setIsFirstTimeAnalysis] = useState(true);
     useEffect(() => {
@@ -412,9 +414,6 @@ const StatisticalAnalysisTool = () => {
         fileUrl = `${API_BASE}${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
 
-
-
-
         if (sessionStorage.getItem("fileURL")) {
             fetch(fileUrl)
                 .then(res => {
@@ -428,60 +427,27 @@ const StatisticalAnalysisTool = () => {
                     setUploadStatus("success");
                     console.log("File loaded successfully:", newFile.name);
 
-                    // Send file to backend to extract columns
                     const formData = new FormData();
                     formData.append('file', newFile);
                     formData.append('userID', userId);
-
-
-                    //                   const storedSheetName = sessionStorage.getItem("activesheetname");
-                    //   if( fileName && userId && fileURL){
-                    //   console.log("Active sheet name from sessionStorage:", storedSheetName);
-                    //    const formData = new FormData();
-
-
-                    //             formData.append('filename', fileName);
-                    //             formData.append('userID', userId);
-                    //             formData.append('activeSheet', storedSheetName || '');
-                    //             formData.append('Fileurl', fileURL || '');
-
-
-                    //               // Call the API to get columns
-                    //             fetch('http://127.0.0.1:8000/api/get-columns/', {
-                    //                 method: 'POST',
-                    //                 body: formData,
-
-                    //             })
-                    //                 .then(response => response.json())
-                    //                 .then(data => {
-                    //                     if (data.success) {
-
-                    //                         console.log(data.columns);
-                    //                        setColumns(data.columns || []);
-                    //                        setColumn1(data.columns[0])
-                    //                        console.log(columns);
-
-                    //                     } else {
-                    //                         console.error("Error fetching columns:", data.error);
-                    //                     }
-                    //                 })
-                    //                 .catch(error => {
-                    //                     console.error("Error:", error);
-                    //                 });
-                    //             }
-                    fetchcolumn();
-
+                    
+                    fetchcolumn(); // Your existing column fetch
+                    
+                    // NEW: Also fetch column types when file loads
+                    setTimeout(() => {
+                        fetchColumnTypes();
+                    }, 500);
+                    
                 })
                 .catch(err => {
                     console.error("Error loading file:", err);
                     setErrorMessage("Error loading file. Please re-upload.");
                     setUploadStatus("error");
                 });
-
         }
-
-
     }, [isPreprocessed, isSurveyData, fileName]);
+
+
 
 
 
@@ -569,8 +535,7 @@ const StatisticalAnalysisTool = () => {
     const [results, setResults] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-    const [isSuggestionModalOpen, setIsSuggestionModalOpen] = useState(false);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);    
 
     const [columnTypesCache, setColumnTypesCache] = useState({});
     const [isFetchingColumnTypes, setIsFetchingColumnTypes] = useState(false);
@@ -723,6 +688,50 @@ const StatisticalAnalysisTool = () => {
         }
     };
 
+
+    const handleSuggestionClick = async () => {
+        // First, check if we have column types already
+        const cacheKey = sessionStorage.getItem("fileURL") || "";
+        
+        if (!cacheKey) {
+            setErrorMessage(
+                language === "বাংলা" 
+                    ? "প্রথমে একটি ফাইল আপলোড করুন" 
+                    : "Please upload a file first"
+            );
+            return;
+        }
+        
+        // Check if we have cached column types
+        const hasCache = columnTypesCache[cacheKey] && 
+                        columnTypesCache[cacheKey].timestamp > Date.now() - 30000;
+        
+        if (!hasCache && !isFetchingColumnTypes) {
+            // Fetch column types if not already fetched
+            try {
+                await fetchColumnTypes();
+            } catch (error) {
+                console.error("Error fetching column types:", error);
+                setErrorMessage(
+                    language === "বাংলা" 
+                        ? "কলাম বিশ্লেষণে ত্রুটি হয়েছে" 
+                        : "Error analyzing columns"
+                );
+                return;
+            }
+        } else if (hasCache) {
+            // Load from cache
+            const cachedData = columnTypesCache[cacheKey];
+            setNumericColumns(cachedData.numeric_columns || []);
+            setCategoricalColumns(cachedData.categorical_columns || []);
+            setColumnTypesLoaded(true);
+        }
+        
+        // Now open the modal
+        setIsSuggestionModalOpen(true);
+    };
+
+
     // Function to fetch groups when column1 changes for tests requiring exactly 2 groups
     const fetchGroupsForColumn = async (columnName) => {
         console.log("[DEBUG] fetchGroupsForColumn called with:", {
@@ -838,6 +847,7 @@ const StatisticalAnalysisTool = () => {
         }
     };
 
+
     // Add this useEffect to sync tempSelectedColumns when menu opens
     useEffect(() => {
         if (showColumnMenu) {
@@ -883,7 +893,6 @@ const StatisticalAnalysisTool = () => {
         }
     }, [testType, fileURL]);
 
-
     useEffect(() => {
         const savedCache = localStorage.getItem('columnTypesCache');
         if (savedCache) {
@@ -901,6 +910,7 @@ const StatisticalAnalysisTool = () => {
             localStorage.setItem('columnTypesCache', JSON.stringify(columnTypesCache));
         }
     }, [columnTypesCache]);
+
 
     // Add this debug useEffect
     useEffect(() => {
@@ -958,8 +968,6 @@ const StatisticalAnalysisTool = () => {
             setGroupDropdownOpen(false);
         }
     }, [column1, testType, groupsCache, isFetchingGroups]);
-
-
     
     // Initialize groups cache from localStorage
     useEffect(() => {
@@ -2046,15 +2054,6 @@ const StatisticalAnalysisTool = () => {
 
     };
 
-
-    const handleSuggestionClick = () => {
-
-
-        setIsSuggestionModalOpen(true);
-        console.log("Suggestion button clicked");
-
-        // Optional: scroll to the suggestion panel or show modal
-    };
 const closePreview= async () =>{
     setIsPreviewModalOpen(false);
 }
@@ -2141,6 +2140,7 @@ const closePreview= async () =>{
 
                                         {(isPreprocessed || isSurveyData || file) ? (
                                             <div className="uploaded-container">
+                                                
                                                 <div className="left-partition">
                                                     <div className="file-info-box">
                                                         <svg className="file-icon" viewBox="0 0 24 24" stroke="currentColor" fill="none">
@@ -2163,24 +2163,74 @@ const closePreview= async () =>{
                                                         display: 'flex',
                                                         flexDirection: 'column',
                                                         alignItems: 'flex-start',
-                                                        gap: '10px',
+                                                        gap: '15px',
                                                         margin: '0 0',
                                                         marginTop: '1rem',
+                                                        width: '100%',
                                                     }}>
+                                                        {/* Suggestion Section - NEW */}
+                                                        <div className="suggestion-section" style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '15px',
+                                                            padding: '12px 16px',
+                                                            backgroundColor: '#f8fafc',
+                                                            border: '1px solid #e2e8f0',
+                                                            borderRadius: '8px',
+                                                            width: '100%',
+                                                        }}>
+
+
+                                                            <button
+                                                                type="button"
+                                                                className="suggestion-btn"
+                                                                onClick={handleSuggestionClick}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '8px',
+                                                                    padding: '10px 16px',
+                                                                    backgroundColor: '#8b5cf6',
+                                                                    color: 'white',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '14px',
+                                                                    fontWeight: '500',
+                                                                    transition: 'background-color 0.2s',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
+                                                                </svg>
+                                                                {language === "বাংলা" ? "পরীক্ষার পরামর্শ" : "Test Suggestions"}
+                                                            </button>
+
+
+
+                                                            <p style={{
+                                                                margin: 0,
+                                                                color: '#475569',
+                                                                fontSize: '14px',
+                                                                fontStyle: 'italic',
+                                                            }}>
+                                                                {language === "বাংলা" 
+                                                                    ? "আপনার ডেটার জন্য উপযুক্ত পরীক্ষা জানতে এখানে ক্লিক করুন" 
+                                                                    : "Click here to see which tests are appropriate for your data"}
+                                                            </p>
+                                                        </div>
+                                                        
+                                                        {/* Original Action Buttons */}
                                                         <div className="action-buttons" style={{
                                                             display: 'flex',
                                                             gap: '12px',
-                                                            justifyContent: 'flex-start'
+                                                            justifyContent: 'flex-start',
+                                                            flexWrap: 'wrap',
                                                         }}>
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
-                                                                //    disabled={true}
-                                                                // // muted
-                                                                // style={{
-                                                                //     opacity: 0.6,
-                                                                //     cursor: "not-allowed"
-                                                                // }}
                                                                 onClick={handlePreviewClick}
                                                             >
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2190,16 +2240,9 @@ const closePreview= async () =>{
                                                                 {language === "bn" ? "ডেটা প্রিভিউ" : "Preview"}
                                                             </button>
                                                             
-
                                                             <button
                                                                 type="button"
                                                                 className="customize-btn"
-                                                                // disabled={true}
-                                                                // // muted
-                                                                // style={{
-                                                                //     opacity: 0.6,
-                                                                //     cursor: "not-allowed"
-                                                                // }}
                                                                 onClick={() => {
                                                                     const path = "/preprocess";
                                                                     navigate(path, { state: { userId: userId, filename: fileName } });
@@ -2209,7 +2252,6 @@ const closePreview= async () =>{
                                                                     <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
                                                                 </svg>
                                                                 {language === "bn" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
-                                                                
                                                             </button>
 
                                                             <button
@@ -2226,6 +2268,9 @@ const closePreview= async () =>{
                                                             </button>
                                                         </div>
                                                     </div>
+
+
+
                                                 </div>
 
                                                 <div className="right-partition">
@@ -5039,6 +5084,20 @@ const closePreview= async () =>{
                                         </div>
                                     </div>
                                 )}
+
+
+                                {/* Test Suggestions Modal */}
+
+                                <TestSuggestionsModal
+                                    isOpen={isSuggestionModalOpen}
+                                    onClose={() => setIsSuggestionModalOpen(false)}
+                                    categoricalColumns={categoricalColumns}
+                                    numericColumns={numericColumns}
+                                    language={language}
+                                    isLoading={isFetchingColumnTypes && columnTypesLoaded === false}
+                                    error={columnTypesError}
+                                />
+
                             </div>
                         </div>
                     ) : (
@@ -5086,6 +5145,9 @@ const closePreview= async () =>{
                         />
 
                     )}
+
+
+
 
                 </div>
             </div>
