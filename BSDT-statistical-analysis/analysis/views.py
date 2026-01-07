@@ -9024,3 +9024,62 @@ def delete_temp_folder(request):
             return JsonResponse({"status": "success", "message": "Temporary folder deleted"})
         except Exception as e:
             return JsonResponse({"status": "error", "message": str(e)}, status=500)
+
+
+## function for handling alias.
+
+@csrf_exempt
+def create_alias_api(request):
+    try:
+        # Extract headers and body
+        user_id = request.headers.get('userID')
+        data = json.loads(request.body)
+        filename = data.get("filename")
+        file_url = data.get("Fileurl")
+        alias_mapping = data.get("alias_mapping", {}) # { "Your Name": "name, nm" }
+        
+        # 1. Validation
+        if not user_id or not file_url:
+            return JsonResponse({'success': False, 'error': 'Missing required parameters.'})
+
+        if not alias_mapping:
+            return JsonResponse({'success': False, 'error': 'No aliases provided.'})
+
+        # 2. Path Setup
+        # We want to save this in the same folder as the preprocessed files for easy access
+        preprocess_folder_name = f"ID_{user_id}_uploads/temporary_uploads/preprocessed/"
+        os.makedirs(os.path.join(settings.MEDIA_ROOT, preprocess_folder_name), exist_ok=True)
+        
+        # 3. Create DataFrame for the Aliases
+        # Structure: | original_column | aliases |
+        alias_data = []
+        for orig_col, aliases in alias_mapping.items():
+            alias_data.append({
+                'original_column': orig_col,
+                'aliases': aliases
+            })
+            
+        df_aliases = pd.DataFrame(alias_data)
+
+        # 4. Save as a separate CSV file
+        # Naming convention: [original_filename]_col_aliases.csv
+        base_name = os.path.splitext(filename)[0]
+        alias_filename = f"{base_name}_col_aliases.csv"
+        
+        save_path = os.path.join(settings.MEDIA_ROOT, preprocess_folder_name, alias_filename)
+        
+        df_aliases.to_csv(save_path, index=False)
+
+        # 5. Generate URL (if needed for frontend download/viewing)
+        file_url_alias = os.path.join(settings.MEDIA_URL, preprocess_folder_name, alias_filename).replace("\\", "/")
+
+        return JsonResponse({
+            'success': True,
+            'message': f"Alias file created successfully: {alias_filename}",
+            'alias_file_url': file_url_alias,
+            'alias_filename': alias_filename
+        })
+
+    except Exception as e:
+        import traceback
+        return JsonResponse({'success': False, 'error': f"{str(e)}"})
