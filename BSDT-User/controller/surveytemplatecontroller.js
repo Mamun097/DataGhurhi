@@ -1,6 +1,8 @@
 const supabase = require("../db");
 const { jwtAuthMiddleware } = require("../auth/authmiddleware");
 const crypto = require("crypto");
+const { generateSlug } = require("../services/generateSlug");
+const Project = require("../model/project");
 
 exports.saveSurveyForm = async (req, res) => {
   try {
@@ -473,5 +475,99 @@ exports.getResponseCount = async (req, res) => {
     );
     supabase.removeChannel(channel);
     res.end();
+  });
+};
+
+exports.copySurveyForm = async (req, res) => {
+  const { survey_id } = req.params;
+  const userId = req.jwt.id;
+  const { projectId } = req.body;
+
+  // 1. Fetch the original survey (ensure we select copy_count)
+  const { data: originalSurvey, error: originalSurveyError } = await supabase
+    .from("survey")
+    .select("*")
+    .eq("survey_id", survey_id)
+    .eq("user_id", userId) 
+    .single();
+
+  if (originalSurveyError || !originalSurvey) {
+    console.error("Supabase select error for original survey:", originalSurveyError);
+    return res.status(500).json({ error: "Failed to fetch original survey" });
+  }
+
+  // 2. Determine the new title
+  // Default to 0 if copy_count is null/undefined
+  const currentCount = originalSurvey.copy_count || 0; 
+  const newTitle = `${originalSurvey.title}_copy(${currentCount + 1})`;
+
+  // 3. Create the new survey entry (Slug Logic)
+  let attempts = 0;
+  const maxAttempts = 5;
+  let newSurveyId = null;
+
+  while (attempts < maxAttempts) {
+      const slug = generateSlug();
+      // Attempt to create the shell of the survey
+      const { data, error } = await Project.createSurvey(projectId, newTitle, userId, slug);
+
+      if (!error) {
+          // Success: Capture ID and break the loop (DO NOT return res yet)
+          newSurveyId = data.survey_id;
+          break; 
+      }
+      // Handle Unique Slug Violation
+      if (error.code === '23505') {
+          attempts++;
+          continue;
+      }
+      // Other errors
+      console.error(error);
+      return res.status(400).json({ error: error.message || "Unknown error" });
+  }
+  // If we couldn't create a survey after 5 attempts
+  if (!newSurveyId) {
+      return res.status(500).json({ error: "Could not generate a unique survey link. Please try again." });
+  }
+  // 4. Update the NEW survey with the original data
+  const { data: copiedSurvey, error: copiedSurveyError } = await supabase
+    .from("survey")
+    .update({
+      template: originalSurvey.template,
+      response_user_logged_in_status: originalSurvey.response_user_logged_in_status,
+      shuffle_questions: originalSurvey.shuffle_questions,
+      collectResponse: originalSurvey.collectResponse,
+      banner: originalSurvey.banner,
+      survey_status: "saved", // Reset status to saved/draft
+      starting_date: new Date(),
+      copy_count: 0, // Reset copy count for the new survey
+    })
+    .eq("survey_id", newSurveyId)
+    .select("*")
+    .single();
+
+  if (copiedSurveyError) {
+    console.error("Supabase update error for copied survey:", copiedSurveyError);
+    return res.status(500).json({ error: "Failed to copy survey data" });
+  }
+
+  // 5. Increment the copy_count of the ORIGINAL survey
+  const { error: incrementError } = await supabase
+    .from("survey")
+    .update({
+        copy_count: currentCount + 1
+    })
+    .eq("survey_id", survey_id);
+
+  if (incrementError) {
+      // This is a non-critical error (survey was copied, but counter failed), 
+      // but good to log it.
+      console.error("Failed to increment copy count on original survey:", incrementError);
+  }
+
+  // 6. Return Success
+  return res.status(201).json({
+    message: "Survey copied successfully",
+    data: copiedSurvey,
   });
 };
