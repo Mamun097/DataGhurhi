@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./ChatbotLoading.css";
 
-const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
+const AISurveyChatbot = ({ onClose, onGenerateSurvey , getLabel}) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [step, setStep] = useState("intro");
@@ -17,7 +17,7 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
     setMessages([
       {
         sender: "bot",
-        text: "Hi! I can generate a full survey using AI. Want to give me some info?",
+        text: getLabel("Hi! I can generate a full survey using AI. Want to give me some info?"),
         options: [
           { id: "custom", label: "Give Info" },
           { id: "skip", label: "Let AI decide" }
@@ -39,15 +39,15 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
   const handleOptionSelect = (optionId) => {
     if (step === "intro") {
       if (optionId === "skip") {
-        addMessage("user", "Let AI decide");
-        addMessage("bot", "Perfect! Generating your survey...");
+        addMessage("user", getLabel("Let AI decide"));
+        addMessage("bot", getLabel("Perfect! Generating your survey..."));
         setTimeout(() => {
           onGenerateSurvey(surveyMeta); // default values
         }, 1000);
       } else {
-        addMessage("user", "Give Info");
+        addMessage("user", getLabel("Give Info"));
         setStep("topic");
-        addMessage("bot", "What is the topic or purpose of your survey?");
+        addMessage("bot", getLabel("What is the topic or purpose of your survey?"));
       }
     }
   };
@@ -62,11 +62,11 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
     if (step === "topic") {
       setSurveyMeta((prev) => ({ ...prev, topic: value }));
       setStep("audience");
-      addMessage("bot", "Who is your target audience?");
+      addMessage("bot", getLabel("Who is your target audience?"));
     } else if (step === "audience") {
       setSurveyMeta((prev) => ({ ...prev, audience: value }));
       setStep("numQuestions");
-      addMessage("bot", "How many questions? (default is 10)");
+      addMessage("bot", getLabel("How many questions? (default is 10)"));
     } else if (step === "numQuestions") {
       const num = parseInt(value);
       setSurveyMeta((prev) => ({ ...prev, numQuestions: isNaN(num) ? 10 : num }));
@@ -75,7 +75,7 @@ const AISurveyChatbot = ({ onClose, onGenerateSurvey }) => {
     } else if (step === "questionTypes") {
       setSurveyMeta((prev) => ({ ...prev, questionTypes: value }));
       setStep("confirm");
-      addMessage("bot", "Ready! Click 'Generate Survey' to start.");
+      addMessage("bot", getLabel("Ready! Click 'Generate Survey' to start."));
     }
   };
 
