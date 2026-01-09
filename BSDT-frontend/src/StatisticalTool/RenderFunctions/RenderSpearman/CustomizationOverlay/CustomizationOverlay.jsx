@@ -49,6 +49,19 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         yAxisLeftMargin: language === 'বাংলা' ? 'Y অক্ষ বামের মার্জিন' : 'Y-Axis Left Margin',
         variableLabels: language === 'বাংলা' ? 'ভেরিয়েবল লেবেল' : 'Variable Labels',
         metricType: language === 'বাংলা' ? 'প্রদর্শনের জন্য মেট্রিক' : 'Metric to Display',
+        scatterSize: language === 'বাংলা' ? 'স্ক্যাটার বিন্দুর আকার' : 'Scatter Point Size',
+        scatterOpacity: language === 'বাংলা' ? 'স্ক্যাটার স্বচ্ছতা' : 'Scatter Opacity',
+        scatterColor: language === 'বাংলা' ? 'স্ক্যাটার বিন্দুর রং' : 'Scatter Point Color',
+        lineWidth: language === 'বাংলা' ? 'লাইনের প্রস্থ' : 'Line Width',
+        showRegressionLines: language === 'বাংলা' ? 'রিগ্রেশন লাইন দেখান' : 'Show Regression Lines',
+        showScatterPoints: language === 'বাংলা' ? 'স্ক্যাটার বিন্দু দেখান' : 'Show Scatter Points',
+        showReferenceLine: language === 'বাংলা' ? 'রেফারেন্স লাইন দেখান' : 'Show Reference Line',
+        showCriticalValues: language === 'বাংলা' ? 'ক্রিটিক্যাল মান দেখান' : 'Show Critical Values',
+        regressionLineColor: language === 'বাংলা' ? 'রিগ্রেশন লাইন রং' : 'Regression Line Color',
+        referenceLineColor: language === 'বাংলা' ? 'রেফারেন্স লাইন রং' : 'Reference Line Color',
+        referenceLineWidth: language === 'বাংলা' ? 'রেফারেন্স লাইন প্রস্থ' : 'Reference Line Width',
+        referenceLineStyle: language === 'বাংলা' ? 'রেফারেন্স লাইন স্টাইল' : 'Reference Line Style',
+        legendPosition: language === 'বাংলা' ? 'লিজেন্ড অবস্থান' : 'Legend Position'        
     };
 
     const gridStyles = [
@@ -93,6 +106,20 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
     const handleReset = () => {
         onSettingsChange(getDefaultSettings(plotType, settings.categoryLabels.length, null));
     };
+
+    // Add line styles array (after gridStyles):
+    const lineStyles = [
+        { value: 'solid', label: 'Solid' },
+        { value: 'dashed', label: 'Dashed' },
+        { value: 'dotted', label: 'Dotted' },
+    ];
+
+    const legendPositions = [
+        { value: 'right', label: 'Right' },
+        { value: 'bottom', label: 'Bottom' },
+        { value: 'top', label: 'Top' },
+        { value: 'left', label: 'Left' },
+    ];
 
     return (
         <div className="customization-overlay-backdrop" onClick={onClose}>
@@ -550,6 +577,200 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Appearance Settings */}
                     <div className="customization-section">
                         <h4 className="section-title">{t.appearance}</h4>
+
+
+
+                        {plotType === 'Scatter' && (
+                            <>
+                                {/* Common Scatter Settings */}
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.showScatterPoints}
+                                            onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
+                                        />
+                                        <span>{t.showScatterPoints}</span>
+                                    </label>
+                                </div>
+
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.showRegressionLines}
+                                            onChange={(e) => handleChange('showRegressionLines', e.target.checked)}
+                                        />
+                                        <span>{t.showRegressionLines}</span>
+                                    </label>
+                                </div>
+
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.showReferenceLine}
+                                            onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
+                                        />
+                                        <span>{t.showReferenceLine}</span>
+                                    </label>
+                                </div>
+
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.showCriticalValues}
+                                            onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
+                                        />
+                                        <span>{t.showCriticalValues}</span>
+                                    </label>
+                                </div>
+
+                                <div className="setting-group">
+                                    <label className="setting-checkbox-label">
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.legendOn}
+                                            onChange={(e) => handleChange('legendOn', e.target.checked)}
+                                        />
+                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
+                                    </label>
+                                </div>    
+
+                                {settings.legendOn && (
+                                    <div className="setting-group">
+                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
+                                        <select
+                                            className="setting-select"
+                                            value={settings.legendPosition}
+                                            onChange={(e) => handleChange('legendPosition', e.target.value)}
+                                        >
+                                            {legendPositions.map(pos => (
+                                                <option key={pos.value} value={pos.value}>{pos.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.scatterSize}</label>
+                                        <input
+                                            type="range"
+                                            className="setting-range"
+                                            value={settings.scatterSize}
+                                            onChange={(e) => handleChange('scatterSize', parseInt(e.target.value))}
+                                            min="2"
+                                            max="20"
+                                            step="1"
+                                        />
+                                        <span className="range-value">{settings.scatterSize}</span>
+                                    </div>
+
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.scatterOpacity}</label>
+                                        <input
+                                            type="range"
+                                            className="setting-range"
+                                            value={settings.scatterOpacity}
+                                            onChange={(e) => handleChange('scatterOpacity', parseFloat(e.target.value))}
+                                            min="0.1"
+                                            max="1"
+                                            step="0.1"
+                                        />
+                                        <span className="range-value">{settings.scatterOpacity.toFixed(1)}</span>
+                                    </div>
+                                </div>
+
+                                <div className="setting-row">
+                                    <div className="setting-group">
+                                        <label className="setting-label">{t.scatterColor}</label>
+                                        <input
+                                            type="color"
+                                            className="color-picker"
+                                            value={settings.scatterColor}
+                                            onChange={(e) => handleChange('scatterColor', e.target.value)}
+                                        />
+                                    </div>
+
+                                    {settings.showRegressionLines && (
+                                        <div className="setting-group">
+                                            <label className="setting-label">{t.regressionLineColor}</label>
+                                            <input
+                                                type="color"
+                                                className="color-picker"
+                                                value={settings.regressionLineColor || settings.qqLineColor}
+                                                onChange={(e) => handleChange('regressionLineColor', e.target.value)}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {settings.showReferenceLine && (
+                                    <div className="setting-row">
+                                        <div className="setting-group">
+                                            <label className="setting-label">{t.referenceLineColor}</label>
+                                            <input
+                                                type="color"
+                                                className="color-picker"
+                                                value={settings.referenceLineColor}
+                                                onChange={(e) => handleChange('referenceLineColor', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="setting-group">
+                                            <label className="setting-label">{t.referenceLineWidth}</label>
+                                            <input
+                                                type="range"
+                                                className="setting-range"
+                                                value={settings.referenceLineWidth}
+                                                onChange={(e) => handleChange('referenceLineWidth', parseInt(e.target.value))}
+                                                min="1"
+                                                max="5"
+                                                step="1"
+                                            />
+                                            <span className="range-value">{settings.referenceLineWidth}</span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {settings.showReferenceLine && (
+                                    <div className="setting-row">
+                                        <div className="setting-group">
+                                            <label className="setting-label">{t.referenceLineStyle}</label>
+                                            <select
+                                                className="setting-select"
+                                                value={settings.referenceLineStyle}
+                                                onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
+                                            >
+                                                {lineStyles.map(style => (
+                                                    <option key={style.value} value={style.value}>{style.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        {settings.showRegressionLines && (
+                                            <div className="setting-group">
+                                                <label className="setting-label">{t.lineWidth}</label>
+                                                <input
+                                                    type="range"
+                                                    className="setting-range"
+                                                    value={settings.lineWidth}
+                                                    onChange={(e) => handleChange('lineWidth', parseInt(e.target.value))}
+                                                    min="1"
+                                                    max="10"
+                                                    step="1"
+                                                />
+                                                <span className="range-value">{settings.lineWidth}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
+                        )}
+
+
 
                         {plotType === 'Stacked Bar' && (
                             <div className="setting-group">

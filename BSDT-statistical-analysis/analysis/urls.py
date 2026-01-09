@@ -27,6 +27,6 @@ urlpatterns = [
     path("files/", views.list_user_files, name="list_user_files"),
     path("files/<str:filename>/", views.serve_user_file, name="serve_user_file"),
     path('api/delete-temp-folder/', views.delete_temp_folder, name='delete_temp_folder'),
-
-
+    path('api/create-alias/', views.create_alias_api, name='create_alias_api'),
+    path('api/get-alias/', views.get_alias_api, name='get_alias_api'),
 ]

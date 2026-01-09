@@ -1,132 +1,199 @@
-import React, { useEffect, useState, useMemo, useRef, useCallback, use } from 'react';
-import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import './PreprocessDataPage.css';
-import PreviewTable from './previewTable';
-import NavbarAcholder from '../ProfileManagement/navbarAccountholder';
-import { useLocation } from 'react-router-dom';
-import {Files ,SlidersVertical} from "lucide-react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+  useCallback,
+  use,
+} from "react";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import "./PreprocessDataPage.css";
+import PreviewTable from "./previewTable";
+import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
+import { useLocation } from "react-router-dom";
+import { Files, SlidersVertical } from "lucide-react";
 
 const PreprocessDataPage = () => {
- 
-  const API_BASE = 'http://127.0.0.1:8000/api';
-  const API_WORKBOOK='http://127.0.0.1:8000'
+  const API_BASE = "http://127.0.0.1:8000/api";
+  const API_WORKBOOK = "http://127.0.0.1:8000";
   const [data, setData] = useState([]);
-  const filename = sessionStorage.getItem('file_name') || 'latest_uploaded.xlsx';
+  const filename =
+    sessionStorage.getItem("file_name") || "latest_uploaded.xlsx";
   const [columns, setColumns] = useState([]);
   const [availableColumns, setAvailableColumns] = useState([]);
-  const [selectedOption, setSelectedOption] = useState('');
+  const [selectedOption, setSelectedOption] = useState("");
   const [userId, setUserId] = useState(null);
   const location = useLocation();
   const [columnsToDelete, setColumnsToDelete] = useState([]);
   const [duplicateColumns, setDuplicateColumns] = useState([]);
-  const [missingColumn, setMissingColumn] = useState('');
-  const [missingMethod, setMissingMethod] = useState('');
-  const [missingSpec, setMissingSpec] = useState('');
+  const [missingColumn, setMissingColumn] = useState("");
+  const [missingMethod, setMissingMethod] = useState("");
+  const [missingSpec, setMissingSpec] = useState("");
   const [missingValues, setMissingValues] = useState({});
-  const [outlierColumn, setOutlierColumn] = useState('');
-  const [outlierMethod, setOutlierMethod] = useState('');
+  const [outlierColumn, setOutlierColumn] = useState("");
+  const [outlierMethod, setOutlierMethod] = useState("");
   const [numericColumns, setNumericColumns] = useState([]);
   const [outliersSummary, setOutliersSummary] = useState({});
   const [outlierCells, setOutlierCells] = useState([]);
-  const [rankColumn, setRankColumn] = useState('');
+  const [rankColumn, setRankColumn] = useState("");
   const [rankMapping, setRankMapping] = useState({});
-  const [splitTargetColumn, setSplitTargetColumn] = useState('');
-  const [splitMethod, setSplitMethod] = useState('');
-  const [customPhraseInput, setCustomPhraseInput] = useState('');
+  const [splitTargetColumn, setSplitTargetColumn] = useState("");
+  const [splitMethod, setSplitMethod] = useState("");
+  const [customPhraseInput, setCustomPhraseInput] = useState("");
   const [customPhrases, setCustomPhrases] = useState([]);
-  const [groupCategoricalCol, setGroupCategoricalCol] = useState('');
-  const [groupNumericalCol, setGroupNumericalCol] = useState('');
+  const [groupCategoricalCol, setGroupCategoricalCol] = useState("");
+  const [groupNumericalCol, setGroupNumericalCol] = useState("");
   const [groupingPairs, setGroupingPairs] = useState([]);
   const [duplicateIndices, setDuplicateIndices] = useState([]);
-
+  //alias
+  const [aliasColumn, setAliasColumn] = useState("");
+  const [columnAliases, setColumnAliases] = useState({});
+  // rest
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
 
-  const [panelStyle, setPanelStyle] = useState({ top: 0, right: 0, width: 380 });
+  const [panelStyle, setPanelStyle] = useState({
+    top: 0,
+    right: 0,
+    width: 380,
+  });
   const panelRef = useRef(null);
   const draggingRef = useRef(null);
   const resizingRef = useRef(null);
-  const [workbookUrl, setWorkbookUrl] = useState('');
-  const [prefixInput, setPrefixInput] = useState('');
+  const [workbookUrl, setWorkbookUrl] = useState("");
+  const [prefixInput, setPrefixInput] = useState("");
   // Language
-  const [language, setLanguage] = useState(() => localStorage.getItem("language") || "English");
+  const [language, setLanguage] = useState(
+    () => localStorage.getItem("language") || "English"
+  );
   useEffect(() => localStorage.setItem("language", language), [language]);
-
 
   const uniqueCategoriesForRank = useMemo(() => {
     if (!rankColumn || data.length === 0) return [];
     // guard for differing key names
-    return [...new Set(data.map(r => r[rankColumn]).filter(v => v !== undefined && v !== null))];
+    return [
+      ...new Set(
+        data
+          .map((r) => r[rankColumn])
+          .filter((v) => v !== undefined && v !== null)
+      ),
+    ];
   }, [rankColumn, data]);
 
   const totalMissingCount = useMemo(() => {
-    return Object.values(missingValues || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+    return Object.values(missingValues || {}).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0
+    );
   }, [missingValues]);
 
   const totalOutliersCount = useMemo(() => {
-    return Object.values(outliersSummary || {}).reduce((s, v) => s + (Number(v) || 0), 0);
+    return Object.values(outliersSummary || {}).reduce(
+      (s, v) => s + (Number(v) || 0),
+      0
+    );
   }, [outliersSummary]);
 
-  const totalDuplicateCount = useMemo(() => duplicateIndices.length, [duplicateIndices]);
+  //aliasing
+  const uniqueCategoriesForAlias = useMemo(() => {
+    if (!aliasColumn || data.length === 0) return [];
+    return [
+      ...new Set(
+        data
+          .map((r) => r[aliasColumn])
+          .filter((v) => v !== undefined && v !== null)
+      ),
+    ];
+  }, [aliasColumn, data]);
 
- 
+  const totalDuplicateCount = useMemo(
+    () => duplicateIndices.length,
+    [duplicateIndices]
+  );
+
   useEffect(() => {
     if (location.state?.userId) setUserId(location.state.userId);
   }, [location.state]);
 
+  // Fetch existing aliases on load
+  useEffect(() => {
+    if (!userId || !filename) return;
+
+    const fetchAliases = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/get-alias/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            userID: userId,
+          },
+          body: JSON.stringify({ filename }),
+        });
+
+        const res = await response.json();
+        if (res.success && res.aliases) {
+          // Pre-fill the state with existing aliases
+          setColumnAliases(res.aliases);
+        }
+      } catch (error) {
+        console.error("Could not load existing aliases:", error);
+      }
+    };
+
+    fetchAliases();
+  }, [userId, filename]);
+
   useEffect(() => {
     if (!userId) return;
     fetch(`${API_BASE}/preview-data/`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    'userID': userId, // ASCII allowed
-  },
-  body: JSON.stringify({
-    filename,     // Bangla OK
-    sheet: sessionStorage.getItem("activesheetname") || "",
-    Fileurl: sessionStorage.getItem("fileURL") || ''
-  })
- 
-})
-
-      .then(r => r.json())
-      .then(res => {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        userID: userId, // ASCII allowed
+      },
+      body: JSON.stringify({
+        filename, // Bangla OK
+        sheet: sessionStorage.getItem("activesheetname") || "",
+        Fileurl: sessionStorage.getItem("fileURL") || "",
+      }),
+    })
+      .then((r) => r.json())
+      .then((res) => {
         setColumns(res.columns || []);
         setAvailableColumns(res.columns || []);
         setData(res.rows || []);
         setMissingValues(res.missing_values || {});
-         console.log(sessionStorage.getItem("fileURL") );
+        console.log(sessionStorage.getItem("fileURL"));
       })
-      .catch(err => console.error("Preview fetch error:", err));
-  }, [userId, sessionStorage.getItem("activesheetname")], sessionStorage.getItem("fileURL"), data);
+      .catch((err) => console.error("Preview fetch error:", err));
+  }, [userId]);
 
   // Fetch outlier summary lazily when option selected
   useEffect(() => {
-    if (selectedOption !== 'handle_outliers') return;
+    if (selectedOption !== "handle_outliers") return;
     fetch(`${API_BASE}/outliers-summary/`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'userID': userId,
+        "Content-Type": "application/json",
+        userID: userId,
       },
-       body: JSON.stringify({ 
-        filename,     
+      body: JSON.stringify({
+        filename,
         sheet: sessionStorage.getItem("activesheetname") || "",
-        Fileurl: sessionStorage.getItem("fileURL") || '' 
-           })
+        Fileurl: sessionStorage.getItem("fileURL") || "",
+      }),
     })
-      .then(r => r.json())
-      .then(s => {
+      .then((r) => r.json())
+      .then((s) => {
         if (s.success) {
           setNumericColumns(s.numeric_columns || []);
           setOutliersSummary(s.outliers_summary || {});
           setOutlierCells(s.outlier_cells || []);
         }
       })
-      .catch(err => console.warn("Outlier summary error:", err));
+      .catch((err) => console.warn("Outlier summary error:", err));
   }, [selectedOption, userId]);
 
   //downloads
@@ -134,40 +201,43 @@ const PreprocessDataPage = () => {
     const worksheet = XLSX.utils.json_to_sheet(payload);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-    XLSX.writeFile(workbook, 'preprocessed_' + fname);
+    XLSX.writeFile(workbook, "preprocessed_" + fname);
   }, []);
 
-  const downloadAsPDF = useCallback((payload, fname = 'data.pdf') => {
+  const downloadAsPDF = useCallback((payload, fname = "data.pdf") => {
     const doc = new jsPDF();
-    if (!payload.length) doc.text('No data', 10, 10);
+    if (!payload.length) doc.text("No data", 10, 10);
     else {
       const cols = Object.keys(payload[0]);
-      const rows = payload.map(r => cols.map(c => r[c]));
+      const rows = payload.map((r) => cols.map((c) => r[c]));
       autoTable(doc, { head: [cols], body: rows });
     }
     doc.save(fname);
   }, []);
 
-  // Panel drag/resizing handlers 
+  // Panel drag/resizing handlers
   useEffect(() => {
     function onMouseMove(e) {
       if (draggingRef.current) {
         const { startTop, startY } = draggingRef.current;
         const dy = e.clientY - startY;
-        setPanelStyle(prev => ({ ...prev, top: Math.max(0, startTop + dy) }));
+        setPanelStyle((prev) => ({ ...prev, top: Math.max(0, startTop + dy) }));
       } else if (resizingRef.current) {
         const { startWidth, startX } = resizingRef.current;
         const dx = startX - e.clientX; // dragging left edge outward -> increase width
         const newWidth = Math.min(Math.max(300, startWidth + dx), 900);
-        setPanelStyle(prev => ({ ...prev, width: newWidth }));
+        setPanelStyle((prev) => ({ ...prev, width: newWidth }));
       }
     }
-    function onMouseUp() { draggingRef.current = null; resizingRef.current = null; }
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    function onMouseUp() {
+      draggingRef.current = null;
+      resizingRef.current = null;
+    }
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
     return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
     };
   }, []);
 
@@ -184,56 +254,90 @@ const PreprocessDataPage = () => {
     if (!selectedOption) return;
     switch (selectedOption) {
       // delete
-      case 'delete_column': {
-        if (!columnsToDelete.length) return alert("Select at least one column to delete.");
+      case "delete_column": {
+        if (!columnsToDelete.length)
+          return alert("Select at least one column to delete.");
         fetch(`${API_BASE}/delete-columns/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'userID': userId, 'Content-Type': 'application/json'
+            userID: userId,
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({ columns: columnsToDelete,
-                                filename,     
-                                sheet: sessionStorage.getItem("activesheetname") || "",
-                                Fileurl: sessionStorage.getItem("fileURL") || '' 
-           })
+          body: JSON.stringify({
+            columns: columnsToDelete,
+            filename,
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
-              sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []); 
-              setAvailableColumns(res.columns || []); 
+              sessionStorage.setItem("fileURL", res.file_url || "");
+              setColumns(res.columns || []);
+              setAvailableColumns(res.columns || []);
               setData(res.rows || []);
-              
+
               setIsRightPanelOpen(false);
-              alert("column deleted successfully!!!")
+              alert("column deleted successfully!!!");
               setColumnsToDelete([]);
-              console.log(sessionStorage.getItem("fileURL") );
+              console.log(sessionStorage.getItem("fileURL"));
             } else alert(res.error || "Error");
+          });
+        break;
+      }
+      //alias
+      case "create_alias": {
+        if (Object.keys(columnAliases).length === 0)
+          return alert("Please add at least one alias.");
+
+        fetch(`${API_BASE}/create-alias/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            userID: userId,
+          },
+          body: JSON.stringify({
+            alias_mapping: columnAliases, // Sending the mapping: { "ColName": "alias1, alias2" }
+            filename,
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
+        })
+          .then((r) => r.json())
+          .then((res) => {
+            if (res.success) {
+              alert(res.message);
+              setIsRightPanelOpen(false);
+              // We do NOT update the main table data (setData) because the data didn't change,
+              // we just created a reference file.
+            } else {
+              alert(res.error || "Error creating alias file.");
+            }
           });
         break;
       }
 
       // remove duplicates
-      case 'remove_duplicates': {
+      case "remove_duplicates": {
         fetch(`${API_BASE}/find-duplicates/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-                        'userID': userId,
-                        // 'filename': filename,
-                        // 'sheet': sessionStorage.getItem("activesheetname") || '',
-                        // 'Fileurl': sessionStorage.getItem("fileURL"),
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        columns: duplicateColumns,
-                        filename,     
-                        sheet: sessionStorage.getItem("activesheetname") || "",
-                        Fileurl: sessionStorage.getItem("fileURL") || '' 
-                       }),
-                    })
-          .then(r => r.json())
-          .then(res => {
+            userID: userId,
+            // 'filename': filename,
+            // 'sheet': sessionStorage.getItem("activesheetname") || '',
+            // 'Fileurl': sessionStorage.getItem("fileURL"),
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            columns: duplicateColumns,
+            filename,
+            sheet: sessionStorage.getItem("activesheetname") || "",
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
+        })
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
               //sessionStorage.setItem("fileURL", res.file_url || '');
               setColumns(res.columns || []);
@@ -247,57 +351,62 @@ const PreprocessDataPage = () => {
       }
 
       // missing values
-      case 'handle_missing': {
-        if (!missingColumn || !missingMethod) return alert("Select column and method.");
+      case "handle_missing": {
+        if (!missingColumn || !missingMethod)
+          return alert("Select column and method.");
         fetch(`${API_BASE}/handle-missing/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 
+            "Content-Type": "application/json",
+            userID: userId,
           },
           body: JSON.stringify({
             column: missingColumn,
             method: missingMethod,
             missing_spec: missingSpec,
-            filename,     
+            filename,
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || '' })
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
-              sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []); setData(res.rows || []); setAvailableColumns(res.columns || []);
+              sessionStorage.setItem("fileURL", res.file_url || "");
+              setColumns(res.columns || []);
+              setData(res.rows || []);
+              setAvailableColumns(res.columns || []);
               setIsRightPanelOpen(false);
-
             } else alert(res.error || "Error");
           });
         break;
       }
 
       // outliers
-      case 'handle_outliers': {
-        if (!outlierColumn || !outlierMethod) return alert("Select column & method.");
+      case "handle_outliers": {
+        if (!outlierColumn || !outlierMethod)
+          return alert("Select column & method.");
         fetch(`${API_BASE}/handle-outliers/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json', 'userID': userId
+            "Content-Type": "application/json",
+            userID: userId,
           },
-          body: JSON.stringify({ 
-            column: outlierColumn, 
+          body: JSON.stringify({
+            column: outlierColumn,
             method: outlierMethod,
-            filename,     
+            filename,
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || ''
-
-           })
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
               setColumns(res.columns || []);
               setAvailableColumns(res.columns || []);
               setData(res.rows || []);
-              sessionStorage.setItem("fileURL", res.file_url || '');
+              sessionStorage.setItem("fileURL", res.file_url || "");
               setIsRightPanelOpen(false);
             } else alert(res.error || "Error");
           });
@@ -305,25 +414,30 @@ const PreprocessDataPage = () => {
       }
 
       // rank column
-      case 'rank_column': {
-        if (!rankColumn || !Object.keys(rankMapping).length) return alert("Assign ranks.");
+      case "rank_column": {
+        if (!rankColumn || !Object.keys(rankMapping).length)
+          return alert("Assign ranks.");
         fetch(`${API_BASE}/rank-column/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json', 'userID': userId, 
+            "Content-Type": "application/json",
+            userID: userId,
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             column: rankColumn,
             mapping: rankMapping,
-            filename,     
+            filename,
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || ''})
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
-              sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []); setAvailableColumns(res.columns || []); setData(res.rows || []);
+              sessionStorage.setItem("fileURL", res.file_url || "");
+              setColumns(res.columns || []);
+              setAvailableColumns(res.columns || []);
+              setData(res.rows || []);
               setIsRightPanelOpen(false);
             } else alert(res.error || "Error");
           });
@@ -331,28 +445,34 @@ const PreprocessDataPage = () => {
       }
 
       // split column
-      case 'split_column': {
-        if (!splitTargetColumn || !splitMethod) return alert("Select column & method.");
-        if (splitMethod === 'custom' && !customPhrases.length) return alert("Add custom phrases.");
+      case "split_column": {
+        if (!splitTargetColumn || !splitMethod)
+          return alert("Select column & method.");
+        if (splitMethod === "custom" && !customPhrases.length)
+          return alert("Add custom phrases.");
         fetch(`${API_BASE}/split-column/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json', 'userID': userId  },
+            "Content-Type": "application/json",
+            userID: userId,
+          },
           body: JSON.stringify({
-            column: splitTargetColumn, 
+            column: splitTargetColumn,
             method: splitMethod,
-            phrases: splitMethod === 'custom' ? customPhrases : [], 
+            phrases: splitMethod === "custom" ? customPhrases : [],
             delete_original: true,
-            filename,     
+            filename,
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || ''
-          })
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
-              sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []); setAvailableColumns(res.columns || []); setData(res.rows || []);
+              sessionStorage.setItem("fileURL", res.file_url || "");
+              setColumns(res.columns || []);
+              setAvailableColumns(res.columns || []);
+              setData(res.rows || []);
               setIsRightPanelOpen(false);
             } else alert(res.error || "Error");
           });
@@ -387,23 +507,27 @@ const PreprocessDataPage = () => {
       // }
 
       // generate id
-      case 'generate_id': {
+      case "generate_id": {
         fetch(`${API_BASE}/generate-unique-id/`, {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json', 'userID': userId },
-            body: JSON.stringify({
-            filename,     
+            "Content-Type": "application/json",
+            userID: userId,
+          },
+          body: JSON.stringify({
+            filename,
             sheet: sessionStorage.getItem("activesheetname") || "",
-            Fileurl: sessionStorage.getItem("fileURL") || '',
-            prefix: prefixInput
-          })
+            Fileurl: sessionStorage.getItem("fileURL") || "",
+            prefix: prefixInput,
+          }),
         })
-          .then(r => r.json())
-          .then(res => {
+          .then((r) => r.json())
+          .then((res) => {
             if (res.success) {
-              sessionStorage.setItem("fileURL", res.file_url || '');
-              setColumns(res.columns || []); setAvailableColumns(res.columns || []); setData(res.rows || []);
+              sessionStorage.setItem("fileURL", res.file_url || "");
+              setColumns(res.columns || []);
+              setAvailableColumns(res.columns || []);
+              setData(res.rows || []);
               setIsRightPanelOpen(false);
             } else alert(res.error || "Error");
           });
@@ -418,54 +542,55 @@ const PreprocessDataPage = () => {
   useEffect(() => {
     setWorkbookUrl(`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`);
   }, [data]);
-const handleReapply = () => {
-  if (selectedOption && selectedOption !== "open") {
-    setIsRightPanelOpen(true);
-  }
-};
-
+  const handleReapply = () => {
+    if (selectedOption && selectedOption !== "open") {
+      setIsRightPanelOpen(true);
+    }
+  };
 
   return (
     <>
       <NavbarAcholder language={language} setLanguage={setLanguage} />
-        <div  className="preprocess-page">
+      <div className="preprocess-page">
         {/* TOPBAR: title left, controls right */}
         <div className="topbar">
           <div className="title-left">
-            <h1 className="page-title"> 
-              <Files  />Data Preprocessing</h1>
+            <h1 className="page-title">
+              <Files />
+              Data Preprocessing
+            </h1>
             <div className="small-sub">File: {filename}</div>
           </div>
 
           <div className="topbar-right">
-          <div className="select-wrap">
-            <select
-              className="select-input"
-              value={selectedOption}
-
-              onChange={(e) => {
-                const value = e.target.value;
-                setSelectedOption(value);
-                if (value !== "open") {
-                  setIsRightPanelOpen(true);
-                }
-              }}
-                  onClick={() => {
-                if (selectedOption !== "open") {
-                  setIsRightPanelOpen(true);
-                }
-              }}
-            >
-              <option value="open">Preprocessing Menu</option>
-              <option value="delete_column">Delete Column</option>
-              <option value="remove_duplicates">Remove Duplicates</option>
-              <option value="handle_missing">Handle Missing</option>
-              <option value="handle_outliers">Handle Outliers</option>
-              <option value="rank_column">Rank Column</option>
-              <option value="split_column">Split Column</option>
-              <option value="generate_id">Generate Unique ID</option>
-            </select>
-          </div>
+            <div className="select-wrap">
+              <select
+                className="select-input"
+                value={selectedOption}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setSelectedOption(value);
+                  if (value !== "open") {
+                    setIsRightPanelOpen(true);
+                  }
+                }}
+                onClick={() => {
+                  if (selectedOption !== "open") {
+                    setIsRightPanelOpen(true);
+                  }
+                }}
+              >
+                <option value="open">Preprocessing Menu</option>
+                <option value="create_alias">Create Alias</option>
+                <option value="delete_column">Delete Column</option>
+                <option value="remove_duplicates">Remove Duplicates</option>
+                <option value="handle_missing">Handle Missing</option>
+                <option value="handle_outliers">Handle Outliers</option>
+                <option value="rank_column">Rank Column</option>
+                <option value="split_column">Split Column</option>
+                <option value="generate_id">Generate Unique ID</option>
+              </select>
+            </div>
 
             {/* customize icon
             <div className="customize-icon-container">
@@ -474,19 +599,23 @@ const handleReapply = () => {
                 onClick={handleReapply}
               >
                 <SlidersVertical size={20}  />  {/* smaller icon */}
-              {/* </button>
+            {/* </button>
 
               <div className="customize-tooltip">
                 Reapply
               </div>
-            </div> */} 
-
-           
+            </div> */}
 
             {/* three-dot icon */}
-            <button className="icon-btn" onClick={() => setIsPopupOpen(true)} aria-label="menu">
+            <button
+              className="icon-btn"
+              onClick={() => setIsPopupOpen(true)}
+              aria-label="menu"
+            >
               <svg viewBox="0 0 24 24" width="20" height="20">
-                <circle cx="5" cy="12" r="1.5" /><circle cx="12" cy="12" r="1.5" /><circle cx="19" cy="12" r="1.5" />
+                <circle cx="5" cy="12" r="1.5" />
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19" cy="12" r="1.5" />
               </svg>
             </button>
           </div>
@@ -496,14 +625,60 @@ const handleReapply = () => {
         {isPopupOpen && (
           <div className="popup-overlay" onClick={() => setIsPopupOpen(false)}>
             <div className="popup-content" onClick={(e) => e.stopPropagation()}>
-            
               <div className="popup-buttons">
-                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); downloadAsExcel(data, filename); setIsPopupOpen(false); }}>Download Excel</button>
-                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/visualization'; setIsPopupOpen(false); }}>Visualize</button>
-                <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); sessionStorage.setItem("preprocessed", "true"); sessionStorage.setItem("file_name", "preprocess_" + filename); window.location.href = 'http://localhost:5173/?tab=analysis'; setIsPopupOpen(false); }}>Analyze</button>
-               <button className="popup-btn" onClick={() => { if (!data.length) return alert("No data"); window.location.href = '/saved-files'; setIsPopupOpen(false); }}>My Personal Storage</button>
+                <button
+                  className="popup-btn"
+                  onClick={() => {
+                    if (!data.length) return alert("No data");
+                    downloadAsExcel(data, filename);
+                    setIsPopupOpen(false);
+                  }}
+                >
+                  Download Excel
+                </button>
+                <button
+                  className="popup-btn"
+                  onClick={() => {
+                    if (!data.length) return alert("No data");
+                    window.location.href = "/visualization";
+                    setIsPopupOpen(false);
+                  }}
+                >
+                  Visualize
+                </button>
+                <button
+                  className="popup-btn"
+                  onClick={() => {
+                    if (!data.length) return alert("No data");
+                    sessionStorage.setItem("preprocessed", "true");
+                    sessionStorage.setItem(
+                      "file_name",
+                      "preprocess_" + filename
+                    );
+                    window.location.href =
+                      "http://localhost:5173/?tab=analysis";
+                    setIsPopupOpen(false);
+                  }}
+                >
+                  Analyze
+                </button>
+                <button
+                  className="popup-btn"
+                  onClick={() => {
+                    if (!data.length) return alert("No data");
+                    window.location.href = "/saved-files";
+                    setIsPopupOpen(false);
+                  }}
+                >
+                  My Personal Storage
+                </button>
               </div>
-              <button className="popup-close" onClick={() => setIsPopupOpen(false)}>✕</button>
+              <button
+                className="popup-close"
+                onClick={() => setIsPopupOpen(false)}
+              >
+                ✕
+              </button>
             </div>
           </div>
         )}
@@ -513,15 +688,27 @@ const handleReapply = () => {
           <div
             className="right-panel"
             ref={panelRef}
-            style={{ top: panelStyle.top + 'px', right: panelStyle.right + 'px', width: panelStyle.width + 'px' }}
+            style={{
+              top: panelStyle.top + "px",
+              right: panelStyle.right + "px",
+              width: panelStyle.width + "px",
+            }}
           >
             {/* resize handle on left edge */}
             <div className="resize-handle" onMouseDown={startResize} />
 
             {/* header: draggable */}
-            <div className="right-panel-header" onMouseDown={startDrag} role="banner">
+            <div
+              className="right-panel-header"
+              onMouseDown={startDrag}
+              role="banner"
+            >
               <div className="panel-header-left">
-                <h3 className="right-title">{(selectedOption || 'Option').replace(/_/g, ' ').toUpperCase()}</h3>
+                <h3 className="right-title">
+                  {(selectedOption || "Option")
+                    .replace(/_/g, " ")
+                    .toUpperCase()}
+                </h3>
                 <div className="summary-cards">
                   <div className="summary-card">
                     <div className="sum-label">Missing</div>
@@ -539,86 +726,252 @@ const handleReapply = () => {
               </div>
 
               <div className="panel-header-right">
-                <button className="icon-btn small" onClick={() => { setIsRightPanelOpen(false); }}>
-                  <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 6l12 12M6 18L18 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+                <button
+                  className="icon-btn small"
+                  onClick={() => {
+                    setIsRightPanelOpen(false);
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" width="16" height="16">
+                    <path
+                      d="M6 6l12 12M6 18L18 6"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
               </div>
             </div>
 
-      
             <div className="right-panel-body">
-           
-              <p className="panel-intro">Configure <strong>{(selectedOption || '').replace(/_/g,' ')}</strong> then click <strong>Apply</strong>.</p>
+              <p className="panel-intro">
+                Configure{" "}
+                <strong>{(selectedOption || "").replace(/_/g, " ")}</strong>{" "}
+                then click <strong>Apply</strong>.
+              </p>
 
               <details open className="panel-accordion">
                 <summary className="accordion-summary">Configuration</summary>
 
                 {/* Delete Column */}
-                {selectedOption === 'delete_column' && (
+                {selectedOption === "delete_column" && (
                   <div className="panel-section">
                     <label className="panel-label">Columns to delete</label>
                     <div className="tags-box">
-                      {columnsToDelete.length ? columnsToDelete.map((c, i) => (
-                        <span key={i} className="tag-chip">{c}<button className="remove-button" onClick={() => setColumnsToDelete(prev => prev.filter(x => x !== c))}>×</button></span>
-                      )) : <div className="placeholder-text">No selection</div>}
+                      {columnsToDelete.length ? (
+                        columnsToDelete.map((c, i) => (
+                          <span key={i} className="tag-chip">
+                            {c}
+                            <button
+                              className="remove-button"
+                              onClick={() =>
+                                setColumnsToDelete((prev) =>
+                                  prev.filter((x) => x !== c)
+                                )
+                              }
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <div className="placeholder-text">No selection</div>
+                      )}
                     </div>
-                    <select className="select-full" onChange={(e) => { const v = e.target.value; if (v && !columnsToDelete.includes(v)) setColumnsToDelete(prev => [...prev, v]); e.target.selectedIndex = 0; }}>
+                    <select
+                      className="select-full"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v && !columnsToDelete.includes(v))
+                          setColumnsToDelete((prev) => [...prev, v]);
+                        e.target.selectedIndex = 0;
+                      }}
+                    >
                       <option value="">Select column...</option>
-                      {availableColumns.filter(c => !columnsToDelete.includes(c)).map((c, i) => <option key={i} value={c}>{c}</option>)}
+                      {availableColumns
+                        .filter((c) => !columnsToDelete.includes(c))
+                        .map((c, i) => (
+                          <option key={i} value={c}>
+                            {c}
+                          </option>
+                        ))}
                     </select>
                   </div>
                 )}
 
-                {/* Remove duplicates */}
-                {selectedOption === 'remove_duplicates' && (
+                {/* Create Column Aliases */}
+                {selectedOption === "create_alias" && (
                   <div className="panel-section">
-                    <label className="panel-label">Columns to check duplicates</label>
-                    <div className="tags-box">{duplicateColumns.length ? duplicateColumns.map((c,i) =>(
-                      <span key={i} className="tag-chip">{c}<button className="remove-button" onClick={() => setDuplicateColumns(prev => prev.filter(x => x !== c))}>×</button></span>
-                      )) : <div className="placeholder-text">No selection</div>}
+                    <p className="panel-info">
+                      Assign aliases to column headers.
+                      You can use alias names in analysis instead of original.
+                    </p>
+
+                    <div
+                      className="scrollable-mapping-area"
+                      style={{
+                        maxHeight: "400px",
+                        overflowY: "auto",
+                        paddingRight: "5px",
+                      }}
+                    >
+                      {availableColumns.map((col, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            marginBottom: "12px",
+                            borderBottom: "1px solid #eee",
+                            paddingBottom: "8px",
+                          }}
+                        >
+                          <label
+                            style={{
+                              display: "block",
+                              fontSize: "0.85rem",
+                              fontWeight: "600",
+                              color: "#333",
+                              marginBottom: "4px",
+                            }}
+                          >
+                            {col}
+                          </label>
+                          <input
+                            className="text-input"
+                            style={{ width: "100%" }}
+                            placeholder="Enter aliases, separated by commas"
+                            // This line ensures existing aliases are shown
+                            value={columnAliases[col] || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setColumnAliases((prev) => {
+                                const copy = { ...prev };
+                                if (val.trim() === "") delete copy[col];
+                                else copy[col] = val;
+                                return copy;
+                              });
+                            }}
+                          />
+                        </div>
+                      ))}
                     </div>
-                    <select className="select-full" onChange={(e) => { const v = e.target.value; if (v && !duplicateColumns.includes(v)) setDuplicateColumns(prev => [...prev, v]); e.target.selectedIndex = 0; }}>
+                  </div>
+                )}
+
+                {/* Remove duplicates */}
+                {selectedOption === "remove_duplicates" && (
+                  <div className="panel-section">
+                    <label className="panel-label">
+                      Columns to check duplicates
+                    </label>
+                    <div className="tags-box">
+                      {duplicateColumns.length ? (
+                        duplicateColumns.map((c, i) => (
+                          <span key={i} className="tag-chip">
+                            {c}
+                            <button
+                              className="remove-button"
+                              onClick={() =>
+                                setDuplicateColumns((prev) =>
+                                  prev.filter((x) => x !== c)
+                                )
+                              }
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))
+                      ) : (
+                        <div className="placeholder-text">No selection</div>
+                      )}
+                    </div>
+                    <select
+                      className="select-full"
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v && !duplicateColumns.includes(v))
+                          setDuplicateColumns((prev) => [...prev, v]);
+                        e.target.selectedIndex = 0;
+                      }}
+                    >
                       <option value="">Select column...</option>
-                      {availableColumns.filter(c => !duplicateColumns.includes(c)).map((c, i) => <option key={i}>{c}</option>)}
+                      {availableColumns
+                        .filter((c) => !duplicateColumns.includes(c))
+                        .map((c, i) => (
+                          <option key={i}>{c}</option>
+                        ))}
                     </select>
                   </div>
                 )}
 
                 {/* Handle missing */}
-                {selectedOption === 'handle_missing' && (
+                {selectedOption === "handle_missing" && (
                   <div className="panel-section">
                     <label className="panel-label">Target column</label>
-                    <select className="select-full" value={missingColumn} onChange={(e) => setMissingColumn(e.target.value)}>
+                    <select
+                      className="select-full"
+                      value={missingColumn}
+                      onChange={(e) => setMissingColumn(e.target.value)}
+                    >
                       <option value="">Select...</option>
                       <option value="all">All Columns</option>
-                      {Object.entries(missingValues).map(([k, v], i) => <option key={i} value={k}>{k} ({v})</option>)}
+                      {Object.entries(missingValues).map(([k, v], i) => (
+                        <option key={i} value={k}>
+                          {k} ({v})
+                        </option>
+                      ))}
                     </select>
 
                     <label className="panel-label">Method</label>
-                    <select className="select-full" value={missingMethod} onChange={(e) => setMissingMethod(e.target.value)}>
+                    <select
+                      className="select-full"
+                      value={missingMethod}
+                      onChange={(e) => setMissingMethod(e.target.value)}
+                    >
                       <option value="">Select method...</option>
                       <option value="drop">Drop missing rows</option>
                       <option value="fill_mean">Fill mean</option>
                       <option value="fill_median">Fill median</option>
-                      <option value="fill_mode">Fill mode (Use It for Categorical Values) </option>
+                      <option value="fill_mode">
+                        Fill mode (Use It for Categorical Values){" "}
+                      </option>
                     </select>
 
-                    <label className="panel-label">Missing marker (optional)</label>
-                    <input className="text-input" placeholder="e.g., -, N/A" value={missingSpec} onChange={(e) => setMissingSpec(e.target.value)} />
+                    <label className="panel-label">
+                      Missing marker (optional)
+                    </label>
+                    <input
+                      className="text-input"
+                      placeholder="e.g., -, N/A"
+                      value={missingSpec}
+                      onChange={(e) => setMissingSpec(e.target.value)}
+                    />
                   </div>
                 )}
 
                 {/* Outliers */}
-                {selectedOption === 'handle_outliers' && (
+                {selectedOption === "handle_outliers" && (
                   <div className="panel-section">
                     <label className="panel-label">Numeric column</label>
-                    <select className="select-full" value={outlierColumn} onChange={(e) => setOutlierColumn(e.target.value)}>
+                    <select
+                      className="select-full"
+                      value={outlierColumn}
+                      onChange={(e) => setOutlierColumn(e.target.value)}
+                    >
                       <option value="">Select...</option>
-                      {numericColumns.map((n, i) => <option key={i} value={n}>{n} (Outliers: {outliersSummary[n] || 0})</option>)}
+                      {numericColumns.map((n, i) => (
+                        <option key={i} value={n}>
+                          {n} (Outliers: {outliersSummary[n] || 0})
+                        </option>
+                      ))}
                     </select>
 
                     <label className="panel-label">Method</label>
-                    <select className="select-full" value={outlierMethod} onChange={(e) => setOutlierMethod(e.target.value)}>
+                    <select
+                      className="select-full"
+                      value={outlierMethod}
+                      onChange={(e) => setOutlierMethod(e.target.value)}
+                    >
                       <option value="">Select...</option>
                       <option value="remove">Remove</option>
                       <option value="cap">Cap</option>
@@ -627,42 +980,87 @@ const handleReapply = () => {
                 )}
 
                 {/* Rank column */}
-                {selectedOption === 'rank_column' && (
+                {selectedOption === "rank_column" && (
                   <div className="panel-section">
                     <label className="panel-label">Column</label>
-                    <select className="select-full" value={rankColumn} onChange={(e) => { setRankColumn(e.target.value); setRankMapping({}); }}>
+                    <select
+                      className="select-full"
+                      value={rankColumn}
+                      onChange={(e) => {
+                        setRankColumn(e.target.value);
+                        setRankMapping({});
+                      }}
+                    >
                       <option value="">Select...</option>
-                      {availableColumns.map((c,i) => <option key={i} value={c}>{c}</option>)}
+                      {availableColumns.map((c, i) => (
+                        <option key={i} value={c}>
+                          {c}
+                        </option>
+                      ))}
                     </select>
 
                     {rankColumn && (
                       <>
-                        <p className="panel-info">Assign numeric rank for each category</p>
-                        {uniqueCategoriesForRank.length ? uniqueCategoriesForRank.map((v, i) => (
-                          <div className="inline-row" key={i}>
-                            <div className="cat-value">{String(v)}</div>
-                            <input className="small-number" type="number" value={rankMapping[v] ?? ''} onChange={(e) => {
-                              const t = e.target.value;
-                              setRankMapping(prev => { const copy = { ...prev }; if (t === '') delete copy[v]; else copy[v] = Number(t); return copy; });
-                            }} />
+                        <p className="panel-info">
+                          Assign numeric rank for each category
+                        </p>
+                        {uniqueCategoriesForRank.length ? (
+                          uniqueCategoriesForRank.map((v, i) => (
+                            <div className="inline-row" key={i}>
+                              <div className="cat-value">{String(v)}</div>
+                              <input
+                                className="small-number"
+                                type="number"
+                                value={rankMapping[v] ?? ""}
+                                onChange={(e) => {
+                                  const t = e.target.value;
+                                  setRankMapping((prev) => {
+                                    const copy = { ...prev };
+                                    if (t === "") delete copy[v];
+                                    else copy[v] = Number(t);
+                                    return copy;
+                                  });
+                                }}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          <div className="placeholder-text">
+                            No categories detected
                           </div>
-                        )) : <div className="placeholder-text">No categories detected</div>}
+                        )}
                       </>
                     )}
                   </div>
                 )}
 
                 {/* Split */}
-                {selectedOption === 'split_column' && (
+                {selectedOption === "split_column" && (
                   <div className="panel-section">
                     <label className="panel-label">Target column</label>
-                    <select className="select-full" value={splitTargetColumn} onChange={(e) => setSplitTargetColumn(e.target.value)}>
+                    <select
+                      className="select-full"
+                      value={splitTargetColumn}
+                      onChange={(e) => setSplitTargetColumn(e.target.value)}
+                    >
                       <option value="">Select...</option>
-                      {availableColumns.map((c,i) => <option key={i} value={c}>{c}</option>)}
+                      {availableColumns.map((c, i) => (
+                        <option key={i} value={c}>
+                          {c}
+                        </option>
+                      ))}
                     </select>
 
                     <label className="panel-label">Method</label>
-                    <select className="select-full" value={splitMethod} onChange={(e) => { setSplitMethod(e.target.value); setCustomPhrases([]); setCustomPhraseInput(''); }}>
+                    <select
+                      className="select-full"
+                      value={splitMethod}
+                      onChange={(e) => {
+                        setSplitMethod(e.target.value);
+                        setCustomPhrases([]);
+                        setCustomPhraseInput("");
+                      }}
+                    >
                       <option value="">Select...</option>
                       <option value="comma">Comma separated</option>
                       <option value="semicolon">Semicolon separated</option>
@@ -670,14 +1068,35 @@ const handleReapply = () => {
                       <option value="custom">Custom phrase</option>
                     </select>
 
-                    {splitMethod === 'custom' && (
+                    {splitMethod === "custom" && (
                       <>
                         <label className="panel-label">Custom phrase</label>
                         <div className="inline-row">
-                          <input className="text-input" value={customPhraseInput} onChange={(e) => setCustomPhraseInput(e.target.value)} />
-                          <button className="btn-secondary" onClick={() => { const t = customPhraseInput.trim(); if (t && !customPhrases.includes(t)) { setCustomPhrases(prev => [...prev, t]); setCustomPhraseInput(''); } }}>Add</button>
+                          <input
+                            className="text-input"
+                            value={customPhraseInput}
+                            onChange={(e) =>
+                              setCustomPhraseInput(e.target.value)
+                            }
+                          />
+                          <button
+                            className="btn-secondary"
+                            onClick={() => {
+                              const t = customPhraseInput.trim();
+                              if (t && !customPhrases.includes(t)) {
+                                setCustomPhrases((prev) => [...prev, t]);
+                                setCustomPhraseInput("");
+                              }
+                            }}
+                          >
+                            Add
+                          </button>
                         </div>
-                        <div className="panel-info">{customPhrases.length ? 'Added: ' + customPhrases.join(', ') : 'No phrases yet'}</div>
+                        <div className="panel-info">
+                          {customPhrases.length
+                            ? "Added: " + customPhrases.join(", ")
+                            : "No phrases yet"}
+                        </div>
                       </>
                     )}
                   </div>
@@ -709,34 +1128,47 @@ const handleReapply = () => {
                 )} */}
 
                 {/* Generate ID */}
-                {selectedOption === 'generate_id' && (
+                {selectedOption === "generate_id" && (
                   <>
-                  <div className="panel-section">
-                    <p className="panel-info">This will add a <strong>row_id</strong> column (1..N).</p>
-                  </div>
-                  <div className="panel-section">
-                    <label className="panel-label">Prefix (optional) </label>
-                    <p style={{fontSize:"small", color:"gray"}}>Prefix will be added before the numeric ID. E.g., "ID_" will generate IDs like "ID_1", "ID_2", ...
-                  </p>
-                    <input className="text-input" value={prefixInput} onChange={(e) => setPrefixInput(e.target.value)} />
-                  </div>
+                    <div className="panel-section">
+                      <p className="panel-info">
+                        This will add a <strong>row_id</strong> column (1..N).
+                      </p>
+                    </div>
+                    <div className="panel-section">
+                      <label className="panel-label">Prefix (optional) </label>
+                      <p style={{ fontSize: "small", color: "gray" }}>
+                        Prefix will be added before the numeric ID. E.g., "ID_"
+                        will generate IDs like "ID_1", "ID_2", ...
+                      </p>
+                      <input
+                        className="text-input"
+                        value={prefixInput}
+                        onChange={(e) => setPrefixInput(e.target.value)}
+                      />
+                    </div>
                   </>
                 )}
-
               </details>
             </div>
 
             {/* footer: apply & cancel */}
             <div className="right-panel-footer">
-              <button className="btn-apply" onClick={handleApply}>Apply</button>
-              <button className="btn-cancel" onClick={() => setIsRightPanelOpen(false)}>Cancel</button>
+              <button className="btn-apply" onClick={handleApply}>
+                Apply
+              </button>
+              <button
+                className="btn-cancel"
+                onClick={() => setIsRightPanelOpen(false)}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         )}
 
         {/* PREVIEW TABLE */}
-      
-        
+
         <PreviewTable
           workbookUrl={workbookUrl}
           setWorkbookUrl={setWorkbookUrl}
@@ -753,7 +1185,6 @@ const handleReapply = () => {
 
         {/* <div className="center-link"><a href="/analysis" className="back-link">← Back</a></div> */}
       </div>
-    
     </>
   );
 };
