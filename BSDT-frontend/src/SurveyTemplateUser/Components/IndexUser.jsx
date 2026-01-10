@@ -172,7 +172,7 @@ const Index = () => {
     load();
   }, [slug, navigate]);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e, recaptchaToken) => {
     e?.preventDefault();
     if (isPreview) return;
 
@@ -200,6 +200,7 @@ const Index = () => {
             is_quiz: template.is_quiz || false,
             obtained_marks: calculatedMarks,
           },
+          recaptchaToken: recaptchaToken,
         },
         config
       );
