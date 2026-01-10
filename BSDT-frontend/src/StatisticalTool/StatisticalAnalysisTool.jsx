@@ -16,80 +16,56 @@ import apiClient from '../api';
 import PreviewTable from './previewTable';
 import TestSuggestionsModal from './TestSuggestions';
 import * as XLSX from "xlsx";
+import axios from 'axios';
 
-
-import renderKruskalResults from './RenderFunctions/RenderKruskal/renderKruskalResults';
-import renderChiSquareResults from './RenderFunctions/RenderChiSquare/renderChiSquareResults';
-import renderMannWhitneyResults from './RenderFunctions/renderMannWhitneyResults';
-import renderWilcoxonResults from './RenderFunctions/renderWilcoxonResults';
-import renderAnovaResults from './RenderFunctions/renderAnovaResults';
-import renderAncovaResults from './RenderFunctions/renderAncovaResults';
-import renderLinearRegressionResults from './RenderFunctions/renderLinearRegressionResults';
-import renderShapiroResults from './RenderFunctions/renderShapiroResults';
-import renderEDADistributionResults from './RenderFunctions/renderEDADistributionResults';
-import renderEDASwarmResults from './RenderFunctions/renderEDASwarmResults';
-import renderBarChartResults from './RenderFunctions/renderBarChartResults';
-import renderPieChartResults from './RenderFunctions/renderPieChartResults';
-import renderKolmogorovResults from './RenderFunctions/renderKolmogorovResults';
-import renderAndersonDarlingResults from './RenderFunctions/renderAndersonDarlingResults';
-import {
-    renderF_TestResults,
-    renderZ_TestResults, 
-    renderT_TestResults,
-    renderFZT_TestResults
-} from './RenderFunctions/renderFZT_TestResults';
-import renderPearsonResults from './RenderFunctions/RenderPearson/renderPearsonResults';
-import renderSpearmanResults from './RenderFunctions/RenderSpearman/renderSpearmanResults';
-import renderCramerVResults from './RenderFunctions/RenderCramarV/renderCramerVResults';
-import renderCrossTabulationResults from './RenderFunctions/RenderCrossTabulation/renderCrossTabulationResults';
-
+import AnalysisResults from './StatisticalAnalysisFiles/AnalysisResults';
 
 const translations = {
     English: {
-        title: "Statistical Analysis Tool",
-        subtitle: "Upload your Excel file and run various statistical tests on your data",
-        formTitle: "Data Analysis Form",
-        uploadLabel: "Import File",
-        preprocessedLabel: "Preprocessed File",
-        surveyLabel: "Survey Data File",
-        dropFile: "Drag your file or click to browse",
-        processing: "Processing file, please wait...",
-        testType: "Test Type",
-        testGroups: {
-            eda: "Exploratory Data Analysis",
-            correlation: "Correlation Tests",
-            parametric: "Parametric Tests",
-            nonParametric: "Non-parametric Tests",
-            regression: "Regression Analysis",
-            anova: "ANOVA & ANCOVA",
-            other: "Other Tests"
-        },
+        //title: "Statistical Analysis Tool",
+        // subtitle: "Upload your Excel file and run various statistical tests on your data",
+        // formTitle: "Data Analysis Form",
+        // uploadLabel: "Import File",
+        // preprocessedLabel: "Preprocessed File",
+        // surveyLabel: "Survey Data File",
+        // dropFile: "Drag your file or click to browse",
+        // processing: "Processing file, please wait...",
+        // testType: "Test Type",
+        // testGroups: {
+        //     eda: "Exploratory Data Analysis",
+        //     correlation: "Correlation Tests",
+        //     parametric: "Parametric Tests",
+        //     nonParametric: "Non-parametric Tests",
+        //     regression: "Regression Analysis",
+        //     anova: "ANOVA & ANCOVA",
+        //     other: "Other Tests"
+        // },
         tests: {
-            eda_basics: "Basic EDA Summary – Descriptive Stats & Entropy",
-            eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
-            eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
-            eda_pie: "Pie Chart – For Categorical Column",
-            bar_chart: "Bar Chart – Horizontal or Vertical",
-            similarity: "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
-            pearson: "Pearson Correlation",
-            spearman: "Spearman Rank Correlation",
-            mannwhitney: "Mann-Whitney U Test",
-            kruskal: "Kruskal-Wallis H-test",
-            wilcoxon: "Wilcoxon Signed-Rank Test",
-            linear_regression: "Linear Regression",
-            anova: "ANOVA",
-            ancova: "ANCOVA",
-            shapiro: "Shapiro-Wilk Normality Test",
-            kolmogorov: "Kolmogorov–Smirnov Test",
-            anderson: "Anderson–Darling Test",
-            chi_square: "Chi-Square Test",
-            cramers: "Cramér's V",
-            network_graph: "Network Graph",
-            f_test: "F-Test (Variance Comparison)",
-            z_test: "Z-Test (Mean Comparison)",
-            t_test: "T-Test (Mean Comparison)", 
-            fzt_visualization: "F/Z/T Combined Visualization",            
-            cross_tabulation: "Cross Tabulation",
+            // eda_basics: "Basic EDA Summary – Descriptive Stats & Entropy",
+            // eda_distribution: "Distribution Plot –> Histogram + KDE – For Numeric Column",
+            // eda_swarm: "Swarm Plot – Categorical Vs Numeric Columns",
+            // eda_pie: "Pie Chart – For Categorical Column",
+            // bar_chart: "Bar Chart – Horizontal or Vertical",
+            // similarity: "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
+            // pearson: "Pearson Correlation",
+            // spearman: "Spearman Rank Correlation",
+            // mannwhitney: "Mann-Whitney U Test",
+            // kruskal: "Kruskal-Wallis H-test",
+            // wilcoxon: "Wilcoxon Signed-Rank Test",
+            // linear_regression: "Linear Regression",
+            // anova: "ANOVA",
+            // ancova: "ANCOVA",
+            // shapiro: "Shapiro-Wilk Normality Test",
+            // kolmogorov: "Kolmogorov–Smirnov Test",
+            // anderson: "Anderson–Darling Test",
+            // chi_square: "Chi-Square Test",
+            // cramers: "Cramér's V",
+            // network_graph: "Network Graph",
+            // f_test: "F-Test (Variance Comparison)",
+            // z_test: "Z-Test (Mean Comparison)",
+            // t_test: "T-Test (Mean Comparison)", 
+            // fzt_visualization: "F/Z/T Combined Visualization",            
+            // cross_tabulation: "Cross Tabulation",
 
         },
         descriptions: {
@@ -119,57 +95,57 @@ const translations = {
             cramers: "Visual representation of Cramér's V association strength between categorical variables.",
             network_graph: "Displays statistical relationships between variables using a graphical network."
         },
-        selectPrompt: "Choose the appropriate statistical test for your analysis",
-        selectColumn: "Select a column",
-        column1: "Column 1",
-        column2: "Column 2",
-        column3: "Column 3",
-        column4: "Column 4",
-        column5: "Column 5",
-        referenceValue: "Reference Value",
-        heatmapSize: "Heatmap Size",
-        analyzeButton: "Analyze Data",
-        analyzing: "Analyzing Data...",
-        aboutTitle: "About This Tool",
-        aboutText: "This statistical analysis tool allows you to perform various statistical tests on your Excel data:",
-        kruskalTitle: "Kruskal-Wallis H-test",
-        mannwhitneyGroupError: 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.',        
-        selectGroupsPrompt: 'Select 2 Groups',
-        groupsAvailable: 'groups available',
-        selectedGroups: 'Selected Groups',
-        clearSelection: 'Clear Selection',
-        youMustSelect: 'You must select exactly 2 groups',
-        groupsLoading: 'Loading groups...',
-        mannwhitneyHelp: 'Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.',        
-        languageToggle: "বাংলা",
-        downloadLabel: "Format",
-        useDefaultSettings: "Use default plot settings?",
-        labelFontSize: "Label font size",
-        tickFontSize: "Tick font size",
-        imageQuality: "Image quality",
-        imageSize: "Image size (WIDTHxHEIGHT)",
-        palette: "Color palette",
-        barWidth: "Bar width",
-        boxWidth: "Box width",
-        violinWidth: "Violin width",
-        testStatistic: "Test Statistic",
-        pValue: "p-value",
-        significant: "Significant difference (p < 0.05)",
-        notSignificant: "No significant difference (p ≥ 0.05)",
-        uploadError: "Please upload an Excel file",
-        columnError: "Please select at least one column",
-        selectTest: "Select Statistical Test",
-        selectColumns: "Select Columns",
-        selectVariables: "Select Variables",
-        anotherAnalysis: "Perform Another Analysis",
-        visualizations: "Visualizations",
-        columnsAnalyzed: "Columns analyzed:",
-        and: "and",
-        loadingResults: "Loading results...",
-        conclusion: "Conclusion",
-        import:"Import file from DataGhurhi Saved Folder",
-        insights: "File Insights",
-        insightsText: "Insights will appear here"
+        // selectPrompt: "Choose the appropriate statistical test for your analysis",
+        // selectColumn: "Select a column",
+        // column1: "Column 1",
+        // column2: "Column 2",
+        // column3: "Column 3",
+        // column4: "Column 4",
+        // column5: "Column 5",
+        // referenceValue: "Reference Value",
+        // heatmapSize: "Heatmap Size",
+        // analyzeButton: "Analyze Data",
+        // analyzing: "Analyzing Data...",
+        // aboutTitle: "About This Tool",
+        // aboutText: "This statistical analysis tool allows you to perform various statistical tests on your Excel data:",
+        // kruskalTitle: "Kruskal-Wallis H-test",
+        // mannwhitneyGroupError: 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.',        
+        // selectGroupsPrompt: 'Select 2 Groups',
+        // groupsAvailable: 'groups available',
+        // selectedGroups: 'Selected Groups',
+        // clearSelection: 'Clear Selection',
+        // youMustSelect: 'You must select exactly 2 groups',
+        // groupsLoading: 'Loading groups...',
+        // mannwhitneyHelp: 'Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.',        
+        // languageToggle: "বাংলা",
+        // downloadLabel: "Format",
+        // useDefaultSettings: "Use default plot settings?",
+        // labelFontSize: "Label font size",
+        // tickFontSize: "Tick font size",
+        // imageQuality: "Image quality",
+        // imageSize: "Image size (WIDTHxHEIGHT)",
+        // palette: "Color palette",
+        // barWidth: "Bar width",
+        // boxWidth: "Box width",
+        // violinWidth: "Violin width",
+        // testStatistic: "Test Statistic",
+        // pValue: "p-value",
+        // significant: "Significant difference (p < 0.05)",
+        // notSignificant: "No significant difference (p ≥ 0.05)",
+        // uploadError: "Please upload an Excel file",
+        // columnError: "Please select at least one column",
+        // selectTest: "Select Statistical Test",
+        // selectColumns: "Select Columns",
+        // selectVariables: "Select Variables",
+        // anotherAnalysis: "Perform Another Analysis",
+        // visualizations: "Visualizations",
+        // columnsAnalyzed: "Columns analyzed:",
+        // and: "and",
+        // loadingResults: "Loading results...",
+        // conclusion: "Conclusion",
+        // import:"Import file from DataGhurhi Saved Folder",
+        // insights: "File Insights",
+        // insightsText: "Insights will appear here"
     },
     "বাংলা": {
         title: "পরিসংখ্যানগত বিশ্লেষণ টুল",
@@ -311,10 +287,29 @@ const mapDigits = (text, lang) => {
     return text.toString().split('').map(char => digitMapBn[char] || char).join('');
 };
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
 // Main App Component
 const StatisticalAnalysisTool = () => {
-     const API_BASE = 'http://127.0.0.1:8000/api';
-     const API_WORKBOOK='http://127.0.0.1:8000'
+    const API_BASE = 'http://127.0.0.1:8000/api';
+    const API_WORKBOOK='http://127.0.0.1:8000'
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -371,10 +366,124 @@ const StatisticalAnalysisTool = () => {
         if (stored) setFileURL(stored);
     }, []);
 
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const loadTranslations = async () => {
+  if (language === "English") {
+    setTranslatedLabels({});
+    return;
+  }
 
+  const labelsToTranslate = [
+    "Statistical Analysis Tool",
+    "Upload your Excel file and run various statistical tests on your data",
+    "Data Analysis Form",
+    "Import File",
+    "Preprocessed File",
+    "Survey Data File",
+    "Drag your file or click to browse",
+    "Processing file, please wait...",
+    "Test Type",
+
+    "Exploratory Data Analysis",
+    "Correlation Tests",
+    "Parametric Tests",
+    "Non-parametric Tests",
+    "Regression Analysis",
+    "ANOVA & ANCOVA",
+    "Other Tests",
+
+    "Basic EDA Summary – Descriptive Stats & Entropy",
+    "Distribution Plot –> Histogram + KDE – For Numeric Column",
+    "Swarm Plot – Categorical Vs Numeric Columns",
+    "Pie Chart – For Categorical Column",
+    "Bar Chart – Horizontal or Vertical",
+    "Similarity & Distance – Cosine, Euclidean, Pearson, etc.",
+    "Pearson Correlation",
+    "Spearman Rank Correlation",
+    "Mann-Whitney U Test",
+    "Kruskal-Wallis H-test",
+    "Wilcoxon Signed-Rank Test",
+    "Linear Regression",
+    "ANOVA",
+    "ANCOVA",
+    "Shapiro-Wilk Normality Test",
+    "Kolmogorov–Smirnov Test",
+    "Anderson–Darling Test",
+    "Chi-Square Test",
+    "Cramér's V",
+    "Network Graph",
+    "F-Test (Variance Comparison)",
+    "Z-Test (Mean Comparison)",
+    "T-Test (Mean Comparison)", 
+    "F/Z/T Combined Visualization",            
+    "Cross Tabulation",
+
+
+    "Choose the appropriate statistical test for your analysis",
+    "Select a column",
+    "Column 1",
+    "Column 2",
+    "Column 3",
+    "Column 4",
+    "Column 5",
+    "Reference Value",
+    "Analyze Data",
+    "Analyzing Data...",
+    "Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.",        
+    "Selected Groups",
+    "Clear Selection",
+    "Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.",
+    "Import file from DataGhurhi Saved Folder",
+    "Select Statistical Test",
+    "Select Columns",
+        // downloadLabel: "Format",
+        // useDefaultSettings: "Use default plot settings?",
+        // labelFontSize: "Label font size",
+        // tickFontSize: "Tick font size",
+        // imageQuality: "Image quality",
+        // imageSize: "Image size (WIDTHxHEIGHT)",
+        // palette: "Color palette",
+        // barWidth: "Bar width",
+        // boxWidth: "Box width",
+        // violinWidth: "Violin width",
+        // testStatistic: "Test Statistic",
+        // pValue: "p-value",
+        // significant: "Significant difference (p < 0.05)",
+        // notSignificant: "No significant difference (p ≥ 0.05)",
+        // uploadError: "Please upload an Excel file",
+        // columnError: "Please select at least one column",
+        // selectTest: "Select Statistical Test",
+        // selectColumns: "Select Columns",
+        // selectVariables: "Select Variables",
+        // anotherAnalysis: "Perform Another Analysis",
+        // visualizations: "Visualizations",
+        // columnsAnalyzed: "Columns analyzed:",
+        // and: "and",
+        // loadingResults: "Loading results...",
+        // conclusion: "Conclusion",
+        // import:"Import file from DataGhurhi Saved Folder",
+        // insights: "File Insights",
+        // insightsText: "Insights will appear here"
+            
+  ];
+
+  const translations = await translateText(labelsToTranslate, "bn");
+  const translated = {};
+  
+  labelsToTranslate.forEach((key, idx) => {
+    translated[key] = translations[idx];
+  });
+  setTranslatedLabels(translated);
+};
+
+useEffect(() => {
+  loadTranslations();
+}, [language]);
+
+const getLabel = (text) =>
+  language === "English" ? text : translatedLabels[text] || text;
 
     const fetchcolumn = () => {
-
         //fetch column
         const storedSheetName = sessionStorage.getItem("activesheetname") || 'sheet1';
         if (fileName && userId && sessionStorage.getItem("fileURL")) {
@@ -1115,7 +1224,7 @@ const StatisticalAnalysisTool = () => {
             }
             
             if (selectedGroups.length !== 2) {
-                setErrorMessage(t.mannwhitneyGroupError || 'Please select exactly 2 groups for Mann-Whitney test');
+                setErrorMessage(getLabel("Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.") || "Please select exactly 2 groups for Mann-Whitney test");
                 return;
             }
         }
@@ -2085,7 +2194,7 @@ const closePreview= async () =>{
         <div className="an-wrapper">
 
             <header className="page-header">
-                <h1 className="an-page-title">{t.title}</h1>
+                <h1 className="an-page-title">{getLabel("Statistical Analysis Tool")}</h1>
             </header>
 
             <div className="an-content-center">
@@ -2132,7 +2241,7 @@ const closePreview= async () =>{
                                             d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                                         />
                                     </svg>
-                                    <span>{t.formTitle}</span>
+                                    <span>{getLabel("Data Analysis Form")}</span>
                                 </div>
                                 <button 
                                 // disabled={true}
@@ -2152,10 +2261,10 @@ const closePreview= async () =>{
                                         {!(isPreprocessed || isSurveyData || file) && (
                                             <h5 className="section-title">
                                                 {isPreprocessed
-                                                    ? t.preprocessedLabel
+                                                    ? getLabel("Preprocessed File")
                                                     : isSurveyData
-                                                        ? t.surveyLabel
-                                                        : t.uploadLabel}
+                                                        ? getLabel("Survey Data File")
+                                                        : getLabel("Import File")}
                                             </h5>
                                         )}
 
@@ -2325,7 +2434,7 @@ const closePreview= async () =>{
                                                             d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                                                         />
                                                     </svg>
-                                                    <p className="action-text">{t.dropFile}</p>
+                                                    <p className="action-text">{getLabel("Drag your file or click to browse")}</p>
                                                     <input
                                                         ref={fileInputRef}
                                                         type="file"
@@ -2354,7 +2463,7 @@ const closePreview= async () =>{
                                                             d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
                                                         />
                                                     </svg>
-                                                    <div className="action-text">{t.import}</div>
+                                                    <div className="action-text">{getLabel("Import file from DataGhurhi Saved Folder")}</div>
                                                 </div>
                                             </div>
                                         )}
@@ -2362,7 +2471,7 @@ const closePreview= async () =>{
                                         {uploadStatus === "loading" && (
                                             <div className="status-line">
                                                 <div className="spinner" />
-                                                {t.processing}
+                                                {getLabel("Processing file, please wait...")}
                                             </div>
                                         )}
 
@@ -2617,54 +2726,54 @@ const closePreview= async () =>{
 
                                         {(isPreprocessed || isSurveyData || file) ? (
                                             <div className="form-section">
-                                                <h5 className="section-title">{t.selectTest}</h5>
-                                                <label className="form-label">{t.testType}</label>
+                                                <h5 className="section-title">{getLabel("Select Statistical Test")}</h5>
+                                                <label className="form-label">{getLabel("Test Type")}</label>
                                                 <select className="form-select" value={testType} onChange={(e) => setTestType(e.target.value)}>
                                                     <option value="" disabled>
-                                                        {t.selectPrompt}
+                                                        {getLabel("Choose the appropriate statistical test for your analysis")}
                                                     </option>
-                                                    <optgroup label={t.testGroups.eda}>
-                                                        <option value="eda_basics">{t.tests.eda_basics}</option>
-                                                        <option value="eda_distribution">{t.tests.eda_distribution}</option>
-                                                        <option value="eda_swarm">{t.tests.eda_swarm}</option>
-                                                        <option value="eda_pie">{t.tests.eda_pie}</option>
-                                                        <option value="bar_chart">{t.tests.bar_chart}</option>
-                                                        <option value="similarity">{t.tests.similarity}</option>
+                                                    <optgroup label={getLabel("Exploratory Data Analysis")}>
+                                                        <option value="eda_basics">{getLabel("Basic EDA Summary – Descriptive Stats & Entropy")}</option>
+                                                        <option value="eda_distribution">{getLabel("Distribution Plot –> Histogram + KDE – For Numeric Column")}</option>
+                                                        <option value="eda_swarm">{getLabel("Swarm Plot – Categorical Vs Numeric Columns")}</option>
+                                                        <option value="eda_pie">{getLabel("Pie Chart – For Categorical Column")}</option>
+                                                        <option value="bar_chart">{getLabel("Bar Chart – Horizontal or Vertical")}</option>
+                                                        <option value="similarity">{getLabel("Similarity & Distance – Cosine, Euclidean, Pearson, etc.")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.nonParametric}>
-                                                        <option value="kruskal">{t.tests.kruskal}</option>
-                                                        <option value="mannwhitney">{t.tests.mannwhitney}</option>
-                                                        <option value="wilcoxon">{t.tests.wilcoxon}</option>
+                                                    <optgroup label={getLabel("Non-parametric Tests")}>
+                                                        <option value="kruskal">{getLabel("Kruskal-Wallis Test")}</option>
+                                                        <option value="mannwhitney">{getLabel("Mann-Whitney U Test")}</option>
+                                                        <option value="wilcoxon">{getLabel("Wilcoxon Signed-Rank Test")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.correlation}>
-                                                        <option value="pearson">{t.tests.pearson}</option>
-                                                        <option value="spearman">{t.tests.spearman}</option>
+                                                    <optgroup label={getLabel("Correlation Tests")}>
+                                                        <option value="pearson">{getLabel("Pearson Correlation")}</option>
+                                                        <option value="spearman">{getLabel("Spearman Correlation")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.parametric}>
-                                                        <option value="f_test">{t.tests.f_test}</option>
-                                                        <option value="z_test">{t.tests.z_test}</option>
-                                                        <option value="t_test">{t.tests.t_test}</option>
-                                                    <option value="fzt_visualization">{t.tests.fzt_visualization}</option>
+                                                    <optgroup label={getLabel("Parametric Tests")}>
+                                                        <option value="f_test">{getLabel("F-Test")}</option>
+                                                        <option value="z_test">{getLabel("Z-Test")}</option>
+                                                        <option value="t_test">{getLabel("T-Test")}</option>
+                                                    <option value="fzt_visualization">{getLabel("F-Z-T Visualization")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.regression}>
-                                                        <option value="linear_regression">{t.tests.linear_regression}</option>
+                                                    <optgroup label={getLabel("Regression Analysis")}>
+                                                        <option value="linear_regression">{getLabel("Linear Regression")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.anova}>
-                                                        <option value="anova">{t.tests.anova}</option>
-                                                        <option value="ancova">{t.tests.ancova}</option>
+                                                    <optgroup label={getLabel("ANOVA & ANCOVA")}>
+                                                        <option value="anova">{getLabel("ANOVA")}</option>
+                                                        <option value="ancova">{getLabel("ANCOVA")}</option>
                                                     </optgroup>
-                                                    <optgroup label={t.testGroups.other}>
-                                                        <option value="shapiro">{t.tests.shapiro}</option>
-                                                        <option value="kolmogorov">{t.tests.kolmogorov}</option>
-                                                        <option value="anderson">{t.tests.anderson}</option>
-                                                        <option value="cross_tabulation">{t.tests.cross_tabulation}</option>
-                                                        <option value="chi_square">{t.tests.chi_square}</option>
-                                                        <option value="cramers">{t.tests.cramers}</option>
-                                                        <option value="network_graph">{t.tests.network_graph}</option>
+                                                    <optgroup label={getLabel("Other Tests")}>
+                                                        <option value="shapiro">{getLabel("Shapiro-Wilk Test")}</option>
+                                                        <option value="kolmogorov">{getLabel("Kolmogorov-Smirnov Test")}</option>
+                                                        <option value="anderson">{getLabel("Anderson-Darling Test")}</option>
+                                                        <option value="cross_tabulation">{getLabel("Cross Tabulation")}</option>
+                                                        <option value="chi_square">{getLabel("Chi-Square Test")}</option>
+                                                        <option value="cramers">{getLabel("Cramér's V")}</option>
+                                                        <option value="network_graph">{getLabel("Network Graph")}</option>
                                                     </optgroup>
                                                 </select>
 
-                                                <div className="test-description-hint">{t.selectPrompt}</div>
+                                                <div className="test-description-hint">{getLabel("Choose the appropriate statistical test for your analysis")}</div>
 
                                                     {testType && t.descriptions[testType] && (
                                                         <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
@@ -2703,7 +2812,7 @@ const closePreview= async () =>{
 
                                         {(testType === 'pearson' || testType === 'network_graph' || testType === 'spearman' || testType === 'cross_tabulation' || testType === 'chi_square' || testType === 'cramers') && (
                                             <div style={{ marginBottom: '2rem' }}>
-                                                <h5 className="section-title">{t.selectColumns}</h5>
+                                                <h5 className="section-title">{getLabel("Select a column")}</h5>
 
                                                 {/* Selected Columns Display */}
                                                 <div style={{
@@ -3027,7 +3136,7 @@ const closePreview= async () =>{
                                                 {/* For other tests - keep existing code */}
                                                 {testType !== 'kruskal' && testType !== 'mannwhitney' && testType !== 'wilcoxon' && testType !== 'linear_regression' && testType !== 'bar_chart' && testType !== 'eda_pie' && testType !== 'shapiro' && testType !== 'kolmogorov' && testType !== 'anderson' && testType !== 'eda_distribution' && testType !== 'eda_swarm' && testType !== 'similarity' && testType !== 'anova' && testType !== 'ancova' && testType !== 'f_test' && testType !== 'z_test' && testType !== 't_test' && testType !== 'fzt_visualization' && !["spearman", "pearson", "cross_tabulation", "network_graph", "cramers", "chi_square"].includes(testType) && (
                                                     <div className="form-group">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         <label className="form-label">
                                                             {(testType === "kolmogorov" ||
                                                                 testType === "anderson" ||
@@ -3036,7 +3145,7 @@ const closePreview= async () =>{
                                                                 ? language === "bn"
                                                                     ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
                                                                     : "Pick a Numerical Column"
-                                                                : t.column1}
+                                                                : getLabel("Column 1")}
                                                         </label>
                                                         <select
                                                             className="form-select"
@@ -3060,7 +3169,7 @@ const closePreview= async () =>{
                                                 {/* Combined component for tests requiring 1 categorical + 1 numeric column (Kruskal, Swarm Plot, ANOVA) */}
                                                 {(testType === 'kruskal' || testType === 'eda_swarm' || testType === 'anova') && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -3345,7 +3454,7 @@ const closePreview= async () =>{
                                                 {/* For Mann-Whitney test - special column type handling with grouping */}
                                                 {testType === 'mannwhitney' && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -3443,7 +3552,7 @@ const closePreview= async () =>{
                                                                     }}>
                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                             <span style={{ fontWeight: '600', color: '#0369a1' }}>
-                                                                                {t.selectedGroups || 'Selected Groups'}: {selectedGroups.join(', ')}
+                                                                                {getLabel("Selected Groups") || 'Selected Groups'}: {selectedGroups.join(', ')}
                                                                             </span>
                                                                             <button
                                                                                 type="button"
@@ -3460,7 +3569,7 @@ const closePreview= async () =>{
                                                                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
                                                                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                                                             >
-                                                                                {t.clearSelection || 'Clear'}
+                                                                                {getLabel("Clear Selection") || 'Clear'}
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -3594,7 +3703,7 @@ const closePreview= async () =>{
                                                                             <line x1="12" y1="8" x2="12" y2="12"></line>
                                                                             <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                         </svg>
-                                                                        ⚠️ {t.mannwhitneyGroupError || 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups.'}
+                                                                        ⚠️ {getLabel("Mann-Whitney test requires exactly 2 groups. Please select 2 groups from the dropdown.") || 'Mann-Whitney test requires exactly 2 groups. Please select 2 groups.'}
                                                                     </div>
                                                                 )}
                                                                 
@@ -3608,7 +3717,7 @@ const closePreview= async () =>{
                                                                     color: '#64748b',
                                                                     fontSize: '0.75rem'
                                                                 }}>
-                                                                    {t.mannwhitneyHelp || 'Select exactly 2 groups for Mann-Whitney test. The test will compare these two groups.'}
+                                                                    {getLabel("Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.") || 'Select exactly 2 groups for Mann-Whitney test. The test will compare these two groups.'}
                                                                 </div>
                                                             </div>
                                                         )}
@@ -3676,7 +3785,7 @@ const closePreview= async () =>{
                                                 {/* Combined component for tests requiring both numeric columns */}
                                                 {(testType === 'wilcoxon' || testType === 'linear_regression' || testType === 'similarity') && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -3894,7 +4003,7 @@ const closePreview= async () =>{
                                                 {/* Combined component for tests requiring 1 categorical column (Bar Chart, Pie Chart) */}
                                                 {(testType === 'bar_chart' || testType === 'eda_pie') && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -4014,7 +4123,7 @@ const closePreview= async () =>{
                                                 {/* Combined component for tests requiring 1 numeric column (Shapiro, Kolmogorov, Anderson, EDA Distribution) */}
                                                 {(testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson' || testType === 'eda_distribution') && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -4166,7 +4275,7 @@ const closePreview= async () =>{
                                                 {/* Component for ANCOVA test - requires 1 categorical + 2 numeric columns */}
                                                 {testType === 'ancova' && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -4395,7 +4504,7 @@ const closePreview= async () =>{
                                                 {/* For F, Z, T tests and combined visualization - requires 1 categorical with exactly 2 groups + 1 numeric */}
                                                 {(testType === 'f_test' || testType === 'z_test' || testType === 't_test' || testType === 'fzt_visualization') && (
                                                     <div className="form-section">
-                                                        <h5 className="section-title">{t.selectColumns}</h5>
+                                                        <h5 className="section-title">{getLabel("Select Columns")}</h5>
                                                         
                                                         {columnTypesError && (
                                                             <div className="error-box" style={{ marginBottom: '1rem' }}>
@@ -4501,7 +4610,7 @@ const closePreview= async () =>{
                                                                     }}>
                                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                                                             <span style={{ fontWeight: '600', color: '#0369a1' }}>
-                                                                                {t.selectedGroups || 'Selected Groups'}: {selectedGroups.join(', ')}
+                                                                                {getLabel("Selected Groups") || 'Selected Groups'}: {selectedGroups.join(', ')}
                                                                             </span>
                                                                             <button
                                                                                 type="button"
@@ -4518,7 +4627,7 @@ const closePreview= async () =>{
                                                                                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#fee2e2'}
                                                                                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                                                                             >
-                                                                                {t.clearSelection || 'Clear'}
+                                                                                {getLabel("Clear Selection") || 'Clear'}
                                                                             </button>
                                                                         </div>
                                                                     </div>
@@ -4859,7 +4968,7 @@ const closePreview= async () =>{
 
                                                 {requiredFields.col2 && (
                                                     <div className="form-group">
-                                                        <label className="form-label">{t.column2}</label>
+                                                        <label className="form-label">{getLabel("Column 2")}</label>
                                                         <select
                                                             className="form-select"
                                                             value={column2}
@@ -4878,7 +4987,7 @@ const closePreview= async () =>{
 
                                                 {requiredFields.col3 && (
                                                     <div className="form-group">
-                                                        <label className="form-label">{t.column3}</label>
+                                                        <label className="form-label">{getLabel("Column 3")}</label>
                                                         <select
                                                             className="form-select"
                                                             value={column3}
@@ -4897,7 +5006,7 @@ const closePreview= async () =>{
 
                                                 {requiredFields.col4 && (
                                                     <div className="form-group">
-                                                        <label className="form-label">{t.column4}</label>
+                                                        <label className="form-label">{getLabel("Column 4")}</label>
                                                         <select
                                                             className="form-select"
                                                             value={column4}
@@ -5010,7 +5119,7 @@ const closePreview= async () =>{
 
                                                 {requiredFields.col5 && (
                                                     <div className="form-group">
-                                                        <label className="form-label">{t.column5}</label>
+                                                        <label className="form-label">{getLabel("Column 5")}</label>
                                                         <select
                                                             className="form-select"
                                                             value={column5}
@@ -5033,7 +5142,7 @@ const closePreview= async () =>{
 
                                         {requiredFields.refValue && (
                                             <div className="form-group">
-                                                <label className="form-label">{t.referenceValue}</label>
+                                                <label className="form-label">{getLabel("Reference Value")}</label>
                                                 <input
                                                     type="number"
                                                     className="form-input"
@@ -5070,7 +5179,7 @@ const closePreview= async () =>{
                                                 {isAnalyzing ? (
                                                     <>
                                                         <div className="spinner small"></div>
-                                                        {t.analyzing}
+                                                        {getLabel("Analyzing Data...")}
                                                     </>
                                                 ) : (
                                                     <>
@@ -5079,7 +5188,7 @@ const closePreview= async () =>{
                                                             <line x1="12" y1="20" x2="12" y2="4"></line>
                                                             <line x1="6" y1="20" x2="6" y2="14"></line>
                                                         </svg>
-                                                        {t.analyzeButton}
+                                                        {getLabel("Analyze Data")}
                                                     </>
                                                 )}
                                             </button>
@@ -5178,661 +5287,4 @@ const closePreview= async () =>{
     );
 };
 
-// Component for rendering analysis results
-const AnalysisResults = ({ isFirstTimeAnalysis, setIsFirstTimeAnalysis, handleSubmit, user_id, results, testType, columns, language = 'English', setLanguage, imageFormat, setImageFormat, useDefaultSettings, setUseDefaultSettings, labelFontSize, setLabelFontSize, tickFontSize, setTickFontSize, imageQuality, setImageQuality, imageSize, setImageSize, colorPalette, setColorPalette, barWidth, setBarWidth, boxWidth, setBoxWidth, violinWidth, setViolinWidth, showGrid, setShowGrid, histColor, setHistColor, kdeColor, setKdeColor, distColor, setDistColor, t, filename }) => {
-
-    const [kruskalActiveTab, setKruskalActiveTab] = useState('count');
-    const [chiSquareActiveTab, setChiSquareActiveTab] = useState('detailed');
-    const [mannWhitneyActiveTab, setMannWhitneyActiveTab] = useState('box');
-    const [wilcoxonActiveTab, setWilcoxonActiveTab] = useState('histogram');
-    const [anovaActiveTab, setAnovaActiveTab] = useState('count');   
-    const [ancovaActiveTab, setAncovaActiveTab] = useState('scatter');    
-    const [linearRegressionActiveTab, setLinearRegressionActiveTab] = useState('scatter');
-    const [shapiroActiveTab, setShapiroActiveTab] = useState('histogram');    
-    const [edaDistributionActiveTab, setEdaDistributionActiveTab] = useState('histogram');
-    const [edaSwarmActiveTab, setEDASwarmActiveTab] = useState('swarm');
-    const [barChartActiveTab, setBarChartActiveTab] = useState('vertical');
-    const [pieActiveTab, setPieActiveTab] = useState('pie');
-    const [kolmogorovActiveTab, setKolmogorovActiveTab] = useState('ecdf');   
-    const [andersonActiveTab, setAndersonActiveTab] = useState('qq'); 
-    const [fTestActiveTab, setFTestActiveTab] = useState('count');
-    const [zTestActiveTab, setZTestActiveTab] = useState('count');
-    const [tTestActiveTab, setTTestActiveTab] = useState('count');
-    const [fztTestActiveTab, setFZTTestActiveTab] = useState('count');
-    const [pearsonActiveTab, setPearsonActiveTab] = useState('detailed');
-    const [spearmanActiveTab, setSpearmanActiveTab] = useState('detailed');    
-    const [cramerVActiveTab, setCramerVActiveTab] = useState('detailed');
-    const [crossTabActiveTab, setCrossTabActiveTab] = useState('detailed');
-
-    
-    // For rendering different results based on test type
-    const renderResults = () => {
-        if (testType === 'kruskal') {
-            return renderKruskalResults(
-                kruskalActiveTab,
-                setKruskalActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'mannwhitney') {
-            return renderMannWhitneyResults(
-                mannWhitneyActiveTab,
-                setMannWhitneyActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'wilcoxon') {
-            return renderWilcoxonResults(
-                wilcoxonActiveTab,
-                setWilcoxonActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'anova') {
-            return renderAnovaResults(
-                anovaActiveTab,
-                setAnovaActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'ancova') {
-            return renderAncovaResults(
-                ancovaActiveTab,
-                setAncovaActiveTab,
-                results,
-                language,
-            );
-        } else if (testType === 'linear_regression') {
-            return renderLinearRegressionResults(
-                linearRegressionActiveTab,
-                setLinearRegressionActiveTab,
-                results,
-                language
-            );                
-        } else if (testType === 'shapiro') {
-            return renderShapiroResults(
-                shapiroActiveTab,
-                setShapiroActiveTab,
-                results,
-                language
-            );   
-        } else if (testType === 'eda_swarm') {
-            return renderEDASwarmResults(
-                edaSwarmActiveTab,
-                setEDASwarmActiveTab,
-                results,
-                language
-            );           
-        } else if (testType === 'eda_distribution') { 
-            return renderEDADistributionResults(
-                edaDistributionActiveTab,
-                setEdaDistributionActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'bar_chart') {
-            return renderBarChartResults(
-                barChartActiveTab,
-                setBarChartActiveTab,
-                results,
-                language
-            );         
-        } else if (testType === 'eda_pie') {
-            return renderPieChartResults(
-                pieActiveTab,
-                setPieActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'kolmogorov') {
-            return renderKolmogorovResults(
-                kolmogorovActiveTab,
-                setKolmogorovActiveTab,
-                results,
-                language
-            );
-        } else if (testType === 'anderson') {
-            return renderAndersonDarlingResults(
-                andersonActiveTab,
-                setAndersonActiveTab,
-                results,
-                language
-            );        
-    } else if (testType === 'f_test') {
-        return renderF_TestResults(
-            fTestActiveTab,
-            setFTestActiveTab,
-            results,
-            language
-        );
-    } else if (testType === 'z_test') {
-        return renderZ_TestResults(
-            zTestActiveTab,
-            setZTestActiveTab,
-            results,
-            language
-        );
-    } else if (testType === 't_test') {
-        return renderT_TestResults(
-            tTestActiveTab,
-            setTTestActiveTab,
-            results,
-            language
-        );
-    } else if (testType === 'fzt_visualization') {
-        return renderFZT_TestResults(
-            fztTestActiveTab,
-            setFZTTestActiveTab,
-            results,
-            language
-        );                        
-        } else if (testType === 'spearman') {
-            return renderSpearmanResults(
-                spearmanActiveTab,
-                setSpearmanActiveTab,
-                results,
-                language
-            );     
-        } else if (testType === 'cross_tabulation') { 
-            return renderCrossTabulationResults(
-                crossTabActiveTab,
-                setCrossTabActiveTab,
-                results,
-                language
-            );                                 
-        } else if (testType === 'cramers') {
-            return renderCramerVResults(cramerVActiveTab, setCramerVActiveTab, results, language);            
-        } else if (testType === 'pearson') {
-            return renderPearsonResults(pearsonActiveTab, setPearsonActiveTab, results, language);
-
-        } else if (testType === 'eda_basics') {
-            return renderEDABasicsResults();
-        } else if (testType === 'similarity') {
-            return renderSimilarityResults();
-        } else if (testType === 'chi_square') {
-            return renderChiSquareResults(chiSquareActiveTab, setChiSquareActiveTab, results, language);
-        } else if (testType === 'network_graph') {
-            return renderNetworkGraphResults();
-        }
-
-        switch (testType) {
-            case 'pearson':
-                return (
-                    <>
-                        <h2 className="text-2xl font-bold mb-4">Pearson Correlation Analysis</h2>
-
-                        {/* ... will write Pearson results rendering ... */}
-                    </>
-                );
-
-            // ... will write the other test type renderers ...
-
-            default:
-                return (
-                    <>
-                        <h2 className="text-2xl font-bold mb-4">{results.test}</h2>
-                        <p className="mb-3">
-                            <strong>Analysis complete.</strong> The test results are displayed below.
-                        </p>
-                        {/* ... default results rendering ... */}
-                    </>
-                );
-        }
-    };
-
-
-
-    const renderEDABasicsResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== "বাংলা") return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return (
-                <div className="stats-loading">
-                    <p>{language === "বাংলা" ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
-                </div>
-            );
-        }
-
-        const renderTitle = (key) => {
-            const titles = {
-                count: language === "বাংলা" ? 'গণনা' : 'Count',
-                min: language === "বাংলা" ? 'সর্বনিম্ন' : 'Min',
-                max: language === "বাংলা" ? 'সর্বোচ্চ' : 'Max',
-                range: language === "বাংলা" ? 'পরিসর' : 'Range',
-                iqr: language === "বাংলা" ? 'IQR' : 'IQR',
-                outliers: language === "বাংলা" ? 'আউটলাইয়ার সংখ্যা' : 'Outliers',
-                mean: language === "বাংলা" ? 'গড়' : 'Mean',
-                median: language === "বাংলা" ? 'মিডিয়ান' : 'Median',
-                mode: language === "বাংলা" ? 'মোড' : 'Mode',
-                variance: language === "বাংলা" ? 'চর বৈচিত্র্য' : 'Variance',
-                std: language === "বাংলা" ? 'স্ট্যান্ডার্ড ডেভিয়েশন' : 'Std Dev',
-                mad: language === "বাংলা" ? 'ম্যাড' : 'MAD',
-                skew: language === "বাংলা" ? 'স্কিউনেস' : 'Skewness',
-                kurt: language === "বাংলা" ? 'কার্টোসিস' : 'Kurtosis',
-                cv: language === "বাংলা" ? 'CV' : 'Coeff. of Variation',
-            };
-            return titles[key] || key;
-        };
-
-        const renderWideTable = (title, statKeys) => {
-            const columns = Object.keys(results[statKeys[0]] || {});
-            if (columns.length === 0) return null;
-
-            return (
-                <div className="eda-table-section">
-                    <h3 className="eda-table-title">{title}</h3>
-                    <div className="stats-results-table-wrapper">
-                        <div className="eda-table-scroll">
-                            <table className="stats-results-table eda-wide-table">
-                                <thead>
-                                    <tr>
-                                        <th className="eda-column-header">
-                                            {language === "বাংলা" ? 'কলাম' : 'Column'}
-                                        </th>
-                                        {statKeys.map((statKey, idx) => (
-                                            <th key={idx} className="eda-stat-header">
-                                                {renderTitle(statKey)}
-                                            </th>
-                                        ))}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {columns.map((col, i) => (
-                                        <tr key={i}>
-                                            <td className="stats-table-label eda-column-cell">
-                                                {col}
-                                            </td>
-                                            {statKeys.map((statKey, idx) => (
-                                                <td key={idx} className="stats-table-value stats-numeric eda-value-cell">
-                                                    {results[statKey]?.[col] !== undefined
-                                                        ? mapDigitIfBengali(
-                                                            typeof results[statKey][col] === 'number'
-                                                                ? results[statKey][col].toFixed(4)
-                                                                : results[statKey][col]
-                                                        )
-                                                        : "-"}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            );
-        };
-
-        return (
-            <div className="stats-results-container stats-fade-in">
-                {/* Header Section */}
-                <div className="stats-header">
-                    <h2 className="stats-title">
-                        {language === "বাংলা" ? 'মৌলিক EDA বিশ্লেষণ' : 'Basic EDA Summary'}
-                    </h2>
-                </div>
-
-                {/* Dataset Info Card */}
-                {results.info && (
-                    <div className="eda-info-card">
-                        <h3 className="eda-info-title">
-                            {language === "বাংলা" ? 'ডেটাসেট তথ্য' : 'Dataset Info'}
-                        </h3>
-                        <div className="stats-results-table-wrapper">
-                            <table className="stats-results-table">
-                                <tbody>
-                                    <tr>
-                                        <td className="stats-table-label">
-                                            {language === "বাংলা" ? 'মোট সারি' : 'Total Rows'}
-                                        </td>
-                                        <td className="stats-table-value stats-numeric">
-                                            {mapDigitIfBengali(results.info.rows)}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="stats-table-label">
-                                            {language === "বাংলা" ? 'মোট কলাম' : 'Total Columns'}
-                                        </td>
-                                        <td className="stats-table-value stats-numeric">
-                                            {mapDigitIfBengali(results.info.columns)}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="stats-table-label">
-                                            {language === "বাংলা" ? 'পুনরাবৃত্ত সারি' : 'Duplicate Rows'}
-                                        </td>
-                                        <td className="stats-table-value stats-numeric">
-                                            {mapDigitIfBengali(results.info.duplicates)}
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td className="stats-table-label">
-                                            {language === "বাংলা" ? 'মেমোরি ব্যবহার' : 'Memory Usage'}
-                                        </td>
-                                        <td className="stats-table-value stats-numeric">
-                                            {mapDigitIfBengali(results.info.memory)} {language === "বাংলা" ? 'কিলোবাইট' : 'KB'}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {/* Table 1: Count, Min, Max, Range, IQR, Outliers */}
-                {renderWideTable(
-                    language === "বাংলা" ? 'টেবিল ১: পরিসংখ্যান এবং বিস্তার' : 'Table 1: Count, Min, Max, Range, IQR, Outliers',
-                    ['count', 'min', 'max', 'range', 'iqr', 'outliers']
-                )}
-
-                {/* Table 2: Central Tendency & Dispersion */}
-                {renderWideTable(
-                    language === "বাংলা" ? 'টেবিল ২: কেন্দ্রীয় প্রবণতা এবং বিক্ষিপ্ততা' : 'Table 2: Central Tendency & Dispersion',
-                    ['mean', 'median', 'mode', 'variance', 'std']
-                )}
-
-                {/* Table 3: MAD, Skewness, Kurtosis, CV */}
-                {renderWideTable(
-                    language === "বাংলা" ? 'টেবিল ৩: ম্যাড, স্কিউনেস, কার্টোসিস, সিভি' : 'Table 3: MAD, Skewness, Kurtosis, CV',
-                    ['mad', 'skew', 'kurt', 'cv']
-                )}
-            </div>
-        );
-    };
-
-    const renderSimilarityResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== "বাংলা") return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === "বাংলা" ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === "বাংলা" ? 'সাদৃশ্য এবং দূরত্ব বিশ্লেষণ' : 'Similarity and Distance Analysis'}
-                </h2>
-
-                {results.heading && (
-                    <p className="mb-3 font-medium text-gray-700 dark:text-gray-300">
-                        {results.heading}
-                    </p>
-                )}
-
-                {results.columns && results.columns.length > 0 && (
-                    <p className="mb-3">
-                        <strong>{language === "বাংলা" ? 'বিশ্লেষিত কলাম:' : 'Columns analyzed:'}</strong>{" "}
-                        {results.columns.map((col, i) => (
-                            <span key={i}>
-                                {col}{i < results.columns.length - 1 ? (language === "বাংলা" ? ' এবং ' : ' and ') : ''}
-                            </span>
-                        ))}
-                    </p>
-                )}
-
-                {results.results && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <StatRow label={language === "বাংলা" ? 'কসাইন সাদৃশ্য' : 'Cosine Similarity'} value={results.results.cosine_similarity} />
-                        <StatRow label={language === "বাংলা" ? 'ইউক্লিডীয় দূরত্ব' : 'Euclidean Distance'} value={results.results.euclidean_distance} />
-                        <StatRow label={language === "বাংলা" ? 'ম্যানহাটন (L1) দূরত্ব' : 'Manhattan (L1) Distance'} value={results.results.manhattan_distance} />
-                        <StatRow label={language === "বাংলা" ? 'চেবিশেভ (L∞) দূরত্ব' : 'Chebyshev (L∞) Distance'} value={results.results.chebyshev_distance} />
-                        <StatRow label={
-                            language === "বাংলা"
-                                ? `মিনকোর্সকি (p=${results.results.p}) দূরত্ব`
-                                : `Minkowski (p=${results.results.p}) Distance`
-                        } value={results.results.minkowski_distance} />
-                        <StatRow label={language === "বাংলা" ? 'পিয়ারসন সহগ' : 'Pearson Correlation'} value={results.results.pearson_correlation} />
-                        <StatRow label={language === "বাংলা" ? 'স্পিয়ারম্যান সহগ' : 'Spearman Correlation'} value={results.results.spearman_correlation} />
-                    </div>
-                )}
-            </>
-        );
-    };
-
-
-    const renderNetworkGraphResults = () => {
-        const mapDigitIfBengali = (text) => {
-            if (language !== "বাংলা") return text;
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-        };
-
-        if (!results) {
-            return <p>{language === "বাংলা" ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
-        }
-
-        return (
-            <>
-                <h2 className="text-2xl font-bold mb-4">
-                    {language === "বাংলা" ? 'নেটওয়ার্ক গ্রাফ বিশ্লেষণ' : 'Network Graph Analysis'}
-                </h2>
-
-                <p className="mb-3">
-                    <strong>{language === "বাংলা" ? 'ভিজ্যুয়ালাইজেশন:' : 'Visualization:'}</strong>
-                </p>
-
-                {results.image_path && (
-                    <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-                        <div className="relative">
-                            <img
-                                src={`http://127.0.0.1:8000/${results.image_path}`}
-                                alt={language === "বাংলা" ? 'নেটওয়ার্ক গ্রাফ' : 'Network Graph'}
-                                className="w-full h-auto object-contain"
-                            />
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const response = await fetch(`http://127.0.0.1:8000/${results.image_path}`);
-                                        const blob = await response.blob();
-                                        const url = window.URL.createObjectURL(blob);
-                                        const link = document.createElement('a');
-                                        link.href = url;
-                                        link.download = results.image_path.split('/').pop() || 'network_graph.png';
-                                        document.body.appendChild(link);
-                                        link.click();
-                                        document.body.removeChild(link);
-                                        window.URL.revokeObjectURL(url);
-                                    } catch (error) {
-                                        console.error('Download failed:', error);
-                                        alert(language === "বাংলা" ? 'ডাউনলোড ব্যর্থ হয়েছে' : 'Download failed');
-                                    }
-                                }}
-                                className="absolute top-2 left-2 bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-2 rounded-md shadow-lg transition duration-200 transform hover:scale-105 flex items-center text-sm"
-                                title={language === "বাংলা" ? 'ছবি ডাউনলোড করুন' : 'Download Image'}
-                            >
-                                <svg
-                                    className="w-4 h-4 mr-1"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth="2"
-                                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                    />
-                                </svg>
-                                {language === "বাংলা" ? 'ডাউনলোড' : 'Download'}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    };
-
-    // Helper component for consistent layout
-    const StatRow = ({ label, value }) => (
-        <div className="bg-white dark:bg-gray-800 rounded shadow p-4">
-            <p className="font-medium text-gray-800 dark:text-gray-100">{label}</p>
-            <p className="text-blue-700 dark:text-blue-300 text-xl mt-1">{value}</p>
-        </div>
-    );
-
-    return (
-        <div className=" rounded-lg  overflow-hidden"
-            style={{ boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)', marginBottom: '2rem' }}>
-
-
-            {/* <div className="bg-gray-700 text-white p-4 font-semibold">
-                <p className="text-black inline">
-                    {language === "বাংলা" ? 'পরিসংখ্যানগত বিশ্লেষণ ফলাফল' : 'Statistical Analysis Results'}
-                </p>
-            </div> */}
-            <div className="p-6">
-                <div className="analysis-container">
-                    {renderResults()}
-                </div>
-
-                <div style={{
-                    padding: '1rem 0',
-                    display: 'flex',
-                    gap: '1rem',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    marginTop: '2rem'
-                }}>
-                    <button
-                        onClick={() => {
-                            if (!results || !columns || !testType) {
-                                alert(language === 'বাংলা'
-                                    ? 'রিপোর্ট যুক্ত করার জন্য সম্পূর্ণ বিশ্লেষণ প্রয়োজন'
-                                    : 'Analysis must be completed before adding to report'
-                                );
-                                return;
-                            }
-
-                            try {
-                                // Dynamically find image sources from the page
-                                const imagePaths = Array.from(document.querySelectorAll('.analysis-container img'))
-                                    .map(img => img.getAttribute('src'))
-                                    .filter(src => src?.includes('/media/'))
-                                    .map(fullSrc => {
-                                        try {
-                                            const url = new URL(fullSrc, window.location.origin);
-                                            return url.pathname;
-                                        } catch {
-                                            return fullSrc;
-                                        }
-                                    });
-
-                                const enrichedResults = {
-                                    ...results,
-                                    image_paths: imagePaths,
-                                };
-
-                                const existingReports = JSON.parse(localStorage.getItem('analysisReports') || '[]');
-                                const updatedReports = [
-                                    ...existingReports,
-                                    {
-                                        results: enrichedResults,
-                                        columns,
-                                        type: testType,
-                                        timestamp: new Date().toISOString()
-                                    }
-                                ];
-
-                                localStorage.setItem('analysisReports', JSON.stringify(updatedReports));
-                                alert(language === 'বাংলা' ? 'রিপোর্টে যুক্ত হয়েছে' : 'Results and visulaizations are added to the report');
-                            } catch (error) {
-                                console.error("Add to Report Failed:", error);
-                                alert(language === 'বাংলা' ? 'রিপোর্ট যুক্ত করা যায়নি' : 'Failed to add to report');
-                            }
-                        }}
-                        className="stats-save-btn"
-                    >
-                        {language === 'বাংলা' ? 'রিপোর্টে যুক্ত করুন' : 'Add to Report'}
-                    </button>
-
-                    <button
-                        onClick={() => {
-                            window.location.reload();
-                        }}
-                        className="stats-save-btn"
-                    >
-                        {language === "বাংলা" ? 'আরেকটি বিশ্লেষণ করুন' : 'Perform Another Analysis'}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-
-    // Other visualization components
-    // const CorrelationHeatmap = ({ data }) => {
-    //     // Extracting unique variables
-    //     const variables = [...new Set(data.flatMap(item => [item.Variable_1, item.Variable_2]))];
-
-    //     // Creating correlation matrix
-    //     const matrix = [];
-    //     for (let i = 0; i < variables.length; i++) {
-    //         const row = [];
-    //         for (let j = 0; j < variables.length; j++) {
-    //             if (i === j) {
-    //                 row.push(1); // Diagonal is always 1
-    //             } else {
-    //                 const correlation = data.find(
-    //                     item => (item.Variable_1 === variables[i] && item.Variable_2 === variables[j]) ||
-    //                         (item.Variable_1 === variables[j] && item.Variable_2 === variables[i])
-    //                 );
-    //                 row.push(correlation ? correlation.Correlation : 0);
-    //             }
-    //         }
-    //         matrix.push(row);
-    //     }
-
-    //     // Creating color scale
-    //     const getColor = (value) => {
-    //         if (value >= 0.7) return 'bg-red-700 text-white';
-    //         if (value >= 0.5) return 'bg-red-500 text-white';
-    //         if (value >= 0.3) return 'bg-red-300 text-gray-800';
-    //         if (value >= 0.1) return 'bg-red-100 text-gray-800';
-    //         if (value >= -0.1) return 'bg-gray-100 text-gray-800';
-    //         if (value >= -0.3) return 'bg-blue-100 text-gray-800';
-    //         if (value >= -0.5) return 'bg-blue-300 text-gray-800';
-    //         if (value >= -0.7) return 'bg-blue-500 text-white';
-    //         return 'bg-blue-700 text-white';
-    //     };
-
-    //     return (
-    //         <div className="overflow-x-auto">
-    //             <table className="w-full bg-white rounded-lg overflow-hidden border-collapse">
-    //                 <thead>
-    //                     <tr>
-    //                         <th className="p-2 border"></th>
-    //                         {variables.map((variable, idx) => (
-    //                             <th key={idx} className="p-2 border bg-gray-100 text-sm font-medium transform -rotate-45 origin-bottom-left h-20">
-    //                                 <div className="ml-2">{variable}</div>
-    //                             </th>
-    //                         ))}
-    //                     </tr>
-    //                 </thead>
-    //                 <tbody>
-    //                     {matrix.map((row, rowIdx) => (
-    //                         <tr key={rowIdx}>
-    //                             <th className="p-2 border bg-gray-100 font-medium text-left">
-    //                                 {variables[rowIdx]}
-    //                             </th>
-    //                             {row.map((value, colIdx) => (
-    //                                 <td
-    //                                     key={colIdx}
-    //                                     className={`p-2 border text-center ${getColor(value)}`}
-    //                                     title={`${variables[rowIdx]} vs ${variables[colIdx]}: ${value.toFixed(2)}`}
-    //                                 >
-    //                                     {value.toFixed(2)}
-    //                                 </td>
-    //                             ))}
-    //                         </tr>
-    //                     ))}
-    //                 </tbody>
-    //             </table>
-    //         </div>
-    //     );
-    // };
-};
 export default StatisticalAnalysisTool;
