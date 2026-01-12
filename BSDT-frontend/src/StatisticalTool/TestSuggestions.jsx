@@ -1,4 +1,3 @@
-// TestSuggestionsModal.jsx - Updated version
 import React from 'react';
 import './TestSuggestionsModal.css';
 
@@ -145,6 +144,7 @@ const TestSuggestionsModal = ({
 
   const hasCategorical = categoricalColumns && categoricalColumns.length > 0;
   const hasNumeric = numericColumns && numericColumns.length > 0;
+  const hasBothTypes = hasCategorical && hasNumeric;
   
   // Digit mapping for Bengali
   const digitMapBn = {
@@ -219,53 +219,81 @@ const TestSuggestionsModal = ({
             <p className="suggestion-intro">{t.suggestionIntro}</p>
             
             <div className="suggestions-grid">
-              {/* Tests for both categorical and numerical */}
-              {hasCategorical && hasNumeric && (
-                <div className="suggestion-category">
-                  <h4>{t.bothTypes}</h4>
-                  <ul>
-                    <li>{t.tests.distribution}</li>
-                    <li>{t.tests.swarm}</li>
-                    <li>{t.tests.kruskal}</li>
-                    <li>{t.tests.mannwhitney}</li>
-                    <li>{t.tests.f_test}</li>
-                    <li>{t.tests.z_test}</li>
-                    <li>{t.tests.t_test}</li>
-                    <li>{t.tests.fzt_combined}</li>
-                    <li>{t.tests.anova}</li>
-                    <li>{t.tests.ancova}</li>
-                  </ul>
-                </div>
+              {/* When we have BOTH types, show all categories */}
+              {hasBothTypes ? (
+                <>
+                  {/* Tests for both categorical and numerical */}
+                  <div className="suggestion-category">
+                    <h4>{t.bothTypes}</h4>
+                    <ul>
+                      <li>{t.tests.distribution}</li>
+                      <li>{t.tests.swarm}</li>
+                      <li>{t.tests.kruskal}</li>
+                      <li>{t.tests.mannwhitney}</li>
+                      <li>{t.tests.f_test}</li>
+                      <li>{t.tests.z_test}</li>
+                      <li>{t.tests.t_test}</li>
+                      <li>{t.tests.fzt_combined}</li>
+                      <li>{t.tests.anova}</li>
+                      <li>{t.tests.ancova}</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Tests for categorical only */}
+                  <div className="suggestion-category">
+                    <h4>{t.categoricalOnly}</h4>
+                    <ul>
+                      <li>{t.tests.bar_chart}</li>
+                      <li>{t.tests.pie_chart}</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Tests for numerical only */}
+                  <div className="suggestion-category">
+                    <h4>{t.numericOnly}</h4>
+                    <ul>
+                      <li>{t.tests.similarity}</li>
+                      <li>{t.tests.wilcoxon}</li>
+                      <li>{t.tests.linear_regression}</li>
+                      <li>{t.tests.shapiro}</li>
+                      <li>{t.tests.kolmogorov}</li>
+                      <li>{t.tests.anderson}</li>
+                    </ul>
+                  </div>
+                </>
+              ) : (
+                /* When we have only one type, show only relevant categories */
+                <>
+                  {/* Tests for categorical only */}
+                  {hasCategorical && !hasNumeric && (
+                    <div className="suggestion-category">
+                      <h4>{t.categoricalOnly}</h4>
+                      <ul>
+                        <li>{t.tests.bar_chart}</li>
+                        <li>{t.tests.pie_chart}</li>
+                      </ul>
+                    </div>
+                  )}
+                  
+                  {/* Tests for numerical only */}
+                  {!hasCategorical && hasNumeric && (
+                    <div className="suggestion-category">
+                      <h4>{t.numericOnly}</h4>
+                      <ul>
+                        <li>{t.tests.similarity}</li>
+                        <li>{t.tests.wilcoxon}</li>
+                        <li>{t.tests.linear_regression}</li>
+                        <li>{t.tests.shapiro}</li>
+                        <li>{t.tests.kolmogorov}</li>
+                        <li>{t.tests.anderson}</li>
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
               
-              {/* Tests for categorical only */}
-              {hasCategorical && !hasNumeric && (
-                <div className="suggestion-category">
-                  <h4>{t.categoricalOnly}</h4>
-                  <ul>
-                    <li>{t.tests.bar_chart}</li>
-                    <li>{t.tests.pie_chart}</li>
-                  </ul>
-                </div>
-              )}
-              
-              {/* Tests for numerical only */}
-              {!hasCategorical && hasNumeric && (
-                <div className="suggestion-category">
-                  <h4>{t.numericOnly}</h4>
-                  <ul>
-                    <li>{t.tests.similarity}</li>
-                    <li>{t.tests.wilcoxon}</li>
-                    <li>{t.tests.linear_regression}</li>
-                    <li>{t.tests.shapiro}</li>
-                    <li>{t.tests.kolmogorov}</li>
-                    <li>{t.tests.anderson}</li>
-                  </ul>
-                </div>
-              )}
-              
-              {/* Tests always available */}
-              <div className="suggestion-category">
+              {/* Tests always available - Show this last and make it full width */}
+              <div className="suggestion-category always-available">
                 <h4>{t.alwaysAvailable}</h4>
                 <ul>
                   <li>{t.tests.basic_eda}</li>
