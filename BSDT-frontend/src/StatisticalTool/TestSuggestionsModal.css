@@ -1,4 +1,4 @@
-/* TestSuggestionsModal.css */
+/* TestSuggestionsModal.css - Updated */
 .suggestion-modal-overlay {
   position: fixed;
   top: 0;
@@ -137,10 +137,11 @@
   font-size: 0.95rem;
 }
 
+/* Updated grid layout for better organization */
 .suggestions-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 25px;
 }
 
 .suggestion-category {
@@ -148,14 +149,58 @@
   border-radius: 8px;
   padding: 20px;
   background-color: #f8fafc;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.suggestion-category:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Different border colors for each category */
+.suggestion-category:nth-child(1) {
+  border-top: 4px solid #3b82f6; /* Blue for mixed tests */
+}
+
+.suggestion-category:nth-child(2) {
+  border-top: 4px solid #10b981; /* Green for categorical tests */
+}
+
+.suggestion-category:nth-child(3) {
+  border-top: 4px solid #f59e0b; /* Amber for numerical tests */
+}
+
+.suggestion-category.always-available {
+  border-top: 4px solid #8b5cf6; /* Purple for always available */
+  grid-column: 1 / -1; /* Make it span full width */
 }
 
 .suggestion-category h4 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #3b82f6;
+  color: #1e293b;
   font-size: 1rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Add icons to category headers */
+.suggestion-category:nth-child(1) h4:before {
+  content: "🔀";
+}
+
+.suggestion-category:nth-child(2) h4:before {
+  content: "🏷️";
+}
+
+.suggestion-category:nth-child(3) h4:before {
+  content: "📊";
+}
+
+.suggestion-category.always-available h4:before {
+  content: "✅";
 }
 
 .suggestion-category ul {
@@ -173,8 +218,8 @@
 }
 
 .suggestion-category li:before {
-  content: "•";
-  color: #3b82f6;
+  content: "✓";
+  color: #10b981;
   position: absolute;
   left: 0;
   font-weight: bold;
@@ -203,24 +248,7 @@
   background-color: #2563eb;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .columns-summary {
-    grid-template-columns: 1fr;
-  }
-  
-  .suggestion-modal {
-    width: 95%;
-  }
-  
-  .suggestion-modal-header,
-  .suggestion-modal-content {
-    padding: 15px;
-  }
-}
-
-
-/* Add to TestSuggestionsModal.css */
+/* Loading and error states */
 .loading-state,
 .error-state {
   display: flex;
@@ -276,4 +304,34 @@
 
 .retry-btn:hover {
   background-color: #2563eb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .columns-summary {
+    grid-template-columns: 1fr;
+  }
+  
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .suggestion-category.always-available {
+    grid-column: 1;
+  }
+  
+  .suggestion-modal {
+    width: 95%;
+  }
+  
+  .suggestion-modal-header,
+  .suggestion-modal-content {
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .suggestion-modal-overlay {
+    padding: 10px;
+  }
 }
