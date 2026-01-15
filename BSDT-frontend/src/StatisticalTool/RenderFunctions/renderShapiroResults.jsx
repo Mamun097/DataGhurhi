@@ -7,6 +7,26 @@ import {
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -106,17 +126,6 @@ const fontFamilyOptions = [
 ];
 
 const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = shapiroActiveTab;
     const setActiveTab = setShapiroActiveTab;
 
@@ -124,6 +133,8 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
     const [currentPlotType, setCurrentPlotType] = React.useState('Histogram');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
+    const [translatedNumbers, setTranslatedNumbers] = React.useState({});
 
     const [histogramSettings, setHistogramSettings] = React.useState(
         getDefaultSettings('Histogram', 1, [results?.column_names?.sample || results?.column_name || 'Data'])
@@ -131,6 +142,138 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
     const [qqSettings, setQqSettings] = React.useState(
         getDefaultSettings('QQ', 1, [results?.column_names?.sample || results?.column_name || 'Data'])
     );
+
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.n_observations) numbers.add(String(results.n_observations));
+        if (results.plot_data?.sample?.count) numbers.add(String(results.plot_data.sample.count));
+        if (results.statistic !== null && results.statistic !== undefined) {
+            numbers.add(results.statistic.toFixed(4));
+        }
+        if (results.p_value !== null && results.p_value !== undefined) {
+            numbers.add(results.p_value.toFixed(6));
+        }
+        
+        // Add descriptive stats
+        if (results.descriptive_stats) {
+            if (results.descriptive_stats.mean) numbers.add(results.descriptive_stats.mean.toFixed(4));
+            if (results.descriptive_stats.std_dev) numbers.add(results.descriptive_stats.std_dev.toFixed(4));
+            if (results.descriptive_stats.skewness) numbers.add(results.descriptive_stats.skewness.toFixed(4));
+            if (results.descriptive_stats.kurtosis) numbers.add(results.descriptive_stats.kurtosis.toFixed(4));
+        }
+        
+        // Add QQ data stats
+        if (results.qq_data) {
+            if (results.qq_data.shapiro_stat) numbers.add(results.qq_data.shapiro_stat.toFixed(4));
+            if (results.qq_data.shapiro_p) numbers.add(results.qq_data.shapiro_p.toFixed(6));
+            if (results.qq_data.r_squared) numbers.add(results.qq_data.r_squared.toFixed(4));
+            if (results.qq_data.slope) numbers.add(results.qq_data.slope.toFixed(4));
+            if (results.qq_data.intercept) numbers.add(results.qq_data.intercept.toFixed(4));
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Shapiro-Wilk Normality Test',
+                'Test Statistic (W)',
+                'P-Value',
+                'Data follows normal distribution (p ≥ 0.05)',
+                'Data does not follow normal distribution (p < 0.05)',
+                'Histogram',
+                'Q-Q Plot',
+                'Observations',
+                'Mean',
+                'Std. Deviation',
+                'Skewness',
+                'Kurtosis',
+                'Save Result',
+                'Analyzed Column',
+                'Conclusion',
+                'Visualizations',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Normality Test and Statistics',
+                'Shapiro-Wilk Test',
+                'Normal Distribution',
+                'Non-normal Distribution',
+                'Q-Q Plot Statistics',
+                'Statistic',
+                'p-value',
+                'Slope',
+                'Intercept',
+                'Values',
+                'Frequency',
+                'Theoretical Quantiles',
+                'Sample Quantiles',
+                'Q-Q Points',
+                'Theoretical Line'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
 
     React.useEffect(() => {
         if (results?.column_names?.sample || results?.column_name) {
@@ -171,7 +314,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -207,7 +350,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -215,7 +358,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -239,30 +382,30 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
     };
 
     const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (W)' : 'Test Statistic (W)',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        normal: language === 'বাংলা' ? 'ডেটা স্বাভাবিক বন্টন অনুসরণ করে (p ≥ 0.05)' : 'Data follows normal distribution (p ≥ 0.05)',
-        notNormal: language === 'বাংলা' ? 'ডেটা স্বাভাবিক বন্টন অনুসরণ করে না (p < 0.05)' : 'Data does not follow normal distribution (p < 0.05)',
-        shapiroTitle: language === 'বাংলা' ? 'শ্যাপিরো-উইল্ক স্বাভাবিকতা পরীক্ষা' : 'Shapiro-Wilk Normality Test',
-        histogram: language === 'বাংলা' ? 'হিস্টোগ্রাম' : 'Histogram',
-        qqPlot: language === 'বাংলা' ? 'কিউ-কিউ প্লট' : 'Q-Q Plot',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations',
-        mean: language === 'বাংলা' ? 'গড়' : 'Mean',
-        stdDev: language === 'বাংলা' ? 'মানক বিচ্যুতি' : 'Std. Deviation',
-        skewness: language === 'বাংলা' ? 'বঙ্কিমতা' : 'Skewness',
-        kurtosis: language === 'বাংলা' ? 'কুরটোসিস' : 'Kurtosis'
+        testStatistic: getLabel('Test Statistic (W)'),
+        pValue: getLabel('P-Value'),
+        normal: getLabel('Data follows normal distribution (p ≥ 0.05)'),
+        notNormal: getLabel('Data does not follow normal distribution (p < 0.05)'),
+        shapiroTitle: getLabel('Shapiro-Wilk Normality Test'),
+        histogram: getLabel('Histogram'),
+        qqPlot: getLabel('Q-Q Plot'),
+        observations: getLabel('Observations'),
+        mean: getLabel('Mean'),
+        stdDev: getLabel('Std. Deviation'),
+        skewness: getLabel('Skewness'),
+        kurtosis: getLabel('Kurtosis')
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -278,7 +421,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(4) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(4)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -393,21 +536,21 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -477,7 +620,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
                                     fontSize: settings.yAxisTickSize,
-                                    formatter: (value) => value > 0 ? value : ''
+                                    formatter: (value) => value > 0 ? mapDigit(value) : ''
                                 } : false}
                             >
                                 {histogramData.map((entry, index) => (
@@ -555,21 +698,21 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -646,7 +789,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             {/* Scatter Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Q-Q Points"
+                                    name={getLabel('Q-Q Points')}
                                     data={qqPlotData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
@@ -668,7 +811,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                             {/* Reference Line */}
                             {settings.showReferenceLine && linePoints.length > 0 && (
                                 <Line
-                                    name="Theoretical Line"
+                                    name={getLabel('Theoretical Line')}
                                     dataKey="y"
                                     data={linePoints}
                                     stroke={settings.referenceLineColor || '#ef4444'}
@@ -703,31 +846,31 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                 {settings.showCriticalValues && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'স্বাভাবিকতা পরীক্ষা এবং পরিসংখ্যান' : 'Normality Test and Statistics'}
+                            {getLabel('Normality Test and Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'শাপিরো-উইল্ক পরীক্ষা' : 'Shapiro-Wilk Test'}
+                                    {getLabel('Shapiro-Wilk Test')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    <div>Statistic: {qqData.shapiro_stat?.toFixed(4)}</div>
-                                    <div>p-value: {qqData.shapiro_p?.toFixed(6)}</div>
+                                    <div>{getLabel('Statistic')}: {mapDigit(qqData.shapiro_stat?.toFixed(4))}</div>
+                                    <div>{getLabel('p-value')}: {mapDigit(qqData.shapiro_p?.toFixed(6))}</div>
                                     <div style={{ fontWeight: 'bold', color: qqData.shapiro_p > 0.05 ? '#059669' : '#dc2626' }}>
                                         {qqData.shapiro_p > 0.05 ? 
-                                            (language === 'বাংলা' ? 'স্বাভাবিক বন্টন' : 'Normal Distribution') : 
-                                            (language === 'বাংলা' ? 'অস্বাভাবিক বন্টন' : 'Non-normal Distribution')}
+                                            getLabel('Normal Distribution') : 
+                                            getLabel('Non-normal Distribution')}
                                     </div>
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'কিউ-কিউ প্লট পরিসংখ্যান' : 'Q-Q Plot Statistics'}
+                                    {getLabel('Q-Q Plot Statistics')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    <div>R²: {qqData.r_squared?.toFixed(4)}</div>
-                                    <div>Slope: {qqData.slope?.toFixed(4)}</div>
-                                    <div>Intercept: {qqData.intercept?.toFixed(4)}</div>
+                                    <div>R²: {mapDigit(qqData.r_squared?.toFixed(4))}</div>
+                                    <div>{getLabel('Slope')}: {mapDigit(qqData.slope?.toFixed(4))}</div>
+                                    <div>{getLabel('Intercept')}: {mapDigit(qqData.intercept?.toFixed(4))}</div>
                                 </div>
                             </div>
                         </div>
@@ -747,7 +890,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -755,53 +898,53 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column'}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Column')}</td>
                             <td className="stats-table-value">{results.column_names?.sample || results.column_name || columns?.[0] || 'Data'}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.observations}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_observations || results.plot_data?.sample?.count)}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.n_observations || results.plot_data?.sample?.count)}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.testStatistic}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic?.toFixed(4))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.statistic?.toFixed(4))}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.pValue}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value?.toFixed(6))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.p_value?.toFixed(6))}</td>
                         </tr>
                         {results.descriptive_stats?.mean && (
                             <tr>
                                 <td className="stats-table-label">{t.mean}</td>
-                                <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.mean.toFixed(4))}</td>
+                                <td className="stats-table-value stats-numeric">{mapDigit(results.descriptive_stats.mean.toFixed(4))}</td>
                             </tr>
                         )}
                         {results.descriptive_stats?.std_dev && (
                             <tr>
                                 <td className="stats-table-label">{t.stdDev}</td>
-                                <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.std_dev.toFixed(4))}</td>
+                                <td className="stats-table-value stats-numeric">{mapDigit(results.descriptive_stats.std_dev.toFixed(4))}</td>
                             </tr>
                         )}
                         {results.descriptive_stats?.skewness && (
                             <tr>
                                 <td className="stats-table-label">{t.skewness}</td>
-                                <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.skewness.toFixed(4))}</td>
+                                <td className="stats-table-value stats-numeric">{mapDigit(results.descriptive_stats.skewness.toFixed(4))}</td>
                             </tr>
                         )}
                         {results.descriptive_stats?.kurtosis && (
                             <tr>
                                 <td className="stats-table-label">{t.kurtosis}</td>
-                                <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.kurtosis.toFixed(4))}</td>
+                                <td className="stats-table-value stats-numeric">{mapDigit(results.descriptive_stats.kurtosis.toFixed(4))}</td>
                             </tr>
                         )}
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value >= 0.05 ? (
@@ -827,7 +970,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
                     <button className={`stats-tab ${activeTab === 'histogram' ? 'active' : ''}`} onClick={() => setActiveTab('histogram')}>{t.histogram}</button>
@@ -855,7 +998,7 @@ const renderShapiroResults = (shapiroActiveTab, setShapiroActiveTab, results, la
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

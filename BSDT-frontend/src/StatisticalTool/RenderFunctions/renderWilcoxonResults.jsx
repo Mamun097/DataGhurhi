@@ -7,7 +7,26 @@ import {
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -101,7 +120,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     return baseSettings;
 };
 
-
 const fontFamilyOptions = [
     { value: 'Times New Roman', label: 'Times New Roman' },
     { value: 'Arial', label: 'Arial' },
@@ -115,17 +133,6 @@ const fontFamilyOptions = [
 ];
 
 const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = wilcoxonActiveTab;
     const setActiveTab = setWilcoxonActiveTab;
 
@@ -133,6 +140,8 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
     const [currentPlotType, setCurrentPlotType] = React.useState('Histogram');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
+    const [translatedNumbers, setTranslatedNumbers] = React.useState({});
 
     const [histogramSettings, setHistogramSettings] = React.useState(
         getDefaultSettings('Histogram', 1, ['Differences'])
@@ -146,6 +155,170 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
     const [boxSettings, setBoxSettings] = React.useState(
         getDefaultSettings('Box', 1, ['Differences'])
     );
+
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.total_pairs) numbers.add(String(results.total_pairs));
+        if (results.statistic !== null && results.statistic !== undefined) {
+            numbers.add(results.statistic.toFixed(4));
+        }
+        if (results.p_value !== null && results.p_value !== undefined) {
+            numbers.add(results.p_value.toFixed(6));
+        }
+        
+        // Add critical values
+        if (results.critical_values) {
+            if (results.critical_values.lower) numbers.add(results.critical_values.lower.toFixed(4));
+            if (results.critical_values.mean_difference) numbers.add(results.critical_values.mean_difference.toFixed(4));
+            if (results.critical_values.upper) numbers.add(results.critical_values.upper.toFixed(4));
+        }
+        
+        // Add regression data
+        if (results.plot_data?.regression) {
+            if (results.plot_data.regression.r_squared) numbers.add(results.plot_data.regression.r_squared.toFixed(4));
+            if (results.plot_data.regression.slope) numbers.add(results.plot_data.regression.slope.toFixed(4));
+            if (results.plot_data.regression.intercept) numbers.add(results.plot_data.regression.intercept.toFixed(4));
+        }
+        
+        // Add QQ data
+        if (results.qq_data) {
+            if (results.qq_data.shapiro_stat) numbers.add(results.qq_data.shapiro_stat.toFixed(4));
+            if (results.qq_data.shapiro_p) numbers.add(results.qq_data.shapiro_p.toFixed(6));
+            if (results.qq_data.r_squared) numbers.add(results.qq_data.r_squared.toFixed(4));
+            if (results.qq_data.slope) numbers.add(results.qq_data.slope.toFixed(4));
+            if (results.qq_data.intercept) numbers.add(results.qq_data.intercept.toFixed(4));
+        }
+        
+        // Add box plot statistics
+        if (results.plot_data?.differences) {
+            const diff = results.plot_data.differences;
+            if (diff.min) numbers.add(String(diff.min));
+            if (diff.q25) numbers.add(String(diff.q25));
+            if (diff.median) numbers.add(String(diff.median));
+            if (diff.q75) numbers.add(String(diff.q75));
+            if (diff.max) numbers.add(String(diff.max));
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Wilcoxon Signed-Rank Test',
+                'Test Statistic (W)',
+                'P-Value',
+                'Significant difference found (p < 0.05)',
+                'No significant difference (p ≥ 0.05)',
+                'Total Pairs',
+                'Histogram of Differences',
+                'Scatter Plot',
+                'Q-Q Plot',
+                'Box Plot of Differences',
+                'Differences',
+                'Frequency',
+                'Save Result',
+                'Analyzed Columns',
+                'and',
+                'Conclusion',
+                'Visualizations',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Critical Values',
+                'Lower Bound',
+                'Mean Difference',
+                'Upper Bound',
+                'Regression R²',
+                'Normality Test and Statistics',
+                'Shapiro-Wilk Test',
+                'Normal Distribution',
+                'Non-normal Distribution',
+                'Q-Q Plot Statistics',
+                'Statistic',
+                'p-value',
+                'Slope',
+                'Intercept',
+                'Difference Confidence Interval',
+                'Lower:',
+                'Mean:',
+                'Upper:',
+                'Box Plot Statistics',
+                'Max',
+                'Q3 (75%)',
+                'Median',
+                'Q1 (25%)',
+                'Min',
+                'Data Points',
+                'Regression Line',
+                'Reference Line (y=x)',
+                'Q-Q Points',
+                'Theoretical Line',
+                'Theoretical Quantiles',
+                'Sample Quantiles'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
 
     React.useEffect(() => {
         if (results.plot_data) {
@@ -188,7 +361,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -224,7 +397,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -232,7 +405,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -256,30 +429,30 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
     };
 
     const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (W)' : 'Test Statistic (W)',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference (p ≥ 0.05)',
-        wilcoxonTitle: language === 'বাংলা' ? 'উইলকক্সন সাইনড র‍্যাঙ্ক টেস্ট' : 'Wilcoxon Signed-Rank Test',
-        totalPairs: language === 'বাংলা' ? 'মোট জোড়া' : 'Total Pairs',
-        histogram: language === 'বাংলা' ? 'পার্থক্যের হিস্টোগ্রাম' : 'Histogram of Differences',
-        scatterPlot: language === 'বাংলা' ? 'বনাম স্ক্যাটার প্লট' : 'Scatter Plot',
-        qqPlot: language === 'বাংলা' ? 'কিউ-কিউ প্লট' : 'Q-Q Plot',
-        boxPlot: language === 'বাংলা' ? 'পার্থক্যের বক্স প্লট' : 'Box Plot of Differences',
-        differences: language === 'বাংলা' ? 'পার্থক্য' : 'Differences',
-        frequency: language === 'বাংলা' ? 'ফ্রিকোয়েন্সি' : 'Frequency'
+        testStatistic: getLabel('Test Statistic (W)'),
+        pValue: getLabel('P-Value'),
+        significant: getLabel('Significant difference found (p < 0.05)'),
+        notSignificant: getLabel('No significant difference (p ≥ 0.05)'),
+        wilcoxonTitle: getLabel('Wilcoxon Signed-Rank Test'),
+        totalPairs: getLabel('Total Pairs'),
+        histogram: getLabel('Histogram of Differences'),
+        scatterPlot: getLabel('Scatter Plot'),
+        qqPlot: getLabel('Q-Q Plot'),
+        boxPlot: getLabel('Box Plot of Differences'),
+        differences: getLabel('Differences'),
+        frequency: getLabel('Frequency')
     };
 
     const plotData = results.plot_data || {};
@@ -304,7 +477,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -388,21 +561,21 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -472,7 +645,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
                                     fontSize: settings.yAxisTickSize,
-                                    formatter: (value) => value > 0 ? value : '' // Only show label if frequency > 0
+                                    formatter: (value) => value > 0 ? mapDigit(value) : ''
                                 } : false}
                             >
                                 {histogramData.map((entry, index) => (
@@ -554,21 +727,21 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -600,8 +773,6 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 type="number"
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
-
-
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -613,7 +784,6 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                     },
                                     dx: settings.xAxisTitleOffset
                                 }}
-
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
@@ -653,7 +823,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* FIX: Scatter Points with CUSTOM SHAPE - Like Anderson-Darling */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Data Points"
+                                    name={getLabel('Data Points')}
                                     data={scatterData}
                                     fill={settings.scatterColor || settings.categoryColors[0]}
                                     fillOpacity={settings.scatterOpacity}
@@ -675,7 +845,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* Regression Line */}
                             {settings.showRegressionLines && (
                                 <Line
-                                    name="Regression Line"
+                                    name={getLabel('Regression Line')}
                                     type="linear"
                                     dataKey="y"
                                     data={regressionLine}
@@ -689,7 +859,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* Reference Line (y = x) */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Reference Line (y=x)"
+                                    name={getLabel('Reference Line (y=x)')}
                                     type="linear"
                                     dataKey="y"
                                     data={referenceLine}
@@ -724,41 +894,41 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 {settings.showCriticalValues && results.critical_values && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Values'}
+                            {getLabel('Critical Values')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'নিম্ন সীমা' : 'Lower Bound'}
+                                    {getLabel('Lower Bound')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.lower?.toFixed(4)}
+                                    {mapDigit(results.critical_values.lower?.toFixed(4))}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'গড় পার্থক্য' : 'Mean Difference'}
+                                    {getLabel('Mean Difference')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.mean_difference?.toFixed(4)}
+                                    {mapDigit(results.critical_values.mean_difference?.toFixed(4))}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'উচ্চ সীমা' : 'Upper Bound'}
+                                    {getLabel('Upper Bound')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.upper?.toFixed(4)}
+                                    {mapDigit(results.critical_values.upper?.toFixed(4))}
                                 </div>
                             </div>
                         </div>
                         {regressionData.r_squared && (
                             <div style={{ marginTop: '12px', padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'রিগ্রেশন R²' : 'Regression R²'}
+                                    {getLabel('Regression R²')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {regressionData.r_squared.toFixed(4)}
+                                    {mapDigit(regressionData.r_squared.toFixed(4))}
                                 </div>
                             </div>
                         )}
@@ -810,21 +980,21 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -857,7 +1027,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
-                                    value: 'Theoretical Quantiles',
+                                    value: getLabel('Theoretical Quantiles'),
                                     position: 'insideBottom',
                                     offset: settings.legendPosition === 'bottom' ? settings.xAxisBottomMargin - 10 : settings.xAxisBottomMargin,
                                     style: {
@@ -876,7 +1046,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
-                                    value: 'Sample Quantiles',
+                                    value: getLabel('Sample Quantiles'),
                                     angle: -90,
                                     position: 'insideLeft',
                                     offset: settings.yAxisLeftMargin,
@@ -906,7 +1076,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* FIX: Scatter Points with CUSTOM SHAPE */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Q-Q Points"
+                                    name={getLabel('Q-Q Points')}
                                     data={qqPlotData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
@@ -928,7 +1098,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             {/* FIX: Reference Line */}
                             {settings.showReferenceLine && linePoints.length > 0 && (
                                 <Line
-                                    name="Theoretical Line"
+                                    name={getLabel('Theoretical Line')}
                                     dataKey="y"
                                     data={linePoints}
                                     stroke={settings.referenceLineColor || '#ef4444'}
@@ -963,42 +1133,42 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 {settings.showCriticalValues && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'স্বাভাবিকতা পরীক্ষা এবং পরিসংখ্যান' : 'Normality Test and Statistics'}
+                            {getLabel('Normality Test and Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'শাপিরো-উইল্ক পরীক্ষা' : 'Shapiro-Wilk Test'}
+                                    {getLabel('Shapiro-Wilk Test')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    <div>Statistic: {qqData.shapiro_stat?.toFixed(4)}</div>
-                                    <div>p-value: {qqData.shapiro_p?.toFixed(6)}</div>
+                                    <div>{getLabel('Statistic')}: {mapDigit(qqData.shapiro_stat?.toFixed(4))}</div>
+                                    <div>{getLabel('p-value')}: {mapDigit(qqData.shapiro_p?.toFixed(6))}</div>
                                     <div style={{ fontWeight: 'bold', color: qqData.shapiro_p > 0.05 ? '#059669' : '#dc2626' }}>
                                         {qqData.shapiro_p > 0.05 ? 
-                                            (language === 'বাংলা' ? 'স্বাভাবিক বন্টন' : 'Normal Distribution') : 
-                                            (language === 'বাংলা' ? 'অস্বাভাবিক বন্টন' : 'Non-normal Distribution')}
+                                            getLabel('Normal Distribution') : 
+                                            getLabel('Non-normal Distribution')}
                                     </div>
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'কিউ-কিউ প্লট পরিসংখ্যান' : 'Q-Q Plot Statistics'}
+                                    {getLabel('Q-Q Plot Statistics')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                    <div>R²: {qqData.r_squared?.toFixed(4)}</div>
-                                    <div>Slope: {qqData.slope?.toFixed(4)}</div>
-                                    <div>Intercept: {qqData.intercept?.toFixed(4)}</div>
+                                    <div>R²: {mapDigit(qqData.r_squared?.toFixed(4))}</div>
+                                    <div>{getLabel('Slope')}: {mapDigit(qqData.slope?.toFixed(4))}</div>
+                                    <div>{getLabel('Intercept')}: {mapDigit(qqData.intercept?.toFixed(4))}</div>
                                 </div>
                             </div>
                             {results.critical_values && (
                                 <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                        {language === 'বাংলা' ? 'পার্থক্যের আস্থার ব্যবধান' : 'Difference Confidence Interval'}
+                                        {getLabel('Difference Confidence Interval')}
                                     </div>
                                     <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                        <div>{language === 'বাংলা' ? 'নিম্ন:' : 'Lower:'} {results.critical_values.lower?.toFixed(4)}</div>
-                                        <div>{language === 'বাংলা' ? 'গড়:' : 'Mean:'} {results.critical_values.mean_difference?.toFixed(4)}</div>
-                                        <div>{language === 'বাংলা' ? 'উচ্চ:' : 'Upper:'} {results.critical_values.upper?.toFixed(4)}</div>
+                                        <div>{getLabel('Lower:')}: {mapDigit(results.critical_values.lower?.toFixed(4))}</div>
+                                        <div>{getLabel('Mean:')}: {mapDigit(results.critical_values.mean_difference?.toFixed(4))}</div>
+                                        <div>{getLabel('Upper:')}: {mapDigit(results.critical_values.upper?.toFixed(4))}</div>
                                     </div>
                                 </div>
                             )}
@@ -1015,7 +1185,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         
         const differences = plotData.differences || {};
         const boxData = [{
-            name: 'Differences',
+            name: getLabel('Differences'),
             min: differences.min || 0,
             q25: differences.q25 || 0,
             median: differences.median || 0,
@@ -1091,21 +1261,21 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -1191,18 +1361,18 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                            {getLabel('Box Plot Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {boxData.map((group, idx) => (
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>Max: {group.max}</div>
-                                        <div>Q3 (75%): {group.q75}</div>
-                                        <div>Median: {group.median}</div>
-                                        <div>Q1 (25%): {group.q25}</div>
-                                        <div>Min: {group.min}</div>
+                                        <div>{getLabel('Max')}: {mapDigit(group.max)}</div>
+                                        <div>{getLabel('Q3 (75%)')}: {mapDigit(group.q75)}</div>
+                                        <div>{getLabel('Median')}: {mapDigit(group.median)}</div>
+                                        <div>{getLabel('Q1 (25%)')}: {mapDigit(group.q25)}</div>
+                                        <div>{getLabel('Min')}: {mapDigit(group.min)}</div>
                                     </div>
                                 </div>
                             ))}
@@ -1213,8 +1383,6 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         );
     };
 
-
-    
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
@@ -1225,7 +1393,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -1233,29 +1401,29 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{sample1Column} {language === 'বাংলা' ? 'এবং' : 'and'} {sample2Column}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
+                            <td className="stats-table-value">{sample1Column} {getLabel('and')} {sample2Column}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.totalPairs}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_pairs)}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.total_pairs)}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.testStatistic}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic.toFixed(4))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.statistic.toFixed(4))}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.pValue}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value.toFixed(6))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.p_value.toFixed(6))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value < 0.05 ? (
@@ -1281,7 +1449,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
                     <button className={`stats-tab ${activeTab === 'histogram' ? 'active' : ''}`} onClick={() => setActiveTab('histogram')}>{t.histogram}</button>
@@ -1323,7 +1491,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import MosaicPlot from './plots/MosaicPlot';
@@ -18,6 +19,25 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import './CramerVResults.css';
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
 const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, language) => {
     const blockRefs = useRef({});
     const activeTab = cramerVActiveTab;
@@ -28,9 +48,88 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
     const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
 
     const categoryNames = results.variables || [];
     const categoryCount = categoryNames.length;
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                "Cramer's V Association Analysis",
+                'Description',
+                'Value',
+                'Variables',
+                'Number of Variables',
+                'Total Comparisons',
+                'Strong Associations',
+                'Total Observations',
+                'Effect Size Distribution',
+                'Insight',
+                'Detailed Analysis & Visualizations',
+                'Detailed Result',
+                'Heatmap',
+                'Mosaic Plot',
+                'Grouped Bar',
+                'Stacked Bar',
+                'Variable Statistics',
+                'Download All',
+                'Categories:',
+                'Observations:',
+                'Missing:',
+                'Entropy:',
+                'Distribution:',
+                'Pairwise Associations',
+                "Detailed Cramer's V association analysis for each variable pair",
+                'Reference Variable',
+                "Testing association strength with other variables • Cramer's V ranges from 0 (no association) to 1 (perfect association)",
+                'Strong',
+                'Weak',
+                'Total comparisons',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                "No strong associations found (Cramer's V < 0.3). All variables are weakly related.",
+                "indicating strong interdependencies.",
+                "show strong associations (Cramer's V ≥ 0.3), suggesting selective dependencies.",
+                'All',
+                'variable pairs show strong associations',
+                'out of',
+                'variable pairs',
+                'Negligible',
+                'V ≥ 0.5',
+                'Large association',
+                '0.3 ≤ V < 0.5',
+                'Medium association',
+                '0.1 ≤ V < 0.3',
+                'Small association',
+                'V < 0.1',
+                'Negligible association',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -41,7 +140,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'bn' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -77,7 +176,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'bn' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -328,10 +427,9 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
     };
 
     if (!results) {
-        return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        return <p>{getLabel('Loading results...')}</p>;
     }
 
-    const t = (en, bn) => (language === 'bn' ? bn : en);
     const fmt = (v, digits = 4) => formatValue(v, digits, language);
     const mapDigit = (text) => mapDigitIfBengali(text, language);
 
@@ -350,7 +448,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
     const getInsightMessage = () => {
         const strongPercentage = totalComparisons > 0 ? (strongAssociations / totalComparisons * 100).toFixed(1) : 0;
 
-        if (language === 'bn') {
+        if (language === 'bn' || language === 'বাংলা') {
             if (strongAssociations === 0) {
                 return 'কোনো শক্তিশালী সম্পর্ক পাওয়া যায়নি (ক্রেমারস ভি < ০.৩)। সমস্ত ভেরিয়েবল দুর্বলভাবে সম্পর্কিত।';
             } else if (strongAssociations === totalComparisons) {
@@ -360,18 +458,18 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
             }
         } else {
             if (strongAssociations === 0) {
-                return 'No strong associations found (Cramer\'s V < 0.3). All variables are weakly related.';
+                return getLabel("No strong associations found (Cramer's V < 0.3). All variables are weakly related.");
             } else if (strongAssociations === totalComparisons) {
-                return `All ${totalComparisons} variable pairs show strong associations (Cramer's V ≥ 0.3), indicating strong interdependencies.`;
+                return `${getLabel('All')} ${totalComparisons} ${getLabel('variable pairs show strong associations')} (Cramer's V ≥ 0.3), ${getLabel('indicating strong interdependencies.')}`;
             } else {
-                return `${strongAssociations} out of ${totalComparisons} variable pairs (${strongPercentage}%) show strong associations (Cramer's V ≥ 0.3), suggesting selective dependencies.`;
+                return `${strongAssociations} ${getLabel('out of')} ${totalComparisons} ${getLabel('variable pairs')} (${strongPercentage}%) ${getLabel("show strong associations (Cramer's V ≥ 0.3), suggesting selective dependencies.")}`;
             }
         }
     };
 
     // Effect size interpretation guide
     const getEffectSizeGuide = () => {
-        if (language === 'bn') {
+        if (language === 'bn' || language === 'বাংলা') {
             return [
                 { range: 'V ≥ ০.৫', label: 'বড় সম্পর্ক', color: '#dc2626', key: 'Large' },
                 { range: '০.৩ ≤ V < ০.৫', label: 'মধ্যম সম্পর্ক', color: '#f59e0b', key: 'Medium' },
@@ -380,10 +478,10 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
             ];
         } else {
             return [
-                { range: 'V ≥ 0.5', label: 'Large association', color: '#dc2626', key: 'Large' },
-                { range: '0.3 ≤ V < 0.5', label: 'Medium association', color: '#f59e0b', key: 'Medium' },
-                { range: '0.1 ≤ V < 0.3', label: 'Small association', color: '#10b981', key: 'Small' },
-                { range: 'V < 0.1', label: 'Negligible association', color: '#6b7280', key: 'Negligible' }
+                { range: getLabel('V ≥ 0.5'), label: getLabel('Large association'), color: '#dc2626', key: 'Large' },
+                { range: getLabel('0.3 ≤ V < 0.5'), label: getLabel('Medium association'), color: '#f59e0b', key: 'Medium' },
+                { range: getLabel('0.1 ≤ V < 0.3'), label: getLabel('Small association'), color: '#10b981', key: 'Small' },
+                { range: getLabel('V < 0.1'), label: getLabel('Negligible association'), color: '#6b7280', key: 'Negligible' }
             ];
         }
     };
@@ -432,7 +530,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
     return (
         <>
             <h2 className="cramer-v-title">
-                {t("Cramer's V Association Analysis", "ক্রেমার'স ভি সম্পর্ক বিশ্লেষণ")}
+                {getLabel("Cramer's V Association Analysis")}
             </h2>
 
             {/* Summary Statistics Table */}
@@ -440,13 +538,13 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{t('Description', 'বিবরণ')}</th>
-                            <th>{t('Value', 'মান')}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t('Variables', 'ভেরিয়েবলসমূহ')}</td>
+                            <td className="stats-table-label">{getLabel('Variables')}</td>
                             <td className="stats-table-value">
                                 {results.variables && results.variables.map((v, i) => (
                                     <span key={i}>
@@ -457,25 +555,25 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Number of Variables', 'ভেরিয়েবলের সংখ্যা')}</td>
+                            <td className="stats-table-label">{getLabel('Number of Variables')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.n_variables || 0)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Comparisons', 'মোট তুলনা')}</td>
+                            <td className="stats-table-label">{getLabel('Total Comparisons')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalComparisons)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Strong Associations', 'শক্তিশালী সম্পর্ক')}</td>
+                            <td className="stats-table-label">{getLabel('Strong Associations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(strongAssociations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Observations', 'মোট পর্যবেক্ষণ')}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.metadata?.total_observations || 0)}</td>
                         </tr>
                         
                         {/* Effect Size Distribution */}
                         <tr>
-                            <td className="stats-table-label">{t('Effect Size Distribution', 'সম্পর্কের মাত্রা বন্টন')}</td>
+                            <td className="stats-table-label">{getLabel('Effect Size Distribution')}</td>
                             <td className="stats-table-value">
                                 <div className="effect-size-distribution">
                                     {getEffectSizeGuide().map((effect, idx) => (
@@ -495,7 +593,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                         </tr>
 
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{t('Insight', 'অন্তর্দৃষ্টি')}</td>
+                            <td className="stats-table-label">{getLabel('Insight')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {strongAssociations > 0 ? (
@@ -523,7 +621,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
             {/* Tabbed Section */}
             <div className="stats-viz-section">
                 <h3 className="stats-viz-header">
-                    {t('Detailed Analysis & Visualizations', 'বিস্তারিত বিশ্লেষণ এবং ভিজ্যুয়ালাইজেশন')}
+                    {getLabel('Detailed Analysis & Visualizations')}
                 </h3>
 
                 {/* Tab Navigation */}
@@ -547,31 +645,31 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
                         onClick={() => setActiveTab('detailed')}
                     >
-                        {t('Detailed Result', 'বিস্তারিত বিশ্লেষণ')}
+                        {getLabel('Detailed Result')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'heatmap' ? 'active' : ''}`}
                         onClick={() => setActiveTab('heatmap')}
                     >
-                        {t('Heatmap', 'হিটম্যাপ')}
+                        {getLabel('Heatmap')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('mosaic')}
                     >
-                        {t('Mosaic Plot', 'মোজাইক প্লট')}
+                        {getLabel('Mosaic Plot')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
-                        {t('Grouped Bar', 'গ্রুপড বার')}
+                        {getLabel('Grouped Bar')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'stacked' ? 'active' : ''}`}
                         onClick={() => setActiveTab('stacked')}
                     >
-                        {t('Stacked Bar', 'স্ট্যাকড বার')}
+                        {getLabel('Stacked Bar')}
                     </button>
                 </div>
 
@@ -592,7 +690,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                             marginBottom: '0',
                                             borderBottom: 'none'
                                         }}>
-                                            {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
+                                            {getLabel('Variable Statistics')}
                                         </h4>
                                         <button
                                             className="customize-btn"
@@ -601,7 +699,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -620,25 +718,25 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
 
                                             <div className="variable-stat-content">
                                                 <div className="stat-row">
-                                                    <span>{t('Categories:', 'শ্রেণীর সংখ্যা:')}</span>
+                                                    <span>{getLabel('Categories:')}</span>
                                                     <span className="stat-value categories">
                                                         {mapDigit(varStat.n_categories)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Observations:', 'পর্যবেক্ষণ:')}</span>
+                                                    <span>{getLabel('Observations:')}</span>
                                                     <span className="stat-value observations">
                                                         {mapDigit(varStat.n_observations)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Missing:', 'অনুপস্থিত:')}</span>
+                                                    <span>{getLabel('Missing:')}</span>
                                                     <span className="stat-value missing">
                                                         {mapDigit(varStat.n_missing)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Entropy:', 'এনট্রপি:')}</span>
+                                                    <span>{getLabel('Entropy:')}</span>
                                                     <span className="stat-value entropy">
                                                         {fmt(varStat.entropy)}
                                                     </span>
@@ -646,7 +744,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
 
                                                 <div className="distribution-section">
                                                     <p className="distribution-title">
-                                                        {t('Distribution:', 'বিতরণ:')}
+                                                        {getLabel('Distribution:')}
                                                     </p>
                                                     <div className="distribution-list">
                                                         {varStat.categories.map((cat, catIdx) => (
@@ -679,11 +777,10 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                 marginBottom: '0',
                                                 borderBottom: 'none'
                                             }}>
-                                                {t('Pairwise Associations', 'জোড়াভিত্তিক সম্পর্ক')}
+                                                {getLabel('Pairwise Associations')}
                                             </h4>
                                             <p className="section-description">
-                                                {t('Detailed Cramer\'s V association analysis for each variable pair',
-                                                    'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত ক্রেমারস ভি সম্পর্ক বিশ্লেষণ')}
+                                                {getLabel("Detailed Cramer's V association analysis for each variable pair")}
                                             </p>
                                         </div>
                                         <button
@@ -693,7 +790,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -728,7 +825,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                                 {mapDigit(block.anchor)}
                                                             </h3>
                                                             <p className="block-subtitle">
-                                                                {t('Reference Variable', 'রেফারেন্স ভেরিয়েবল')}
+                                                                {getLabel('Reference Variable')}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -808,8 +905,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                                         </svg>
-                                                        {t('Testing association strength with other variables • Cramer\'s V ranges from 0 (no association) to 1 (perfect association)',
-                                                            'অন্যান্য ভেরিয়েবলের সাথে সম্পর্কের মাত্রা পরীক্ষা • ক্রেমারস ভি ০ (কোন সম্পর্ক নেই) থেকে ১ (পূর্ণ সম্পর্ক) পর্যন্ত')}
+                                                        {getLabel("Testing association strength with other variables • Cramer's V ranges from 0 (no association) to 1 (perfect association)")}
                                                     </p>
                                                 </div>
                                             </div>
@@ -841,7 +937,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                                     </td>
                                                                     <td>
                                                                         <div className={`badge effect-size-${row.effect_size?.toLowerCase() || 'negligible'}`}>
-                                                                            {row.effect_size || t('Negligible', 'নগণ্য')}
+                                                                            {row.effect_size || getLabel('Negligible')}
                                                                         </div>
                                                                     </td>
                                                                     <td>
@@ -876,7 +972,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                     <div className="block-stat-item">
                                                         <div className="status-dot significant"></div>
                                                         <span>
-                                                            {t('Strong', 'শক্তিশালী')}: <strong>
+                                                            {getLabel('Strong')}: <strong>
                                                                 {mapDigit(block.results.filter(r => (r.cramers_v || 0) >= 0.3).length)}
                                                             </strong>
                                                         </span>
@@ -884,14 +980,14 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                                                     <div className="block-stat-item">
                                                         <div className="status-dot"></div>
                                                         <span>
-                                                            {t('Weak', 'দুর্বল')}: <strong>
+                                                            {getLabel('Weak')}: <strong>
                                                                 {mapDigit(block.results.filter(r => (r.cramers_v || 0) < 0.3).length)}
                                                             </strong>
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div className="block-total">
-                                                    {t('Total comparisons', 'মোট তুলনা')}: {mapDigit(block.results.length)}
+                                                    {getLabel('Total comparisons')}: {mapDigit(block.results.length)}
                                                 </div>
                                             </div>
                                         </div>
@@ -992,7 +1088,7 @@ const renderCramerVResults = (cramerVActiveTab, setCramerVActiveTab, results, la
                         heatmapSettings
                     }
                     onSettingsChange={setCurrentSettings}
-                    language={language === 'bn' ? 'বাংলা' : 'English'}
+                    language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                     fontFamilyOptions={fontFamilyOptions}
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :

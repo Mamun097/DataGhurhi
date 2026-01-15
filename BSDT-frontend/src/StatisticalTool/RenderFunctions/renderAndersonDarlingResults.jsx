@@ -3,6 +3,26 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Responsive
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -80,7 +100,7 @@ const fontFamilyOptions = [
 const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -96,10 +116,73 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
     const [currentPlotType, setCurrentPlotType] = React.useState('QQ');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
 
     const [qqSettings, setQqSettings] = React.useState(
         getDefaultSettings('QQ', 1, [])
     );
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Anderson-Darling Test',
+                'Q-Q Plot',
+                'Descriptive Statistics',
+                'Critical Values Table',
+                'Description',
+                'Value',
+                'Analyzed Column',
+                'Sample Size',
+                'Test Statistic (A²)',
+                'Critical Value',
+                'Significance Level',
+                'Interpretation',
+                'Normal Distribution',
+                'Not Normal Distribution',
+                'Statistic',
+                'Mean',
+                'Standard Deviation',
+                'Median',
+                'Minimum Value',
+                'Maximum Value',
+                'Significance Level (%)',
+                'Visualizations',
+                'Q-Q Plot Explanation',
+                'Q-Q plot tests data normality. If points closely follow the line, data follows normal distribution.',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Save Result',
+                'Data Point',
+                'Theoretical Line',
+                'Q-Q Points',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -123,7 +206,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -159,7 +242,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
     
@@ -168,7 +251,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -192,34 +275,15 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (A²)' : 'Test Statistic (A²)',
-        criticalValue: language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Value',
-        significanceLevel: language === 'বাংলা' ? 'গুরুত্বপূর্ণ স্তর' : 'Significance Level',
-        interpretation: language === 'বাংলা' ? 'ব্যাখ্যা' : 'Interpretation',
-        normalDistribution: language === 'বাংলা' ? 'স্বাভাবিক বণ্টন' : 'Normal Distribution',
-        notNormalDistribution: language === 'বাংলা' ? 'স্বাভাবিক বণ্টন নয়' : 'Not Normal Distribution',
-        andersonTitle: language === 'বাংলা' ? 'অ্যান্ডারসন-ডার্লিং পরীক্ষা' : 'Anderson-Darling Test',
-        qqPlot: language === 'বাংলা' ? 'কিউ-কিউ প্লট' : 'Q-Q Plot',
-        descriptiveStats: language === 'বাংলা' ? 'বর্ণনামূলক পরিসংখ্যান' : 'Descriptive Statistics',
-        criticalValuesTable: language === 'বাংলা' ? 'ক্রিটিক্যাল মানের সারণী' : 'Critical Values Table',
-        sampleSize: language === 'বাংলা' ? 'নমুনার আকার' : 'Sample Size',
-        mean: language === 'বাংলা' ? 'গড়' : 'Mean',
-        standardDeviation: language === 'বাংলা' ? 'মানক বিচ্যুতি' : 'Standard Deviation',
-        median: language === 'বাংলা' ? 'মাধ্যমিক' : 'Median',
-        minValue: language === 'বাংলা' ? 'ন্যূনতম মান' : 'Minimum Value',
-        maxValue: language === 'বাংলা' ? 'সর্বোচ্চ মান' : 'Maximum Value'
     };
 
     const columnName = results.column_name || columns?.[0] || 'Variable';
@@ -235,7 +299,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {language === 'বাংলা' ? 'ডেটা পয়েন্ট' : 'Data Point'}
+                        {getLabel('Data Point')}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
@@ -413,7 +477,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                             {/* Reference Line */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Theoretical Line"
+                                    name={getLabel('Theoretical Line')}
                                     type="linear"
                                     dataKey="y"
                                     data={referenceLineData}
@@ -428,7 +492,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                             {/* Scatter Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Q-Q Points"
+                                    name={getLabel('Q-Q Points')}
                                     data={scatterData}
                                     fill={settings.scatterColor}
                                     fillOpacity={settings.scatterOpacity}
@@ -470,12 +534,10 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'কিউ-কিউ প্লট ব্যাখ্যা' : 'Q-Q Plot Explanation'}
+                            {getLabel('Q-Q Plot Explanation')}
                         </h4>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {language === 'বাংলা' ? 
-                                'কিউ-কিউ প্লট ডেটার স্বাভাবিকতা পরীক্ষা করে। যদি বিন্দুগুলি লাইনের কাছাকাছি থাকে তবে ডেটা স্বাভাবিক বণ্টন অনুসরণ করে।' : 
-                                'Q-Q plot tests data normality. If points closely follow the line, data follows normal distribution.'}
+                            {getLabel('Q-Q plot tests data normality. If points closely follow the line, data follows normal distribution.')}
                         </p>
                     </div>
                 )}
@@ -486,14 +548,14 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.andersonTitle}</h2>
+                <h2 className="stats-title">{getLabel('Anderson-Darling Test')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -501,33 +563,33 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column'}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Column')}</td>
                             <td className="stats-table-value">{columnName}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.sampleSize}</td>
+                            <td className="stats-table-label">{getLabel('Sample Size')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.sample_size)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.testStatistic}</td>
+                            <td className="stats-table-label">{getLabel('Test Statistic (A²)')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.criticalValue}</td>
+                            <td className="stats-table-label">{getLabel('Critical Value')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.critical_value.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.significanceLevel}</td>
+                            <td className="stats-table-label">{getLabel('Significance Level')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.significance_level)}%</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{t.interpretation}</td>
+                            <td className="stats-table-label">{getLabel('Interpretation')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.is_normal ? (
@@ -535,14 +597,14 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.normalDistribution}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Normal Distribution')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notNormalDistribution}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('Not Normal Distribution')}</span>
                                         </>
                                     )}
                                 </div>
@@ -554,33 +616,33 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
 
             {/* Descriptive Statistics */}
             <div className="stats-results-table-wrapper" style={{ marginTop: '20px' }}>
-                <h3 className="stats-viz-header">{t.descriptiveStats}</h3>
+                <h3 className="stats-viz-header">{getLabel('Descriptive Statistics')}</h3>
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'পরিসংখ্যান' : 'Statistic'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Statistic')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t.mean}</td>
+                            <td className="stats-table-label">{getLabel('Mean')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.mean.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.standardDeviation}</td>
+                            <td className="stats-table-label">{getLabel('Standard Deviation')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.std.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.median}</td>
+                            <td className="stats-table-label">{getLabel('Median')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.median.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.minValue}</td>
+                            <td className="stats-table-label">{getLabel('Minimum Value')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.min.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.maxValue}</td>
+                            <td className="stats-table-label">{getLabel('Maximum Value')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.descriptive_stats.max.toFixed(4))}</td>
                         </tr>
                     </tbody>
@@ -590,12 +652,12 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
             {/* Critical Values Table */}
             {qqSettings.showCriticalValues && results.critical_values && (
                 <div className="stats-results-table-wrapper" style={{ marginTop: '20px' }}>
-                    <h3 className="stats-viz-header">{t.criticalValuesTable}</h3>
+                    <h3 className="stats-viz-header">{getLabel('Critical Values Table')}</h3>
                     <table className="stats-results-table">
                         <thead>
                             <tr>
-                                <th>{language === 'বাংলা' ? 'গুরুত্বপূর্ণ স্তর (%)' : 'Significance Level (%)'}</th>
-                                <th>{language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Value'}</th>
+                                <th>{getLabel('Significance Level (%)')}</th>
+                                <th>{getLabel('Critical Value')}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -613,10 +675,10 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
             )}
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'qq' ? 'active' : ''}`} onClick={() => setActiveTab('qq')}>{t.qqPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'qq' ? 'active' : ''}`} onClick={() => setActiveTab('qq')}>{getLabel('Q-Q Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -634,7 +696,7 @@ const renderAndersonDarlingResults = (andersonActiveTab, setAndersonActiveTab, r
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import GroupedBarPlot from './plots/GroupedBarPlot';
-import ScatterPlot from './plots/ScatterPlot'; // NEW: Import ScatterPlot component
+import ScatterPlot from './plots/ScatterPlot';
 import {
-    mapDigitIfBengali,
     formatValue,
     downloadVariableStatsPDF,
     downloadPairwiseBlockPNG,
@@ -16,6 +16,40 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import './PearsonResults.css';
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
+// Translate numbers using Google Translate API
+const translateNumber = async (number, targetLang) => {
+  if (targetLang === 'en' || targetLang === 'English') {
+    return String(number);
+  }
+  
+  try {
+    const translations = await translateText([String(number)], targetLang);
+    return translations[0];
+  } catch (error) {
+    console.error("Number translation error:", error);
+    return String(number);
+  }
+};
+
 const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, language) => {
     const blockRefs = useRef({});
     const activeTab = pearsonActiveTab;
@@ -26,15 +60,177 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
     const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
     
-    // NEW: State for scatter plot
+    // State for scatter plot
     const [selectedPairIndex, setSelectedPairIndex] = useState(0);
     const [scatterSettings, setScatterSettings] = useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
-    // NEW: Initialize scatter plot settings
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        // Add basic statistics numbers
+        if (results.n_variables) numbers.add(String(results.n_variables));
+        if (results.n_comparisons) numbers.add(String(results.n_comparisons));
+        if (results.metadata?.total_observations) numbers.add(String(results.metadata.total_observations));
+        
+        // Add variable stats numbers
+        if (results.variable_stats) {
+            results.variable_stats.forEach(stat => {
+                if (stat.n_observations) numbers.add(String(stat.n_observations));
+                if (stat.n_missing) numbers.add(String(stat.n_missing));
+                if (stat.mean !== null) numbers.add(formatValue(stat.mean, 4, 'en'));
+                if (stat.std !== null) numbers.add(formatValue(stat.std, 4, 'en'));
+                if (stat.median !== null) numbers.add(formatValue(stat.median, 4, 'en'));
+                if (stat.min !== null) numbers.add(formatValue(stat.min, 4, 'en'));
+                if (stat.max !== null) numbers.add(formatValue(stat.max, 4, 'en'));
+            });
+        }
+        
+        // Add pairwise results numbers
+        if (results.pairwise_results) {
+            results.pairwise_results.forEach(pair => {
+                if (pair.correlation !== null) numbers.add(formatValue(pair.correlation, 4, 'en'));
+                if (pair.p_value !== null) numbers.add(formatValue(pair.p_value, 4, 'en'));
+                if (pair.p_adjusted !== null) numbers.add(formatValue(pair.p_adjusted, 4, 'en'));
+                if (pair.ci_lower !== null) numbers.add(formatValue(pair.ci_lower, 4, 'en'));
+                if (pair.ci_upper !== null) numbers.add(formatValue(pair.ci_upper, 4, 'en'));
+                if (pair.n) numbers.add(String(pair.n));
+            });
+        }
+        
+        // Add block results numbers
+        if (results.blocks) {
+            results.blocks.forEach(block => {
+                if (block.results) {
+                    numbers.add(String(block.results.length));
+                    block.results.forEach(row => {
+                        if (row.correlation !== null) numbers.add(formatValue(row.correlation, 4, 'en'));
+                        if (row.p_value !== null) numbers.add(formatValue(row.p_value, 4, 'en'));
+                        if (row.p_adjusted !== null) numbers.add(formatValue(row.p_adjusted, 4, 'en'));
+                        if (row.ci_lower !== null) numbers.add(formatValue(row.ci_lower, 4, 'en'));
+                        if (row.ci_upper !== null) numbers.add(formatValue(row.ci_upper, 4, 'en'));
+                        if (row.n) numbers.add(String(row.n));
+                    });
+                }
+            });
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations for both labels and numbers
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Pearson Correlation Results',
+                'Description',
+                'Value',
+                'Variables',
+                'Number of Variables',
+                'Total Comparisons',
+                'Significant Correlations',
+                'Strong Correlations (|r| ≥ 0.7)',
+                'Total Observations',
+                'Insight',
+                'Detailed Analysis & Visualizations',
+                'Detailed Result',
+                'Heatmap',
+                'Grouped Bar',
+                'Scatter Plot',
+                'Variable Statistics',
+                'Download All',
+                'Observations:',
+                'Missing:',
+                'Mean:',
+                'Std Dev:',
+                'Median:',
+                'Range:',
+                'Pairwise Correlations',
+                'Detailed Pearson correlation results for each variable pair',
+                'Reference Variable',
+                'Testing linear correlations with other variables • Significance level α = 0.05',
+                'Significant',
+                'Not Significant',
+                'Total comparisons',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'No significant linear correlations found between any variable pairs (p ≥ 0.05).',
+                'out of',
+                'variable pairs',
+                'show significant linear correlations (p < 0.05), including',
+                'strong correlations (|r| ≥ 0.7)',
+                'moderate correlations',
+                'Very Strong',
+                'Strong',
+                'Moderate',
+                'Weak',
+                'Very Weak',
+            ];
+        
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+            
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    // Get translated number
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    // Format and translate numbers
+    const fmt = (v, digits = 4) => {
+        const formatted = formatValue(v, digits, 'en');
+        return getNumber(formatted);
+    };
+
+    // Map digit for display (uses Google Translate)
+    const mapDigit = (text) => {
+        return getNumber(text);
+    };
+
+    // Initialize scatter plot settings
     useEffect(() => {
         if (results.scatter_plot_data && results.scatter_plot_data.length > 0) {
             const firstPair = results.scatter_plot_data[0];
@@ -52,7 +248,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'bn' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -88,7 +284,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'bn' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -104,7 +300,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
         { value: 'Impact', label: 'Impact' }
     ];
 
-    // NEW: Get default settings for scatter plot
+    // Get default settings for scatter plot
     const getScatterDefaultSettings = (pair) => {
         if (!pair) {
             return {
@@ -334,12 +530,8 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     };
 
     if (!results) {
-        return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        return <p>{getLabel('Loading results...')}</p>;
     }
-
-    const t = (en, bn) => (language === 'bn' ? bn : en);
-    const fmt = (v, digits = 4) => formatValue(v, digits, language);
-    const mapDigit = (text) => mapDigitIfBengali(text, language);
 
     // Calculate significant correlations
     const significantCount = results.pairwise_results ? 
@@ -353,34 +545,35 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     // Generate insight message
     const getInsightMessage = () => {
         const significanceRate = totalComparisons > 0 ? (significantCount / totalComparisons * 100).toFixed(1) : 0;
+        const translatedSignificanceRate = getNumber(significanceRate);
 
-        if (language === 'bn') {
+        if (language === 'bn' || language === 'বাংলা') {
             if (significantCount === 0) {
                 return 'কোনো ভেরিয়েবল জোড়ার মধ্যে উল্লেখযোগ্য রৈখিক সম্পর্ক পাওয়া যায়নি (p ≥ 0.05)।';
             } else {
                 let strengthMsg = '';
                 if (strongCorrelations > 0) {
-                    strengthMsg = ` ${strongCorrelations}টি শক্তিশালী সম্পর্ক (|r| ≥ 0.7)`;
+                    strengthMsg = ` ${getNumber(strongCorrelations)}টি শক্তিশালী সম্পর্ক (|r| ≥ 0.7)`;
                 }
                 if (moderateCorrelations > 0) {
-                    strengthMsg += strengthMsg ? `, ${moderateCorrelations}টি মধ্যম সম্পর্ক` : ` ${moderateCorrelations}টি মধ্যম সম্পর্ক`;
+                    strengthMsg += strengthMsg ? `, ${getNumber(moderateCorrelations)}টি মধ্যম সম্পর্ক` : ` ${getNumber(moderateCorrelations)}টি মধ্যম সম্পর্ক`;
                 }
                 
-                return `${significantCount}টি ভেরিয়েবল জোড়ায় (মোট ${totalComparisons}টির মধ্যে ${mapDigit(significanceRate)}%) উল্লেখযোগ্য রৈখিক সম্পর্ক পাওয়া গেছে (p < 0.05)।${strengthMsg}।`;
+                return `${getNumber(significantCount)}টি ভেরিয়েবল জোড়ায় (মোট ${getNumber(totalComparisons)}টির মধ্যে ${translatedSignificanceRate}%) উল্লেখযোগ্য রৈখিক সম্পর্ক পাওয়া গেছে (p < 0.05)।${strengthMsg}।`;
             }
         } else {
             if (significantCount === 0) {
-                return 'No significant linear correlations found between any variable pairs (p ≥ 0.05).';
+                return getLabel('No significant linear correlations found between any variable pairs (p ≥ 0.05).');
             } else {
                 let strengthMsg = '';
                 if (strongCorrelations > 0) {
-                    strengthMsg = ` ${strongCorrelations} strong correlations (|r| ≥ 0.7)`;
+                    strengthMsg = ` ${strongCorrelations} ${getLabel('strong correlations (|r| ≥ 0.7)')}`;
                 }
                 if (moderateCorrelations > 0) {
-                    strengthMsg += strengthMsg ? `, ${moderateCorrelations} moderate correlations` : ` ${moderateCorrelations} moderate correlations`;
+                    strengthMsg += strengthMsg ? `, ${moderateCorrelations} ${getLabel('moderate correlations')}` : ` ${moderateCorrelations} ${getLabel('moderate correlations')}`;
                 }
                 
-                return `${significantCount} out of ${totalComparisons} variable pairs (${significanceRate}%) show significant linear correlations (p < 0.05), including${strengthMsg}.`;
+                return `${significantCount} ${getLabel('out of')} ${totalComparisons} ${getLabel('variable pairs')} (${significanceRate}%) ${getLabel('show significant linear correlations (p < 0.05), including')}${strengthMsg}.`;
             }
         }
     };
@@ -430,14 +623,14 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const getCorrelationStrength = (corr) => {
         if (corr === null) return '';
         const absCorr = Math.abs(corr);
-        if (absCorr >= 0.9) return t('Very Strong', 'অত্যন্ত শক্তিশালী');
-        if (absCorr >= 0.7) return t('Strong', 'শক্তিশালী');
-        if (absCorr >= 0.5) return t('Moderate', 'মধ্যম');
-        if (absCorr >= 0.3) return t('Weak', 'দুর্বল');
-        return t('Very Weak', 'অত্যন্ত দুর্বল');
+        if (absCorr >= 0.9) return getLabel('Very Strong');
+        if (absCorr >= 0.7) return getLabel('Strong');
+        if (absCorr >= 0.5) return getLabel('Moderate');
+        if (absCorr >= 0.3) return getLabel('Weak');
+        return getLabel('Very Weak');
     };
 
-    // NEW: Handle scatter pair selection
+    // Handle scatter pair selection
     const handleScatterPairChange = (index) => {
         setSelectedPairIndex(index);
         const pair = results.scatter_plot_data[index];
@@ -448,7 +641,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     return (
         <>
             <h2 className="pearson-title">
-                {t('Pearson Correlation Results', 'পিয়ারসন সম্পর্ক পরীক্ষার ফলাফল')}
+                {getLabel('Pearson Correlation Results')}
             </h2>
 
             {/* Summary Statistics Table */}
@@ -456,13 +649,13 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{t('Description', 'বিবরণ')}</th>
-                            <th>{t('Value', 'মান')}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t('Variables', 'ভেরিয়েবলসমূহ')}</td>
+                            <td className="stats-table-label">{getLabel('Variables')}</td>
                             <td className="stats-table-value">
                                 {results.variables && results.variables.map((v, i) => (
                                     <span key={i}>
@@ -473,27 +666,27 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Number of Variables', 'ভেরিয়েবলের সংখ্যা')}</td>
+                            <td className="stats-table-label">{getLabel('Number of Variables')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.n_variables || 0)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Comparisons', 'মোট তুলনা')}</td>
+                            <td className="stats-table-label">{getLabel('Total Comparisons')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalComparisons)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Significant Correlations', 'উল্লেখযোগ্য সম্পর্ক')}</td>
+                            <td className="stats-table-label">{getLabel('Significant Correlations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(significantCount)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Strong Correlations (|r| ≥ 0.7)', 'শক্তিশালী সম্পর্ক')}</td>
+                            <td className="stats-table-label">{getLabel('Strong Correlations (|r| ≥ 0.7)')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(strongCorrelations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Observations', 'মোট পর্যবেক্ষণ')}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.metadata?.total_observations || 0)}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{t('Insight', 'অন্তর্দৃষ্টি')}</td>
+                            <td className="stats-table-label">{getLabel('Insight')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {significantCount > 0 ? (
@@ -521,7 +714,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
             {/* Tabbed Section */}
             <div className="stats-viz-section">
                 <h3 className="stats-viz-header">
-                    {t('Detailed Analysis & Visualizations', 'বিস্তারিত বিশ্লেষণ এবং ভিজ্যুয়ালাইজেশন')}
+                    {getLabel('Detailed Analysis & Visualizations')}
                 </h3>
 
                 {/* Tab Navigation */}
@@ -545,27 +738,26 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
                         onClick={() => setActiveTab('detailed')}
                     >
-                        {t('Detailed Result', 'বিস্তারিত বিশ্লেষণ')}
+                        {getLabel('Detailed Result')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'heatmap' ? 'active' : ''}`}
                         onClick={() => setActiveTab('heatmap')}
                     >
-                        {t('Heatmap', 'হিটম্যাপ')}
+                        {getLabel('Heatmap')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
-                        {t('Grouped Bar', 'গ্রুপড বার')}
+                        {getLabel('Grouped Bar')}
                     </button>
-                    {/* NEW: Scatter Plot Tab */}
                     <button
                         className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`}
                         onClick={() => setActiveTab('scatter')}
                         disabled={!results.scatter_plot_data || results.scatter_plot_data.length === 0}
                     >
-                        {t('Scatter Plot', 'স্ক্যাটার প্লট')}
+                        {getLabel('Scatter Plot')}
                     </button>
                 </div>
 
@@ -586,7 +778,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                             marginBottom: '0',
                                             borderBottom: 'none'
                                         }}>
-                                            {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
+                                            {getLabel('Variable Statistics')}
                                         </h4>
                                         <button
                                             className="customize-btn"
@@ -595,7 +787,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -614,13 +806,13 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
 
                                             <div className="variable-stat-content">
                                                 <div className="stat-row">
-                                                    <span>{t('Observations:', 'পর্যবেক্ষণ:')}</span>
+                                                    <span>{getLabel('Observations:')}</span>
                                                     <span className="stat-value observations">
                                                         {mapDigit(varStat.n_observations)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Missing:', 'অনুপস্থিত:')}</span>
+                                                    <span>{getLabel('Missing:')}</span>
                                                     <span className="stat-value missing">
                                                         {mapDigit(varStat.n_missing)}
                                                     </span>
@@ -628,25 +820,25 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                 {varStat.mean !== null && (
                                                     <>
                                                         <div className="stat-row">
-                                                            <span>{t('Mean:', 'গড়:')}</span>
+                                                            <span>{getLabel('Mean:')}</span>
                                                             <span className="stat-value mean">
                                                                 {fmt(varStat.mean)}
                                                             </span>
                                                         </div>
                                                         <div className="stat-row">
-                                                            <span>{t('Std Dev:', 'মানক বিচ্যুতি:')}</span>
+                                                            <span>{getLabel('Std Dev:')}</span>
                                                             <span className="stat-value std">
                                                                 {fmt(varStat.std)}
                                                             </span>
                                                         </div>
                                                         <div className="stat-row">
-                                                            <span>{t('Median:', 'মধ্যমা:')}</span>
+                                                            <span>{getLabel('Median:')}</span>
                                                             <span className="stat-value median">
                                                                 {fmt(varStat.median)}
                                                             </span>
                                                         </div>
                                                         <div className="stat-row">
-                                                            <span>{t('Range:', 'পরিসর:')}</span>
+                                                            <span>{getLabel('Range:')}</span>
                                                             <span className="stat-value range">
                                                                 {fmt(varStat.min)} - {fmt(varStat.max)}
                                                             </span>
@@ -670,11 +862,10 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                 marginBottom: '0',
                                                 borderBottom: 'none'
                                             }}>
-                                                {t('Pairwise Correlations', 'জোড়াভিত্তিক সম্পর্ক')}
+                                                {getLabel('Pairwise Correlations')}
                                             </h4>
                                             <p className="section-description">
-                                                {t('Detailed Pearson correlation results for each variable pair',
-                                                    'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত পিয়ারসন সম্পর্ক ফলাফল')}
+                                                {getLabel('Detailed Pearson correlation results for each variable pair')}
                                             </p>
                                         </div>
                                         <button
@@ -684,7 +875,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -702,7 +893,6 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                             className="block-card"
                                             ref={(el) => { blockRefs.current[block.anchor] = el; }}
                                         >
-                                            {/* Card Header */}
                                             <div className="block-header">
                                                 <div className="block-header-content">
                                                     <div className="block-header-info">
@@ -716,7 +906,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                                 {mapDigit(block.anchor)}
                                                             </h3>
                                                             <p className="block-subtitle">
-                                                                {t('Reference Variable', 'রেফারেন্স ভেরিয়েবল')}
+                                                                {getLabel('Reference Variable')}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -796,13 +986,11 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                                         </svg>
-                                                        {t('Testing linear correlations with other variables • Significance level α = 0.05',
-                                                            'অন্যান্য ভেরিয়েবলের সাথে রৈখিক সম্পর্ক পরীক্ষা • তাৎপর্য স্তর α = 0.05')}
+                                                        {getLabel('Testing linear correlations with other variables • Significance level α = 0.05')}
                                                     </p>
                                                 </div>
                                             </div>
 
-                                            {/* Table Content */}
                                             <div className="block-table-container">
                                                 <div className="block-table-scroll">
                                                     <table className="block-table">
@@ -859,13 +1047,12 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                 </div>
                                             </div>
 
-                                            {/* Footer */}
                                             <div className="block-footer">
                                                 <div className="block-stats">
                                                     <div className="block-stat-item">
                                                         <div className="status-dot significant"></div>
                                                         <span>
-                                                            {t('Significant', 'উল্লেখযোগ্য')}: <strong>
+                                                            {getLabel('Significant')}: <strong>
                                                                 {mapDigit(block.results.filter(r => r.p_value !== null && r.p_value < 0.05).length)}
                                                             </strong>
                                                         </span>
@@ -873,14 +1060,14 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                     <div className="block-stat-item">
                                                         <div className="status-dot"></div>
                                                         <span>
-                                                            {t('Not Significant', 'অ-উল্লেখযোগ্য')}: <strong>
+                                                            {getLabel('Not Significant')}: <strong>
                                                                 {mapDigit(block.results.filter(r => r.p_value === null || r.p_value >= 0.05).length)}
                                                             </strong>
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div className="block-total">
-                                                    {t('Total comparisons', 'মোট তুলনা')}: {mapDigit(block.results.length)}
+                                                    {getLabel('Total comparisons')}: {mapDigit(block.results.length)}
                                                 </div>
                                             </div>
                                         </div>
@@ -925,7 +1112,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                     </div>
                 )}
 
-                {/* NEW: Scatter Plot Tab */}
+                {/* Scatter Plot Tab */}
                 {activeTab === 'scatter' && results.scatter_plot_data && results.scatter_plot_data.length > 0 && (
                     <div className="stats-plot-wrapper active">
                         <ScatterPlot
@@ -963,7 +1150,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                         currentPlotType === 'grouped' ? setGroupedBarSettings :
                         currentPlotType === 'scatter' ? setScatterSettings : setHeatmapSettings
                     }
-                    language={language === 'bn' ? 'বাংলা' : 'English'}
+                    language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                     fontFamilyOptions={fontFamilyOptions}
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :
