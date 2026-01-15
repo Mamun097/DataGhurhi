@@ -101,6 +101,7 @@ const Data_summary = () => {
     "Individual",
     "Previous",
     "Next",
+    "Analyze the Result",
   ];
 
   const getLabel = (label) => translatedLabels[label] || label;

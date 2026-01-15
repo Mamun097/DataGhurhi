@@ -1,8 +1,30 @@
+//with digit
+
 import React, { useState, useEffect, useRef } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line, AreaChart, Area, ComposedChart } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -72,34 +94,145 @@ const fontFamilyOptions = [
 ];
 
 const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributionActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = edaDistributionActiveTab;
     const setActiveTab = setEdaDistributionActiveTab;
 
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Histogram');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [currentPlotType, setCurrentPlotType] = useState('Histogram');
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
 
-    const [histogramSettings, setHistogramSettings] = React.useState(
+    const [histogramSettings, setHistogramSettings] = useState(
         getDefaultSettings('Histogram', 1, [])
     );
-    const [kdeSettings, setKdeSettings] = React.useState(
+    const [kdeSettings, setKdeSettings] = useState(
         getDefaultSettings('KDE', 1, [])
     );
-    const [distributionSettings, setDistributionSettings] = React.useState(
+    const [distributionSettings, setDistributionSettings] = useState(
         getDefaultSettings('HistogramKDE', 1, [])
     );
+
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        const statistics = results.statistics || {};
+        
+        if (statistics.count) numbers.add(String(statistics.count));
+        if (statistics.mean !== null && statistics.mean !== undefined) numbers.add(statistics.mean.toFixed(4));
+        if (statistics.median !== null && statistics.median !== undefined) numbers.add(statistics.median.toFixed(4));
+        if (statistics.std !== null && statistics.std !== undefined) numbers.add(statistics.std.toFixed(4));
+        if (statistics.min !== null && statistics.min !== undefined) numbers.add(statistics.min.toFixed(4));
+        if (statistics.max !== null && statistics.max !== undefined) numbers.add(statistics.max.toFixed(4));
+        if (statistics.max !== null && statistics.min !== null) {
+            numbers.add((statistics.max - statistics.min).toFixed(4));
+        }
+        if (statistics.skewness !== null && statistics.skewness !== undefined) numbers.add(statistics.skewness.toFixed(4));
+        if (statistics.kurtosis !== null && statistics.kurtosis !== undefined) numbers.add(statistics.kurtosis.toFixed(4));
+        if (statistics.variance !== null && statistics.variance !== undefined) numbers.add(statistics.variance.toFixed(4));
+        if (statistics.q25 !== null && statistics.q25 !== undefined) numbers.add(statistics.q25.toFixed(4));
+        if (statistics.q75 !== null && statistics.q75 !== undefined) numbers.add(statistics.q75.toFixed(4));
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Distribution Analysis',
+                'Histogram',
+                'KDE Plot',
+                'Distribution Plot',
+                'Column',
+                'Statistics',
+                'Count',
+                'Mean',
+                'Median',
+                'Std Dev',
+                'Variance',
+                'Min',
+                'Max',
+                '25th Percentile',
+                '75th Percentile',
+                'Skewness',
+                'Kurtosis',
+                'Range',
+                'IQR',
+                'Data Points',
+                'Observations',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Histogram data not available',
+                'KDE data not available',
+                'Distribution data not available',
+                'Visualizations',
+                'Statistic',
+                'Value',
+                'Save Result',
+                'Result saved successfully',
+                'Error saving result',
+                'Frequency',
+                'Values',
+                'Density'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -127,7 +260,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -163,7 +296,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -171,7 +304,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -195,39 +328,15 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        edaTitle: language === 'বাংলা' ? 'বন্টন বিশ্লেষণ' : 'Distribution Analysis',
-        histogram: language === 'বাংলা' ? 'হিস্টোগ্রাম' : 'Histogram',
-        kde: language === 'বাংলā' ? 'কেডিই প্লট' : 'KDE Plot',
-        distribution: language === 'বাংলা' ? 'বন্টন প্লট' : 'Distribution Plot',
-        column: language === 'বাংলা' ? 'কলাম' : 'Column',
-        statistics: language === 'বাংলা' ? 'পরিসংখ্যান' : 'Statistics',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        mean: language === 'বাংলা' ? 'গড়' : 'Mean',
-        median: language === 'বাংলা' ? 'মাধ্যমিক' : 'Median',
-        std: language === 'বাংলা' ? 'মানক বিচ্যুতি' : 'Std Dev',
-        variance: language === 'বাংলা' ? 'ভ্যারিয়েন্স' : 'Variance',
-        min: language === 'বাংলা' ? 'ন্যূনতম' : 'Min',
-        max: language === 'বাংলা' ? 'সর্বোচ্চ' : 'Max',
-        q25: language === 'বাংলা' ? '২৫তম শতকরা' : '25th Percentile',
-        q75: language === 'বাংলা' ? '৭৫তম শতকরা' : '75th Percentile',
-        skewness: language === 'বাংলা' ? 'বঙ্কিমতা' : 'Skewness',
-        kurtosis: language === 'বাংলা' ? 'কুর্তোসিস' : 'Kurtosis',
-        range: language === 'বাংলা' ? 'পরিসীমা' : 'Range',
-        iqr: language === 'বাংলা' ? 'আন্তঃচতুর্থাংশ পরিসীমা' : 'IQR',
-        dataPoints: language === 'বাংলা' ? 'ডেটা পয়েন্ট' : 'Data Points',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations'
     };
 
     const plotData = results.plot_data || {};
@@ -245,11 +354,11 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {columnName}: {typeof label === 'number' ? label.toFixed(2) : label}
+                        {columnName}: {typeof label === 'number' ? mapDigit(label.toFixed(2)) : label}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -284,7 +393,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
     };
 
     const getYAxisDomain = (settings, data, dataKey) => {
-        // If manual min/max are specified, use them
         if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
             const min = parseFloat(settings.yAxisMin);
             const max = parseFloat(settings.yAxisMax);
@@ -293,10 +401,9 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
             }
         }
         
-        // For histogram, ensure we include all data with proper padding
         if (dataKey === 'frequency' && data && data.length > 0) {
             const maxValue = Math.max(...data.map(d => d[dataKey]));
-            return [0, maxValue * 1.1]; // 10% padding at top
+            return [0, maxValue * 1.1];
         }
         
         return ['auto', 'auto'];
@@ -313,7 +420,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         if (!plotData.histogram || !plotData.histogram.bins) {
             return (
                 <div className="stats-plot-placeholder">
-                    <p>{language === 'বাংলা' ? 'হিস্টোগ্রাম ডেটা পাওয়া যায়নি' : 'Histogram data not available'}</p>
+                    <p>{getLabel('Histogram data not available')}</p>
                 </div>
             );
         }
@@ -336,7 +443,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -346,14 +453,14 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -438,7 +545,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                         </BarChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -464,7 +570,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         if (!plotData.kde || !plotData.kde.curve) {
             return (
                 <div className="stats-plot-placeholder">
-                    <p>{language === 'বাংলা' ? 'কেডিই ডেটা পাওয়া যায়নি' : 'KDE data not available'}</p>
+                    <p>{getLabel('KDE data not available')}</p>
                 </div>
             );
         }
@@ -481,7 +587,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -491,14 +597,14 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -525,7 +631,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <XAxis
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => typeof value === 'number' ? value.toFixed(1) : value}
+                                tickFormatter={(value) => typeof value === 'number' ? mapDigit(value.toFixed(1)) : value}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -572,7 +678,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                         </AreaChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -598,7 +703,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         if (!plotData.histogram || !plotData.kde) {
             return (
                 <div className="stats-plot-placeholder">
-                    <p>{language === 'বাংলা' ? 'বন্টন ডেটা পাওয়া যায়নি' : 'Distribution data not available'}</p>
+                    <p>{getLabel('Distribution data not available')}</p>
                 </div>
             );
         }
@@ -606,7 +711,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
         const histogramData = plotData.histogram.bins;
         const kdeData = plotData.kde.curve;
 
-        // Combine data for composed chart
         const combinedData = histogramData.map((bin, index) => ({
             x: bin.x,
             histogram: bin.y,
@@ -623,7 +727,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -633,14 +737,14 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -701,7 +805,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                             />
                             <Tooltip content={<CustomTooltip />} />
                             
-                            {/* Histogram Bars */}
                             {settings.showHistogram && (
                                 <Bar
                                     dataKey="histogram"
@@ -713,7 +816,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                                 />
                             )}
                             
-                            {/* KDE Line */}
                             {settings.showKDE && (
                                 <Line
                                     type="monotone"
@@ -727,7 +829,6 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                         </ComposedChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -749,81 +850,79 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.edaTitle}</h2>
+                <h2 className="stats-title">{getLabel('Distribution Analysis')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
-            {/* Statistics Table */}
             <div className="stats-results-table-wrapper">
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'পরিসংখ্যান' : 'Statistic'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Statistic')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t.column}</td>
+                            <td className="stats-table-label">{getLabel('Column')}</td>
                             <td className="stats-table-value">{columnName}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.dataPoints}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.count)}</td>
+                            <td className="stats-table-label">{getLabel('Data Points')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.count)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.mean}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.mean?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Mean')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.mean?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.median}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.median?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Median')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.median?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.std}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.std?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Std Dev')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.std?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.min}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.min?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Min')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.min?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.max}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.max?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Max')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.max?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.range}</td>
+                            <td className="stats-table-label">{getLabel('Range')}</td>
                             <td className="stats-table-value stats-numeric">
-                                {mapDigitIfBengali((statistics.max - statistics.min)?.toFixed(4))}
+                                {mapDigit((statistics.max - statistics.min)?.toFixed(4))}
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.skewness}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.skewness?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Skewness')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.skewness?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.kurtosis}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(statistics.kurtosis?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Kurtosis')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(statistics.kurtosis?.toFixed(4))}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            {/* Visualizations */}
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'histogram' ? 'active' : ''}`} onClick={() => setActiveTab('histogram')}>{t.histogram}</button>
-                    <button className={`stats-tab ${activeTab === 'kde' ? 'active' : ''}`} onClick={() => setActiveTab('kde')}>{t.kde}</button>
-                    <button className={`stats-tab ${activeTab === 'distribution' ? 'active' : ''}`} onClick={() => setActiveTab('distribution')}>{t.distribution}</button>
+                    <button className={`stats-tab ${activeTab === 'histogram' ? 'active' : ''}`} onClick={() => setActiveTab('histogram')}>{getLabel('Histogram')}</button>
+                    <button className={`stats-tab ${activeTab === 'kde' ? 'active' : ''}`} onClick={() => setActiveTab('kde')}>{getLabel('KDE Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'distribution' ? 'active' : ''}`} onClick={() => setActiveTab('distribution')}>{getLabel('Distribution Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -853,7 +952,7 @@ const renderEDADistributionResults = (edaDistributionActiveTab, setEdaDistributi
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

@@ -3,6 +3,26 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Responsive
 import CustomizationOverlay from './CustomizationOverlay for Ancova/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -104,7 +124,7 @@ const fontFamilyOptions = [
 const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -120,6 +140,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     const [currentPlotType, setCurrentPlotType] = React.useState('Scatter');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
@@ -130,6 +151,65 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     const [residualSettings, setResidualSettings] = React.useState(
         getDefaultSettings('Residual', categoryCount, categoryNames)
     );
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'ANCOVA (Analysis of Covariance)',
+                'Scatter Plot',
+                'Residual Plot',
+                'Group Effect',
+                'Covariate Effect',
+                'Description',
+                'Value',
+                'Analyzed Columns',
+                'group',
+                'covariate',
+                'outcome',
+                'Number of Groups',
+                'Total Observations',
+                'Group Effect Conclusion',
+                'Significant effect found (p < 0.05)',
+                'No significant effect (p ≥ 0.05)',
+                'Visualizations',
+                'Group Regression Equations',
+                'ANCOVA Statistics',
+                'Residual Statistics',
+                'Mean Residual',
+                'Residual SD',
+                'Residual Range',
+                'Group',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Save Result',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
@@ -163,7 +243,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -199,7 +279,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -207,7 +287,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -231,27 +311,15 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        fStatistic: language === 'বাংলা' ? 'এফ-পরিসংখ্যান' : 'F-Statistic',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য প্রভাব পাওয়া গেছে (p < 0.05)' : 'Significant effect found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য প্রভাব নেই (p ≥ 0.05)' : 'No significant effect (p ≥ 0.05)',
-        ancovaTitle: language === 'বাংলা' ? 'এনকোভা (ANCOVA)' : 'ANCOVA (Analysis of Covariance)',
-        scatterPlot: language === 'বাংলা' ? 'স্ক্যাটার প্লট' : 'Scatter Plot',
-        residualPlot: language === 'বাংলা' ? 'রেসিডুয়াল প্লট' : 'Residual Plot',
-        groupEffect: language === 'বাংলা' ? 'গ্রুপ প্রভাব' : 'Group Effect',
-        covariateEffect: language === 'বাংলা' ? 'কোভ্যারিয়েট প্রভাব' : 'Covariate Effect'
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -265,7 +333,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {payload[0]?.payload?.group ? `${language === 'বাংলা' ? 'গ্রুপ' : 'Group'}: ${payload[0].payload.group}` : ''}
+                        {payload[0]?.payload?.group ? `${getLabel('Group')}: ${payload[0].payload.group}` : ''}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
@@ -536,7 +604,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 {settings.showCriticalValues && Object.keys(regressionLines).length > 0 && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'গ্রুপ রিগ্রেশন সমীকরণ' : 'Group Regression Equations'}
+                            {getLabel('Group Regression Equations')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
                             {Object.keys(regressionLines).map((groupName, groupIndex) => {
@@ -570,12 +638,12 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 {settings.showCriticalValues && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'এনকোভা পরিসংখ্যান' : 'ANCOVA Statistics'}
+                            {getLabel('ANCOVA Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {t.groupEffect}
+                                    {getLabel('Group Effect')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
                                     F = {results.f_statistic_group?.toFixed(4)}, p = {results.p_value_group?.toFixed(6)}
@@ -583,7 +651,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {t.covariateEffect}
+                                    {getLabel('Covariate Effect')}
                                 </div>
                                 <div style={{ fontSize: '14px', color: '#6b7280' }}>
                                     F = {results.f_statistic_covariate?.toFixed(4)}, p = {results.p_value_covariate?.toFixed(6)}
@@ -819,12 +887,12 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 {settings.showCriticalValues && results.residual_data && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'অবশিষ্ট পরিসংখ্যান' : 'Residual Statistics'}
+                            {getLabel('Residual Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'গড় অবশিষ্ট' : 'Mean Residual'}
+                                    {getLabel('Mean Residual')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
                                     {results.residual_data.statistics?.mean?.toFixed(4) || '0.0000'}
@@ -832,7 +900,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'অবশিষ্ট এসডি' : 'Residual SD'}
+                                    {getLabel('Residual SD')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
                                     {results.residual_data.statistics?.std?.toFixed(4)}
@@ -840,7 +908,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'অবশিষ্ট পরিসীমা' : 'Residual Range'}
+                                    {getLabel('Residual Range')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
                                     {results.residual_data.statistics?.min?.toFixed(4)} to {results.residual_data.statistics?.max?.toFixed(4)}
@@ -856,14 +924,14 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.ancovaTitle}</h2>
+                <h2 className="stats-title">{getLabel('ANCOVA (Analysis of Covariance)')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -871,36 +939,36 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
                             <td className="stats-table-value">
-                                {results.column_names?.group} ({language === 'বাংলা' ? 'গ্রুপ' : 'group'}), 
-                                {results.column_names?.covariate} ({language === 'বাংলা' ? 'কোভ্যারিয়েট' : 'covariate'}), 
-                                {results.column_names?.outcome} ({language === 'বাংলা' ? 'আউটকাম' : 'outcome'})
+                                {results.column_names?.group} ({getLabel('group')}), 
+                                {results.column_names?.covariate} ({getLabel('covariate')}), 
+                                {results.column_names?.outcome} ({getLabel('outcome')})
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
+                            <td className="stats-table-label">{getLabel('Number of Groups')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.groupEffect}</td>
+                            <td className="stats-table-label">{getLabel('Group Effect')}</td>
                             <td className="stats-table-value stats-numeric">
                                 F = {mapDigitIfBengali(results.f_statistic_group?.toFixed(4))}, 
                                 p = {mapDigitIfBengali(results.p_value_group?.toFixed(6))}
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.covariateEffect}</td>
+                            <td className="stats-table-label">{getLabel('Covariate Effect')}</td>
                             <td className="stats-table-value stats-numeric">
                                 F = {mapDigitIfBengali(results.f_statistic_covariate?.toFixed(4))}, 
                                 p = {mapDigitIfBengali(results.p_value_covariate?.toFixed(6))}
@@ -911,7 +979,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.metadata?.r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপ প্রভাব সিদ্ধান্ত' : 'Group Effect Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Group Effect Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value_group < 0.05 ? (
@@ -919,14 +987,14 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.significant}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Significant effect found (p < 0.05)')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('No significant effect (p ≥ 0.05)')}</span>
                                         </>
                                     )}
                                 </div>
@@ -937,11 +1005,11 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`} onClick={() => setActiveTab('scatter')}>{t.scatterPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'residuals' ? 'active' : ''}`} onClick={() => setActiveTab('residuals')}>{t.residualPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`} onClick={() => setActiveTab('scatter')}>{getLabel('Scatter Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'residuals' ? 'active' : ''}`} onClick={() => setActiveTab('residuals')}>{getLabel('Residual Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -965,7 +1033,7 @@ const renderAncovaResults = (ancovaActiveTab, setAncovaActiveTab, results, langu
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

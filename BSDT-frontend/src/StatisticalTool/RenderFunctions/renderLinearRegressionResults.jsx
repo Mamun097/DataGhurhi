@@ -3,6 +3,26 @@ import { ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Responsive
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -51,7 +71,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         legendPosition: 'top'
     };
 
-    // Add plot-specific settings
     if (plotType === 'Scatter') {
         return {
             ...baseSettings,
@@ -104,35 +123,167 @@ const fontFamilyOptions = [
 ];
 
 const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegressionActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.', '-': '-'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = linearRegressionActiveTab;
     const setActiveTab = setLinearRegressionActiveTab;
 
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Scatter');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [currentPlotType, setCurrentPlotType] = useState('Scatter');
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
 
-    const [scatterSettings, setScatterSettings] = React.useState(
+    const [scatterSettings, setScatterSettings] = useState(
         getDefaultSettings('Scatter', results.data_points?.length || 0)
     );
-    const [residualSettings, setResidualSettings] = React.useState(
+    const [residualSettings, setResidualSettings] = useState(
         getDefaultSettings('Residual', results.data_points?.length || 0)
     );
 
-    React.useEffect(() => {
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.intercept !== null && results.intercept !== undefined) {
+            numbers.add(results.intercept.toFixed(4));
+        }
+        if (results.coefficient !== null && results.coefficient !== undefined) {
+            numbers.add(results.coefficient.toFixed(4));
+        }
+        if (results.r_squared !== null && results.r_squared !== undefined) {
+            numbers.add(results.r_squared.toFixed(4));
+        }
+        if (results.adjusted_r_squared !== null && results.adjusted_r_squared !== undefined) {
+            numbers.add(results.adjusted_r_squared.toFixed(4));
+        }
+        if (results.mean_squared_error !== null && results.mean_squared_error !== undefined) {
+            numbers.add(results.mean_squared_error.toFixed(4));
+        }
+        if (results.root_mean_squared_error !== null && results.root_mean_squared_error !== undefined) {
+            numbers.add(results.root_mean_squared_error.toFixed(4));
+        }
+        
+        // Critical values
+        if (results.critical_values) {
+            if (results.critical_values.lower !== null && results.critical_values.lower !== undefined) {
+                numbers.add(results.critical_values.lower.toFixed(4));
+            }
+            if (results.critical_values.upper !== null && results.critical_values.upper !== undefined) {
+                numbers.add(results.critical_values.upper.toFixed(4));
+            }
+            if (results.critical_values.mean_difference !== null && results.critical_values.mean_difference !== undefined) {
+                numbers.add(results.critical_values.mean_difference.toFixed(4));
+            }
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Linear Regression',
+                'Independent Variable',
+                'Dependent Variable',
+                'Intercept',
+                'Coefficient',
+                'R-Squared',
+                'Adjusted R-Squared',
+                'Mean Squared Error',
+                'Equation',
+                'Scatter Plot',
+                'Residual Plot',
+                'Regression Line',
+                'Confidence Interval',
+                'Prediction Interval',
+                'Significant relationship',
+                'No significant relationship',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Save Result',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Visualizations',
+                'Analyzed Columns',
+                'and',
+                'Conclusion',
+                'Data Points',
+                'Reference Line',
+                'Residual Points',
+                'Critical Values',
+                'Lower Bound',
+                'Mean Difference',
+                'Upper Bound',
+                'Regression R²',
+                'Zero Reference Line',
+                'Residual Statistics',
+                'Mean Residual',
+                'Residual SD',
+                'Residual Range',
+                'to'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
+
+    useEffect(() => {
         if (results.data_points && results.data_points.length > 0) {
-            // Update settings when data is available
             setScatterSettings(prev => ({ ...prev }));
             setResidualSettings(prev => ({ ...prev }));
         }
@@ -162,7 +313,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -198,7 +349,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -206,7 +357,7 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -230,34 +381,15 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        linearRegressionTitle: language === 'বাংলা' ? 'লিনিয়ার রিগ্রেশন' : 'Linear Regression',
-        independentVariable: language === 'বাংলা' ? 'স্বাধীন চলক' : 'Independent Variable',
-        dependentVariable: language === 'বাংলা' ? 'নির্ভরশীল চলক' : 'Dependent Variable',
-        intercept: language === 'বাংলা' ? 'ইন্টারসেপ্ট' : 'Intercept',
-        coefficient: language === 'বাংলা' ? 'সহগ' : 'Coefficient',
-        rSquared: language === 'বাংলা' ? 'আর-স্কোয়ার্ড' : 'R-Squared',
-        adjustedRSquared: language === 'বাংলা' ? 'সমন্বিত আর-স্কোয়ার্ড' : 'Adjusted R-Squared',
-        meanSquaredError: language === 'বাংলা' ? 'গড় বর্গ ত্রুটি' : 'Mean Squared Error',
-        equation: language === 'বাংলা' ? 'সমীকরণ' : 'Equation',
-        scatterPlot: language === 'বাংলা' ? 'স্ক্যাটার প্লট' : 'Scatter Plot',
-        residualPlot: language === 'বাংলা' ? 'অবশিষ্ট প্লট' : 'Residual Plot',
-        regressionLine: language === 'বাংলা' ? 'রিগ্রেশন লাইন' : 'Regression Line',
-        confidenceInterval: language === 'বাংলা' ? 'কনফিডেন্স ইন্টারভাল' : 'Confidence Interval',
-        predictionInterval: language === 'বাংলা' ? 'প্রেডিকশন ইন্টারভাল' : 'Prediction Interval',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য সম্পর্ক' : 'Significant relationship',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য সম্পর্ক নেই' : 'No significant relationship'
     };
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -271,11 +403,11 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {payload[0]?.payload?.x !== undefined ? `${t.independentVariable}: ${payload[0].payload.x}` : ''}
+                        {payload[0]?.payload?.x !== undefined ? `${getLabel('Independent Variable')}: ${mapDigit(payload[0].payload.x.toFixed(2))}` : ''}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -350,7 +482,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
         }
     };
 
-    // Prepare scatter plot data
     const scatterData = results.data_points?.map(point => ({
         x: point.x,
         y: point.y,
@@ -358,15 +489,12 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
         residual: point.residual
     })) || [];
 
-    // Prepare regression line data
     const regressionLineData = results.regression_line || [];
-
 
     const renderScatterChart = () => {
         const settings = scatterSettings;
         const { height } = getDimensions(settings.dimensions);
         
-        // Use the Wilcoxon-style plot_data if available, otherwise fallback to original data_points
         const plotData = results.plot_data || {};
         const sample1 = plotData.sample1?.values || results.data_points?.map(p => p.x) || [];
         const sample2 = plotData.sample2?.values || results.data_points?.map(p => p.y) || [];
@@ -377,7 +505,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
             pair: index + 1
         }));
 
-        // Use backend regression data (from plot_data.regression or fallback to main results)
         const regressionData = plotData.regression || {
             slope: results.coefficient,
             intercept: results.intercept,
@@ -398,7 +525,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
             }
         ];
 
-        // Reference line (y = x) - same as Wilcoxon
         const minVal = Math.min(minX, Math.min(...scatterData.map(p => p.y)));
         const maxVal = Math.max(maxX, Math.max(...scatterData.map(p => p.y)));
         const referenceLine = [
@@ -416,21 +542,21 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -505,10 +631,9 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 />
                             )}                            
                             
-                            {/* Scatter Points with CUSTOM SHAPE - Like Wilcoxon */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name="Data Points"
+                                    name={getLabel('Data Points')}
                                     data={scatterData}
                                     fill={settings.scatterColor || settings.categoryColors[0]}
                                     fillOpacity={settings.scatterOpacity}
@@ -527,10 +652,9 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 />
                             )}
                             
-                            {/* Regression Line */}
                             {settings.showRegressionLines && (
                                 <Line
-                                    name="Regression Line"
+                                    name={getLabel('Regression Line')}
                                     type="linear"
                                     dataKey="y"
                                     data={regressionLine}
@@ -541,10 +665,9 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 />
                             )}
                             
-                            {/* Reference Line (y = x) */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Reference Line"
+                                    name={getLabel('Reference Line')}
                                     type="linear"
                                     dataKey="y"
                                     data={referenceLine}
@@ -559,7 +682,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                         </ComposedChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -575,45 +697,44 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                     )}
                 </div>
 
-                {/* Critical Values Display - Same as Wilcoxon */}
                 {settings.showCriticalValues && results.critical_values && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ক্রিটিক্যাল মান' : 'Critical Values'}
+                            {getLabel('Critical Values')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'নিম্ন সীমা' : 'Lower Bound'}
+                                    {getLabel('Lower Bound')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.lower?.toFixed(4)}
+                                    {mapDigit(results.critical_values.lower?.toFixed(4))}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'গড় পার্থক্য' : 'Mean Difference'}
+                                    {getLabel('Mean Difference')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.mean_difference?.toFixed(4)}
+                                    {mapDigit(results.critical_values.mean_difference?.toFixed(4))}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'উচ্চ সীমা' : 'Upper Bound'}
+                                    {getLabel('Upper Bound')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values.upper?.toFixed(4)}
+                                    {mapDigit(results.critical_values.upper?.toFixed(4))}
                                 </div>
                             </div>
                         </div>
                         {regressionData.r_squared && (
                             <div style={{ marginTop: '12px', padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #8b5cf6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'রিগ্রেশন R²' : 'Regression R²'}
+                                    {getLabel('Regression R²')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {regressionData.r_squared.toFixed(4)}
+                                    {mapDigit(regressionData.r_squared.toFixed(4))}
                                 </div>
                             </div>
                         )}
@@ -623,12 +744,10 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
         );
     };
 
-
     const renderResidualPlot = () => {
         const settings = residualSettings;
         const { height } = getDimensions(settings.dimensions);
 
-        // Use residual data from backend or calculate from data_points
         const residualData = results.residual_data ? 
             results.residual_data.independent.map((x, index) => ({
                 x: x,
@@ -641,7 +760,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                 fitted: point.predicted
             })) || [];
 
-        // Create zero reference line data
         const minX = Math.min(...residualData.map(d => d.x));
         const maxX = Math.max(...residualData.map(d => d.x));
         const zeroReferenceLine = [
@@ -659,21 +777,21 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button className="customize-btn" onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -747,10 +865,9 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 />
                             )}                            
                             
-                            {/* Zero Reference Line */}
                             {settings.showReferenceLine && (
                                 <Line
-                                    name="Zero Reference Line"
+                                    name={getLabel('Zero Reference Line')}
                                     type="linear"
                                     dataKey="y"
                                     data={zeroReferenceLine}
@@ -763,10 +880,9 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                 />
                             )}
                             
-                            {/* Residual Points */}
                             {settings.showScatterPoints && (
                                 <Scatter
-                                    name={language === 'বাংলা' ? 'অবশিষ্ট' : 'Residual Points'}
+                                    name={getLabel('Residual Points')}
                                     data={residualData}
                                     fill={settings.scatterColor || '#3b82f6'}
                                     fillOpacity={settings.scatterOpacity || 0.7}
@@ -787,7 +903,6 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                         </ComposedChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -803,35 +918,34 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                     )}
                 </div>
 
-                {/* Residual Statistics Display */}
                 {settings.showCriticalValues && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'অবশিষ্ট পরিসংখ্যান' : 'Residual Statistics'}
+                            {getLabel('Residual Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'গড় অবশিষ্ট' : 'Mean Residual'}
+                                    {getLabel('Mean Residual')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values?.mean_difference?.toFixed(4) || '0.0000'}
+                                    {mapDigit(results.critical_values?.mean_difference?.toFixed(4) || '0.0000')}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'অবশিষ্ট এসডি' : 'Residual SD'}
+                                    {getLabel('Residual SD')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.root_mean_squared_error?.toFixed(4)}
+                                    {mapDigit(results.root_mean_squared_error?.toFixed(4))}
                                 </div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
                                 <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>
-                                    {language === 'বাংলা' ? 'অবশিষ্ট পরিসীমা' : 'Residual Range'}
+                                    {getLabel('Residual Range')}
                                 </div>
                                 <div style={{ fontSize: '16px', color: '#6b7280' }}>
-                                    {results.critical_values?.lower?.toFixed(4)} to {results.critical_values?.upper?.toFixed(4)}
+                                    {mapDigit(results.critical_values?.lower?.toFixed(4))} {getLabel('to')} {mapDigit(results.critical_values?.upper?.toFixed(4))}
                                 </div>
                             </div>
                         </div>
@@ -844,14 +958,14 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.linearRegressionTitle}</h2>
+                <h2 className="stats-title">{getLabel('Linear Regression')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -859,45 +973,45 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{results.column_names?.independent || columns?.[0]} {language === 'বাংলা' ? 'এবং' : 'and'} {results.column_names?.dependent || columns?.[1]}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
+                            <td className="stats-table-value">{results.column_names?.independent || columns?.[0]} {getLabel('and')} {results.column_names?.dependent || columns?.[1]}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.intercept}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.intercept?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Intercept')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.intercept?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.coefficient}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.coefficient?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Coefficient')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.coefficient?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.rSquared}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.r_squared?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('R-Squared')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.adjustedRSquared}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.adjusted_r_squared?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Adjusted R-Squared')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.adjusted_r_squared?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.meanSquaredError}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.mean_squared_error?.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Mean Squared Error')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.mean_squared_error?.toFixed(4))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সমীকরণ' : 'Equation'}</td>
+                            <td className="stats-table-label">{getLabel('Equation')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
-                                    y = {mapDigitIfBengali(results.coefficient?.toFixed(4))}x {results.intercept >= 0 ? '+' : ''} {mapDigitIfBengali(results.intercept?.toFixed(4))}
+                                    y = {mapDigit(results.coefficient?.toFixed(4))}x {results.intercept >= 0 ? '+' : ''} {mapDigit(results.intercept?.toFixed(4))}
                                 </div>
                             </td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.significant ? (
@@ -905,14 +1019,14 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.significant}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Significant relationship')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('No significant relationship')}</span>
                                         </>
                                     )}
                                 </div>
@@ -923,11 +1037,11 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`} onClick={() => setActiveTab('scatter')}>{t.scatterPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'residuals' ? 'active' : ''}`} onClick={() => setActiveTab('residuals')}>{t.residualPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'scatter' ? 'active' : ''}`} onClick={() => setActiveTab('scatter')}>{getLabel('Scatter Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'residuals' ? 'active' : ''}`} onClick={() => setActiveTab('residuals')}>{getLabel('Residual Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -951,21 +1065,10 @@ const renderLinearRegressionResults = (linearRegressionActiveTab, setLinearRegre
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />
-
-            <CustomizationOverlay
-                isOpen={overlayOpen}
-                onClose={() => setOverlayOpen(false)}
-                plotType={currentPlotType}
-                settings={getCurrentSettings()}
-                onSettingsChange={setCurrentSettings}
-                language={language}
-                fontFamilyOptions={fontFamilyOptions}
-                getDefaultSettings={getDefaultSettings}
-            />            
 
             <style jsx="true">{`
                 .customize-btn {

@@ -3,6 +3,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -63,7 +83,7 @@ const fontFamilyOptions = [
 const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -79,6 +99,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     const [currentPlotType, setCurrentPlotType] = React.useState('Count');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
@@ -95,6 +116,71 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     const [violinSettings, setViolinSettings] = React.useState(
         getDefaultSettings('Violin', categoryCount, categoryNames)
     );
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'One-Way ANOVA',
+                'Group Sizes',
+                'Box Plot',
+                'Violin Plot',
+                'Mean Values',
+                'Count',
+                'Observations',
+                'Degrees of Freedom',
+                'Sum of Squares',
+                'Mean Square',
+                'F-Statistic',
+                'P-Value',
+                'Significant difference found (p < 0.05)',
+                'No significant difference (p ≥ 0.05)',
+                'Description',
+                'Value',
+                'Analyzed Columns',
+                'and',
+                'Number of Groups',
+                'Total Observations',
+                'between',
+                'within',
+                'Conclusion',
+                'Visualizations',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Save Result',
+                'Box Plot Statistics',
+                'Max',
+                'Median',
+                'Min',
+                'Violin Plot Information',
+                'Violin plot shows data distribution density. Wider sections = more data points',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
@@ -134,7 +220,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -170,7 +256,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -178,7 +264,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -202,32 +288,15 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        fStatistic: language === 'বাংলা' ? 'এফ-পরিসংখ্যান' : 'F-Statistic',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference (p ≥ 0.05)',
-        anovaTitle: language === 'বাংলা' ? 'এক-মুখী এনোভা' : 'One-Way ANOVA',
-        groupSizes: language === 'বাংলা' ? 'গ্রুপের আকার' : 'Group Sizes',
-        boxPlot: language === 'বাংলা' ? 'বক্স প্লট' : 'Box Plot',
-        violinPlot: language === 'বাংলা' ? 'ভায়োলিন প্লট' : 'Violin Plot',
-        meanPlot: language === 'বাংলা' ? 'গড় মান' : 'Mean Values',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations',
-        degreesOfFreedom: language === 'বাংলা' ? 'ডিগ্রী অফ ফ্রিডম' : 'Degrees of Freedom',
-        sumOfSquares: language === 'বাংলা' ? 'সমষ্টি বর্গ' : 'Sum of Squares',
-        meanSquare: language === 'বাংলা' ? 'গড় বর্গ' : 'Mean Square'
     };
 
     const plotData = results.plot_data || [];
@@ -794,18 +863,18 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                            {getLabel('Box Plot Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {data.map((group, idx) => (
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>Max: {group.max}</div>
+                                        <div>{getLabel('Max')}: {group.max}</div>
                                         <div>Q3 (75%): {group.q75}</div>
-                                        <div>Median: {group.median}</div>
+                                        <div>{getLabel('Median')}: {group.median}</div>
                                         <div>Q1 (25%): {group.q25}</div>
-                                        <div>Min: {group.min}</div>
+                                        <div>{getLabel('Min')}: {group.min}</div>
                                     </div>
                                 </div>
                             ))}
@@ -1065,10 +1134,10 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
+                            {getLabel('Violin Plot Information')}
                         </h4>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
+                            {getLabel('Violin plot shows data distribution density. Wider sections = more data points')}
                         </p>
                     </div>
                 )}
@@ -1099,14 +1168,14 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.anovaTitle}</h2>
+                <h2 className="stats-title">{getLabel('One-Way ANOVA')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -1114,37 +1183,37 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{groupColumn} {language === 'বাংলা' ? 'এবং' : 'and'} {valueColumn}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
+                            <td className="stats-table-value">{groupColumn} {getLabel('and')} {valueColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
+                            <td className="stats-table-label">{getLabel('Number of Groups')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.fStatistic}</td>
+                            <td className="stats-table-label">{getLabel('F-Statistic')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.f_statistic?.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.pValue}</td>
+                            <td className="stats-table-label">{getLabel('P-Value')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value?.toFixed(6))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.degreesOfFreedom}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.df_between)} {language === 'বাংলা' ? '(বিটুইন),' : '(between),'} {mapDigitIfBengali(results.df_within)} {language === 'বাংলা' ? '(উইদিন)' : '(within)'}</td>
+                            <td className="stats-table-label">{getLabel('Degrees of Freedom')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.df_between)} ({getLabel('between')}), {mapDigitIfBengali(results.df_within)} ({getLabel('within')})</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value < 0.05 ? (
@@ -1152,14 +1221,14 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.significant}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Significant difference found (p < 0.05)')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('No significant difference (p ≥ 0.05)')}</span>
                                         </>
                                     )}
                                 </div>
@@ -1170,13 +1239,13 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.count}</button>
-                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{t.meanPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{t.violinPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{getLabel('Count')}</button>
+                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{getLabel('Mean Values')}</button>
+                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{getLabel('Box Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{getLabel('Violin Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -1212,7 +1281,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />
