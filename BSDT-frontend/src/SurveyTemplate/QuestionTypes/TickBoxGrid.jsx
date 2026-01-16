@@ -1,10 +1,17 @@
-import React, { useState, useCallback, useMemo,useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useMemo,
+  useRef,
+  useEffect,
+} from "react";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
+import "./CSS/TickBoxGrid.css";
 
 const MAX_COLUMNS = 7; // Define maximum number of columns
 
@@ -383,19 +390,97 @@ const TickBoxGrid = ({
   ]);
 
   const [showMenu, setShowMenu] = useState(false);
-    const menuRef = useRef(null);
-  
-    // Close on outside click
-    useEffect(() => {
-      const handleClickOutside = (e) => {
-        if (menuRef.current && !menuRef.current.contains(e.target)) {
-          setShowMenu(false);
+  const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
+
+  // Close on outside click and position menu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(e.target)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleMenuPosition = () => {
+      if (showMenu && menuButtonRef.current && menuRef.current) {
+        const buttonRect = menuButtonRef.current.getBoundingClientRect();
+        const menu = menuRef.current.querySelector(".custom-menu");
+        if (menu) {
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            const menuTop = buttonRect.bottom + 8;
+            const menuRight = window.innerWidth - buttonRect.right;
+            menu.style.position = "fixed";
+            menu.style.top = `${menuTop}px`;
+            menu.style.right = `${menuRight}px`;
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "10000";
+
+            requestAnimationFrame(() => {
+              const menuRect = menu.getBoundingClientRect();
+              if (menuRect.bottom > window.innerHeight) {
+                menu.style.top = `${Math.max(
+                  8,
+                  buttonRect.top - menuRect.height - 8
+                )}px`;
+              }
+              if (menuRect.left < 16) {
+                menu.style.left = "16px";
+                menu.style.right = "auto";
+              }
+            });
+          } else {
+            menu.style.position = "absolute";
+            menu.style.top = "calc(100% + 8px)";
+            menu.style.right = "0";
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "1000";
+          }
         }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-  
+      }
+    };
+
+    const handleOutside = (e) => {
+      handleClickOutside(e);
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside, { passive: true });
+
+    let scrollTimeout = null;
+    const throttledMenuPosition = () => {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => {
+        handleMenuPosition();
+        scrollTimeout = null;
+      }, 16);
+    };
+
+    if (showMenu) {
+      handleMenuPosition();
+      window.addEventListener("resize", handleMenuPosition, { passive: true });
+      window.addEventListener("scroll", throttledMenuPosition, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+      window.removeEventListener("resize", handleMenuPosition);
+      window.removeEventListener("scroll", throttledMenuPosition);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [showMenu]);
+
   return (
     <div className="mb-3 dnd-isolate">
       {/* <div className="d-flex justify-content-between align-items-center mb-2">
@@ -492,36 +577,44 @@ const TickBoxGrid = ({
                       <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
-                        className="d-flex align-items-center mb-2"
+                        className="tickbox-row-row"
                       >
-                        <span
+                        <div
+                          className="tickbox-row-content"
                           {...prov.dragHandleProps}
-                          className="me-2"
-                          style={{ cursor: "grab" }}
                         >
-                          <i
-                            className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
-                          ></i>
-                        </span>
-                        <input
-                          type="text"
-                          className="survey-form-control"
-                          value={row}
-                          onChange={(e) =>
-                            handleRowChange(index, e.target.value)
-                          }
-                          onPaste={(e) => handleRowPaste(index, e)}
-                          onFocus={(e) => e.target.select()}
-                          placeholder={`Row ${index + 1}`}
-                        />
-                        <button
-                          className="btn btn-outline-secondary ms-2 w-auto"
-                          onClick={() => handleDeleteRow(index)}
-                          disabled={rows.length <= 1}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                          <div className="tickbox-row-drag-handle">
+                            <i
+                              className="bi bi-grip-vertical"
+                              style={{
+                                fontSize: "1.2rem",
+                                cursor: "grab",
+                                color: "gray",
+                              }}
+                            ></i>
+                          </div>
+                          <input
+                            type="text"
+                            className="survey-form-control survey-form-control-sm tickbox-row-text-input"
+                            value={row}
+                            onChange={(e) =>
+                              handleRowChange(index, e.target.value)
+                            }
+                            onPaste={(e) => handleRowPaste(index, e)}
+                            onFocus={(e) => e.target.select()}
+                            placeholder={`Row ${index + 1}`}
+                          />
+                          <button
+                            className="btn btn-sm btn-outline-danger tickbox-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRow(index);
+                            }}
+                            disabled={rows.length <= 1}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </Draggable>
@@ -531,10 +624,7 @@ const TickBoxGrid = ({
             )}
           </Droppable>
         </DragDropContext>
-        <button
-          className="add-option-btn"
-          onClick={handleAddRow}
-        >
+        <button className="add-option-btn" onClick={handleAddRow}>
           ➕ {getLabel("Add Row")}
         </button>
       </div>
@@ -558,36 +648,44 @@ const TickBoxGrid = ({
                       <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
-                        className="d-flex align-items-center mb-2"
+                        className="tickbox-col-row"
                       >
-                        <span
+                        <div
+                          className="tickbox-col-content"
                           {...prov.dragHandleProps}
-                          className="me-2"
-                          style={{ cursor: "grab" }}
                         >
-                          <i
-                            className="bi bi-grip-vertical"
-                            style={{ fontSize: "1.2rem", cursor: "grab",color:"gray" }}
-                          ></i>
-                        </span>
-                        <input
-                          type="text"
-                          className="survey-form-control"
-                          value={col}
-                          onChange={(e) =>
-                            handleColumnChange(index, e.target.value)
-                          }
-                          onPaste={(e) => handleColumnPaste(index, e)}
-                          onFocus={(e) => e.target.select()}
-                          placeholder={`Column ${index + 1}`}
-                        />
-                        <button
-                          className="btn btn-outline-secondary ms-2 w-auto"
-                          onClick={() => handleDeleteColumn(index)}
-                          disabled={columns.length <= 1}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
+                          <div className="tickbox-col-drag-handle">
+                            <i
+                              className="bi bi-grip-vertical"
+                              style={{
+                                fontSize: "1.2rem",
+                                cursor: "grab",
+                                color: "gray",
+                              }}
+                            ></i>
+                          </div>
+                          <input
+                            type="text"
+                            className="survey-form-control survey-form-control-sm tickbox-col-text-input"
+                            value={col}
+                            onChange={(e) =>
+                              handleColumnChange(index, e.target.value)
+                            }
+                            onPaste={(e) => handleColumnPaste(index, e)}
+                            onFocus={(e) => e.target.select()}
+                            placeholder={`Column ${index + 1}`}
+                          />
+                          <button
+                            className="btn btn-sm btn-outline-danger tickbox-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteColumn(index);
+                            }}
+                            disabled={columns.length <= 1}
+                          >
+                            <i className="bi bi-trash"></i>
+                          </button>
+                        </div>
                       </div>
                     )}
                   </Draggable>
@@ -725,107 +823,144 @@ const TickBoxGrid = ({
           </label>
         </div>
       </div> */}
-      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-      {/* Copy */}
-      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
-        <i className="bi bi-copy"></i>
-      </button>
+      <div
+        className="question-actions d-flex align-items-center justify-content-end gap-2"
+        style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+      >
+        {/* Copy and Delete - side by side on mobile */}
+        <div className="question-actions-copy-delete-wrapper">
+          <button
+            className="survey-icon-btn"
+            onClick={handleCopy}
+            title="Copy Question"
+          >
+            <i className="bi bi-copy"></i>
+          </button>
 
-      {/* Delete */}
-      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
-        <i className="bi bi-trash"></i>
-      </button>
-
-      {/* Required */}
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={`requiredSwitchTickbox${question.id}`}
-          checked={required}
-          onChange={handleRequired}
-        />
-        <label
-          className="form-check-label small"
-          htmlFor={`requiredSwitchTickbox${question.id}`}
-        >
-          {getLabel("Required")}
-        </label>
-      </div>
-
-      {/* Three Dots Menu */}
-      <div className="menu-container" ref={menuRef}>
-        <button
-          className="icon-btn"
-          onClick={() => setShowMenu((prev) => !prev)}
-          title="More Options"
-        >
-          <i className="bi bi-three-dots-vertical"></i>
-        </button>
-
-      {showMenu && (
-        <div className="custom-menu">
-          {/* Shuffle Options */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-shuffle"></i>
-              {getLabel("Shuffle Row Order")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                id={`enableRowShuffleTickbox${question.id}`}
-                onChange={handleEnableRowShuffleToggle}
-                checked={enableRowShuffle}
-          />
-          
-              <span className="slider-small"></span>
-            </label>
-          </div>
-
-          {/* Require each row */}
-          <div className="menu-item">
-            <div className="menu-label">
-              <i className="bi bi-check2-square"></i>
-             {getLabel("Require a response in each row")}
-            </div>
-            <label className="switch-small">
-              <input
-                type="checkbox"
-                id={`requireEachRowTickbox${question.id}`}
-                onChange={handleRequireEachRowResponseToggle}
-                checked={requireEachRowResponse}
-              />
-              <span className="slider-small"></span>
-            </label>
-          </div>
-
-            {/* Add Image */}
-          <label className="menu-item" style={{ cursor: "pointer" }}>
-            <div className="menu-label">
-              <i className="bi bi-image"></i>
-              {getLabel("Add Image")}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleQuestionImageUpload}
-            />
-          </label>
-
-          {/* Translate */}
-          <button className="menu-item" onClick={handleTranslation}>
-            <div className="menu-label">
-              <i className="bi bi-translate"></i>
-              {getLabel("Translate Question")}
-            </div>
+          <button
+            className="survey-icon-btn"
+            onClick={handleDelete}
+            title="Delete Question"
+          >
+            <i className="bi bi-trash"></i>
           </button>
         </div>
-      )}
 
+        {/* Required */}
+        <div className="form-check form-switch mb-0 required-switch-container">
+          <label
+            className="form-check-label small"
+            htmlFor={`requiredSwitchTickbox${question.id}`}
+          >
+            {getLabel("Required")}
+          </label>
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`requiredSwitchTickbox${question.id}`}
+            checked={required}
+            onChange={handleRequired}
+          />
+        </div>
+
+        {/* Three Dots Menu */}
+        <div className="menu-container" ref={menuRef}>
+          <button
+            ref={menuButtonRef}
+            className="icon-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            title="More Options"
+            type="button"
+          >
+            <i className="bi bi-three-dots-vertical"></i>
+          </button>
+
+          {showMenu && (
+            <>
+              <div
+                className="menu-backdrop"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              ></div>
+              <div className="custom-menu">
+                {/* Shuffle Options */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-shuffle"></i>
+                    {getLabel("Shuffle Row Order")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      id={`enableRowShuffleTickbox${question.id}`}
+                      onChange={handleEnableRowShuffleToggle}
+                      checked={enableRowShuffle}
+                    />
+
+                    <span className="slider-small"></span>
+                  </label>
+                </div>
+
+                {/* Require each row */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-check2-square"></i>
+                    {getLabel("Require a response in each row")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      id={`requireEachRowTickbox${question.id}`}
+                      onChange={handleRequireEachRowResponseToggle}
+                      checked={requireEachRowResponse}
+                    />
+                    <span className="slider-small"></span>
+                  </label>
+                </div>
+
+                {/* Add Image */}
+                <label className="menu-item" style={{ cursor: "pointer" }}>
+                  <div className="menu-label">
+                    <i className="bi bi-image"></i>
+                    {getLabel("Add Image")}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleQuestionImageUpload}
+                  />
+                </label>
+
+                {/* Translate */}
+                <button className="menu-item" onClick={handleTranslation}>
+                  <div className="menu-label">
+                    <i className="bi bi-translate"></i>
+                    {getLabel("Translate Question")}
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
     </div>
   );
 };

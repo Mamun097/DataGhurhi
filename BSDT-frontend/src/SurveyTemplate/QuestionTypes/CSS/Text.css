@@ -1,0 +1,137 @@
+/* Text Question Type Styles */
+
+.text-question-container {
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.text-response-type-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.text-response-type-btn {
+  padding: 8px 16px;
+  border: 2px solid #25856f;
+  background: white;
+  color: #25856f;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 40px;
+}
+
+.text-response-type-btn.active {
+  background: #25856f;
+  color: white;
+}
+
+.text-response-type-btn:hover {
+  background: #f0faf0;
+}
+
+.text-response-type-btn.active:hover {
+  background: #1e6f5f;
+}
+
+.text-validation-section {
+  margin-top: 16px;
+  padding: 12px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+}
+
+.text-validation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.text-validation-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.text-validation-select,
+.text-validation-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.text-validation-select:focus,
+.text-validation-input:focus {
+  border-color: #25856f;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 133, 111, 0.1);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .text-question-container {
+    padding: 10px;
+  }
+
+  .text-response-type-toggle {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .text-response-type-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+
+  .text-validation-section {
+    padding: 10px;
+  }
+
+  .text-validation-controls {
+    gap: 10px;
+  }
+
+  .text-validation-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .text-validation-select,
+  .text-validation-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 480px) {
+  .text-question-container {
+    padding: 8px;
+  }
+
+  .text-response-type-btn {
+    padding: 10px 14px;
+    font-size: 0.9375rem;
+  }
+
+  .text-validation-select,
+  .text-validation-input {
+    padding: 8px;
+    font-size: 1rem;
+  }
+}

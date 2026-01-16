@@ -5,6 +5,7 @@ import TagManager from "./QuestionSpecificUtils/Tag";
 import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 import axios from "axios";
+import "./CSS/DateTime.css";
 
 const DateTimeQuestion = ({
   index,
@@ -156,20 +157,98 @@ const DateTimeQuestion = ({
     handleQuestionChange(response.data.data.translations[0].translatedText);
   }, [handleQuestionChange, question.text]);
 
-    const [showMenu, setShowMenu] = useState(false);
-    const menuRef = useRef(null);
-  
-    // Close on outside click
-    useEffect(() => {
-      const handleClickOutside = (e) => {
-        if (menuRef.current && !menuRef.current.contains(e.target)) {
-          setShowMenu(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
+
+  // Close on outside click and position menu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(e.target)
+      ) {
+        setShowMenu(false);
+      }
+    };
+
+    const handleMenuPosition = () => {
+      if (showMenu && menuButtonRef.current && menuRef.current) {
+        const buttonRect = menuButtonRef.current.getBoundingClientRect();
+        const menu = menuRef.current.querySelector(".custom-menu");
+        if (menu) {
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            const menuTop = buttonRect.bottom + 8;
+            const menuRight = window.innerWidth - buttonRect.right;
+            menu.style.position = "fixed";
+            menu.style.top = `${menuTop}px`;
+            menu.style.right = `${menuRight}px`;
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "10000";
+
+            requestAnimationFrame(() => {
+              const menuRect = menu.getBoundingClientRect();
+              if (menuRect.bottom > window.innerHeight) {
+                menu.style.top = `${Math.max(
+                  8,
+                  buttonRect.top - menuRect.height - 8
+                )}px`;
+              }
+              if (menuRect.left < 16) {
+                menu.style.left = "16px";
+                menu.style.right = "auto";
+              }
+            });
+          } else {
+            menu.style.position = "absolute";
+            menu.style.top = "calc(100% + 8px)";
+            menu.style.right = "0";
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "1000";
+          }
         }
-      };
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-  
+      }
+    };
+
+    const handleOutside = (e) => {
+      handleClickOutside(e);
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside, { passive: true });
+
+    let scrollTimeout = null;
+    const throttledMenuPosition = () => {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => {
+        handleMenuPosition();
+        scrollTimeout = null;
+      }, 16);
+    };
+
+    if (showMenu) {
+      handleMenuPosition();
+      window.addEventListener("resize", handleMenuPosition, { passive: true });
+      window.addEventListener("scroll", throttledMenuPosition, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+      window.removeEventListener("resize", handleMenuPosition);
+      window.removeEventListener("scroll", throttledMenuPosition);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [showMenu]);
+
   return (
     <div className="mb-3">
       {/* Top Bar: Label and TagManager */}
@@ -259,7 +338,10 @@ const DateTimeQuestion = ({
       </div> */}
 
       {/* Date/Time Input & Type Selector */}
-      <div className="d-flex flex-wrap align-items-center gap-2  mb-2" style={{marginLeft:"20px"}}>
+      <div
+        className="d-flex flex-wrap align-items-center gap-2  mb-2"
+        style={{ marginLeft: "20px" }}
+      >
         <input
           type={question.meta?.dateType === "time" ? "time" : "date"}
           className="survey-form-control survey-form-control-sm w-auto"
@@ -330,75 +412,109 @@ const DateTimeQuestion = ({
         </div>
       </div> */}
 
- <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-      {/* Copy */}
-      <button className="survey-icon-btn" onClick={handleCopy} title="Copy Question">
-        <i className="bi bi-copy"></i>
-      </button>
+      <div
+        className="question-actions d-flex align-items-center justify-content-end gap-2"
+        style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+      >
+        {/* Copy and Delete - side by side on mobile */}
+        <div className="question-actions-copy-delete-wrapper">
+          <button
+            className="survey-icon-btn"
+            onClick={handleCopy}
+            title="Copy Question"
+          >
+            <i className="bi bi-copy"></i>
+          </button>
 
-      {/* Delete */}
-      <button className="survey-icon-btn" onClick={handleDelete} title="Delete Question">
-        <i className="bi bi-trash"></i>
-      </button>
-
-      {/* Required */}
-      <div className="form-check form-switch mb-0">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id={`dateTimeRequired-${question.id}`}
-          checked={required}
-          onChange={handleRequired}
-        />
-        <label
-          className="form-check-label small"
-          htmlFor={`dateTimeRequired-${question.id}`}
-        >
-          {getLabel("Required")}
-        </label>
-      </div>
-
-      {/* Three Dots Menu */}
-      <div className="menu-container" ref={menuRef}>
-        <button
-          className="icon-btn"
-          onClick={() => setShowMenu((prev) => !prev)}
-          title="More Options"
-        >
-          <i className="bi bi-three-dots-vertical"></i>
-        </button>
-
-      {showMenu && (
-        <div className="custom-menu">
-    
-            {/* Add Image */}
-          <label className="menu-item" style={{ cursor: "pointer" }}>
-            <div className="menu-label">
-              <i className="bi bi-image"></i>
-              {getLabel("Add Image")}
-            </div>
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={handleQuestionImageUpload}
-            />
-          </label>
-
-          {/* Translate */}
-          <button className="menu-item" onClick={handleTranslation}>
-            <div className="menu-label">
-              <i className="bi bi-translate"></i>
-              {getLabel("Translate Question")}
-            </div>
+          <button
+            className="survey-icon-btn"
+            onClick={handleDelete}
+            title="Delete Question"
+          >
+            <i className="bi bi-trash"></i>
           </button>
         </div>
-      )}
 
+        {/* Required */}
+        <div className="form-check form-switch mb-0 required-switch-container">
+          <label
+            className="form-check-label small"
+            htmlFor={`dateTimeRequired-${question.id}`}
+          >
+            {getLabel("Required")}
+          </label>
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id={`dateTimeRequired-${question.id}`}
+            checked={required}
+            onChange={handleRequired}
+          />
+        </div>
+
+        {/* Three Dots Menu */}
+        <div className="menu-container" ref={menuRef}>
+          <button
+            ref={menuButtonRef}
+            className="icon-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            title="More Options"
+            type="button"
+          >
+            <i className="bi bi-three-dots-vertical"></i>
+          </button>
+
+          {showMenu && (
+            <>
+              <div
+                className="menu-backdrop"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              ></div>
+              <div className="custom-menu">
+                {/* Add Image */}
+                <label className="menu-item" style={{ cursor: "pointer" }}>
+                  <div className="menu-label">
+                    <i className="bi bi-image"></i>
+                    {getLabel("Add Image")}
+                  </div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleQuestionImageUpload}
+                  />
+                </label>
+
+                {/* Translate */}
+                <button className="menu-item" onClick={handleTranslation}>
+                  <div className="menu-label">
+                    <i className="bi bi-translate"></i>
+                    {getLabel("Translate Question")}
+                  </div>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </div>
-
-      
     </div>
   );
 };

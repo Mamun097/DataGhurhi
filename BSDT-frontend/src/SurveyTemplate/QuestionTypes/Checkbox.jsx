@@ -13,6 +13,7 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import translateText from "./QuestionSpecificUtils/Translation";
 import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
 import "../CSS/SurveyQuestions.css";
+import "./CSS/Checkbox.css";
 
 const Checkbox = ({
   index,
@@ -403,17 +404,95 @@ const Checkbox = ({
   ]);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
-  // Close on outside click
+  // Close on outside click and position menu
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target) &&
+        menuButtonRef.current &&
+        !menuButtonRef.current.contains(e.target)
+      ) {
         setShowMenu(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    const handleMenuPosition = () => {
+      if (showMenu && menuButtonRef.current && menuRef.current) {
+        const buttonRect = menuButtonRef.current.getBoundingClientRect();
+        const menu = menuRef.current.querySelector(".custom-menu");
+        if (menu) {
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            const menuTop = buttonRect.bottom + 8;
+            const menuRight = window.innerWidth - buttonRect.right;
+            menu.style.position = "fixed";
+            menu.style.top = `${menuTop}px`;
+            menu.style.right = `${menuRight}px`;
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "10000";
+
+            requestAnimationFrame(() => {
+              const menuRect = menu.getBoundingClientRect();
+              if (menuRect.bottom > window.innerHeight) {
+                menu.style.top = `${Math.max(
+                  8,
+                  buttonRect.top - menuRect.height - 8
+                )}px`;
+              }
+              if (menuRect.left < 16) {
+                menu.style.left = "16px";
+                menu.style.right = "auto";
+              }
+            });
+          } else {
+            menu.style.position = "absolute";
+            menu.style.top = "calc(100% + 8px)";
+            menu.style.right = "0";
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "1000";
+          }
+        }
+      }
+    };
+
+    const handleOutside = (e) => {
+      handleClickOutside(e);
+    };
+
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside, { passive: true });
+
+    let scrollTimeout = null;
+    const throttledMenuPosition = () => {
+      if (scrollTimeout) return;
+      scrollTimeout = setTimeout(() => {
+        handleMenuPosition();
+        scrollTimeout = null;
+      }, 16);
+    };
+
+    if (showMenu) {
+      handleMenuPosition();
+      window.addEventListener("resize", handleMenuPosition, { passive: true });
+      window.addEventListener("scroll", throttledMenuPosition, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+      window.removeEventListener("resize", handleMenuPosition);
+      window.removeEventListener("scroll", throttledMenuPosition);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+    };
+  }, [showMenu]);
 
   const currentOptions = question.meta?.options || [];
 
@@ -430,7 +509,7 @@ const Checkbox = ({
     : getLabel("Other: ");
 
   return (
-    <div className="mb-3 dnd-isolate">
+    <div className="mb-3 dnd-isolate checkbox-question-wrapper">
       {showCropper && selectedFile && (
         <ImageCropper
           file={selectedFile}
@@ -503,29 +582,30 @@ const Checkbox = ({
                     <div
                       ref={prov.innerRef}
                       {...prov.draggableProps}
-                      className="row g-2 mb-2 align-items-center"
+                      className="checkbox-option-row"
                     >
-                      <div className="col-auto" {...prov.dragHandleProps}>
-                        <i
-                          className="bi bi-grip-vertical"
-                          style={{
-                            fontSize: "1.2rem",
-                            cursor: "grab",
-                            color: "gray",
-                          }}
-                        ></i>
-                      </div>
-                      <div className="col-auto">
+                      <div
+                        className="checkbox-option-content"
+                        {...prov.dragHandleProps}
+                      >
+                        <div className="checkbox-option-drag-handle">
+                          <i
+                            className="bi bi-grip-vertical"
+                            style={{
+                              fontSize: "1.2rem",
+                              cursor: "grab",
+                              color: "gray",
+                            }}
+                          ></i>
+                        </div>
                         <input
                           type="checkbox"
-                          className="form-check-input"
+                          className="form-check-input checkbox-input"
                           disabled
                         />
-                      </div>
-                      <div className="col">
                         <input
                           type="text"
-                          className="survey-form-control survey-form-control-sm"
+                          className="survey-form-control survey-form-control-sm checkbox-text-input"
                           value={option}
                           onChange={(e) =>
                             handleOptionChange(idx, e.target.value)
@@ -534,11 +614,12 @@ const Checkbox = ({
                           onFocus={(e) => e.target.select()}
                           placeholder={`Option ${idx + 1}`}
                         />
-                      </div>
-                      <div className="col-auto">
                         <button
-                          className="btn btn-sm btn-outline-secondary w-auto"
-                          onClick={() => removeOption(idx)}
+                          className="btn btn-sm btn-outline-danger checkbox-delete-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeOption(idx);
+                          }}
                           disabled={
                             (question.meta?.options || []).length <= 1 &&
                             (question.meta?.options || [])[0] !== "Other"
@@ -558,37 +639,39 @@ const Checkbox = ({
       </DragDropContext>
       {/* Other Option */}
       {otherOption && (
-        <div className="row g-2 mb-2 align-items-center">
-          <div className="col-auto">
-            <i
-              className="bi bi-grip-vertical"
+        <div className="checkbox-option-row">
+          <div className="checkbox-option-content">
+            <div className="checkbox-option-drag-handle">
+              <i
+                className="bi bi-grip-vertical"
+                style={{
+                  fontSize: "1.2rem",
+                  cursor: "grab",
+                  color: "transparent",
+                }}
+              ></i>
+            </div>
+            <input
+              className="form-check-input checkbox-input"
+              type="checkbox"
+              disabled
+            />
+            <span
+              className="checkbox-other-label"
               style={{
-                fontSize: "1.2rem",
-                cursor: "grab",
-                color: "transparent",
+                fontWeight: 600,
+                color: "#0c0b0bff",
+                fontSize: "14px",
+                flex: 1,
+                minWidth: 0,
               }}
-            ></i>
-          </div>
-          <div className="col-auto">
-            <input className="form-check-input" type="checkbox" disabled />
-          </div>
-          <div className="col-auto">
-            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
+            >
               {otherFieldLabel}
             </span>
-          </div>
-          <div className="col">
-            <input
-              type="text"
-              className="survey-form-control survey-form-control-sm"
-              disabled
-              style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
-            />
-          </div>
-          <div className="col-auto">
             <button
-              className="btn btn-sm btn-outline-danger"
-              onClick={() => {
+              className="btn btn-sm btn-outline-danger checkbox-delete-btn"
+              onClick={(e) => {
+                e.stopPropagation();
                 handleOtherOption(false, question.id, setQuestions);
                 setOtherOption(false);
               }}
@@ -599,8 +682,12 @@ const Checkbox = ({
           </div>
         </div>
       )}
-      <div className="d-flex gap-2 mt-3">
-        <button type="button" className="add-option-btn" onClick={addOption}>
+      <div className="d-flex gap-2 mt-3 checkbox-actions-mobile">
+        <button
+          type="button"
+          className="add-option-btn checkbox-add-option-btn"
+          onClick={addOption}
+        >
           <i className="bi bi-plus-circle me-1"></i>
           {getLabel("Add Option")}
         </button>
@@ -608,7 +695,7 @@ const Checkbox = ({
         {!otherOption && (
           <button
             type="button"
-            className="add-option-btn"
+            className="add-option-btn checkbox-add-other-btn"
             onClick={() => {
               handleOtherOption(!otherOption, question.id, setQuestions);
               setOtherOption(true);
@@ -717,27 +804,37 @@ const Checkbox = ({
           </label>
         </div> */}
       {/* </div> */}
-      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-        {/* Copy */}
-        <button
-          className="survey-icon-btn"
-          onClick={handleCopy}
-          title="Copy Question"
-        >
-          <i className="bi bi-copy"></i>
-        </button>
+      <div
+        className="question-actions d-flex align-items-center justify-content-end gap-2"
+        style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+      >
+        {/* Copy and Delete - side by side on mobile */}
+        <div className="question-actions-copy-delete-wrapper">
+          <button
+            className="survey-icon-btn"
+            onClick={handleCopy}
+            title="Copy Question"
+          >
+            <i className="bi bi-copy"></i>
+          </button>
 
-        {/* Delete */}
-        <button
-          className="survey-icon-btn"
-          onClick={handleDelete}
-          title="Delete Question"
-        >
-          <i className="bi bi-trash"></i>
-        </button>
+          <button
+            className="survey-icon-btn"
+            onClick={handleDelete}
+            title="Delete Question"
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+        </div>
 
         {/* Required */}
-        <div className="form-check form-switch mb-0">
+        <div className="form-check form-switch mb-0 required-switch-container">
+          <label
+            className="form-check-label small"
+            htmlFor={`requiredSwitchCheckbox${question.id}`}
+          >
+            {getLabel("Required")}
+          </label>
           <input
             className="form-check-input"
             type="checkbox"
@@ -745,80 +842,100 @@ const Checkbox = ({
             checked={required}
             onChange={handleRequired}
           />
-          <label
-            className="form-check-label small"
-            htmlFor={`requiredSwitchCheckbox${question.id}`}
-          >
-            {getLabel("Required")}
-          </label>
         </div>
 
         {/* Three Dots Menu */}
         <div className="menu-container" ref={menuRef}>
           <button
+            ref={menuButtonRef}
             className="icon-btn"
-            onClick={() => setShowMenu((prev) => !prev)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
             title="More Options"
+            type="button"
           >
             <i className="bi bi-three-dots-vertical"></i>
           </button>
 
           {showMenu && (
-            <div className="custom-menu">
-              {/* Shuffle Options */}
-              <div className="menu-item">
-                <div className="menu-label">
-                  <i className="bi bi-shuffle"></i>
-                  {getLabel("Shuffle Option Order")}
+            <>
+              <div
+                className="menu-backdrop"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              ></div>
+              <div className="custom-menu">
+                {/* Shuffle Options */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-shuffle"></i>
+                    {getLabel("Shuffle Option Order")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      checked={enableOptionShuffle}
+                      onChange={handleEnableOptionShuffleToggle}
+                    />
+                    <span className="slider-small"></span>
+                  </label>
                 </div>
-                <label className="switch-small">
+
+                {/* Require at least one */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-check2-square"></i>
+                    {getLabel("Require at least one selection")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      checked={requireAtLeastOneSelection}
+                      onChange={handleRequireAtLeastOneSelectionToggle}
+                    />
+                    <span className="slider-small"></span>
+                  </label>
+                </div>
+
+                {/* Add Image */}
+                <label className="menu-item" style={{ cursor: "pointer" }}>
+                  <div className="menu-label">
+                    <i className="bi bi-image"></i>
+                    {getLabel("Add Image")}
+                  </div>
                   <input
-                    type="checkbox"
-                    checked={enableOptionShuffle}
-                    onChange={handleEnableOptionShuffleToggle}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleQuestionImageUpload}
                   />
-                  <span className="slider-small"></span>
                 </label>
+
+                {/* Translate */}
+                <button className="menu-item" onClick={handleTranslation}>
+                  <div className="menu-label">
+                    <i className="bi bi-translate"></i>
+                    {getLabel("Translate Question")}
+                  </div>
+                </button>
               </div>
-
-              {/* Require at least one */}
-              <div className="menu-item">
-                <div className="menu-label">
-                  <i className="bi bi-check2-square"></i>
-                  {getLabel("Require at least one selection")}
-                </div>
-                <label className="switch-small">
-                  <input
-                    type="checkbox"
-                    checked={requireAtLeastOneSelection}
-                    onChange={handleRequireAtLeastOneSelectionToggle}
-                  />
-                  <span className="slider-small"></span>
-                </label>
-              </div>
-
-              {/* Add Image */}
-              <label className="menu-item" style={{ cursor: "pointer" }}>
-                <div className="menu-label">
-                  <i className="bi bi-image"></i>
-                  {getLabel("Add Image")}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={handleQuestionImageUpload}
-                />
-              </label>
-
-              {/* Translate */}
-              <button className="menu-item" onClick={handleTranslation}>
-                <div className="menu-label">
-                  <i className="bi bi-translate"></i>
-                  {getLabel("Translate Question")}
-                </div>
-              </button>
-            </div>
+            </>
           )}
         </div>
       </div>

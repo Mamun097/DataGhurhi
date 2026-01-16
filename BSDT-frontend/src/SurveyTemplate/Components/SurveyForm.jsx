@@ -612,7 +612,10 @@ const SurveyForm = ({
   };
 
   return (
-    <div className="px-2 px-md-3 " style={{ paddingTop: "100px" }}>
+    <div
+      className="px-2 px-md-3 survey-form-container"
+      style={{ paddingTop: "100px" }}
+    >
       {/* Action Buttons */}
       {/* Floating Top Navigation Bar */}
       <div className="floating-top-bar">

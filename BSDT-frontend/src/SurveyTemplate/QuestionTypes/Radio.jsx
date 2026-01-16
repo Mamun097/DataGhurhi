@@ -6,6 +6,7 @@ import ImageCropper from "./QuestionSpecificUtils/ImageCropper";
 import TagManager from "./QuestionSpecificUtils/Tag";
 import translateText from "./QuestionSpecificUtils/Translation";
 import { handleOtherOption } from "./QuestionSpecificUtils/OtherOption";
+import "./CSS/Radio.css";
 
 const Radio = ({
   index,
@@ -406,17 +407,69 @@ const Radio = ({
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
 
-  // Close on outside click
+  // Optimized Menu Positioning Effect
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setShowMenu(false);
+    const handleMenuPosition = () => {
+      if (showMenu && menuButtonRef.current && menuRef.current) {
+        const buttonRect = menuButtonRef.current.getBoundingClientRect();
+        const menu = menuRef.current.querySelector(".custom-menu");
+
+        if (menu) {
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            // Mobile: Fixed positioning logic (Calculated ONCE)
+            const menuTop = buttonRect.bottom + 8;
+            const menuRight = window.innerWidth - buttonRect.right;
+
+            menu.style.position = "fixed";
+            menu.style.top = `${menuTop}px`;
+            menu.style.right = `${menuRight}px`;
+            menu.style.left = "auto";
+            menu.style.bottom = "auto";
+            menu.style.zIndex = "10000";
+
+            // Adjust if it goes off-screen
+            const menuRect = menu.getBoundingClientRect();
+            if (menuRect.bottom > window.innerHeight) {
+              menu.style.top = `${Math.max(
+                8,
+                buttonRect.top - menuRect.height - 8
+              )}px`;
+            }
+            if (menuRect.left < 16) {
+              menu.style.left = "16px";
+              menu.style.right = "auto";
+            }
+          } else {
+            // Desktop: Rely on CSS absolute positioning
+            // Reset inline styles so CSS class takes over
+            menu.style.position = "";
+            menu.style.top = "";
+            menu.style.right = "";
+            menu.style.left = "";
+            menu.style.bottom = "";
+            menu.style.zIndex = "";
+          }
+        }
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+
+    if (showMenu) {
+      // Calculate position immediately when opened
+      handleMenuPosition();
+      // Only recalculate on resize (rotations), NOT on scroll
+      window.addEventListener("resize", handleMenuPosition, {
+        passive: true,
+      });
+    }
+
+    return () => {
+      window.removeEventListener("resize", handleMenuPosition);
+    };
+  }, [showMenu]);
 
   // Update mark for one particular question
   const handleQuestionPointValueChange = useCallback(
@@ -497,7 +550,7 @@ const Radio = ({
   );
 
   return (
-    <div className="mb-3 dnd-isolate">
+    <div className="mb-3 dnd-isolate radio-question-wrapper">
       {showCropper && selectedFile && (
         <ImageCropper
           file={selectedFile}
@@ -571,21 +624,24 @@ const Radio = ({
                       <div
                         ref={prov.innerRef}
                         {...prov.draggableProps}
-                        className="row g-2 mb-2 align-items-center"
+                        className="radio-option-row"
                       >
-                        <div className="col-auto" {...prov.dragHandleProps}>
-                          <i
-                            className="bi bi-grip-vertical"
-                            style={{
-                              fontSize: "1.2rem",
-                              cursor: "grab",
-                              color: "gray",
-                            }}
-                          ></i>
-                        </div>
-                        <div className="col-auto">
+                        <div
+                          className="radio-option-content"
+                          {...prov.dragHandleProps}
+                        >
+                          <div className="radio-option-drag-handle">
+                            <i
+                              className="bi bi-grip-vertical"
+                              style={{
+                                fontSize: "1.2rem",
+                                cursor: "grab",
+                                color: "gray",
+                              }}
+                            ></i>
+                          </div>
                           <input
-                            className="form-check-input"
+                            className="form-check-input radio-input"
                             type="radio"
                             name={`display-radio-${question.id}`}
                             disabled={!(isQuiz && !advanceMarkingEnabled)}
@@ -598,11 +654,9 @@ const Radio = ({
                             }}
                             onClick={handleCorrectAnswerDeselection(option)}
                           />
-                        </div>
-                        <div className="col">
                           <input
                             type="text"
-                            className="survey-form-control survey-form-control-sm"
+                            className="survey-form-control survey-form-control-sm radio-text-input"
                             value={option || ""}
                             onChange={(e) =>
                               handleOptionChange(idx, e.target.value)
@@ -611,31 +665,10 @@ const Radio = ({
                             onFocus={(e) => e.target.select()}
                             placeholder={`Option ${idx + 1}`}
                           />
-                        </div>
-                        <div className="col-auto">
-                          {/* If quiz and advance marking enabled then add small text(floating number) input field that will be used for marks for that individual option */}
-                          {isQuiz && advanceMarkingEnabled && (
-                            <input
-                              type="text"
-                              className="survey-form-control survey-form-control-sm ms-2"
-                              style={{ width: "90px", display: "inline-block" }}
-                              placeholder={getLabel("Marks")}
-                              value={`${
-                                question.meta?.optionSpecificMarks?.[idx] || ""
-                              }`}
-                              onChange={(e) =>
-                                updateOptionSpecificMarks(idx, e.target.value)
-                              }
-                            />
-                          )}
-                        </div>
-
-                        {/* Remove Option Button; If the option was selected as correct answer then
-                            remove it from the question's meta */}
-                        <div className="col-auto">
                           <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => {
+                            className="btn btn-sm btn-outline-danger radio-delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (isQuiz) {
                                 handleCorrectAnswerDeselection(option)();
                               }
@@ -653,6 +686,23 @@ const Radio = ({
                             <i className="bi bi-trash"></i>
                           </button>
                         </div>
+                        {/* If quiz and advance marking enabled then add small text(floating number) input field that will be used for marks for that individual option */}
+                        {isQuiz && advanceMarkingEnabled && (
+                          <div className="radio-option-marks-wrapper">
+                            <input
+                              type="text"
+                              className="survey-form-control survey-form-control-sm"
+                              style={{ width: "100%" }}
+                              placeholder={getLabel("Marks")}
+                              value={`${
+                                question.meta?.optionSpecificMarks?.[idx] || ""
+                              }`}
+                              onChange={(e) =>
+                                updateOptionSpecificMarks(idx, e.target.value)
+                              }
+                            />
+                          </div>
+                        )}
                       </div>
                     )}
                   </Draggable>
@@ -666,41 +716,32 @@ const Radio = ({
 
       {/* Other Option */}
       {otherOption && (
-        <div className="row g-2 mb-2 align-items-center">
-          <div className="col-auto">
-            <i
-              className="bi bi-grip-vertical"
-              style={{
-                fontSize: "1.2rem",
-                cursor: "grab",
-                color: "transparent",
-              }}
-            ></i>
-          </div>
-          <div className="col-auto">
+        <div className="radio-option-row">
+          <div className="radio-option-content">
+            <div className="radio-option-drag-handle">
+              <i
+                className="bi bi-grip-vertical"
+                style={{
+                  fontSize: "1.2rem",
+                  cursor: "grab",
+                  color: "transparent",
+                }}
+              ></i>
+            </div>
             <input
-              className="form-check-input"
+              className="form-check-input radio-input"
               type="radio"
               name={`display-radio-${question.id}`}
               disabled
             />
-          </div>
-          <div className="col-auto">
-            <span style={{ fontWeight: 600, color: "#0c0b0bff" }}>
-              {otherFieldLabel}
-            </span>
-          </div>
-          <div className="col">
             <input
               type="text"
-              className="survey-form-control survey-form-control-sm"
+              className="survey-form-control survey-form-control-sm radio-text-input"
               disabled
               style={{ backgroundColor: "#f5f5f5", cursor: "not-allowed" }}
             />
-          </div>
-          <div className="col-auto">
             <button
-              className="btn btn-sm btn-outline-danger"
+              className="btn btn-sm btn-outline-danger radio-delete-btn"
               onClick={() => {
                 handleOtherOption(false, question.id, setQuestions);
                 setOtherOption(false);
@@ -714,8 +755,12 @@ const Radio = ({
       )}
 
       {/* Add Option or Add "Other" */}
-      <div className="d-flex gap-2 mt-3">
-        <button type="button" className="add-option-btn" onClick={addOption}>
+      <div className="d-flex gap-2 mt-3 radio-actions-mobile">
+        <button
+          type="button"
+          className="add-option-btn radio-add-option-btn"
+          onClick={addOption}
+        >
           <i className="bi bi-plus-circle me-1"></i>
           {getLabel("Add Option")}
         </button>
@@ -723,7 +768,7 @@ const Radio = ({
         {!otherOption && !isQuiz && (
           <button
             type="button"
-            className="add-option-btn"
+            className="add-option-btn radio-add-other-btn"
             onClick={() => {
               handleOtherOption(!otherOption, question.id, setQuestions);
               setOtherOption(true);
@@ -764,27 +809,37 @@ const Radio = ({
       )}
 
       {/* Action Buttons and Toggles */}
-      <div className="question-actions d-flex align-items-center justify-content-end gap-2">
-        {/* Copy */}
-        <button
-          className="survey-icon-btn"
-          onClick={handleCopy}
-          title="Copy Question"
-        >
-          <i className="bi bi-copy"></i>
-        </button>
+      <div
+        className="question-actions d-flex align-items-center justify-content-end gap-2"
+        style={{ width: "100%", maxWidth: "100%", boxSizing: "border-box" }}
+      >
+        {/* Copy and Delete - side by side on mobile */}
+        <div className="question-actions-copy-delete-wrapper">
+          <button
+            className="survey-icon-btn"
+            onClick={handleCopy}
+            title="Copy Question"
+          >
+            <i className="bi bi-copy"></i>
+          </button>
 
-        {/* Delete */}
-        <button
-          className="survey-icon-btn"
-          onClick={handleDelete}
-          title="Delete Question"
-        >
-          <i className="bi bi-trash"></i>
-        </button>
+          <button
+            className="survey-icon-btn"
+            onClick={handleDelete}
+            title="Delete Question"
+          >
+            <i className="bi bi-trash"></i>
+          </button>
+        </div>
 
         {/* Required */}
-        <div className="form-check form-switch mb-0">
+        <div className="form-check form-switch mb-0 required-switch-container">
+          <label
+            className="form-check-label small"
+            htmlFor={`requiredSwitchRadio-${question.id}`}
+          >
+            {getLabel("Required")}
+          </label>
           <input
             className="form-check-input"
             type="checkbox"
@@ -792,82 +847,102 @@ const Radio = ({
             checked={required}
             onChange={handleRequired}
           />
-          <label
-            className="form-check-label small"
-            htmlFor={`requiredSwitchRadio-${question.id}`}
-          >
-            {getLabel("Required")}
-          </label>
         </div>
 
         {/* Three Dots Menu */}
         <div className="menu-container" ref={menuRef}>
           <button
+            ref={menuButtonRef}
             className="icon-btn"
-            onClick={() => setShowMenu((prev) => !prev)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setShowMenu((prev) => !prev);
+            }}
             title="More Options"
+            type="button"
           >
             <i className="bi bi-three-dots-vertical"></i>
           </button>
 
           {showMenu && (
-            <div className="custom-menu">
-              {/* Shuffle Options */}
-              <div className="menu-item">
-                <div className="menu-label">
-                  <i className="bi bi-shuffle"></i>
-                  {getLabel("Shuffle Option Order")}
+            <>
+              <div
+                className="menu-backdrop"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowMenu(false);
+                }}
+              ></div>
+              <div className="custom-menu">
+                {/* Shuffle Options */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-shuffle"></i>
+                    {getLabel("Shuffle Option Order")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      id={`enableOptionShuffleRadio-${question.id}`}
+                      checked={enableOptionShuffle}
+                      onChange={handleEnableOptionShuffleToggle}
+                    />
+                    <span className="slider-small"></span>
+                  </label>
                 </div>
-                <label className="switch-small">
+
+                {/* Add Image */}
+                <label className="menu-item" style={{ cursor: "pointer" }}>
+                  <div className="menu-label">
+                    <i className="bi bi-image"></i>
+                    {getLabel("Add Image")}
+                  </div>
                   <input
-                    type="checkbox"
-                    id={`enableOptionShuffleRadio-${question.id}`}
-                    checked={enableOptionShuffle}
-                    onChange={handleEnableOptionShuffleToggle}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleQuestionImageUpload}
                   />
-                  <span className="slider-small"></span>
                 </label>
+
+                {/* Translate */}
+                <button className="menu-item" onClick={handleTranslation}>
+                  <div className="menu-label">
+                    <i className="bi bi-translate"></i>
+                    {getLabel("Translate Question")}
+                  </div>
+                </button>
+
+                {/* Advance Marking - Future Feature Placeholder */}
+                <div className="menu-item">
+                  <div className="menu-label">
+                    <i className="bi bi-sliders2"></i>
+                    {getLabel("Advance Marking")}
+                  </div>
+                  <label className="switch-small">
+                    <input
+                      type="checkbox"
+                      id={`advanceMarkingRadio-${question.id}`}
+                      checked={advanceMarkingEnabled}
+                      onChange={() => setAdvanceMarkingEnabled((prev) => !prev)}
+                    />
+                    <span className="slider-small"></span>
+                  </label>
+                </div>
               </div>
-
-              {/* Add Image */}
-              <label className="menu-item" style={{ cursor: "pointer" }}>
-                <div className="menu-label">
-                  <i className="bi bi-image"></i>
-                  {getLabel("Add Image")}
-                </div>
-                <input
-                  type="file"
-                  accept="image/*"
-                  hidden
-                  onChange={handleQuestionImageUpload}
-                />
-              </label>
-
-              {/* Translate */}
-              <button className="menu-item" onClick={handleTranslation}>
-                <div className="menu-label">
-                  <i className="bi bi-translate"></i>
-                  {getLabel("Translate Question")}
-                </div>
-              </button>
-
-              {/* Advance Marking - Future Feature Placeholder */}
-              <div className="menu-item">
-                <div className="menu-label">
-                  <i className="bi bi-sliders2"></i>
-                  {getLabel("Advance Marking")}
-                </div>
-                <label className="switch-small">
-                  <input
-                    type="checkbox"
-                    id={`advanceMarkingRadio-${question.id}`}
-                    checked={advanceMarkingEnabled}
-                    onChange={() => setAdvanceMarkingEnabled((prev) => !prev)}
-                  />
-                  <span className="slider-small"></span>
-                </label>
-              </div>
-            </div>
+            </>
           )}
         </div>
       </div>

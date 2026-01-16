@@ -1,0 +1,408 @@
+/* TickBox Grid Question Type Styles */
+
+.tickbox-grid-container {
+  padding: 12px;
+  background: #fafafa;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.tickbox-grid-table-container {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.tickbox-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tickbox-grid-table th,
+.tickbox-grid-table td {
+  padding: 12px;
+  text-align: center;
+  border: 1px solid #e5e5e5;
+}
+
+.tickbox-grid-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.tickbox-grid-table td {
+  font-size: 14px;
+}
+
+.tickbox-grid-table input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+/* Row and Column Row Containers */
+.tickbox-row-row,
+.tickbox-col-row {
+  background: #ffffff;
+  border: 1.5px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  transition: all 0.2s ease;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tickbox-row-row:hover,
+.tickbox-col-row:hover {
+  border-color: #25856f;
+  box-shadow: 0 2px 8px rgba(37, 133, 111, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Single line layout: dragger, input, delete button */
+.tickbox-row-content,
+.tickbox-col-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.tickbox-row-drag-handle,
+.tickbox-col-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: grab;
+  min-width: 24px;
+}
+
+.tickbox-row-content .tickbox-row-text-input,
+.tickbox-col-content .tickbox-col-text-input {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.tickbox-row-content .tickbox-delete-btn,
+.tickbox-col-content .tickbox-delete-btn {
+  flex-shrink: 0;
+  margin-left: 8px;
+  min-width: 40px;
+}
+
+/* Drag Handle */
+.tickbox-row-row .bi-grip-vertical,
+.tickbox-col-row .bi-grip-vertical {
+  color: #999;
+  font-size: 1.2rem;
+  cursor: grab;
+  transition: color 0.2s ease;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+}
+
+.tickbox-row-row:hover .bi-grip-vertical,
+.tickbox-col-row:hover .bi-grip-vertical {
+  color: #25856f;
+}
+
+/* Option Input Field */
+.tickbox-row-row .survey-form-control-sm,
+.tickbox-col-row .survey-form-control-sm {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+}
+
+.tickbox-row-row .survey-form-control-sm:focus,
+.tickbox-col-row .survey-form-control-sm:focus {
+  border-color: #25856f;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 133, 111, 0.1);
+}
+
+/* Delete Button - Consistent with design language */
+.tickbox-row-row .tickbox-delete-btn,
+.tickbox-col-row .tickbox-delete-btn,
+.tickbox-row-row .btn-outline-danger,
+.tickbox-col-row .btn-outline-danger {
+  border: 2px solid #dc3545;
+  background-color: #ffffff;
+  color: #dc3545;
+  padding: 6px 10px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.1);
+}
+
+.tickbox-row-row .tickbox-delete-btn:hover,
+.tickbox-col-row .tickbox-delete-btn:hover,
+.tickbox-row-row .btn-outline-danger:hover,
+.tickbox-col-row .btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: #ffffff;
+  border-color: #dc3545;
+  box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2);
+  transform: translateY(-1px);
+}
+
+.tickbox-row-row .tickbox-delete-btn:active,
+.tickbox-col-row .tickbox-delete-btn:active,
+.tickbox-row-row .btn-outline-danger:active,
+.tickbox-col-row .btn-outline-danger:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(220, 53, 69, 0.2);
+}
+
+.tickbox-row-row .tickbox-delete-btn:disabled,
+.tickbox-col-row .tickbox-delete-btn:disabled,
+.tickbox-row-row .btn-outline-danger:disabled,
+.tickbox-col-row .btn-outline-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #ffffff;
+  color: #dc3545;
+  border-color: #dc3545;
+}
+
+.tickbox-grid-add-row-btn,
+.tickbox-grid-add-column-btn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  border: 2px solid #25856f;
+  background: white;
+  color: #25856f;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 40px;
+}
+
+.tickbox-grid-add-row-btn:hover,
+.tickbox-grid-add-column-btn:hover {
+  background: #25856f;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .tickbox-grid-container {
+    padding: 10px;
+  }
+
+  .tickbox-grid-table-container {
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tickbox-grid-table {
+    min-width: 600px;
+  }
+
+  .tickbox-grid-table th,
+  .tickbox-grid-table td {
+    padding: 8px 6px;
+    font-size: 12px;
+  }
+
+  .tickbox-grid-table input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+
+  /* Row and Column Row Containers - Mobile */
+  .tickbox-row-row,
+  .tickbox-col-row {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 10px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+    overflow: hidden;
+  }
+
+  .tickbox-row-content,
+  .tickbox-col-content {
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    overflow: visible !important;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .tickbox-row-drag-handle,
+  .tickbox-col-drag-handle {
+    flex-shrink: 0;
+    min-width: 20px;
+    width: 20px;
+  }
+
+  .tickbox-row-drag-handle .bi-grip-vertical,
+  .tickbox-col-drag-handle .bi-grip-vertical {
+    font-size: 1rem;
+    min-width: 20px;
+    min-height: 20px;
+    padding: 2px;
+  }
+
+  .tickbox-row-content .tickbox-row-text-input,
+  .tickbox-col-content .tickbox-col-text-input {
+    flex: 1;
+    min-width: 0;
+    max-width: calc(100% - 100px) !important; /* Reserve space for drag and delete button */
+    padding: 10px 12px !important;
+    font-size: 1rem !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+    border: 2px solid #e5e5e5 !important;
+    box-sizing: border-box !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .tickbox-row-content .tickbox-row-text-input:focus,
+  .tickbox-col-content .tickbox-col-text-input:focus {
+    border-color: #25856f !important;
+    box-shadow: 0 0 0 3px rgba(37, 133, 111, 0.15) !important;
+  }
+
+  .tickbox-row-content .tickbox-delete-btn,
+  .tickbox-col-content .tickbox-delete-btn {
+    flex-shrink: 0;
+    margin-left: 6px !important;
+    min-width: 40px !important;
+    width: auto !important;
+    padding: 8px 10px !important;
+  }
+
+  /* Delete button styling - ensure it's separate and visible */
+  .tickbox-row-content .tickbox-delete-btn,
+  .tickbox-col-content .tickbox-delete-btn,
+  .tickbox-row-row .tickbox-delete-btn.btn-sm.btn-outline-danger,
+  .tickbox-col-row .tickbox-delete-btn.btn-sm.btn-outline-danger {
+    padding: 8px 10px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    font-size: 0.875rem !important;
+    border-radius: 8px !important;
+    border: 2px solid #dc3545 !important;
+    color: #dc3545 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(220, 53, 69, 0.1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tickbox-row-content .tickbox-delete-btn:hover,
+  .tickbox-col-content .tickbox-delete-btn:hover,
+  .tickbox-row-row .tickbox-delete-btn:hover,
+  .tickbox-col-row .tickbox-delete-btn:hover {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    border-color: #dc3545 !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
+  }
+
+  .tickbox-grid-add-row-btn,
+  .tickbox-grid-add-column-btn {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 1rem;
+    min-height: 44px;
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tickbox-grid-container {
+    padding: 8px;
+  }
+
+  .tickbox-grid-table th,
+  .tickbox-grid-table td {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .tickbox-grid-table input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .tickbox-row-row,
+  .tickbox-col-row {
+    padding: 10px !important;
+  }
+
+  .tickbox-row-content,
+  .tickbox-col-content {
+    gap: 4px !important;
+  }
+
+  .tickbox-row-drag-handle,
+  .tickbox-col-drag-handle {
+    min-width: 18px;
+    width: 18px;
+  }
+
+  .tickbox-row-drag-handle .bi-grip-vertical,
+  .tickbox-col-drag-handle .bi-grip-vertical {
+    font-size: 0.9rem;
+    min-width: 18px;
+    min-height: 18px;
+  }
+
+  .tickbox-row-content .tickbox-row-text-input,
+  .tickbox-col-content .tickbox-col-text-input {
+    max-width: calc(100% - 90px) !important;
+    padding: 8px 10px !important;
+    font-size: 1rem !important;
+    min-height: 40px !important;
+  }
+
+  .tickbox-row-content .tickbox-delete-btn,
+  .tickbox-col-content .tickbox-delete-btn {
+    padding: 6px 8px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin-left: 4px !important;
+  }
+
+  .tickbox-grid-add-row-btn,
+  .tickbox-grid-add-column-btn {
+    padding: 10px 14px;
+    font-size: 0.9375rem;
+  }
+}

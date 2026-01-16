@@ -14,7 +14,9 @@
   position: fixed; 
   top: 0; 
   left: 0;
-  width: 100%; 
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 70px;
 }
 
 .NavbarAcholderTopSection {
@@ -23,8 +25,9 @@
   grid-template-columns: 10% 70% 7% 12%;
   align-items: center;
   gap: 1rem;
-  width: 95%;
-  flex-wrap: nowrap; 
+  width: 100%;
+  flex-wrap: nowrap;
+  box-sizing: border-box;
 }
 body {
   margin: 0;
@@ -309,9 +312,17 @@ body {
    RESPONSIVE BEHAVIOR
 =========================== */
 @media (max-width: 1200px) {
+  .NavbarAcholderContainer {
+    padding: 8px 16px;
+  }
+
+  .NavbarAcholderTopSection {
+    width: 100%;
+    gap: 0.8rem;
+  }
  
    .NavbarAcholderSearchWrapper{
-    margin-left: 50px;
+    margin-left: 30px;
     justify-content: flex-start;
    }
    .NavbarAcholderSearchBox{
@@ -320,6 +331,8 @@ body {
 
   .NavbarAcholderSearchInput {
     font-size: 0.75rem;
+    width: 100%;
+    max-width: 400px;
   }
   .NavbarAcholderSearchFilter {
     font-size: 0.75rem;
@@ -327,32 +340,122 @@ body {
   .NavbarAcholderSearchIcon{
     font-size: 1.5rem;
   }
-
-  
- 
 }
+@media (max-width: 768px) {
+  .NavbarAcholderContainer {
+    padding: 8px 12px;
+    min-height: auto;
+  }
+
+  .NavbarAcholderTopSection {
+    grid-template-areas:
+      "logo lang nav"
+      "search search search";
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0;
+  }
+
+  .NavbarAcholderLogoSection {
+    margin-left: 0;
+  }
+
+  .NavbarAcholderLogoItem {
+    font-size: 0.9rem;
+  }
+
+  .NavbarAcholderLogoItem img {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
+
+  .NavbarAcholderLangSwitchInline {
+    gap: 0.3rem;
+  }
+
+  .NavbarAcholderLangLabels {
+    font-size: 0.75rem;
+    gap: 0.15rem;
+  }
+
+  .NavbarAcholderSwitch {
+    width: 45px;
+    height: 22px;
+  }
+
+  .NavbarAcholderSlider::before {
+    height: 16px;
+    width: 16px;
+  }
+
+  .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider::before {
+    transform: translateX(20px);
+  }
+
+  .NavbarAcholderProfile {
+    gap: 0.4rem;
+  }
+
+  .NavbarAcholderAvatarWrap {
+    gap: 0.2rem;
+  }
+
+  .NavbarAcholderUserName {
+    font-size: 0.8rem;
+  }
+
+  .NavbarAcholderSearchWrapper {
+    margin-left: 0;
+    margin-right: 0;
+    width: 100%;
+  }
+
+  .NavbarAcholderSearchInput {
+    width: 100%;
+    font-size: 0.875rem;
+    padding: 6px 8px;
+  }
+
+  .NavbarAcholderSearchFilter {
+    font-size: 0.75rem;
+    padding: 6px 8px;
+  }
+
+  .NavbarAcholderSearchIcon {
+    font-size: 1.2rem;
+    margin-right: 8px;
+  }
+}
+
 @media (max-width:500px) {
+  .NavbarAcholderContainer {
+    padding: 6px 10px;
+  }
+
  .NavbarAcholderTopSection {
     display: grid;
     grid-template-areas:
       "logo lang  nav  "
       "search search search";
 
-    grid-template-columns: 10% 50% 30%;
+    grid-template-columns: auto 1fr auto;
     grid-template-rows: auto auto;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.6rem;
     width: 100%;
-    padding: 0 0.8rem;
+    padding: 0;
   }
 
   /* Make search input smaller */
  
    .NavbarAcholderSearchWrapper{
     margin-left: 0;
-    margin-right: 10px;
+    margin-right: 0;
     justify-content: flex-start;
     align-items: center;
+    width: 100%;
    }
    .NavbarAcholderSearchBox{
     width: 100%;
@@ -360,12 +463,15 @@ body {
 
   .NavbarAcholderSearchInput {
     font-size: 0.75rem;
+    width: 100%;
   }
   .NavbarAcholderSearchFilter {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
+    padding: 5px 6px;
   }
   .NavbarAcholderSearchIcon{
-    font-size: 1.5rem;
+    font-size: 1.1rem;
+    margin-right: 6px;
   }
   
 
@@ -381,14 +487,38 @@ body {
   }
 
   .NavbarAcholderLogoItem {
-    font-size:1rem;
+    font-size:0.85rem;
     align-content: left;
   }
 
   .NavbarAcholderLogoItem img {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
   }
-  
-  
+
+  .NavbarAcholderLangSwitchInline {
+    gap: 0.2rem;
+  }
+
+  .NavbarAcholderLangLabels {
+    font-size: 0.7rem;
+  }
+
+  .NavbarAcholderSwitch {
+    width: 40px;
+    height: 20px;
+  }
+
+  .NavbarAcholderSlider::before {
+    height: 14px;
+    width: 14px;
+  }
+
+  .NavbarAcholderSwitch input:checked + .NavbarAcholderSlider::before {
+    transform: translateX(18px);
+  }
+
+  .NavbarAcholderUserName {
+    font-size: 0.75rem;
+  }
 }

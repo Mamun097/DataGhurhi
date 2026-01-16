@@ -31,6 +31,92 @@
 .survey-question-content-wrapper {
   flex-grow: 1;
 }
+
+/* Hide outermost divs padding on mobile for wider view */
+@media (max-width: 768px) {
+  /* Remove padding from QuestionContainer outermost div */
+  .mb-4.p-3.border.rounded.bg-light.shadow-sm {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 16px !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-radius: 0 !important;
+    border-top: 1px solid #e5e5e5 !important;
+    border-bottom: 1px solid #e5e5e5 !important;
+    overflow: visible !important;
+  }
+
+  /* Remove padding from survey-question-inner-container */
+  .survey-question-inner-container {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure content wrapper has no padding */
+  .survey-question-content-wrapper {
+    padding: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Add minimal padding to question-type-body for readability */
+  .question-type-body {
+    padding: 12px 8px !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure tag section doesn't break layout */
+  .tag-toggle-container {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* Question input section - minimal padding */
+  .d-flex.flex-column.flex-sm-row.align-items-start.align-items-sm-center.justify-content-between.gap-2.mb-3 {
+    padding: 0 8px !important;
+    margin-bottom: 12px !important;
+    overflow: visible !important;
+  }
+
+  /* Better spacing between question containers */
+  .survey-question-draggable-item {
+    margin-bottom: 16px !important;
+  }
+
+  /* Ensure menu opens outside container on mobile */
+  .menu-container {
+    overflow: visible !important;
+    z-index: 1000 !important;
+  }
+
+  .custom-menu {
+    position: fixed !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 320px !important;
+    z-index: 10000 !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+  }
+
+  /* Ensure parent containers don't clip menu */
+  .mb-4.p-3.border.rounded.bg-light.shadow-sm,
+  .mb-3,
+  .mb-3.dnd-isolate,
+  .question-actions,
+  .question-type-body,
+  .d-flex.align-items-center.justify-content-end.gap-2 {
+    overflow: visible !important;
+  }
+}
 .survey-form-control {
   width: 100%;
   padding: 15px;
@@ -73,22 +159,66 @@
 
 .menu-container {
   position: relative;
+  z-index: 1000;
+  overflow: visible !important;
+}
+
+/* Menu backdrop for mobile */
+.menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 9999;
+  animation: fadeIn 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Prevent body scrolling when menu is open on mobile */
+body:has(.menu-backdrop) {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100% !important;
+}
+
+/* Ensure parent containers don't clip the menu */
+.mb-4.p-3.border.rounded.bg-light.shadow-sm,
+.mb-3,
+.mb-3.dnd-isolate,
+.question-actions,
+.question-type-body,
+.d-flex.align-items-center.justify-content-end.gap-2 {
+  overflow: visible !important;
 }
 
 .custom-menu {
   position: absolute;
   right: 0;
-  top: 100%;
-  margin-top: 6px;
+  top: calc(100% + 8px);
+  margin-top: 0;
   width: 260px;
+  max-width: 260px;
   background: #fff;
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   padding: 6px 0;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  z-index: 1000;
+  z-index: 10000;
   animation: fadeInScale 0.15s ease-out;
   font-family: "Inter", "Segoe UI", sans-serif;
+  overflow: visible !important;
 }
 
 @keyframes fadeInScale {
@@ -220,4 +350,394 @@
 
 .add-option-btn:active {
   transform: scale(0.97);
+}
+
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .survey-form-control {
+    padding: 12px;
+    font-size: 1rem; /* Prevents zoom on iOS */
+    border-radius: 6px;
+  }
+
+  .survey-form-control-sm {
+    padding: 10px;
+    font-size: 1rem;
+  }
+
+  /* Option rows - better mobile layout */
+  .row.g-2.mb-2 {
+    margin-bottom: 12px !important;
+  }
+
+  .row.g-2.mb-2 .col-auto {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  .row.g-2.mb-2 .col {
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+
+  /* Drag handle icon - larger for mobile */
+  .bi-grip-vertical {
+    font-size: 1.4rem !important;
+    min-width: 24px;
+    min-height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Checkbox input - larger for touch */
+  .form-check-input {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 0.25rem;
+  }
+
+  /* Unified Delete Button Styling - Consistent across all components */
+  .btn-sm.btn-outline-danger,
+  .checkbox-delete-btn,
+  .radio-delete-btn,
+  .dropdown-delete-btn,
+  .likert-delete-btn,
+  .tickbox-delete-btn {
+    padding: 8px 12px !important;
+    font-size: 0.875rem !important;
+    min-height: 40px !important;
+    min-width: 40px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid #dc3545 !important;
+    background-color: #ffffff !important;
+    color: #dc3545 !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    box-shadow: 0 1px 2px rgba(220, 53, 69, 0.1) !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+  }
+
+  .btn-sm.btn-outline-danger:hover,
+  .checkbox-delete-btn:hover,
+  .radio-delete-btn:hover,
+  .dropdown-delete-btn:hover,
+  .likert-delete-btn:hover,
+  .tickbox-delete-btn:hover {
+    background-color: #dc3545 !important;
+    color: #ffffff !important;
+    border-color: #dc3545 !important;
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.2) !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .btn-sm.btn-outline-danger:active,
+  .checkbox-delete-btn:active,
+  .radio-delete-btn:active,
+  .dropdown-delete-btn:active,
+  .likert-delete-btn:active,
+  .tickbox-delete-btn:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 1px 2px rgba(220, 53, 69, 0.2) !important;
+  }
+
+  .btn-sm.btn-outline-danger:disabled,
+  .checkbox-delete-btn:disabled,
+  .radio-delete-btn:disabled,
+  .dropdown-delete-btn:disabled,
+  .likert-delete-btn:disabled,
+  .tickbox-delete-btn:disabled {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    background-color: #ffffff !important;
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+  }
+
+  /* Add option buttons - full width on mobile */
+  .d-flex.gap-2.mt-3,
+  .checkbox-actions-mobile {
+    flex-direction: column;
+    gap: 10px !important;
+  }
+
+  /* Checkbox option rows - better mobile spacing */
+  .checkbox-option-row {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .checkbox-option-row > [class*="col"] {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .add-option-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 16px;
+    font-size: 1rem; /* Prevents zoom on iOS */
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  /* Question actions - better mobile layout */
+  .question-actions {
+    flex-wrap: wrap;
+    gap: 8px !important;
+    margin-top: 12px;
+  }
+
+  /* Copy and Delete buttons side by side on mobile */
+  .question-actions-copy-delete-wrapper {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 12px !important;
+    width: 100%;
+  }
+
+  .question-actions-copy-delete-wrapper .survey-icon-btn {
+    width: calc(50% - 6px) !important;
+    flex: 0 0 auto !important;
+  }
+
+  .survey-icon-btn {
+    padding: 10px 12px;
+    font-size: 1.2rem;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Required switch container - better mobile layout */
+  .question-actions .required-switch-container {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 12px 14px !important;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .question-actions .required-switch-container .form-check-label {
+    font-size: 0.9375rem !important;
+    font-weight: 600 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    order: 1;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .question-actions .required-switch-container .form-check-input {
+    width: 44px !important;
+    height: 24px !important;
+    margin: 0 !important;
+    flex-shrink: 0;
+    order: 2;
+  }
+
+  /* Required switch - better mobile layout */
+  .form-check.form-switch {
+    margin-bottom: 0;
+  }
+
+  .form-check-label.small {
+    font-size: 0.875rem;
+    margin-left: 8px;
+  }
+
+  /* Custom menu - full width on mobile */
+  .custom-menu {
+    position: fixed !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 320px !important;
+    z-index: 10000 !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+  }
+
+  .menu-item {
+    padding: 12px 16px;
+    font-size: 0.9375rem;
+    min-height: 44px; /* Touch-friendly */
+  }
+
+  .menu-label {
+    font-size: 0.9375rem;
+  }
+
+  .menu-item i {
+    font-size: 18px;
+  }
+
+  /* Image alignment controls - better mobile */
+  .d-flex.flex-wrap.justify-content-between.align-items-center.mt-2.gap-2 {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px !important;
+  }
+
+  .form-select.w-auto {
+    width: 100% !important;
+    min-height: 44px;
+    font-size: 1rem;
+  }
+
+  /* Image container - responsive */
+  .bg-gray-50.p-3.rounded-lg.shadow-sm {
+    padding: 12px !important;
+  }
+
+  .img-fluid.rounded {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Other option row - better mobile */
+  .row.g-2.mb-2.align-items-center .col-auto span {
+    font-size: 0.875rem;
+  }
+
+  /* Icon button */
+  .icon-btn {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Menu positioning on mobile - use fixed to escape container */
+  .menu-container {
+    position: relative;
+    z-index: 1000;
+    overflow: visible !important;
+  }
+
+  .custom-menu {
+    position: fixed !important;
+    width: calc(100vw - 32px) !important;
+    max-width: 320px !important;
+    z-index: 10000 !important;
+    right: 16px !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    margin-top: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .survey-form-control {
+    padding: 10px;
+    font-size: 1rem;
+  }
+
+  .survey-form-control-sm {
+    padding: 8px;
+    font-size: 1rem;
+  }
+
+  .bi-grip-vertical {
+    font-size: 1.2rem !important;
+    min-width: 20px;
+    min-height: 20px;
+  }
+
+  .form-check-input {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .btn-sm.btn-outline-danger,
+  .checkbox-delete-btn,
+  .radio-delete-btn,
+  .dropdown-delete-btn,
+  .likert-delete-btn,
+  .tickbox-delete-btn {
+    padding: 6px 10px !important;
+    min-height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  .add-option-btn {
+    padding: 10px 14px;
+    font-size: 0.9375rem;
+    min-height: 44px;
+  }
+
+  .survey-icon-btn {
+    padding: 8px 10px;
+    font-size: 1.1rem;
+    min-width: 40px;
+    min-height: 40px;
+  }
+
+  .custom-menu {
+    width: calc(100vw - 24px);
+    max-width: 280px;
+  }
+
+  .menu-item {
+    padding: 10px 14px;
+    font-size: 0.875rem;
+    min-height: 44px;
+  }
+
+  .menu-label {
+    font-size: 0.875rem;
+    gap: 8px;
+  }
+
+  .menu-item i {
+    font-size: 16px;
+  }
+
+  .form-check-label.small {
+    font-size: 0.8125rem;
+  }
+
+  .icon-btn {
+    min-width: 40px;
+    min-height: 40px;
+    padding: 8px;
+  }
+}
+
+/* Extra small devices */
+@media (max-width: 360px) {
+  .survey-form-control {
+    padding: 8px;
+  }
+
+  .survey-form-control-sm {
+    padding: 6px;
+  }
+
+  .add-option-btn {
+    padding: 8px 12px;
+    font-size: 0.875rem;
+  }
+
+  .custom-menu {
+    width: calc(100vw - 16px);
+  }
 }

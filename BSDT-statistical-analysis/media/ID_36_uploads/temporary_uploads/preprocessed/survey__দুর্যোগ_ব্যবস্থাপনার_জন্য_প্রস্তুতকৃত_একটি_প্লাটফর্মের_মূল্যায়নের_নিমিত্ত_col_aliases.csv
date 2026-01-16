@@ -1,3 +1,4 @@
-original_column,aliases
-আপনার ইমেইল:,Email
-আপনার পূর্ণ নাম:,Name
+"original_column","aliases"
+"আপনার ইমেইল:","Email,em,""Email,em"""
+"আপনার পূর্ণ নাম:","Name"
+"আপনার বয়স (বছর):","age"

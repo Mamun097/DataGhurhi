@@ -45,3 +45,83 @@
     left: auto;
   }
 }
+
+/* Auto Numbering and Title Alignment - Mobile Responsive */
+@media (max-width: 768px) {
+  /* Container for auto numbering and title controls */
+  .section-controls-container {
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+    width: 100%;
+    margin-bottom: 16px !important;
+    flex-wrap: nowrap;
+  }
+
+  /* Auto Numbering checkbox container */
+  .auto-numbering-control {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* Title toggle container */
+  .title-control {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    margin: 0 !important;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* Auto Numbering label - above checkbox */
+  .auto-numbering-control .auto-numbering-label {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    order: 1;
+  }
+
+  /* Auto Numbering checkbox - below label */
+  .auto-numbering-control .auto-numbering-checkbox {
+    margin: 0 !important;
+    flex-shrink: 0;
+    width: 18px !important;
+    height: 18px !important;
+    order: 2;
+  }
+
+  /* Title label alignment */
+  .title-control .form-check-label {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 0.9rem;
+    min-width: fit-content;
+    white-space: nowrap;
+  }
+
+  /* Title switch container alignment */
+  .title-control .form-check.form-switch {
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    padding-left: 0 !important;
+  }
+
+  .title-control .form-check-input {
+    margin: 0 !important;
+    flex-shrink: 0;
+    width: 40px !important;
+    height: 20px !important;
+  }
+}

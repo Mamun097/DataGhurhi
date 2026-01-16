@@ -355,26 +355,26 @@ const SurveySections = ({
           )}
         </div>
 
-        <div className="d-flex align-items-center justify-content-end mb-2 gap-3">
+        <div className="d-flex align-items-center justify-content-end mb-2 gap-3 section-controls-container">
           {/* Auto Numbering */}
-          <div className="d-flex align-items-center">
+          <div className="d-flex align-items-center auto-numbering-control">
+            <label
+              htmlFor={`auto-numbering-${section.id}`}
+              className="form-check-label auto-numbering-label"
+            >
+              {getLabel("Auto Numbering")}
+            </label>
             <input
               type="checkbox"
               id={`auto-numbering-${section.id}`}
               checked={section.autoNumbering || false}
               onChange={handleToggleAutoNumbering}
-              className="form-check-input me-1"
+              className="form-check-input auto-numbering-checkbox"
             />
-            <label
-              htmlFor={`auto-numbering-${section.id}`}
-              className="form-check-label"
-            >
-              {getLabel("Auto Numbering")}
-            </label>
           </div>
 
           {/* Title toggle slider */}
-          <div className="d-flex align-items-center">
+          <div className="d-flex align-items-center title-control">
             <label className="form-check-label me-1">{getLabel("Title")}</label>
             <div className="form-check form-switch">
               <input

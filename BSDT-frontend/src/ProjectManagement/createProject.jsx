@@ -37,13 +37,12 @@ const AddProject = () => {
     description: "",
     privacy_mode: "public",
   });
-const navigate = useNavigate();
+  const navigate = useNavigate();
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "English"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
-
 
   const loadTranslations = useCallback(async () => {
     if (language === "English") {
@@ -128,7 +127,7 @@ const navigate = useNavigate();
         toast.success(
           `✅ ${getLabel("Project created successfully", "successToast")}`
         );
-        setTimeout(() => (navigate("/dashboard?tab=projects")), 3000);
+        setTimeout(() => navigate("/dashboard?tab=projects"), 3000);
       }
     } catch (error) {
       console.error(error);
@@ -167,7 +166,9 @@ const navigate = useNavigate();
             </div>
 
             <div className="form-group">
-              <label htmlFor="field">{getLabel("Research Field", "field")}</label>
+              <label htmlFor="field">
+                {getLabel("Research Field", "field")}
+              </label>
               <input
                 type="text"
                 id="field"
@@ -216,7 +217,7 @@ const navigate = useNavigate();
                   </label>
                 </div>
 
-                <div className="visibility-option">
+                <div className="crt-visibility-option">
                   <input
                     type="radio"
                     id="public"
@@ -236,13 +237,17 @@ const navigate = useNavigate();
                 )}
               </div>
             </div>
-<div > 
-            <button type="submit" className="submit-btn" >
-              {getLabel("Create Project", "submit")}
-            </button>
-            <button type="button" className="cancel-btn" onClick={() => navigate("/dashboard?tab=projects")}>
-              {getLabel("Cancel", "cancel")}
-            </button>
+            <div className="form-actions">
+              <button type="submit" className="submit-btn">
+                {getLabel("Create Project", "submit")}
+              </button>
+              <button
+                type="button"
+                className="cancel-btn"
+                onClick={() => navigate("/dashboard?tab=projects")}
+              >
+                {getLabel("Cancel", "cancel")}
+              </button>
             </div>
           </form>
         </div>
@@ -253,4 +258,3 @@ const navigate = useNavigate();
 };
 
 export default AddProject;
- 
