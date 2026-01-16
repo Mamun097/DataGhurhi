@@ -483,67 +483,66 @@ useEffect(() => {
 const getLabel = (text) =>
   language === "English" ? text : translatedLabels[text] || text;
 
-    const fetchcolumn = () => {
-        //fetch column
+    const fetchcolumn = async () => {
+        // Fetch column
         const storedSheetName = sessionStorage.getItem("activesheetname") || 'sheet1';
-        if (fileName && userId && sessionStorage.getItem("fileURL")) {
+        const fileUrl = sessionStorage.getItem("fileURL");
+        
+        if (fileName && userId && fileUrl) {
             console.log("Active sheet name from sessionStorage:", storedSheetName);
+            console.log("Fetching columns for file:", fileName);
+            
             const formData = new FormData();
-
-
             formData.append('filename', fileName);
             formData.append('userID', userId);
             formData.append('activeSheet', storedSheetName || '');
-            formData.append('Fileurl', sessionStorage.getItem("fileURL") || '');
+            formData.append('Fileurl', fileUrl);
 
-
-            // Call the API to get columns
-            fetch(`${API_BASE}/get-columns/`, {
-                method: 'POST',
-                body: formData,
-
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-
-                        console.log(data.columns);
-                        setColumns(data.columns || []);
-                        setColumn1(data.columns[0])
-                        console.log(columns);
-
-                    } else {
-                        console.error("Error fetching columns:", data.error);
-                    }
-                })
-                .catch(error => {
-                    console.error("Error:", error);
+            try {
+                const response = await fetch(`${API_BASE}/get-columns/`, {
+                    method: 'POST',
+                    body: formData,
                 });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log("Columns fetched successfully:", data.columns);
+                    setColumns(data.columns || []);
+                    
+                    // Set the first column as default if available
+                    if (data.columns && data.columns.length > 0) {
+                        setColumn1(data.columns[0]);
+                    }
+                    
+                } else {
+                    console.error("Error fetching columns:", data.error);
+                    setErrorMessage("Failed to load columns");
+                }
+            } catch (error) {
+                console.error("Error fetching columns:", error);
+                setErrorMessage("Connection error while loading columns");
+            }
+        } else {
+            console.log("Missing data for column fetch:", { fileName, userId, fileUrl });
         }
-    }
+    };
 
-
+    // In the useEffect that loads file from sessionStorage:
     useEffect(() => {
-
         const filename = sessionStorage.getItem("file_name") || '';
-
-
+        
         let fileUrl = "";
-
+        
         if (isSurveyData) {
-
-
             sessionStorage.removeItem("surveyfile");
-        }
-        else if (isPreprocessed) {
-            //fileUrl = `http://127.0.0.1:8000/media/ID_${userId}_uploads/temporary_uploads/preprocessed/${filename}`;
-
+        } else if (isPreprocessed) {
             sessionStorage.removeItem("preprocessed");
         }
-
+        
         fileUrl = `http://127.0.0.1:8000${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
-
+        
         if (sessionStorage.getItem("fileURL")) {
             fetch(fileUrl)
                 .then(res => {
@@ -556,17 +555,12 @@ const getLabel = (text) =>
                     setFileName(filename || newFile.name);
                     setUploadStatus("success");
                     console.log("File loaded successfully:", newFile.name);
-
-                    const formData = new FormData();
-                    formData.append('file', newFile);
-                    formData.append('userID', userId);
                     
-                    fetchcolumn(); // Your existing column fetch
+                    // Call fetchcolumn synchronously after file is set
+                    fetchcolumn(); // This should fetch columns now
                     
                     // NEW: Also fetch column types when file loads
-                    setTimeout(() => {
-                        fetchColumnTypes();
-                    }, 500);
+                    fetchColumnTypes();
                     
                 })
                 .catch(err => {
@@ -575,12 +569,16 @@ const getLabel = (text) =>
                     setUploadStatus("error");
                 });
         }
-    }, [isPreprocessed, isSurveyData, fileName]);
+    }, [isPreprocessed, isSurveyData]); // Remove fileName from dependencies    
 
 
-
-
-
+    // Add this useEffect to fetch columns when fileName is set
+    useEffect(() => {
+        if (uploadStatus === "success" && fileName && sessionStorage.getItem("fileURL")) {
+            console.log("Fetching columns after upload success for:", fileName);
+            fetchcolumn();
+        }
+    }, [uploadStatus, fileName]);
 
     console.log("File URL from sessionStorage:", file);
 
@@ -1118,13 +1116,14 @@ const getLabel = (text) =>
         }
     }, [groupsCache]);
 
-    // Handle file selection async
+        // Handle file selection async
     const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
             setFile(selectedFile);
-            sessionStorage.setItem("file_name", selectedFile.name);
-            setFileName(selectedFile.name);
+            const fileName = selectedFile.name;
+            sessionStorage.setItem("file_name", fileName);
+            setFileName(fileName);
             setUploadStatus('loading');
 
             const formData = new FormData();
@@ -1132,35 +1131,33 @@ const getLabel = (text) =>
             formData.append('userID', userId);
             console.log("File selected:", selectedFile);
 
-            fetch(`${API_BASE}/upload-file/`, {
-                method: 'POST',
-
-                body: formData,
-            })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        setUploadStatus('success');
-                        const fixedUrl = data.fileURL.replace(/\\/g, '/');
-                        console.log("ee", fixedUrl);
-                        sessionStorage.setItem("fileURL", fixedUrl);
-                        console.log("File uploaded successfully. URL:", sessionStorage.getItem("fileURL"));
-                        fetchcolumn();
-
-                    } else {
-                        setErrorMessage(data.error);
-                        setUploadStatus('error');
-                    }
-                })
-                .catch(error => {
-                    setErrorMessage('Error processing file: ' + error);
-                    setUploadStatus('error');
+            try {
+                const response = await fetch(`${API_BASE}/upload-file/`, {
+                    method: 'POST',
+                    body: formData,
                 });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    setUploadStatus('success');
+                    const fixedUrl = data.fileURL.replace(/\\/g, '/');
+                    console.log("File uploaded successfully. URL:", fixedUrl);
+                    sessionStorage.setItem("fileURL", fixedUrl);
+                    
+                    // Fetch columns immediately after successful upload
+                    fetchcolumn();
+                    
+                } else {
+                    setErrorMessage(data.error);
+                    setUploadStatus('error');
+                }
+            } catch (error) {
+                setErrorMessage('Error processing file: ' + error);
+                setUploadStatus('error');
+            }
         }
-
-
     };
-
 
     const handleSubmit = (e) => {
         e.preventDefault();
