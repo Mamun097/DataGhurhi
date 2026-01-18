@@ -13,12 +13,10 @@ import renderBarChartResults from '../RenderFunctions/renderBarChartResults';
 import renderPieChartResults from '../RenderFunctions/renderPieChartResults';
 import renderKolmogorovResults from '../RenderFunctions/renderKolmogorovResults';
 import renderAndersonDarlingResults from '../RenderFunctions/renderAndersonDarlingResults';
-import {
-    renderF_TestResults,
-    renderZ_TestResults, 
-    renderT_TestResults,
-    renderFZT_TestResults
-} from '../RenderFunctions/renderFZT_TestResults';
+import renderF_TestResults from '../RenderFunctions/RenderFZT/renderF_TestResults';
+import renderZ_TestResults from '../RenderFunctions/RenderFZT/renderZ_TestResults';
+import renderT_TestResults from '../RenderFunctions/RenderFZT/renderT_TestResults';
+import renderFZT_TestResults from '../RenderFunctions/RenderFZT/renderFZT_TestResults';
 import renderPearsonResults from '../RenderFunctions/RenderPearson/renderPearsonResults';
 import renderSpearmanResults from '../RenderFunctions/RenderSpearman/renderSpearmanResults';
 import renderCramerVResults from '../RenderFunctions/RenderCramarV/renderCramerVResults';

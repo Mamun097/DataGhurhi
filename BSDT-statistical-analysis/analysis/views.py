@@ -600,18 +600,18 @@ def analyze_data_api(request):
                 if not valid:
                     return JsonResponse({'success': False, 'error': error})
                 return process_anderson_darling_test(request, df, norm_column, user_id)            
-
-            elif test_type == 'f_test':                
-                return process_f_test(request, df, col1_norm, col2_norm, user_id)
+            
+            elif test_type == 'f_test':
+                return process_f_test(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)
             
             elif test_type == 'z_test':
-                return process_z_test(request, df, col1_norm, col2_norm, user_id)  
+                return process_z_test(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)  
             
             elif test_type == 't_test':
-                return process_t_test(request, df, col1_norm, col2_norm, user_id)
+                return process_t_test(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)
             
             elif test_type == 'fzt_visualization':
-                return process_fzt_visualization(request, df, col1_norm, col2_norm, user_id)
+                return process_fzt_visualization(request, df, col1_norm, col2_norm, user_id, ordinal_mappings)
 
             elif test_type == 'cross_tabulation':
                 selected_columns = []
@@ -3506,418 +3506,1122 @@ def process_anderson_darling_test(request, df: pd.DataFrame, col: str, user_id: 
     return JsonResponse(response_data)
 
 
-def process_f_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
+def process_f_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str, ordinal_mappings):
     """
-    Performs F-test for equality of variances - FIXED DATA STRUCTURE
+    Performs F-test for equality of variances with ordinal mapping support
     """
-    print(f"[F-Test] cols: {col_group}(group) | {col_value}(value)")
+    import numpy as np
+    from scipy import stats
+    import json
     
-    # Validate column names
-    if col_group not in df.columns or col_value not in df.columns:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Invalid column names.'
-        })
-
-    # Extract language preference
     try:
-        language = request.POST.get('language', 'en').lower()
-    except Exception:
-        language = 'en'
-    
-    if language not in ('en', 'bn'):
-        language = 'en'
-
-    # Prepare working dataset
-    work = df[[col_group, col_value]].copy()
-    work = work.dropna(subset=[col_group, col_value])
-    print(f"[F-Test] after dropna: {len(work)} rows")
-
-    # Ensure grouping column is categorical
-    if not pd.api.types.is_categorical_dtype(work[col_group]):
-        work[col_group] = work[col_group].astype('category')
-
-    categories = list(work[col_group].cat.categories)
-    
-    if len(categories) != 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'F-test requires exactly 2 groups.'
-        })
-
-    # Ensure value column is numeric
-    if not pd.api.types.is_numeric_dtype(work[col_value]):
-        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
-        work = work.dropna(subset=[col_value])
+        # Get language
+        lang = request.POST.get('language', 'en')
         
-        if not pd.api.types.is_numeric_dtype(work[col_value]):
+        print(f"[DEBUG F-TEST] Starting F-test with ordinal mappings")
+        print(f"[DEBUG F-TEST] Column 1 (categorical): {col_group}")
+        print(f"[DEBUG F-TEST] Column 2 (numerical): {col_value}")
+        print(f"[DEBUG F-TEST] Ordinal mappings available: {col_group in ordinal_mappings}")
+        
+        # Check if columns exist
+        if col_group not in df.columns or col_value not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG F-TEST] Error: {error_msg}")
             return JsonResponse({
                 'success': False, 
-                'error': f'"{col_value}" must be numeric for F-test.'
+                'error': error_msg
             })
-
-    # Prepare groups for statistical test
-    group1_data = work.loc[work[col_group] == categories[0], col_value].values
-    group2_data = work.loc[work[col_group] == categories[1], col_value].values
-    
-    if len(group1_data) < 2 or len(group2_data) < 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Each group must contain at least 2 observations for F-test.'
-        })
-
-    # Perform F-test for equality of variances
-    try:
-        # Calculate variances
-        var1 = np.var(group1_data, ddof=1)
-        var2 = np.var(group2_data, ddof=1)
         
-        # F-statistic (larger variance / smaller variance)
-        if var1 >= var2:
-            F_stat = var1 / var2
-            dfn = len(group1_data) - 1
-            dfd = len(group2_data) - 1
-        else:
-            F_stat = var2 / var1
-            dfn = len(group2_data) - 1
-            dfd = len(group1_data) - 1
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
         
-        # Two-tailed p-value
-        p_value = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
+        print(f"[DEBUG F-TEST] Raw selected_groups JSON: {selected_groups_json}")
         
-        print(f"[F-Test] result: F={F_stat:.6f}, p={p_value:.6g}, df=({dfn}, {dfd})")
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG F-TEST] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG F-TEST] JSON decode error: {e}")
+                selected_groups = []
         
-    except Exception as e:
-        return JsonResponse({
-            'success': False, 
-            'error': f'Error in F-test: {e}'
-        })
-
-    # Prepare plot data - CRITICAL: This is what frontend needs
-    plot_data = []
-    for i, category in enumerate(categories):
-        category_data = group1_data if i == 0 else group2_data
+        # Prepare working dataset
+        work = df[[col_group, col_value]].copy()
+        print(f"[DEBUG F-TEST] Initial work shape: {work.shape}")
         
-        plot_data.append({
-            'category': str(category),
-            'count': int(len(category_data)),
-            'mean': float(np.mean(category_data)),
-            'median': float(np.median(category_data)),
-            'std': float(np.std(category_data)),
-            'min': float(np.min(category_data)),
-            'max': float(np.max(category_data)),
-            'q25': float(np.percentile(category_data, 25)),
-            'q75': float(np.percentile(category_data, 75))
-        })
-
-    # Prepare variances for response
-    variances = {
-        str(categories[0]): float(np.var(group1_data, ddof=1)),
-        str(categories[1]): float(np.var(group2_data, ddof=1))
-    }
-
-    # Response structure that matches frontend expectations
-    response_data = {
-        'success': True,
-        'test': 'F-Test for Equality of Variances',
-        'language': language,
-        'statistic': float(F_stat),
-        'p_value': float(p_value),
-        'degrees_of_freedom': f"{dfn}, {dfd}",
-        'n_groups': int(len(categories)),
-        'total_observations': int(len(work)),
-        'variances': variances,  # Required for table
-        'column_names': {
-            'group': str(col_group),
-            'value': str(col_value)
-        },
-        'plot_data': plot_data,  # REQUIRED - frontend checks this
-        'metadata': {
-            'significant': bool(p_value < 0.05),
-            'test_type': 'f_test'
-        }
-    }
-
-    print(f"[F-Test] Returning {len(plot_data)} plot data items")
-    return JsonResponse(response_data)
-
-
-def process_z_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
-    
-    """
-    Performs Z-test for equality of means and returns analysis results without generating plots.
-    Frontend will handle visualization using the returned data.
-    """
-    print(f"[Z-Test] cols: {col_group}(group) | {col_value}(value)")
-    
-    # Validate column names
-    if col_group not in df.columns or col_value not in df.columns:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Invalid column names.'
-        })
-
-    # Extract language preference
-    try:
-        language = request.POST.get('language', 'en').lower()
-    except Exception:
-        language = 'en'
-    
-    if language not in ('en', 'bn'):
-        language = 'en'
-
-    # Prepare working dataset
-    work = df[[col_group, col_value]].copy()
-    work = work.dropna(subset=[col_group, col_value])
-    print(f"[Z-Test] after dropna: {len(work)} rows")
-
-    # Ensure grouping column is categorical
-    if not pd.api.types.is_categorical_dtype(work[col_group]):
-        work[col_group] = work[col_group].astype('category')
-
-    categories = list(work[col_group].cat.categories)
-    
-    if len(categories) != 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Z-test requires exactly 2 groups.'
-        })
-
-    # Ensure value column is numeric
-    if not pd.api.types.is_numeric_dtype(work[col_value]):
-        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
-        work = work.dropna(subset=[col_value])
-        
-        if not pd.api.types.is_numeric_dtype(work[col_value]):
-            return JsonResponse({
-                'success': False, 
-                'error': f'"{col_value}" must be numeric for Z-test.'
-            })
-
-    # Prepare groups for statistical test
-    group1_data = work.loc[work[col_group] == categories[0], col_value].values
-    group2_data = work.loc[work[col_group] == categories[1], col_value].values
-    
-    if len(group1_data) < 2 or len(group2_data) < 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Each group must contain at least 2 observations for Z-test.'
-        })
-
-    # Perform Z-test for equality of means
-    try:
-        from statsmodels.stats.weightstats import ztest
-        z_stat, p_value = ztest(group1_data, group2_data)
-        
-        print(f"[Z-Test] result: Z={z_stat:.6f}, p={p_value:.6g}")
-        
-    except Exception as e:
-        return JsonResponse({
-            'success': False, 
-            'error': f'Error in Z-test: {e}'
-        })
-
-    # Prepare data for frontend plotting
-    plot_data = []
-    
-    for i, category in enumerate(categories):
-        if i == 0:
-            category_data = group1_data
-        else:
-            category_data = group2_data
+        # ============================================================
+        # FIX: Apply ordinal mapping BEFORE any processing
+        # ============================================================
+        if col_group in ordinal_mappings:
+            print(f"[DEBUG F-TEST] Applying ordinal mapping for column: {col_group}")
+            print(f"[DEBUG F-TEST] Ordinal mapping keys: {list(ordinal_mappings[col_group].keys())[:5] if ordinal_mappings[col_group] else 'Empty'}")
             
-        plot_data.append({
-            'category': str(category),
-            'values': [float(x) for x in category_data],
-            'count': int(len(category_data)),
-            'mean': float(np.mean(category_data)),
-            'median': float(np.median(category_data)),
-            'std': float(np.std(category_data)),
-            'variance': float(np.var(category_data, ddof=1)),
-            'min': float(np.min(category_data)),
-            'max': float(np.max(category_data)),
-            'q25': float(np.percentile(category_data, 25)),
-            'q75': float(np.percentile(category_data, 75))
-        })
-
-    # Prepare response with localized labels
-    test_name = 'Z-Test for Equality of Means' if language == 'en' else 'জেড-টেস্ট (মানে সমতা)'
-    
-    response_data = {
-        'success': True,
-        'test': test_name,
-        'language': language,
-        'statistic': float(z_stat),
-        'p_value': float(p_value),
-        'n_groups': int(len(categories)),
-        'total_observations': int(len(work)),
-        'means': {
-            str(categories[0]): float(np.mean(group1_data)),
-            str(categories[1]): float(np.mean(group2_data))
-        },
-        'column_names': {
-            'group': str(col_group),
-            'value': str(col_value)
-        },
-        'plot_data': plot_data,
-        'metadata': {
-            'categories': [str(c) for c in categories],
-            'significant': bool(p_value < 0.05),
-            'alpha': 0.05,
-            'test_type': 'z_test'
-        }
-    }
-    return JsonResponse(response_data)
-
-
-def process_t_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str):
-    """
-    Performs Welch's T-test for equality of means and returns analysis results without generating plots.
-    Frontend will handle visualization using the returned data.
-    """
-    print(f"[T-Test] cols: {col_group}(group) | {col_value}(value)")
-    
-    # Validate column names
-    if col_group not in df.columns or col_value not in df.columns:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Invalid column names.'
-        })
-
-    # Extract language preference
-    try:
-        language = request.POST.get('language', 'en').lower()
-    except Exception:
-        language = 'en'
-    
-    if language not in ('en', 'bn'):
-        language = 'en'
-
-    # Prepare working dataset
-    work = df[[col_group, col_value]].copy()
-    work = work.dropna(subset=[col_group, col_value])
-    print(f"[T-Test] after dropna: {len(work)} rows")
-
-    # Ensure grouping column is categorical
-    if not pd.api.types.is_categorical_dtype(work[col_group]):
-        work[col_group] = work[col_group].astype('category')
-
-    categories = list(work[col_group].cat.categories)
-    
-    if len(categories) != 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'T-test requires exactly 2 groups.'
-        })
-
-    # Ensure value column is numeric
-    if not pd.api.types.is_numeric_dtype(work[col_value]):
-        work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
-        work = work.dropna(subset=[col_value])
+            # Apply the mapping to convert numeric codes back to original labels
+            def map_to_original(value):
+                if pd.isna(value):
+                    return value
+                
+                # Try different types of keys
+                str_val = str(value).strip()
+                
+                # Try as string key first
+                if str_val in ordinal_mappings[col_group]:
+                    return ordinal_mappings[col_group][str_val]
+                
+                # Try as integer if possible
+                try:
+                    int_val = int(float(value))
+                    if int_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][int_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # Try as float
+                try:
+                    float_val = float(value)
+                    if float_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][float_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # If not found in mapping, return original
+                return value
+            
+            # Apply mapping
+            work[col_group] = work[col_group].apply(map_to_original)
+            
+            # Also map selected groups if provided
+            if selected_groups:
+                mapped_selected_groups = []
+                for group in selected_groups:
+                    # Check if selected group is in mapping values (original labels)
+                    found = False
+                    for key, val in ordinal_mappings[col_group].items():
+                        if str(val).strip() == str(group).strip():
+                            mapped_selected_groups.append(str(val))
+                            found = True
+                            break
+                    
+                    # If not found, check if it's a numeric code that needs mapping
+                    if not found:
+                        try:
+                            # Check if group is a numeric code
+                            num_group = float(group)
+                            for key, val in ordinal_mappings[col_group].items():
+                                try:
+                                    num_key = float(key)
+                                    if abs(num_key - num_group) < 0.001:  # Handle floating point
+                                        mapped_selected_groups.append(str(val))
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # If still not found, keep original
+                    if not found:
+                        mapped_selected_groups.append(str(group))
+                
+                selected_groups = mapped_selected_groups
+                print(f"[DEBUG F-TEST] Mapped selected groups: {selected_groups}")
+        else:
+            print(f"[DEBUG F-TEST] No ordinal mapping found for column: {col_group}")
+        # ============================================================
         
+        # Step 1: Clean the categorical column
+        work[col_group] = work[col_group].apply(lambda x: str(x).strip() if pd.notna(x) else x)
+        work = work.dropna(subset=[col_group])
+        print(f"[DEBUG F-TEST] After dropping NaN from col_group: {work.shape}")
+        
+        # Step 2: Convert numeric column
         if not pd.api.types.is_numeric_dtype(work[col_value]):
+            print(f"[DEBUG F-TEST] Column 2 is not numeric, attempting conversion...")
+            try:
+                work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+                print(f"[DEBUG F-TEST] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col_value}" must be numerical for F-test. Conversion error: {e}'
+                print(f"[DEBUG F-TEST] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Drop NaN from numeric column
+        work = work.dropna(subset=[col_value])
+        print(f"[DEBUG F-TEST] After dropping NaN from numeric column: {work.shape}")
+        
+        # Get all available groups after mapping
+        available_groups = sorted([str(g).strip() for g in work[col_group].unique()])
+        print(f"[DEBUG F-TEST] Available groups in cleaned data (after mapping): {available_groups}")
+        
+        # Step 3: Filter by selected groups (if provided)
+        if selected_groups:
+            selected_groups_str = [str(g).strip() for g in selected_groups]
+            print(f"[DEBUG F-TEST] Looking for groups (as strings): {selected_groups_str}")
+            
+            # Check which selected groups actually exist
+            existing_groups = []
+            for selected in selected_groups_str:
+                # Try exact match first
+                found = False
+                for available in available_groups:
+                    if selected == available:
+                        existing_groups.append(available)
+                        found = True
+                        print(f"[DEBUG F-TEST] Found exact match: '{selected}'")
+                        break
+                
+                # If not found with exact match, try case-insensitive
+                if not found:
+                    for available in available_groups:
+                        if selected.lower() == available.lower():
+                            existing_groups.append(available)
+                            found = True
+                            print(f"[DEBUG F-TEST] Found case-insensitive match: '{selected}' -> '{available}'")
+                            break
+                
+                if not found:
+                    print(f"[DEBUG F-TEST] Group '{selected}' not found in data")
+            
+            if len(existing_groups) >= 2:
+                work = work[work[col_group].apply(lambda x: str(x).strip()).isin(existing_groups)]
+                unique_groups = existing_groups[:2]
+                print(f"[DEBUG F-TEST] Using selected groups: {unique_groups}")
+            else:
+                print(f"[DEBUG F-TEST] Not enough selected groups exist. Using first 2 available groups.")
+                unique_groups = available_groups[:2]
+        else:
+            unique_groups = available_groups[:2]
+            print(f"[DEBUG F-TEST] No groups selected, using first 2 available groups: {unique_groups}")
+        
+        print(f"[DEBUG F-TEST] Final work shape: {work.shape}")
+        
+        # Check if we have data
+        if len(work) == 0:
+            error_msg = 'No data available after cleaning. Please check if the selected groups exist in the data.'
+            print(f"[DEBUG F-TEST] Error: {error_msg}")
             return JsonResponse({
-                'success': False, 
-                'error': f'"{col_value}" must be numeric for T-test.'
+                'success': False,
+                'error': error_msg
             })
-
-    # Prepare groups for statistical test
-    group1_data = work.loc[work[col_group] == categories[0], col_value].values
-    group2_data = work.loc[work[col_group] == categories[1], col_value].values
-    
-    if len(group1_data) < 2 or len(group2_data) < 2:
-        return JsonResponse({
-            'success': False, 
-            'error': 'Each group must contain at least 2 observations for T-test.'
-        })
-
-    # Perform Welch's T-test (does not assume equal variances)
-    try:
-        t_stat, p_value = stats.ttest_ind(group1_data, group2_data, equal_var=False)
         
-        # Calculate Welch-Satterthwaite degrees of freedom
-        v1 = np.var(group1_data, ddof=1)
-        v2 = np.var(group2_data, ddof=1)
-        n1 = len(group1_data)
-        n2 = len(group2_data)
-        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+        # Check if we have exactly 2 groups
+        if len(unique_groups) != 2:
+            error_msg = f'F-test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG F-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
         
-        print(f"[T-Test] result: t={t_stat:.6f}, p={p_value:.6g}, df={welch_df:.2f}")
+        # Get group data
+        group1_data = work[work[col_group] == unique_groups[0]][col_value].values
+        group2_data = work[work[col_group] == unique_groups[1]][col_value].values
+        
+        print(f"[DEBUG F-TEST] Group 1 ({unique_groups[0]}) size: {len(group1_data)}")
+        print(f"[DEBUG F-TEST] Group 2 ({unique_groups[1]}) size: {len(group2_data)}")
+        
+        # Check minimum observations
+        group_counts = work[col_group].value_counts()
+        if any(group_counts < 2):
+            explanation = (
+                "F-test for Equality of Variances requires:\n"
+                "• A categorical column with exactly 2 groups\n"
+                "• A numerical column\n"
+                "• Each group must have at least 2 observations\n\n"
+                f"Current group counts: {group_counts.to_dict()}"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'is_explanation': True,
+                'message': explanation,
+                'groups': list(group_counts.index),
+                'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
+            })
+        
+        # Check if all values are identical
+        all_values = np.concatenate([group1_data, group2_data])
+        if len(np.unique(all_values)) == 1:
+            warning_message_en = "All values in the numeric column are identical. The F-test requires variation in the data."
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। এফ-টেস্টের জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন।"
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message_bn if lang == 'bn' else warning_message_en,
+                'language': lang,
+                'identical_value': float(all_values[0]),
+                'n_observations': int(len(work)),
+                'column_names': {
+                    'group': str(col_group),
+                    'value': str(col_value)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': 'F-Test for Equality of Variances' if lang == 'en' else 'এফ-টেস্ট (ভ্যারিয়েন্স সমতা পরীক্ষা)'
+            })
+        
+        # Perform F-test
+        try:
+            print(f"[DEBUG F-TEST] Performing F-test...")
+            
+            # Calculate variances
+            var1 = np.var(group1_data, ddof=1)
+            var2 = np.var(group2_data, ddof=1)
+            
+            print(f"[DEBUG F-TEST] Variances: Group 1: {var1:.6f}, Group 2: {var2:.6f}")
+            
+            # F-statistic
+            if var1 >= var2:
+                F_stat = var1 / var2
+                dfn = len(group1_data) - 1
+                dfd = len(group2_data) - 1
+                larger_group = unique_groups[0]
+            else:
+                F_stat = var2 / var1
+                dfn = len(group2_data) - 1
+                dfd = len(group1_data) - 1
+                larger_group = unique_groups[1]
+            
+            # Two-tailed p-value
+            p_value = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
+            
+            print(f"[DEBUG F-TEST] Test results - F: {F_stat:.6f}, p-value: {p_value:.6f}, df: ({dfn}, {dfd})")
+            
+        except Exception as e:
+            error_msg = f'Error performing F-test: {str(e)}'
+            print(f"[DEBUG F-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Prepare plot data - Use the mapped category names
+        plot_data = []
+        group_data_list = [group1_data, group2_data]
+        var_list = [var1, var2]
+        
+        for i, group in enumerate(unique_groups):
+            group_data = group_data_list[i]
+            group_var = var_list[i]
+            
+            plot_data.append({
+                'category': str(group),  # This should now be the original label, not float
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)),
+                'median': float(np.median(group_data)),
+                'std': float(np.std(group_data, ddof=1)),
+                'min': float(np.min(group_data)),
+                'max': float(np.max(group_data)),
+                'q25': float(np.percentile(group_data, 25)),
+                'q75': float(np.percentile(group_data, 75)),
+                'variance': float(group_var)
+            })
+        
+        # Prepare response - matching Kruskal structure
+        result = {
+            'success': True,
+            'test': 'F-Test for Equality of Variances' if lang == 'en' else 'এফ-টেস্ট (ভ্যারিয়েন্স সমতা পরীক্ষা)',
+            'statistic': float(F_stat),
+            'p_value': float(p_value),
+            'degrees_of_freedom': f"{dfn}, {dfd}",  # Add this for frontend compatibility
+            'n_groups': len(unique_groups),
+            'total_observations': len(work),
+            'column_names': {
+                'group': str(col_group),
+                'value': str(col_value)
+            },
+            'groups': unique_groups,  # These should be the mapped labels
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'variances': {
+                unique_groups[0]: float(var1),
+                unique_groups[1]: float(var2)
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05,
+                'dfn': int(dfn),
+                'dfd': int(dfd),
+                'larger_variance_group': larger_group,
+                'interpretation': f'Variances are {"NOT " if p_value >= 0.05 else ""}significantly different (p = {p_value:.4f})'
+            }
+        }
+        
+        print(f"[DEBUG F-TEST] Returning successful result")
+        print(f"[DEBUG F-TEST] Groups in response: {unique_groups}")
+        print(f"[DEBUG F-TEST] Plot data categories: {[d['category'] for d in plot_data]}")
+        
+        return JsonResponse(result)
         
     except Exception as e:
-        return JsonResponse({
-            'success': False, 
-            'error': f'Error in T-test: {e}'
-        })
-
-    # Prepare data for frontend plotting
-    plot_data = []
-    
-    for i, category in enumerate(categories):
-        if i == 0:
-            category_data = group1_data
-        else:
-            category_data = group2_data
-            
-        plot_data.append({
-            'category': str(category),
-            'values': [float(x) for x in category_data],
-            'count': int(len(category_data)),
-            'mean': float(np.mean(category_data)),
-            'median': float(np.median(category_data)),
-            'std': float(np.std(category_data)),
-            'variance': float(np.var(category_data, ddof=1)),
-            'min': float(np.min(category_data)),
-            'max': float(np.max(category_data)),
-            'q25': float(np.percentile(category_data, 25)),
-            'q75': float(np.percentile(category_data, 75))
-        })
-
-    # Prepare response with localized labels
-    test_name = "Welch's T-Test for Equality of Means" if language == 'en' else 'টি-টেস্ট (মানে সমতা)'
-    
-    response_data = {
-        'success': True,
-        'test': test_name,
-        'language': language,
-        'statistic': float(t_stat),
-        'p_value': float(p_value),
-        'degrees_of_freedom': float(welch_df),
-        'n_groups': int(len(categories)),
-        'total_observations': int(len(work)),
-        'means': {
-            str(categories[0]): float(np.mean(group1_data)),
-            str(categories[1]): float(np.mean(group2_data))
-        },
-        'variances': {
-            str(categories[0]): float(np.var(group1_data, ddof=1)),
-            str(categories[1]): float(np.var(group2_data, ddof=1))
-        },
-        'column_names': {
-            'group': str(col_group),
-            'value': str(col_value)
-        },
-        'plot_data': plot_data,
-        'metadata': {
-            'categories': [str(c) for c in categories],
-            'significant': bool(p_value < 0.05),
-            'alpha': 0.05,
-            'test_type': 't_test'
-        }
-    }
-    return JsonResponse(response_data)
+        import traceback
+        error_msg = f'Unexpected error in F-test: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG F-TEST] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
-def process_fzt_visualization(request, df, col_group, col_value, user_id):
+def process_z_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str, ordinal_mappings):
     """
-    Returns ALL THREE test results + combined visualization data
+    Performs Z-test for equality of means with ordinal mapping and group selection support
     """
+    import numpy as np
+    from statsmodels.stats.weightstats import ztest
+    import json
+    
     try:
-        # Extract language preference
-        language = request.POST.get('language', 'en').lower()
-        if language not in ('en', 'bn'):
-            language = 'en'
+        # Get language
+        lang = request.POST.get('language', 'en')
+        
+        print(f"[DEBUG Z-TEST] Starting Z-test with ordinal mappings")
+        print(f"[DEBUG Z-TEST] Column 1 (categorical): {col_group}")
+        print(f"[DEBUG Z-TEST] Column 2 (numerical): {col_value}")
+        print(f"[DEBUG Z-TEST] Ordinal mappings available: {col_group in ordinal_mappings}")
+        
+        # Check if columns exist
+        if col_group not in df.columns or col_value not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG Z-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False, 
+                'error': error_msg
+            })
+        
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
+        
+        print(f"[DEBUG Z-TEST] Raw selected_groups JSON: {selected_groups_json}")
+        
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG Z-TEST] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG Z-TEST] JSON decode error: {e}")
+                selected_groups = []
+        
+        # Prepare working dataset
+        work = df[[col_group, col_value]].copy()
+        print(f"[DEBUG Z-TEST] Initial work shape: {work.shape}")
+        
+        # ============================================================
+        # Apply ordinal mapping BEFORE any processing (same as F-test)
+        # ============================================================
+        if col_group in ordinal_mappings:
+            print(f"[DEBUG Z-TEST] Applying ordinal mapping for column: {col_group}")
+            print(f"[DEBUG Z-TEST] Ordinal mapping keys: {list(ordinal_mappings[col_group].keys())[:5] if ordinal_mappings[col_group] else 'Empty'}")
+            
+            # Apply the mapping to convert numeric codes back to original labels
+            def map_to_original(value):
+                if pd.isna(value):
+                    return value
+                
+                # Try different types of keys
+                str_val = str(value).strip()
+                
+                # Try as string key first
+                if str_val in ordinal_mappings[col_group]:
+                    return ordinal_mappings[col_group][str_val]
+                
+                # Try as integer if possible
+                try:
+                    int_val = int(float(value))
+                    if int_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][int_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # Try as float
+                try:
+                    float_val = float(value)
+                    if float_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][float_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # If not found in mapping, return original
+                return value
+            
+            # Apply mapping
+            work[col_group] = work[col_group].apply(map_to_original)
+            
+            # Also map selected groups if provided
+            if selected_groups:
+                mapped_selected_groups = []
+                for group in selected_groups:
+                    # Check if selected group is in mapping values (original labels)
+                    found = False
+                    for key, val in ordinal_mappings[col_group].items():
+                        if str(val).strip() == str(group).strip():
+                            mapped_selected_groups.append(str(val))
+                            found = True
+                            break
+                    
+                    # If not found, check if it's a numeric code that needs mapping
+                    if not found:
+                        try:
+                            # Check if group is a numeric code
+                            num_group = float(group)
+                            for key, val in ordinal_mappings[col_group].items():
+                                try:
+                                    num_key = float(key)
+                                    if abs(num_key - num_group) < 0.001:  # Handle floating point
+                                        mapped_selected_groups.append(str(val))
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # If still not found, keep original
+                    if not found:
+                        mapped_selected_groups.append(str(group))
+                
+                selected_groups = mapped_selected_groups
+                print(f"[DEBUG Z-TEST] Mapped selected groups: {selected_groups}")
+        else:
+            print(f"[DEBUG Z-TEST] No ordinal mapping found for column: {col_group}")
+        # ============================================================
+        
+        # Step 1: Clean the categorical column
+        work[col_group] = work[col_group].apply(lambda x: str(x).strip() if pd.notna(x) else x)
+        work = work.dropna(subset=[col_group])
+        print(f"[DEBUG Z-TEST] After dropping NaN from col_group: {work.shape}")
+        
+        # Step 2: Convert numeric column
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            print(f"[DEBUG Z-TEST] Column 2 is not numeric, attempting conversion...")
+            try:
+                work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+                print(f"[DEBUG Z-TEST] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col_value}" must be numerical for Z-test. Conversion error: {e}'
+                print(f"[DEBUG Z-TEST] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Drop NaN from numeric column
+        work = work.dropna(subset=[col_value])
+        print(f"[DEBUG Z-TEST] After dropping NaN from numeric column: {work.shape}")
+        
+        # Get all available groups after mapping
+        available_groups = sorted([str(g).strip() for g in work[col_group].unique()])
+        print(f"[DEBUG Z-TEST] Available groups in cleaned data (after mapping): {available_groups}")
+        
+        # Step 3: Filter by selected groups (if provided) - IMPORTANT: Z-test needs exactly 2 groups
+        if selected_groups:
+            selected_groups_str = [str(g).strip() for g in selected_groups]
+            print(f"[DEBUG Z-TEST] Looking for groups (as strings): {selected_groups_str}")
+            
+            # Check which selected groups actually exist
+            existing_groups = []
+            for selected in selected_groups_str:
+                # Try exact match first
+                found = False
+                for available in available_groups:
+                    if selected == available:
+                        existing_groups.append(available)
+                        found = True
+                        print(f"[DEBUG Z-TEST] Found exact match: '{selected}'")
+                        break
+                
+                # If not found with exact match, try case-insensitive
+                if not found:
+                    for available in available_groups:
+                        if selected.lower() == available.lower():
+                            existing_groups.append(available)
+                            found = True
+                            print(f"[DEBUG Z-TEST] Found case-insensitive match: '{selected}' -> '{available}'")
+                            break
+                
+                if not found:
+                    print(f"[DEBUG Z-TEST] Group '{selected}' not found in data")
+            
+            # For Z-test, we need exactly 2 groups
+            if len(existing_groups) >= 2:
+                # Use the first 2 existing groups
+                work = work[work[col_group].apply(lambda x: str(x).strip()).isin(existing_groups[:2])]
+                unique_groups = existing_groups[:2]
+                print(f"[DEBUG Z-TEST] Using selected groups: {unique_groups}")
+            else:
+                print(f"[DEBUG Z-TEST] Not enough selected groups exist. Using first 2 available groups.")
+                unique_groups = available_groups[:2]
+        else:
+            unique_groups = available_groups[:2]
+            print(f"[DEBUG Z-TEST] No groups selected, using first 2 available groups: {unique_groups}")
+        
+        print(f"[DEBUG Z-TEST] Final work shape: {work.shape}")
+        
+        # Check if we have data
+        if len(work) == 0:
+            error_msg = 'No data available after cleaning. Please check if the selected groups exist in the data.'
+            print(f"[DEBUG Z-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Check if we have exactly 2 groups (Z-test requirement)
+        if len(unique_groups) != 2:
+            error_msg = f'Z-test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG Z-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Get group data
+        group1_data = work[work[col_group] == unique_groups[0]][col_value].values
+        group2_data = work[work[col_group] == unique_groups[1]][col_value].values
+        
+        print(f"[DEBUG Z-TEST] Group 1 ({unique_groups[0]}) size: {len(group1_data)}")
+        print(f"[DEBUG Z-TEST] Group 2 ({unique_groups[1]}) size: {len(group2_data)}")
+        
+        # Check minimum observations
+        group_counts = work[col_group].value_counts()
+        if any(group_counts < 2):
+            explanation = (
+                "Z-test for Equality of Means requires:\n"
+                "• A categorical column with exactly 2 groups\n"
+                "• A numerical column\n"
+                "• Each group must have at least 2 observations\n\n"
+                f"Current group counts: {group_counts.to_dict()}"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'is_explanation': True,
+                'message': explanation,
+                'groups': list(group_counts.index),
+                'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
+            })
+        
+        # Check if all values are identical
+        all_values = np.concatenate([group1_data, group2_data])
+        if len(np.unique(all_values)) == 1:
+            warning_message_en = "All values in the numeric column are identical. The Z-test requires variation in the data."
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। জেড-টেস্টের জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন।"
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message_bn if lang == 'bn' else warning_message_en,
+                'language': lang,
+                'identical_value': float(all_values[0]),
+                'n_observations': int(len(work)),
+                'column_names': {
+                    'group': str(col_group),
+                    'value': str(col_value)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': 'Z-Test for Equality of Means' if lang == 'en' else 'জেড-টেস্ট (মানে সমতা)'
+            })
+        
+        # Perform Z-test
+        try:
+            print(f"[DEBUG Z-TEST] Performing Z-test...")
+            
+            # Perform Z-test for equality of means
+            z_stat, p_value = ztest(group1_data, group2_data)
+            
+            print(f"[DEBUG Z-TEST] Test results - Z: {z_stat:.6f}, p-value: {p_value:.6f}")
+            
+        except Exception as e:
+            error_msg = f'Error performing Z-test: {str(e)}'
+            print(f"[DEBUG Z-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Prepare plot data - Use the mapped category names
+        plot_data = []
+        group_data_list = [group1_data, group2_data]
+        
+        for i, group in enumerate(unique_groups):
+            group_data = group_data_list[i]
+            
+            plot_data.append({
+                'category': str(group),  # This should now be the original label, not float
+                'values': [float(x) for x in group_data],
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)),
+                'median': float(np.median(group_data)),
+                'std': float(np.std(group_data, ddof=1)),
+                'variance': float(np.var(group_data, ddof=1)),
+                'min': float(np.min(group_data)),
+                'max': float(np.max(group_data)),
+                'q25': float(np.percentile(group_data, 25)),
+                'q75': float(np.percentile(group_data, 75))
+            })
+        
+        # Prepare response - matching F-test structure
+        test_name = 'Z-Test for Equality of Means' if lang == 'en' else 'জেড-টেস্ট (মানে সমতা)'
+        
+        result = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'statistic': float(z_stat),
+            'p_value': float(p_value),
+            'n_groups': len(unique_groups),
+            'total_observations': len(work),
+            'column_names': {
+                'group': str(col_group),
+                'value': str(col_value)
+            },
+            'groups': unique_groups,  # These should be the mapped labels
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'means': {
+                unique_groups[0]: float(np.mean(group1_data)),
+                unique_groups[1]: float(np.mean(group2_data))
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05,
+                'test_type': 'z_test',
+                'interpretation': f'Means are {"NOT " if p_value >= 0.05 else ""}significantly different (p = {p_value:.4f})'
+            }
+        }
+        
+        print(f"[DEBUG Z-TEST] Returning successful result")
+        print(f"[DEBUG Z-TEST] Groups in response: {unique_groups}")
+        print(f"[DEBUG Z-TEST] Plot data categories: {[d['category'] for d in plot_data]}")
+        
+        return JsonResponse(result)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f'Unexpected error in Z-test: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG Z-TEST] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
+
+def process_t_test(request, df: pd.DataFrame, col_group: str, col_value: str, user_id: str, ordinal_mappings):
+    """
+    Performs Welch's T-test for equality of means with ordinal mapping and group selection support
+    """
+    import numpy as np
+    from scipy import stats
+    import json
+    
+    try:
+        # Get language
+        lang = request.POST.get('language', 'en')
+        
+        print(f"[DEBUG T-TEST] Starting T-test with ordinal mappings")
+        print(f"[DEBUG T-TEST] Column 1 (categorical): {col_group}")
+        print(f"[DEBUG T-TEST] Column 2 (numerical): {col_value}")
+        print(f"[DEBUG T-TEST] Ordinal mappings available: {col_group in ordinal_mappings}")
+        
+        # Check if columns exist
+        if col_group not in df.columns or col_value not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG T-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False, 
+                'error': error_msg
+            })
+        
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
+        
+        print(f"[DEBUG T-TEST] Raw selected_groups JSON: {selected_groups_json}")
+        
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG T-TEST] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG T-TEST] JSON decode error: {e}")
+                selected_groups = []
+        
+        # Prepare working dataset
+        work = df[[col_group, col_value]].copy()
+        print(f"[DEBUG T-TEST] Initial work shape: {work.shape}")
+        
+        # ============================================================
+        # Apply ordinal mapping BEFORE any processing (same as F-test)
+        # ============================================================
+        if col_group in ordinal_mappings:
+            print(f"[DEBUG T-TEST] Applying ordinal mapping for column: {col_group}")
+            print(f"[DEBUG T-TEST] Ordinal mapping keys: {list(ordinal_mappings[col_group].keys())[:5] if ordinal_mappings[col_group] else 'Empty'}")
+            
+            # Apply the mapping to convert numeric codes back to original labels
+            def map_to_original(value):
+                if pd.isna(value):
+                    return value
+                
+                # Try different types of keys
+                str_val = str(value).strip()
+                
+                # Try as string key first
+                if str_val in ordinal_mappings[col_group]:
+                    return ordinal_mappings[col_group][str_val]
+                
+                # Try as integer if possible
+                try:
+                    int_val = int(float(value))
+                    if int_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][int_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # Try as float
+                try:
+                    float_val = float(value)
+                    if float_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][float_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # If not found in mapping, return original
+                return value
+            
+            # Apply mapping
+            work[col_group] = work[col_group].apply(map_to_original)
+            
+            # Also map selected groups if provided
+            if selected_groups:
+                mapped_selected_groups = []
+                for group in selected_groups:
+                    # Check if selected group is in mapping values (original labels)
+                    found = False
+                    for key, val in ordinal_mappings[col_group].items():
+                        if str(val).strip() == str(group).strip():
+                            mapped_selected_groups.append(str(val))
+                            found = True
+                            break
+                    
+                    # If not found, check if it's a numeric code that needs mapping
+                    if not found:
+                        try:
+                            # Check if group is a numeric code
+                            num_group = float(group)
+                            for key, val in ordinal_mappings[col_group].items():
+                                try:
+                                    num_key = float(key)
+                                    if abs(num_key - num_group) < 0.001:  # Handle floating point
+                                        mapped_selected_groups.append(str(val))
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # If still not found, keep original
+                    if not found:
+                        mapped_selected_groups.append(str(group))
+                
+                selected_groups = mapped_selected_groups
+                print(f"[DEBUG T-TEST] Mapped selected groups: {selected_groups}")
+        else:
+            print(f"[DEBUG T-TEST] No ordinal mapping found for column: {col_group}")
+        # ============================================================
+        
+        # Step 1: Clean the categorical column
+        work[col_group] = work[col_group].apply(lambda x: str(x).strip() if pd.notna(x) else x)
+        work = work.dropna(subset=[col_group])
+        print(f"[DEBUG T-TEST] After dropping NaN from col_group: {work.shape}")
+        
+        # Step 2: Convert numeric column
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            print(f"[DEBUG T-TEST] Column 2 is not numeric, attempting conversion...")
+            try:
+                work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+                print(f"[DEBUG T-TEST] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col_value}" must be numerical for T-test. Conversion error: {e}'
+                print(f"[DEBUG T-TEST] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Drop NaN from numeric column
+        work = work.dropna(subset=[col_value])
+        print(f"[DEBUG T-TEST] After dropping NaN from numeric column: {work.shape}")
+        
+        # Get all available groups after mapping
+        available_groups = sorted([str(g).strip() for g in work[col_group].unique()])
+        print(f"[DEBUG T-TEST] Available groups in cleaned data (after mapping): {available_groups}")
+        
+        # Step 3: Filter by selected groups (if provided) - T-test needs exactly 2 groups
+        if selected_groups:
+            selected_groups_str = [str(g).strip() for g in selected_groups]
+            print(f"[DEBUG T-TEST] Looking for groups (as strings): {selected_groups_str}")
+            
+            # Check which selected groups actually exist
+            existing_groups = []
+            for selected in selected_groups_str:
+                # Try exact match first
+                found = False
+                for available in available_groups:
+                    if selected == available:
+                        existing_groups.append(available)
+                        found = True
+                        print(f"[DEBUG T-TEST] Found exact match: '{selected}'")
+                        break
+                
+                # If not found with exact match, try case-insensitive
+                if not found:
+                    for available in available_groups:
+                        if selected.lower() == available.lower():
+                            existing_groups.append(available)
+                            found = True
+                            print(f"[DEBUG T-TEST] Found case-insensitive match: '{selected}' -> '{available}'")
+                            break
+                
+                if not found:
+                    print(f"[DEBUG T-TEST] Group '{selected}' not found in data")
+            
+            # For T-test, we need exactly 2 groups
+            if len(existing_groups) >= 2:
+                # Use the first 2 existing groups
+                work = work[work[col_group].apply(lambda x: str(x).strip()).isin(existing_groups[:2])]
+                unique_groups = existing_groups[:2]
+                print(f"[DEBUG T-TEST] Using selected groups: {unique_groups}")
+            else:
+                print(f"[DEBUG T-TEST] Not enough selected groups exist. Using first 2 available groups.")
+                unique_groups = available_groups[:2]
+        else:
+            unique_groups = available_groups[:2]
+            print(f"[DEBUG T-TEST] No groups selected, using first 2 available groups: {unique_groups}")
+        
+        print(f"[DEBUG T-TEST] Final work shape: {work.shape}")
+        
+        # Check if we have data
+        if len(work) == 0:
+            error_msg = 'No data available after cleaning. Please check if the selected groups exist in the data.'
+            print(f"[DEBUG T-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Check if we have exactly 2 groups (T-test requirement)
+        if len(unique_groups) != 2:
+            error_msg = f'T-test requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG T-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Get group data
+        group1_data = work[work[col_group] == unique_groups[0]][col_value].values
+        group2_data = work[work[col_group] == unique_groups[1]][col_value].values
+        
+        print(f"[DEBUG T-TEST] Group 1 ({unique_groups[0]}) size: {len(group1_data)}")
+        print(f"[DEBUG T-TEST] Group 2 ({unique_groups[1]}) size: {len(group2_data)}")
+        
+        # Check minimum observations
+        group_counts = work[col_group].value_counts()
+        if any(group_counts < 2):
+            explanation = (
+                "T-test for Equality of Means requires:\n"
+                "• A categorical column with exactly 2 groups\n"
+                "• A numerical column\n"
+                "• Each group must have at least 2 observations\n\n"
+                f"Current group counts: {group_counts.to_dict()}"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'is_explanation': True,
+                'message': explanation,
+                'groups': list(group_counts.index),
+                'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
+            })
+        
+        # Check if all values are identical
+        all_values = np.concatenate([group1_data, group2_data])
+        if len(np.unique(all_values)) == 1:
+            warning_message_en = "All values in the numeric column are identical. The T-test requires variation in the data."
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। টি-টেস্টের জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন।"
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message_bn if lang == 'bn' else warning_message_en,
+                'language': lang,
+                'identical_value': float(all_values[0]),
+                'n_observations': int(len(work)),
+                'column_names': {
+                    'group': str(col_group),
+                    'value': str(col_value)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': "Welch's T-Test for Equality of Means" if lang == 'en' else 'টি-টেস্ট (মানে সমতা)'
+            })
+        
+        # Perform Welch's T-test
+        try:
+            print(f"[DEBUG T-TEST] Performing Welch's T-test...")
+            
+            # Perform Welch's T-test (does not assume equal variances)
+            t_stat, p_value = stats.ttest_ind(group1_data, group2_data, equal_var=False)
+            
+            # Calculate Welch-Satterthwaite degrees of freedom
+            v1 = np.var(group1_data, ddof=1)
+            v2 = np.var(group2_data, ddof=1)
+            n1 = len(group1_data)
+            n2 = len(group2_data)
+            welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+            
+            print(f"[DEBUG T-TEST] Test results - t: {t_stat:.6f}, p-value: {p_value:.6f}, df: {welch_df:.2f}")
+            
+        except Exception as e:
+            error_msg = f'Error performing T-test: {str(e)}'
+            print(f"[DEBUG T-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Prepare plot data - Use the mapped category names
+        plot_data = []
+        group_data_list = [group1_data, group2_data]
+        variance_list = [v1, v2]
+        
+        for i, group in enumerate(unique_groups):
+            group_data = group_data_list[i]
+            group_var = variance_list[i]
+            
+            plot_data.append({
+                'category': str(group),  # This should now be the original label, not float
+                'values': [float(x) for x in group_data],
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)),
+                'median': float(np.median(group_data)),
+                'std': float(np.std(group_data, ddof=1)),
+                'variance': float(group_var),
+                'min': float(np.min(group_data)),
+                'max': float(np.max(group_data)),
+                'q25': float(np.percentile(group_data, 25)),
+                'q75': float(np.percentile(group_data, 75))
+            })
+        
+        # Prepare response - matching F/Z-test structure
+        test_name = "Welch's T-Test for Equality of Means" if lang == 'en' else 'টি-টেস্ট (মানে সমতা)'
+        
+        result = {
+            'success': True,
+            'test': test_name,
+            'language': lang,
+            'statistic': float(t_stat),
+            'p_value': float(p_value),
+            'degrees_of_freedom': float(welch_df),
+            'n_groups': len(unique_groups),
+            'total_observations': len(work),
+            'column_names': {
+                'group': str(col_group),
+                'value': str(col_value)
+            },
+            'groups': unique_groups,  # These should be the mapped labels
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'means': {
+                unique_groups[0]: float(np.mean(group1_data)),
+                unique_groups[1]: float(np.mean(group2_data))
+            },
+            'variances': {
+                unique_groups[0]: float(v1),
+                unique_groups[1]: float(v2)
+            },
+            'plot_data': plot_data,
+            'metadata': {
+                'significant': bool(p_value < 0.05),
+                'alpha': 0.05,
+                'test_type': 't_test',
+                'interpretation': f'Means are {"NOT " if p_value >= 0.05 else ""}significantly different (p = {p_value:.4f})'
+            }
+        }
+        
+        print(f"[DEBUG T-TEST] Returning successful result")
+        print(f"[DEBUG T-TEST] Groups in response: {unique_groups}")
+        print(f"[DEBUG T-TEST] Plot data categories: {[d['category'] for d in plot_data]}")
+        
+        return JsonResponse(result)
+        
+    except Exception as e:
+        import traceback
+        error_msg = f'Unexpected error in T-test: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG T-TEST] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
+
+
+def process_fzt_visualization(request, df, col_group, col_value, user_id, ordinal_mappings):
+    """
+    Returns ALL THREE test results + combined visualization data with ordinal mapping support
+    """
+    import numpy as np
+    from scipy import stats
+    from statsmodels.stats.weightstats import ztest
+    import json
+    
+    try:
+        # Get language
+        lang = request.POST.get('language', 'en')
+        
+        print(f"[DEBUG FZT-TEST] Starting FZT combined analysis with ordinal mappings")
+        print(f"[DEBUG FZT-TEST] Column 1 (categorical): {col_group}")
+        print(f"[DEBUG FZT-TEST] Column 2 (numerical): {col_value}")
+        print(f"[DEBUG FZT-TEST] Ordinal mappings available: {col_group in ordinal_mappings}")
+        
+        # Check if columns exist
+        if col_group not in df.columns or col_value not in df.columns:
+            error_msg = f'Selected columns not found. Available: {list(df.columns)}'
+            print(f"[DEBUG FZT-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False, 
+                'error': error_msg
+            })
+        
+        # Get selected groups from request
+        selected_groups = []
+        selected_groups_json = request.POST.get('selected_groups', '')
+        
+        print(f"[DEBUG FZT-TEST] Raw selected_groups JSON: {selected_groups_json}")
+        
+        if selected_groups_json:
+            try:
+                selected_groups = json.loads(selected_groups_json)
+                print(f"[DEBUG FZT-TEST] Parsed selected groups: {selected_groups}")
+            except json.JSONDecodeError as e:
+                print(f"[DEBUG FZT-TEST] JSON decode error: {e}")
+                selected_groups = []
+        
         # Extract plot parameters for histogram and KDE
         histogram_bins = request.POST.get('histogram_bins', 'auto')
         kde_bandwidth = request.POST.get('kde_bandwidth', None)
@@ -3939,78 +4643,295 @@ def process_fzt_visualization(request, df, col_group, col_value, user_id):
                     kde_bandwidth = None
             except (ValueError, TypeError):
                 kde_bandwidth = None
-
+        
         # Prepare working dataset
         work = df[[col_group, col_value]].copy()
-        work = work.dropna(subset=[col_group, col_value])
+        print(f"[DEBUG FZT-TEST] Initial work shape: {work.shape}")
         
-        # Ensure grouping column is categorical and value is numeric
-        if not pd.api.types.is_categorical_dtype(work[col_group]):
-            work[col_group] = work[col_group].astype('category')
+        # ============================================================
+        # Apply ordinal mapping BEFORE any processing (same as other tests)
+        # ============================================================
+        if col_group in ordinal_mappings:
+            print(f"[DEBUG FZT-TEST] Applying ordinal mapping for column: {col_group}")
+            print(f"[DEBUG FZT-TEST] Ordinal mapping keys: {list(ordinal_mappings[col_group].keys())[:5] if ordinal_mappings[col_group] else 'Empty'}")
             
-        if not pd.api.types.is_numeric_dtype(work[col_value]):
-            work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
-            work = work.dropna(subset=[col_value])
-
-        categories = list(work[col_group].cat.categories)
-        
-        if len(categories) != 2:
-            return JsonResponse({
-                'success': False, 
-                'error': 'F/Z/T analysis requires exactly 2 groups.'
-            })
-
-        # Prepare groups
-        group1_data = work.loc[work[col_group] == categories[0], col_value].values
-        group2_data = work.loc[work[col_group] == categories[1], col_value].values
-
-        # Perform all three tests using existing logic
-        # F-Test
-        var1 = np.var(group1_data, ddof=1)
-        var2 = np.var(group2_data, ddof=1)
-        if var1 >= var2:
-            F_stat = var1 / var2
-            dfn = len(group1_data) - 1
-            dfd = len(group2_data) - 1
+            # Apply the mapping to convert numeric codes back to original labels
+            def map_to_original(value):
+                if pd.isna(value):
+                    return value
+                
+                # Try different types of keys
+                str_val = str(value).strip()
+                
+                # Try as string key first
+                if str_val in ordinal_mappings[col_group]:
+                    return ordinal_mappings[col_group][str_val]
+                
+                # Try as integer if possible
+                try:
+                    int_val = int(float(value))
+                    if int_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][int_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # Try as float
+                try:
+                    float_val = float(value)
+                    if float_val in ordinal_mappings[col_group]:
+                        return ordinal_mappings[col_group][float_val]
+                except (ValueError, TypeError):
+                    pass
+                
+                # If not found in mapping, return original
+                return value
+            
+            # Apply mapping
+            work[col_group] = work[col_group].apply(map_to_original)
+            
+            # Also map selected groups if provided
+            if selected_groups:
+                mapped_selected_groups = []
+                for group in selected_groups:
+                    # Check if selected group is in mapping values (original labels)
+                    found = False
+                    for key, val in ordinal_mappings[col_group].items():
+                        if str(val).strip() == str(group).strip():
+                            mapped_selected_groups.append(str(val))
+                            found = True
+                            break
+                    
+                    # If not found, check if it's a numeric code that needs mapping
+                    if not found:
+                        try:
+                            # Check if group is a numeric code
+                            num_group = float(group)
+                            for key, val in ordinal_mappings[col_group].items():
+                                try:
+                                    num_key = float(key)
+                                    if abs(num_key - num_group) < 0.001:  # Handle floating point
+                                        mapped_selected_groups.append(str(val))
+                                        found = True
+                                        break
+                                except (ValueError, TypeError):
+                                    continue
+                        except (ValueError, TypeError):
+                            pass
+                    
+                    # If still not found, keep original
+                    if not found:
+                        mapped_selected_groups.append(str(group))
+                
+                selected_groups = mapped_selected_groups
+                print(f"[DEBUG FZT-TEST] Mapped selected groups: {selected_groups}")
         else:
-            F_stat = var2 / var1
-            dfn = len(group2_data) - 1
-            dfd = len(group1_data) - 1
-        pF = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
-
-        # Z-Test
-        from statsmodels.stats.weightstats import ztest
-        z_stat, pZ = ztest(group1_data, group2_data)
-
-        # T-Test
-        t_stat, pT = stats.ttest_ind(group1_data, group2_data, equal_var=False)
-        v1 = np.var(group1_data, ddof=1)
-        v2 = np.var(group2_data, ddof=1)
-        n1, n2 = len(group1_data), len(group2_data)
-        welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
-
-        # Prepare plot data for each group (similar to distribution plot)
-        plot_data = []
-        for i, category in enumerate(categories):
-            category_data = group1_data if i == 0 else group2_data
-            plot_data.append({
-                'category': str(category),
-                'values': [float(x) for x in category_data],
-                'count': int(len(category_data)),
-                'mean': float(np.mean(category_data)),
-                'median': float(np.median(category_data)),
-                'std': float(np.std(category_data)),
-                'variance': float(np.var(category_data, ddof=1)),
-                'min': float(np.min(category_data)),
-                'max': float(np.max(category_data)),
-                'q25': float(np.percentile(category_data, 25)),
-                'q75': float(np.percentile(category_data, 75))
+            print(f"[DEBUG FZT-TEST] No ordinal mapping found for column: {col_group}")
+        # ============================================================
+        
+        # Step 1: Clean the categorical column
+        work[col_group] = work[col_group].apply(lambda x: str(x).strip() if pd.notna(x) else x)
+        work = work.dropna(subset=[col_group])
+        print(f"[DEBUG FZT-TEST] After dropping NaN from col_group: {work.shape}")
+        
+        # Step 2: Convert numeric column
+        if not pd.api.types.is_numeric_dtype(work[col_value]):
+            print(f"[DEBUG FZT-TEST] Column 2 is not numeric, attempting conversion...")
+            try:
+                work[col_value] = pd.to_numeric(work[col_value], errors='coerce')
+                print(f"[DEBUG FZT-TEST] Column 2 converted to numeric")
+            except Exception as e:
+                error_msg = f'Column "{col_value}" must be numerical for F/Z/T analysis. Conversion error: {e}'
+                print(f"[DEBUG FZT-TEST] Error: {error_msg}")
+                return JsonResponse({
+                    'success': False,
+                    'error': error_msg
+                })
+        
+        # Drop NaN from numeric column
+        work = work.dropna(subset=[col_value])
+        print(f"[DEBUG FZT-TEST] After dropping NaN from numeric column: {work.shape}")
+        
+        # Get all available groups after mapping
+        available_groups = sorted([str(g).strip() for g in work[col_group].unique()])
+        print(f"[DEBUG FZT-TEST] Available groups in cleaned data (after mapping): {available_groups}")
+        
+        # Step 3: Filter by selected groups (if provided) - Needs exactly 2 groups
+        if selected_groups:
+            selected_groups_str = [str(g).strip() for g in selected_groups]
+            print(f"[DEBUG FZT-TEST] Looking for groups (as strings): {selected_groups_str}")
+            
+            # Check which selected groups actually exist
+            existing_groups = []
+            for selected in selected_groups_str:
+                # Try exact match first
+                found = False
+                for available in available_groups:
+                    if selected == available:
+                        existing_groups.append(available)
+                        found = True
+                        print(f"[DEBUG FZT-TEST] Found exact match: '{selected}'")
+                        break
+                
+                # If not found with exact match, try case-insensitive
+                if not found:
+                    for available in available_groups:
+                        if selected.lower() == available.lower():
+                            existing_groups.append(available)
+                            found = True
+                            print(f"[DEBUG FZT-TEST] Found case-insensitive match: '{selected}' -> '{available}'")
+                            break
+                
+                if not found:
+                    print(f"[DEBUG FZT-TEST] Group '{selected}' not found in data")
+            
+            # We need exactly 2 groups
+            if len(existing_groups) >= 2:
+                # Use the first 2 existing groups
+                work = work[work[col_group].apply(lambda x: str(x).strip()).isin(existing_groups[:2])]
+                unique_groups = existing_groups[:2]
+                print(f"[DEBUG FZT-TEST] Using selected groups: {unique_groups}")
+            else:
+                print(f"[DEBUG FZT-TEST] Not enough selected groups exist. Using first 2 available groups.")
+                unique_groups = available_groups[:2]
+        else:
+            unique_groups = available_groups[:2]
+            print(f"[DEBUG FZT-TEST] No groups selected, using first 2 available groups: {unique_groups}")
+        
+        print(f"[DEBUG FZT-TEST] Final work shape: {work.shape}")
+        
+        # Check if we have data
+        if len(work) == 0:
+            error_msg = 'No data available after cleaning. Please check if the selected groups exist in the data.'
+            print(f"[DEBUG FZT-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
             })
+        
+        # Check if we have exactly 2 groups
+        if len(unique_groups) != 2:
+            error_msg = f'F/Z/T analysis requires exactly 2 groups. Found: {len(unique_groups)} groups ({unique_groups})'
+            print(f"[DEBUG FZT-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Get group data
+        group1_data = work[work[col_group] == unique_groups[0]][col_value].values
+        group2_data = work[work[col_group] == unique_groups[1]][col_value].values
+        
+        print(f"[DEBUG FZT-TEST] Group 1 ({unique_groups[0]}) size: {len(group1_data)}")
+        print(f"[DEBUG FZT-TEST] Group 2 ({unique_groups[1]}) size: {len(group2_data)}")
+        
+        # Check minimum observations
+        group_counts = work[col_group].value_counts()
+        if any(group_counts < 2):
+            explanation = (
+                "F/Z/T analysis requires:\n"
+                "• A categorical column with exactly 2 groups\n"
+                "• A numerical column\n"
+                "• Each group must have at least 2 observations\n\n"
+                f"Current group counts: {group_counts.to_dict()}"
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'is_explanation': True,
+                'message': explanation,
+                'groups': list(group_counts.index),
+                'group_sizes': {g: int(group_counts[g]) for g in group_counts.index}
+            })
+        
+        # Check if all values are identical
+        all_values = np.concatenate([group1_data, group2_data])
+        if len(np.unique(all_values)) == 1:
+            warning_message_en = "All values in the numeric column are identical. Statistical tests require variation in the data."
+            warning_message_bn = "সংখ্যাসূচক কলামের সকল মান অভিন্ন। পরিসংখ্যানগত টেস্টের জন্য ডেটার মধ্যে বৈচিত্র্য প্রয়োজন।"
+            
+            return JsonResponse({
+                'success': True,
+                'identical_values': True,
+                'warning_message': warning_message_bn if lang == 'bn' else warning_message_en,
+                'language': lang,
+                'identical_value': float(all_values[0]),
+                'n_observations': int(len(work)),
+                'column_names': {
+                    'group': str(col_group),
+                    'value': str(col_value)
+                },
+                'groups': unique_groups,
+                'group_sizes': {
+                    unique_groups[0]: int(len(group1_data)),
+                    unique_groups[1]: int(len(group2_data))
+                },
+                'test': 'F/Z/T Combined Analysis' if lang == 'en' else 'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'
+            })
+        
+        # Perform all three tests
+        try:
+            print(f"[DEBUG FZT-TEST] Performing all three tests...")
+            
+            # F-Test
+            var1 = np.var(group1_data, ddof=1)
+            var2 = np.var(group2_data, ddof=1)
+            if var1 >= var2:
+                F_stat = var1 / var2
+                dfn = len(group1_data) - 1
+                dfd = len(group2_data) - 1
+            else:
+                F_stat = var2 / var1
+                dfn = len(group2_data) - 1
+                dfd = len(group1_data) - 1
+            pF = 2 * min(stats.f.cdf(F_stat, dfn, dfd), 1 - stats.f.cdf(F_stat, dfn, dfd))
 
-        # Generate distribution plot data for each group (like EDA distribution)
+            # Z-Test
+            z_stat, pZ = ztest(group1_data, group2_data)
+
+            # T-Test
+            t_stat, pT = stats.ttest_ind(group1_data, group2_data, equal_var=False)
+            v1 = np.var(group1_data, ddof=1)
+            v2 = np.var(group2_data, ddof=1)
+            n1, n2 = len(group1_data), len(group2_data)
+            welch_df = (v1/n1 + v2/n2)**2 / ((v1/n1)**2/(n1-1) + (v2/n2)**2/(n2-1))
+            
+            print(f"[DEBUG FZT-TEST] Results - F: {F_stat:.6f}(p={pF:.6f}), Z: {z_stat:.6f}(p={pZ:.6f}), t: {t_stat:.6f}(p={pT:.6f})")
+            
+        except Exception as e:
+            error_msg = f'Error performing statistical tests: {str(e)}'
+            print(f"[DEBUG FZT-TEST] Error: {error_msg}")
+            return JsonResponse({
+                'success': False,
+                'error': error_msg
+            })
+        
+        # Prepare plot data for each group - Use the mapped category names
+        plot_data = []
+        group_data_list = [group1_data, group2_data]
+        variance_list = [var1, var2]
+        
+        for i, group in enumerate(unique_groups):
+            group_data = group_data_list[i]
+            group_var = variance_list[i]
+            
+            plot_data.append({
+                'category': str(group),  # This should now be the original label, not float
+                'values': [float(x) for x in group_data],
+                'count': int(len(group_data)),
+                'mean': float(np.mean(group_data)),
+                'median': float(np.median(group_data)),
+                'std': float(np.std(group_data, ddof=1)),
+                'variance': float(group_var),
+                'min': float(np.min(group_data)),
+                'max': float(np.max(group_data)),
+                'q25': float(np.percentile(group_data, 25)),
+                'q75': float(np.percentile(group_data, 75))
+            })
+        
+        # Generate distribution plot data for each group
         distribution_data = {}
         
-        for i, category in enumerate(categories):
+        for i, group in enumerate(unique_groups):
             category_data = group1_data if i == 0 else group2_data
             
             # Generate histogram data
@@ -4050,7 +4971,7 @@ def process_fzt_visualization(request, df, col_group, col_value, user_id):
             x_points = np.linspace(data_min - 0.1 * data_range, data_max + 0.1 * data_range, 200)
             y_points = kde(x_points)
             
-            # Normalize to make it comparable to histogram (like seaborn does)
+            # Normalize to make it comparable to histogram
             y_points_normalized = y_points * len(category_data) * (x_points[1] - x_points[0])
             
             kde_curve = []
@@ -4072,49 +4993,78 @@ def process_fzt_visualization(request, df, col_group, col_value, user_id):
             distribution_data[f'group{i+1}'] = {
                 'histogram': hist_data,
                 'kde': kde_data,
-                'category': str(category)
+                'category': str(group)  # Use mapped category name
             }
-
-        return JsonResponse({
+        
+        # Prepare response
+        test_name_en = 'F/Z/T Combined Analysis'
+        test_name_bn = 'এফ/জেড/টি সম্মিলিত বিশ্লেষণ'
+        
+        result = {
             'success': True,
-            'test': 'F/Z/T Combined Analysis',
-            'language': language,
+            'test': test_name_bn if lang == 'bn' else test_name_en,
+            'language': lang,
             'f_test': {
                 'statistic': float(F_stat),
                 'p_value': float(pF),
-                'degrees_of_freedom': f"{dfn}, {dfd}"
+                'degrees_of_freedom': f"{dfn}, {dfd}",
+                'interpretation': f'Variances are {"NOT " if pF >= 0.05 else ""}significantly different (p = {pF:.4f})'
             },
             'z_test': {
                 'statistic': float(z_stat),
-                'p_value': float(pZ)
+                'p_value': float(pZ),
+                'interpretation': f'Means are {"NOT " if pZ >= 0.05 else ""}significantly different (p = {pZ:.4f})'
             },
             't_test': {
                 'statistic': float(t_stat),
                 'p_value': float(pT),
-                'degrees_of_freedom': float(welch_df)
+                'degrees_of_freedom': float(welch_df),
+                'interpretation': f'Means are {"NOT " if pT >= 0.05 else ""}significantly different (p = {pT:.4f})'
             },
             'plot_data': plot_data,
-            'distribution_data': distribution_data,  # Changed from combined_histogram_data
+            'distribution_data': distribution_data,
             'column_names': {
                 'group': str(col_group),
                 'value': str(col_value)
             },
-            'n_groups': int(len(categories)),
-            'total_observations': int(len(work)),
+            'groups': unique_groups,  # These should be the mapped labels
+            'n_groups': len(unique_groups),
+            'total_observations': len(work),
+            'group_sizes': {
+                unique_groups[0]: int(len(group1_data)),
+                unique_groups[1]: int(len(group2_data))
+            },
+            'means': {
+                unique_groups[0]: float(np.mean(group1_data)),
+                unique_groups[1]: float(np.mean(group2_data))
+            },
+            'variances': {
+                unique_groups[0]: float(var1),
+                unique_groups[1]: float(var2)
+            },
             'metadata': {
-                'categories': [str(c) for c in categories],
+                'categories': unique_groups,  # Use mapped category names
                 'test_type': 'fzt_visualization',
                 'has_all_tests': True,
-                'histogram_bins_used': histogram_bins if isinstance(histogram_bins, int) else 'auto'
+                'histogram_bins_used': histogram_bins if isinstance(histogram_bins, int) else 'auto',
+                'significant_F': bool(pF < 0.05),
+                'significant_Z': bool(pZ < 0.05),
+                'significant_T': bool(pT < 0.05),
+                'alpha': 0.05
             }
-        })
-
+        }
+        
+        print(f"[DEBUG FZT-TEST] Returning successful result")
+        print(f"[DEBUG FZT-TEST] Groups in response: {unique_groups}")
+        print(f"[DEBUG FZT-TEST] Plot data categories: {[d['category'] for d in plot_data]}")
+        
+        return JsonResponse(result)
+        
     except Exception as e:
-        return JsonResponse({
-            'success': False, 
-            'error': f'Error in F/Z/T analysis: {str(e)}'
-        })
-
+        import traceback
+        error_msg = f'Unexpected error in F/Z/T analysis: {str(e)}\n{traceback.format_exc()}'
+        print(f"[DEBUG FZT-TEST] Critical error: {error_msg}")
+        return JsonResponse({'success': False, 'error': str(e)})
 
 
 def process_pearson_test(request, df, selected_columns, user_id):
@@ -9119,3 +10069,4 @@ def get_alias_api(request):
 
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
