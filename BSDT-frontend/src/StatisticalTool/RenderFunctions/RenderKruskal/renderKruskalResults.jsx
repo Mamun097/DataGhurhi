@@ -37,8 +37,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         captionItalic: false,
         captionUnderline: false,
         captionTopMargin: 30,
-        xAxisTitle: 'Groups',
-        yAxisTitle: 'Values',
+        xAxisTitle: 'Category',
+        yAxisTitle: 'Data Values',
         xAxisTitleSize: 20,
         yAxisTitleSize: 20,
         xAxisTitleBold: false,
@@ -84,12 +84,14 @@ const fontFamilyOptions = [
 
 const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, language, user_id, testType, filename, columns) => {
     const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedCategoryLabels, setTranslatedCategoryLabels] = useState([]);
 
     // Load translations
     useEffect(() => {
         const loadTranslations = async () => {
             if (language === 'English' || language === 'en') {
                 setTranslatedLabels({});
+                setTranslatedCategoryLabels([]);
                 return;
             }
 
@@ -137,6 +139,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 'Violin plot shows data distribution density. Wider sections = more data points',
                 'Group Sizes',
                 'Observations',
+                'Category',
+                'Data Values',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'count',
+                'mean',
             ];
 
             const translations = await translateText(labelsToTranslate, "bn");
@@ -145,16 +155,30 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 translated[key] = translations[idx];
             });
             setTranslatedLabels(translated);
+
+            // Translate category labels if they exist
+            if (results.plot_data && results.plot_data.length > 0) {
+                const categoryNames = results.plot_data.map(d => d.category);
+                const translatedCategories = await translateText(categoryNames, "bn");
+                setTranslatedCategoryLabels(translatedCategories);
+            }
         };
 
         loadTranslations();
-    }, [language]);
+    }, [language, results.plot_data]);
 
     const getLabel = (text) => {
         if (language === 'English' || language === 'en') {
             return text;
         }
         return translatedLabels[text] || text;
+    };
+
+    const getCategoryLabel = (index) => {
+        if (language === 'English' || language === 'en') {
+            return results.plot_data[index]?.category || '';
+        }
+        return translatedCategoryLabels[index] || results.plot_data[index]?.category || '';
     };
 
     const renderIdenticalValuesWarning = (results, language, columns) => {
@@ -300,7 +324,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -371,13 +395,42 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
-            const labels = results.plot_data.map(d => d.category);
-            setCountSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setMeanSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setBoxSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setViolinSettings(prev => ({ ...prev, categoryLabels: labels }));
+            const labels = results.plot_data.map((d, idx) => 
+                language === 'English' || language === 'en' 
+                    ? d.category 
+                    : (translatedCategoryLabels[idx] || d.category)
+            );
+            
+            // Also update axis titles with translations
+            const xAxisTitle = getLabel('Category');
+            const yAxisTitle = getLabel('Data Values');
+            
+            setCountSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setMeanSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setBoxSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setViolinSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
         }
-    }, [results.plot_data]);
+    }, [results.plot_data, language, translatedCategoryLabels, translatedLabels]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -503,7 +556,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {getLabel(entry.name)}: {mapDigitIfBengali(typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value)}
                         </p>
                     ))}
                 </div>
@@ -556,6 +609,11 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return -(tickSize * 1.5 + 5);
     };
 
+    // Custom tick formatter for Y-axis to translate numbers
+    const formatYAxisTick = (value) => {
+        return mapDigitIfBengali(Number.isInteger(value) ? value : value.toFixed(1));
+    };
+
     const renderCountChart = () => {
         const settings = countSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -590,10 +648,10 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -641,6 +699,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <YAxis
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -666,7 +725,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                     position: 'top',
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => mapDigitIfBengali(value)
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -784,6 +844,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <YAxis
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -809,7 +870,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                     position: 'top',
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => mapDigitIfBengali(value.toFixed(2))
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -844,7 +906,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         );
     };
 
-    // Box and Violin plots from original file - keeping as is since they're chart rendering
+    // Box and Violin plots with translated labels and numbers
     const CustomBoxPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         const scatterData = [];
@@ -1013,7 +1075,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -1059,11 +1121,11 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>{getLabel('Max:')} {group.max}</div>
-                                        <div>{getLabel('Q3 (75%):')} {group.q75}</div>
-                                        <div>{getLabel('Median:')} {group.median}</div>
-                                        <div>{getLabel('Q1 (25%):')} {group.q25}</div>
-                                        <div>{getLabel('Min:')} {group.min}</div>
+                                        <div>{getLabel('Max:')} {mapDigitIfBengali(group.max)}</div>
+                                        <div>{getLabel('Q3 (75%):')} {mapDigitIfBengali(group.q75)}</div>
+                                        <div>{getLabel('Median:')} {mapDigitIfBengali(group.median)}</div>
+                                        <div>{getLabel('Q1 (25%):')} {mapDigitIfBengali(group.q25)}</div>
+                                        <div>{getLabel('Min:')} {mapDigitIfBengali(group.min)}</div>
                                     </div>
                                 </div>
                             ))}
@@ -1285,7 +1347,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 dataKey="y"
                                 domain={[yMin, yMax]}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,

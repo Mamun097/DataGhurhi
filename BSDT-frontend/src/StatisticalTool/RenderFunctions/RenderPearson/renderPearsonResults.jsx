@@ -62,6 +62,8 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
     const chartRef = useRef(null);
     const [translatedLabels, setTranslatedLabels] = useState({});
     const [translatedNumbers, setTranslatedNumbers] = useState({});
+    const [translatedVariableLabels, setTranslatedVariableLabels] = useState([]);
+    const [translatedTableColumns, setTranslatedTableColumns] = useState([]);
     
     // State for scatter plot
     const [selectedPairIndex, setSelectedPairIndex] = useState(0);
@@ -130,6 +132,8 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
             if (language === 'English' || language === 'en') {
                 setTranslatedLabels({});
                 setTranslatedNumbers({});
+                setTranslatedVariableLabels([]);
+                setTranslatedTableColumns([]);
                 return;
             }
 
@@ -198,6 +202,19 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                 });
                 setTranslatedNumbers(translatedNums);
             }
+
+            // Translate variable names
+            if (results.variables && results.variables.length > 0) {
+                const translatedVars = await translateText(results.variables, "bn");
+                setTranslatedVariableLabels(translatedVars);
+            }
+
+            // Translate table column labels
+            if (results.table_columns && results.table_columns.length > 0) {
+                const columnLabels = results.table_columns.map(col => col.label);
+                const translatedCols = await translateText(columnLabels, "bn");
+                setTranslatedTableColumns(translatedCols);
+            }
         };
 
         loadTranslations();
@@ -219,6 +236,30 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
         return translatedNumbers[key] || key;
     };
 
+    // Get translated variable name
+    const getVariable = (varName) => {
+        if (language === 'English' || language === 'en') {
+            return varName;
+        }
+        const index = results.variables ? results.variables.indexOf(varName) : -1;
+        if (index !== -1 && translatedVariableLabels[index]) {
+            return translatedVariableLabels[index];
+        }
+        return varName;
+    };
+
+    // Get translated table column
+    const getTableColumn = (colLabel) => {
+        if (language === 'English' || language === 'en') {
+            return colLabel;
+        }
+        const index = results.table_columns ? results.table_columns.findIndex(col => col.label === colLabel) : -1;
+        if (index !== -1 && translatedTableColumns[index]) {
+            return translatedTableColumns[index];
+        }
+        return colLabel;
+    };
+
     // Format and translate numbers
     const fmt = (v, digits = 4) => {
         const formatted = formatValue(v, digits, 'en');
@@ -238,6 +279,23 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
             setScatterSettings(defaultSettings);
         }
     }, [results.scatter_plot_data]);
+
+    // Update settings when language changes
+    useEffect(() => {
+        if (language === 'English' || language === 'en') return;
+        
+        // Update variable labels in settings
+        if (translatedVariableLabels.length > 0) {
+            setHeatmapSettings(prev => ({
+                ...prev,
+                variableLabels: translatedVariableLabels
+            }));
+            setGroupedBarSettings(prev => ({
+                ...prev,
+                variableLabels: translatedVariableLabels
+            }));
+        }
+    }, [language, translatedVariableLabels]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -659,7 +717,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                             <td className="stats-table-value">
                                 {results.variables && results.variables.map((v, i) => (
                                     <span key={i}>
-                                        {mapDigit(v)}
+                                        {getVariable(v)}
                                         {i < results.variables.length - 1 ? ', ' : ''}
                                     </span>
                                 ))}
@@ -801,7 +859,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                     {results.variable_stats.map((varStat, idx) => (
                                         <div key={idx} className="variable-stat-card">
                                             <h4 className="variable-stat-title">
-                                                {mapDigit(varStat.variable)}
+                                                {getVariable(varStat.variable)}
                                             </h4>
 
                                             <div className="variable-stat-content">
@@ -903,7 +961,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                         </div>
                                                         <div>
                                                             <h3 className="block-title">
-                                                                {mapDigit(block.anchor)}
+                                                                {getVariable(block.anchor)}
                                                             </h3>
                                                             <p className="block-subtitle">
                                                                 {getLabel('Reference Variable')}
@@ -998,7 +1056,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                             <tr>
                                                                 {results.table_columns && results.table_columns.filter(c => c.key !== 'variable1').map((col, idx) => (
                                                                     <th key={col.key}>
-                                                                        {mapDigit(col.label)}
+                                                                        {getTableColumn(col.label)}
                                                                     </th>
                                                                 ))}
                                                             </tr>
@@ -1009,7 +1067,7 @@ const renderPearsonResults = (pearsonActiveTab, setPearsonActiveTab, results, la
                                                                     <td className="variable-cell">
                                                                         <div className="variable-cell-content">
                                                                             <div className={`status-dot ${row.p_value !== null && row.p_value < 0.05 ? 'significant' : ''}`}></div>
-                                                                            {mapDigit(row.variable2)}
+                                                                            {getVariable(row.variable2)}
                                                                         </div>
                                                                     </td>
                                                                     <td className="numeric-cell">
