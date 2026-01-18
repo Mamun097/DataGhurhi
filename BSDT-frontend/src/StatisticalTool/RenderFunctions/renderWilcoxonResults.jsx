@@ -274,7 +274,9 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                 'Q-Q Points',
                 'Theoretical Line',
                 'Theoretical Quantiles',
-                'Sample Quantiles'
+                'Sample Quantiles',
+                'frequency',
+                'count',
             ];
 
             // Translate labels
@@ -320,18 +322,40 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
         return getNumber(text);
     };
 
+    // Custom tick formatter for Y-axis to translate numbers
+    const formatYAxisTick = (value) => {
+        return mapDigit(Number.isInteger(value) ? value : value.toFixed(1));
+    };
+
     React.useEffect(() => {
         if (results.plot_data) {
             const sample1Name = results.plot_data.sample1?.name || 'Sample 1';
             const sample2Name = results.plot_data.sample2?.name || 'Sample 2';
+            
+            // Update axis titles with translations
+            const xAxisTitle = getLabel('Groups');
+            const yAxisTitle = getLabel('Values');
+            
             setScatterSettings(prev => ({ 
                 ...prev, 
                 categoryLabels: [sample1Name, sample2Name],
                 xAxisTitle: sample1Name,
                 yAxisTitle: sample2Name
             }));
+            
+            setHistogramSettings(prev => ({
+                ...prev,
+                xAxisTitle: getLabel('Differences'),
+                yAxisTitle: getLabel('Frequency')
+            }));
+            
+            setBoxSettings(prev => ({
+                ...prev,
+                xAxisTitle: getLabel('Differences'),
+                yAxisTitle: getLabel('Values')
+            }));
         }
-    }, [results.plot_data]);
+    }, [results.plot_data, language, translatedLabels]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -477,7 +501,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
+                            {getLabel(entry.name)}: {mapDigit(typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value)}
                         </p>
                     ))}
                 </div>
@@ -602,6 +626,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <XAxis
                                 dataKey="midPoint"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -619,6 +644,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                             <YAxis
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -773,6 +799,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 type="number"
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.xAxisTitle,
                                     position: 'insideBottom',
@@ -792,6 +819,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -1026,6 +1054,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 type="number"
                                 dataKey="x"
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: getLabel('Theoretical Quantiles'),
                                     position: 'insideBottom',
@@ -1045,6 +1074,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: getLabel('Sample Quantiles'),
                                     angle: -90,
@@ -1322,6 +1352,7 @@ const renderWilcoxonResults = (wilcoxonActiveTab, setWilcoxonActiveTab, results,
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
