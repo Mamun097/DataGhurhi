@@ -392,3 +392,380 @@ body {
   
   
 }
+
+
+/* ===========================
+   NAVBAR CONTAINER
+=========================== */
+.NavbarAcholderContainer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(90deg, #cbf0cd, #38a782, #cbf0cd);
+  color: white;
+  font-family: "Segoe UI", sans-serif;
+  padding: 8px 20px;
+  z-index: 1000;
+  border-radius: 0 0 8px 8px;
+  position: fixed; 
+  top: 0; 
+  left: 0;
+  width: 100%; 
+}
+
+.NavbarAcholderTopSection {
+  display: grid;
+  grid-template-areas: "logo search lang nav";
+  grid-template-columns: 10% 70% 7% 12%;
+  align-items: center;
+  gap: 1rem;
+  width: 95%;
+  flex-wrap: nowrap; 
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+.NavbarAcholderLogoSection {
+  grid-area: logo;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.NavbarAcholderLogoItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: rgb(24, 116, 55);
+  background: none;
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+}
+
+.NavbarAcholderLogoItem img {
+  width: 3rem;
+  height: 3rem;
+  cursor: pointer;
+  object-fit: contain;
+  background: none;
+}
+
+.LogoWithBeta {
+  position: relative;
+  display: inline-block;
+}
+
+/* Logo */
+.MainLogo {
+  width: 55px; 
+  height: auto;
+}
+
+/* Subscript Beta tag */
+.LogoBetaTag {
+  position: absolute;
+  bottom: -6px;      
+  right: -8px;       
+  font-size: 12px;   
+  color: #c43c3c;    
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* ===========================
+   LANGUAGE DROPDOWN
+=========================== */
+.NavbarAcholderLangDropdown {
+  grid-area: lang;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+}
+
+.NavbarAcholderLangButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.NavbarAcholderLangButton:hover {
+  background-color: #f9fafb;
+  border-color: #4a90e2;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.NavbarAcholderLangFlag {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.NavbarAcholderLangChevron {
+  color: #666;
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.NavbarAcholderLangButton:hover .NavbarAcholderLangChevron {
+  transform: translateY(2px);
+}
+
+.NavbarAcholderLangMenuItem {
+  min-width: 180px;
+}
+
+.NavbarAcholderSearchWrapper {
+  grid-area: search;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-left: 140px;
+  height: 100%;
+}
+
+.NavbarAcholderSearchSection {
+  display: flex;
+  align-items: center;
+  background-color: #f9fafb;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.NavbarAcholderSearchSection:focus-within {
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
+}
+
+.NavbarAcholderSearchFilter {
+  border: none;
+  background-color: #e1fadf;
+  padding: 8px 10px;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  cursor: pointer;
+  border-right: 1px solid #d1d5db;
+}
+
+.NavbarAcholderSearchBox {
+  display: flex;
+  align-items: center;
+  padding: 4px 10px;
+  background-color: #fff;
+}
+
+.NavbarAcholderSearchInput {
+  border: none;
+  outline: none;
+  font-size: 14px;
+  padding: 6px 8px;
+  width: 500px;
+  background: transparent;
+}
+
+.NavbarAcholderSearchIcon {
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  margin-right: 16px;
+  transition: color 0.2s ease;
+}
+
+.NavbarAcholderSearchIcon:hover {
+  color: #000;
+}
+
+/* ===========================
+   NAVIGATION MENU
+=========================== */
+.NavbarAcholderNavList {
+  grid-area: nav;
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  align-items: center;
+  flex-wrap: nowrap;
+  margin-left: auto;
+  margin-right: 10px;
+}
+
+.NavbarAcholderNavList li a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.4rem 0.8rem;
+  transition: background 0.2s, border-radius 0.2s;
+}
+
+.NavbarAcholderNavList li a:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+
+.NavbarAcholderIcon {
+  font-size: 1rem;
+}
+
+/* ===========================
+   PROFILE SECTION
+=========================== */
+.NavbarAcholderProfile {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-left: auto;
+}
+
+.NavbarAcholderAvatarWrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-direction: column;
+}
+
+.NavbarAcholderUserName {
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: #163e1f;
+  text-align: center;
+}
+
+/* ===========================
+   MOBILE DROPDOWN
+=========================== */
+.NavbarAcholderNavList.NavbarAcholderPopupOpen {
+  display: flex;
+}
+
+/* ===========================
+   HAMBURGER BUTTON
+=========================== */
+.NavbarAcholderHamburger {
+  background: none;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  color: #ffffff;
+  display: none;
+}
+
+/* ===========================
+   RESPONSIVE BEHAVIOR
+=========================== */
+@media (max-width: 1200px) {
+  .NavbarAcholderSearchWrapper {
+    margin-left: 50px;
+    justify-content: flex-start;
+  }
+
+  .NavbarAcholderSearchBox {
+    width: 100%;
+  }
+
+  .NavbarAcholderSearchInput {
+    font-size: 0.75rem;
+  }
+
+  .NavbarAcholderSearchFilter {
+    font-size: 0.75rem;
+  }
+
+  .NavbarAcholderSearchIcon {
+    font-size: 1.5rem;
+  }
+
+  .NavbarAcholderLangButton {
+    padding: 6px 10px;
+  }
+
+  .NavbarAcholderLangFlag {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 500px) {
+  .NavbarAcholderTopSection {
+    display: grid;
+    grid-template-areas:
+      "logo lang nav"
+      "search search search";
+    grid-template-columns: 10% 50% 30%;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    padding: 0 0.8rem;
+  }
+
+  .NavbarAcholderSearchWrapper {
+    margin-left: 0;
+    margin-right: 10px;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .NavbarAcholderSearchBox {
+    width: 100%;
+  }
+
+  .NavbarAcholderSearchInput {
+    font-size: 0.75rem;
+  }
+
+  .NavbarAcholderSearchFilter {
+    font-size: 0.75rem;
+  }
+
+  .NavbarAcholderSearchIcon {
+    font-size: 1.5rem;
+  }
+
+  .NavbarAcholderNavList {
+    grid-area: nav;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.2rem;
+    margin-left: auto;
+  }
+
+  .NavbarAcholderLogoItem {
+    font-size: 1rem;
+    align-content: left;
+  }
+
+  .NavbarAcholderLogoItem img {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .NavbarAcholderLangButton {
+    padding: 6px 8px;
+  }
+
+  .NavbarAcholderLangFlag {
+    font-size: 18px;
+  }
+
+  .NavbarAcholderLangChevron {
+    font-size: 10px;
+  }
+}

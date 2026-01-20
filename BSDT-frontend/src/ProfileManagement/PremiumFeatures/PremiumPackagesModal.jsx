@@ -1,9 +1,29 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import "./PremiumPackagesModal.css";
 import CustomPackageBuilder from "./CustomPackage";
 import "./CustomPackage.css";
 import usePaymentGateway from "./PaymentGateway/FixedPackGateway";
 import apiClient from "../../api";
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
 
 // Tab Navigation Component
 const PackageTabNavigation = ({ activeTab, onTabChange, getLabel }) => {
@@ -34,6 +54,7 @@ const PackageCard = ({
   processingPayment,
   loading,
   mostPopularPackageId,
+  mapDigitIfBengali,
 }) => {
   const calculateDiscount = (originalPrice, discountPrice) => {
     if (originalPrice <= discountPrice) return 0;
@@ -43,11 +64,13 @@ const PackageCard = ({
   const formatValidityPeriod = (validity) => {
     if (!validity) return null;
     if (validity % 365 === 0) {
-      return getLabel(`${validity / 365} Years`);
+      const years = validity / 365;
+      return `${mapDigitIfBengali(years)} ${getLabel("Years")}`;
     } else if (validity % 30 === 0) {
-      return getLabel(`${validity / 30} Months`);
+      const months = validity / 30;
+      return `${mapDigitIfBengali(months)} ${getLabel("Months")}`;
     } else {
-      return getLabel(`${validity} Days`);
+      return `${mapDigitIfBengali(validity)} ${getLabel("Days")}`;
     }
   };
 
@@ -59,8 +82,8 @@ const PackageCard = ({
 
   const formatParticipantCount = (count) => {
     if (count === -1) return getLabel("Unlimited");
-    if (count >= 1000) return `${(count / 1000).toFixed(0)}K`;
-    return count.toLocaleString();
+    if (count >= 1000) return `${mapDigitIfBengali((count / 1000).toFixed(0))}K`;
+    return mapDigitIfBengali(count.toLocaleString());
   };
 
   const getPackageFeatures = (pkg) => {
@@ -98,7 +121,7 @@ const PackageCard = ({
     const hasSurvey = pkg.survey && pkg.survey > 0;
     features.push({
       text: hasSurvey
-        ? `${pkg.survey.toLocaleString()} ${getLabel(
+        ? `${mapDigitIfBengali(pkg.survey.toLocaleString())} ${getLabel(
           "Automatic Smart Survey Generation with LLM"
         )}`
         : `${getLabel("Automatic Smart Survey Generation with LLM")}`,
@@ -111,7 +134,7 @@ const PackageCard = ({
     const hasQuestion = pkg.question && pkg.question > 0;
     features.push({
       text: hasQuestion
-        ? `${pkg.question.toLocaleString()} ${getLabel(
+        ? `${mapDigitIfBengali(pkg.question.toLocaleString())} ${getLabel(
           "Automatic Smart Question Generation with LLM"
         )}`
         : `${getLabel("Automatic Smart Question Generation with LLM")}`,
@@ -124,7 +147,7 @@ const PackageCard = ({
     const hasTag = pkg.tag && pkg.tag > 0;
     features.push({
       text: hasTag
-        ? `${pkg.tag.toLocaleString()} ${getLabel(
+        ? `${mapDigitIfBengali(pkg.tag.toLocaleString())} ${getLabel(
           "Automatic Question Tag Generation"
         )}`
         : `${getLabel("Automatic Question Tag Generation")}`,
@@ -151,12 +174,12 @@ const PackageCard = ({
 
         <div className="price-section">
           {discount > 0 && (
-            <div className="original-price">৳{pkg.original_price}</div>
+            <div className="original-price">৳{mapDigitIfBengali(pkg.original_price)}</div>
           )}
-          <div className="current-price">৳{pkg.discount_price}</div>
+          <div className="current-price">৳{mapDigitIfBengali(pkg.discount_price)}</div>
           {discount > 0 && (
             <div className="discount-badge">
-              {discount}% {getLabel("OFF")}
+              {mapDigitIfBengali(discount)}% {getLabel("OFF")}
             </div>
           )}
         </div>
@@ -201,7 +224,7 @@ const PackageCard = ({
 };
 
 // Main Modal Component
-const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
+const PremiumPackagesModal = ({ isOpen, onClose, language }) => {
   const [packages, setPackages] = useState([]);
   const [mostPopularPackageId, setMostPopularPackageId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -220,7 +243,95 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     isValid: false,
   });
 
-  // Initialize payment gateway
+  const [translatedLabels, setTranslatedLabels] = useState({});
+
+  // Load translations - FIX: Check both 'bn' and 'বাংলা'
+  useEffect(() => {
+    const loadTranslations = async () => {
+      // FIX: Properly check for English language
+      if (language === 'English' || language === 'en') {
+        setTranslatedLabels({});
+        return;
+      }
+
+      const labelsToTranslate = [
+        'Choose Your Premium Package',
+        'Current Subscription',
+        'Active until',
+        'Analysis',
+        'Responses',
+        'Unlimited',
+        'Survey',
+        'Question',
+        'Tag',
+        'Unlock Powerful AI Features',
+        'AI Survey Generation',
+        'Create professional surveys in seconds with AI assistance',
+        'Smart Question Creation',
+        'Generate relevant questions based on your research goals',
+        'Automatic Tagging',
+        'Organize questions with intelligent tagging system',
+        'Greater Number of Responses',
+        'Collect greater number of survey responses without restrictions',
+        'Advanced Analytics',
+        'Access advanced statistical analyses along with regular ones',
+        'Fixed Packages',
+        'Custom Package',
+        'Loading packages...',
+        'Failed to load packages. Please try again.',
+        'Retry',
+        'Most Popular',
+        'OFF',
+        'Years',
+        'Months',
+        'Days',
+        'Advanced Statistical Analyses',
+        'Survey Responses',
+        'Automatic Smart Survey Generation with LLM',
+        'Automatic Smart Question Generation with LLM',
+        'Automatic Question Tag Generation',
+        'Processing...',
+        'Buy Now',
+        'No packages available at the moment.',
+        'Retry Loading',
+        'Please configure your custom package first',
+      ];
+
+      const translations = await translateText(labelsToTranslate, "bn");
+      const translated = {};
+      labelsToTranslate.forEach((key, idx) => {
+        translated[key] = translations[idx];
+      });
+      setTranslatedLabels(translated);
+    };
+
+    // FIX: Only load translations when modal is open
+    if (isOpen) {
+      loadTranslations();
+    }
+  }, [language, isOpen]); // FIX: Added isOpen as dependency
+
+  // FIX: Create getLabel function that works with the current state
+  const getLabel = (text) => {
+    if (language === 'English' || language === 'en') {
+      return text;
+    }
+    return translatedLabels[text] || text;
+  };
+
+  // FIX: Create mapDigitIfBengali that checks both 'bn' and 'বাংলা'
+  const mapDigitIfBengali = (text) => {
+    if (!text && text !== 0) return '';
+    if (language !== 'বাংলা' && language !== 'bn') return text.toString();
+    const digitMapBn = {
+      '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+      '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
+      '.': '.'
+    };
+    return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+  };
+
+  // Initialize payment gateway - passing the getLabel function
   const {
     currentUser,
     userSubscription,
@@ -238,7 +349,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
     if (isOpen) {
       initializePaymentGateway();
     }
-  }, [isOpen]);
+  }, [isOpen, initializePaymentGateway]);
 
   // Fetch packages and most popular package when modal opens
   useEffect(() => {
@@ -267,7 +378,6 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
         );
         const popularData = popularResponse.data;
         popularPackageId = popularData.popularPackageId;
-        // console.log("Popular Package API Response:", popularData);
       } catch (popularErr) {
         console.warn("Failed to fetch most popular package, but continuing...");
       }
@@ -321,17 +431,17 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                     </p>
                     <div className="subscription-details">
                       <span>
-                        Analysis: {userSubscription.advanced_analysis}
+                        {getLabel("Analysis")}: {mapDigitIfBengali(userSubscription.advanced_analysis)}
                       </span>
                       <span>
-                        Responses:{" "}
+                        {getLabel("Responses")}:{" "}
                         {userSubscription.participant_count === -1
                           ? getLabel("Unlimited")
-                          : userSubscription.participant_count}
+                          : mapDigitIfBengali(userSubscription.participant_count)}
                       </span>
-                      <span>Survey: {userSubscription.survey}</span>
-                      <span>Question: {userSubscription.question}</span>
-                      <span>Tag: {userSubscription.tag}</span>
+                      <span>{getLabel("Survey")}: {mapDigitIfBengali(userSubscription.survey)}</span>
+                      <span>{getLabel("Question")}: {mapDigitIfBengali(userSubscription.question)}</span>
+                      <span>{getLabel("Tag")}: {mapDigitIfBengali(userSubscription.tag)}</span>
                     </div>
                   </div>
                 </div>
@@ -443,6 +553,7 @@ const PremiumPackagesModal = ({ isOpen, onClose, getLabel }) => {
                           processingPayment={processingPayment}
                           loading={loading}
                           mostPopularPackageId={mostPopularPackageId}
+                          mapDigitIfBengali={mapDigitIfBengali}
                         />
                       );
                     })}
