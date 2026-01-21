@@ -3,6 +3,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -69,24 +89,179 @@ const fontFamilyOptions = [
 
 const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab, results, language, user_id, testType, filename, columns) => {
 
+    const activeTab = mannWhitneyActiveTab;
+    const setActiveTab = setMannWhitneyActiveTab;
 
-    const renderIdenticalValuesWarning = (results, language, columns) => {
-        const mapDigitIfBengali = (text) => {
-            if (!text) return '';
-            if (language !== 'বাংলা') return text;
-            const digitMapBn = {
-                '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-                '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-                '.': '.'
-            };
-            return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+    const [overlayOpen, setOverlayOpen] = React.useState(false);
+    const [currentPlotType, setCurrentPlotType] = React.useState('Box');
+    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
+    const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
+    const [translatedNumbers, setTranslatedNumbers] = React.useState({});
+
+    const categoryNames = results.plot_data?.map(d => d.category) || [];
+    const categoryCount = categoryNames.length;
+
+    const [boxSettings, setBoxSettings] = React.useState(
+        getDefaultSettings('Box', categoryCount, categoryNames)
+    );
+    const [violinSettings, setViolinSettings] = React.useState(
+        getDefaultSettings('Violin', categoryCount, categoryNames)
+    );
+    const [rankSettings, setRankSettings] = React.useState(
+        getDefaultSettings('Rank', categoryCount, categoryNames)
+    );
+
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.n_groups) numbers.add(String(results.n_groups));
+        if (results.total_observations) numbers.add(String(results.total_observations));
+        if (results.n_observations) numbers.add(String(results.n_observations));
+        if (results.identical_value !== null && results.identical_value !== undefined) {
+            numbers.add(String(results.identical_value));
+        }
+        if (results.statistic !== null && results.statistic !== undefined) {
+            numbers.add(results.statistic.toFixed(4));
+        }
+        if (results.p_value !== null && results.p_value !== undefined) {
+            numbers.add(results.p_value.toFixed(6));
+        }
+        
+        // Add group sizes
+        if (results.group_sizes) {
+            Object.values(results.group_sizes).forEach(size => {
+                numbers.add(String(size));
+            });
+        }
+        
+        // Add plot data numbers
+        if (results.plot_data) {
+            results.plot_data.forEach(item => {
+                if (item.min !== null && item.min !== undefined) numbers.add(item.min.toFixed(2));
+                if (item.q25 !== null && item.q25 !== undefined) numbers.add(item.q25.toFixed(2));
+                if (item.median !== null && item.median !== undefined) numbers.add(item.median.toFixed(2));
+                if (item.q75 !== null && item.q75 !== undefined) numbers.add(item.q75.toFixed(2));
+                if (item.max !== null && item.max !== undefined) numbers.add(item.max.toFixed(2));
+                if (item.mean_rank !== null && item.mean_rank !== undefined) numbers.add(item.mean_rank.toFixed(1));
+            });
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Mann-Whitney U Test',
+                'Test Statistic (U)',
+                'P-Value',
+                'Significant difference found (p < 0.05)',
+                'No significant difference (p ≥ 0.05)',
+                'Group Sizes',
+                'Box Plot',
+                'Violin Plot',
+                'Rank Plot',
+                'Observations',
+                'Average Rank',
+                'Save Result',
+                'Analyzed Columns',
+                'and',
+                'Number of Groups',
+                'Total Observations',
+                'Conclusion',
+                'Visualizations',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Box Plot Statistics',
+                'Violin Plot Information',
+                'Violin plot shows data distribution density. Wider sections = more data points',
+                'Error',
+                'An error occurred.',
+                'Statistical Test Not Required',
+                'All values in your data are identical. Mann-Whitney test is not required because both groups have the same values.',
+                'All values:',
+                'Group Information',
+                'observations',
+                'Why the test cannot be performed?',
+                'The Mann-Whitney test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.',
+                'Max',
+                'Q3 (75%)',
+                'Median',
+                'Q1 (25%)',
+                'Min',
+                'Groups',
+                'Values'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
         };
 
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
+
+    const renderIdenticalValuesWarning = (results, language, columns) => {
         return (
             <div className="stats-results-container stats-fade-in">
                 <div className="stats-header">
                     <h2 className="stats-title">
-                        {results.test || (language === 'বাংলা' ? 'ম্যান-হুইটনি ইউ টেস্ট' : 'Mann-Whitney U Test')}
+                        {results.test || getLabel('Mann-Whitney U Test')}
                     </h2>
                 </div>
 
@@ -98,37 +273,34 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                     </div>
                     
                     <h3 className="stats-warning-title">
-                        {language === 'বাংলা' ? 'পরিসংখ্যানগত পরীক্ষার প্রয়োজন নেই' : 'Statistical Test Not Required'}
+                        {getLabel('Statistical Test Not Required')}
                     </h3>
                     
                     <div className="stats-warning-card">
                         <p>
-                            {language === 'বাংলা' ? 
-                                'আপনার ডেটার সকল মান একই। ম্যান-হুইটনি পরীক্ষা চালানোর প্রয়োজন নেই, কারণ উভয় গোষ্ঠীর মান অভিন্ন।' :
-                                'All values in your data are identical. Mann-Whitney test is not required because both groups have the same values.'
-                            }
+                            {getLabel('All values in your data are identical. Mann-Whitney test is not required because both groups have the same values.')}
                         </p>
                         
                         <div className="stats-simple-summary">
                             <div className="stats-summary-item">
-                                <span className="stats-summary-label">{language === 'বাংলা' ? 'সকল মান:' : 'All values:'}</span>
-                                <span className="stats-summary-value">{mapDigitIfBengali(results.identical_value || '0')}</span>
+                                <span className="stats-summary-label">{getLabel('All values:')}</span>
+                                <span className="stats-summary-value">{mapDigit(results.identical_value || '0')}</span>
                             </div>
                             <div className="stats-summary-item">
-                                <span className="stats-summary-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ:' : 'Total observations:'}</span>
-                                <span className="stats-summary-value">{mapDigitIfBengali(results.n_observations || '0')}</span>
+                                <span className="stats-summary-label">{getLabel('Total Observations:')}</span>
+                                <span className="stats-summary-value">{mapDigit(results.n_observations || '0')}</span>
                             </div>
                         </div>
                         
                         {/* Group information */}
                         <div className="stats-groups-info">
-                            <h4>{language === 'বাংলা' ? 'গোষ্ঠীর তথ্য' : 'Group Information'}</h4>
+                            <h4>{getLabel('Group Information')}</h4>
                             <div className="stats-groups-list">
                                 {results.groups && results.group_sizes && results.groups.map((group, idx) => (
                                     <div key={idx} className="stats-group-item">
                                         <span className="stats-group-name">{group}:</span>
                                         <span className="stats-group-count">
-                                            {mapDigitIfBengali(results.group_sizes[group] || 0)} {language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'observations'}
+                                            {mapDigit(results.group_sizes[group] || 0)} {getLabel('observations')}
                                         </span>
                                     </div>
                                 ))}
@@ -137,12 +309,9 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                     </div>
                     
                     <div className="stats-explanation">
-                        <h4>{language === 'বাংলা' ? 'কেন এই পরীক্ষা চালানো যায়নি?' : 'Why the test cannot be performed?'}</h4>
+                        <h4>{getLabel('Why the test cannot be performed?')}</h4>
                         <p>
-                            {language === 'বাংলা' ? 
-                                'ম্যান-হুইটনি পরীক্ষাটি র্যাঙ্কিং-ভিত্তিক। যখন সকল মান একই হয়, তখন সকল র্যাঙ্ক একই হয়ে যায় এবং পরিসংখ্যানগতভাবে কোন পার্থক্য বিশ্লেষণ করা যায় না।' :
-                                'The Mann-Whitney test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.'
-                            }
+                            {getLabel('The Mann-Whitney test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.')}
                         </p>
                     </div>
                 </div>
@@ -272,17 +441,6 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         );
     };
     
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     // DEBUG: Log the results structure
     console.log("Mann-Whitney Results:", results);
     console.log("Has identical_values?", results?.identical_values);
@@ -292,7 +450,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -302,7 +460,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -312,8 +470,8 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return (
             <div className="stats-error">
                 <div className="stats-error-icon">⚠️</div>
-                <h3>{language === 'বাংলা' ? 'ত্রুটি' : 'Error'}</h3>
-                <p>{results.error || (language === 'বাংলা' ? 'একটি ত্রুটি ঘটেছে।' : 'An error occurred.')}</p>
+                <h3>{getLabel('Error')}</h3>
+                <p>{results.error || getLabel('An error occurred.')}</p>
             </div>
         );
     }
@@ -321,28 +479,6 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
     if (results.hasOwnProperty('identical_values') && results.identical_values === true) {
         return renderIdenticalValuesWarning(results, language, columns);
     }
-    
-    const activeTab = mannWhitneyActiveTab;
-    const setActiveTab = setMannWhitneyActiveTab;
-
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Box');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
-
-    const categoryNames = results.plot_data?.map(d => d.category) || [];
-    const categoryCount = categoryNames.length;
-
-    const [boxSettings, setBoxSettings] = React.useState(
-        getDefaultSettings('Box', categoryCount, categoryNames)
-    );
-    const [violinSettings, setViolinSettings] = React.useState(
-        getDefaultSettings('Violin', categoryCount, categoryNames)
-    );
-    const [rankSettings, setRankSettings] = React.useState(
-        getDefaultSettings('Rank', categoryCount, categoryNames)
-    );
-
 
     if (results.is_explanation) {
         return (
@@ -388,7 +524,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -424,7 +560,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -432,7 +568,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -456,29 +592,29 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
     };
 
     const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (U)' : 'Test Statistic (U)',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference (p ≥ 0.05)',
-        mannWhitneyTitle: language === 'বাংলা' ? 'ম্যান-হুইটনি ইউ টেস্ট' : 'Mann-Whitney U Test',
-        groupSizes: language === 'বাংলা' ? 'গ্রুপের আকার' : 'Group Sizes',
-        boxPlot: language === 'বাংলা' ? 'বক্স প্লট' : 'Box Plot',
-        violinPlot: language === 'বাংলা' ? 'ভায়োলিন প্লট' : 'Violin Plot',
-        rankPlot: language === 'বাংলা' ? 'র‍্যাঙ্ক প্লট' : 'Rank Plot',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations',
-        averageRank: language === 'বাংলা' ? 'গড় র‍্যাঙ্ক' : 'Average Rank'
+        testStatistic: getLabel('Test Statistic (U)'),
+        pValue: getLabel('P-Value'),
+        significant: getLabel('Significant difference found (p < 0.05)'),
+        notSignificant: getLabel('No significant difference (p ≥ 0.05)'),
+        mannWhitneyTitle: getLabel('Mann-Whitney U Test'),
+        groupSizes: getLabel('Group Sizes'),
+        boxPlot: getLabel('Box Plot'),
+        violinPlot: getLabel('Violin Plot'),
+        rankPlot: getLabel('Rank Plot'),
+        observations: getLabel('Observations'),
+        averageRank: getLabel('Average Rank')
     };
 
     const plotData = results.plot_data || [];
@@ -498,7 +634,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -646,7 +782,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -656,14 +792,14 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -755,18 +891,18 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                            {getLabel('Box Plot Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {data.map((group, idx) => (
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>Max: {group.max}</div>
-                                        <div>Q3 (75%): {group.q75}</div>
-                                        <div>Median: {group.median}</div>
-                                        <div>Q1 (25%): {group.q25}</div>
-                                        <div>Min: {group.min}</div>
+                                        <div>{getLabel('Max')}: {mapDigit(group.max)}</div>
+                                        <div>{getLabel('Q3 (75%)')}: {mapDigit(group.q75)}</div>
+                                        <div>{getLabel('Median')}: {mapDigit(group.median)}</div>
+                                        <div>{getLabel('Q1 (25%)')}: {mapDigit(group.q25)}</div>
+                                        <div>{getLabel('Min')}: {mapDigit(group.min)}</div>
                                     </div>
                                 </div>
                             ))}
@@ -919,7 +1055,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -929,14 +1065,14 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -1028,10 +1164,10 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
+                            {getLabel('Violin Plot Information')}
                         </h4>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
+                            {getLabel('Violin plot shows data distribution density. Wider sections = more data points')}
                         </p>
                     </div>
                 )}
@@ -1059,7 +1195,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -1069,14 +1205,14 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -1149,7 +1285,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
                                     fontSize: settings.yAxisTickSize,
-                                    formatter: (value) => value.toFixed(1)
+                                    formatter: (value) => mapDigit(value.toFixed(1))
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -1213,7 +1349,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -1221,33 +1357,33 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{groupColumn} {language === 'বাংলা' ? 'এবং' : 'and'} {valueColumn}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
+                            <td className="stats-table-value">{groupColumn} {getLabel('and')} {valueColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
+                            <td className="stats-table-label">{getLabel('Number of Groups')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.n_groups)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.total_observations)}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.testStatistic}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic.toFixed(4))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.statistic.toFixed(4))}</td>
                         </tr>
                         <tr>
                             <td className="stats-table-label">{t.pValue}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value.toFixed(6))}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.p_value.toFixed(6))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value < 0.05 ? (
@@ -1273,7 +1409,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
                     <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
@@ -1308,7 +1444,7 @@ const renderMannWhitneyResults = (mannWhitneyActiveTab, setMannWhitneyActiveTab,
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

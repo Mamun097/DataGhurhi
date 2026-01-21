@@ -285,7 +285,7 @@ const ProjectTab = ({
               className="filter-select"
             >
               <option value="title">{getLabel("Title")}</option>
-              <option value="field">{getLabel("Field")}</option>
+              <option value="field">{getLabel("Research Field")}</option>
               <option value="created_at">{getLabel("Created")}</option>
               <option value="last_updated">{getLabel("Updated")}</option>
             </select>

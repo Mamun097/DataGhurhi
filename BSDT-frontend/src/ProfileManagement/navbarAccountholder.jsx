@@ -136,6 +136,11 @@ const NavbarAcholder = ({
     const newLang = language === "English" ? "বাংলা" : "English";
     localStorage.setItem("language", newLang);
     setLanguage(newLang);
+
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent("languageChanged", { 
+        detail: { language: newLang } 
+    }));
   };
 
   const handleSearch = async () => {

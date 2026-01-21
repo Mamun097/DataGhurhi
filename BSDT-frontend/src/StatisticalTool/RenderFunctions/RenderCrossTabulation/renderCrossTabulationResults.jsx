@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import MosaicPlot from './plots/MosaicPlot';
@@ -17,6 +18,25 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import './CrossTabulationResults.css';
 
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
+
 const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, results, language) => {
     const blockRefs = useRef({});
     const activeTab = crossTabActiveTab;
@@ -27,9 +47,80 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
     const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
 
     const categoryNames = results.variables || [];
     const categoryCount = categoryNames.length;
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Cross-Tabulation Analysis',
+                'Description',
+                'Value',
+                'Variables',
+                'Number of Variables',
+                'Total Comparisons',
+                'Total Observations',
+                'Total Frequencies',
+                'Insight',
+                'Detailed Analysis & Visualizations',
+                'Detailed Result',
+                'Heatmap',
+                'Mosaic Plot',
+                'Grouped Bar',
+                'Stacked Bar',
+                'Variable Statistics',
+                'Download All',
+                'Categories:',
+                'Observations:',
+                'Missing:',
+                'Distribution:',
+                'Pairwise Cross-Tabulations',
+                'Detailed frequency distributions for each variable pair',
+                'Reference Variable',
+                'Frequency distributions with other variables • Includes row and column percentages',
+                'Total comparisons',
+                'Total observations',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'No data available',
+                'Total',
+                'Row Percentages',
+                'Frequency Counts',
+                'Most Frequent',
+                'Least Frequent',
+                'Categories',
+                'categories',
+                'Cross-tabulation analysis completed for',
+                'variable pairs. Total of',
+                'observations analyzed.',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -40,7 +131,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'bn' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -76,7 +167,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'bn' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -148,7 +239,6 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
         };
     };
 
-    // Get all unique variables
     const allVariables = new Set();
     results.pairwise_results?.forEach(pair => {
         if (pair && pair.variable1 && pair.variable2) {
@@ -338,30 +428,24 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
     };
 
     if (!results) {
-        return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        return <p>{getLabel('Loading results...')}</p>;
     }
 
-    const t = (en, bn) => (language === 'bn' ? bn : en);
     const fmt = (v, digits = 6) => formatValue(v, digits, language);
     const mapDigit = (text) => mapDigitIfBengali(text, language);
 
-    // Calculate summary statistics for cross-tabulation
     const totalComparisons = results.n_comparisons || 0;
     const totalObservations = results.metadata?.total_observations || 0;
-    
-    // Calculate total frequencies across all comparisons
     const totalFrequencies = results.pairwise_results?.reduce((sum, pair) => sum + (pair.n || 0), 0) || 0;
 
-    // Generate insight message for cross-tabulation
     const getInsightMessage = () => {
-        if (language === 'bn') {
+        if (language === 'bn' || language === 'বাংলা') {
             return `${totalComparisons}টি ভেরিয়েবল জোড়ার মধ্যে ক্রস-ট্যাবুলেশন বিশ্লেষণ সম্পন্ন হয়েছে। মোট ${mapDigit(totalObservations)}টি পর্যবেক্ষণ বিশ্লেষণে অন্তর্ভুক্ত।`;
         } else {
-            return `Cross-tabulation analysis completed for ${totalComparisons} variable pairs. Total of ${totalObservations} observations analyzed.`;
+            return `${getLabel('Cross-tabulation analysis completed for')} ${totalComparisons} ${getLabel('variable pairs. Total of')} ${totalObservations} ${getLabel('observations analyzed.')}`;
         }
     };
 
-    // Add this inside your component
     const [isSticky, setIsSticky] = useState(false);
     const [containerWidth, setContainerWidth] = useState('auto');
     const tabContainerRef = useRef(null);
@@ -402,10 +486,9 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    // Helper function to render contingency table for cross-tabulation
     const renderContingencyTable = (result, showPercentages = false) => {
         if (!result.contingency_table || !result.categories_var1 || !result.categories_var2) {
-            return <div className="no-data-message">{t('No data available', 'কোন ডেটা পাওয়া যায়নি')}</div>;
+            return <div className="no-data-message">{getLabel('No data available')}</div>;
         }
 
         const data = showPercentages ? result.row_percentages : result.contingency_table;
@@ -420,7 +503,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                             {result.categories_var2.map((category, idx) => (
                                 <th key={idx}>{mapDigit(category)}</th>
                             ))}
-                            {result.margins_row && <th>{t('Total', 'মোট')}</th>}
+                            {result.margins_row && <th>{getLabel('Total')}</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -444,7 +527,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                         ))}
                         {result.margins_col && (
                             <tr className="totals-row">
-                                <td className="total-header">{t('Total', 'মোট')}</td>
+                                <td className="total-header">{getLabel('Total')}</td>
                                 {result.margins_col.map((total, idx) => (
                                     <td key={idx} className="total-cell">
                                         {mapDigit(total)}
@@ -459,14 +542,13 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                 </table>
                 <div className="table-footer">
                     <span className="table-type">
-                        {showPercentages ? t('Row Percentages', 'সারি শতকরা') : t('Frequency Counts', 'ফ্রিকোয়েন্সি গণনা')}
+                        {showPercentages ? getLabel('Row Percentages') : getLabel('Frequency Counts')}
                     </span>
                 </div>
             </div>
         );
     };
 
-    // Render summary statistics for each pairwise result
     const renderPairwiseSummary = (result) => {
         if (!result.summary_stats) return null;
 
@@ -476,16 +558,16 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
             <div className="pairwise-summary">
                 <div className="summary-stats-grid">
                     <div className="summary-stat">
-                        <span className="stat-label">{t('Total Observations', 'মোট পর্যবেক্ষণ')}:</span>
+                        <span className="stat-label">{getLabel('Total Observations')}:</span>
                         <span className="stat-value">{mapDigit(stats.total_observations)}</span>
                     </div>
                     <div className="summary-stat">
-                        <span className="stat-label">{t('Categories', 'শ্রেণী')}:</span>
+                        <span className="stat-label">{getLabel('Categories')}:</span>
                         <span className="stat-value">{mapDigit(stats.n_categories_var1)} × {mapDigit(stats.n_categories_var2)}</span>
                     </div>
                     {stats.most_frequent && (
                         <div className="summary-stat">
-                            <span className="stat-label">{t('Most Frequent', 'সবচেয়ে ঘন ঘন')}:</span>
+                            <span className="stat-label">{getLabel('Most Frequent')}:</span>
                             <span className="stat-value">
                                 {mapDigit(stats.most_frequent.category1)} × {mapDigit(stats.most_frequent.category2)} 
                                 ({mapDigit(stats.most_frequent.count)})
@@ -494,7 +576,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                     )}
                     {stats.least_frequent && (
                         <div className="summary-stat">
-                            <span className="stat-label">{t('Least Frequent', 'সবচেয়ে কম ঘন ঘন')}:</span>
+                            <span className="stat-label">{getLabel('Least Frequent')}:</span>
                             <span className="stat-value">
                                 {mapDigit(stats.least_frequent.category1)} × {mapDigit(stats.least_frequent.category2)} 
                                 ({mapDigit(stats.least_frequent.count)})
@@ -509,7 +591,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
     return (
         <>
             <h2 className="cross-tab-title">
-                {t('Cross-Tabulation Analysis', 'ক্রস-ট্যাবুলেশন বিশ্লেষণ')}
+                {getLabel('Cross-Tabulation Analysis')}
             </h2>
 
             {/* Summary Statistics Table */}
@@ -517,13 +599,13 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{t('Description', 'বিবরণ')}</th>
-                            <th>{t('Value', 'মান')}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t('Variables', 'ভেরিয়েবলসমূহ')}</td>
+                            <td className="stats-table-label">{getLabel('Variables')}</td>
                             <td className="stats-table-value">
                                 {results.variables && results.variables.map((v, i) => (
                                     <span key={i}>
@@ -534,23 +616,23 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Number of Variables', 'ভেরিয়েবলের সংখ্যা')}</td>
+                            <td className="stats-table-label">{getLabel('Number of Variables')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.n_variables || 0)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Comparisons', 'মোট তুলনা')}</td>
+                            <td className="stats-table-label">{getLabel('Total Comparisons')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalComparisons)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Observations', 'মোট পর্যবেক্ষণ')}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalObservations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Frequencies', 'মোট ফ্রিকোয়েন্সি')}</td>
+                            <td className="stats-table-label">{getLabel('Total Frequencies')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalFrequencies)}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{t('Insight', 'অন্তর্দৃষ্টি')}</td>
+                            <td className="stats-table-label">{getLabel('Insight')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
@@ -567,43 +649,40 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
             {/* Tabbed Section */}
             <div className="stats-viz-section">
                 <h3 className="stats-viz-header">
-                    {t('Detailed Analysis & Visualizations', 'বিস্তারিত বিশ্লেষণ এবং ভিজ্যুয়ালাইজেশন')}
+                    {getLabel('Detailed Analysis & Visualizations')}
                 </h3>
 
                 {/* Tab Navigation */}
-                <div
-                    ref={tabContainerRef}
-                    className="stats-tab-container"
-                >
+                <div ref={tabContainerRef} className="stats-tab-container">
                     <button
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
                         onClick={() => setActiveTab('detailed')}
                     >
-                        {t('Detailed Result', 'বিস্তারিত বিশ্লেষণ')}
+                        {getLabel('Detailed Result')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'heatmap' ? 'active' : ''}`}
                         onClick={() => setActiveTab('heatmap')}
                     >
-                        {t('Heatmap', 'হিটম্যাপ')}
+                        {getLabel('Heatmap')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
                         onClick={() => setActiveTab('mosaic')}
                     >
-                        {t('Mosaic Plot', 'মোজাইক প্লট')}
+                        {getLabel('Mosaic Plot')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
-                        {t('Grouped Bar', 'গ্রুপড বার')}
+                        {getLabel('Grouped Bar')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'stacked' ? 'active' : ''}`}
                         onClick={() => setActiveTab('stacked')}
                     >
-                        {t('Stacked Bar', 'স্ট্যাকড বার')}
+                        {getLabel('Stacked Bar')}
                     </button>
                 </div>
 
@@ -624,7 +703,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                             marginBottom: '0',
                                             borderBottom: 'none'
                                         }}>
-                                            {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
+                                            {getLabel('Variable Statistics')}
                                         </h4>
                                         <button
                                             className="customize-btn"
@@ -633,7 +712,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -652,19 +731,19 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
 
                                             <div className="variable-stat-content">
                                                 <div className="stat-row">
-                                                    <span>{t('Categories:', 'শ্রেণীর সংখ্যা:')}</span>
+                                                    <span>{getLabel('Categories:')}</span>
                                                     <span className="stat-value categories">
                                                         {mapDigit(varStat.n_categories)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Observations:', 'পর্যবেক্ষণ:')}</span>
+                                                    <span>{getLabel('Observations:')}</span>
                                                     <span className="stat-value observations">
                                                         {mapDigit(varStat.n_observations)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Missing:', 'অনুপস্থিত:')}</span>
+                                                    <span>{getLabel('Missing:')}</span>
                                                     <span className="stat-value missing">
                                                         {mapDigit(varStat.n_missing)}
                                                     </span>
@@ -672,7 +751,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
 
                                                 <div className="distribution-section">
                                                     <p className="distribution-title">
-                                                        {t('Distribution:', 'বিতরণ:')}
+                                                        {getLabel('Distribution:')}
                                                     </p>
                                                     <div className="distribution-list">
                                                         {varStat.categories.map((cat, catIdx) => (
@@ -705,11 +784,10 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                                 marginBottom: '0',
                                                 borderBottom: 'none'
                                             }}>
-                                                {t('Pairwise Cross-Tabulations', 'জোড়াভিত্তিক ক্রস-ট্যাবুলেশন')}
+                                                {getLabel('Pairwise Cross-Tabulations')}
                                             </h4>
                                             <p className="section-description">
-                                                {t('Detailed frequency distributions for each variable pair',
-                                                    'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত ফ্রিকোয়েন্সি বিতরণ')}
+                                                {getLabel('Detailed frequency distributions for each variable pair')}
                                             </p>
                                         </div>
                                         <button
@@ -719,7 +797,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -754,7 +832,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                                                 {mapDigit(block.anchor)}
                                                             </h3>
                                                             <p className="block-subtitle">
-                                                                {t('Reference Variable', 'রেফারেন্স ভেরিয়েবল')}
+                                                                {getLabel('Reference Variable')}
                                                             </p>
                                                         </div>
                                                     </div>
@@ -834,8 +912,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                                         </svg>
-                                                        {t('Frequency distributions with other variables • Includes row and column percentages',
-                                                            'অন্যান্য ভেরিয়েবলের সাথে ফ্রিকোয়েন্সি বিতরণ • সারি এবং কলাম শতকরা অন্তর্ভুক্ত')}
+                                                        {getLabel('Frequency distributions with other variables • Includes row and column percentages')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -850,29 +927,26 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                                             </h4>
                                                             <div className="cross-tab-stats">
                                                                 <span className="stat-badge">
-                                                                    {t('Total:', 'মোট:')} {mapDigit(result.n)}
+                                                                    {getLabel('Total:') || 'Total:'} {mapDigit(result.n)}
                                                                 </span>
                                                                 <span className="stat-badge">
-                                                                    {result.categories_var1?.length || 0} × {result.categories_var2?.length || 0} {t('categories', 'শ্রেণী')}
+                                                                    {result.categories_var1?.length || 0} × {result.categories_var2?.length || 0} {getLabel('categories')}
                                                                 </span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Summary Statistics */}
                                                         {renderPairwiseSummary(result)}
 
-                                                        {/* Frequency Table */}
                                                         <div className="table-section">
                                                             <h5 className="table-section-title">
-                                                                {t('Frequency Counts', 'ফ্রিকোয়েন্সি গণনা')}
+                                                                {getLabel('Frequency Counts')}
                                                             </h5>
                                                             {renderContingencyTable(result, false)}
                                                         </div>
 
-                                                        {/* Row Percentages Table */}
                                                         <div className="table-section">
                                                             <h5 className="table-section-title">
-                                                                {t('Row Percentages', 'সারি শতকরা')}
+                                                                {getLabel('Row Percentages')}
                                                             </h5>
                                                             {renderContingencyTable(result, true)}
                                                         </div>
@@ -880,19 +954,18 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                                 ))}
                                             </div>
 
-                                            {/* Footer */}
                                             <div className="block-footer">
                                                 <div className="block-stats">
                                                     <div className="block-stat-item">
                                                         <span>
-                                                            {t('Total comparisons', 'মোট তুলনা')}: <strong>
+                                                            {getLabel('Total comparisons')}: <strong>
                                                                 {mapDigit(block.results.length)}
                                                             </strong>
                                                         </span>
                                                     </div>
                                                     <div className="block-stat-item">
                                                         <span>
-                                                            {t('Total observations', 'মোট পর্যবেক্ষণ')}: <strong>
+                                                            {getLabel('Total observations')}: <strong>
                                                                 {mapDigit(block.results.reduce((sum, r) => sum + (r.n || 0), 0))}
                                                             </strong>
                                                         </span>
@@ -924,7 +997,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                     </div>
                 )}
 
-                {/* Other Plot Tabs */}
+                {/* Mosaic Plot Tab */}
                 {activeTab === 'mosaic' && (
                     <div className="stats-plot-wrapper active">
                         <MosaicPlot
@@ -941,6 +1014,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                     </div>
                 )}
 
+                {/* Stacked Bar Tab */}
                 {activeTab === 'stacked' && (
                     <div className="stats-plot-wrapper active">
                         <StackedBarPlot
@@ -957,6 +1031,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                     </div>
                 )}
 
+                {/* Grouped Bar Tab */}
                 {activeTab === 'grouped' && (
                     <div className="stats-plot-wrapper active">
                         <GroupedBarPlot
@@ -997,7 +1072,7 @@ const renderCrossTabulationResults = (crossTabActiveTab, setCrossTabActiveTab, r
                                     currentPlotType === 'stacked' ? setStackedBarSettings :
                                         setHeatmapSettings
                     }
-                    language={language === 'bn' ? 'বাংলা' : 'English'}
+                    language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                     fontFamilyOptions={fontFamilyOptions}
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :

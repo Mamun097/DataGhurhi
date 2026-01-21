@@ -80,42 +80,58 @@ const HeatmapPlot = ({
         }
     }
 
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+    const divergingColor = (value, scheme = 'coolwarm') => {
+        const v = clamp(value, -1, 1);
+        const gamma = 0.6;
+        const t = Math.sign(v) * Math.pow(Math.abs(v), gamma);
+
+        if (scheme === 'coolwarm' || scheme === 'redblue') {
+            if (t < 0) {
+                const i = Math.round(255 * (1 + t));
+                return `rgb(${i}, ${i}, 255)`;
+            } else {
+                const i = Math.round(255 * (1 - t));
+                return `rgb(255, ${i}, ${i})`;
+            }
+        }
+
+        if (scheme === 'greens') {
+            const i = Math.round(255 * Math.abs(t));
+            return `rgb(${255 - i}, 255, ${255 - i})`;
+        }
+
+        if (scheme === 'reds') {
+            const i = Math.round(255 * Math.abs(t));
+            return `rgb(255, ${255 - i}, ${255 - i})`;
+        }
+
+        if (scheme === 'viridis') {
+            const u = (t + 1) / 2;
+            const r = Math.round(68 + 187 * u);
+            const g = Math.round(1 + 204 * u);
+            const b = Math.round(84 + 171 * (1 - u));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        return '#d1d5db';
+    };
+
     const getColor = (value, metricType) => {
         if (value === null) return '#f3f4f6';
 
         // Different color schemes for different metrics
         if (metricType === 'correlation') {
-            // SPEARMAN CORRELATION: Blue (negative) to Red (positive) scheme
-            const normalized = (value + 1) / 2; // Convert -1 to 1 range to 0 to 1
-            
-            if (settings.colorScheme === 'coolwarm' || settings.colorScheme === 'redblue') {
-                // Blue to White to Red gradient
-                if (value < 0) {
-                    // Negative values: Blue scale
-                    const intensity = Math.round(255 * (1 - Math.abs(value)));
-                    return `rgb(${intensity}, ${intensity}, 255)`;
-                } else {
-                    // Positive values: Red scale  
-                    const intensity = Math.round(255 * (1 - value));
-                    return `rgb(255, ${intensity}, ${intensity})`;
-                }
-            } else if (settings.colorScheme === 'greens') {
-                // Green scale for correlation strength
-                const intensity = Math.round(255 * Math.abs(value));
-                return `rgb(${Math.max(0, 255 - intensity)}, 255, ${Math.max(0, 255 - intensity)})`;
-            } else if (settings.colorScheme === 'reds') {
-                // Red scale for correlation strength
-                const intensity = Math.round(255 * Math.abs(value));
-                return `rgb(255, ${Math.max(0, 255 - intensity)}, ${Math.max(0, 255 - intensity)})`;
-            } else if (settings.colorScheme === 'viridis') {
-                // Viridis color scheme
-                const t = (value + 1) / 2;
-                const r = Math.round(68 + 187 * t);
-                const g = Math.round(1 + 204 * t);
-                const b = Math.round(84 + 171 * (1 - t));
-                return `rgb(${r}, ${g}, ${b})`;
+            // Near-zero correlations → neutral gray
+            if (Math.abs(value) < 0.05) {
+                return '#e5e7eb';
             }
-        } 
+
+            // Use shared diverging scale
+            return divergingColor(value, settings.colorScheme);
+        }
+ 
         else if (metricType === 'p_value') {
             // P-VALUE: Red scheme (significant = bright red)
             const normalized = Math.min(1, Math.max(0, value));

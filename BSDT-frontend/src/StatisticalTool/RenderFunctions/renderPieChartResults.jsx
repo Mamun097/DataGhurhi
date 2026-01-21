@@ -3,6 +3,26 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recha
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'];
@@ -26,6 +46,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         legendOn: true,
         dataLabelsOn: true,
         borderOn: false,
+        plotBorderOn: false,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
         pieXPosition: 50,
@@ -33,7 +54,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         legendXPosition: 100,
         legendYPosition: 50,
         dataLabelPosition: 'outside'
-      
     };
 };
 
@@ -50,33 +70,129 @@ const fontFamilyOptions = [
 ];
 
 const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = pieActiveTab;
     const setActiveTab = setPieActiveTab;
 
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Pie');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [currentPlotType, setCurrentPlotType] = useState('Pie');
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
-    const [pieSettings, setPieSettings] = React.useState(
+    const [pieSettings, setPieSettings] = useState(
         getDefaultSettings('Pie', categoryCount, categoryNames)
     );
 
-    React.useEffect(() => {
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.n_categories) numbers.add(String(results.n_categories));
+        if (results.total_observations) numbers.add(String(results.total_observations));
+        
+        if (results.metadata?.most_common_percentage !== null && results.metadata?.most_common_percentage !== undefined) {
+            numbers.add(results.metadata.most_common_percentage.toFixed(1));
+        }
+        
+        if (results.plot_data) {
+            results.plot_data.forEach(item => {
+                if (item.count) numbers.add(String(item.count));
+                if (item.percentage !== null && item.percentage !== undefined) {
+                    numbers.add(item.percentage.toFixed(1));
+                }
+            });
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Pie Chart Analysis',
+                'Analyzed Column',
+                'Total Observations',
+                'Number of Categories',
+                'Category',
+                'Count',
+                'Percentage',
+                'Most Common Category',
+                'Pie Chart',
+                'Statistics',
+                'Save Result',
+                'Visualizations',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Category Statistics',
+                'Error'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
+
+    useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);
             setPieSettings(prev => ({ ...prev, categoryLabels: labels }));
@@ -100,7 +216,7 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -136,26 +252,24 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
-    // Add this check FIRST - handle error case from backend
     if (results && results.success === false) {
         return (
             <div className="stats-error">
-                <h3 className="error-title">{language === 'বাংলা' ? 'ত্রুটি' : 'Error'}</h3>
+                <h3 className="error-title">{getLabel('Error')}</h3>
                 <p>{results.error}</p>
             </div>
         );
     }
 
-    // Then check for loading/empty data
     if (!results || !results.plot_data) {
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -179,30 +293,15 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        pieChartTitle: language === 'বাংলা' ? 'পাই চার্ট বিশ্লেষণ' : 'Pie Chart Analysis',
-        columnAnalyzed: language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column',
-        totalObservations: language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations',
-        numberOfCategories: language === 'বাংলা' ? 'বিভাগের সংখ্যা' : 'Number of Categories',
-        category: language === 'বাংলা' ? 'বিভাগ' : 'Category',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        percentage: language === 'বাংলা' ? 'শতাংশ' : 'Percentage',
-        mostCommonCategory: language === 'বাংলা' ? 'সবচেয়ে সাধারণ বিভাগ' : 'Most Common Category',
-        pieChart: language === 'বাংলা' ? 'পাই চার্ট' : 'Pie Chart',
-        statistics: language === 'বাংলา' ? 'পরিসংখ্যান' : 'Statistics',
-        saveResult: language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result',
-        visualizations: language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'
     };
 
     const plotData = results.plot_data || [];
@@ -221,10 +320,10 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{data.name}</p>
                     <p style={{ margin: 0, color: '#374151' }}>
-                        {t.count}: {mapDigitIfBengali(data.count)}
+                        {getLabel('Count')}: {mapDigit(data.count)}
                     </p>
                     <p style={{ margin: 0, color: '#374151' }}>
-                        {t.percentage}: {mapDigitIfBengali(data.percentage.toFixed(1))}%
+                        {getLabel('Percentage')}: {mapDigit(data.percentage.toFixed(1))}%
                     </p>
                 </div>
             );
@@ -267,18 +366,15 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
             label = `${entry.percentage.toFixed(1)}%`;
         }
         
-        return language === 'বাংলা' ? mapDigitIfBengali(label) : label;
+        return mapDigit(label);
     };
 
-    // ADD THIS NEW FUNCTION for custom label rendering
     const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
         const settings = pieSettings;
         const RADIAN = Math.PI / 180;
         
-        // If data labels are off, return null
         if (!settings.dataLabelsOn) return null;
         
-        // Determine label text
         let labelText = '';
         const entry = plotData[index];
         
@@ -290,11 +386,9 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
             labelText = `${entry.percentage.toFixed(1)}%`;
         }
         
-        // Convert to Bengali if needed
-        labelText = language === 'বাংলা' ? mapDigitIfBengali(labelText) : labelText;
+        labelText = mapDigit(labelText);
         
         if (settings.dataLabelPosition === 'inside') {
-            // For inside labels - position at the center of each slice
             const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
             const x = cx + radius * Math.cos(-midAngle * RADIAN);
             const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -313,7 +407,6 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                 </text>
             );
         } else {
-            // For outside labels - use default positioning
             const radius = outerRadius * 1.1;
             const x = cx + radius * Math.cos(-midAngle * RADIAN);
             const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -337,7 +430,6 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         const settings = pieSettings;
         const { height } = getDimensions(settings.dimensions);
 
-        // Fix data transformation - ensure we have valid data
         const data = plotData.map((item, idx) => ({
             name: settings.categoryLabels[idx] || item.category || `Category ${idx + 1}`,
             value: item.percentage || 0,
@@ -347,14 +439,23 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         }));
 
         return (
-            <div style={{ position: 'relative', width: '100%' }}>
+            <div style={{ 
+                position: 'relative', 
+                width: '100%',
+                // Add image border here
+                border: settings.borderOn ? '3px solid #333333' : 'none',
+                borderRadius: settings.borderOn ? '8px' : '0',
+                padding: settings.borderOn ? '10px' : '0',
+                boxSizing: 'border-box',
+                backgroundColor: 'white'
+            }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
                     <button className="customize-btn" onClick={() => openCustomization('Pie')}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -364,14 +465,14 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -380,7 +481,6 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                     <ResponsiveContainer width="100%" height={height}>
                         <PieChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                            style={settings.plotBorderOn ? { border: '2px solid black', borderRadius: '8px' } : {}} // ← CHANGE: settings.plotBorderOn
                         >
                             {settings.captionOn && (
                                 <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
@@ -393,32 +493,38 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                                 cy={`${settings.pieYPosition || 50}%`}
                                 innerRadius={settings.innerRadius + '%'}
                                 outerRadius={settings.outerRadius}
-                                paddingAngle={2}
+                                paddingAngle={settings.plotBorderOn ? 0 : 2} // Remove padding angle when border is on
                                 dataKey="value"
-                                label={settings.dataLabelsOn ? renderCustomizedLabel : false} // ← CHANGE to renderCustomizedLabel
-                                labelLine={settings.dataLabelsOn && settings.dataLabelPosition === 'outside'} // ← Only show label line for outside
+                                label={settings.dataLabelsOn ? renderCustomizedLabel : false}
+                                labelLine={settings.dataLabelsOn && settings.dataLabelPosition === 'outside'}
+                                // Add black bold stroke for plot border
+                                stroke={settings.plotBorderOn ? '#000000' : 'none'}
+                                strokeWidth={settings.plotBorderOn ? 3 : 0}
                             >
                                 {data.map((entry, index) => (
                                     <Cell 
                                         key={`cell-${index}`} 
                                         fill={entry.fill}
+                                        // Add individual cell border - black bold lines
+                                        stroke={settings.plotBorderOn ? '#000000' : 'none'}
+                                        strokeWidth={settings.plotBorderOn ? 3 : 0}
                                     />
                                 ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                             {settings.legendOn && (
                                 <Legend 
-                                layout="vertical"
-                                verticalAlign="middle"
-                                align={settings.legendPosition}
-                                wrapperStyle={{
-                                    position: 'absolute',
-                                    left: `${settings.legendXPosition || 100}%`,
-                                    top: `${settings.legendYPosition || 50}%`,
-                                    transform: 'translate(-100%, -50%)',
-                                    paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
-                                    paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
-                                }}
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align={settings.legendPosition}
+                                    wrapperStyle={{
+                                        position: 'absolute',
+                                        left: `${settings.legendXPosition || 100}%`,
+                                        top: `${settings.legendYPosition || 50}%`,
+                                        transform: 'translate(-100%, -50%)',
+                                        paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
+                                        paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
+                                    }}
                                     formatter={(value, entry) => {
                                         const item = data.find(d => d.name === value);
                                         if (item && (settings.showCount || settings.showPercentage)) {
@@ -430,7 +536,7 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                                             } else if (settings.showPercentage) {
                                                 legendText += ` - ${item.percentage.toFixed(1)}%`;
                                             }
-                                            return language === 'বাংলা' ? mapDigitIfBengali(legendText) : legendText;
+                                            return mapDigit(legendText);
                                         }
                                         return value;
                                     }}
@@ -446,14 +552,14 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.pieChartTitle}</h2>
+                <h2 className="stats-title">{getLabel('Pie Chart Analysis')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {t.saveResult}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -461,29 +567,29 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t.columnAnalyzed}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Column')}</td>
                             <td className="stats-table-value">{analyzedColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.numberOfCategories}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_categories)}</td>
+                            <td className="stats-table-label">{getLabel('Number of Categories')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.n_categories)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.totalObservations}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.total_observations)}</td>
                         </tr>
                         {results.metadata?.most_common_category && (
                             <tr>
-                                <td className="stats-table-label">{t.mostCommonCategory}</td>
+                                <td className="stats-table-label">{getLabel('Most Common Category')}</td>
                                 <td className="stats-table-value">
                                     {results.metadata.most_common_category} 
-                                    ({mapDigitIfBengali(results.metadata.most_common_percentage.toFixed(1))}%)
+                                    ({mapDigit(results.metadata.most_common_percentage.toFixed(1))}%)
                                 </td>
                             </tr>
                         )}
@@ -492,14 +598,14 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{t.visualizations}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
                     <button className={`stats-tab ${activeTab === 'pie' ? 'active' : ''}`} onClick={() => setActiveTab('pie')}>
-                        {t.pieChart}
+                        {getLabel('Pie Chart')}
                     </button>
                     <button className={`stats-tab ${activeTab === 'statistics' ? 'active' : ''}`} onClick={() => setActiveTab('statistics')}>
-                        {t.statistics}
+                        {getLabel('Statistics')}
                     </button>
                 </div>
 
@@ -514,7 +620,7 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                         <div className="stats-plot-wrapper active">
                             <div style={{ padding: '20px', background: '#f9fafb', borderRadius: '8px' }}>
                                 <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>
-                                    {language === 'বাংলা' ? 'বিভাগ অনুযায়ী পরিসংখ্যান' : 'Category Statistics'}
+                                    {getLabel('Category Statistics')}
                                 </h4>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
                                     {plotData.map((item, idx) => (
@@ -529,8 +635,8 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                                                 {pieSettings.categoryLabels[idx]}
                                             </div>
                                             <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                                                <div>{t.count}: {mapDigitIfBengali(item.count)}</div>
-                                                <div>{t.percentage}: {mapDigitIfBengali(item.percentage.toFixed(1))}%</div>
+                                                <div>{getLabel('Count')}: {mapDigit(item.count)}</div>
+                                                <div>{getLabel('Percentage')}: {mapDigit(item.percentage.toFixed(1))}%</div>
                                             </div>
                                         </div>
                                     ))}
@@ -547,7 +653,7 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

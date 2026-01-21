@@ -1,135 +1,193 @@
 import './CustomizationOverlay.css';
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
 
 const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsChange, language, fontFamilyOptions, getDefaultSettings }) => {
+    const [translatedLabels, setTranslatedLabels] = useState({});
+
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Customization',
+                'General Settings',
+                'Font Style',
+                'Axes Settings',
+                'Grid Settings',
+                'Appearance',
+                'Labels',
+                'Colors',
+                'Dimensions',
+                'Caption',
+                'Caption On',
+                'Caption Text',
+                'Caption Size',
+                'X-Axis Title',
+                'Y-Axis Title',
+                'X-Axis Title Size',
+                'Y-Axis Title Size',
+                'X-Axis Tick Size',
+                'Y-Axis Tick Size',
+                'Y-Axis Min',
+                'Y-Axis Max',
+                'Grid On',
+                'Grid Style',
+                'Grid Color',
+                'Grid Opacity',
+                'Image Border On',
+                'Plot Border On',
+                'Bar Border On',
+                'Data Labels On',
+                'Error Bars On',
+                'Width',
+                'Bar Width',
+                'Box Width',
+                'Violin Width',
+                'Category Labels',
+                'Category Colors',
+                'Close',
+                'Reset',
+                'Auto',
+                'Caption Top Margin',
+                'X-Axis Bottom Margin',
+                'Y-Axis Left Margin',
+                'Scatter Point Size',
+                'Line Width',
+                'Show Regression Lines',
+                'Show Scatter Points',
+                'Legend Position',
+                'Show Mean Line',
+                'Show Median Line',
+                'Rank Bar Width',
+                'Show Data Points',
+                'Histogram Bins',
+                'Scatter Opacity',
+                'Q-Q Line Color',
+                'Reference Line Color',
+                'Histogram Color',
+                'KDE Color',
+                'Distribution Color',
+                'KDE Line Width',
+                'Histogram Opacity',
+                'KDE Opacity',
+                'Show KDE',
+                'Show Histogram',
+                'Bin Width',
+                'Swarm Point Size',
+                'Swarm Opacity',
+                'Swarm Color',
+                'Orientation',
+                'Vertical',
+                'Horizontal',
+                'Show Percentage',
+                'Bar Spacing',
+                'Bar Radius',
+                'Bar Height',
+                'Show Count',
+                'Inner Radius',
+                'Outer Radius',
+                'Pie Width',
+                'Legend On',
+                'Donut Chart',
+                'Start Angle',
+                'End Angle',
+                'Minimum Angle',
+                'Label Line',
+                'ECDF Color',
+                'CDF Color',
+                'Line Style',
+                'Show ECDF',
+                'Show CDF',
+                'Point Size',
+                'Show Distribution Parameters',
+                'X-Axis Title Horizontal Offset',
+                'Y-Axis Title Vertical Offset',
+                'Scatter Point Color',
+                'Reference Line Width',
+                'Reference Line Style',
+                'Show Reference Line',
+                'Show Critical Values',
+                'Distribution Curve Color',
+                'Observed Value Line Color',
+                'Curve Width',
+                'Fill Distribution',
+                'Fill Color',
+                'Show Legend',
+                'Category',
+                'Choose color',
+                'Enter caption text...',
+                'Bold',
+                'Italic',
+                'Underline',
+                'Dotted',
+                'Dashed',
+                'Solid',
+                'Dash-Dot',
+                'Long Dash',
+                'Right',
+                'Bottom',
+                'Top',
+                'Left',
+                'Pie Chart Horizontal Position',
+                'Pie Chart Vertical Position',
+                'Legend Horizontal Position',
+                'Legend Vertical Position',
+                'Data Label Position',
+                'Outside',
+                'Inside',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) =>
+        language === 'English' ? text : translatedLabels[text] || text;
+
     if (!isOpen) return null;
 
-    const t = {
-        customization: language === 'বাংলা' ? 'কাস্টমাইজেশন' : 'Customization',
-        general: language === 'বাংলা' ? 'সাধারণ সেটিংস' : 'General Settings',
-        fontFamily: language === 'বাংলা' ? 'ফন্ট স্টাইল' : 'Font Style',
-        axes: language === 'বাংলা' ? 'অক্ষ সেটিংস' : 'Axes Settings',
-        grid: language === 'বাংলা' ? 'গ্রিড সেটিংস' : 'Grid Settings',
-        appearance: language === 'বাংলা' ? 'চেহারা' : 'Appearance',
-        labels: language === 'বাংলা' ? 'লেবেল' : 'Labels',
-        colors: language === 'বাংলা' ? 'রং' : 'Colors',
-        dimensions: language === 'বাংলা' ? 'মাত্রা' : 'Dimensions',
-        caption: language === 'বাংলা' ? 'ক্যাপশন' : 'Caption',
-        captionOn: language === 'বাংলা' ? 'ক্যাপশন চালু' : 'Caption On',
-        captionText: language === 'বাংলা' ? 'ক্যাপশন টেক্সট' : 'Caption Text',
-        captionSize: language === 'বাংলা' ? 'ক্যাপশন আকার' : 'Caption Size',
-        xAxisTitle: language === 'বাংলা' ? 'X অক্ষের শিরোনাম' : 'X-Axis Title',
-        yAxisTitle: language === 'বাংলা' ? 'Y অক্ষের শিরোনাম' : 'Y-Axis Title',
-        xAxisTitleSize: language === 'বাংলা' ? 'X অক্ষ শিরোনাম আকার' : 'X-Axis Title Size',
-        yAxisTitleSize: language === 'বাংলা' ? 'Y অক্ষ শিরোনাম আকার' : 'Y-Axis Title Size',
-        xAxisTickSize: language === 'বাংলা' ? 'X অক্ষ টিক আকার' : 'X-Axis Tick Size',
-        yAxisTickSize: language === 'বাংলা' ? 'Y অক্ষ টিক আকার' : 'Y-Axis Tick Size',
-        yAxisMin: language === 'বাংলা' ? 'Y অক্ষ ন্যূনতম' : 'Y-Axis Min',
-        yAxisMax: language === 'বাংলা' ? 'Y অক্ষ সর্বোচ্চ' : 'Y-Axis Max',
-        gridOn: language === 'বাংলা' ? 'গ্রিড চালু' : 'Grid On',
-        gridStyle: language === 'বাংলা' ? 'গ্রিড স্টাইল' : 'Grid Style',
-        gridColor: language === 'বাংলা' ? 'গ্রিড রং' : 'Grid Color',
-        gridOpacity: language === 'বাংলা' ? 'গ্রিড স্বচ্ছতা' : 'Grid Opacity',
-        borderOn: language === 'বাংলা' ? 'বর্ডার চালু' : 'Image Border On',
-        plotBorderOn: language === 'বাংলা' ? 'প্লট বর্ডার চালু' : 'Plot Border On',
-        barBorderOn: language === 'বাংলা' ? 'বার বর্ডার চালু' : 'Bar Border On',
-        dataLabelsOn: language === 'বাংলা' ? 'ডেটা লেবেল চালু' : 'Data Labels On',
-        errorBarsOn: language === 'বাংলা' ? 'এরর বার চালু' : 'Error Bars On',
-        width: language === 'বাংলা' ? 'প্রস্থ' : 'Width',
-        barWidth: language === 'বাংলা' ? 'বার প্রস্থ' : 'Bar Width',
-        boxWidth: language === 'বাংলা' ? 'বক্স প্রস্থ' : 'Box Width',
-        violinWidth: language === 'বাংলা' ? 'ভায়োলিন প্রস্থ' : 'Violin Width',
-        categoryLabels: language === 'বাংলা' ? 'ক্যাটাগরি লেবেল' : 'Category Labels',
-        categoryColors: language === 'বাংলা' ? 'ক্যাটাগরি রং' : 'Category Colors',
-        close: language === 'বাংলা' ? 'বন্ধ করুন' : 'Close',
-        reset: language === 'বাংলা' ? 'রিসেট' : 'Reset',
-        auto: language === 'বাংলা' ? 'স্বয়ংক্রিয়' : 'Auto',
-        captionTopMargin: language === 'বাংলা' ? 'ক্যাপশন উপরের মার্জিন' : 'Caption Top Margin',
-        xAxisBottomMargin: language === 'বাংলা' ? 'X অক্ষ নিচের মার্জিন' : 'X-Axis Bottom Margin',
-        yAxisLeftMargin: language === 'বাংলা' ? 'Y অক্ষ বামের মার্জিন' : 'Y-Axis Left Margin',
-        // ANCOVA specific settings
-        scatterSize: language === 'বাংলা' ? 'স্ক্যাটার বিন্দুর আকার' : 'Scatter Point Size',
-        lineWidth: language === 'বাংলা' ? 'লাইনের প্রস্থ' : 'Line Width',
-        showRegressionLines: language === 'বাংলা' ? 'রিগ্রেশন লাইন দেখান' : 'Show Regression Lines',
-        showScatterPoints: language === 'বাংলা' ? 'স্ক্যাটার বিন্দু দেখান' : 'Show Scatter Points',
-        legendPosition: language === 'বাংলা' ? 'লিজেন্ড অবস্থান' : 'Legend Position',
-        // Mann-Whitney specific settings
-        showMeanLine: language === 'বাংলা' ? 'গড় লাইন দেখান' : 'Show Mean Line',
-        showMedianLine: language === 'বাংলা' ? 'মাধ্যমিক লাইন দেখান' : 'Show Median Line',
-        rankBarWidth: language === 'বাংলা' ? 'র‍্যাঙ্ক বার প্রস্থ' : 'Rank Bar Width',
-        showDataPoints: language === 'বাংলা' ? 'ডেটা পয়েন্ট দেখান' : 'Show Data Points',
-        // Wilcoxon specific settings
-        histogramBins: language === 'বাংলা' ? 'হিস্টোগ্রাম বিন সংখ্যা' : 'Histogram Bins',
-        scatterOpacity: language === 'বাংলা' ? 'স্ক্যাটার স্বচ্ছতা' : 'Scatter Opacity',
-        qqLineColor: language === 'বাংলা' ? 'কিউ-কিউ লাইন রং' : 'Q-Q Line Color',
-        referenceLineColor: language === 'বাংলা' ? 'রেফারেন্স লাইন রং' : 'Reference Line Color',
-        // EDA Distribution specific settings - REMOVED DUPLICATE histogramBins
-        histogramColor: language === 'বাংলা' ? 'হিস্টোগ্রাম রং' : 'Histogram Color',
-        kdeColor: language === 'বাংলা' ? 'কেডিই রং' : 'KDE Color',
-        distributionColor: language === 'বাংলা' ? 'বন্টন রং' : 'Distribution Color',
-        kdeLineWidth: language === 'বাংলা' ? 'কেডিই লাইন প্রস্থ' : 'KDE Line Width',
-        histogramOpacity: language === 'বাংলা' ? 'হিস্টোগ্রাম স্বচ্ছতা' : 'Histogram Opacity',
-        kdeOpacity: language === 'বাংলা' ? 'কেডিই স্বচ্ছতা' : 'KDE Opacity',
-        showKDE: language === 'বাংলা' ? 'কেডিই দেখান' : 'Show KDE',
-        showHistogram: language === 'বাংলা' ? 'হিস্টোগ্রাম দেখান' : 'Show Histogram',
-        binWidth: language === 'বাংলা' ? 'বিন প্রস্থ' : 'Bin Width',     
-        swarmPointSize: language === 'বাংলা' ? 'সোয়ার্ম বিন্দুর আকার' : 'Swarm Point Size',
-        swarmOpacity: language === 'বাংলা' ? 'সোয়ার্ম স্বচ্ছতা' : 'Swarm Opacity',
-        swarmColor: language === 'বাংলা' ? 'সোয়ার্ম রং' : 'Swarm Color',
-        orientation: language === 'বাংলা' ? 'অভিযোজন' : 'Orientation',
-        vertical: language === 'বাংলা' ? 'উল্লম্ব' : 'Vertical',
-        horizontal: language === 'বাংলা' ? 'অনুভূমিক' : 'Horizontal',
-        showPercentage: language === 'বাংলা' ? 'শতাংশ দেখান' : 'Show Percentage',
-        barSpacing: language === 'বাংলা' ? 'বার ব্যবধান' : 'Bar Spacing',
-        barRadius: language === 'বাংলা' ? 'বার বক্রতা' : 'Bar Radius',
-        barHeight: language === 'বাংলা' ? 'বার উচ্চতা' : 'Bar Height',
-        showCount: language === 'বাংলা' ? 'গণনা দেখান' : 'Show Count',
-        innerRadius: language === 'বাংলা' ? 'ভিতরের ব্যাসার্ধ' : 'Inner Radius',
-        outerRadius: language === 'বাংলা' ? 'বাইরের ব্যাসার্ধ' : 'Outer Radius',
-        pieWidth: language === 'বাংলা' ? 'পাই প্রস্থ' : 'Pie Width',        
-        legendOn: language === 'বাংলা' ? 'লিজেন্ড চালু' : 'Legend On',
-        donutChart: language === 'বাংলা' ? 'ডোনাট চার্ট' : 'Donut Chart',
-        startAngle: language === 'বাংলা' ? 'শুরু কোণ' : 'Start Angle',
-        endAngle: language === 'বাংলা' ? 'শেষ কোণ' : 'End Angle',
-        minAngle: language === 'বাংলা' ? 'ন্যূনতম কোণ' : 'Minimum Angle',
-        labelLine: language === 'বাংলা' ? 'লেবেল লাইন' : 'Label Line',
-        // Kolmogorov-Smirnov specific settings
-        ecdfColor: language === 'বাংলা' ? 'ইসিডিএফ রং' : 'ECDF Color',
-        cdfColor: language === 'বাংলা' ? 'সিডিএফ রং' : 'CDF Color',
-        lineStyle: language === 'বাংলা' ? 'লাইন স্টাইল' : 'Line Style',
-        lineWidth: language === 'বাংলা' ? 'লাইন প্রস্থ' : 'Line Width',
-        showECDF: language === 'বাংলা' ? 'ইসিডিএফ দেখান' : 'Show ECDF',
-        showCDF: language === 'বাংলা' ? 'সিডিএফ দেখান' : 'Show CDF',
-        pointSize: language === 'বাংলা' ? 'বিন্দুর আকার' : 'Point Size',
-        showDistributionParameters: language === 'বাংলা' ? 'বন্টন প্যারামিটার দেখান' : 'Show Distribution Parameters',
-        xAxisTitleOffset: language === 'বাংলা' ? 'X অক্ষ শিরোনাম অনুভূমিক স্থানান্তর' : 'X-Axis Title Horizontal Offset',
-        yAxisTitleOffset: language === 'বাংলা' ? 'Y অক্ষ শিরোনাম উল্লম্ব স্থানান্তর' : 'Y-Axis Title Vertical Offset',        
-        scatterColor: language === 'বাংলা' ? 'স্ক্যাটার বিন্দুর রং' : 'Scatter Point Color',                
-        referenceLineWidth: language === 'বাংলা' ? 'রেফারেন্স লাইন প্রস্থ' : 'Reference Line Width',
-        referenceLineStyle: language === 'বাংলা' ? 'রেফারেন্স লাইন স্টাইল' : 'Reference Line Style',
-        showReferenceLine: language === 'বাংলা' ? 'রেফারেন্স লাইন দেখান' : 'Show Reference Line',        
-        showCriticalValues: language === 'বাংলা' ? 'ক্রিটিক্যাল মান দেখান' : 'Show Critical Values',
-        // F/Z/T Distribution Plot specific settings
-        distributionCurveColor: language === 'বাংলা' ? 'বন্টন বক্ররেখার রং' : 'Distribution Curve Color',
-        distributionLineColor: language === 'বাংলা' ? 'পর্যবেক্ষিত মানের রং' : 'Observed Value Line Color',
-        distributionLineWidth: language === 'বাংলা' ? 'লাইন প্রস্থ' : 'Line Width',
-        distributionCurveWidth: language === 'বাংলা' ? 'বক্ররেখার প্রস্থ' : 'Curve Width',
-        distributionFill: language === 'বাংলা' ? 'বক্ররেখা ভরাট' : 'Fill Distribution',
-        distributionFillColor: language === 'বাংলা' ? 'ভরাট রং' : 'Fill Color'
-    };
-
     const gridStyles = [
-        { value: '3 3', label: 'Dotted' },
-        { value: '10 5', label: 'Dashed' },
-        { value: '1 0', label: 'Solid' },
-        { value: '15 5 5 5', label: 'Dash-Dot' },
-        { value: '20 10', label: 'Long Dash' },
+        { value: '3 3', label: getLabel('Dotted') },
+        { value: '10 5', label: getLabel('Dashed') },
+        { value: '1 0', label: getLabel('Solid') },
+        { value: '15 5 5 5', label: getLabel('Dash-Dot') },
+        { value: '20 10', label: getLabel('Long Dash') },
     ];
 
-    // ADDED: Missing lineStyles array
     const lineStyles = [
-        { value: 'solid', label: 'Solid' },
-        { value: 'dashed', label: 'Dashed' },
-        { value: 'dotted', label: 'Dotted' },
+        { value: 'solid', label: getLabel('Solid') },
+        { value: 'dashed', label: getLabel('Dashed') },
+        { value: 'dotted', label: getLabel('Dotted') },
     ];
 
     const dimensions = [
@@ -141,10 +199,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
     ];
 
     const legendPositions = [
-        { value: 'right', label: 'Right' },
-        { value: 'bottom', label: 'Bottom' },
-        { value: 'top', label: 'Top' },
-        { value: 'left', label: 'Left' },
+        { value: 'right', label: getLabel('Right') },
+        { value: 'bottom', label: getLabel('Bottom') },
+        { value: 'top', label: getLabel('Top') },
+        { value: 'left', label: getLabel('Left') },
     ];
 
     const handleChange = (key, value) => {
@@ -178,16 +236,16 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
         <div className="customization-overlay-backdrop" onClick={onClose}>
             <div className="customization-overlay" onClick={(e) => e.stopPropagation()}>
                 <div className="customization-header">
-                    <h3>{t.customization} - {plotType}</h3>
+                    <h3>{getLabel('Customization')} - {plotType}</h3>
                 </div>
 
                 <div className="customization-content">
                     {/* General Settings */}
                     <div className="customization-section">
-                        <h4 className="section-title">{t.general}</h4>
+                        <h4 className="section-title">{getLabel('General Settings')}</h4>
 
                         <div className="setting-group">
-                            <label className="setting-label">{t.dimensions}</label>
+                            <label className="setting-label">{getLabel('Dimensions')}</label>
                             <select
                                 className="setting-select"
                                 value={settings.dimensions}
@@ -200,7 +258,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         </div>
 
                         <div className="setting-group">
-                            <label className="setting-label">{t.fontFamily}</label>
+                            <label className="setting-label">{getLabel('Font Style')}</label>
                             <select
                                 className="setting-select"
                                 value={settings.fontFamily}
@@ -219,42 +277,42 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     checked={settings.captionOn}
                                     onChange={(e) => handleChange('captionOn', e.target.checked)}
                                 />
-                                <span>{t.captionOn}</span>
+                                <span>{getLabel('Caption On')}</span>
                             </label>
                         </div>
 
                         {settings.captionOn && (
                             <>
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.captionText}</label>
+                                    <label className="setting-label">{getLabel('Caption Text')}</label>
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <input
                                             type="text"
                                             className="setting-input"
                                             value={settings.captionText}
                                             onChange={(e) => handleChange('captionText', e.target.value)}
-                                            placeholder="Enter caption text..."
+                                            placeholder={getLabel('Enter caption text...')}
                                             style={{ flex: 1 }}
                                         />
                                         <div className="text-style-buttons">
                                             <button
                                                 className={`style-btn ${settings.captionBold ? 'active' : ''}`}
                                                 onClick={() => handleChange('captionBold', !settings.captionBold)}
-                                                title="Bold"
+                                                title={getLabel('Bold')}
                                             >
                                                 <strong>B</strong>
                                             </button>
                                             <button
                                                 className={`style-btn ${settings.captionItalic ? 'active' : ''}`}
                                                 onClick={() => handleChange('captionItalic', !settings.captionItalic)}
-                                                title="Italic"
+                                                title={getLabel('Italic')}
                                             >
                                                 <em>I</em>
                                             </button>
                                             <button
                                                 className={`style-btn ${settings.captionUnderline ? 'active' : ''}`}
                                                 onClick={() => handleChange('captionUnderline', !settings.captionUnderline)}
-                                                title="Underline"
+                                                title={getLabel('Underline')}
                                             >
                                                 <u>U</u>
                                             </button>
@@ -263,7 +321,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.captionSize}</label>
+                                        <label className="setting-label">{getLabel('Caption Size')}</label>
                                         <input
                                             type="number"
                                             className="setting-input"
@@ -274,7 +332,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         />
                                     </div>
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.captionTopMargin}</label>
+                                        <label className="setting-label">{getLabel('Caption Top Margin')}</label>
                                         <input
                                             type="number"
                                             className="setting-input"
@@ -292,10 +350,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Axes Settings */}
                     {plotType !== 'Pie' && (
                         <div className="customization-section">
-                            <h4 className="section-title">{t.axes}</h4>
+                            <h4 className="section-title">{getLabel('Axes Settings')}</h4>
 
                             <div className="setting-group">
-                                <label className="setting-label">{t.xAxisTitle}</label>
+                                <label className="setting-label">{getLabel('X-Axis Title')}</label>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <input
                                         type="text"
@@ -308,21 +366,21 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         <button
                                             className={`style-btn ${settings.xAxisTitleBold ? 'active' : ''}`}
                                             onClick={() => handleChange('xAxisTitleBold', !settings.xAxisTitleBold)}
-                                            title="Bold"
+                                            title={getLabel('Bold')}
                                         >
                                             <strong>B</strong>
                                         </button>
                                         <button
                                             className={`style-btn ${settings.xAxisTitleItalic ? 'active' : ''}`}
                                             onClick={() => handleChange('xAxisTitleItalic', !settings.xAxisTitleItalic)}
-                                            title="Italic"
+                                            title={getLabel('Italic')}
                                         >
                                             <em>I</em>
                                         </button>
                                         <button
                                             className={`style-btn ${settings.xAxisTitleUnderline ? 'active' : ''}`}
                                             onClick={() => handleChange('xAxisTitleUnderline', !settings.xAxisTitleUnderline)}
-                                            title="Underline"
+                                            title={getLabel('Underline')}
                                         >
                                             <u>U</u>
                                         </button>
@@ -331,7 +389,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </div>
 
                             <div className="setting-group">
-                                <label className="setting-label">{t.yAxisTitle}</label>
+                                <label className="setting-label">{getLabel('Y-Axis Title')}</label>
                                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                     <input
                                         type="text"
@@ -344,21 +402,21 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         <button
                                             className={`style-btn ${settings.yAxisTitleBold ? 'active' : ''}`}
                                             onClick={() => handleChange('yAxisTitleBold', !settings.yAxisTitleBold)}
-                                            title="Bold"
+                                            title={getLabel('Bold')}
                                         >
                                             <strong>B</strong>
                                         </button>
                                         <button
                                             className={`style-btn ${settings.yAxisTitleItalic ? 'active' : ''}`}
                                             onClick={() => handleChange('yAxisTitleItalic', !settings.yAxisTitleItalic)}
-                                            title="Italic"
+                                            title={getLabel('Italic')}
                                         >
                                             <em>I</em>
                                         </button>
                                         <button
                                             className={`style-btn ${settings.yAxisTitleUnderline ? 'active' : ''}`}
                                             onClick={() => handleChange('yAxisTitleUnderline', !settings.yAxisTitleUnderline)}
-                                            title="Underline"
+                                            title={getLabel('Underline')}
                                         >
                                             <u>U</u>
                                         </button>
@@ -368,7 +426,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.xAxisTitleSize}</label>
+                                    <label className="setting-label">{getLabel('X-Axis Title Size')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -380,7 +438,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisTitleSize}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Title Size')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -394,7 +452,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.xAxisTickSize}</label>
+                                    <label className="setting-label">{getLabel('X-Axis Tick Size')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -406,7 +464,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisTickSize}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Tick Size')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -420,7 +478,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.xAxisBottomMargin}</label>
+                                    <label className="setting-label">{getLabel('X-Axis Bottom Margin')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -432,7 +490,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisLeftMargin}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Left Margin')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -446,7 +504,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.xAxisTitleOffset}</label>
+                                    <label className="setting-label">{getLabel('X-Axis Title Horizontal Offset')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -458,7 +516,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisTitleOffset}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Title Vertical Offset')}</label>
                                     <input
                                         type="number"
                                         className="setting-input"
@@ -472,24 +530,24 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisMin}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Min')}</label>
                                     <input
                                         type="text"
                                         className="setting-input"
                                         value={settings.yAxisMin}
                                         onChange={(e) => handleChange('yAxisMin', e.target.value)}
-                                        placeholder={t.auto}
+                                        placeholder={getLabel('Auto')}
                                     />
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.yAxisMax}</label>
+                                    <label className="setting-label">{getLabel('Y-Axis Max')}</label>
                                     <input
                                         type="text"
                                         className="setting-input"
                                         value={settings.yAxisMax}
                                         onChange={(e) => handleChange('yAxisMax', e.target.value)}
-                                        placeholder={t.auto}
+                                        placeholder={getLabel('Auto')}
                                     />
                                 </div>
                             </div>
@@ -499,7 +557,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Grid Settings */}
                     {plotType !== 'Pie' && (
                         <div className="customization-section">
-                            <h4 className="section-title">{t.grid}</h4>
+                            <h4 className="section-title">{getLabel('Grid Settings')}</h4>
 
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
@@ -508,7 +566,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.gridOn}
                                         onChange={(e) => handleChange('gridOn', e.target.checked)}
                                     />
-                                    <span>{t.gridOn}</span>
+                                    <span>{getLabel('Grid On')}</span>
                                 </label>
                             </div>
 
@@ -516,7 +574,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 <>
                                     <div className="setting-row">
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.gridStyle}</label>
+                                            <label className="setting-label">{getLabel('Grid Style')}</label>
                                             <select
                                                 className="setting-select"
                                                 value={settings.gridStyle}
@@ -529,7 +587,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         </div>
 
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.gridColor}</label>
+                                            <label className="setting-label">{getLabel('Grid Color')}</label>
                                             <select
                                                 className="setting-select"
                                                 value={settings.gridColor}
@@ -542,7 +600,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.gridOpacity}</label>
+                                        <label className="setting-label">{getLabel('Grid Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -561,31 +619,30 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                     {/* Appearance Settings */}
                     <div className="customization-section">
-                        <h4 className="section-title">{t.appearance}</h4>
+                        <h4 className="section-title">{getLabel('Appearance')}</h4>
 
-                        <div className="setting-group"> {/* Border On */}
+                        <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
                                     type="checkbox"
                                     checked={settings.borderOn}
                                     onChange={(e) => handleChange('borderOn', e.target.checked)}
                                 />
-                                <span>{t.borderOn}</span>
+                                <span>{getLabel('Image Border On')}</span>
                             </label>
                         </div>
 
-                        <div className="setting-group"> {/* Plot Border On */}
+                        <div className="setting-group">
                             <label className="setting-checkbox-label">
                                 <input
                                     type="checkbox"
                                     checked={settings.plotBorderOn}
                                     onChange={(e) => handleChange('plotBorderOn', e.target.checked)}
                                 />
-                                <span>{t.plotBorderOn}</span>
+                                <span>{getLabel('Plot Border On')}</span>
                             </label>
                         </div>
 
-                        {/* Bar Border On */}
                         {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Rank' || plotType === 'Histogram') && ( 
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
@@ -594,12 +651,11 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.barBorderOn}
                                         onChange={(e) => handleChange('barBorderOn', e.target.checked)}
                                     />
-                                    <span>{t.barBorderOn}</span>
+                                    <span>{getLabel('Bar Border On')}</span>
                                 </label>
                             </div>
                         )}
 
-                        {/* Data Labels On */}
                         {(plotType === 'Count' || plotType === 'Mean' || plotType === 'Histogram' || plotType === 'Box') && (
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
@@ -608,12 +664,11 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.dataLabelsOn}
                                         onChange={(e) => handleChange('dataLabelsOn', e.target.checked)}
                                     />
-                                    <span>{t.dataLabelsOn}</span>
+                                    <span>{getLabel('Data Labels On')}</span>
                                 </label>
                             </div>
                         )}
 
-                        {/* Error Bars On */}
                         {plotType === 'Mean' && (
                             <div className="setting-group">
                                 <label className="setting-checkbox-label">
@@ -622,18 +677,17 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.errorBarsOn}
                                         onChange={(e) => handleChange('errorBarsOn', e.target.checked)}
                                     />
-                                    <span>{t.errorBarsOn}</span>
+                                    <span>{getLabel('Error Bars On')}</span>
                                 </label>
                             </div>
                         )}
 
-                        {/* Element Width Control */}                                              
                         {!isKolmogorovPlot && !isAncovaPlot && plotType !== 'QQ' && plotType !== 'KDE' && plotType !== 'FDistribution' && plotType !== 'ZDistribution' && plotType !== 'TDistribution' && plotType !== 'Swarm' && plotType !== 'Pie' && (
                             <div className="setting-group">
                                 <label className="setting-label">
-                                    {plotType === 'Count' || plotType === 'Mean' || plotType === 'Histogram' || plotType === 'Vertical' || plotType === 'Horizontal'  || plotType === 'HistogramKDE'? t.barWidth :
-                                    plotType === 'Box' ? t.boxWidth : 
-                                    plotType === 'Rank' ? t.rankBarWidth : t.violinWidth}
+                                    {plotType === 'Count' || plotType === 'Mean' || plotType === 'Histogram' || plotType === 'Vertical' || plotType === 'Horizontal' || plotType === 'HistogramKDE' ? getLabel('Bar Width') :
+                                    plotType === 'Box' ? getLabel('Box Width') : 
+                                    plotType === 'Rank' ? getLabel('Rank Bar Width') : getLabel('Violin Width')}
                                 </label>
                                 <input
                                     type="range"
@@ -644,10 +698,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     max="1"
                                     step="0.05"
                                 />
-                                <span className="range-value">{settings.elementWidth.toFixed(2)}</span> {/* ERROR HERE */}
+                                <span className="range-value">{settings.elementWidth.toFixed(2)}</span>
                             </div>
                         )}
-
 
                         {/* Kolmogorov-Smirnov Specific Settings */}
                         {isKolmogorovPlot && (
@@ -659,7 +712,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showECDF}
                                             onChange={(e) => handleChange('showECDF', e.target.checked)}
                                         />
-                                        <span>{t.showECDF}</span>
+                                        <span>{getLabel('Show ECDF')}</span>
                                     </label>
                                 </div>
 
@@ -670,7 +723,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showCDF}
                                             onChange={(e) => handleChange('showCDF', e.target.checked)}
                                         />
-                                        <span>{t.showCDF}</span>
+                                        <span>{getLabel('Show CDF')}</span>
                                     </label>
                                 </div>
 
@@ -681,7 +734,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showDistributionParameters}
                                             onChange={(e) => handleChange('showDistributionParameters', e.target.checked)}
                                         />
-                                        <span>{t.showDistributionParameters}</span>
+                                        <span>{getLabel('Show Distribution Parameters')}</span>
                                     </label>
                                 </div>
 
@@ -692,27 +745,27 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.legendOn}
                                             onChange={(e) => handleChange('legendOn', e.target.checked)}
                                         />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
+                                        <span>{getLabel('Show Legend')}</span>
                                     </label>
                                 </div>    
 
                                 {settings.legendOn && (
                                     <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
+                                        <label className="setting-label">{getLabel('Legend Position')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.legendPosition}
                                             onChange={(e) => handleChange('legendPosition', e.target.value)}
                                         >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
+                                            <option value="top">{getLabel('Top')}</option>
+                                            <option value="bottom">{getLabel('Bottom')}</option>
                                         </select>
                                     </div>
                                 )}
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.ecdfColor}</label>
+                                        <label className="setting-label">{getLabel('ECDF Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -722,7 +775,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.cdfColor}</label>
+                                        <label className="setting-label">{getLabel('CDF Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -734,7 +787,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.lineStyle}</label>
+                                        <label className="setting-label">{getLabel('Line Style')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.lineStyle}
@@ -747,7 +800,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.lineWidth}</label>
+                                        <label className="setting-label">{getLabel('Line Width')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -762,7 +815,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.pointSize}</label>
+                                    <label className="setting-label">{getLabel('Point Size')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -787,13 +840,13 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showDataPoints}
                                             onChange={(e) => handleChange('showDataPoints', e.target.checked)}
                                         />
-                                        <span>{t.showDataPoints}</span>
+                                        <span>{getLabel('Show Data Points')}</span>
                                     </label>
                                 </div>
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.swarmPointSize}</label>
+                                        <label className="setting-label">{getLabel('Swarm Point Size')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -807,7 +860,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.swarmOpacity}</label>
+                                        <label className="setting-label">{getLabel('Swarm Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -822,7 +875,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.swarmColor}</label>
+                                    <label className="setting-label">{getLabel('Swarm Color')}</label>
                                     <input
                                         type="color"
                                         className="color-picker"
@@ -833,13 +886,11 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             </>
                         )}
 
-
                         {plotType === 'Pie' && (
                         <>
-                            {/* Add this after the existing pie settings */}
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">Pie Chart Horizontal Position</label>
+                                    <label className="setting-label">{getLabel('Pie Chart Horizontal Position')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -851,7 +902,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     <span className="range-value">{settings.pieXPosition || 50}%</span>
                                 </div>
                                 <div className="setting-group">
-                                    <label className="setting-label">Pie Chart Vertical Position</label>
+                                    <label className="setting-label">{getLabel('Pie Chart Vertical Position')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -864,10 +915,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
                             </div>
                             
-                            {/* Remove the existing legendPosition select and replace with: */}
                             <div className="setting-row">
                                 <div className="setting-group">
-                                    <label className="setting-label">Legend Horizontal Position</label>
+                                    <label className="setting-label">{getLabel('Legend Horizontal Position')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -879,7 +929,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     <span className="range-value">{settings.legendXPosition || 100}%</span>
                                 </div>
                                 <div className="setting-group">
-                                    <label className="setting-label">Legend Vertical Position</label>
+                                    <label className="setting-label">{getLabel('Legend Vertical Position')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -897,21 +947,21 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.dataLabelsOn}
                                         onChange={(e) => handleChange('dataLabelsOn', e.target.checked)}
                                     />
-                                    <span>{t.dataLabelsOn}</span>
+                                    <span>{getLabel('Data Labels On')}</span>
                                     </label>
                                 </div>                            
                             </div>
 
                             {settings.dataLabelsOn && (
                                 <div className="setting-group">
-                                    <label className="setting-label">Data Label Position</label>
+                                    <label className="setting-label">{getLabel('Data Label Position')}</label>
                                     <select
                                         className="setting-select"
                                         value={settings.dataLabelPosition || 'outside'}
                                         onChange={(e) => handleChange('dataLabelPosition', e.target.value)}
                                     >
-                                        <option value="outside">Outside</option>
-                                        <option value="inside">Inside</option>
+                                        <option value="outside">{getLabel('Outside')}</option>
+                                        <option value="inside">{getLabel('Inside')}</option>
                                     </select>
                                 </div>
                             )}
@@ -929,7 +979,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showScatterPoints}
                                             onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
                                         />
-                                        <span>{t.showScatterPoints}</span>
+                                        <span>{getLabel('Show Scatter Points')}</span>
                                     </label>
                                 </div>
 
@@ -940,7 +990,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showReferenceLine}
                                             onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
                                         />
-                                        <span>{t.showReferenceLine}</span>
+                                        <span>{getLabel('Show Reference Line')}</span>
                                     </label>
                                 </div>
 
@@ -951,7 +1001,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showCriticalValues}
                                             onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
                                         />
-                                        <span>{t.showCriticalValues}</span>
+                                        <span>{getLabel('Show Critical Values')}</span>
                                     </label>
                                 </div>
 
@@ -962,20 +1012,20 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         checked={settings.legendOn}
                                         onChange={(e) => handleChange('legendOn', e.target.checked)}
                                         />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
+                                        <span>{getLabel('Show Legend')}</span>
                                     </label>
                                 </div>
 
                                 {settings.legendOn && (
                                     <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
+                                        <label className="setting-label">{getLabel('Legend Position')}</label>
                                         <select
                                         className="setting-select"
                                         value={settings.legendPosition}
                                         onChange={(e) => handleChange('legendPosition', e.target.value)}
                                         >
-                                        <option value="top">Top</option>
-                                        <option value="bottom">Bottom</option>
+                                        <option value="top">{getLabel('Top')}</option>
+                                        <option value="bottom">{getLabel('Bottom')}</option>
                                         </select>
                                     </div>
                                 )}
@@ -983,7 +1033,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterSize}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Size')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -997,7 +1047,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterOpacity}</label>
+                                        <label className="setting-label">{getLabel('Scatter Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1013,7 +1063,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterColor}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1023,7 +1073,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineColor}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1035,7 +1085,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineWidth}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Width')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1049,15 +1099,15 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineStyle}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Style')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.referenceLineStyle}
                                             onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
                                         >
-                                            <option value="solid">Solid</option>
-                                            <option value="dashed">Dashed</option>
-                                            <option value="dotted">Dotted</option>
+                                            <option value="solid">{getLabel('Solid')}</option>
+                                            <option value="dashed">{getLabel('Dashed')}</option>
+                                            <option value="dotted">{getLabel('Dotted')}</option>
                                         </select>
                                     </div>
 
@@ -1070,7 +1120,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                             <>
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.distributionCurveWidth}</label>
+                                        <label className="setting-label">{getLabel('Curve Width')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1086,7 +1136,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.distributionCurveColor}</label>
+                                        <label className="setting-label">{getLabel('Distribution Curve Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1096,7 +1146,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
                                 </div>
 
-                                {/* Only show fill options for FDistribution */}
                                 {plotType === 'FDistribution' && (
                                     <>
                                         <div className="setting-group">
@@ -1106,13 +1155,13 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                                     checked={settings.distributionFill}
                                                     onChange={(e) => handleChange('distributionFill', e.target.checked)}
                                                 />
-                                                <span>{t.distributionFill}</span>
+                                                <span>{getLabel('Fill Distribution')}</span>
                                             </label>
                                         </div>
 
                                         {settings.distributionFill && (
                                             <div className="setting-group">
-                                                <label className="setting-label">{t.distributionFillColor}</label>
+                                                <label className="setting-label">{getLabel('Fill Color')}</label>
                                                 <input
                                                     type="color"
                                                     className="color-picker"
@@ -1129,7 +1178,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         {plotType === 'Scatter' && (
                             <>
-                                {/* Common Scatter Settings */}
                                 <div className="setting-group">
                                     <label className="setting-checkbox-label">
                                         <input
@@ -1137,7 +1185,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showScatterPoints}
                                             onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
                                         />
-                                        <span>{t.showScatterPoints}</span>
+                                        <span>{getLabel('Show Scatter Points')}</span>
                                     </label>
                                 </div>
 
@@ -1148,7 +1196,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showRegressionLines}
                                             onChange={(e) => handleChange('showRegressionLines', e.target.checked)}
                                         />
-                                        <span>{t.showRegressionLines}</span>
+                                        <span>{getLabel('Show Regression Lines')}</span>
                                     </label>
                                 </div>
 
@@ -1159,7 +1207,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showReferenceLine}
                                             onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
                                         />
-                                        <span>{t.showReferenceLine}</span>
+                                        <span>{getLabel('Show Reference Line')}</span>
                                     </label>
                                 </div>
 
@@ -1170,7 +1218,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showCriticalValues}
                                             onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
                                         />
-                                        <span>{t.showCriticalValues}</span>
+                                        <span>{getLabel('Show Critical Values')}</span>
                                     </label>
                                 </div>
 
@@ -1181,27 +1229,27 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.legendOn}
                                             onChange={(e) => handleChange('legendOn', e.target.checked)}
                                         />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
+                                        <span>{getLabel('Show Legend')}</span>
                                     </label>
                                 </div>    
 
                                 {settings.legendOn && (
                                     <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
+                                        <label className="setting-label">{getLabel('Legend Position')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.legendPosition}
                                             onChange={(e) => handleChange('legendPosition', e.target.value)}
                                         >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
+                                            <option value="top">{getLabel('Top')}</option>
+                                            <option value="bottom">{getLabel('Bottom')}</option>
                                         </select>
                                     </div>
                                 )}
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterSize}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Size')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1215,7 +1263,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterOpacity}</label>
+                                        <label className="setting-label">{getLabel('Scatter Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1231,7 +1279,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterColor}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1242,7 +1290,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                     {settings.showRegressionLines && (
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.qqLineColor}</label>
+                                            <label className="setting-label">{getLabel('Q-Q Line Color')}</label>
                                             <input
                                                 type="color"
                                                 className="color-picker"
@@ -1256,7 +1304,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 {settings.showReferenceLine && (
                                     <div className="setting-row">
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineColor}</label>
+                                            <label className="setting-label">{getLabel('Reference Line Color')}</label>
                                             <input
                                                 type="color"
                                                 className="color-picker"
@@ -1266,7 +1314,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                         </div>
 
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineWidth}</label>
+                                            <label className="setting-label">{getLabel('Reference Line Width')}</label>
                                             <input
                                                 type="range"
                                                 className="setting-range"
@@ -1284,21 +1332,21 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 {settings.showReferenceLine && (
                                     <div className="setting-row">
                                         <div className="setting-group">
-                                            <label className="setting-label">{t.referenceLineStyle}</label>
+                                            <label className="setting-label">{getLabel('Reference Line Style')}</label>
                                             <select
                                                 className="setting-select"
                                                 value={settings.referenceLineStyle}
                                                 onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
                                             >
-                                                <option value="solid">Solid</option>
-                                                <option value="dashed">Dashed</option>
-                                                <option value="dotted">Dotted</option>
+                                                <option value="solid">{getLabel('Solid')}</option>
+                                                <option value="dashed">{getLabel('Dashed')}</option>
+                                                <option value="dotted">{getLabel('Dotted')}</option>
                                             </select>
                                         </div>
 
                                         {settings.showRegressionLines && (
                                             <div className="setting-group">
-                                                <label className="setting-label">{t.lineWidth}</label>
+                                                <label className="setting-label">{getLabel('Line Width')}</label>
                                                 <input
                                                     type="range"
                                                     className="setting-range"
@@ -1314,8 +1362,6 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
                                 )}
 
-                                                            
-
                             </>
                         )}            
                         
@@ -1329,7 +1375,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showScatterPoints}
                                             onChange={(e) => handleChange('showScatterPoints', e.target.checked)}
                                         />
-                                        <span>{t.showScatterPoints}</span>
+                                        <span>{getLabel('Show Scatter Points')}</span>
                                     </label>
                                 </div>
 
@@ -1340,7 +1386,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showReferenceLine}
                                             onChange={(e) => handleChange('showReferenceLine', e.target.checked)}
                                         />
-                                        <span>{t.showReferenceLine}</span>
+                                        <span>{getLabel('Show Reference Line')}</span>
                                     </label>
                                 </div>
 
@@ -1351,7 +1397,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.showCriticalValues}
                                             onChange={(e) => handleChange('showCriticalValues', e.target.checked)}
                                         />
-                                        <span>{t.showCriticalValues}</span>
+                                        <span>{getLabel('Show Critical Values')}</span>
                                     </label>
                                 </div>
 
@@ -1362,27 +1408,27 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             checked={settings.legendOn}
                                             onChange={(e) => handleChange('legendOn', e.target.checked)}
                                         />
-                                        <span>{language === 'বাংলা' ? 'লেজেন্ড দেখান' : 'Show Legend'}</span>
+                                        <span>{getLabel('Show Legend')}</span>
                                     </label>
                                 </div>    
 
                                 {settings.legendOn && (
                                     <div className="setting-group">
-                                        <label className="setting-label">{language === 'বাংলা' ? 'লেজেন্ড অবস্থান' : 'Legend Position'}</label>
+                                        <label className="setting-label">{getLabel('Legend Position')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.legendPosition}
                                             onChange={(e) => handleChange('legendPosition', e.target.value)}
                                         >
-                                            <option value="top">Top</option>
-                                            <option value="bottom">Bottom</option>
+                                            <option value="top">{getLabel('Top')}</option>
+                                            <option value="bottom">{getLabel('Bottom')}</option>
                                         </select>
                                     </div>
                                 )}
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterSize}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Size')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1396,7 +1442,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterOpacity}</label>
+                                        <label className="setting-label">{getLabel('Scatter Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1412,7 +1458,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.scatterColor}</label>
+                                        <label className="setting-label">{getLabel('Scatter Point Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1422,7 +1468,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineColor}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1434,7 +1480,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineWidth}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Width')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1448,15 +1494,15 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.referenceLineStyle}</label>
+                                        <label className="setting-label">{getLabel('Reference Line Style')}</label>
                                         <select
                                             className="setting-select"
                                             value={settings.referenceLineStyle}
                                             onChange={(e) => handleChange('referenceLineStyle', e.target.value)}
                                         >
-                                            <option value="solid">Solid</option>
-                                            <option value="dashed">Dashed</option>
-                                            <option value="dotted">Dotted</option>
+                                            <option value="solid">{getLabel('Solid')}</option>
+                                            <option value="dashed">{getLabel('Dashed')}</option>
+                                            <option value="dotted">{getLabel('Dotted')}</option>
                                         </select>
                                     </div>
 
@@ -1466,9 +1512,8 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         {plotType === 'Histogram' && (
                             <>
-
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.histogramColor}</label>
+                                    <label className="setting-label">{getLabel('Histogram Color')}</label>
                                     <input
                                         type="color"
                                         className="color-picker"
@@ -1478,7 +1523,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.histogramOpacity}</label>
+                                    <label className="setting-label">{getLabel('Histogram Opacity')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -1496,7 +1541,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                         {plotType === 'KDE' && (
                             <>
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.kdeColor}</label>
+                                    <label className="setting-label">{getLabel('KDE Color')}</label>
                                     <input
                                         type="color"
                                         className="color-picker"
@@ -1506,7 +1551,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.kdeOpacity}</label>
+                                    <label className="setting-label">{getLabel('KDE Opacity')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -1520,7 +1565,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.kdeLineWidth}</label>
+                                    <label className="setting-label">{getLabel('KDE Line Width')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -1537,10 +1582,9 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                         {plotType === 'HistogramKDE' && (
                             <>
-
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.histogramBins}</label>
+                                        <label className="setting-label">{getLabel('Histogram Bins')}</label>
                                         <input
                                             type="text"
                                             className="setting-input"
@@ -1553,7 +1597,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.histogramColor}</label>
+                                        <label className="setting-label">{getLabel('Histogram Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1563,7 +1607,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.kdeColor}</label>
+                                        <label className="setting-label">{getLabel('KDE Color')}</label>
                                         <input
                                             type="color"
                                             className="color-picker"
@@ -1575,7 +1619,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                                 <div className="setting-row">
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.histogramOpacity}</label>
+                                        <label className="setting-label">{getLabel('Histogram Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1589,7 +1633,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                     </div>
 
                                     <div className="setting-group">
-                                        <label className="setting-label">{t.kdeOpacity}</label>
+                                        <label className="setting-label">{getLabel('KDE Opacity')}</label>
                                         <input
                                             type="range"
                                             className="setting-range"
@@ -1604,7 +1648,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                 </div>
 
                                 <div className="setting-group">
-                                    <label className="setting-label">{t.kdeLineWidth}</label>
+                                    <label className="setting-label">{getLabel('KDE Line Width')}</label>
                                     <input
                                         type="range"
                                         className="setting-range"
@@ -1624,10 +1668,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                     {/* Category Labels */}
                     {!isKolmogorovPlot && plotType !== 'QQ' && plotType !== 'Histogram' && plotType !== 'KDE' && plotType !== 'HistogramKDE' && (
                         <div className="customization-section">
-                            <h4 className="section-title">{t.categoryLabels}</h4>
+                            <h4 className="section-title">{getLabel('Category Labels')}</h4>
                             {settings.categoryLabels.map((label, index) => (
                                 <div key={index} className="setting-group category-label-row">
-                                    <label className="setting-label">Category {index + 1}</label>
+                                    <label className="setting-label">{getLabel('Category')} {index + 1}</label>
                                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                                         <input
                                             type="text"
@@ -1641,7 +1685,7 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
                                             className="color-picker-compact"
                                             value={settings.categoryColors[index]}
                                             onChange={(e) => handleCategoryColorChange(index, e.target.value)}
-                                            title="Choose color"
+                                            title={getLabel('Choose color')}
                                         />
                                     </div>
                                 </div>
@@ -1654,10 +1698,10 @@ const CustomizationOverlay = ({ isOpen, onClose, plotType, settings, onSettingsC
 
                 <div className="customization-footer">
                     <button className="reset-btn" onClick={handleReset}>
-                        {t.reset}
+                        {getLabel('Reset')}
                     </button>
                     <button className="apply-btn" onClick={onClose}>
-                        {t.close}
+                        {getLabel('Close')}
                     </button>
                 </div>
             </div>

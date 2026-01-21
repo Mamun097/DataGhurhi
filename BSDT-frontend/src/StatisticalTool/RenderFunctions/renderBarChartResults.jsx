@@ -3,6 +3,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import CustomizationOverlay from './CustomizationOverlay for Bar_Chart/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -85,7 +105,7 @@ const fontFamilyOptions = [
 const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results, language, user_id, testType, filename, columns) => {
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -101,6 +121,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
     const [currentPlotType, setCurrentPlotType] = React.useState('Vertical');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
+    const [translatedLabels, setTranslatedLabels] = React.useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
@@ -112,6 +133,58 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         getDefaultSettings('Horizontal', categoryCount, categoryNames)
     );
 
+    // Load translations
+    React.useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Bar Chart',
+                'Vertical Bar Chart',
+                'Horizontal Bar Chart',
+                'Analyzed Column',
+                'Total Observations',
+                'Unique Categories',
+                'Category',
+                'Count',
+                'Percentage',
+                'Statistics',
+                'Max Count',
+                'Min Count',
+                'Mean Count',
+                'Median Count',
+                'Orientation',
+                'Description',
+                'Value',
+                'Visualizations',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Result saved successfully',
+                'Error saving result',
+                'Save Result',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
@@ -373,7 +446,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -409,7 +482,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -417,7 +490,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -441,33 +514,15 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        barChartTitle: language === 'বাংলা' ? 'বার চার্ট' : 'Bar Chart',
-        verticalBarChart: language === 'বাংলা' ? 'উল্লম্ব বার চার্ট' : 'Vertical Bar Chart',
-        horizontalBarChart: language === 'বাংলা' ? 'অনুভূমিক বার চার্ট' : 'Horizontal Bar Chart',
-        analyzedColumn: language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column',
-        totalObservations: language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations',
-        uniqueCategories: language === 'বাংলা' ? 'অনন্য বিভাগ' : 'Unique Categories',
-        category: language === 'বাংলা' ? 'বিভাগ' : 'Category',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        percentage: language === 'বাংলা' ? 'শতাংশ' : 'Percentage',
-        statistics: language === 'বাংলা' ? 'পরিসংখ্যান' : 'Statistics',
-        maxCount: language === 'বাংলা' ? 'সর্বোচ্চ গণনা' : 'Max Count',
-        minCount: language === 'বাংলা' ? 'ন্যূনতম গণনা' : 'Min Count',
-        meanCount: language === 'বাংলা' ? 'গড় গণনা' : 'Mean Count',
-        medianCount: language === 'বাংলা' ? 'মাধ্যমিক গণনা' : 'Median Count',
-        orientation: language === 'বাংলা' ? 'অভিযোজন' : 'Orientation'
     };
 
     const plotData = results.plot_data || [];
@@ -486,10 +541,10 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     <p style={{ margin: 0, color: payload[0].color }}>
-                        {t.count}: {typeof data.count === 'number' ? data.count.toFixed(0) : data.count}
+                        {getLabel('Count')}: {typeof data.count === 'number' ? data.count.toFixed(0) : data.count}
                     </p>
                     <p style={{ margin: 0, color: payload[0].color }}>
-                        {t.percentage}: {typeof data.percentage === 'number' ? data.percentage.toFixed(1) + '%' : data.percentage}
+                        {getLabel('Percentage')}: {typeof data.percentage === 'number' ? data.percentage.toFixed(1) + '%' : data.percentage}
                     </p>
                 </div>
             );
@@ -537,6 +592,22 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
 
+    const getPlotMargins = (settings, isHorizontal = false) => {
+        return {
+            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
+            left: settings.plotMarginLeft + (isHorizontal && settings.categoryLabelWrap ? 15 : 0),
+            right: settings.plotMarginRight,
+            bottom:
+                settings.plotMarginBottom +
+                (settings.categoryLabelWrap
+                    ? settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2
+                    : 0),
+        };
+    };
+
+
+
+
     const renderVerticalChart = () => {
         const settings = verticalSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -549,6 +620,9 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         }));
 
         const yDomain = getYAxisDomain(settings, data, 'count');
+
+        const Y_AXIS_WIDTH = 60;   // space taken by Y-axis (labels + ticks)
+        const X_AXIS_HEIGHT = 110; // space taken by X-axis (labels + ticks)
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -704,22 +778,56 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
 
                     {/* PLOT BORDER OVERLAY */}
 
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
-                            left: settings.plotMarginLeft + 
-                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
-                            right: settings.plotMarginRight,
-                            bottom: settings.plotMarginBottom + 
-                                (settings.categoryLabelWrap ? 
-                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
+                    {settings.plotBorderOn && (() => {
+                        const top =
+                            settings.plotMarginTop +
+                            (settings.captionOn ? 20 : 0);
+
+                        const left = settings.plotMarginLeft;
+                        const right = settings.plotMarginRight;
+
+                        const bottom =
+                            settings.plotMarginBottom +
+                            (settings.categoryLabelWrap
+                                ? settings.categoryLabelMaxLines *
+                                settings.xAxisTickSize *
+                                1.2
+                                : 0);
+
+                        return (
+                            <>
+                                {/* TOP BORDER — starts AFTER Y-axis */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        left: left + Y_AXIS_WIDTH,
+                                        right: right,
+                                        borderTop: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+
+                                {/* RIGHT BORDER — ends BEFORE X-axis */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        right: right,
+                                        bottom: bottom + X_AXIS_HEIGHT,
+                                        borderRight: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+                            </>
+                        );
+                    })()}
+
+
+
+
 
                 </div>
             </div>
@@ -738,6 +846,10 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         }));
 
         const xDomain = getYAxisDomain(settings, data, 'count');
+
+        const Y_AXIS_WIDTH = 100;   // space taken by Y-axis (labels + ticks)
+        const X_AXIS_HEIGHT = 30; // space taken by X-axis (labels + ticks)
+
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -903,22 +1015,60 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     {/* PLOT BORDER OVERLAY */}
 
 
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
-                            left: settings.plotMarginLeft + 
-                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
-                            right: settings.plotMarginRight,
-                            bottom: settings.plotMarginBottom + 
-                                (settings.categoryLabelWrap ? 
-                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
+                    {settings.plotBorderOn && (() => {
+                        const top =
+                            settings.plotMarginTop +
+                            (settings.captionOn ? 20 : 0);
+
+                        const left = settings.plotMarginLeft;
+                        const right = settings.plotMarginRight;
+
+                        const bottom =
+                            settings.plotMarginBottom +
+                            (settings.categoryLabelWrap
+                                ? settings.categoryLabelMaxLines *
+                                settings.xAxisTickSize *
+                                1.2
+                                : 0);
+
+                        const isHorizontal = settings.chartOrientation === 'horizontal';
+
+                        return (
+                            <>
+                                {/* TOP BORDER */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        left: isHorizontal
+                                            ? left + Y_AXIS_WIDTH   // category labels on Y-axis
+                                            : left + Y_AXIS_WIDTH,  // value labels on Y-axis (same offset)
+                                        right: right,
+                                        borderTop: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+
+                                {/* RIGHT BORDER */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        right: right,
+                                        bottom: isHorizontal
+                                            ? bottom + X_AXIS_HEIGHT // numeric x-axis
+                                            : bottom + X_AXIS_HEIGHT,
+                                        borderRight: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+                            </>
+                        );
+                    })()}
+
+
 
                 </div>
             </div>
@@ -928,14 +1078,14 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.barChartTitle}</h2>
+                <h2 className="stats-title">{getLabel('Bar Chart')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -943,41 +1093,41 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t.analyzedColumn}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Column')}</td>
                             <td className="stats-table-value">{analyzedColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.orientation}</td>
-                            <td className="stats-table-value">{results.metadata?.orientation_display || (results.orientation === 'horizontal' ? t.horizontalBarChart : t.verticalBarChart)}</td>
+                            <td className="stats-table-label">{getLabel('Orientation')}</td>
+                            <td className="stats-table-value">{results.metadata?.orientation_display || (results.orientation === 'horizontal' ? getLabel('Horizontal Bar Chart') : getLabel('Vertical Bar Chart'))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.uniqueCategories}</td>
+                            <td className="stats-table-label">{getLabel('Unique Categories')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.unique_categories)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.totalObservations}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.maxCount}</td>
+                            <td className="stats-table-label">{getLabel('Max Count')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistics?.max_count)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.minCount}</td>
+                            <td className="stats-table-label">{getLabel('Min Count')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistics?.min_count)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.meanCount}</td>
+                            <td className="stats-table-label">{getLabel('Mean Count')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistics?.mean_count?.toFixed(2))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.medianCount}</td>
+                            <td className="stats-table-label">{getLabel('Median Count')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistics?.median_count?.toFixed(2))}</td>
                         </tr>
                     </tbody>
@@ -985,11 +1135,11 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'vertical' ? 'active' : ''}`} onClick={() => setActiveTab('vertical')}>{t.verticalBarChart}</button>
-                    <button className={`stats-tab ${activeTab === 'horizontal' ? 'active' : ''}`} onClick={() => setActiveTab('horizontal')}>{t.horizontalBarChart}</button>
+                    <button className={`stats-tab ${activeTab === 'vertical' ? 'active' : ''}`} onClick={() => setActiveTab('vertical')}>{getLabel('Vertical Bar Chart')}</button>
+                    <button className={`stats-tab ${activeTab === 'horizontal' ? 'active' : ''}`} onClick={() => setActiveTab('horizontal')}>{getLabel('Horizontal Bar Chart')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -1013,7 +1163,7 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

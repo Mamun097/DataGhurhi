@@ -3,6 +3,26 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -43,7 +63,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         plotBorderOn: false,
         dataLabelsOn: true,
         
-        // Kolmogorov-Smirnov specific settings
         showECDF: true,
         showCDF: true,
         showDistributionParameters: true,
@@ -58,7 +77,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
         legendOn: true, 
         legendPosition: 'top',
-
     };
 };
 
@@ -75,30 +93,136 @@ const fontFamilyOptions = [
 ];
 
 const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
     const activeTab = kolmogorovActiveTab;
     const setActiveTab = setKolmogorovActiveTab;
 
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('ECDF');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [currentPlotType, setCurrentPlotType] = useState('ECDF');
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
 
-    const [ecdfSettings, setEcdfSettings] = React.useState(
+    const [ecdfSettings, setEcdfSettings] = useState(
         getDefaultSettings('ECDF', 1, [])
     );
 
-    React.useEffect(() => {
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        if (results.statistic !== null && results.statistic !== undefined) {
+            numbers.add(results.statistic.toFixed(4));
+        }
+        if (results.p_value !== null && results.p_value !== undefined) {
+            numbers.add(results.p_value.toFixed(6));
+        }
+        
+        const plotData = results.plot_data || {};
+        if (plotData.statistics) {
+            if (plotData.statistics.sample_size) numbers.add(String(plotData.statistics.sample_size));
+            if (plotData.statistics.mean !== null && plotData.statistics.mean !== undefined) {
+                numbers.add(plotData.statistics.mean.toFixed(4));
+            }
+            if (plotData.statistics.std !== null && plotData.statistics.std !== undefined) {
+                numbers.add(plotData.statistics.std.toFixed(4));
+            }
+        }
+        
+        if (results.metadata?.sample_size) {
+            numbers.add(String(results.metadata.sample_size));
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Test Statistic (D)',
+                'P-Value',
+                'Not normal distribution (p < 0.05)',
+                'Normal distribution (p ≥ 0.05)',
+                'Kolmogorov-Smirnov Test',
+                'ECDF Plot',
+                'Distribution Parameters',
+                'Sample Size',
+                'Mean',
+                'Standard Deviation',
+                'Tested Distribution',
+                'Normal Distribution',
+                'Empirical CDF',
+                'Theoretical CDF',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Save Result',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Visualizations',
+                'Analyzed Column',
+                'Conclusion'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
+
+    useEffect(() => {
         if (results.plot_data) {
             // Update settings with actual data if needed
         }
@@ -132,7 +256,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -168,7 +292,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -176,7 +300,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -200,32 +324,15 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (D)' : 'Test Statistic (D)',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'স্বাভাবিক বন্টন নয় (p < 0.05)' : 'Not normal distribution (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'স্বাভাবিক বন্টন (p ≥ 0.05)' : 'Normal distribution (p ≥ 0.05)',
-        kolmogorovTitle: language === 'বাংলা' ? 'কোলমোগোরভ-স্মিরনভ পরীক্ষা' : 'Kolmogorov-Smirnov Test',
-        ecdfPlot: language === 'বাংলা' ? 'ইসিডিএফ প্লট' : 'ECDF Plot',
-        distributionParameters: language === 'বাংলা' ? 'বন্টন প্যারামিটার' : 'Distribution Parameters',
-        sampleSize: language === 'বাংলা' ? 'নমুনার আকার' : 'Sample Size',
-        mean: language === 'বাংলা' ? 'গড়' : 'Mean',
-        standardDeviation: language === 'বাংলা' ? 'স্ট্যান্ডার্ড ডেভিয়েশন' : 'Standard Deviation',
-        testedDistribution: language === 'বাংলা' ? 'পরীক্ষিত বন্টন' : 'Tested Distribution',
-        normalDistribution: language === 'বাংলা' ? 'স্বাভাবিক বন্টন' : 'Normal Distribution',
-        empiricalCDF: language === 'বাংলা' ? 'অনুভবিক সিডিএফ' : 'Empirical CDF',
-        theoreticalCDF: language === 'বাংলা' ? 'তাত্ত্বিক সিডিএফ' : 'Theoretical CDF'
     };
 
     const plotData = results.plot_data || {};
@@ -242,11 +349,11 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                 }}>
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>
-                        {language === 'বাংলা' ? 'মান' : 'Value'}: {typeof label === 'number' ? label.toFixed(2) : label}
+                        {getLabel('Value')}: {typeof label === 'number' ? mapDigit(label.toFixed(2)) : label}
                     </p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(4) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(4)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -328,7 +435,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -338,14 +445,14 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -417,7 +524,6 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                                 />
                             )}
 
-                            {/* ECDF Line */}
                             {settings.showECDF && (
                                 <Line
                                     type="stepAfter"
@@ -427,21 +533,20 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                                     strokeWidth={settings.lineWidth}
                                     strokeDasharray={getLineStrokeDasharray(settings.lineStyle)}
                                     dot={{ fill: settings.ecdfColor, r: settings.pointSize }}
-                                    name={t.empiricalCDF}
+                                    name={getLabel('Empirical CDF')}
                                 />
                             )}
                             
-                            {/* Theoretical CDF Line */}
                             {settings.showCDF && (
                                 <Line
                                     type="monotone"
                                     dataKey="cdf"
                                     data={cdfData}
                                     stroke={settings.cdfColor}
-                                    strokeWidth={settings.lineWidth + 1}  // Slightly thicker for visibility
+                                    strokeWidth={settings.lineWidth + 1}
                                     strokeDasharray={getLineStrokeDasharray(settings.lineStyle)}
                                     dot={false}
-                                    name={t.theoreticalCDF}
+                                    name={getLabel('Theoretical CDF')}
                                     connectNulls={true}
                                     isAnimationActive={false}
                                 />
@@ -449,7 +554,6 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                         </ComposedChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -465,28 +569,27 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                     )}
                 </div>
 
-                {/* Distribution Parameters */}
                 {settings.showDistributionParameters && plotData.statistics && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {t.distributionParameters}
+                            {getLabel('Distribution Parameters')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #3b82f6' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{t.testedDistribution}</div>
-                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{t.normalDistribution}</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{getLabel('Tested Distribution')}</div>
+                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{getLabel('Normal Distribution')}</div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #10b981' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{t.mean}</div>
-                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigitIfBengali(plotData.statistics.mean.toFixed(4))}</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{getLabel('Mean')}</div>
+                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigit(plotData.statistics.mean.toFixed(4))}</div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #f59e0b' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{t.standardDeviation}</div>
-                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigitIfBengali(plotData.statistics.std.toFixed(4))}</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{getLabel('Standard Deviation')}</div>
+                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigit(plotData.statistics.std.toFixed(4))}</div>
                             </div>
                             <div style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: '4px solid #ef4444' }}>
-                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{t.sampleSize}</div>
-                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigitIfBengali(plotData.statistics.sample_size)}</div>
+                                <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{getLabel('Sample Size')}</div>
+                                <div style={{ fontSize: '13px', color: '#6b7280' }}>{mapDigit(plotData.statistics.sample_size)}</div>
                             </div>
                         </div>
                     </div>
@@ -498,14 +601,14 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.kolmogorovTitle}</h2>
+                <h2 className="stats-title">{getLabel('Kolmogorov-Smirnov Test')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -513,37 +616,37 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Column'}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Column')}</td>
                             <td className="stats-table-value">{variableColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.sampleSize}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(plotData.statistics?.sample_size || results.metadata?.sample_size)}</td>
+                            <td className="stats-table-label">{getLabel('Sample Size')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(plotData.statistics?.sample_size || results.metadata?.sample_size)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.testStatistic}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Test Statistic (D)')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.statistic.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.pValue}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value.toFixed(6))}</td>
+                            <td className="stats-table-label">{getLabel('P-Value')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.p_value.toFixed(6))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.mean}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(plotData.statistics?.mean.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Mean')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(plotData.statistics?.mean.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.standardDeviation}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(plotData.statistics?.std.toFixed(4))}</td>
+                            <td className="stats-table-label">{getLabel('Standard Deviation')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(plotData.statistics?.std.toFixed(4))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value < 0.05 ? (
@@ -551,14 +654,14 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.significant}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Not normal distribution (p < 0.05)')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('Normal distribution (p ≥ 0.05)')}</span>
                                         </>
                                     )}
                                 </div>
@@ -569,10 +672,10 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'ecdf' ? 'active' : ''}`} onClick={() => setActiveTab('ecdf')}>{t.ecdfPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'ecdf' ? 'active' : ''}`} onClick={() => setActiveTab('ecdf')}>{getLabel('ECDF Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -590,7 +693,7 @@ const renderKolmogorovResults = (kolmogorovActiveTab, setKolmogorovActiveTab, re
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

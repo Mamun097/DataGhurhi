@@ -1,8 +1,28 @@
 import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -16,9 +36,9 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         captionBold: false,
         captionItalic: false,
         captionUnderline: false,
-        captionTopMargin: 30,  // ADD THIS LINE
-        xAxisTitle: 'Groups',
-        yAxisTitle: 'Values',
+        captionTopMargin: 30,
+        xAxisTitle: 'Category',
+        yAxisTitle: 'Data Values',
         xAxisTitleSize: 20,
         yAxisTitleSize: 20,
         xAxisTitleBold: false,
@@ -29,8 +49,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         yAxisTitleUnderline: false,
         xAxisTickSize: 18,
         yAxisTickSize: 18,
-        xAxisBottomMargin: -25,  // ADD THIS LINE (calculated from getXAxisLabelOffset)
-        yAxisLeftMargin: 10,  // ADD THIS LINE
+        xAxisBottomMargin: -25,
+        yAxisLeftMargin: 10,
         xAxisTitleOffset: 0, 
         yAxisTitleOffset: 0,
         yAxisMin: 'auto',
@@ -62,10 +82,104 @@ const fontFamilyOptions = [
     { value: 'Garamond', label: 'Garamond' },
 ];
 
-
-
-
 const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, language, user_id, testType, filename, columns) => {
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedCategoryLabels, setTranslatedCategoryLabels] = useState([]);
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedCategoryLabels([]);
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Kruskal-Wallis H-Test',
+                'Statistical Test Not Required',
+                'All values in your data are identical. Kruskal-Wallis test is not required because all groups have the same values.',
+                'All values:',
+                'Total observations:',
+                'Why the test cannot be performed?',
+                'The Kruskal-Wallis test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.',
+                'Loading results...',
+                'Error',
+                'An error occurred.',
+                'Chart not found',
+                'Error downloading image',
+                'Save Result',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Analyzed Columns',
+                'and',
+                'Number of Groups',
+                'Total Observations',
+                'Test Statistic (H)',
+                'P-Value',
+                'Conclusion',
+                'Significant difference found (p < 0.05)',
+                'No significant difference (p ≥ 0.05)',
+                'Visualizations',
+                'Count',
+                'Mean Values',
+                'Box Plot',
+                'Violin Plot',
+                'Customize',
+                'Download',
+                'Box Plot Statistics',
+                'Max:',
+                'Q3 (75%):',
+                'Median:',
+                'Q1 (25%):',
+                'Min:',
+                'Violin Plot Information',
+                'Violin plot shows data distribution density. Wider sections = more data points',
+                'Group Sizes',
+                'Observations',
+                'Category',
+                'Data Values',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'count',
+                'mean',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate category labels if they exist
+            if (results.plot_data && results.plot_data.length > 0) {
+                const categoryNames = results.plot_data.map(d => d.category);
+                const translatedCategories = await translateText(categoryNames, "bn");
+                setTranslatedCategoryLabels(translatedCategories);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results.plot_data]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getCategoryLabel = (index) => {
+        if (language === 'English' || language === 'en') {
+            return results.plot_data[index]?.category || '';
+        }
+        return translatedCategoryLabels[index] || results.plot_data[index]?.category || '';
+    };
 
     const renderIdenticalValuesWarning = (results, language, columns) => {
         const mapDigitIfBengali = (text) => {
@@ -83,7 +197,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             <div className="stats-results-container stats-fade-in">
                 <div className="stats-header">
                     <h2 className="stats-title">
-                        {results.test || (language === 'বাংলা' ? 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট' : 'Kruskal-Wallis H-Test')}
+                        {results.test || getLabel('Kruskal-Wallis H-Test')}
                     </h2>
                 </div>
 
@@ -95,36 +209,30 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     </div>
                     
                     <h3 className="stats-warning-title">
-                        {language === 'বাংলা' ? 'পরিসংখ্যানগত পরীক্ষার প্রয়োজন নেই' : 'Statistical Test Not Required'}
+                        {getLabel('Statistical Test Not Required')}
                     </h3>
                     
                     <div className="stats-warning-card">
                         <p>
-                            {language === 'বাংলা' ? 
-                                'আপনার ডেটার সকল মান একই। ক্রুসকাল-ওয়ালিস পরীক্ষা চালানোর প্রয়োজন নেই, কারণ সকল গোষ্ঠীর মান অভিন্ন।' :
-                                'All values in your data are identical. Kruskal-Wallis test is not required because all groups have the same values.'
-                            }
+                            {getLabel('All values in your data are identical. Kruskal-Wallis test is not required because all groups have the same values.')}
                         </p>
                         
                         <div className="stats-simple-summary">
                             <div className="stats-summary-item">
-                                <span className="stats-summary-label">{language === 'বাংলা' ? 'সকল মান:' : 'All values:'}</span>
+                                <span className="stats-summary-label">{getLabel('All values:')}</span>
                                 <span className="stats-summary-value">{mapDigitIfBengali(results.identical_value || '0')}</span>
                             </div>
                             <div className="stats-summary-item">
-                                <span className="stats-summary-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ:' : 'Total observations:'}</span>
+                                <span className="stats-summary-label">{getLabel('Total observations:')}</span>
                                 <span className="stats-summary-value">{mapDigitIfBengali(results.n_observations || '0')}</span>
                             </div>
                         </div>
                     </div>
                     
                     <div className="stats-explanation">
-                        <h4>{language === 'বাংলা' ? 'কেন এই পরীক্ষা চালানো যায়নি?' : 'Why the test cannot be performed?'}</h4>
+                        <h4>{getLabel('Why the test cannot be performed?')}</h4>
                         <p>
-                            {language === 'বাংলা' ? 
-                                'ক্রুসকাল-ওয়ালিস পরীক্ষাটি র্যাঙ্কিং-ভিত্তিক। যখন সকল মান একই হয়, তখন সকল র্যাঙ্ক একই হয়ে যায় এবং পরিসংখ্যানগতভাবে কোন পার্থক্য বিশ্লেষণ করা যায় না।' :
-                                'The Kruskal-Wallis test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.'
-                            }
+                            {getLabel('The Kruskal-Wallis test is rank-based. When all values are identical, all ranks are tied, making statistical analysis of differences impossible.')}
                         </p>
                     </div>
                 </div>
@@ -216,7 +324,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const mapDigitIfBengali = (text) => {
         if (!text) return '';
-        if (language !== 'বাংলা') return text;
+        if (language !== 'বাংলা' && language !== 'bn') return text;
         const digitMapBn = {
             '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
             '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
@@ -225,50 +333,42 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return text.toString().split('').map(char => digitMapBn[char] || char).join('');
     };
 
-    // DEBUG: Log the results structure
     console.log("Kruskal Results:", results);
     console.log("Has identical_values?", results?.identical_values);
     console.log("Full results object:", JSON.stringify(results, null, 2));
     
-    // Check if results is null or undefined
     if (!results) {
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
     
-    // Check for loading state
     if (results.loading) {
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
     
-    // Check if results has success property
     if (results.success === false) {
         return (
             <div className="stats-error">
                 <div className="stats-error-icon">⚠️</div>
-                <h3>{language === 'বাংলা' ? 'ত্রুটি' : 'Error'}</h3>
-                <p>{results.error || (language === 'বাংলা' ? 'একটি ত্রুটি ঘটেছে।' : 'An error occurred.')}</p>
+                <h3>{getLabel('Error')}</h3>
+                <p>{results.error || getLabel('An error occurred.')}</p>
             </div>
         );
     }
     
-    // Now check for identical values - use the simplest possible check
     if (results.hasOwnProperty('identical_values') && results.identical_values === true) {
-        // Render the identical values warning
         return renderIdenticalValuesWarning(results, language, columns);
     }
-    
 
-    // Rest of your original code follows...
     const activeTab = kruskalActiveTab;
     const setActiveTab = setKruskalActiveTab;
 
@@ -295,13 +395,42 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
-            const labels = results.plot_data.map(d => d.category);
-            setCountSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setMeanSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setBoxSettings(prev => ({ ...prev, categoryLabels: labels }));
-            setViolinSettings(prev => ({ ...prev, categoryLabels: labels }));
+            const labels = results.plot_data.map((d, idx) => 
+                language === 'English' || language === 'en' 
+                    ? d.category 
+                    : (translatedCategoryLabels[idx] || d.category)
+            );
+            
+            // Also update axis titles with translations
+            const xAxisTitle = getLabel('Category');
+            const yAxisTitle = getLabel('Data Values');
+            
+            setCountSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setMeanSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setBoxSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
+            setViolinSettings(prev => ({ 
+                ...prev, 
+                categoryLabels: labels,
+                xAxisTitle: xAxisTitle,
+                yAxisTitle: yAxisTitle
+            }));
         }
-    }, [results.plot_data]);
+    }, [results.plot_data, language, translatedCategoryLabels, translatedLabels]);
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -331,7 +460,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -367,7 +496,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -375,7 +504,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -399,29 +528,15 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        testStatistic: language === 'বাংলা' ? 'পরীক্ষার পরিসংখ্যান (H)' : 'Test Statistic (H)',
-        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
-        significant: language === 'বাংলা' ? 'উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference found (p < 0.05)',
-        notSignificant: language === 'বাংলা' ? 'কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference (p ≥ 0.05)',
-        kruskalTitle: language === 'বাংলা' ? 'ক্রুসকাল-ওয়ালিস এইচ-টেস্ট' : 'Kruskal-Wallis H-Test',
-        groupSizes: language === 'বাংলা' ? 'গ্রুপের আকার' : 'Group Sizes',
-        boxPlot: language === 'বাংলা' ? 'বক্স প্লট' : 'Box Plot',
-        violinPlot: language === 'বাংলা' ? 'ভায়োলিন প্লট' : 'Violin Plot',
-        meanPlot: language === 'বাংলা' ? 'গড় মান' : 'Mean Values',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count',
-        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations'
     };
 
     const plotData = results.plot_data || [];
@@ -441,7 +556,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {getLabel(entry.name)}: {mapDigitIfBengali(typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value)}
                         </p>
                     ))}
                 </div>
@@ -452,10 +567,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
 
     const getDimensions = (dimensionString) => {
         const [width, height] = dimensionString.split('x').map(Number);
-
         let finalWidth = width;
         let finalHeight = height - 100;
-
         return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
     };
 
@@ -496,6 +609,11 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
         return -(tickSize * 1.5 + 5);
     };
 
+    // Custom tick formatter for Y-axis to translate numbers
+    const formatYAxisTick = (value) => {
+        return mapDigitIfBengali(Number.isInteger(value) ? value : value.toFixed(1));
+    };
+
     const renderCountChart = () => {
         const settings = countSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -516,7 +634,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -526,14 +644,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -581,6 +699,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <YAxis
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -606,7 +725,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                     position: 'top',
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => mapDigitIfBengali(value)
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -621,7 +741,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </BarChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -661,7 +780,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -671,7 +790,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
@@ -725,6 +844,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <YAxis
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -750,7 +870,8 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                     position: 'top',
                                     fill: '#1f2937',
                                     fontFamily: settings.fontFamily,
-                                    fontSize: settings.yAxisTickSize
+                                    fontSize: settings.yAxisTickSize,
+                                    formatter: (value) => mapDigitIfBengali(value.toFixed(2))
                                 } : false}
                             >
                                 {data.map((entry, index) => (
@@ -767,7 +888,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             </Bar>
                         </ComposedChart>
                     </ResponsiveContainer>
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -781,12 +901,12 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             zIndex: 0
                         }} />
                     )}
-
                 </div>
             </div>
         );
     };
 
+    // Box and Violin plots with translated labels and numbers
     const CustomBoxPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         const scatterData = [];
@@ -886,7 +1006,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -896,7 +1016,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
@@ -955,7 +1075,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 dataKey="y"
                                 domain={yDomain}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -976,7 +1096,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </ScatterChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -995,18 +1114,18 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
+                            {getLabel('Box Plot Statistics')}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {data.map((group, idx) => (
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>Max: {group.max}</div>
-                                        <div>Q3 (75%): {group.q75}</div>
-                                        <div>Median: {group.median}</div>
-                                        <div>Q1 (25%): {group.q25}</div>
-                                        <div>Min: {group.min}</div>
+                                        <div>{getLabel('Max:')} {mapDigitIfBengali(group.max)}</div>
+                                        <div>{getLabel('Q3 (75%):')} {mapDigitIfBengali(group.q75)}</div>
+                                        <div>{getLabel('Median:')} {mapDigitIfBengali(group.median)}</div>
+                                        <div>{getLabel('Q1 (25%):')} {mapDigitIfBengali(group.q25)}</div>
+                                        <div>{getLabel('Min:')} {mapDigitIfBengali(group.min)}</div>
                                     </div>
                                 </div>
                             ))}
@@ -1159,7 +1278,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -1169,7 +1288,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
@@ -1228,7 +1347,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                 dataKey="y"
                                 domain={[yMin, yMax]}
                                 tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
-                                tickFormatter={(value) => Number.isInteger(value) ? value : value.toFixed(1)}
+                                tickFormatter={formatYAxisTick}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -1249,7 +1368,6 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                         </ScatterChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -1268,10 +1386,10 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
+                            {getLabel('Violin Plot Information')}
                         </h4>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
+                            {getLabel('Violin plot shows data distribution density. Wider sections = more data points')}
                         </p>
                     </div>
                 )}
@@ -1302,14 +1420,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.kruskalTitle}</h2>
+                <h2 className="stats-title">{getLabel('Kruskal-Wallis H-Test')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -1317,33 +1435,33 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
-                            <td className="stats-table-value">{groupColumn} {language === 'বাংলা' ? 'এবং' : 'and'} {valueColumn}</td>
+                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
+                            <td className="stats-table-value">{groupColumn} {getLabel('and')} {valueColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
+                            <td className="stats-table-label">{getLabel('Number of Groups')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.testStatistic}</td>
+                            <td className="stats-table-label">{getLabel('Test Statistic (H)')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.statistic.toFixed(4))}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.pValue}</td>
+                            <td className="stats-table-label">{getLabel('P-Value')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value.toFixed(6))}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
+                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {results.p_value < 0.05 ? (
@@ -1351,14 +1469,14 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{t.significant}</span>
+                                            <span className="stats-conclusion-text significant">{getLabel('Significant difference found (p < 0.05)')}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
+                                            <span className="stats-conclusion-text not-significant">{getLabel('No significant difference (p ≥ 0.05)')}</span>
                                         </>
                                     )}
                                 </div>
@@ -1369,13 +1487,13 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.count}</button>
-                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{t.meanPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
-                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{t.violinPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{getLabel('Count')}</button>
+                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{getLabel('Mean Values')}</button>
+                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{getLabel('Box Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{getLabel('Violin Plot')}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -1411,7 +1529,7 @@ const renderKruskalResults = (kruskalActiveTab, setKruskalActiveTab, results, la
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

@@ -3,6 +3,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import axios from 'axios';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+    try {
+        const response = await axios.post(
+            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+            {
+                q: textArray,
+                target: targetLang,
+                format: "text",
+            }
+        );
+        return response.data.data.translations.map((t) => t.translatedText);
+    } catch (error) {
+        console.error("Translation error:", error);
+        return textArray;
+    }
+};
 
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
@@ -48,7 +68,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
     };
 
-    // Add Swarm Plot specific settings
     if (plotType === 'Swarm') {
         return {
             ...baseSettings,
@@ -62,7 +81,6 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         };
     }
 
-    // Keep existing settings for other plot types
     return {
         ...baseSettings,
         elementWidth: plotType === 'Violin' ? 0.4 : 0.8
@@ -82,30 +100,140 @@ const fontFamilyOptions = [
 ];
 
 const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
-    };
-
-    const [overlayOpen, setOverlayOpen] = React.useState(false);
-    const [currentPlotType, setCurrentPlotType] = React.useState('Swarm');
-    const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
-    const chartRef = React.useRef(null);
+    const [overlayOpen, setOverlayOpen] = useState(false);
+    const [currentPlotType, setCurrentPlotType] = useState('Swarm');
+    const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
+    const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
+    const [translatedNumbers, setTranslatedNumbers] = useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
-    const [swarmSettings, setSwarmSettings] = React.useState(
+    const [swarmSettings, setSwarmSettings] = useState(
         getDefaultSettings('Swarm', categoryCount, categoryNames)
     );
 
-    React.useEffect(() => {
+    // Collect all numbers that need translation
+    const collectNumbersToTranslate = () => {
+        const numbers = new Set();
+        
+        // Overall stats
+        if (results.overall_stats?.total_count) numbers.add(String(results.overall_stats.total_count));
+        if (results.overall_stats?.global_mean !== null && results.overall_stats?.global_mean !== undefined) {
+            numbers.add(results.overall_stats.global_mean.toFixed(2));
+        }
+        if (results.overall_stats?.global_median !== null && results.overall_stats?.global_median !== undefined) {
+            numbers.add(results.overall_stats.global_median.toFixed(2));
+        }
+        if (results.overall_stats?.global_std !== null && results.overall_stats?.global_std !== undefined) {
+            numbers.add(results.overall_stats.global_std.toFixed(2));
+        }
+        if (results.metadata?.n_categories) numbers.add(String(results.metadata.n_categories));
+        
+        // Category stats
+        if (results.plot_data) {
+            results.plot_data.forEach(group => {
+                if (group.count) numbers.add(String(group.count));
+                if (group.mean !== null && group.mean !== undefined) numbers.add(group.mean.toFixed(2));
+                if (group.median !== null && group.median !== undefined) numbers.add(group.median.toFixed(2));
+                if (group.std !== null && group.std !== undefined) numbers.add(group.std.toFixed(2));
+                if (group.min !== null && group.min !== undefined) numbers.add(group.min.toFixed(2));
+                if (group.max !== null && group.max !== undefined) numbers.add(group.max.toFixed(2));
+                if (group.q25 !== null && group.q25 !== undefined) numbers.add(group.q25.toFixed(2));
+                if (group.q75 !== null && group.q75 !== undefined) numbers.add(group.q75.toFixed(2));
+            });
+        }
+        
+        return Array.from(numbers);
+    };
+
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                setTranslatedNumbers({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Swarm Plot',
+                'Categorical Variable',
+                'Numeric Variable',
+                'Total Observations',
+                'Number of Categories',
+                'Category Statistics',
+                'Overall Statistics',
+                'Mean',
+                'Median',
+                'Standard Deviation',
+                'Minimum',
+                'Maximum',
+                'First Quartile (Q1)',
+                'Third Quartile (Q3)',
+                'Count',
+                'Customize',
+                'Download',
+                'PNG',
+                'JPG',
+                'JPEG',
+                'PDF',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'Save Result',
+                'Result saved successfully',
+                'Error saving result',
+                'Description',
+                'Value',
+                'Visualization'
+            ];
+
+            // Translate labels
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+
+            // Translate numbers
+            const numbersToTranslate = collectNumbersToTranslate();
+            if (numbersToTranslate.length > 0) {
+                const numberTranslations = await translateText(numbersToTranslate, "bn");
+                const translatedNums = {};
+                numbersToTranslate.forEach((key, idx) => {
+                    translatedNums[key] = numberTranslations[idx];
+                });
+                setTranslatedNumbers(translatedNums);
+            }
+        };
+
+        loadTranslations();
+    }, [language, results]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
+
+    const getNumber = (num) => {
+        if (language === 'English' || language === 'en') {
+            return String(num);
+        }
+        const key = String(num);
+        return translatedNumbers[key] || key;
+    };
+
+    const mapDigit = (text) => {
+        if (!text) return '';
+        return getNumber(text);
+    };
+
+    useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
             const labels = results.plot_data.map(d => d.category);
             setSwarmSettings(prev => ({ ...prev, categoryLabels: labels }));
@@ -129,7 +257,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -165,7 +293,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -173,7 +301,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
+                <p>{getLabel('Loading results...')}</p>
             </div>
         );
     }
@@ -197,33 +325,15 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
             if (response.ok) {
                 const data = await response.json();
                 console.log('Result saved successfully:', data);
-                alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+                alert(getLabel('Result saved successfully'));
             } else {
                 console.error('Error saving result:', response.statusText);
-                alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+                alert(getLabel('Error saving result'));
             }
         } catch (error) {
             console.error('Error saving result:', error);
-            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+            alert(getLabel('Error saving result'));
         }
-    };
-
-    const t = {
-        swarmPlot: language === 'বাংলা' ? 'সোয়ার্ম প্লট' : 'Swarm Plot',
-        categoricalVariable: language === 'বাংলা' ? 'বিভাগভিত্তিক চলক' : 'Categorical Variable',
-        numericVariable: language === 'বাংলা' ? 'সংখ্যাভিত্তিক চলক' : 'Numeric Variable',
-        totalObservations: language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations',
-        numberOfCategories: language === 'বাংলা' ? 'বিভাগের সংখ্যা' : 'Number of Categories',
-        categoryStatistics: language === 'বাংলা' ? 'বিভাগের পরিসংখ্যান' : 'Category Statistics',
-        overallStatistics: language === 'বাংলा' ? 'সামগ্রিক পরিসংখ্যান' : 'Overall Statistics',
-        mean: language === 'বাংলা' ? 'গড়' : 'Mean',
-        median: language === 'বাংলা' ? 'মাধ্যমিক' : 'Median',
-        standardDeviation: language === 'বাংলা' ? 'মানক বিচ্যুতি' : 'Standard Deviation',
-        minimum: language === 'বাংলা' ? 'সর্বনিম্ন' : 'Minimum',
-        maximum: language === 'বাংলা' ? 'সর্বোচ্চ' : 'Maximum',
-        firstQuartile: language === 'বাংলা' ? 'প্রথম চতুর্থাংশ' : 'First Quartile (Q1)',
-        thirdQuartile: language === 'বাংলা' ? 'তৃতীয় চতুর্থাংশ' : 'Third Quartile (Q3)',
-        count: language === 'বাংলা' ? 'গণনা' : 'Count'
     };
 
     const plotData = results.plot_data || [];
@@ -243,7 +353,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                     <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                            {entry.name}: {typeof entry.value === 'number' ? mapDigit(entry.value.toFixed(2)) : entry.value}
                         </p>
                     ))}
                 </div>
@@ -295,12 +405,10 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
     const CustomSwarmPlot = ({ data, settings }) => {
         const { height } = getDimensions(settings.dimensions);
         
-        // Prepare scatter data for swarm plot
         const scatterData = [];
         
         data.forEach((group, groupIndex) => {
             group.values.forEach((value, valueIndex) => {
-                // Add jitter for swarm effect
                 const jitter = (Math.random() - 0.5) * settings.elementWidth;
                 scatterData.push({
                     x: groupIndex + jitter,
@@ -358,12 +466,10 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
             );
         };
 
-        // Fixed MeanLine component
         const MeanLine = () => {
             if (!settings.showMeanLine) return null;
             
             return data.map((group, index) => {
-                // Calculate position for mean line
                 const meanY = group.mean;
                 
                 return (
@@ -381,12 +487,10 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
             });
         };
 
-        // Fixed MedianLine component
         const MedianLine = () => {
             if (!settings.showMedianLine) return null;
             
             return data.map((group, index) => {
-                // Calculate position for median line
                 const medianY = group.median;
                 
                 return (
@@ -411,7 +515,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                             <circle cx="12" cy="12" r="3"></circle>
                             <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
                         </svg>
-                        Customize
+                        {getLabel('Customize')}
                     </button>
                     <div style={{ position: 'relative' }}>
                         <button
@@ -421,14 +525,14 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                             </svg>
-                            Download
+                            {getLabel('Download')}
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload('png')}>{getLabel('PNG')}</button>
+                                <button onClick={() => handleDownload('jpg')}>{getLabel('JPG')}</button>
+                                <button onClick={() => handleDownload('jpeg')}>{getLabel('JPEG')}</button>
+                                <button onClick={() => handleDownload('pdf')}>{getLabel('PDF')}</button>
                             </div>
                         )}
                     </div>
@@ -498,13 +602,11 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                             <Tooltip content={<CustomTooltip />} />
                             <Scatter data={scatterData} shape={<CustomSwarmShape />} />
                             
-                            {/* Render mean and median lines */}
                             <MeanLine />
                             <MedianLine />
                         </ScatterChart>
                     </ResponsiveContainer>
 
-                    {/* PLOT BORDER OVERLAY */}
                     {settings.plotBorderOn && (
                         <div style={{
                             position: 'absolute',
@@ -520,50 +622,49 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                     )}
                 </div>
 
-                {/* Statistics Display */}
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px' }}>
                         <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px', marginBottom: '16px' }}>
                             <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                                {t.overallStatistics}
+                                {getLabel('Overall Statistics')}
                             </h4>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px' }}>
                                 <div style={{ padding: '8px', background: 'white', borderRadius: '4px' }}>
-                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{t.totalObservations}</div>
-                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigitIfBengali(results.overall_stats?.total_count)}</div>
+                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{getLabel('Total Observations')}</div>
+                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigit(results.overall_stats?.total_count)}</div>
                                 </div>
                                 <div style={{ padding: '8px', background: 'white', borderRadius: '4px' }}>
-                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{t.mean}</div>
-                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigitIfBengali(results.overall_stats?.global_mean?.toFixed(2))}</div>
+                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{getLabel('Mean')}</div>
+                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigit(results.overall_stats?.global_mean?.toFixed(2))}</div>
                                 </div>
                                 <div style={{ padding: '8px', background: 'white', borderRadius: '4px' }}>
-                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{t.median}</div>
-                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigitIfBengali(results.overall_stats?.global_median?.toFixed(2))}</div>
+                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{getLabel('Median')}</div>
+                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigit(results.overall_stats?.global_median?.toFixed(2))}</div>
                                 </div>
                                 <div style={{ padding: '8px', background: 'white', borderRadius: '4px' }}>
-                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{t.standardDeviation}</div>
-                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigitIfBengali(results.overall_stats?.global_std?.toFixed(2))}</div>
+                                    <div style={{ fontSize: '12px', color: '#6b7280' }}>{getLabel('Standard Deviation')}</div>
+                                    <div style={{ fontWeight: 'bold', color: '#1f2937' }}>{mapDigit(results.overall_stats?.global_std?.toFixed(2))}</div>
                                 </div>
                             </div>
                         </div>
 
                         <div style={{ padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                             <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                                {t.categoryStatistics}
+                                {getLabel('Category Statistics')}
                             </h4>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '12px' }}>
                                 {data.map((group, idx) => (
                                     <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${settings.categoryColors[idx]}` }}>
                                         <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.category}</div>
                                         <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                            <div>{t.count}: {mapDigitIfBengali(group.count)}</div>
-                                            <div>{t.mean}: {mapDigitIfBengali(group.mean.toFixed(2))}</div>
-                                            <div>{t.median}: {mapDigitIfBengali(group.median.toFixed(2))}</div>
-                                            <div>{t.standardDeviation}: {mapDigitIfBengali(group.std.toFixed(2))}</div>
-                                            <div>{t.minimum}: {mapDigitIfBengali(group.min.toFixed(2))}</div>
-                                            <div>{t.maximum}: {mapDigitIfBengali(group.max.toFixed(2))}</div>
-                                            <div>{t.firstQuartile}: {mapDigitIfBengali(group.q25.toFixed(2))}</div>
-                                            <div>{t.thirdQuartile}: {mapDigitIfBengali(group.q75.toFixed(2))}</div>
+                                            <div>{getLabel('Count')}: {mapDigit(group.count)}</div>
+                                            <div>{getLabel('Mean')}: {mapDigit(group.mean.toFixed(2))}</div>
+                                            <div>{getLabel('Median')}: {mapDigit(group.median.toFixed(2))}</div>
+                                            <div>{getLabel('Standard Deviation')}: {mapDigit(group.std.toFixed(2))}</div>
+                                            <div>{getLabel('Minimum')}: {mapDigit(group.min.toFixed(2))}</div>
+                                            <div>{getLabel('Maximum')}: {mapDigit(group.max.toFixed(2))}</div>
+                                            <div>{getLabel('First Quartile (Q1)')}: {mapDigit(group.q25.toFixed(2))}</div>
+                                            <div>{getLabel('Third Quartile (Q3)')}: {mapDigit(group.q75.toFixed(2))}</div>
                                         </div>
                                     </div>
                                 ))}
@@ -592,14 +693,14 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{t.swarmPlot}</h2>
+                <h2 className="stats-title">{getLabel('Swarm Plot')}</h2>
                 <button onClick={handleSaveResult} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
+                    {getLabel('Save Result')}
                 </button>
             </div>
 
@@ -607,33 +708,33 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
-                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t.categoricalVariable}</td>
+                            <td className="stats-table-label">{getLabel('Categorical Variable')}</td>
                             <td className="stats-table-value">{categoricalColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.numericVariable}</td>
+                            <td className="stats-table-label">{getLabel('Numeric Variable')}</td>
                             <td className="stats-table-value">{numericColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.numberOfCategories}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.metadata?.n_categories)}</td>
+                            <td className="stats-table-label">{getLabel('Number of Categories')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.metadata?.n_categories)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t.totalObservations}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.overall_stats?.total_count)}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigit(results.overall_stats?.total_count)}</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualization'}</h3>
+                <h3 className="stats-viz-header">{getLabel('Visualization')}</h3>
 
                 <div className="stats-plot-container">
                     <div className="stats-plot-wrapper active">
@@ -648,7 +749,7 @@ const renderEDASwarmResults = (activeTab, setActiveTab, results, language, user_
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language}
+                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />

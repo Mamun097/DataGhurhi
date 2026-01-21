@@ -1,29 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter } from 'recharts';
-import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, ErrorBar, ScatterChart, Scatter, LineChart, Line, AreaChart, Area, Legend } from 'recharts';
+import CustomizationOverlay from '../CustomizationOverlay/CustomizationOverlay';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import axios from 'axios';
 
-const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
-
-const translateText = async (textArray, targetLang) => {
-    try {
-        const response = await axios.post(
-            `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
-            {
-                q: textArray,
-                target: targetLang,
-                format: "text",
-            }
-        );
-        return response.data.data.translations.map((t) => t.translatedText);
-    } catch (error) {
-        console.error("Translation error:", error);
-        return textArray;
-    }
-};
-
+// Shared default settings function for all test types
 const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
     const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -51,6 +32,8 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         yAxisTickSize: 18,
         xAxisBottomMargin: -25,
         yAxisLeftMargin: 0,
+        xAxisTitleOffset: 0,
+        yAxisTitleOffset: 0,
         yAxisMin: 'auto',
         yAxisMax: 'auto',
         gridOn: true,
@@ -64,10 +47,25 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         errorBarsOn: true,
         elementWidth: plotType === 'Violin' ? 0.4 : 0.8,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
-        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length])
+        categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
+        
+        // Distribution plot specific settings
+        distributionCurveColor: '#3b82f6',
+
+        distributionCurveWidth: 2,
+        distributionFill: false,
+        distributionFillColor: '#3b82f680',
+        
+        // Histogram+KDE specific settings
+        histogramBins: 30,
+        histogramOpacity: 0.7,
+        kdeLineWidth: 2,
+        showHistogram: true,
+        showKDE: true
     };
 };
 
+// Shared font family options for all test types
 const fontFamilyOptions = [
     { value: 'Times New Roman', label: 'Times New Roman' },
     { value: 'Arial', label: 'Arial' },
@@ -80,26 +78,164 @@ const fontFamilyOptions = [
     { value: 'Garamond', label: 'Garamond' },
 ];
 
-const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language, user_id, testType, filename, columns) => {
-    const mapDigitIfBengali = (text) => {
-        if (!text) return '';
-        if (language !== 'বাংলা' && language !== 'bn') return text;
-        const digitMapBn = {
-            '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
-            '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
-            '.': '.'
-        };
-        return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+// Shared utility functions for all test types
+const mapDigitIfBengali = (text, language) => {
+    if (!text) return '';
+    if (language !== 'বাংলা') return text;
+    const digitMapBn = {
+        '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
+        '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
+        '.': '.'
     };
+    return text.toString().split('').map(char => digitMapBn[char] || char).join('');
+};
 
-    const activeTab = anovaActiveTab;
-    const setActiveTab = setAnovaActiveTab;
+const getDimensions = (dimensionString) => {
+    const [width, height] = dimensionString.split('x').map(Number);
+    let finalWidth = width;
+    let finalHeight = height - 100;
+    return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
+};
+
+const getTextStyle = (bold, italic, underline, fontFamily) => {
+    return {
+        fontWeight: bold ? 'bold' : 'normal',
+        fontStyle: italic ? 'italic' : 'normal',
+        textDecoration: underline ? 'underline' : 'none',
+        fontFamily: fontFamily
+    };
+};
+
+const getCaptionStyle = (settings) => {
+    return {
+        fontSize: settings.captionSize,
+        ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline, settings.fontFamily),
+        fill: '#374151',
+        textAnchor: 'middle'
+    };
+};
+
+const getYAxisDomain = (settings, data, dataKey) => {
+    if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
+        const min = parseFloat(settings.yAxisMin);
+        const max = parseFloat(settings.yAxisMax);
+        if (!isNaN(min) && !isNaN(max)) {
+            return [min, max];
+        }
+    }
+    return ['auto', 'auto'];
+};
+
+const getGridStroke = (gridColor) => {
+    return gridColor === 'black' ? '#000000' : '#e5e7eb';
+};
+
+const CustomTooltip = ({ active, payload, label, language }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div style={{
+                backgroundColor: 'white',
+                padding: '12px',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+            }}>
+                <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
+                {payload.map((entry, index) => (
+                    <p key={index} style={{ margin: 0, color: entry.color }}>
+                        {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
+                    </p>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
+// Shared download handler
+const handleDownload = async (chartRef, format, activeTab, setDownloadMenuOpen, language) => {
+    setDownloadMenuOpen(false);
+
+    if (!chartRef.current) {
+        alert(language === 'বাংলা' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+        return;
+    }
+
+    try {
+        const canvas = await html2canvas(chartRef.current, {
+            scale: 3,
+            backgroundColor: '#ffffff',
+            logging: false,
+            useCORS: true,
+            allowTaint: true,
+        });
+
+        if (format === 'pdf') {
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const pdf = new jsPDF({
+                orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
+                unit: 'px',
+                format: [imgWidth, imgHeight]
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`${activeTab}_plot.pdf`);
+        } else {
+            const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+            const imgData = canvas.toDataURL(mimeType, 1.0);
+
+            const link = document.createElement('a');
+            link.download = `${activeTab}_plot.${format}`;
+            link.href = imgData;
+            link.click();
+        }
+    } catch (error) {
+        console.error('Download error:', error);
+        alert(language === 'বাংলা' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+    }
+};
+
+// Shared save result handler
+const handleSaveResult = async (results, user_id, testType, filename, language) => {
+    console.log('Saving result...');
+    try {
+        const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                results: results,
+                user_id: user_id,
+                test_name: testType,
+                filename: filename,
+            }),
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Result saved successfully:', data);
+            alert(language === 'বাংলা' ? 'ফলাফল সংরক্ষিত হয়েছে' : 'Result saved successfully');
+        } else {
+            console.error('Error saving result:', response.statusText);
+            alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+        }
+    } catch (error) {
+        console.error('Error saving result:', error);
+        alert(language === 'বাংলা' ? 'সংরক্ষণে ত্রুটি' : 'Error saving result');
+    }
+};
+
+const renderZ_TestResults = (zTestActiveTab, setZTestActiveTab, results, language, user_id, testType, filename, columns) => {
+    const activeTab = zTestActiveTab;
+    const setActiveTab = setZTestActiveTab;
 
     const [overlayOpen, setOverlayOpen] = React.useState(false);
     const [currentPlotType, setCurrentPlotType] = React.useState('Count');
     const [downloadMenuOpen, setDownloadMenuOpen] = React.useState(false);
     const chartRef = React.useRef(null);
-    const [translatedLabels, setTranslatedLabels] = React.useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
@@ -116,71 +252,9 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     const [violinSettings, setViolinSettings] = React.useState(
         getDefaultSettings('Violin', categoryCount, categoryNames)
     );
-
-    // Load translations
-    React.useEffect(() => {
-        const loadTranslations = async () => {
-            if (language === 'English' || language === 'en') {
-                setTranslatedLabels({});
-                return;
-            }
-
-            const labelsToTranslate = [
-                'One-Way ANOVA',
-                'Group Sizes',
-                'Box Plot',
-                'Violin Plot',
-                'Mean Values',
-                'Count',
-                'Observations',
-                'Degrees of Freedom',
-                'Sum of Squares',
-                'Mean Square',
-                'F-Statistic',
-                'P-Value',
-                'Significant difference found (p < 0.05)',
-                'No significant difference (p ≥ 0.05)',
-                'Description',
-                'Value',
-                'Analyzed Columns',
-                'and',
-                'Number of Groups',
-                'Total Observations',
-                'between',
-                'within',
-                'Conclusion',
-                'Visualizations',
-                'Chart not found',
-                'Error downloading image',
-                'Loading results...',
-                'Result saved successfully',
-                'Error saving result',
-                'Save Result',
-                'Box Plot Statistics',
-                'Max',
-                'Median',
-                'Min',
-                'Violin Plot Information',
-                'Violin plot shows data distribution density. Wider sections = more data points',
-            ];
-
-            const translations = await translateText(labelsToTranslate, "bn");
-            const translated = {};
-            labelsToTranslate.forEach((key, idx) => {
-                translated[key] = translations[idx];
-            });
-            setTranslatedLabels(translated);
-        };
-
-        loadTranslations();
-    }, [language]);
-
-    const getLabel = (text) => {
-        if (language === 'English' || language === 'en') {
-            return text;
-        }
-        return translatedLabels[text] || text;
-    };
+    const [zDistributionSettings, setZDistributionSettings] = React.useState(
+        getDefaultSettings('Distribution', categoryCount, categoryNames)
+    );
 
     React.useEffect(() => {
         if (results.plot_data && results.plot_data.length > 0) {
@@ -189,6 +263,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             setMeanSettings(prev => ({ ...prev, categoryLabels: labels }));
             setBoxSettings(prev => ({ ...prev, categoryLabels: labels }));
             setViolinSettings(prev => ({ ...prev, categoryLabels: labels }));
+            setZDistributionSettings(prev => ({ ...prev, categoryLabels: labels }));
         }
     }, [results.plot_data]);
 
@@ -203,6 +278,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             case 'Mean': return meanSettings;
             case 'Box': return boxSettings;
             case 'Violin': return violinSettings;
+            case 'ZDistribution': return zDistributionSettings;
             default: return countSettings;
         }
     };
@@ -213,50 +289,7 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             case 'Mean': setMeanSettings(settings); break;
             case 'Box': setBoxSettings(settings); break;
             case 'Violin': setViolinSettings(settings); break;
-        }
-    };
-
-    const handleDownload = async (format) => {
-        setDownloadMenuOpen(false);
-
-        if (!chartRef.current) {
-            alert(getLabel('Chart not found'));
-            return;
-        }
-
-        try {
-            const canvas = await html2canvas(chartRef.current, {
-                scale: 3,
-                backgroundColor: '#ffffff',
-                logging: false,
-                useCORS: true,
-                allowTaint: true,
-            });
-
-            if (format === 'pdf') {
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const pdf = new jsPDF({
-                    orientation: imgWidth > imgHeight ? 'landscape' : 'portrait',
-                    unit: 'px',
-                    format: [imgWidth, imgHeight]
-                });
-
-                const imgData = canvas.toDataURL('image/png');
-                pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-                pdf.save(`${activeTab}_plot.pdf`);
-            } else {
-                const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-                const imgData = canvas.toDataURL(mimeType, 1.0);
-
-                const link = document.createElement('a');
-                link.download = `${activeTab}_plot.${format}`;
-                link.href = imgData;
-                link.click();
-            }
-        } catch (error) {
-            console.error('Download error:', error);
-            alert(getLabel('Error downloading image'));
+            case 'ZDistribution': setZDistributionSettings(settings); break;
         }
     };
 
@@ -264,113 +297,69 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
         return (
             <div className="stats-loading">
                 <div className="stats-spinner"></div>
-                <p>{getLabel('Loading results...')}</p>
+                <p>{language === 'বাংলা' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>
             </div>
         );
     }
 
-    const handleSaveResult = async () => {
-        console.log('Saving result...');
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/save-results/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    results: results,
-                    user_id: user_id,
-                    test_name: testType,
-                    filename: filename,
-                }),
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Result saved successfully:', data);
-                alert(getLabel('Result saved successfully'));
-            } else {
-                console.error('Error saving result:', response.statusText);
-                alert(getLabel('Error saving result'));
-            }
-        } catch (error) {
-            console.error('Error saving result:', error);
-            alert(getLabel('Error saving result'));
-        }
+    const t = {
+        testStatistic: language === 'বাংলা' ? 'জেড-পরিসংখ্যান' : 'Z-Statistic',
+        pValue: language === 'বাংলা' ? 'পি-মান' : 'P-Value',
+        significant: language === 'বাংলা' ? 'গড়ে উল্লেখযোগ্য পার্থক্য পাওয়া গেছে (p < 0.05)' : 'Significant difference in means found (p < 0.05)',
+        notSignificant: language === 'বাংলা' ? 'গড়ে কোনো উল্লেখযোগ্য পার্থক্য নেই (p ≥ 0.05)' : 'No significant difference in means (p ≥ 0.05)',
+        zTestTitle: language === 'বাংলা' ? 'জেড-টেস্ট (গড় সমতা)' : 'Z-Test for Equality of Means',
+        groupSizes: language === 'বাংলা' ? 'গ্রুপের আকার' : 'Group Sizes',
+        boxPlot: language === 'বাংলা' ? 'বক্স প্লট' : 'Box Plot',
+        violinPlot: language === 'বাংলা' ? 'ভায়োলিন প্লট' : 'Violin Plot',
+        meanPlot: language === 'বাংলা' ? 'গড় মান' : 'Mean Values',
+        count: language === 'বাংলা' ? 'গণনা' : 'Count',
+        observations: language === 'বাংলা' ? 'পর্যবেক্ষণ' : 'Observations',
+        means: language === 'বাংলা' ? 'গড়' : 'Means',
+        zDistribution: language === 'বাংলা' ? 'জেড-বন্টন' : 'Z-Distribution',
+        standardNormal: language === 'বাংলা' ? 'স্ট্যান্ডার্ড নরমাল' : 'Standard Normal',
+        observedZ: language === 'বাংলা' ? 'পর্যবেক্ষিত জেড' : 'Observed Z',
+        standardError: language === 'বাংলা' ? 'স্ট্যান্ডার্ড এরর' : 'Standard Error'
     };
 
     const plotData = results.plot_data || [];
     const groupColumn = results.column_names?.group || columns?.[0] || 'Group';
     const valueColumn = results.column_names?.value || columns?.[1] || 'Value';
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div style={{
-                    backgroundColor: 'white',
-                    padding: '12px',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                }}>
-                    <p style={{ margin: 0, fontWeight: 'bold', marginBottom: '4px' }}>{label}</p>
-                    {payload.map((entry, index) => (
-                        <p key={index} style={{ margin: 0, color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
-                        </p>
-                    ))}
-                </div>
-            );
+    // Extract Z-test specific statistics from results
+    const zStatistic = results.statistic;
+    const pValue = results.p_value;
+    const means = results.means || {};
+    const groupNames = Object.keys(means);
+
+    // Generate Z-distribution data for the plot (Standard Normal Distribution)
+    const generateZDistributionData = () => {
+        const data = [];
+        
+        // Generate standard normal distribution curve
+        const minZ = -4;
+        const maxZ = 4;
+        const criticalZ = 1.96; // For alpha=0.05 two-tailed
+        
+        for (let z = minZ; z <= maxZ; z += 0.1) {
+            // Standard normal distribution PDF
+            const pdf = (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * z * z);
+            data.push({
+                z: z,
+                pdf: pdf,
+                isCritical: Math.abs(z) > criticalZ
+            });
         }
-        return null;
+        return data;
     };
 
-    const getDimensions = (dimensionString) => {
-        const [width, height] = dimensionString.split('x').map(Number);
+    const zDistributionData = generateZDistributionData();
 
-        let finalWidth = width;
-        let finalHeight = height - 100;
+    // Calculate additional statistics for display
+    const meanDifference = means[groupNames[1]] - means[groupNames[0]];
+    const pooledVariance = plotData.reduce((sum, group) => sum + Math.pow(group.std, 2), 0) / plotData.length;
+    const standardError = Math.sqrt(pooledVariance * (1/plotData[0].count + 1/plotData[1].count));
 
-        return { width: finalWidth, height: finalHeight, originalWidth: width, originalHeight: height };
-    };
-
-    const getTextStyle = (bold, italic, underline, fontFamily) => {
-        return {
-            fontWeight: bold ? 'bold' : 'normal',
-            fontStyle: italic ? 'italic' : 'normal',
-            textDecoration: underline ? 'underline' : 'none',
-            fontFamily: fontFamily
-        };
-    };
-
-    const getCaptionStyle = (settings) => {
-        return {
-            fontSize: settings.captionSize,
-            ...getTextStyle(settings.captionBold, settings.captionItalic, settings.captionUnderline, settings.fontFamily),
-            fill: '#374151',
-            textAnchor: 'middle'
-        };
-    };
-
-    const getYAxisDomain = (settings, data, dataKey) => {
-        if (settings.yAxisMin !== 'auto' && settings.yAxisMin !== '' && settings.yAxisMax !== 'auto' && settings.yAxisMax !== '') {
-            const min = parseFloat(settings.yAxisMin);
-            const max = parseFloat(settings.yAxisMax);
-            if (!isNaN(min) && !isNaN(max)) {
-                return [min, max];
-            }
-        }
-        return ['auto', 'auto'];
-    };
-
-    const getGridStroke = (gridColor) => {
-        return gridColor === 'black' ? '#000000' : '#e5e7eb';
-    };
-
-    const getXAxisLabelOffset = (tickSize, angle = -45) => {
-        return -(tickSize * 1.5 + 5);
-    };
-
+    // Chart rendering functions
     const renderCountChart = () => {
         const settings = countSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -405,10 +394,10 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload(chartRef, 'png', activeTab, setDownloadMenuOpen, language)}>PNG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpg', activeTab, setDownloadMenuOpen, language)}>JPG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpeg', activeTab, setDownloadMenuOpen, language)}>JPEG</button>
+                                <button onClick={() => handleDownload(chartRef, 'pdf', activeTab, setDownloadMenuOpen, language)}>PDF</button>
                             </div>
                         )}
                     </div>
@@ -446,14 +435,13 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 domain={yDomain}
-                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
                                 label={{
                                     value: settings.yAxisTitle,
                                     angle: -90,
@@ -463,17 +451,15 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip language={language} />} />
                             <Bar
                                 dataKey="count"
                                 radius={[0, 0, 0, 0]}
                                 barSize={settings.elementWidth * 100}
-                                style={{ transform: 'translateY(-1px)' }}
                                 label={settings.dataLabelsOn ? {
                                     position: 'top',
                                     fill: '#1f2937',
@@ -492,21 +478,6 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
-
-                    {/* PLOT BORDER OVERLAY */}
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '80px',
-                            right: '20px',
-                            bottom: '80px',
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
                 </div>
             </div>
         );
@@ -547,10 +518,10 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                         </button>
                         {downloadMenuOpen && (
                             <div className="download-menu">
-                                <button onClick={() => handleDownload('png')}>PNG</button>
-                                <button onClick={() => handleDownload('jpg')}>JPG</button>
-                                <button onClick={() => handleDownload('jpeg')}>JPEG</button>
-                                <button onClick={() => handleDownload('pdf')}>PDF</button>
+                                <button onClick={() => handleDownload(chartRef, 'png', activeTab, setDownloadMenuOpen, language)}>PNG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpg', activeTab, setDownloadMenuOpen, language)}>JPG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpeg', activeTab, setDownloadMenuOpen, language)}>JPEG</button>
+                                <button onClick={() => handleDownload(chartRef, 'pdf', activeTab, setDownloadMenuOpen, language)}>PDF</button>
                             </div>
                         )}
                     </div>
@@ -588,10 +559,9 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
                             <YAxis
                                 domain={yDomain}
@@ -605,17 +575,15 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
-                                axisLine={{ strokeWidth: 2 }}
-                                stroke={settings.plotBorderOn ? '#000000' : 'gray'}
                             />
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip language={language} />} />
                             <Bar
                                 dataKey="mean"
                                 radius={[0, 0, 0, 0]}
                                 barSize={settings.elementWidth * 100}
-                                style={{ transform: 'translateY(-1px)' }}
                                 label={settings.dataLabelsOn ? {
                                     position: 'top',
                                     fill: '#1f2937',
@@ -637,21 +605,134 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                             </Bar>
                         </ComposedChart>
                     </ResponsiveContainer>
+                </div>
+            </div>
+        );
+    };
 
-                    {/* PLOT BORDER OVERLAY */}
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.captionOn ? '50px' : '30px',
-                            left: '80px',
-                            right: '20px',
-                            bottom: '80px',
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
+    const renderZDistributionChart = () => {
+        const settings = zDistributionSettings;
+        const { height } = getDimensions(settings.dimensions);
+
+        return (
+            <div style={{ position: 'relative', width: '100%' }}>
+                <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
+                    <button className="customize-btn" onClick={() => openCustomization('ZDistribution')}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M12 1v6m0 6v6m9-9h-6m-6 0H3"></path>
+                        </svg>
+                        Customize
+                    </button>
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="customize-btn"
+                            onClick={() => setDownloadMenuOpen(!downloadMenuOpen)}
+                        >
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                            </svg>
+                            Download
+                        </button>
+                        {downloadMenuOpen && (
+                            <div className="download-menu">
+                                <button onClick={() => handleDownload(chartRef, 'png', activeTab, setDownloadMenuOpen, language)}>PNG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpg', activeTab, setDownloadMenuOpen, language)}>JPG</button>
+                                <button onClick={() => handleDownload(chartRef, 'jpeg', activeTab, setDownloadMenuOpen, language)}>JPEG</button>
+                                <button onClick={() => handleDownload(chartRef, 'pdf', activeTab, setDownloadMenuOpen, language)}>PDF</button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <div ref={chartRef} style={{ position: 'relative' }}>
+                    <ResponsiveContainer width="100%" height={height}>
+                        <AreaChart
+                            data={zDistributionData}
+                            margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
+                        >
+                            {settings.captionOn && (
+                                <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
+                                    {settings.captionText}
+                                </text>
+                            )}
+                            {settings.gridOn && (
+                                <CartesianGrid
+                                    strokeDasharray={settings.gridStyle}
+                                    stroke={getGridStroke(settings.gridColor)}
+                                    strokeOpacity={settings.gridOpacity}
+                                />
+                            )}
+                            <XAxis
+                                dataKey="z"
+                                tick={{ fill: '#000000', fontSize: settings.xAxisTickSize, fontFamily: settings.fontFamily }}
+                                tickFormatter={(value) => typeof value === 'number' ? value.toFixed(1) : value}
+                                label={{
+                                    value: 'Z Value',
+                                    position: 'insideBottom',
+                                    offset: settings.xAxisBottomMargin,
+                                    style: {
+                                        fontSize: settings.xAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
+                                    },
+                                    dx: settings.xAxisTitleOffset
+                                }}
+                            />
+                            <YAxis
+                                tick={{ fill: '#000000', fontSize: settings.yAxisTickSize, fontFamily: settings.fontFamily }}
+                                label={{
+                                    value: 'Density',
+                                    angle: -90,
+                                    position: 'insideLeft',
+                                    style: {
+                                        fontSize: settings.yAxisTitleSize,
+                                        fill: '#374151',
+                                        ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
+                                    },
+                                    dy: settings.yAxisTitleOffset
+                                }}
+                            />
+                            <Tooltip 
+                                content={<CustomTooltip language={language} />}
+                                formatter={(value, name) => [value.toFixed(4), name]}
+                                labelFormatter={(label) => `Z = ${label.toFixed(2)}`}
+                            />
+                            
+                            {/* Critical regions */}
+                            <Area
+                                type="monotone"
+                                dataKey="pdf"
+                                stroke="none"
+                                fill="#ef4444"
+                                fillOpacity={0.3}
+                                data={zDistributionData.filter(d => d.isCritical)}
+                            />
+                            
+                            {/* Main distribution curve */}
+                            <Area
+                                type="monotone"
+                                dataKey="pdf"
+                                stroke={settings.distributionCurveColor}
+                                strokeWidth={settings.distributionCurveWidth}
+                                fill={settings.distributionFill ? settings.distributionFillColor : 'none'}
+                                fillOpacity={0.6}
+                            />
+                                                        
+                        </AreaChart>
+                    </ResponsiveContainer>
+                    <div style={{ 
+                        position: 'absolute', 
+                        top: '60px', 
+                        left: '535px', 
+                        backgroundColor: 'rgba(255,255,255,0.9)',
+                        padding: '10px',
+                        borderRadius: '5px',
+                        border: '1px solid #e5e7eb'
+                    }}>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold' }}>{t.observedZ}: {zStatistic.toFixed(4)}</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>p-value: {pValue.toFixed(6)}</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>{t.standardError}: {standardError.toFixed(4)}</div>
+                    </div>
                 </div>
             </div>
         );
@@ -814,7 +895,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -834,7 +916,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -863,18 +946,18 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {getLabel('Box Plot Statistics')}
+                            {language === 'বাংলা' ? 'বক্স প্লট পরিসংখ্যান' : 'Box Plot Statistics'}
                         </h4>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                             {data.map((group, idx) => (
                                 <div key={idx} style={{ padding: '12px', background: 'white', borderRadius: '8px', borderLeft: `4px solid ${group.fill}` }}>
                                     <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#1f2937' }}>{group.name}</div>
                                     <div style={{ fontSize: '13px', color: '#6b7280' }}>
-                                        <div>{getLabel('Max')}: {group.max}</div>
+                                        <div>Max: {group.max}</div>
                                         <div>Q3 (75%): {group.q75}</div>
-                                        <div>{getLabel('Median')}: {group.median}</div>
+                                        <div>Median: {group.median}</div>
                                         <div>Q1 (25%): {group.q25}</div>
-                                        <div>{getLabel('Min')}: {group.min}</div>
+                                        <div>Min: {group.min}</div>
                                     </div>
                                 </div>
                             ))}
@@ -1085,7 +1168,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.xAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.xAxisTitleBold, settings.xAxisTitleItalic, settings.xAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dx: settings.xAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -1105,7 +1189,8 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                                         fontSize: settings.yAxisTitleSize,
                                         fill: '#374151',
                                         ...getTextStyle(settings.yAxisTitleBold, settings.yAxisTitleItalic, settings.yAxisTitleUnderline, settings.fontFamily)
-                                    }
+                                    },
+                                    dy: settings.yAxisTitleOffset
                                 }}
                                 axisLine={{ strokeWidth: 2 }}
                                 stroke={settings.plotBorderOn ? '#000000' : 'gray'}
@@ -1134,10 +1219,10 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 {settings.dataLabelsOn && (
                     <div style={{ marginTop: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
                         <h4 style={{ margin: '0 0 12px 0', color: '#374151' }}>
-                            {getLabel('Violin Plot Information')}
+                            {language === 'বাংলা' ? 'ভায়োলিন প্লট তথ্য' : 'Violin Plot Information'}
                         </h4>
                         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
-                            {getLabel('Violin plot shows data distribution density. Wider sections = more data points')}
+                            {language === 'বাংলা' ? 'ভায়োলিন প্লট ডেটা বিতরণের ঘনত্ব দেখায়। প্রশস্ত অংশ = আরও ডেটা পয়েন্ট' : 'Violin plot shows data distribution density. Wider sections = more data points'}
                         </p>
                     </div>
                 )}
@@ -1168,14 +1253,14 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
     return (
         <div className="stats-results-container stats-fade-in">
             <div className="stats-header">
-                <h2 className="stats-title">{getLabel('One-Way ANOVA')}</h2>
-                <button onClick={handleSaveResult} className="stats-save-btn">
+                <h2 className="stats-title">{t.zTestTitle}</h2>
+                <button onClick={() => handleSaveResult(results, user_id, testType, filename, language)} className="stats-save-btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
                         <polyline points="17 21 17 13 7 13 7 21" />
                         <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    {getLabel('Save Result')}
+                    {language === 'বাংলা' ? 'ফলাফল সংরক্ষণ করুন' : 'Save Result'}
                 </button>
             </div>
 
@@ -1183,52 +1268,62 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{getLabel('Description')}</th>
-                            <th>{getLabel('Value')}</th>
+                            <th>{language === 'বাংলা' ? 'বিবরণ' : 'Description'}</th>
+                            <th>{language === 'বাংলা' ? 'মান' : 'Value'}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{getLabel('Analyzed Columns')}</td>
-                            <td className="stats-table-value">{groupColumn} {getLabel('and')} {valueColumn}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'বিশ্লেষিত কলাম' : 'Analyzed Columns'}</td>
+                            <td className="stats-table-value">{groupColumn} {language === 'বাংলা' ? 'এবং' : 'and'} {valueColumn}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{getLabel('Number of Groups')}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups)}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'গ্রুপের সংখ্যা' : 'Number of Groups'}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.n_groups, language)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations)}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'মোট পর্যবেক্ষণ' : 'Total Observations'}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.total_observations, language)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{getLabel('F-Statistic')}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.f_statistic?.toFixed(4))}</td>
+                            <td className="stats-table-label">{t.testStatistic}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(zStatistic.toFixed(4), language)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{getLabel('P-Value')}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.p_value?.toFixed(6))}</td>
+                            <td className="stats-table-label">{t.pValue}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(pValue.toFixed(6), language)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{getLabel('Degrees of Freedom')}</td>
-                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(results.df_between)} ({getLabel('between')}), {mapDigitIfBengali(results.df_within)} ({getLabel('within')})</td>
+                            <td className="stats-table-label">{t.standardError}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(standardError.toFixed(4), language)}</td>
+                        </tr>
+                        {Object.entries(means).map(([group, mean]) => (
+                            <tr key={group}>
+                                <td className="stats-table-label">{t.means} ({group})</td>
+                                <td className="stats-table-value stats-numeric">{mapDigitIfBengali(mean.toFixed(4), language)}</td>
+                            </tr>
+                        ))}
+                        <tr>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'গড়ের পার্থক্য' : 'Mean Difference'}</td>
+                            <td className="stats-table-value stats-numeric">{mapDigitIfBengali(meanDifference.toFixed(4), language)}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{getLabel('Conclusion')}</td>
+                            <td className="stats-table-label">{language === 'বাংলা' ? 'সিদ্ধান্ত' : 'Conclusion'}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
-                                    {results.p_value < 0.05 ? (
+                                    {pValue < 0.05 ? (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#059669" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text significant">{getLabel('Significant difference found (p < 0.05)')}</span>
+                                            <span className="stats-conclusion-text significant">{t.significant}</span>
                                         </>
                                     ) : (
                                         <>
                                             <svg className="stats-conclusion-icon" fill="none" viewBox="0 0 24 24" stroke="#dc2626" strokeWidth="2">
                                                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span className="stats-conclusion-text not-significant">{getLabel('No significant difference (p ≥ 0.05)')}</span>
+                                            <span className="stats-conclusion-text not-significant">{t.notSignificant}</span>
                                         </>
                                     )}
                                 </div>
@@ -1239,13 +1334,14 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
             </div>
 
             <div className="stats-viz-section">
-                <h3 className="stats-viz-header">{getLabel('Visualizations')}</h3>
+                <h3 className="stats-viz-header">{language === 'বাংলা' ? 'ভিজ্যুয়ালাইজেশন' : 'Visualizations'}</h3>
 
                 <div className="stats-tab-container">
-                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{getLabel('Count')}</button>
-                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{getLabel('Mean Values')}</button>
-                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{getLabel('Box Plot')}</button>
-                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{getLabel('Violin Plot')}</button>
+                    <button className={`stats-tab ${activeTab === 'count' ? 'active' : ''}`} onClick={() => setActiveTab('count')}>{t.count}</button>
+                    <button className={`stats-tab ${activeTab === 'mean' ? 'active' : ''}`} onClick={() => setActiveTab('mean')}>{t.meanPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'box' ? 'active' : ''}`} onClick={() => setActiveTab('box')}>{t.boxPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'violin' ? 'active' : ''}`} onClick={() => setActiveTab('violin')}>{t.violinPlot}</button>
+                    <button className={`stats-tab ${activeTab === 'zdistribution' ? 'active' : ''}`} onClick={() => setActiveTab('zdistribution')}>{t.zDistribution}</button>
                 </div>
 
                 <div className="stats-plot-container">
@@ -1263,13 +1359,23 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
 
                     {activeTab === 'box' && (
                         <div className="stats-plot-wrapper active">
-                            <CustomBoxPlot data={boxChartData} settings={boxSettings} />
+                            <div style={{ padding: '20px', textAlign: 'center' }}>
+                                <CustomBoxPlot data={boxChartData} settings={boxSettings} />
+                            </div>
                         </div>
                     )}
 
                     {activeTab === 'violin' && (
+                        <div className="stats-plot-wrapper active">                            
+                            <div style={{ padding: '20px', textAlign: 'center' }}>
+                                <CustomViolinPlot data={violinChartData} settings={violinSettings} />   
+                            </div>
+                        </div>
+                    )}
+
+                    {activeTab === 'zdistribution' && (
                         <div className="stats-plot-wrapper active">
-                            <CustomViolinPlot data={violinChartData} settings={violinSettings} />
+                            {renderZDistributionChart()}
                         </div>
                     )}
                 </div>
@@ -1281,77 +1387,12 @@ const renderAnovaResults = (anovaActiveTab, setAnovaActiveTab, results, language
                 plotType={currentPlotType}
                 settings={getCurrentSettings()}
                 onSettingsChange={setCurrentSettings}
-                language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
+                language={language}
                 fontFamilyOptions={fontFamilyOptions}
                 getDefaultSettings={getDefaultSettings}
             />
-
-            <style jsx="true">{`
-                .customize-btn {
-                    background: white;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 8px;
-                    padding: 8px 12px;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    font-size: 14px;
-                    color: #374151;
-                    transition: all 0.2s;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-
-                .customize-btn:hover {
-                    background: #f9fafb;
-                    border-color: #3b82f6;
-                    color: #3b82f6;
-                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-                    transform: translateY(-1px);
-                }
-
-                .customize-btn svg {
-                    flex-shrink: 0;
-                }
-
-                .download-menu {
-                    position: absolute;
-                    top: 100%;
-                    right: 0;
-                    margin-top: 8px;
-                    background: white;
-                    border: 2px solid #e5e7eb;
-                    border-radius: 8px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    overflow: hidden;
-                    z-index: 100;
-                    min-width: 120px;
-                }
-
-                .download-menu button {
-                    width: 100%;
-                    padding: 10px 16px;
-                    border: none;
-                    background: white;
-                    color: #374151;
-                    font-size: 14px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    text-align: left;
-                    transition: all 0.2s;
-                }
-
-                .download-menu button:hover {
-                    background: #f3f4f6;
-                    color: #3b82f6;
-                }
-
-                .download-menu button:not(:last-child) {
-                    border-bottom: 1px solid #e5e7eb;
-                }
-            `}</style>
         </div>
     );
 };
 
-export default renderAnovaResults;
+export default renderZ_TestResults;

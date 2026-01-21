@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import axios from 'axios';
 import CustomizationOverlay from './CustomizationOverlay/CustomizationOverlay';
 import HeatmapPlot from './plots/HeatmapPlot';
 import MosaicPlot from './plots/MosaicPlot';
@@ -13,9 +14,29 @@ import {
     downloadPairwiseBlockJPG,
     downloadPairwiseBlockPDF,
     downloadAllPairwiseBlocksPDF
-} from './utils'; import html2canvas from 'html2canvas';
+} from './utils'; 
+import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import './ChiSquareResults.css';
+
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+const translateText = async (textArray, targetLang) => {
+  try {
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
+    return response.data.data.translations.map((t) => t.translatedText);
+  } catch (error) {
+    console.error("Translation error:", error);
+    return textArray;
+  }
+};
 
 const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, results, language) => {
     const blockRefs = useRef({});
@@ -27,10 +48,78 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
     const [downloadMenuOpen, setDownloadMenuOpen] = useState(false);
     const [blockDownloadMenus, setBlockDownloadMenus] = useState({});
     const chartRef = useRef(null);
+    const [translatedLabels, setTranslatedLabels] = useState({});
 
     const categoryNames = results.plot_data?.map(d => d.category) || [];
     const categoryCount = categoryNames.length;
 
+    // Load translations
+    useEffect(() => {
+        const loadTranslations = async () => {
+            if (language === 'English' || language === 'en') {
+                setTranslatedLabels({});
+                return;
+            }
+
+            const labelsToTranslate = [
+                'Chi-Square Test Results',
+                'Description',
+                'Value',
+                'Variables',
+                'Number of Variables',
+                'Total Comparisons',
+                'Significant Associations',
+                'Total Observations',
+                'Insight',
+                'Detailed Analysis & Visualizations',
+                'Detailed Result',
+                'Heatmap',
+                'Mosaic Plot',
+                'Grouped Bar',
+                'Stacked Bar',
+                'Residual Plot',
+                'Variable Statistics',
+                'Download All',
+                'Categories:',
+                'Observations:',
+                'Missing:',
+                'Distribution:',
+                'Pairwise Comparisons',
+                'Detailed chi-square test results for each variable pair',
+                'Reference Variable',
+                'Testing associations with other variables • Significance level α = 0.05',
+                'Significant',
+                'Not Significant',
+                'Total comparisons',
+                'Chart not found',
+                'Error downloading image',
+                'Loading results...',
+                'No significant associations found between any variable pairs (p ≥ 0.05). All variables appear to be statistically independent.',
+                'indicating strong interdependencies.',
+                'show significant associations (p < 0.05), suggesting selective dependencies.',
+                'All',
+                'variable pairs show significant associations (p < 0.05)',
+                'out of',
+                'variable pairs',
+            ];
+
+            const translations = await translateText(labelsToTranslate, "bn");
+            const translated = {};
+            labelsToTranslate.forEach((key, idx) => {
+                translated[key] = translations[idx];
+            });
+            setTranslatedLabels(translated);
+        };
+
+        loadTranslations();
+    }, [language]);
+
+    const getLabel = (text) => {
+        if (language === 'English' || language === 'en') {
+            return text;
+        }
+        return translatedLabels[text] || text;
+    };
 
     const openCustomization = (plotType) => {
         setCurrentPlotType(plotType);
@@ -41,7 +130,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         setDownloadMenuOpen(false);
 
         if (!chartRef.current) {
-            alert(language === 'bn' ? 'চার্ট খুঁজে পাওয়া যায়নি' : 'Chart not found');
+            alert(getLabel('Chart not found'));
             return;
         }
 
@@ -77,7 +166,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             }
         } catch (error) {
             console.error('Download error:', error);
-            alert(language === 'bn' ? 'ডাউনলোডে ত্রুটি' : 'Error downloading image');
+            alert(getLabel('Error downloading image'));
         }
     };
 
@@ -128,7 +217,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             legendPosition: 'right',
             borderOn: false,
             metricType: 'p_value',
-            // Additional settings for CustomizationOverlay compatibility
             gridOn: false,
             gridStyle: '3 3',
             gridColor: 'gray',
@@ -148,7 +236,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         };
     };
 
-    // Get all unique variables
     const allVariables = new Set();
     results.pairwise_results.forEach(pair => {
         if (pair && pair.variable1 && pair.variable2) {
@@ -203,7 +290,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         };
     };
 
-    // Add mosaic settings state
     const getMosaicDefaultSettings = () => {
         const defaultColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
@@ -247,7 +333,6 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             marginLeft: 100,
             marginRight: 100,
             spacingBetweenVariables: 20,
-
             xAxisTickSize: 16,
         };
     };
@@ -314,28 +399,24 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             categoryLabels: []
         };
     };
-    // 2. ADD states for grouped bar and mosaic settings
-
 
     const [heatmapSettings, setHeatmapSettings] = useState(getHeatmapDefaultSettings());
     const [groupedBarSettings, setGroupedBarSettings] = useState(getGroupedBarDefaultSettings());
     const [mosaicSettings, setMosaicSettings] = useState(getMosaicDefaultSettings());
     const [stackedBarSettings, setStackedBarSettings] = useState(getStackedBarDefaultSettings());
 
-    // 3. UPDATE setCurrentSettings function to include grouped bar case
     const setCurrentSettings = (settings) => {
         switch (currentPlotType) {
             case 'heatmap':
                 setHeatmapSettings(settings);
                 break;
-            case 'grouped':  // ADD THIS CASE
+            case 'grouped':
                 setGroupedBarSettings(settings);
                 break;
-            case 'mosaic':  // ADD THIS CASE
+            case 'mosaic':
                 setMosaicSettings(settings);
                 break;
-
-            case 'stacked':  // ADD THIS CASE
+            case 'stacked':
                 setStackedBarSettings(settings);
                 break;
             default:
@@ -344,22 +425,19 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
     };
 
     if (!results) {
-        return <p>{language === 'bn' ? 'ফলাফল লোড হচ্ছে...' : 'Loading results...'}</p>;
+        return <p>{getLabel('Loading results...')}</p>;
     }
 
-    const t = (en, bn) => (language === 'bn' ? bn : en);
     const fmt = (v, digits = 6) => formatValue(v, digits, language);
     const mapDigit = (text) => mapDigitIfBengali(text, language);
 
-    // Calculate significant associations
     const significantCount = results.pairwise_results ? results.pairwise_results.filter(r => r.p_value < 0.05).length : 0;
     const totalComparisons = results.n_comparisons || 0;
 
-    // Generate insight message
     const getInsightMessage = () => {
         const significanceRate = totalComparisons > 0 ? (significantCount / totalComparisons * 100).toFixed(1) : 0;
 
-        if (language === 'bn') {
+        if (language === 'bn' || language === 'বাংলা') {
             if (significantCount === 0) {
                 return 'কোনো ভেরিয়েবল জোড়ার মধ্যে উল্লেখযোগ্য সম্পর্ক পাওয়া যায়নি (p ≥ 0.05)। সব ভেরিয়েবল পরিসংখ্যানগতভাবে স্বাধীন বলে মনে হয়।';
             } else if (significantCount === totalComparisons) {
@@ -369,16 +447,15 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             }
         } else {
             if (significantCount === 0) {
-                return 'No significant associations found between any variable pairs (p ≥ 0.05). All variables appear to be statistically independent.';
+                return getLabel('No significant associations found between any variable pairs (p ≥ 0.05). All variables appear to be statistically independent.');
             } else if (significantCount === totalComparisons) {
-                return `All ${totalComparisons} variable pairs show significant associations (p < 0.05), indicating strong interdependencies.`;
+                return `${getLabel('All')} ${totalComparisons} ${getLabel('variable pairs show significant associations (p < 0.05)')}, ${getLabel('indicating strong interdependencies.')}`;
             } else {
-                return `${significantCount} out of ${totalComparisons} variable pairs (${significanceRate}%) show significant associations (p < 0.05), suggesting selective dependencies.`;
+                return `${significantCount} ${getLabel('out of')} ${totalComparisons} ${getLabel('variable pairs')} (${significanceRate}%) ${getLabel('show significant associations (p < 0.05), suggesting selective dependencies.')}`;
             }
         }
     };
 
-    // Add this inside your component
     const [isSticky, setIsSticky] = useState(false);
     const [containerWidth, setContainerWidth] = useState('auto');
     const tabContainerRef = useRef(null);
@@ -400,7 +477,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
         };
 
         window.addEventListener('scroll', handleScroll);
-        window.addEventListener('resize', handleScroll); // Also update on resize
+        window.addEventListener('resize', handleScroll);
 
         return () => {
             window.removeEventListener('scroll', handleScroll);
@@ -422,7 +499,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
     return (
         <>
             <h2 className="chi-square-title">
-                {t('Chi-Square Test Results', 'কাই-স্কয়ার পরীক্ষার ফলাফল')}
+                {getLabel('Chi-Square Test Results')}
             </h2>
 
             {/* Summary Statistics Table */}
@@ -430,13 +507,13 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                 <table className="stats-results-table">
                     <thead>
                         <tr>
-                            <th>{t('Description', 'বিবরণ')}</th>
-                            <th>{t('Value', 'মান')}</th>
+                            <th>{getLabel('Description')}</th>
+                            <th>{getLabel('Value')}</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td className="stats-table-label">{t('Variables', 'ভেরিয়েবলসমূহ')}</td>
+                            <td className="stats-table-label">{getLabel('Variables')}</td>
                             <td className="stats-table-value">
                                 {results.variables && results.variables.map((v, i) => (
                                     <span key={i}>
@@ -447,23 +524,23 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                             </td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Number of Variables', 'ভেরিয়েবলের সংখ্যা')}</td>
+                            <td className="stats-table-label">{getLabel('Number of Variables')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.n_variables || 0)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Comparisons', 'মোট তুলনা')}</td>
+                            <td className="stats-table-label">{getLabel('Total Comparisons')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(totalComparisons)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Significant Associations', 'উল্লেখযোগ্য সম্পর্ক')}</td>
+                            <td className="stats-table-label">{getLabel('Significant Associations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(significantCount)}</td>
                         </tr>
                         <tr>
-                            <td className="stats-table-label">{t('Total Observations', 'মোট পর্যবেক্ষণ')}</td>
+                            <td className="stats-table-label">{getLabel('Total Observations')}</td>
                             <td className="stats-table-value stats-numeric">{mapDigit(results.metadata?.total_observations || 0)}</td>
                         </tr>
                         <tr className="stats-conclusion-row">
-                            <td className="stats-table-label">{t('Insight', 'অন্তর্দৃষ্টি')}</td>
+                            <td className="stats-table-label">{getLabel('Insight')}</td>
                             <td className="stats-table-value">
                                 <div className="stats-conclusion-inline">
                                     {significantCount > 0 ? (
@@ -491,65 +568,37 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
             {/* Tabbed Section */}
             <div className="stats-viz-section">
                 <h3 className="stats-viz-header">
-                    {t('Detailed Analysis & Visualizations', 'বিস্তারিত বিশ্লেষণ এবং ভিজ্যুয়ালাইজেশন')}
+                    {getLabel('Detailed Analysis & Visualizations')}
                 </h3>
 
                 {/* Tab Navigation */}
-                <div
-                    ref={tabContainerRef}
-                    className="stats-tab-container"
-                    // style={{
-                    //     position: isSticky ? 'fixed' : 'relative',
-                    //     top: isSticky ? '105px' : 'auto',
-                    //     left: isSticky ? 'auto' : 'auto',
-                    //     right: isSticky ? 'auto' : 'auto',
-                    //     width: isSticky ? containerWidth : 'auto',
-                    //     zIndex: 100,
-                    //     backgroundColor: 'white',
-                    //     padding: '0',
-                    //     boxShadow: isSticky ? '0 2px 4px rgba(0,0,0,0.3)' : 'none',
-                    //     transition: 'all 0.1s ease'
-                    // }}
-                >
+                <div ref={tabContainerRef} className="stats-tab-container">
                     <button
                         className={`stats-tab ${activeTab === 'detailed' ? 'active' : ''}`}
                         onClick={() => setActiveTab('detailed')}
                     >
-                        {t('Detailed Result', 'বিস্তারিত বিশ্লেষণ')}
+                        {getLabel('Detailed Result')}
                     </button>
                     <button
                         className={`stats-tab ${activeTab === 'heatmap' ? 'active' : ''}`}
                         onClick={() => setActiveTab('heatmap')}
                     >
-                        {t('Heatmap', 'হিটম্যাপ')}
+                        {getLabel('Heatmap')}
                     </button>
-                    {/* <button
-                        className={`stats-tab ${activeTab === 'mosaic' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('mosaic')}
-                    >
-                        {t('Mosaic Plot', 'মোজাইক প্লট')}
-                    </button> */}
 
                     <button
                         className={`stats-tab ${activeTab === 'grouped' ? 'active' : ''}`}
                         onClick={() => setActiveTab('grouped')}
                     >
-                        {t('Grouped Bar', 'গ্রুপড বার')}
+                        {getLabel('Grouped Bar')}
                     </button>
 
                     <button
                         className={`stats-tab ${activeTab === 'stacked' ? 'active' : ''}`}
                         onClick={() => setActiveTab('stacked')}
                     >
-                        {t('Stacked Bar', 'স্ট্যাকড বার')}
+                        {getLabel('Stacked Bar')}
                     </button>
-
-                    {/* <button
-                        className={`stats-tab ${activeTab === 'residual' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('residual')}
-                    >
-                        {t('Residual Plot', 'রেসিডুয়াল প্লট')}
-                    </button> */}
                 </div>
 
                 {/* Detailed Analysis Tab */}
@@ -558,9 +607,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                         {/* Variable Statistics Section */}
                         {results.variable_stats && results.variable_stats.length > 0 && (
                             <div className="variable-stats-section">
-                                <div style={{
-                                    marginBottom: '20px'
-                                }}>
+                                <div style={{ marginBottom: '20px' }}>
                                     <div style={{
                                         display: 'flex',
                                         justifyContent: 'space-between',
@@ -571,7 +618,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                             marginBottom: '0',
                                             borderBottom: 'none'
                                         }}>
-                                            {t('Variable Statistics', 'ভেরিয়েবল পরিসংখ্যান')}
+                                            {getLabel('Variable Statistics')}
                                         </h4>
                                         <button
                                             className="customize-btn"
@@ -580,7 +627,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -599,19 +646,19 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
 
                                             <div className="variable-stat-content">
                                                 <div className="stat-row">
-                                                    <span>{t('Categories:', 'শ্রেণীর সংখ্যা:')}</span>
+                                                    <span>{getLabel('Categories:')}</span>
                                                     <span className="stat-value categories">
                                                         {mapDigit(varStat.n_categories)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Observations:', 'পর্যবেক্ষণ:')}</span>
+                                                    <span>{getLabel('Observations:')}</span>
                                                     <span className="stat-value observations">
                                                         {mapDigit(varStat.n_observations)}
                                                     </span>
                                                 </div>
                                                 <div className="stat-row">
-                                                    <span>{t('Missing:', 'অনুপস্থিত:')}</span>
+                                                    <span>{getLabel('Missing:')}</span>
                                                     <span className="stat-value missing">
                                                         {mapDigit(varStat.n_missing)}
                                                     </span>
@@ -619,7 +666,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
 
                                                 <div className="distribution-section">
                                                     <p className="distribution-title">
-                                                        {t('Distribution:', 'বিতরণ:')}
+                                                        {getLabel('Distribution:')}
                                                     </p>
                                                     <div className="distribution-list">
                                                         {varStat.categories.map((cat, catIdx) => (
@@ -652,20 +699,20 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                 marginBottom: '0',
                                                 borderBottom: 'none'
                                             }}>
-                                                {t('Pairwise Comparisons', 'জোড়াভিত্তিক তুলনা')}
+                                                {getLabel('Pairwise Comparisons')}
                                             </h4>
                                             <p className="section-description">
-                                                {t('Detailed chi-square test results for each variable pair',
-                                                    'প্রতিটি ভেরিয়েবল জোড়ার জন্য বিস্তারিত কাই-স্কয়ার পরীক্ষার ফলাফল')}
+                                                {getLabel('Detailed chi-square test results for each variable pair')}
                                             </p>
                                         </div>
                                         <button
-                                            className="customize-btn" onClick={() => downloadAllPairwiseBlocksPDF(results, blockRefs)}
+                                            className="customize-btn" 
+                                            onClick={() => downloadAllPairwiseBlocksPDF(results, blockRefs)}
                                         >
                                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                             </svg>
-                                            {t('Download All', 'সব ডাউনলোড করুন')}
+                                            {getLabel('Download All')}
                                         </button>
                                     </div>
                                     <div style={{
@@ -683,11 +730,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                             className="block-card"
                                             ref={(el) => { blockRefs.current[block.anchor] = el; }}
                                         >
-                                            {/* Card Header */}
-                                            <div
-                                                ref={(el) => { blockRefs.current[block.anchor] = el; }}
-                                                className="block-header"
-                                            >
+                                            <div className="block-header">
                                                 <div className="block-header-content">
                                                     <div className="block-header-info">
                                                         <div className="block-icon">
@@ -703,22 +746,23 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                                 {mapDigit(block.anchor)}
                                                             </h3>
                                                             <p className="block-subtitle">
-                                                                {t('Reference Variable', 'রেফারেন্স ভেরিয়েবল')}
+                                                                {getLabel('Reference Variable')}
                                                             </p>
                                                         </div>
                                                     </div>
 
                                                     <div className="block-actions">
                                                         <div style={{ position: 'relative' }}>
-                                                            <button className="customize-btn" onClick={() => setBlockDownloadMenus(prev => ({
-                                                                ...prev,
-                                                                [block.anchor]: !prev[block.anchor]
-                                                            }))}
+                                                            <button 
+                                                                className="customize-btn" 
+                                                                onClick={() => setBlockDownloadMenus(prev => ({
+                                                                    ...prev,
+                                                                    [block.anchor]: !prev[block.anchor]
+                                                                }))}
                                                             >
                                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                     <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                                                                 </svg>
-                                                                {/* {t('Download', 'ডাউনলোড')} */}
                                                             </button>
 
                                                             {blockDownloadMenus[block.anchor] && (
@@ -785,8 +829,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                             <line x1="12" y1="16" x2="12" y2="12"></line>
                                                             <line x1="12" y1="8" x2="12.01" y2="8"></line>
                                                         </svg>
-                                                        {t('Testing associations with other variables • Significance level α = 0.05',
-                                                            'অন্যান্য ভেরিয়েবলের সাথে সম্পর্ক পরীক্ষা • তাৎপর্য স্তর α = 0.05')}
+                                                        {getLabel('Testing associations with other variables • Significance level α = 0.05')}
                                                     </p>
                                                 </div>
                                             </div>
@@ -845,7 +888,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                     <div className="block-stat-item">
                                                         <div className="status-dot significant"></div>
                                                         <span>
-                                                            {t('Significant', 'উল্লেখযোগ্য')}: <strong>
+                                                            {getLabel('Significant')}: <strong>
                                                                 {mapDigit(block.results.filter(r => r.p_value < 0.05).length)}
                                                             </strong>
                                                         </span>
@@ -853,14 +896,14 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                                                     <div className="block-stat-item">
                                                         <div className="status-dot"></div>
                                                         <span>
-                                                            {t('Not Significant', 'অ-উল্লেখযোগ্য')}: <strong>
+                                                            {getLabel('Not Significant')}: <strong>
                                                                 {mapDigit(block.results.filter(r => r.p_value >= 0.05).length)}
                                                             </strong>
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div className="block-total">
-                                                    {t('Total comparisons', 'মোট তুলনা')}: {mapDigit(block.results.length)}
+                                                    {getLabel('Total comparisons')}: {mapDigit(block.results.length)}
                                                 </div>
                                             </div>
                                         </div>
@@ -888,7 +931,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     </div>
                 )}
 
-                {/* Other Plot Tabs */}
+                {/* Mosaic Plot Tab */}
                 {activeTab === 'mosaic' && (
                     <div className="stats-plot-wrapper active">
                         <MosaicPlot
@@ -905,6 +948,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     </div>
                 )}
 
+                {/* Stacked Bar Tab */}
                 {activeTab === 'stacked' && (
                     <div className="stats-plot-wrapper active">
                         <StackedBarPlot
@@ -921,6 +965,7 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     </div>
                 )}
 
+                {/* Grouped Bar Tab */}
                 {activeTab === 'grouped' && (
                     <div className="stats-plot-wrapper active">
                         <GroupedBarPlot
@@ -937,12 +982,12 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                     </div>
                 )}
 
+                {/* Residual Plot Tab */}
                 {activeTab === 'residual' && (
                     <div className="stats-plot-wrapper active">
                         <ResidualPlot language={language} />
                     </div>
                 )}
-
 
                 <CustomizationOverlay
                     isOpen={overlayOpen}
@@ -951,35 +996,34 @@ const renderChiSquareResults = (chiSquareActiveTab, setChiSquareActiveTab, resul
                         currentPlotType === 'heatmap' ? 'Heatmap' :
                             currentPlotType === 'grouped' ? 'Grouped Bar' :
                                 currentPlotType === 'mosaic' ? 'Mosaic' :
-                                    currentPlotType === 'stacked' ? 'Stacked Bar' :  // ADD THIS
+                                    currentPlotType === 'stacked' ? 'Stacked Bar' :
                                         'Heatmap'
                     }
                     settings={
                         currentPlotType === 'heatmap' ? heatmapSettings :
                             currentPlotType === 'grouped' ? groupedBarSettings :
                                 currentPlotType === 'mosaic' ? mosaicSettings :
-                                    currentPlotType === 'stacked' ? stackedBarSettings :  // ADD THIS
+                                    currentPlotType === 'stacked' ? stackedBarSettings :
                                         heatmapSettings
                     }
                     onSettingsChange={
                         currentPlotType === 'heatmap' ? setHeatmapSettings :
                             currentPlotType === 'grouped' ? setGroupedBarSettings :
                                 currentPlotType === 'mosaic' ? setMosaicSettings :
-                                    currentPlotType === 'stacked' ? setStackedBarSettings :  // ADD THIS
+                                    currentPlotType === 'stacked' ? setStackedBarSettings :
                                         setHeatmapSettings
                     }
-                    language={language === 'bn' ? 'বাংলা' : 'English'}
+                    language={language === 'bn' || language === 'বাংলা' ? 'বাংলা' : 'English'}
                     fontFamilyOptions={fontFamilyOptions}
                     getDefaultSettings={() =>
                         currentPlotType === 'heatmap' ? getHeatmapDefaultSettings() :
                             currentPlotType === 'grouped' ? getGroupedBarDefaultSettings() :
                                 currentPlotType === 'mosaic' ? getMosaicDefaultSettings() :
-                                    currentPlotType === 'stacked' ? getStackedBarDefaultSettings() :  // ADD THIS
+                                    currentPlotType === 'stacked' ? getStackedBarDefaultSettings() :
                                         getHeatmapDefaultSettings()
                     }
                     results={results}
                 />
-
             </div>
         </>
     );

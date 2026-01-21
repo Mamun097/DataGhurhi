@@ -123,6 +123,7 @@ const SurveyResponses = () => {
     "Individual",
     "Previous",
     "Next",
+    "Analyze the Result",
   ];
 
   const getLabel = (label) => translatedLabels[label] || label;
