@@ -107,6 +107,7 @@ const SurveyResponses = () => {
   const [responseCount, setResponseCount] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [tempTitle, setTempTitle] = useState("");
+  const [surveyTemplate, setSurveyTemplate] = useState(null);
 
   const [language, setLanguage] = useState(
     localStorage.getItem("language") || "en"
@@ -151,6 +152,27 @@ const SurveyResponses = () => {
     };
     loadTranslations();
   }, [language]);
+
+  useEffect(() => {
+    const fetchSurveyTemplate = async () => {
+      try {
+        const tokenData = localStorage.getItem("token");
+        const token = tokenData.startsWith("{")
+          ? JSON.parse(tokenData).token
+          : tokenData;
+        const response = await apiClient.get(`/api/surveytemplate/${survey_id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = response?.data?.data || response?.data;
+        if (data?.template) {
+          setSurveyTemplate(data.template);
+        }
+      } catch (error) {
+        console.error("Error loading survey template", error);
+      }
+    };
+    fetchSurveyTemplate();
+  }, [survey_id]);
 
   useEffect(() => {
     const fetchResponses = async () => {
@@ -215,7 +237,7 @@ const SurveyResponses = () => {
     return counts;
   };
 
-  function SummaryCharts({ responses, countResponses }) {
+  function SummaryCharts({ responses, countResponses, surveyTemplate }) {
     const [titles, setTitles] = useState(() =>
       responses.headers.map((h) => ({ caption: h, x: "Options", y: "Count" }))
     );
@@ -253,8 +275,19 @@ const SurveyResponses = () => {
       });
     };
 
-    const safeFileName = (s) =>
-      (s || "chart").replace(/[<>:"/\\|?*\x00-\x1F]+/g, "_").slice(0, 80);
+    const safeFileName = (s) => {
+      // Remove invalid filename characters
+      const invalidChars = /[<>:"/\\|?*]/g;
+      // Build control chars regex using String.fromCharCode to avoid linter error
+      const controlCharPattern = new RegExp(
+        `[${String.fromCharCode(0)}-${String.fromCharCode(31)}]`,
+        "g"
+      );
+      return (s || "chart")
+        .replace(invalidChars, "_")
+        .replace(controlCharPattern, "_")
+        .slice(0, 80);
+    };
 
     const downloadChartPDF = (i, captionText) => {
       const chart = chartRefs.current[i];
@@ -399,12 +432,227 @@ const SurveyResponses = () => {
       });
     };
 
+    // Helper function to find question in template
+    const findQuestionInTemplate = (headerText) => {
+      if (!surveyTemplate) return null;
+      
+      // Normalize text for comparison (trim, lowercase, remove extra spaces and special chars)
+      const normalizeText = (text) => {
+        if (!text) return "";
+        return text
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, " ") // Replace multiple spaces with single space
+          .replace(/[:/]/g, " ") // Replace colons and slashes with space
+          .replace(/[()]/g, "") // Remove parentheses
+          .trim();
+      };
+      const normalizedHeader = normalizeText(headerText);
+      
+      // Extract key words from header for better matching
+      const extractKeyWords = (text) => {
+        const words = text.split(/\s+/).filter(w => w.length > 2);
+        return words;
+      };
+      const headerKeyWords = extractKeyWords(normalizedHeader);
+      
+      // Try to find question in flat questions array first
+      let question = null;
+      if (surveyTemplate.questions && Array.isArray(surveyTemplate.questions)) {
+        question = surveyTemplate.questions.find(
+          (q) => {
+            const normalizedQ = normalizeText(q.text);
+            // Try exact match first
+            if (normalizedQ === normalizedHeader) return true;
+            
+            // Try normalized match (after removing special chars)
+            const qKeyWords = extractKeyWords(normalizedQ);
+            const commonWords = headerKeyWords.filter(w => qKeyWords.includes(w));
+            
+            // If at least 2 key words match, consider it a match
+            if (commonWords.length >= 2) return true;
+            
+            // Try partial match (check if header contains question text or vice versa)
+            if (normalizedHeader.includes(normalizedQ) || normalizedQ.includes(normalizedHeader)) {
+              return true;
+            }
+            
+            return false;
+          }
+        );
+      }
+      
+      // If not found, try searching in sections
+      if (!question && surveyTemplate.sections && Array.isArray(surveyTemplate.sections)) {
+        for (const section of surveyTemplate.sections) {
+          if (section.questions && Array.isArray(section.questions)) {
+            question = section.questions.find(
+              (q) => {
+                const normalizedQ = normalizeText(q.text);
+                // Try exact match first
+                if (normalizedQ === normalizedHeader) return true;
+                
+                // Try normalized match
+                const qKeyWords = extractKeyWords(normalizedQ);
+                const commonWords = headerKeyWords.filter(w => qKeyWords.includes(w));
+                
+                if (commonWords.length >= 2) return true;
+                
+                // Try partial match
+                if (normalizedHeader.includes(normalizedQ) || normalizedQ.includes(normalizedHeader)) {
+                  return true;
+                }
+                
+                return false;
+              }
+            );
+            if (question) break;
+          }
+        }
+      }
+      
+      return question;
+    };
+
+    // Helper function to get original option order from template
+    const getOriginalOptionOrder = (headerText) => {
+      const question = findQuestionInTemplate(headerText);
+      if (!question) return null;
+      
+      // Get options from question meta
+      const options = question.meta?.options || [];
+      
+      // Handle different option formats
+      if (options.length > 0) {
+        // If options are strings, return them as is
+        if (typeof options[0] === "string") {
+          return options;
+        }
+        // If options are objects with Text property
+        if (options[0]?.Text) {
+          return options.map((opt) => opt.Text);
+        }
+        // If options are Option class instances or have text property
+        if (options[0]?.text) {
+          return options.map((opt) => opt.text);
+        }
+      }
+      
+      return null;
+    };
+
+    // Helper function to get original option count from template
+    const getOriginalOptionCount = (headerText) => {
+      const question = findQuestionInTemplate(headerText);
+      if (!question) return null;
+      
+      // Question types that shouldn't generate charts
+      const noChartTypes = ["text", "datetime", "linearScale", "rating"];
+      if (noChartTypes.includes(question.type)) {
+        return 0; // Return 0 to ignore these question types
+      }
+      
+      // Get options from question meta
+      const options = question.meta?.options || [];
+      
+      // Handle different option formats and count them
+      let optionCount = 0;
+      if (options.length > 0) {
+        // If options are strings, count them directly
+        if (typeof options[0] === "string") {
+          optionCount = options.length;
+        }
+        // If options are objects with Text property
+        else if (options[0]?.Text) {
+          optionCount = options.length;
+        }
+        // If options are Option class instances or have text property
+        else if (options[0]?.text) {
+          optionCount = options.length;
+        }
+        // For other formats, try to count
+        else {
+          optionCount = options.length;
+        }
+      }
+      
+      // Return the count of original options
+      return optionCount;
+    };
+
+    // Helper function to sort labels and values by original order
+    const sortByOriginalOrder = (labels, values, originalOrder) => {
+      if (!originalOrder || originalOrder.length === 0) {
+        return { sortedLabels: labels, sortedValues: values };
+      }
+      
+      // Normalize text for comparison
+      const normalize = (text) => (text || "").trim().toLowerCase();
+      
+      // Create a map of label to value (with normalized keys for lookup)
+      const labelValueMap = {};
+      const normalizedToOriginal = {};
+      labels.forEach((label, idx) => {
+        labelValueMap[label] = values[idx];
+        normalizedToOriginal[normalize(label)] = label;
+      });
+      
+      // Sort labels based on original order, then add any missing ones
+      const sortedLabels = [];
+      const sortedValues = [];
+      const usedLabels = new Set();
+      
+      // First, add labels in original order
+      originalOrder.forEach((originalLabel) => {
+        const normalizedOriginal = normalize(originalLabel);
+        
+        // Try exact match first
+        if (Object.prototype.hasOwnProperty.call(labelValueMap, originalLabel)) {
+          sortedLabels.push(originalLabel);
+          sortedValues.push(labelValueMap[originalLabel]);
+          usedLabels.add(originalLabel);
+        } else if (normalizedToOriginal[normalizedOriginal]) {
+          // Try normalized match
+          const matchedLabel = normalizedToOriginal[normalizedOriginal];
+          if (!usedLabels.has(matchedLabel)) {
+            sortedLabels.push(matchedLabel);
+            sortedValues.push(labelValueMap[matchedLabel]);
+            usedLabels.add(matchedLabel);
+          }
+        }
+      });
+      
+      // Add any remaining labels that weren't in original order
+      labels.forEach((label) => {
+        if (!usedLabels.has(label)) {
+          sortedLabels.push(label);
+          sortedValues.push(labelValueMap[label]);
+        }
+      });
+      
+      return { sortedLabels, sortedValues };
+    };
+
     return (
       <>
         {responses.headers.map((header, index) => {
           const counts = countResponses(index);
-          const labels = Object.keys(counts);
-          const values = Object.values(counts);
+          const originalOrder = getOriginalOptionOrder(header);
+          const originalOptionCount = getOriginalOptionCount(header);
+          let labels = Object.keys(counts);
+          let values = Object.values(counts);
+          
+          // Debug logging (can be removed later)
+          if (originalOptionCount !== null) {
+            console.log(`Question "${header}": Template options=${originalOptionCount}, Response labels=${labels.length}`, labels);
+          }
+          
+          // Sort by original order if available
+          if (originalOrder && originalOrder.length > 0) {
+            const sorted = sortByOriginalOrder(labels, values, originalOrder);
+            labels = sorted.sortedLabels;
+            values = sorted.sortedValues;
+          }
 
           const displayLabelsForBar =
             Array.isArray(xLabelsState[index]) &&
@@ -412,12 +660,35 @@ const SurveyResponses = () => {
               ? xLabelsState[index]
               : labels;
 
-          const optionCount = labels.length;
+          // Determine chart type based on original question structure, not response data
           let chartType = null;
-          if (optionCount === 0) chartType = "ignore";
-          else if (optionCount <= 2) chartType = "pie";
-          else if (optionCount <= 10) chartType = "bar";
-          else chartType = "ignore";
+          
+          // If we have the original option count from template, use it (most reliable)
+          if (originalOptionCount !== null) {
+            if (originalOptionCount === 0) {
+              chartType = "ignore";
+            } else if (originalOptionCount <= 2) {
+              chartType = "pie";
+            } else if (originalOptionCount <= 10) {
+              chartType = "bar";
+            } else {
+              chartType = "ignore";
+            }
+          } else {
+            // Fallback: use response data, but be conservative
+            // Count all unique responses (including Empty) to avoid showing pie when bar is more appropriate
+            const totalUniqueResponses = labels.length;
+            if (totalUniqueResponses === 0) {
+              chartType = "ignore";
+            } else if (totalUniqueResponses <= 2) {
+              chartType = "pie";
+            } else if (totalUniqueResponses <= 10) {
+              chartType = "bar";
+            } else {
+              chartType = "ignore";
+            }
+          }
+          
           if (chartType === "ignore") return null;
 
           const chartData = {
@@ -465,8 +736,6 @@ const SurveyResponses = () => {
 
           const s = style[index] || {};
           const yMax = s.customYMax === "" ? null : Number(s.customYMax);
-          const barThickness =
-            s.barThickness === "" ? undefined : Number(s.barThickness);
 
           const uniformDefault = s.barColor || "#36A2EB";
           const perBarColors =
@@ -1439,6 +1708,7 @@ const SurveyResponses = () => {
               <SummaryCharts
                 responses={responses}
                 countResponses={countResponses}
+                surveyTemplate={surveyTemplate}
               />
             )}
             {activeTab === "questions" && renderQuestionTab()}
