@@ -40,7 +40,7 @@ export default function FileExplorer() {
   const fetchFiles = async (folderPath) => {
     try {
       const res = await axios.get(
-        `/api/sa/files?user_id=${userId}${
+        `http://127.0.0.1:8000/api/files?user_id=${userId}${
           folderPath ? `&path=${folderPath}` : ""
         }`
       );
@@ -55,7 +55,7 @@ export default function FileExplorer() {
 
   // Helper to generate URL
   const getFileUrl = (fileName) => {
-    return `/api/sa/files/${encodeURIComponent(fileName)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
+    return `http://127.0.0.1:8000/api/files/${encodeURIComponent(fileName)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
   };
 
   const handleDownload = (file) => {

@@ -17,9 +17,9 @@ import { Files, SlidersVertical } from "lucide-react";
 
 const PreprocessDataPage = () => {
  
-  const API_BASE = '/api/sa';
-  //const API_BASE = 'http://127.0.0.1:8000/api';
-  //const API_WORKBOOK='http://127.0.0.1:8000'
+  // const API_BASE = '/api/sa';
+  const API_BASE = 'http://127.0.0.1:8000/api';
+  const API_WORKBOOK='http://127.0.0.1:8000'
   const [data, setData] = useState([]);
   const filename =
     sessionStorage.getItem("file_name") || "latest_uploaded.xlsx";

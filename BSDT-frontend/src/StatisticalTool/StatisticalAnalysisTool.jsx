@@ -308,7 +308,7 @@ const translateText = async (textArray, targetLang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
-    const API_BASE = '/api/sa';   
+    const API_BASE = 'http://127.0.0.1:8000/api';   
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
