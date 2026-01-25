@@ -8,6 +8,44 @@ import apiClient from "../../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
+// Language configurations matching Dashboard
+const LANGUAGES = [
+  { code: "en", name: "ENGLISH", flag: "🇬🇧", googleCode: "en" },
+  { code: "bn", name: "বাংলা", flag: "🇧🇩", googleCode: "bn" },
+  { code: "zh", name: "中文", flag: "🇨🇳", googleCode: "zh-CN" }, // Mandarin Chinese
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳", googleCode: "hi" },
+  { code: "es", name: "ESPAÑOL", flag: "🇪🇸", googleCode: "es" },
+  { code: "ar", name: "العربية", flag: "🇸🇦", googleCode: "ar" },
+  { code: "fr", name: "FRANÇAIS", flag: "🇫🇷", googleCode: "fr" },
+  { code: "pt", name: "PORTUGUÊS", flag: "🇵🇹", googleCode: "pt" },
+  { code: "ru", name: "РУССКИЙ", flag: "🇷🇺", googleCode: "ru" },
+  { code: "ur", name: "اردو", flag: "🇵🇰", googleCode: "ur" },
+  { code: "id", name: "BAHASA INDONESIA", flag: "🇮🇩", googleCode: "id" },
+  { code: "de", name: "DEUTSCH", flag: "🇩🇪", googleCode: "de" },
+  { code: "ja", name: "日本語", flag: "🇯🇵", googleCode: "ja" },
+  { code: "sw", name: "KISWAHILI", flag: "🇰🇪", googleCode: "sw" },
+  { code: "mr", name: "मराठी", flag: "🇮🇳", googleCode: "mr" },
+  { code: "te", name: "తెలుగు", flag: "🇮🇳", googleCode: "te" },
+  { code: "tr", name: "TÜRKÇE", flag: "🇹🇷", googleCode: "tr" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳", googleCode: "ta" },
+  { code: "vi", name: "TIẾNG VIỆT", flag: "🇻🇳", googleCode: "vi" },
+  { code: "ko", name: "한국어", flag: "🇰🇷", googleCode: "ko" },
+  { code: "it", name: "ITALIANO", flag: "🇮🇹", googleCode: "it" },
+  { code: "th", name: "ไทย", flag: "🇹🇭", googleCode: "th" },
+  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳", googleCode: "gu" },
+  { code: "fa", name: "فارسی", flag: "🇮🇷", googleCode: "fa" },
+  { code: "pl", name: "POLSKI", flag: "🇵🇱", googleCode: "pl" },
+  { code: "uk", name: "УКРАЇНСЬКА", flag: "🇺🇦", googleCode: "uk" },
+  { code: "kn", name: "ಕನ್ನಡ", flag: "🇮🇳", googleCode: "kn" },
+  { code: "ml", name: "മലയാളം", flag: "🇮🇳", googleCode: "ml" },
+  { code: "or", name: "ଓଡ଼ିଆ", flag: "🇮🇳", googleCode: "or" },
+  { code: "my", name: "မြန်မာ", flag: "🇲🇲", googleCode: "my" },
+  // Additional major African languages (if not already included)
+  { code: "ha", name: "HAUSA", flag: "🇳🇬", googleCode: "ha" },
+  { code: "yo", name: "YORÙBÁ", flag: "🇳🇬", googleCode: "yo" },
+  { code: "am", name: "አማርኛ", flag: "🇪🇹", googleCode: "am" },
+];
+
 const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
@@ -224,7 +262,7 @@ const PackageCard = ({
 };
 
 // Main Modal Component
-const PremiumPackagesModal = ({ isOpen, onClose, language }) => {
+const PremiumPackagesModal = ({ isOpen, onClose, getLabel: parentGetLabel }) => {
   const [packages, setPackages] = useState([]);
   const [mostPopularPackageId, setMostPopularPackageId] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -244,85 +282,122 @@ const PremiumPackagesModal = ({ isOpen, onClose, language }) => {
   });
 
   const [translatedLabels, setTranslatedLabels] = useState({});
+  const [language, setLanguage] = useState(
+    localStorage.getItem("language") || "en"
+  );
 
-  // Load translations - FIX: Check both 'bn' and 'বাংলা'
+  // Listen for language changes from navbar (same as Dashboard)
   useEffect(() => {
-    const loadTranslations = async () => {
-      // FIX: Properly check for English language
-      if (language === 'English' || language === 'en') {
-        setTranslatedLabels({});
-        return;
-      }
-
-      const labelsToTranslate = [
-        'Choose Your Premium Package',
-        'Current Subscription',
-        'Active until',
-        'Analysis',
-        'Responses',
-        'Unlimited',
-        'Survey',
-        'Question',
-        'Tag',
-        'Unlock Powerful AI Features',
-        'AI Survey Generation',
-        'Create professional surveys in seconds with AI assistance',
-        'Smart Question Creation',
-        'Generate relevant questions based on your research goals',
-        'Automatic Tagging',
-        'Organize questions with intelligent tagging system',
-        'Greater Number of Responses',
-        'Collect greater number of survey responses without restrictions',
-        'Advanced Analytics',
-        'Access advanced statistical analyses along with regular ones',
-        'Fixed Packages',
-        'Custom Package',
-        'Loading packages...',
-        'Failed to load packages. Please try again.',
-        'Retry',
-        'Most Popular',
-        'OFF',
-        'Years',
-        'Months',
-        'Days',
-        'Advanced Statistical Analyses',
-        'Survey Responses',
-        'Automatic Smart Survey Generation with LLM',
-        'Automatic Smart Question Generation with LLM',
-        'Automatic Question Tag Generation',
-        'Processing...',
-        'Buy Now',
-        'No packages available at the moment.',
-        'Retry Loading',
-        'Please configure your custom package first',
-      ];
-
-      const translations = await translateText(labelsToTranslate, "bn");
-      const translated = {};
-      labelsToTranslate.forEach((key, idx) => {
-        translated[key] = translations[idx];
-      });
-      setTranslatedLabels(translated);
+    const handleLanguageChange = (event) => {
+      const newLanguage = event.detail.language;
+      setLanguage(newLanguage);
     };
 
-    // FIX: Only load translations when modal is open
+    window.addEventListener("languageChanged", handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
+  // Load translations (same pattern as Dashboard)
+  const loadTranslations = async () => {
+    if (language === "en") {
+      setTranslatedLabels({});
+      return;
+    }
+
+    const labelsToTranslate = [
+      'Choose Your Premium Package',
+      'Current Subscription',
+      'Active until',
+      'Analysis',
+      'Responses',
+      'Unlimited',
+      'Survey',
+      'Question',
+      'Tag',
+      'Unlock Powerful AI Features',
+      'AI Survey Generation',
+      'Create professional surveys in seconds with AI assistance',
+      'Smart Question Creation',
+      'Generate relevant questions based on your research goals',
+      'Automatic Tagging',
+      'Organize questions with intelligent tagging system',
+      'Greater Number of Responses',
+      'Collect greater number of survey responses without restrictions',
+      'Advanced Analytics',
+      'Access advanced statistical analyses along with regular ones',
+      'Fixed Packages',
+      'Custom Package',
+      'Loading packages...',
+      'Failed to load packages. Please try again.',
+      'Retry',
+      'Most Popular',
+      'OFF',
+      'Years',
+      'Months',
+      'Days',
+      'Advanced Statistical Analyses',
+      'Survey Responses',
+      'Automatic Smart Survey Generation with LLM',
+      'Automatic Smart Question Generation with LLM',
+      'Automatic Question Tag Generation',
+      'Processing...',
+      'Buy Now',
+      'No packages available at the moment.',
+      'Retry Loading',
+      'Please configure your custom package first',
+      'Unlock advanced statistical analyses and insights along with basic ones',
+      'Build Your Custom Package',
+      'Select the features you need and choose validity period',
+      'Choose Validity Period',
+      'Days',
+      'Months',
+      'Years',
+      'Day',
+      'Month',
+      'Year',
+      'Package Summary',
+      'Total',
+      'Validity',
+      'Subtotal',
+      'Survey Participants',
+      'Question Tag',
+      'Have a coupon?',
+      'Apply Coupon',
+    ];
+
+    // Get the Google Translate language code for the current language
+    const currentLangObj = LANGUAGES.find(l => l.code === language);
+    const targetLang = currentLangObj ? currentLangObj.googleCode : "en";
+
+    const translations = await translateText(labelsToTranslate, targetLang);
+    const translated = {};
+    labelsToTranslate.forEach((key, idx) => {
+      translated[key] = translations[idx];
+    });
+    setTranslatedLabels(translated);
+  };
+
+  useEffect(() => {
     if (isOpen) {
       loadTranslations();
     }
-  }, [language, isOpen]); // FIX: Added isOpen as dependency
+  }, [language, isOpen]);
 
-  // FIX: Create getLabel function that works with the current state
+  // getLabel function (same pattern as Dashboard)
   const getLabel = (text) => {
-    if (language === 'English' || language === 'en') {
-      return text;
+    if (parentGetLabel) {
+      return parentGetLabel(text);
     }
-    return translatedLabels[text] || text;
+    return language === "en" ? text : translatedLabels[text] || text;
   };
 
-  // FIX: Create mapDigitIfBengali that checks both 'bn' and 'বাংলা'
+  // Bengali digit mapping
   const mapDigitIfBengali = (text) => {
     if (!text && text !== 0) return '';
-    if (language !== 'বাংলা' && language !== 'bn') return text.toString();
+    if (language !== 'bn') return text.toString();
     const digitMapBn = {
       '0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪',
       '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯',
