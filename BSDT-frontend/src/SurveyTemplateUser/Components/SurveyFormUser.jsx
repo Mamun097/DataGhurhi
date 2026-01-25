@@ -49,19 +49,26 @@ const SurveyForm = ({
 }) => {
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0);
 
-  // NEW: reCAPTCHA state
+  // reCAPTCHA states
   const [recaptchaToken, setRecaptchaToken] = useState(null);
+  const [isRecaptchaAvailable, setIsRecaptchaAvailable] = useState(true);
+  const [recaptchaError, setRecaptchaError] = useState(false);
   const recaptchaRef = useRef(null);
 
-  // NEW: Check if user is logged in
-  const isLoggedIn = !!localStorage.getItem("token");
+  // Check if reCAPTCHA is properly configured
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY || RECAPTCHA_SITE_KEY === 'undefined' || RECAPTCHA_SITE_KEY.trim() === '') {
+      setIsRecaptchaAvailable(false);
+      console.warn("reCAPTCHA site key not configured. Survey submission will proceed without verification.");
+    }
+  }, []);
 
   // Scroll to top when section changes
   useEffect(() => {
     window.scrollTo({ top: 10, behavior: "smooth" });
   }, [currentVisibleIndex]);
 
-  // State and Effect for detecting mobile view ---
+  // State and Effect for detecting mobile view
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   // Quiz related states
@@ -70,11 +77,10 @@ const SurveyForm = ({
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768); // Using Bootstrap's 'md' breakpoint
+      setIsMobile(window.innerWidth < 768);
     };
 
     window.addEventListener("resize", handleResize);
-    // Cleanup the event listener on component unmount
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -118,7 +124,7 @@ const SurveyForm = ({
       const endTime = new Date(template.template.quiz_settings.end_time);
       const now = new Date();
       const timeLeftInSeconds = Math.max(0, Math.floor((endTime - now) / 1000));
-      setQuizTimeLeft(timeLeftInSeconds / 60); // convert to minutes
+      setQuizTimeLeft(timeLeftInSeconds / 60);
     }
 
     if (shuffle && !hasShuffled.current) {
@@ -215,32 +221,30 @@ const SurveyForm = ({
     return true;
   };
 
-  // NEW: Handle reCAPTCHA change
+  // Handle reCAPTCHA change
   const handleRecaptchaChange = (token) => {
     setRecaptchaToken(token);
+    setRecaptchaError(false);
   };
 
-  {
-    /** Two ways to submit the form.
-     * 1. Regular submit button
-     * 2. If the survey is in quiz mode then after fixed time automatic submission */
-  }
+  // Handle reCAPTCHA error
+  const handleRecaptchaError = () => {
+    setRecaptchaError(true);
+    setIsRecaptchaAvailable(false);
+    console.error("reCAPTCHA failed to load. Proceeding without verification.");
+  };
 
   // Central function for the submission logic
   const submitSurvey = (event = null) => {
     if (validateCurrentSection()) {
-      // NEW: Check reCAPTCHA only for non-logged-in users and non-preview mode
-      // if (!isPreview && !isLoggedIn && !recaptchaToken) {
-      //   alert("Please complete the reCAPTCHA verification before submitting.");
-      //   return;
-      // }
-      if (!isPreview && !recaptchaToken) {
+      // Only require reCAPTCHA if it's available and working (not in preview mode)
+      if (!isPreview && isRecaptchaAvailable && !recaptchaError && !recaptchaToken) {
         alert("Please complete the reCAPTCHA verification before submitting.");
         return;
       }
 
       if (onSubmit) {
-        // NEW: Pass recaptcha token as second parameter
+        // Pass recaptcha token as second parameter (will be null if not available)
         onSubmit(event, recaptchaToken);
       }
     }
@@ -248,7 +252,7 @@ const SurveyForm = ({
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-    submitSurvey(e); // Call the central logic
+    submitSurvey(e);
   };
 
   // Handler for when the timer runs out
@@ -306,7 +310,6 @@ const SurveyForm = ({
       {logo && currentVisibleIndex < 1 && (
         <>
           {isMobile || logoAlignment === "center" ? (
-            // This block is used for CENTER alignment OR any alignment on MOBILE
             <div className="py-3 text-center">
               <img
                 src={logo}
@@ -333,7 +336,6 @@ const SurveyForm = ({
               )}
             </div>
           ) : (
-            // This block is ONLY used for LEFT/RIGHT alignment on DESKTOP
             <div
               className={`py-3 px-3 d-flex align-items-start justify-content-between flex-column flex-sm-row ${
                 logoAlignment === "left" ? "flex-sm-row" : "flex-sm-row-reverse"
@@ -461,15 +463,31 @@ const SurveyForm = ({
         )}
       </div>
 
-      {/* NEW: Show reCAPTCHA only on last page, for non-logged-in users, and not in preview */}
-      {!isPreview &&  
+      {/* Show reCAPTCHA on last page for all users (not in preview) */}
+      {!isPreview && 
        currentVisibleIndex === visibleSections.length - 1 && (
         <div className="container d-flex justify-content-center my-4">
-          <ReCAPTCHA
-            ref={recaptchaRef}
-            sitekey={RECAPTCHA_SITE_KEY}
-            onChange={handleRecaptchaChange}
-          />
+          {isRecaptchaAvailable && !recaptchaError ? (
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={handleRecaptchaChange}
+              onErrored={handleRecaptchaError}
+              onExpired={() => setRecaptchaToken(null)}
+            />
+          ) : (
+            <div 
+              className="alert alert-warning" 
+              role="alert"
+              style={{
+                maxWidth: '500px',
+                textAlign: 'center'
+              }}
+            >
+              <i className="bi bi-exclamation-triangle-fill me-2"></i>
+              Security verification temporarily unavailable. You can proceed with survey submission.
+            </div>
+          )}
         </div>
       )}
 
@@ -493,13 +511,12 @@ const SurveyForm = ({
           <button
             type="button"
             className="btn btn-primary"
-            disabled={isSubmitting} // Also disable during submission
+            disabled={isSubmitting}
             onClick={handleNext}
           >
             Next
           </button>
         ) : (
-          // 2 & 3. UPDATE THE SUBMIT BUTTON
           <button
             type="button"
             className="btn btn-success"

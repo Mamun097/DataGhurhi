@@ -75,10 +75,22 @@ const LandingLogin = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [emailError, setEmailError] = useState("");
   const [recaptchaToken, setRecaptchaToken] = useState(null);
+  
+  // reCAPTCHA availability state
+  const [isRecaptchaAvailable, setIsRecaptchaAvailable] = useState(true);
+  const [recaptchaError, setRecaptchaError] = useState(false);
 
   const togglePasswordVisibility = () => setShowPassword((p) => !p);
 
   const slides = language === "English" || loadingTranslation ? slidesEnglish : translatedSlide;
+
+  // Check if reCAPTCHA is available
+  useEffect(() => {
+    if (!RECAPTCHA_SITE_KEY || RECAPTCHA_SITE_KEY === 'undefined' || RECAPTCHA_SITE_KEY.trim() === '') {
+      setIsRecaptchaAvailable(false);
+      console.warn("reCAPTCHA site key not configured. Login will proceed without verification.");
+    }
+  }, []);
 
   useEffect(() => {
     const fetchSlides = async () => {
@@ -130,6 +142,13 @@ const LandingLogin = () => {
 
   const handleRecaptchaChange = (token) => {
     setRecaptchaToken(token);
+    setRecaptchaError(false);
+  };
+
+  const handleRecaptchaError = () => {
+    setRecaptchaError(true);
+    setIsRecaptchaAvailable(false);
+    console.error("reCAPTCHA failed to load. Proceeding without verification.");
   };
 
   const handleSubmit = async (e) => {
@@ -137,15 +156,20 @@ const LandingLogin = () => {
     
     if (emailError) return toast.error("Enter valid email");
     
-    if (!recaptchaToken) {
+    // Only require reCAPTCHA if it's available and working
+    if (isRecaptchaAvailable && !recaptchaToken && !recaptchaError) {
       return toast.error("Please complete the reCAPTCHA verification");
     }
 
     try {
-      const res = await apiClient.post("/api/login", {
-        ...formData,
-        recaptchaToken
-      }, { withCredentials: true });
+      const loginData = { ...formData };
+      
+      // Only include recaptchaToken if reCAPTCHA is available
+      if (isRecaptchaAvailable && recaptchaToken) {
+        loginData.recaptchaToken = recaptchaToken;
+      }
+      
+      const res = await apiClient.post("/api/login", loginData, { withCredentials: true });
       
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", "user");
@@ -155,7 +179,9 @@ const LandingLogin = () => {
       setTimeout(() => (window.location.href = "/dashboard"), 1500);
     } catch (error) {
       toast.error("Wrong email or password");
-      setRecaptchaToken(null); // Reset reCAPTCHA on error
+      if (isRecaptchaAvailable) {
+        setRecaptchaToken(null); // Reset reCAPTCHA on error
+      }
     }
   };
 
@@ -286,13 +312,31 @@ const LandingLogin = () => {
         </span>
       </div>
 
-      {/* reCAPTCHA */}
+      {/* Conditional reCAPTCHA or Warning Message */}
       <div className="dg-recaptcha">
-        <ReCAPTCHA
-          sitekey={RECAPTCHA_SITE_KEY}
-          onChange={handleRecaptchaChange}
-          hl={language === "বাংলা" ? "bn" : "en"}
-        />
+        {isRecaptchaAvailable && !recaptchaError ? (
+          <ReCAPTCHA
+            sitekey={RECAPTCHA_SITE_KEY}
+            onChange={handleRecaptchaChange}
+            onErrored={handleRecaptchaError}
+            onExpired={() => setRecaptchaToken(null)}
+            hl={language === "বাংলা" ? "bn" : "en"}
+          />
+        ) : (
+          <div style={{
+            padding: '10px',
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffc107',
+            borderRadius: '4px',
+            color: '#856404',
+            fontSize: '14px',
+            marginBottom: '10px'
+          }}>
+            ⚠️ {language === "English" 
+              ? "Security verification temporarily unavailable. You can proceed with login." 
+              : "নিরাপত্তা যাচাইকরণ সাময়িকভাবে অনুপলব্ধ। আপনি লগইন করতে পারবেন।"}
+          </div>
+        )}
       </div>
 
       <button className="dg-btn dg-btn-primary" type="submit">
