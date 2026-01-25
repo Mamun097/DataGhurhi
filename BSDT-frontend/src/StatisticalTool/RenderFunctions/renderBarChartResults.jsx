@@ -592,6 +592,22 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         return gridColor === 'black' ? '#000000' : '#e5e7eb';
     };
 
+    const getPlotMargins = (settings, isHorizontal = false) => {
+        return {
+            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
+            left: settings.plotMarginLeft + (isHorizontal && settings.categoryLabelWrap ? 15 : 0),
+            right: settings.plotMarginRight,
+            bottom:
+                settings.plotMarginBottom +
+                (settings.categoryLabelWrap
+                    ? settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2
+                    : 0),
+        };
+    };
+
+
+
+
     const renderVerticalChart = () => {
         const settings = verticalSettings;
         const { height } = getDimensions(settings.dimensions);
@@ -604,6 +620,9 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         }));
 
         const yDomain = getYAxisDomain(settings, data, 'count');
+
+        const Y_AXIS_WIDTH = 60;   // space taken by Y-axis (labels + ticks)
+        const X_AXIS_HEIGHT = 110; // space taken by X-axis (labels + ticks)
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -759,22 +778,56 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
 
                     {/* PLOT BORDER OVERLAY */}
 
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
-                            left: settings.plotMarginLeft + 
-                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
-                            right: settings.plotMarginRight,
-                            bottom: settings.plotMarginBottom + 
-                                (settings.categoryLabelWrap ? 
-                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
+                    {settings.plotBorderOn && (() => {
+                        const top =
+                            settings.plotMarginTop +
+                            (settings.captionOn ? 20 : 0);
+
+                        const left = settings.plotMarginLeft;
+                        const right = settings.plotMarginRight;
+
+                        const bottom =
+                            settings.plotMarginBottom +
+                            (settings.categoryLabelWrap
+                                ? settings.categoryLabelMaxLines *
+                                settings.xAxisTickSize *
+                                1.2
+                                : 0);
+
+                        return (
+                            <>
+                                {/* TOP BORDER — starts AFTER Y-axis */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        left: left + Y_AXIS_WIDTH,
+                                        right: right,
+                                        borderTop: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+
+                                {/* RIGHT BORDER — ends BEFORE X-axis */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        right: right,
+                                        bottom: bottom + X_AXIS_HEIGHT,
+                                        borderRight: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+                            </>
+                        );
+                    })()}
+
+
+
+
 
                 </div>
             </div>
@@ -793,6 +846,10 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
         }));
 
         const xDomain = getYAxisDomain(settings, data, 'count');
+
+        const Y_AXIS_WIDTH = 100;   // space taken by Y-axis (labels + ticks)
+        const X_AXIS_HEIGHT = 30; // space taken by X-axis (labels + ticks)
+
 
         return (
             <div style={{ position: 'relative', width: '100%' }}>
@@ -958,22 +1015,60 @@ const renderBarChartResults = (barChartActiveTab, setBarChartActiveTab, results,
                     {/* PLOT BORDER OVERLAY */}
 
 
-                    {settings.plotBorderOn && (
-                        <div style={{
-                            position: 'absolute',
-                            top: settings.plotMarginTop + (settings.captionOn ? 20 : 0),
-                            left: settings.plotMarginLeft + 
-                                (settings.plotType === 'Horizontal' && settings.categoryLabelWrap ? 15 : 0),
-                            right: settings.plotMarginRight,
-                            bottom: settings.plotMarginBottom + 
-                                (settings.categoryLabelWrap ? 
-                                (settings.categoryLabelMaxLines * settings.xAxisTickSize * 1.2) : 0),
-                            borderTop: '2px solid #000000',
-                            borderRight: '2px solid #000000',
-                            pointerEvents: 'none',
-                            zIndex: 0
-                        }} />
-                    )}
+                    {settings.plotBorderOn && (() => {
+                        const top =
+                            settings.plotMarginTop +
+                            (settings.captionOn ? 20 : 0);
+
+                        const left = settings.plotMarginLeft;
+                        const right = settings.plotMarginRight;
+
+                        const bottom =
+                            settings.plotMarginBottom +
+                            (settings.categoryLabelWrap
+                                ? settings.categoryLabelMaxLines *
+                                settings.xAxisTickSize *
+                                1.2
+                                : 0);
+
+                        const isHorizontal = settings.chartOrientation === 'horizontal';
+
+                        return (
+                            <>
+                                {/* TOP BORDER */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        left: isHorizontal
+                                            ? left + Y_AXIS_WIDTH   // category labels on Y-axis
+                                            : left + Y_AXIS_WIDTH,  // value labels on Y-axis (same offset)
+                                        right: right,
+                                        borderTop: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+
+                                {/* RIGHT BORDER */}
+                                <div
+                                    style={{
+                                        position: 'absolute',
+                                        top: top,
+                                        right: right,
+                                        bottom: isHorizontal
+                                            ? bottom + X_AXIS_HEIGHT // numeric x-axis
+                                            : bottom + X_AXIS_HEIGHT,
+                                        borderRight: '2px solid black',
+                                        pointerEvents: 'none',
+                                        zIndex: 1,
+                                    }}
+                                />
+                            </>
+                        );
+                    })()}
+
+
 
                 </div>
             </div>

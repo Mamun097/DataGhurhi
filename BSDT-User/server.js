@@ -13,20 +13,58 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(cookieParser());
 app.use(express.json());
 
-const allowedOrigins = ['http://localhost:5173', 'http://103.94.135.115:5173', 'http://dataghurhi.cse.buet.ac.bd:5173']
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('CORS not allowed from this origin: ' + origin));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Content-Type', 'Authorization'],
-}));
+const path = require("path");
+// const viewRouter = require("./route/view");
+// app.use("/", viewRouter);
+app.get("/v/:slug", (req, res) => {
+  const slug = req.params.slug;
+  const url = `https://dataghurhi.cse.buet.ac.bd/v/${slug}`;
+  // res.status(200).send(`
+  //   View Project Page Redirecting...
+  //   <script>
+  //     window.location.href = "${url}";
+  //   </script>
+  // `);
+  res.status(200).send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta property="og:title" content="Dataghurhi" />
+  <meta property="og:description" content="Explore the power of data with Dataghurhi." />
+  <meta property="og:image" content="https://dataghurhi.cse.buet.ac.bd/assets/logos/dataghurhi.png" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="${url}" />
+</head>
+<body>
+  <div id="root"></div>
+  <script src="/assets/index.js"></script>
+</body>
+</html>
+`);
+});
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  // "http://103.94.135.115:5173",
+  // "http://dataghurhi.cse.buet.ac.bd:5173",
+  "https://dataghurhi.cse.buet.ac.bd",
+];
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed from this origin: " + origin));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 const registerRouter = require("./route/register");
 const loginRouter = require("./route/login");
@@ -127,15 +165,14 @@ const port = process.env.PORT || 2000;
 (async () => {
   const { data, error } = await supabase.rpc("now");
   if (error) {
-    console.error('Database connection failed:', error.message);
+    console.error("Database connection failed:", error.message);
   } else {
-    console.log('Database connected successfully:', data);
+    console.log("Database connected successfully:", data);
   }
-  app.listen(port, '0.0.0.0', () => {
+  app.listen(port, "0.0.0.0", () => {
     console.log(`Server is running on port ${port}`);
   });
 })();
-
 
 // Routes
 app.use("/api/register", registerRouter);
@@ -197,3 +234,8 @@ app.use("/api", analysisFileUploadRouter);
 
 app.use("/api/faq", faqRoutes);
 app.use("/api/search", searchRouter);
+
+// app.use(express.static("dist"));
+// app.get("*", (_, res) => {
+//   res.sendFile(path.join(__dirname, "dist/index.html"));
+// });

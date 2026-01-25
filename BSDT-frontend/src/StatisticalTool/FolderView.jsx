@@ -40,7 +40,7 @@ export default function FileExplorer() {
   const fetchFiles = async (folderPath) => {
     try {
       const res = await axios.get(
-        `http://127.0.0.1:8000/files?user_id=${userId}${
+        `http://127.0.0.1:8000/api/files?user_id=${userId}${
           folderPath ? `&path=${folderPath}` : ""
         }`
       );
@@ -55,7 +55,7 @@ export default function FileExplorer() {
 
   // Helper to generate URL
   const getFileUrl = (fileName) => {
-    return `http://127.0.0.1:8000/files/${encodeURIComponent(fileName)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
+    return `http://127.0.0.1:8000/api/files/${encodeURIComponent(fileName)}?user_id=${userId}&path=${encodeURIComponent(currentPath)}`;
   };
 
   const handleDownload = (file) => {
@@ -85,7 +85,7 @@ export default function FileExplorer() {
     const fileURL = `/media/ID_${userId}_uploads/saved_files/${file.name}`;
     sessionStorage.setItem("file_name", file.name);
     sessionStorage.setItem("fileURL", fileURL);
-    window.location.href = "http://localhost:5173/?tab=analysis";
+    window.location.href = "/?tab=analysis";
   };
 
   const handleFileClick = (file) => {

@@ -46,6 +46,7 @@ const getDefaultSettings = (plotType, categoryCount, categoryNames) => {
         legendOn: true,
         dataLabelsOn: true,
         borderOn: false,
+        plotBorderOn: false,
         categoryLabels: categoryNames || Array(categoryCount).fill('').map((_, i) => `Category ${i + 1}`),
         categoryColors: Array(categoryCount).fill('').map((_, i) => defaultColors[i % defaultColors.length]),
         pieXPosition: 50,
@@ -438,7 +439,16 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
         }));
 
         return (
-            <div style={{ position: 'relative', width: '100%' }}>
+            <div style={{ 
+                position: 'relative', 
+                width: '100%',
+                // Add image border here
+                border: settings.borderOn ? '3px solid #333333' : 'none',
+                borderRadius: settings.borderOn ? '8px' : '0',
+                padding: settings.borderOn ? '10px' : '0',
+                boxSizing: 'border-box',
+                backgroundColor: 'white'
+            }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '8px', zIndex: 10 }}>
                     <button className="customize-btn" onClick={() => openCustomization('Pie')}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -471,7 +481,6 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                     <ResponsiveContainer width="100%" height={height}>
                         <PieChart
                             margin={{ top: settings.captionOn ? 50 : 30, right: 20, left: 20, bottom: 40 }}
-                            style={settings.plotBorderOn ? { border: '2px solid black', borderRadius: '8px' } : {}}
                         >
                             {settings.captionOn && (
                                 <text x="50%" y={settings.captionTopMargin} style={getCaptionStyle(settings)}>
@@ -484,32 +493,38 @@ const renderPieChartResults = (pieActiveTab, setPieActiveTab, results, language,
                                 cy={`${settings.pieYPosition || 50}%`}
                                 innerRadius={settings.innerRadius + '%'}
                                 outerRadius={settings.outerRadius}
-                                paddingAngle={2}
+                                paddingAngle={settings.plotBorderOn ? 0 : 2} // Remove padding angle when border is on
                                 dataKey="value"
                                 label={settings.dataLabelsOn ? renderCustomizedLabel : false}
                                 labelLine={settings.dataLabelsOn && settings.dataLabelPosition === 'outside'}
+                                // Add black bold stroke for plot border
+                                stroke={settings.plotBorderOn ? '#000000' : 'none'}
+                                strokeWidth={settings.plotBorderOn ? 3 : 0}
                             >
                                 {data.map((entry, index) => (
                                     <Cell 
                                         key={`cell-${index}`} 
                                         fill={entry.fill}
+                                        // Add individual cell border - black bold lines
+                                        stroke={settings.plotBorderOn ? '#000000' : 'none'}
+                                        strokeWidth={settings.plotBorderOn ? 3 : 0}
                                     />
                                 ))}
                             </Pie>
                             <Tooltip content={<CustomTooltip />} />
                             {settings.legendOn && (
                                 <Legend 
-                                layout="vertical"
-                                verticalAlign="middle"
-                                align={settings.legendPosition}
-                                wrapperStyle={{
-                                    position: 'absolute',
-                                    left: `${settings.legendXPosition || 100}%`,
-                                    top: `${settings.legendYPosition || 50}%`,
-                                    transform: 'translate(-100%, -50%)',
-                                    paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
-                                    paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
-                                }}
+                                    layout="vertical"
+                                    verticalAlign="middle"
+                                    align={settings.legendPosition}
+                                    wrapperStyle={{
+                                        position: 'absolute',
+                                        left: `${settings.legendXPosition || 100}%`,
+                                        top: `${settings.legendYPosition || 50}%`,
+                                        transform: 'translate(-100%, -50%)',
+                                        paddingLeft: settings.legendPosition === 'right' ? '20px' : '0',
+                                        paddingTop: settings.legendPosition === 'top' ? '0' : '20px'
+                                    }}
                                     formatter={(value, entry) => {
                                         const item = data.find(d => d.name === value);
                                         if (item && (settings.showCount || settings.showPercentage)) {
