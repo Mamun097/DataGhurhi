@@ -1,37 +1,80 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import "./register.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import apiClient from "../api";
-
 import NavbarAcholder from "../ProfileManagement/navbarAccountholder";
 import { ToastContainer, toast } from "react-toastify";
-const API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
-const API_URL = "https://translation.googleapis.com/language/translate/v2";
 
-// Batch translation for array of texts
+const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+// Language configurations matching dashboard
+const LANGUAGES = [
+  { code: "en", name: "ENGLISH", flag: "🇬🇧", googleCode: "en" },
+  { code: "bn", name: "বাংলা", flag: "🇧🇩", googleCode: "bn" },
+  { code: "zh", name: "中文", flag: "🇨🇳", googleCode: "zh-CN" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳", googleCode: "hi" },
+  { code: "es", name: "ESPAÑOL", flag: "🇪🇸", googleCode: "es" },
+  { code: "ar", name: "العربية", flag: "🇸🇦", googleCode: "ar" },
+  { code: "fr", name: "FRANÇAIS", flag: "🇫🇷", googleCode: "fr" },
+  { code: "pt", name: "PORTUGUÊS", flag: "🇵🇹", googleCode: "pt" },
+  { code: "ru", name: "РУССКИЙ", flag: "🇷🇺", googleCode: "ru" },
+  { code: "ur", name: "اردو", flag: "🇵🇰", googleCode: "ur" },
+  { code: "id", name: "BAHASA INDONESIA", flag: "🇮🇩", googleCode: "id" },
+  { code: "de", name: "DEUTSCH", flag: "🇩🇪", googleCode: "de" },
+  { code: "ja", name: "日本語", flag: "🇯🇵", googleCode: "ja" },
+  { code: "sw", name: "KISWAHILI", flag: "🇰🇪", googleCode: "sw" },
+  { code: "mr", name: "मराठी", flag: "🇮🇳", googleCode: "mr" },
+  { code: "te", name: "తెలుగు", flag: "🇮🇳", googleCode: "te" },
+  { code: "tr", name: "TÜRKÇE", flag: "🇹🇷", googleCode: "tr" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳", googleCode: "ta" },
+  { code: "vi", name: "TIẾNG VIỆT", flag: "🇻🇳", googleCode: "vi" },
+  { code: "ko", name: "한국어", flag: "🇰🇷", googleCode: "ko" },
+  { code: "it", name: "ITALIANO", flag: "🇮🇹", googleCode: "it" },
+  { code: "th", name: "ไทย", flag: "🇹🇭", googleCode: "th" },
+  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳", googleCode: "gu" },
+  { code: "fa", name: "فارسی", flag: "🇮🇷", googleCode: "fa" },
+  { code: "pl", name: "POLSKI", flag: "🇵🇱", googleCode: "pl" },
+  { code: "uk", name: "УКРАЇНСЬКА", flag: "🇺🇦", googleCode: "uk" },
+  { code: "kn", name: "ಕನ್ನಡ", flag: "🇮🇳", googleCode: "kn" },
+  { code: "ml", name: "മലയാളം", flag: "🇮🇳", googleCode: "ml" },
+  { code: "or", name: "ଓଡ଼ିଆ", flag: "🇮🇳", googleCode: "or" },
+  { code: "my", name: "မြန်မာ", flag: "🇲🇲", googleCode: "my" },
+  { code: "ha", name: "HAUSA", flag: "🇳🇬", googleCode: "ha" },
+  { code: "yo", name: "YORÙBÁ", flag: "🇳🇬", googleCode: "yo" },
+  { code: "am", name: "አማርኛ", flag: "🇪🇹", googleCode: "am" },
+];
+
+// Translation function
 const translateText = async (textArray, targetLang) => {
   if (!Array.isArray(textArray) || textArray.length === 0 || !targetLang)
     return textArray;
 
   try {
-    const response = await axios.post(`${API_URL}?key=${API_KEY}`, {
-      q: textArray,
-      target: targetLang,
-      format: "text",
-    });
+    const response = await axios.post(
+      `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`,
+      {
+        q: textArray,
+        target: targetLang,
+        format: "text",
+      }
+    );
     return response.data.data.translations.map((t) => t.translatedText);
   } catch (error) {
-    console.error("Translation error:", error.response?.data || error.message);
+    console.error("Translation error:", error);
     return textArray;
   }
 };
 
 const Register = () => {
+  // Language state - use code instead of full name
   const [language, setLanguage] = useState(
-    () => localStorage.getItem("language") || "English"
+    localStorage.getItem("language") || "en"
   );
+  const [translatedLabels, setTranslatedLabels] = useState({});
+  const [loadingTranslations, setLoadingTranslations] = useState(false);
+
   const [step, setStep] = useState(1);
   const [generatedOtp, setGeneratedOtp] = useState("");
   const [otp, setOtp] = useState("");
@@ -45,16 +88,117 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const togglePasswordVisibility = () => setShowPassword((prev) => !prev);
   const toggleConfirmPasswordVisibility = () =>
     setShowConfirmPassword((prev) => !prev);
 
-  const [translations, setTranslations] = useState({});
-  const [loadingTranslations, setLoadingTranslations] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [otpCooldown, setOtpCooldown] = useState(0);
+
+  const [passwordValidations, setPasswordValidations] = useState({
+    length: false,
+    upper: false,
+    lower: false,
+    number: false,
+    specialCharacter: false,
+    match: false,
+  });
+
+  // Labels to translate
+  const labelsToTranslate = React.useMemo(
+    () => [
+      "Create an Account",
+      "First Name",
+      "Last Name",
+      "Email Address",
+      "Password",
+      "Confirm Password",
+      "Sign Up",
+      "Already have an account?",
+      "Log in",
+      "Why Create an Account?",
+      "Create smart surveys effortlessly and share them easily",
+      "Collaborate with your team in real-time",
+      "Access data analysis and charts",
+      "Save progress, track deadlines and manage responses",
+      "Generate reports in English & Bangla",
+      "Invalid email address",
+      "Please enter a valid email before submitting.",
+      "Passwords do not match.",
+      "Registered Successfully",
+      "Enter OTP",
+      "Verify OTP",
+      "Resend OTP in",
+      "Send OTP",
+      "Sending...",
+      "Info",
+      "OTP",
+      "OTP verified successfully",
+      "Invalid OTP",
+      "📧 OTP sent to your email",
+      "❌ Failed to send OTP.",
+      "Password must include:",
+      "At least 8 characters",
+      "At least one uppercase letter",
+      "At least one lowercase letter",
+      "At least one number",
+      "At least one special alphabet",
+      "Both passwords must match",
+      "This email is already registered.",
+      "Something went wrong.",
+      "❌ Please verify OTP first.",
+      "Resend OTP",
+      "❌ Password does not meet requirements. Please follow the instructions.",
+      "❌ Password and confirm password do not match.",
+    ],
+    []
+  );
+
+  const getLabel = (text) =>
+    language === "en" ? text : translatedLabels[text] || text;
+
+  const loadTranslations = useCallback(async () => {
+    if (language === "en") {
+      setTranslatedLabels({});
+      return;
+    }
+
+    setLoadingTranslations(true);
+
+    const currentLangObj = LANGUAGES.find(l => l.code === language);
+    const targetLang = currentLangObj ? currentLangObj.googleCode : "en";
+
+    const translations = await translateText(labelsToTranslate, targetLang);
+    const mapped = {};
+    labelsToTranslate.forEach((label, idx) => {
+      mapped[label] = translations[idx];
+    });
+    setTranslatedLabels(mapped);
+    setLoadingTranslations(false);
+  }, [language, labelsToTranslate]);
+
+  // Listen for language changes from navbar
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      const newLanguage = event.detail.language;
+      setLanguage(newLanguage);
+      localStorage.setItem("language", newLanguage);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    loadTranslations();
+  }, [language, loadTranslations]);
+
   const checkEmailExists = async () => {
     try {
       const res = await apiClient.post("/api/register/check-email", {
@@ -66,6 +210,7 @@ const Register = () => {
       return false;
     }
   };
+
   const getPasswordValidations = (password, confirmPassword) => ({
     length: password.length >= 8,
     upper: /[A-Z]/.test(password),
@@ -74,138 +219,11 @@ const Register = () => {
     specialCharacter: /[~`!@#$%^&*(),.?":{}|<>]/.test(password),
     match: password === confirmPassword && confirmPassword !== "",
   });
+
   useEffect(() => {
     const { password, confirmPassword } = formData;
     setPasswordValidations(getPasswordValidations(password, confirmPassword));
   }, [formData]);
-
-  const defaultTexts = React.useMemo(
-    () => ({
-      title: "Create an Account",
-      firstName: "First Name",
-      lastName: "Last Name",
-      email: "Email Address",
-      password: "Password",
-      confirmPassword: "Confirm Password",
-      signUp: "Sign Up",
-      alreadyAccount: "Already have an account?",
-      login: "Log in",
-      whyAccount: "Why Create an Account?",
-      benefits: [
-        "Create smart surveys effortlessly and share them easily",
-        "Collaborate with your team in real-time",
-        "Access data analysis and charts",
-        "Save progress, track deadlines and manage responses",
-        "Generate reports in English & Bangla",
-      ],
-      invalidEmail: "Invalid email address",
-      emailRequired: "Please enter a valid email before submitting.",
-      passwordMismatch: "Passwords do not match.",
-      registrationSuccess: "Registered Successfully",
-      EnterOTP: "Enter OTP",
-      VerifyOTP: "Verify OTP",
-      ResendOTP: "Resend OTP in",
-      sendOtp: "Send OTP",
-      Sending: "Sending...",
-      Info: "Info",
-      OTP: "OTP",
-      otpverified: "OTP verified successfully",
-      invalidOtp: "Invalid OTP",
-      Password: "Password",
-      otpsent: "📧 OTP sent to your email",
-      failedToSendOtp: "❌ Failed to send OTP.",
-      Passwordmustinclude: "Password must include:",
-      Atleast8characters: "At least 8 characters",
-      Oneuppercaseletter: "At least one uppercase letter",
-      Onelowercaseletter: "At least one lowercase letter",
-      Onenumber: "At least one number",
-      specialCharacter: "At least one special alphabet",
-      passwordsMustMatch: "Both passwords must match",
-
-      emailalreadyregistered: "This email is already registered.",
-    }),
-    []
-  );
-
-  const [passwordValidations, setPasswordValidations] = useState({
-    length: false,
-    upper: false,
-    lower: false,
-    number: false,
-    specialCharacter: false,
-  });
-
-  useEffect(() => {
-    const { password, confirmPassword } = formData;
-    setPasswordValidations({
-      length: password.length >= 8,
-      upper: /[A-Z]/.test(password),
-      lower: /[a-z]/.test(password),
-      number: /[0-9]/.test(password),
-      specialCharacter: /[~`!@#$%^&*(),.?":{}|<>]/.test(password),
-      match: password === confirmPassword && confirmPassword !== "",
-    });
-  }, [formData]);
-
-  useEffect(() => {
-    localStorage.setItem("language", language);
-  }, [language, defaultTexts]);
-
-  useEffect(() => {
-    const fetchTranslations = async () => {
-      if (language === "English") {
-        setTranslations({});
-        return;
-      }
-
-      setLoadingTranslations(true);
-
-      try {
-        const flatTexts = [];
-        const keysMap = [];
-
-        for (const [key, value] of Object.entries(defaultTexts)) {
-          if (Array.isArray(value)) {
-            for (const v of value) {
-              flatTexts.push(v);
-              keysMap.push({ key, isArray: true });
-            }
-          } else {
-            flatTexts.push(value);
-            keysMap.push({ key, isArray: false });
-          }
-        }
-
-        const translatedArray = await translateText(flatTexts, "bn");
-
-        const newTranslations = {};
-        let idx = 0;
-
-        for (const { key, isArray } of keysMap) {
-          if (isArray) {
-            if (!newTranslations[key]) newTranslations[key] = [];
-            newTranslations[key].push(translatedArray[idx]);
-          } else {
-            newTranslations[key] = translatedArray[idx];
-          }
-          idx++;
-        }
-
-        setTranslations(newTranslations);
-      } catch (error) {
-        console.error("Translation loading error:", error);
-      }
-
-      setLoadingTranslations(false);
-    };
-
-    fetchTranslations();
-  }, [language, defaultTexts]);
-
-  const t = (key) =>
-    language === "English" || loadingTranslations
-      ? defaultTexts[key]
-      : translations[key] || defaultTexts[key];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -213,7 +231,7 @@ const Register = () => {
 
     if (name === "email") {
       const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      setEmailError(emailPattern.test(value) ? "" : t("invalidEmail"));
+      setEmailError(emailPattern.test(value) ? "" : getLabel("Invalid email address"));
     }
 
     if (name === "password" || name === "confirmPassword") {
@@ -231,12 +249,12 @@ const Register = () => {
       });
     }
   };
+
   const handleSubmitFinal = async (e) => {
     e.preventDefault();
-    if (emailError) return toast.error(`❌ ${t("emailRequired")}`);
+    if (emailError) return toast.error(`❌ ${getLabel("Please enter a valid email before submitting.")}`);
     if (formData.password !== formData.confirmPassword) {
-      const msg = `❌ ${t("passwordMismatch")}`;
-      return toast.error(msg);
+      return toast.error(`❌ ${getLabel("Passwords do not match.")}`);
     }
 
     setIsLoading(true);
@@ -249,32 +267,31 @@ const Register = () => {
 
       if (response.status === 201) {
         toast.success(
-          `🎉 ${t("registrationSuccess")}: ${formData.firstName} ${
-            formData.lastName
-          }`
+          `🎉 ${getLabel("Registered Successfully")}: ${formData.firstName} ${formData.lastName}`
         );
         setTimeout(() => (window.location.href = "/login"), 3000);
       }
     } catch (error) {
-      toast.error("❌ Something went wrong.");
+      toast.error(`❌ ${getLabel("Something went wrong.")}`);
       console.error("Registration error:", error);
     } finally {
       setIsLoading(false);
     }
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validatePassword()) return;
-    if (!otpVerified) return toast.error("❌ Please verify OTP first.");
+    if (!otpVerified) return toast.error(getLabel("❌ Please verify OTP first."));
     if (formData.password !== formData.confirmPassword)
-      return toast.error(`❌ ${t("passwordMismatch")}`);
+      return toast.error(`❌ ${getLabel("Passwords do not match.")}`);
 
     setIsLoading(true);
     try {
-      toast.success(`🎉 ${t("registrationSuccess")}`);
+      toast.success(`🎉 ${getLabel("Registered Successfully")}`);
       setTimeout(() => (window.location.href = "/"), 3000);
     } catch {
-      toast.error("❌ Something went wrong.");
+      toast.error(`❌ ${getLabel("Something went wrong.")}`);
     } finally {
       setIsLoading(false);
     }
@@ -284,22 +301,19 @@ const Register = () => {
     setIsLoading(true);
     setEmailError("");
 
-    // Check if email is provided
     if (!formData.email) {
-      toast.error(`❌ ${t("emailRequired")}`);
+      toast.error(`❌ ${getLabel("Please enter a valid email before submitting.")}`);
       setIsLoading(false);
       return;
     }
 
-    // Check if email already exists in DB
     const exists = await checkEmailExists();
     if (exists) {
-      setEmailError(t("emailalreadyregistered"));
+      setEmailError(getLabel("This email is already registered."));
       setIsLoading(false);
       return;
     }
 
-    // Generate 6-digit OTP
     const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setGeneratedOtp(newOtp);
 
@@ -309,12 +323,12 @@ const Register = () => {
         otp: newOtp,
       });
 
-      toast.success(t("otpsent"));
+      toast.success(getLabel("📧 OTP sent to your email"));
       setStep(2);
-      setOtpCooldown(180); // 3 minutes cooldown
+      setOtpCooldown(180);
     } catch (error) {
       console.error("Failed to send OTP:", error);
-      toast.error(t("failedToSendOtp"));
+      toast.error(getLabel("❌ Failed to send OTP."));
     } finally {
       setIsLoading(false);
     }
@@ -323,10 +337,10 @@ const Register = () => {
   const verifyOtp = () => {
     if (otp === generatedOtp) {
       setOtpVerified(true);
-      toast.success(t("otpverified"));
+      toast.success(getLabel("OTP verified successfully"));
       setStep(3);
     } else {
-      toast.error(t("invalidOtp"));
+      toast.error(getLabel("Invalid OTP"));
     }
   };
 
@@ -353,17 +367,9 @@ const Register = () => {
         !validations.number ||
         !validations.specialCharacter
       ) {
-        toast.error(
-          language === "Bangla"
-            ? "❌ পাসওয়ার্ডটি যথাযথ নয়। অনুগ্রহ করে নির্দেশনা অনুসরণ করুন।"
-            : "❌ Password does not meet requirements. Please follow the instructions."
-        );
+        toast.error(getLabel("❌ Password does not meet requirements. Please follow the instructions."));
       } else if (!validations.match) {
-        toast.error(
-          language === "Bangla"
-            ? "❌ পাসওয়ার্ড ও নিশ্চিতকরণ পাসওয়ার্ড মিলছে না।"
-            : "❌ Password and confirm password do not match."
-        );
+        toast.error(getLabel("❌ Password and confirm password do not match."));
       }
       return false;
     }
@@ -386,11 +392,13 @@ const Register = () => {
             alt="Account Benefits"
             className="feature-image"
           />
-          <h3>{t("whyAccount")}</h3>
+          <h3>{getLabel("Why Create an Account?")}</h3>
           <ul>
-            {t("benefits").map((b, i) => (
-              <li key={i}>{b}</li>
-            ))}
+            <li>{getLabel("Create smart surveys effortlessly and share them easily")}</li>
+            <li>{getLabel("Collaborate with your team in real-time")}</li>
+            <li>{getLabel("Access data analysis and charts")}</li>
+            <li>{getLabel("Save progress, track deadlines and manage responses")}</li>
+            <li>{getLabel("Generate reports in English & Bangla")}</li>
           </ul>
         </motion.div>
 
@@ -400,7 +408,7 @@ const Register = () => {
           animate={{ y: 0 }}
           transition={{ duration: 1 }}
         >
-          <h2 className="register-title">{t("title")}</h2>
+          <h2 className="register-title">{getLabel("Create an Account")}</h2>
 
           <div className="step-indicator">
             <div
@@ -416,9 +424,9 @@ const Register = () => {
               }}
             ></div>
             {[
-              { label: t("Info"), number: 1 },
-              { label: t("OTP"), number: 2 },
-              { label: t("Password"), number: 3 },
+              { label: getLabel("Info"), number: 1 },
+              { label: getLabel("OTP"), number: 2 },
+              { label: getLabel("Password"), number: 3 },
             ].map(({ label, number }) => (
               <div className="step" key={number}>
                 <div
@@ -430,7 +438,7 @@ const Register = () => {
                       : ""
                   }`}
                   onClick={() => {
-                    if (number < step) setStep(number); // allow back navigation only
+                    if (number < step) setStep(number);
                   }}
                   title={label}
                 >
@@ -448,7 +456,7 @@ const Register = () => {
                   <input
                     type="text"
                     name="firstName"
-                    placeholder={t("firstName")}
+                    placeholder={getLabel("First Name")}
                     value={formData.firstName}
                     onChange={handleChange}
                     required
@@ -456,7 +464,7 @@ const Register = () => {
                   <input
                     type="text"
                     name="lastName"
-                    placeholder={t("lastName")}
+                    placeholder={getLabel("Last Name")}
                     value={formData.lastName}
                     onChange={handleChange}
                     required
@@ -465,7 +473,7 @@ const Register = () => {
                 <input
                   type="email"
                   name="email"
-                  placeholder={t("email")}
+                  placeholder={getLabel("Email Address")}
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -477,7 +485,7 @@ const Register = () => {
                   onClick={sendOtp}
                   disabled={isLoading}
                 >
-                  {isLoading ? t("Sending") : t("sendOtp")}
+                  {isLoading ? getLabel("Sending...") : getLabel("Send OTP")}
                 </button>
               </>
             )}
@@ -486,7 +494,7 @@ const Register = () => {
               <>
                 <input
                   type="text"
-                  placeholder={t("EnterOTP")}
+                  placeholder={getLabel("Enter OTP")}
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
                   required
@@ -497,7 +505,7 @@ const Register = () => {
                     className="register-button"
                     onClick={verifyOtp}
                   >
-                    {t("VerifyOTP")}
+                    {getLabel("Verify OTP")}
                   </button>
 
                   <button
@@ -507,14 +515,14 @@ const Register = () => {
                     disabled={otpCooldown > 0 || isLoading}
                   >
                     {otpCooldown > 0
-                      ? `${t("ResendOTP")} ${Math.floor(otpCooldown / 60)
+                      ? `${getLabel("Resend OTP in")} ${Math.floor(otpCooldown / 60)
                           .toString()
                           .padStart(2, "0")}:${(otpCooldown % 60)
                           .toString()
                           .padStart(2, "0")}`
                       : isLoading
-                      ? t("Sending")
-                      : t("Resend OTP")}
+                      ? getLabel("Sending...")
+                      : getLabel("Resend OTP")}
                   </button>
                 </div>
               </>
@@ -523,52 +531,25 @@ const Register = () => {
             {step === 3 && (
               <>
                 <div className="password-requirements">
-                  <p>{t("Passwordmustinclude")}</p>
+                  <p>{getLabel("Password must include:")}</p>
                   <ul>
-                    <li
-                      style={{
-                        color: passwordValidations.length ? "green" : "red",
-                      }}
-                    >
-                      ✔️ {t("Atleast8characters")}
+                    <li style={{ color: passwordValidations.length ? "green" : "red" }}>
+                      ✔️ {getLabel("At least 8 characters")}
                     </li>
-                    <li
-                      style={{
-                        color: passwordValidations.upper ? "green" : "red",
-                      }}
-                    >
-                      ✔️ {t("Oneuppercaseletter")}
+                    <li style={{ color: passwordValidations.upper ? "green" : "red" }}>
+                      ✔️ {getLabel("At least one uppercase letter")}
                     </li>
-                    <li
-                      style={{
-                        color: passwordValidations.lower ? "green" : "red",
-                      }}
-                    >
-                      ✔️ {t("Onelowercaseletter")}
+                    <li style={{ color: passwordValidations.lower ? "green" : "red" }}>
+                      ✔️ {getLabel("At least one lowercase letter")}
                     </li>
-                    <li
-                      style={{
-                        color: passwordValidations.number ? "green" : "red",
-                      }}
-                    >
-                      ✔️ {t("Onenumber")}
+                    <li style={{ color: passwordValidations.number ? "green" : "red" }}>
+                      ✔️ {getLabel("At least one number")}
                     </li>
-                    <li
-                      style={{
-                        color: passwordValidations.specialCharacter
-                          ? "green"
-                          : "red",
-                      }}
-                    >
-                      ✔️ {t("specialCharacter")}
+                    <li style={{ color: passwordValidations.specialCharacter ? "green" : "red" }}>
+                      ✔️ {getLabel("At least one special alphabet")}
                     </li>
-
-                    <li
-                      style={{
-                        color: passwordValidations.match ? "green" : "red",
-                      }}
-                    >
-                      ✔️ {t("passwordsMustMatch")}
+                    <li style={{ color: passwordValidations.match ? "green" : "red" }}>
+                      ✔️ {getLabel("Both passwords must match")}
                     </li>
                   </ul>
                 </div>
@@ -577,7 +558,7 @@ const Register = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     name="password"
-                    placeholder={t("Password")}
+                    placeholder={getLabel("Password")}
                     value={formData.password}
                     onChange={handleChange}
                     required
@@ -594,7 +575,7 @@ const Register = () => {
                   <input
                     type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
-                    placeholder={t("confirmPassword")}
+                    placeholder={getLabel("Confirm Password")}
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     required
@@ -615,13 +596,13 @@ const Register = () => {
                     Object.values(passwordValidations).includes(false)
                   }
                 >
-                  {isLoading ? "..." : t("signUp")}
+                  {isLoading ? "..." : getLabel("Sign Up")}
                 </button>
               </>
             )}
           </form>
           <p className="login-link">
-            {t("alreadyAccount")} <a href="/">{t("login")}</a>
+            {getLabel("Already have an account?")} <a href="/">{getLabel("Log in")}</a>
           </p>
         </motion.div>
       </div>

@@ -25,6 +25,43 @@ import no_survey from "./banner/no_survey.png";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
 
+// Language configurations matching dashboard
+const LANGUAGES = [
+  { code: "en", name: "ENGLISH", flag: "🇬🇧", googleCode: "en" },
+  { code: "bn", name: "বাংলা", flag: "🇧🇩", googleCode: "bn" },
+  { code: "zh", name: "中文", flag: "🇨🇳", googleCode: "zh-CN" },
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳", googleCode: "hi" },
+  { code: "es", name: "ESPAÑOL", flag: "🇪🇸", googleCode: "es" },
+  { code: "ar", name: "العربية", flag: "🇸🇦", googleCode: "ar" },
+  { code: "fr", name: "FRANÇAIS", flag: "🇫🇷", googleCode: "fr" },
+  { code: "pt", name: "PORTUGUÊS", flag: "🇵🇹", googleCode: "pt" },
+  { code: "ru", name: "РУССКИЙ", flag: "🇷🇺", googleCode: "ru" },
+  { code: "ur", name: "اردو", flag: "🇵🇰", googleCode: "ur" },
+  { code: "id", name: "BAHASA INDONESIA", flag: "🇮🇩", googleCode: "id" },
+  { code: "de", name: "DEUTSCH", flag: "🇩🇪", googleCode: "de" },
+  { code: "ja", name: "日本語", flag: "🇯🇵", googleCode: "ja" },
+  { code: "sw", name: "KISWAHILI", flag: "🇰🇪", googleCode: "sw" },
+  { code: "mr", name: "मराठी", flag: "🇮🇳", googleCode: "mr" },
+  { code: "te", name: "తెలుగు", flag: "🇮🇳", googleCode: "te" },
+  { code: "tr", name: "TÜRKÇE", flag: "🇹🇷", googleCode: "tr" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳", googleCode: "ta" },
+  { code: "vi", name: "TIẾNG VIỆT", flag: "🇻🇳", googleCode: "vi" },
+  { code: "ko", name: "한국어", flag: "🇰🇷", googleCode: "ko" },
+  { code: "it", name: "ITALIANO", flag: "🇮🇹", googleCode: "it" },
+  { code: "th", name: "ไทย", flag: "🇹🇭", googleCode: "th" },
+  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳", googleCode: "gu" },
+  { code: "fa", name: "فارسی", flag: "🇮🇷", googleCode: "fa" },
+  { code: "pl", name: "POLSKI", flag: "🇵🇱", googleCode: "pl" },
+  { code: "uk", name: "УКРАЇНСЬКА", flag: "🇺🇦", googleCode: "uk" },
+  { code: "kn", name: "ಕನ್ನಡ", flag: "🇮🇳", googleCode: "kn" },
+  { code: "ml", name: "മലയാളം", flag: "🇮🇳", googleCode: "ml" },
+  { code: "or", name: "ଓଡ଼ିଆ", flag: "🇮🇳", googleCode: "or" },
+  { code: "my", name: "မြန်မာ", flag: "🇲🇲", googleCode: "my" },
+  { code: "ha", name: "HAUSA", flag: "🇳🇬", googleCode: "ha" },
+  { code: "yo", name: "YORÙBÁ", flag: "🇳🇬", googleCode: "yo" },
+  { code: "am", name: "አማርኛ", flag: "🇪🇹", googleCode: "am" },
+];
+
 const translateText = async (textArray, targetLang) => {
   try {
     const response = await axios.post(
@@ -47,7 +84,7 @@ const CollabSurveyTab = ({
   showCollabModal,
   setShowCollabModal,
   navigate,
-  language = "English",
+  language: propLanguage,
 }) => {
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [collabRequests, setCollabRequests] = useState([]);
@@ -57,6 +94,11 @@ const CollabSurveyTab = ({
   const [sortField, setSortField] = useState("title");
   const [sortOrder, setSortOrder] = useState("asc");
   const [survey_details, setSurveyDetails] = useState({});
+  
+  // Language state - use prop if provided, otherwise use localStorage
+  const [language, setLanguage] = useState(
+    propLanguage || localStorage.getItem("language") || "en"
+  );
 
   const bannerImages = [
     banner1,
@@ -105,20 +147,46 @@ const CollabSurveyTab = ({
   );
 
   const getLabel = (text) =>
-    language === "English" ? text : translatedLabels[text] || text;
+    language === "en" ? text : translatedLabels[text] || text;
 
   const loadTranslations = useCallback(async () => {
-    if (language === "English") {
+    if (language === "en") {
       setTranslatedLabels({});
       return;
     }
-    const translations = await translateText(labelsToTranslate, "bn");
+
+    // Get the Google Translate language code for the current language
+    const currentLangObj = LANGUAGES.find(l => l.code === language);
+    const targetLang = currentLangObj ? currentLangObj.googleCode : "en";
+
+    const translations = await translateText(labelsToTranslate, targetLang);
     const mapped = {};
     labelsToTranslate.forEach((label, idx) => {
       mapped[label] = translations[idx];
     });
     setTranslatedLabels(mapped);
   }, [language, labelsToTranslate]);
+
+  // Listen for language changes from navbar
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      const newLanguage = event.detail.language;
+      setLanguage(newLanguage);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
+
+  // Update language when prop changes
+  useEffect(() => {
+    if (propLanguage) {
+      setLanguage(propLanguage);
+    }
+  }, [propLanguage]);
 
   useEffect(() => {
     loadTranslations();
@@ -347,7 +415,6 @@ const CollabSurveyTab = ({
                 <div
                   className="collab-banner"
                   style={{
-                    // backgroundImage: `url(${getSurveyBanner(survey_id)})`,
                     backgroundImage: survey_details.banner
                       ? survey_details.banner
                       : survey_details.backgroundImage
