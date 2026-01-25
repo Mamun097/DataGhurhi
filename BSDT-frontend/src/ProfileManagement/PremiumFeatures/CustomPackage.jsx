@@ -388,12 +388,12 @@ const CustomPackageBuilder = ({
   const formatValidityDisplay = (days) => {
     if (days >= 365) {
       const years = Math.floor(days / 365);
-      return `${years} ${years === 1 ? "Year" : "Years"}`;
+      return `${years} ${years === 1 ? getLabel("Year") : getLabel("Years")}`;
     } else if (days >= 30) {
       const months = Math.floor(days / 30);
-      return `${months} ${months === 1 ? "Month" : "Months"}`;
+      return `${months} ${months === 1 ? getLabel("Month") : getLabel("Months")}`;
     } else {
-      return `${days} ${days === 1 ? "Day" : "Days"}`;
+      return `${days} ${days === 1 ? getLabel("Day") : getLabel("Days")}`;
     }
   };
 
@@ -871,7 +871,7 @@ const CustomPackageBuilder = ({
                 className="coupon-link"
                 onClick={() => setIsCouponOverlayOpen(true)}
               >
-                Have a coupon? 🎟️
+                {getLabel ? getLabel("Have a coupon?") : "Have a coupon?"} 🎟️
               </button>
               {appliedCoupon && (
                 <div className="applied-coupon-info">

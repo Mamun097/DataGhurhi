@@ -21,14 +21,14 @@ import axios from 'axios';
 import AnalysisResults from './StatisticalAnalysisFiles/AnalysisResults';
 
 const translations = {
-    English: {
+    en: {
         //title: "Statistical Analysis Tool",
         // subtitle: "Upload your Excel file and run various statistical tests on your data",
         // formTitle: "Data Analysis Form",
         // uploadLabel: "Import File",
         // preprocessedLabel: "Preprocessed File",
         // surveyLabel: "Survey Data File",
-        // dropFile: "Drag your file or click to browse",
+        dropFile: "Drag your file or click to browse",
         // processing: "Processing file, please wait...",
         // testType: "Test Type",
         // testGroups: {
@@ -117,7 +117,7 @@ const translations = {
         // youMustSelect: 'You must select exactly 2 groups',
         // groupsLoading: 'Loading groups...',
         // mannwhitneyHelp: 'Select exactly 2 groups for Mann-Whitney test. Applicable only for numerical data.',        
-        // languageToggle: "বাংলা",
+        // languageToggle: 'bn',
         // downloadLabel: "Format",
         // useDefaultSettings: "Use default plot settings?",
         // labelFontSize: "Label font size",
@@ -147,7 +147,7 @@ const translations = {
         // insights: "File Insights",
         // insightsText: "Insights will appear here"
     },
-    "বাংলা": {
+    'bn': {
         title: "পরিসংখ্যানগত বিশ্লেষণ টুল",
         subtitle: "আপনার এক্সেল ফাইল আপলোড করুন এবং আপনার ডেটাতে বিভিন্ন পরিসংখ্যান পরীক্ষা চালান",
         formTitle: "ডেটা বিশ্লেষণ ফর্ম",
@@ -283,7 +283,7 @@ const digitMapBn = {
 
 // Function to convert English digits to Bengali
 const mapDigits = (text, lang) => {
-    if (lang !== 'বাংলা') return text;
+    if (lang !== 'bn') return text;
     return text.toString().split('').map(char => digitMapBn[char] || char).join('');
 };
 
@@ -312,7 +312,7 @@ const StatisticalAnalysisTool = () => {
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
-        return localStorage.getItem("language") || "English";
+        return localStorage.getItem("language") || 'en';
     });
 
     // Sync with localStorage when language changes
@@ -367,7 +367,7 @@ const StatisticalAnalysisTool = () => {
 
     const [translatedLabels, setTranslatedLabels] = useState({});
     const loadTranslations = async () => {
-  if (language === "English") {
+  if (language === 'en') {
     setTranslatedLabels({});
     return;
   }
@@ -466,7 +466,7 @@ const StatisticalAnalysisTool = () => {
             
   ];
 
-  const translations = await translateText(labelsToTranslate, "bn");
+  const translations = await translateText(labelsToTranslate, 'bn');
   const translated = {};
   
   labelsToTranslate.forEach((key, idx) => {
@@ -480,7 +480,7 @@ useEffect(() => {
 }, [language]);
 
 const getLabel = (text) =>
-  language === "English" ? text : translatedLabels[text] || text;
+  language === 'en' ? text : translatedLabels[text] || text;
 
     const fetchcolumn = async () => {
         // Fetch column
@@ -583,9 +583,9 @@ const getLabel = (text) =>
 
     console.log("File name from sessionStorage:", fileName);
 
-    useEffect(() => {
-        if (!file) setFileName(translations[language].dropFile);
-    }, [language, file]);
+    // useEffect(() => {
+    //     if (!file) setFileName(translations[language].dropFile);
+    // }, [language, file]);
     // preprocessed data state
 
 
@@ -822,7 +822,7 @@ const getLabel = (text) =>
         
         if (!cacheKey) {
             setErrorMessage(
-                language === "বাংলা" 
+                language === 'bn' 
                     ? "প্রথমে একটি ফাইল আপলোড করুন" 
                     : "Please upload a file first"
             );
@@ -840,7 +840,7 @@ const getLabel = (text) =>
             } catch (error) {
                 console.error("Error fetching column types:", error);
                 setErrorMessage(
-                    language === "বাংলা" 
+                    language === 'bn' 
                         ? "কলাম বিশ্লেষণে ত্রুটি হয়েছে" 
                         : "Error analyzing columns"
                 );
@@ -1185,7 +1185,7 @@ const getLabel = (text) =>
         if (testType === 'mannwhitney') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1194,7 +1194,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'ম্যান-হুইটনি পরীক্ষার জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'Mann-Whitney test requires both categorical and numeric columns in the file.'
                 );
@@ -1203,7 +1203,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1212,7 +1212,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1229,7 +1229,7 @@ const getLabel = (text) =>
         if (testType === 'kruskal') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1238,7 +1238,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'Kruskal-Wallis test requires both categorical and numeric columns in the file.'
                 );
@@ -1247,7 +1247,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1256,7 +1256,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1268,7 +1268,7 @@ const getLabel = (text) =>
         if (testType === 'wilcoxon') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে ২টি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select 2 numeric columns.'
                 );
@@ -1277,7 +1277,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length < 2) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'উইলকক্সন পরীক্ষার জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Wilcoxon test requires at least 2 numeric columns in the file.'
                 );
@@ -1286,7 +1286,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'First column must be a numeric column.'
                 );
@@ -1295,7 +1295,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1307,7 +1307,7 @@ const getLabel = (text) =>
         if (testType === 'linear_regression') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে স্বাধীন এবং নির্ভরশীল চলক নির্বাচন করুন।' 
                         : 'Please select independent and dependent variables.'
                 );
@@ -1316,7 +1316,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length < 2) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'রৈখিক রিগ্রেশনের জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Linear regression requires at least 2 numeric columns in the file.'
                 );
@@ -1325,7 +1325,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'স্বাধীন চলকটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Independent variable must be a numeric column.'
                 );
@@ -1334,7 +1334,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্ভরশীল চলকটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Dependent variable must be a numeric column.'
                 );
@@ -1346,7 +1346,7 @@ const getLabel = (text) =>
         if (testType === 'bar_chart') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন।' 
                         : 'Please select a categorical column.'
                 );
@@ -1355,7 +1355,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'বার চার্টের জন্য ফাইলে শ্রেণীবদ্ধ কলাম প্রয়োজন।'
                         : 'Bar chart requires categorical columns in the file.'
                 );
@@ -1364,7 +1364,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'Selected column must be a categorical column.'
                 );
@@ -1376,7 +1376,7 @@ const getLabel = (text) =>
         if (testType === 'eda_pie') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন।' 
                         : 'Please select a categorical column.'
                 );
@@ -1385,7 +1385,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'পাই চার্টের জন্য ফাইলে শ্রেণীবদ্ধ কলাম প্রয়োজন।'
                         : 'Pie chart requires categorical columns in the file.'
                 );
@@ -1394,7 +1394,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'Selected column must be a categorical column.'
                 );
@@ -1406,7 +1406,7 @@ const getLabel = (text) =>
         if (testType === 'shapiro') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select a numeric column.'
                 );
@@ -1415,7 +1415,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'শাপিরো-উইল্ক পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Shapiro-Wilk test requires numeric columns in the file.'
                 );
@@ -1424,7 +1424,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Selected column must be a numeric column.'
                 );
@@ -1436,7 +1436,7 @@ const getLabel = (text) =>
         if (testType === 'kolmogorov') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select a numeric column.'
                 );
@@ -1445,7 +1445,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'কোলমোগোরভ-স্মিরনভ পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Kolmogorov-Smirnov test requires numeric columns in the file.'
                 );
@@ -1454,7 +1454,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Selected column must be a numeric column.'
                 );
@@ -1466,7 +1466,7 @@ const getLabel = (text) =>
         if (testType === 'anderson') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select a numeric column.'
                 );
@@ -1475,7 +1475,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'অ্যান্ডারসন-ডার্লিং পরীক্ষার জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Anderson-Darling test requires numeric columns in the file.'
                 );
@@ -1484,7 +1484,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Selected column must be a numeric column.'
                 );
@@ -1496,7 +1496,7 @@ const getLabel = (text) =>
         if (testType === 'eda_distribution') {
             if (!column1) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select a numeric column.'
                 );
@@ -1505,7 +1505,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'বন্টন প্লটের জন্য ফাইলে সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Distribution plot requires numeric columns in the file.'
                 );
@@ -1514,7 +1514,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'নির্বাচিত কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Selected column must be a numeric column.'
                 );
@@ -1526,7 +1526,7 @@ const getLabel = (text) =>
         if (testType === 'eda_swarm') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1535,7 +1535,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'সোয়ার্ম প্লটের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'Swarm plot requires both categorical and numeric columns in the file.'
                 );
@@ -1544,7 +1544,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1553,7 +1553,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1565,7 +1565,7 @@ const getLabel = (text) =>
         if (testType === 'similarity') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে ২টি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select 2 numeric columns.'
                 );
@@ -1574,7 +1574,7 @@ const getLabel = (text) =>
             
             if (numericColumns.length < 2) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'সাদৃশ্য পরীক্ষার জন্য ফাইলে কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
                         : 'Similarity test requires at least 2 numeric columns in the file.'
                 );
@@ -1583,7 +1583,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'First column must be a numeric column.'
                 );
@@ -1592,7 +1592,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1604,7 +1604,7 @@ const getLabel = (text) =>
         if (testType === 'anova') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1613,7 +1613,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'এনোভা পরীক্ষার জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'ANOVA test requires both categorical and numeric columns in the file.'
                 );
@@ -1622,7 +1622,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1631,7 +1631,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1643,7 +1643,7 @@ const getLabel = (text) =>
         if (testType === 'ancova') {
             if (!column1 || !column2 || !column3) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং দুটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select one categorical and two numeric columns.'
                 );
@@ -1652,7 +1652,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length < 2) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'এনকোভা পরীক্ষার জন্য ফাইলে ১টি শ্রেণীবদ্ধ এবং কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন।'
                         : 'ANCOVA test requires 1 categorical and at least 2 numeric columns in the file.'
                 );
@@ -1661,7 +1661,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে (গ্রুপ ভেরিয়েবল)।'
                         : 'First column must be a categorical column (group variable).'
                 );
@@ -1670,7 +1670,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে (কোভেরিয়েট)।'
                         : 'Second column must be a numeric column (covariate).'
                 );
@@ -1679,7 +1679,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column3)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'তৃতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে (আউটকাম)।'
                         : 'Third column must be a numeric column (outcome).'
                 );
@@ -1689,7 +1689,7 @@ const getLabel = (text) =>
             // Make sure column2 and column3 are different
             if (column2 === column3) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'কোভেরিয়েট এবং আউটকাম কলাম দুটি আলাদা হতে হবে।'
                         : 'Covariate and outcome columns must be different.'
                 );
@@ -1701,7 +1701,7 @@ const getLabel = (text) =>
         if (testType === 'f_test') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1710,7 +1710,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'এফ-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'F-test requires both categorical and numeric columns in the file.'
                 );
@@ -1719,7 +1719,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1728,7 +1728,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1737,7 +1737,7 @@ const getLabel = (text) =>
             
             if (selectedGroups.length !== 2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'এফ-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
                         : 'Please select exactly 2 groups for F-test.'
                 );
@@ -1749,7 +1749,7 @@ const getLabel = (text) =>
         if (testType === 'z_test') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1758,7 +1758,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'জেড-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'Z-test requires both categorical and numeric columns in the file.'
                 );
@@ -1767,7 +1767,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1776,7 +1776,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1785,7 +1785,7 @@ const getLabel = (text) =>
             
             if (selectedGroups.length !== 2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'জেড-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
                         : 'Please select exactly 2 groups for Z-test.'
                 );
@@ -1797,7 +1797,7 @@ const getLabel = (text) =>
         if (testType === 't_test') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1806,7 +1806,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'টি-টেস্টের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'T-test requires both categorical and numeric columns in the file.'
                 );
@@ -1815,7 +1815,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1824,7 +1824,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1833,7 +1833,7 @@ const getLabel = (text) =>
             
             if (selectedGroups.length !== 2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'টি-টেস্টের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
                         : 'Please select exactly 2 groups for T-test.'
                 );
@@ -1845,7 +1845,7 @@ const getLabel = (text) =>
         if (testType === 'fzt_visualization') {
             if (!column1 || !column2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'দয়া করে একটি শ্রেণীবদ্ধ এবং একটি সংখ্যাগত কলাম নির্বাচন করুন।' 
                         : 'Please select both a categorical and a numeric column.'
                 );
@@ -1854,7 +1854,7 @@ const getLabel = (text) =>
             
             if (categoricalColumns.length === 0 || numericColumns.length === 0) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'এফ/জেড/টি সম্মিলিত বিশ্লেষণের জন্য ফাইলে শ্রেণীবদ্ধ এবং সংখ্যাগত উভয় ধরনের কলাম প্রয়োজন।'
                         : 'F/Z/T combined analysis requires both categorical and numeric columns in the file.'
                 );
@@ -1863,7 +1863,7 @@ const getLabel = (text) =>
             
             if (!categoricalColumns.includes(column1)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'প্রথম কলামটি একটি শ্রেণীবদ্ধ কলাম হতে হবে।'
                         : 'First column must be a categorical column.'
                 );
@@ -1872,7 +1872,7 @@ const getLabel = (text) =>
             
             if (!numericColumns.includes(column2)) {
                 setErrorMessage(
-                    language === 'বাংলা'
+                    language === 'bn'
                         ? 'দ্বিতীয় কলামটি একটি সংখ্যাগত কলাম হতে হবে।'
                         : 'Second column must be a numeric column.'
                 );
@@ -1881,7 +1881,7 @@ const getLabel = (text) =>
             
             if (selectedGroups.length !== 2) {
                 setErrorMessage(
-                    language === 'বাংলা' 
+                    language === 'bn' 
                         ? 'এফ/জেড/টি সম্মিলিত বিশ্লেষণের জন্য ঠিক ২টি গ্রুপ নির্বাচন করুন।' 
                         : 'Please select exactly 2 groups for F/Z/T combined analysis.'
                 );
@@ -1892,7 +1892,7 @@ const getLabel = (text) =>
         setIsAnalyzing(true);
         setErrorMessage(''); // ← CLEAR ANY ERROR MESSAGES
 
-        const langCode = language === 'বাংলা' ? "বাংলা" : 'en';
+        const langCode = language === 'bn' ? 'bn' : 'en';
         const isHeatmap4x4 = heatmapSize === '4x4';
 
         const formData = new FormData();
@@ -2096,7 +2096,7 @@ const getLabel = (text) =>
     const resetForm = () => {
         setResults(null);
         setFile(null);
-        setFileName(t.dropFile);
+        // setFileName(t.dropFile);
         setUploadStatus('initial');
         setColumns([]);
         setColumn1('');
@@ -2247,7 +2247,7 @@ const closePreview= async () =>{
                                 //     cursor: "not-allowed"
                                 // }}
                                 onClick={() => navigate("/report")} className="an-btn an-btn-primary small">
-                                    {language === "বাংলা" ? "রিপোর্ট দেখুন" : "Show Report"}
+                                    {language === 'bn' ? "রিপোর্ট দেখুন" : "Show Report"}
                                 </button>
                             </div>
 
@@ -2330,7 +2330,7 @@ const closePreview= async () =>{
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                     <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
                                                                 </svg>
-                                                                {language === "বাংলা" ? "পরীক্ষার পরামর্শ" : "Test Suggestions"}
+                                                                {language === 'bn' ? "পরীক্ষার পরামর্শ" : "Test Suggestions"}
                                                             </button>
 
 
@@ -2341,7 +2341,7 @@ const closePreview= async () =>{
                                                                 fontSize: '14px',
                                                                 fontStyle: 'italic',
                                                             }}>
-                                                                {language === "বাংলা" 
+                                                                {language === 'bn' 
                                                                     ? "আপনার ডেটার জন্য উপযুক্ত পরীক্ষা জানতে এখানে ক্লিক করুন" 
                                                                     : "Click here to see which tests are appropriate for your data"}
                                                             </p>
@@ -2363,7 +2363,7 @@ const closePreview= async () =>{
                                                                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                                                     <circle cx="12" cy="12" r="3"></circle>
                                                                 </svg>
-                                                                {language === "বাংলা" ? "ডেটা প্রিভিউ" : "Preview"}
+                                                                {language === 'bn' ? "ডেটা প্রিভিউ" : "Preview"}
                                                             </button>
                                                             
                                                             <button
@@ -2377,7 +2377,7 @@ const closePreview= async () =>{
                                                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                                                     <path d="M12 2v6m0 4v10M4 8l4 4-4 4m16-8l-4 4 4 4"></path>
                                                                 </svg>
-                                                                {language === "বাংলা" ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
+                                                                {language === 'bn' ? "ডেটা প্রিপ্রসেস করুন" : "Preprocess"}
                                                             </button>
 
                                                             <button
@@ -2390,7 +2390,7 @@ const closePreview= async () =>{
                                                                     <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
                                                                     <path d="M3 21v-5h5"></path>
                                                                 </svg>
-                                                                {language === "বাংলা" ? "রিসেট করুন" : "Reset"}
+                                                                {language === 'bn' ? "রিসেট করুন" : "Reset"}
                                                             </button>
                                                         </div>
                                                     </div>
@@ -2775,7 +2775,7 @@ const closePreview= async () =>{
                                                         <div className="mt-2 p-3 bg-gray-100 text-gray-700 text-sm rounded shadow-sm text-left">
 
                                                             <strong className="block text-gray-800 mb-1">
-                                                                {language === "বাংলা" ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
+                                                                {language === 'bn' ? 'পরীক্ষার বিবরণ:' : 'Statistical Test Description:'}
                                                             </strong>
                                                             
                                                             {/* Description */}
@@ -2792,7 +2792,7 @@ const closePreview= async () =>{
                                                                     onClick={() => setDetailsModalVisible(true)}
                                                                     className="text-blue-600 text-xs underline hover:text-blue-800"
                                                                     >
-                                                                    {language === "বাংলা" ? 'বিস্তারিত দেখুন' : 'More Details'}
+                                                                    {language === 'bn' ? 'বিস্তারিত দেখুন' : 'More Details'}
                                                                     </button>
                                                                 </div>
                                                             )}                                                            
@@ -3138,7 +3138,7 @@ const closePreview= async () =>{
                                                                 testType === "anderson" ||
                                                                 testType === "shapiro" ||
                                                                 testType === "eda_distribution")
-                                                                ? language === "bn"
+                                                                ? language === 'bn'
                                                                     ? "একটি সংখ্যাগত কলাম নির্বাচন করুন"
                                                                     : "Pick a Numerical Column"
                                                                 : getLabel("Column 1")}
@@ -3187,10 +3187,10 @@ const closePreview= async () =>{
                                                         <div className="form-group">
                                                             <label className="form-label">
                                                                 {testType === 'kruskal'
-                                                                    ? (language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)")
+                                                                    ? (language === 'bn' ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)")
                                                                     : testType === 'eda_swarm'
-                                                                    ? (language === "বাংলা" ? "শ্রেণীবদ্ধ কলাম (X-অক্ষ)" : "Categorical Column (X-axis)")
-                                                                    : (language === "বাংলা" ? "ফ্যাক্টর কলাম (শ্রেণীবদ্ধ)" : "Factor Column (Categorical)")
+                                                                    ? (language === 'bn' ? "শ্রেণীবদ্ধ কলাম (X-অক্ষ)" : "Categorical Column (X-axis)")
+                                                                    : (language === 'bn' ? "ফ্যাক্টর কলাম (শ্রেণীবদ্ধ)" : "Factor Column (Categorical)")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
@@ -3199,8 +3199,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
@@ -3212,14 +3212,14 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'kruskal'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                                 : "Kruskal-Wallis test requires categorical columns. No categorical columns found in the file.")
                                                                             : testType === 'eda_swarm'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "সোয়ার্ম প্লটের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                                 : "Swarm plot requires categorical columns. No categorical columns found in the file.")
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? "এনোভা পরীক্ষার জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                                 : "ANOVA test requires categorical columns. No categorical columns found in the file.")
                                                                         }
@@ -3233,18 +3233,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn1(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
                                                                                 : "Select a categorical column"}
                                                                         </option>
                                                                         {categoricalColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                                {col} {language === 'bn' ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
                                                                             : `${categoricalColumns.length} categorical columns found`}
                                                                     </div>
@@ -3256,10 +3256,10 @@ const closePreview= async () =>{
                                                         <div className="form-group">
                                                             <label className="form-label">
                                                                 {testType === 'kruskal'
-                                                                    ? (language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)")
+                                                                    ? (language === 'bn' ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)")
                                                                     : testType === 'eda_swarm'
-                                                                    ? (language === "বাংলা" ? "সংখ্যাগত কলাম (Y-অক্ষ)" : "Numeric Column (Y-axis)")
-                                                                    : (language === "বাংলা" ? "নির্ভরশীল চলক (সংখ্যাগত)" : "Dependent Variable (Numeric)")
+                                                                    ? (language === 'bn' ? "সংখ্যাগত কলাম (Y-অক্ষ)" : "Numeric Column (Y-axis)")
+                                                                    : (language === 'bn' ? "নির্ভরশীল চলক (সংখ্যাগত)" : "Dependent Variable (Numeric)")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
@@ -3268,8 +3268,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -3281,14 +3281,14 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'kruskal'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "ক্রুসকাল-ওয়ালিস পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Kruskal-Wallis test requires numeric columns. No numeric columns found in the file.")
                                                                             : testType === 'eda_swarm'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "সোয়ার্ম প্লটের জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Swarm plot requires numeric columns. No numeric columns found in the file.")
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? "এনোভা পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "ANOVA test requires numeric columns. No numeric columns found in the file.")
                                                                         }
@@ -3302,18 +3302,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn2(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
                                                                                 : "Select a numeric column"}
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -3339,21 +3339,21 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <div>
                                                                         <strong style={{ color: '#0369a1' }}>
-                                                                            {language === "বাংলা" ? "ক্রুসকাল-ওয়ালিস পরীক্ষা নির্দেশনা" : "Kruskal-Wallis Test Guidelines"}
+                                                                            {language === 'bn' ? "ক্রুসকাল-ওয়ালিস পরীক্ষা নির্দেশনা" : "Kruskal-Wallis Test Guidelines"}
                                                                         </strong>
                                                                         <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "দুই বা ততোধিক স্বাধীন গোষ্ঠীর মধ্যকার পার্থক্য পরীক্ষা করে"
                                                                                     : "Tests for differences between two or more independent groups"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "নন-প্যারামেট্রিক (স্বাভাবিক বন্টনের প্রয়োজন নেই)"
                                                                                     : "Non-parametric (doesn't require normal distribution)"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "প্রতিটি গোষ্ঠীতে কমপক্ষে ৫টি পর্যবেক্ষণ সুপারিশকৃত"
                                                                                     : "At least 5 observations per group recommended"}
                                                                             </li>
@@ -3380,21 +3380,21 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <div>
                                                                         <strong style={{ color: '#0369a1' }}>
-                                                                            {language === "বাংলা" ? "সোয়ার্ম প্লট নির্দেশনা" : "Swarm Plot Guidelines"}
+                                                                            {language === 'bn' ? "সোয়ার্ম প্লট নির্দেশনা" : "Swarm Plot Guidelines"}
                                                                         </strong>
                                                                         <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "প্রতিটি শ্রেণীর মধ্যে ডেটা পয়েন্টের বন্টন দেখায়"
                                                                                     : "Shows distribution of data points within each category"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "ওভারল্যাপিং পয়েন্টগুলি উপরে-নীচে সাজানো হয়"
                                                                                     : "Overlapping points are arranged vertically to avoid overlap"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "ছোট থেকে মাঝারি নমুনার জন্য আদর্শ (n < 100)"
                                                                                     : "Ideal for small to medium samples (n < 100)"}
                                                                             </li>
@@ -3421,21 +3421,21 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <div>
                                                                         <strong style={{ color: '#0369a1' }}>
-                                                                            {language === "বাংলা" ? "এনোভা পরীক্ষা নির্দেশনা" : "ANOVA Test Guidelines"}
+                                                                            {language === 'bn' ? "এনোভা পরীক্ষা নির্দেশনা" : "ANOVA Test Guidelines"}
                                                                         </strong>
                                                                         <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "দুই বা ততোধিক গোষ্ঠীর গড় মানের পার্থক্য পরীক্ষা করে"
                                                                                     : "Tests for differences in means between two or more groups"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "প্যারামেট্রিক (স্বাভাবিক বন্টন ও সমান ভ্যারিয়েন্স প্রয়োজন)"
                                                                                     : "Parametric (requires normal distribution and equal variances)"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "প্রতিটি গোষ্ঠীতে কমপক্ষে ১০টি পর্যবেক্ষণ সুপারিশকৃত"
                                                                                     : "At least 10 observations per group recommended"}
                                                                             </li>
@@ -3470,7 +3470,7 @@ const closePreview= async () =>{
                                                         {/* Column 1 - Categorical (Grouping variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                {language === 'bn' ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -3479,8 +3479,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
@@ -3492,7 +3492,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? "এই ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                             : "No categorical columns found in this file."}
                                                                     </span>
@@ -3510,18 +3510,18 @@ const closePreview= async () =>{
                                                                         }}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
                                                                                 : "Select a categorical column"}
                                                                         </option>
                                                                         {categoricalColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                                {col} {language === 'bn' ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
                                                                             : `${categoricalColumns.length} categorical columns found`}
                                                                     </div>
@@ -3533,7 +3533,7 @@ const closePreview= async () =>{
                                                         {column1 && (
                                                             <div className="form-group">
                                                                 <label className="form-label">
-                                                                    {language === "বাংলা" ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
+                                                                    {language === 'bn' ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
                                                                     <span className="required-star">*</span>
                                                                 </label>
                                                                 
@@ -3594,14 +3594,14 @@ const closePreview= async () =>{
                                                                             {isFetchingGroups ? (
                                                                                 <>
                                                                                     <div className="spinner small" style={{ display: 'inline-block', marginRight: '0.5rem' }}></div>
-                                                                                    {language === "বাংলা" ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
+                                                                                    {language === 'bn' ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
                                                                                 </>
                                                                             ) : availableGroups.length === 0 ? (
                                                                                 column1 
-                                                                                    ? (language === "বাংলা" ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
-                                                                                    : (language === "বাংলা" ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
+                                                                                    ? (language === 'bn' ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
+                                                                                    : (language === 'bn' ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
                                                                             ) : (
-                                                                                `Select 2 groups (${availableGroups.length} ${language === "বাংলা" ? "টি উপলব্ধ" : "available"})`
+                                                                                `Select 2 groups (${availableGroups.length} ${language === 'bn' ? "টি উপলব্ধ" : "available"})`
                                                                             )}
                                                                         </span>
                                                                         {availableGroups.length > 0 && !isFetchingGroups && <span>▼</span>}
@@ -3721,7 +3721,7 @@ const closePreview= async () =>{
                                                         {/* Column 2 - Numerical (Value variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
+                                                                {language === 'bn' ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -3731,8 +3731,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -3744,7 +3744,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? "এই ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                             : "No numeric columns found in this file."}
                                                                     </span>
@@ -3757,18 +3757,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn2(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
                                                                                 : "Select a numeric column"}
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -3802,10 +3802,10 @@ const closePreview= async () =>{
                                                         <div className="form-group">
                                                             <label className="form-label">
                                                                 {testType === 'wilcoxon' 
-                                                                    ? (language === "বাংলা" ? "প্রথম কলাম (সংখ্যাগত)" : "First Column (Numeric)")
+                                                                    ? (language === 'bn' ? "প্রথম কলাম (সংখ্যাগত)" : "First Column (Numeric)")
                                                                     : testType === 'linear_regression'
-                                                                    ? (language === "বাংলা" ? "স্বাধীন চলক (পূর্বাভাসক)" : "Independent Variable (Predictor)")
-                                                                    : (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম" : "First Numeric Column")
+                                                                    ? (language === 'bn' ? "স্বাধীন চলক (পূর্বাভাসক)" : "Independent Variable (Predictor)")
+                                                                    : (language === 'bn' ? "প্রথম সংখ্যাগত কলাম" : "First Numeric Column")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
@@ -3814,8 +3814,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -3827,14 +3827,14 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'wilcoxon' 
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                             : testType === 'linear_regression'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? `সাদৃশ্য পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Similarity test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                         }
@@ -3849,20 +3849,20 @@ const closePreview= async () =>{
                                                                     >
                                                                         <option value="">
                                                                             {testType === 'wilcoxon' 
-                                                                                ? (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
+                                                                                ? (language === 'bn' ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
                                                                                 : testType === 'linear_regression'
-                                                                                ? (language === "বাংলা" ? "স্বাধীন চলক নির্বাচন করুন" : "Select independent variable")
-                                                                                : (language === "বাংলা" ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
+                                                                                ? (language === 'bn' ? "স্বাধীন চলক নির্বাচন করুন" : "Select independent variable")
+                                                                                : (language === 'bn' ? "প্রথম সংখ্যাগত কলাম নির্বাচন করুন" : "Select first numeric column")
                                                                             }
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -3873,10 +3873,10 @@ const closePreview= async () =>{
                                                         <div className="form-group">
                                                             <label className="form-label">
                                                                 {testType === 'wilcoxon' 
-                                                                    ? (language === "বাংলা" ? "দ্বিতীয় কলাম (সংখ্যাগত)" : "Second Column (Numeric)")
+                                                                    ? (language === 'bn' ? "দ্বিতীয় কলাম (সংখ্যাগত)" : "Second Column (Numeric)")
                                                                     : testType === 'linear_regression'
-                                                                    ? (language === "বাংলা" ? "নির্ভরশীল চলক (প্রতিক্রিয়া)" : "Dependent Variable (Response)")
-                                                                    : (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম" : "Second Numeric Column")
+                                                                    ? (language === 'bn' ? "নির্ভরশীল চলক (প্রতিক্রিয়া)" : "Dependent Variable (Response)")
+                                                                    : (language === 'bn' ? "দ্বিতীয় সংখ্যাগত কলাম" : "Second Numeric Column")
                                                                 }
                                                                 <span className="required-star">*</span>
                                                             </label>
@@ -3885,8 +3885,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -3898,14 +3898,14 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'wilcoxon' 
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? `উইলকক্সন পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Wilcoxon test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                             : testType === 'linear_regression'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? `রৈখিক রিগ্রেশনের জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Linear regression requires at least 2 numeric columns. Found: ${numericColumns.length}`)
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? `সাদৃশ্য পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি`
                                                                                 : `Similarity test requires at least 2 numeric columns. Found: ${numericColumns.length}`)
                                                                         }
@@ -3920,30 +3920,30 @@ const closePreview= async () =>{
                                                                     >
                                                                         <option value="">
                                                                             {testType === 'wilcoxon' 
-                                                                                ? (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
+                                                                                ? (language === 'bn' ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
                                                                                 : testType === 'linear_regression'
-                                                                                ? (language === "বাংলা" ? "নির্ভরশীল চলক নির্বাচন করুন" : "Select dependent variable")
-                                                                                : (language === "বাংলা" ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
+                                                                                ? (language === 'bn' ? "নির্ভরশীল চলক নির্বাচন করুন" : "Select dependent variable")
+                                                                                : (language === 'bn' ? "দ্বিতীয় সংখ্যাগত কলাম নির্বাচন করুন" : "Select second numeric column")
                                                                             }
                                                                         </option>
                                                                         {numericColumns
                                                                             .filter(col => col !== column1)
                                                                             .map((col, idx) => (
                                                                                 <option key={idx} value={col}>
-                                                                                    {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                    {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                                 </option>
                                                                             ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
                                                                         {testType === 'wilcoxon' 
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "উইলকক্সন পরীক্ষা জোড়া ডেটার জন্য (যেমন: চিকিৎসার পূর্ব-পরবর্তী)"
                                                                                 : "Wilcoxon test is for paired data (e.g., before-after treatment)")
                                                                             : testType === 'linear_regression'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "মডেল: Y = a + bX, যেখানে X স্বাধীন চলক এবং Y নির্ভরশীল চলক"
                                                                                 : "Model: Y = a + bX, where X is independent and Y is dependent")
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? "দুইটি সংখ্যাগত ভেক্টরের মধ্যে সাদৃশ্য ও দূরত্ব পরিমাপ করে"
                                                                                 : "Measures similarity and distance between two numeric vectors")
                                                                         }
@@ -3970,21 +3970,21 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <div>
                                                                         <strong style={{ color: '#0369a1' }}>
-                                                                            {language === "বাংলা" ? "সাদৃশ্য পরীক্ষা নির্দেশনা" : "Similarity Test Guidelines"}
+                                                                            {language === 'bn' ? "সাদৃশ্য পরীক্ষা নির্দেশনা" : "Similarity Test Guidelines"}
                                                                         </strong>
                                                                         <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "কসাইন সাদৃশ্য: ১ এর কাছাকাছি মান বেশি সাদৃশ্য নির্দেশ করে"
                                                                                     : "Cosine similarity: Values near 1 indicate high similarity"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "দূরত্ব মেট্রিক: ০ এর কাছাকাছি মান কম দূরত্ব নির্দেশ করে"
                                                                                     : "Distance metrics: Values near 0 indicate low distance"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "পিয়ারসন ও স্পিয়ারম্যান: -১ থেকে +১ পর্যন্ত, +১ সম্পূর্ণ সম্পর্ক"
                                                                                     : "Pearson & Spearman: -1 to +1, +1 indicates perfect correlation"}
                                                                             </li>
@@ -4019,14 +4019,14 @@ const closePreview= async () =>{
                                                         {/* Column 1 - Categorical column */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "শ্রেণীবদ্ধ কলাম" : "Categorical Column"}
+                                                                {language === 'bn' ? "শ্রেণীবদ্ধ কলাম" : "Categorical Column"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
                                                                 <div className="no-columns-warning">
@@ -4037,10 +4037,10 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'bar_chart' 
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "বার চার্টের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                                 : "Bar chart requires categorical columns. No categorical columns found in the file.")
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? "পাই চার্টের জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                                 : "Pie chart requires categorical columns. No categorical columns found in the file.")}
                                                                     </span>
@@ -4053,7 +4053,7 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn1(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
                                                                                 : "Select a categorical column"}
                                                                         </option>
@@ -4064,7 +4064,7 @@ const closePreview= async () =>{
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
                                                                             : `${categoricalColumns.length} categorical columns found`}
                                                                     </div>
@@ -4090,21 +4090,21 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <div>
                                                                         <strong style={{ color: '#0369a1' }}>
-                                                                            {language === "বাংলা" ? "পাই চার্ট নির্দেশনা" : "Pie Chart Guidelines"}
+                                                                            {language === 'bn' ? "পাই চার্ট নির্দেশনা" : "Pie Chart Guidelines"}
                                                                         </strong>
                                                                         <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "পাই চার্ট ১০টি বা কম শ্রেণীর জন্য উপযুক্ত"
                                                                                     : "Pie charts work best with 10 or fewer categories"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "প্রতিটি অংশ মোটের শতাংশ দেখায়"
                                                                                     : "Each slice shows percentage of the total"}
                                                                             </li>
                                                                             <li>
-                                                                                {language === "বাংলা" 
+                                                                                {language === 'bn' 
                                                                                     ? "১০+ শ্রেণীর জন্য বার চার্ট ভালো বিকল্প"
                                                                                     : "For 10+ categories, consider using a bar chart instead"}
                                                                             </li>
@@ -4139,14 +4139,14 @@ const closePreview= async () =>{
                                                         {/* Column 1 - Numeric column */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "সংখ্যাগত কলাম" : "Numeric Column"}
+                                                                {language === 'bn' ? "সংখ্যাগত কলাম" : "Numeric Column"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
                                                             {!columnTypesLoaded ? (
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
-                                                                    {language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
+                                                                    {language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types..."}
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
                                                                 <div className="no-columns-warning">
@@ -4157,18 +4157,18 @@ const closePreview= async () =>{
                                                                     </svg>
                                                                     <span>
                                                                         {testType === 'shapiro' 
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "শাপিরো-উইল্ক পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Shapiro-Wilk test requires numeric columns. No numeric columns found in the file.")
                                                                             : testType === 'kolmogorov'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "কোলমোগোরভ-স্মিরনভ পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Kolmogorov-Smirnov test requires numeric columns. No numeric columns found in the file.")
                                                                             : testType === 'anderson'
-                                                                            ? (language === "বাংলা" 
+                                                                            ? (language === 'bn' 
                                                                                 ? "অ্যান্ডারসন-ডার্লিং পরীক্ষার জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Anderson-Darling test requires numeric columns. No numeric columns found in the file.")
-                                                                            : (language === "বাংলা" 
+                                                                            : (language === 'bn' 
                                                                                 ? "বন্টন প্লটের জন্য সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                                 : "Distribution plot requires numeric columns. No numeric columns found in the file.")}
                                                                     </span>
@@ -4181,7 +4181,7 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn1(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
                                                                                 : "Select a numeric column"}
                                                                         </option>
@@ -4192,7 +4192,7 @@ const closePreview= async () =>{
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -4218,46 +4218,46 @@ const closePreview= async () =>{
                                                                 <div>
                                                                     <strong style={{ color: '#0369a1' }}>
                                                                         {testType === 'shapiro'
-                                                                            ? (language === "বাংলা" ? "শাপিরো-উইল্ক পরীক্ষা নির্দেশনা" : "Shapiro-Wilk Test Guidelines")
+                                                                            ? (language === 'bn' ? "শাপিরো-উইল্ক পরীক্ষা নির্দেশনা" : "Shapiro-Wilk Test Guidelines")
                                                                             : testType === 'kolmogorov'
-                                                                            ? (language === "বাংলা" ? "কোলমোগোরভ-স্মিরনভ পরীক্ষা নির্দেশনা" : "Kolmogorov-Smirnov Test Guidelines")
+                                                                            ? (language === 'bn' ? "কোলমোগোরভ-স্মিরনভ পরীক্ষা নির্দেশনা" : "Kolmogorov-Smirnov Test Guidelines")
                                                                             : testType === 'anderson'
-                                                                            ? (language === "বাংলা" ? "অ্যান্ডারসন-ডার্লিং পরীক্ষা নির্দেশনা" : "Anderson-Darling Test Guidelines")
-                                                                            : (language === "বাংলা" ? "বন্টন বিশ্লেষণ নির্দেশনা" : "Distribution Analysis Guidelines")}
+                                                                            ? (language === 'bn' ? "অ্যান্ডারসন-ডার্লিং পরীক্ষা নির্দেশনা" : "Anderson-Darling Test Guidelines")
+                                                                            : (language === 'bn' ? "বন্টন বিশ্লেষণ নির্দেশনা" : "Distribution Analysis Guidelines")}
                                                                     </strong>
                                                                     <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                         <li>
                                                                             {testType === 'shapiro'
-                                                                                ? (language === "বাংলা" 
+                                                                                ? (language === 'bn' 
                                                                                     ? "ছোট নমুনার জন্য সবচেয়ে শক্তিশালী স্বাভাবিকতা পরীক্ষা (n < 50)"
                                                                                     : "Most powerful normality test for small samples (n < 50)")
                                                                                 : testType === 'kolmogorov'
-                                                                                ? (language === "বাংলা" 
+                                                                                ? (language === 'bn' 
                                                                                     ? "বড় নমুনার জন্য উপযুক্ত (n > 50)"
                                                                                     : "Suitable for large samples (n > 50)")
                                                                                 : testType === 'anderson'
-                                                                                ? (language === "বাংলা" 
+                                                                                ? (language === 'bn' 
                                                                                     ? "বিভিন্ন স্বাভাবিকতা স্তরের জন্য সমালোচনামূলক মান প্রদান করে"
                                                                                     : "Provides critical values for different normality levels")
-                                                                                : (language === "বাংলা" 
+                                                                                : (language === 'bn' 
                                                                                     ? "ডেটার বন্টন ও আকৃতি বিশ্লেষণ করে"
                                                                                     : "Analyzes the distribution and shape of data")}
                                                                         </li>
                                                                         <li>
                                                                             {testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson'
-                                                                                ? (language === "বাংলা" 
+                                                                                ? (language === 'bn' 
                                                                                     ? "স্বাভাবিক বন্টন যাচাই করে (p < 0.05 = স্বাভাবিক নয়)"
                                                                                     : "Tests for normal distribution (p < 0.05 = not normal)")
-                                                                                : (language === "বাংলা" 
+                                                                                : (language === 'bn' 
                                                                                     ? "হিস্টোগ্রাম, KDE এবং সারাংশ পরিসংখ্যান দেখায়"
                                                                                     : "Shows histogram, KDE and summary statistics")}
                                                                         </li>
                                                                         <li>
                                                                             {testType === 'shapiro' || testType === 'kolmogorov' || testType === 'anderson'
-                                                                                ? (language === "বাংলা" 
+                                                                                ? (language === 'bn' 
                                                                                     ? "কমপক্ষে ৩টি পর্যবেক্ষণ প্রয়োজন"
                                                                                     : "Requires at least 3 observations")
-                                                                                : (language === "বাংলা" 
+                                                                                : (language === 'bn' 
                                                                                     ? "কমপক্ষে ১০টি পর্যবেক্ষণ সুপারিশকৃত"
                                                                                     : "At least 10 observations recommended")}
                                                                         </li>
@@ -4291,7 +4291,7 @@ const closePreview= async () =>{
                                                         {/* Column 1 - Categorical (Grouping variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                {language === 'bn' ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -4299,8 +4299,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
@@ -4311,7 +4311,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? "এনকোভা পরীক্ষার জন্য শ্রেণীবদ্ধ কলাম প্রয়োজন। ফাইলে কোন শ্রেণীবদ্ধ কলাম পাওয়া যায়নি।" 
                                                                             : "ANCOVA test requires categorical columns. No categorical columns found in the file."}
                                                                     </span>
@@ -4324,18 +4324,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn1(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
                                                                                 : "Select a categorical column"}
                                                                         </option>
                                                                         {categoricalColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                                {col} {language === 'bn' ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
                                                                             : `${categoricalColumns.length} categorical columns found`}
                                                                     </div>
@@ -4346,7 +4346,7 @@ const closePreview= async () =>{
                                                         {/* Column 2 - Numeric (Covariate variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "কোভেরিয়েট কলাম (সংখ্যাগত)" : "Covariate Column (Numeric)"}
+                                                                {language === 'bn' ? "কোভেরিয়েট কলাম (সংখ্যাগত)" : "Covariate Column (Numeric)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -4354,8 +4354,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -4366,7 +4366,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? "এনকোভা পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। ফাইলে কোন সংখ্যাগত কলাম পাওয়া যায়নি।" 
                                                                             : "ANCOVA test requires at least 2 numeric columns. No numeric columns found in the file."}
                                                                     </span>
@@ -4379,18 +4379,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn2(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "কোভেরিয়েট কলাম নির্বাচন করুন" 
                                                                                 : "Select covariate column"}
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -4401,7 +4401,7 @@ const closePreview= async () =>{
                                                         {/* Column 3 - Numeric (Outcome variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "আউটকাম কলাম (সংখ্যাগত)" : "Outcome Column (Numeric)"}
+                                                                {language === 'bn' ? "আউটকাম কলাম (সংখ্যাগত)" : "Outcome Column (Numeric)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -4409,8 +4409,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length < 2 ? (
@@ -4421,7 +4421,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `এনকোভা পরীক্ষার জন্য কমপক্ষে ২টি সংখ্যাগত কলাম প্রয়োজন। পাওয়া গেছে: ${numericColumns.length}টি` 
                                                                             : `ANCOVA test requires at least 2 numeric columns. Found: ${numericColumns.length}`}
                                                                     </span>
@@ -4434,7 +4434,7 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn3(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "আউটকাম কলাম নির্বাচন করুন" 
                                                                                 : "Select outcome column"}
                                                                         </option>
@@ -4442,12 +4442,12 @@ const closePreview= async () =>{
                                                                             .filter(col => col !== column2)  // Don't show the covariate column
                                                                             .map((col, idx) => (
                                                                                 <option key={idx} value={col}>
-                                                                                    {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                    {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                                 </option>
                                                                             ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? "কোভেরিয়েটের প্রভাব নিয়ন্ত্রণ করে গ্রুপের পার্থক্য বিশ্লেষণ করে"
                                                                             : "Analyzes group differences while controlling for covariate effects"}
                                                                     </div>
@@ -4472,21 +4472,21 @@ const closePreview= async () =>{
                                                                 </svg>
                                                                 <div>
                                                                     <strong style={{ color: '#0369a1' }}>
-                                                                        {language === "বাংলা" ? "এনকোভা পরীক্ষা নির্দেশনা" : "ANCOVA Test Guidelines"}
+                                                                        {language === 'bn' ? "এনকোভা পরীক্ষা নির্দেশনা" : "ANCOVA Test Guidelines"}
                                                                     </strong>
                                                                     <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                         <li>
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "কোভেরিয়েটের প্রভাব নিয়ন্ত্রণ করে গ্রুপের পার্থক্য বিশ্লেষণ করে"
                                                                                 : "Analyzes group differences while controlling for covariate effects"}
                                                                         </li>
                                                                         <li>
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "এনোভা + রিগ্রেশনের সমন্বয় (ANOVA + Regression)"
                                                                                 : "Combination of ANOVA and regression analysis"}
                                                                         </li>
                                                                         <li>
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "স্বাভাবিক বন্টন, সমান ভ্যারিয়েন্স এবং রৈখিক সম্পর্ক প্রয়োজন"
                                                                                 : "Requires normal distribution, equal variances, and linear relationships"}
                                                                         </li>
@@ -4520,7 +4520,7 @@ const closePreview= async () =>{
                                                         {/* Column 1 - Categorical (Grouping variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
+                                                                {language === 'bn' ? "গ্রুপিং কলাম (শ্রেণীবদ্ধ)" : "Grouping Column (Categorical)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -4528,8 +4528,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : categoricalColumns.length === 0 ? (
@@ -4540,7 +4540,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${
                                                                                 testType === 'f_test' ? 'এফ-টেস্ট' :
                                                                                 testType === 'z_test' ? 'জেড-টেস্ট' :
@@ -4568,18 +4568,18 @@ const closePreview= async () =>{
                                                                         }}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি শ্রেণীবদ্ধ কলাম নির্বাচন করুন" 
                                                                                 : "Select a categorical column"}
                                                                         </option>
                                                                         {categoricalColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
+                                                                                {col} {language === 'bn' ? "(শ্রেণীবদ্ধ)" : "(categorical)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${categoricalColumns.length}টি শ্রেণীবদ্ধ কলাম পাওয়া গেছে` 
                                                                             : `${categoricalColumns.length} categorical columns found`}
                                                                     </div>
@@ -4591,7 +4591,7 @@ const closePreview= async () =>{
                                                         {column1 && (
                                                             <div className="form-group">
                                                                 <label className="form-label">
-                                                                    {language === "বাংলা" ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
+                                                                    {language === 'bn' ? "গ্রুপ নির্বাচন (২টি প্রয়োজন)" : "Select Groups (2 required)"}
                                                                     <span className="required-star">*</span>
                                                                 </label>
                                                                 
@@ -4652,14 +4652,14 @@ const closePreview= async () =>{
                                                                             {isFetchingGroups ? (
                                                                                 <>
                                                                                     <div className="spinner small" style={{ display: 'inline-block', marginRight: '0.5rem' }}></div>
-                                                                                    {language === "বাংলা" ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
+                                                                                    {language === 'bn' ? "গ্রুপ লোড হচ্ছে..." : "Loading groups..."}
                                                                                 </>
                                                                             ) : availableGroups.length === 0 ? (
                                                                                 column1 
-                                                                                    ? (language === "বাংলা" ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
-                                                                                    : (language === "বাংলা" ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
+                                                                                    ? (language === 'bn' ? "গ্রুপ পাওয়া যায়নি" : "No groups found") 
+                                                                                    : (language === 'bn' ? "প্রথমে একটি কলাম নির্বাচন করুন" : "Select a column first")
                                                                             ) : (
-                                                                                `Select 2 groups (${availableGroups.length} ${language === "বাংলা" ? "টি উপলব্ধ" : "available"})`
+                                                                                `Select 2 groups (${availableGroups.length} ${language === 'bn' ? "টি উপলব্ধ" : "available"})`
                                                                             )}
                                                                         </span>
                                                                         {availableGroups.length > 0 && !isFetchingGroups && <span>▼</span>}
@@ -4752,7 +4752,7 @@ const closePreview= async () =>{
                                                                             <line x1="12" y1="8" x2="12" y2="12"></line>
                                                                             <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                         </svg>
-                                                                        ⚠️ {language === "বাংলা" 
+                                                                        ⚠️ {language === 'bn' 
                                                                             ? `${testType === 'f_test' ? 'এফ-টেস্ট' :
                                                                             testType === 'z_test' ? 'জেড-টেস্ট' :
                                                                             testType === 't_test' ? 'টি-টেস্ট' :
@@ -4774,7 +4774,7 @@ const closePreview= async () =>{
                                                                     color: '#64748b',
                                                                     fontSize: '0.75rem'
                                                                 }}>
-                                                                    {language === "বাংলা" 
+                                                                    {language === 'bn' 
                                                                         ? `${testType === 'f_test' ? 'এফ-টেস্ট' :
                                                                         testType === 'z_test' ? 'জেড-টেস্ট' :
                                                                         testType === 't_test' ? 'টি-টেস্ট' :
@@ -4790,7 +4790,7 @@ const closePreview= async () =>{
                                                         {/* Column 2 - Numerical (Value variable) */}
                                                         <div className="form-group">
                                                             <label className="form-label">
-                                                                {language === "বাংলা" ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
+                                                                {language === 'bn' ? "মান কলাম (সংখ্যাগত)" : "Value Column (Numeric)"}
                                                                 <span className="required-star">*</span>
                                                             </label>
                                                             
@@ -4798,8 +4798,8 @@ const closePreview= async () =>{
                                                                 <div className="loading-placeholder">
                                                                     <div className="spinner small"></div>
                                                                     {isFetchingColumnTypes 
-                                                                        ? (language === "বাংলা" ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
-                                                                        : (language === "বাংলা" ? "কলাম লোড হচ্ছে..." : "Loading columns...")
+                                                                        ? (language === 'bn' ? "কলাম বিশ্লেষণ করা হচ্ছে..." : "Analyzing column types...")
+                                                                        : (language === 'bn' ? "কলাম লোড হচ্ছে..." : "Loading columns...")
                                                                     }
                                                                 </div>
                                                             ) : numericColumns.length === 0 ? (
@@ -4810,7 +4810,7 @@ const closePreview= async () =>{
                                                                         <line x1="12" y1="16" x2="12" y2="16"></line>
                                                                     </svg>
                                                                     <span>
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${
                                                                                 testType === 'f_test' ? 'এফ-টেস্ট' :
                                                                                 testType === 'z_test' ? 'জেড-টেস্ট' :
@@ -4833,18 +4833,18 @@ const closePreview= async () =>{
                                                                         onChange={(e) => setColumn2(e.target.value)}
                                                                     >
                                                                         <option value="">
-                                                                            {language === "বাংলা" 
+                                                                            {language === 'bn' 
                                                                                 ? "একটি সংখ্যাগত কলাম নির্বাচন করুন" 
                                                                                 : "Select a numeric column"}
                                                                         </option>
                                                                         {numericColumns.map((col, idx) => (
                                                                             <option key={idx} value={col}>
-                                                                                {col} {language === "বাংলা" ? "(সংখ্যাগত)" : "(numeric)"}
+                                                                                {col} {language === 'bn' ? "(সংখ্যাগত)" : "(numeric)"}
                                                                             </option>
                                                                         ))}
                                                                     </select>
                                                                     <div className="column-count-hint">
-                                                                        {language === "বাংলা" 
+                                                                        {language === 'bn' 
                                                                             ? `${numericColumns.length}টি সংখ্যাগত কলাম পাওয়া গেছে` 
                                                                             : `${numericColumns.length} numeric columns found`}
                                                                     </div>
@@ -4870,28 +4870,28 @@ const closePreview= async () =>{
                                                                 <div>
                                                                     <strong style={{ color: '#0369a1' }}>
                                                                         {testType === 'f_test'
-                                                                            ? (language === "বাংলা" ? "এফ-টেস্ট নির্দেশনা" : "F-Test Guidelines")
+                                                                            ? (language === 'bn' ? "এফ-টেস্ট নির্দেশনা" : "F-Test Guidelines")
                                                                             : testType === 'z_test'
-                                                                            ? (language === "বাংলা" ? "জেড-টেস্ট নির্দেশনা" : "Z-Test Guidelines")
+                                                                            ? (language === 'bn' ? "জেড-টেস্ট নির্দেশনা" : "Z-Test Guidelines")
                                                                             : testType === 't_test'
-                                                                            ? (language === "বাংলা" ? "টি-টেস্ট নির্দেশনা" : "T-Test Guidelines")
-                                                                            : (language === "বাংলা" ? "এফ/জেড/টি সম্মিলিত বিশ্লেষণ নির্দেশনা" : "F/Z/T Combined Analysis Guidelines")}
+                                                                            ? (language === 'bn' ? "টি-টেস্ট নির্দেশনা" : "T-Test Guidelines")
+                                                                            : (language === 'bn' ? "এফ/জেড/টি সম্মিলিত বিশ্লেষণ নির্দেশনা" : "F/Z/T Combined Analysis Guidelines")}
                                                                     </strong>
                                                                     <ul style={{ margin: '0.5rem 0 0 0', paddingLeft: '1rem', color: '#475569' }}>
                                                                         {testType === 'f_test' && (
                                                                             <>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "দুইটি গ্রুপের ভ্যারিয়েন্স (বিচ্ছুরণ) তুলনা করে"
                                                                                         : "Compares variances (spread) between two groups"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "স্বাভাবিক বন্টন ও স্বাধীন নমুনা প্রয়োজন"
                                                                                         : "Requires normal distribution and independent samples"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "ফর্মুলা: F = (গ্রুপ ১ এর ভ্যারিয়েন্স) / (গ্রুপ ২ এর ভ্যারিয়েন্স)"
                                                                                         : "Formula: F = (Group 1 variance) / (Group 2 variance)"}
                                                                                 </li>
@@ -4900,17 +4900,17 @@ const closePreview= async () =>{
                                                                         {testType === 'z_test' && (
                                                                             <>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "বড় নমুনার জন্য (n > 30) গড় মানের পার্থক্য পরীক্ষা করে"
                                                                                         : "Tests for mean differences in large samples (n > 30)"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "জনসংখ্যার ভ্যারিয়েন্স জানা থাকলে ব্যবহার করা হয়"
                                                                                         : "Used when population variance is known"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "স্বাভাবিক বন্টনের জন্য সবচেয়ে শক্তিশালী"
                                                                                         : "Most powerful for normal distributions"}
                                                                                 </li>
@@ -4919,17 +4919,17 @@ const closePreview= async () =>{
                                                                         {testType === 't_test' && (
                                                                             <>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "ছোট নমুনার জন্য (n < 30) গড় মানের পার্থক্য পরীক্ষা করে"
                                                                                         : "Tests for mean differences in small samples (n < 30)"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "জনসংখ্যার ভ্যারিয়েন্স অজানা থাকলে ব্যবহার করা হয়"
                                                                                         : "Used when population variance is unknown"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "ওয়েলচের টি-টেস্ট (অসম ভ্যারিয়েন্সের জন্য উপযুক্ত)"
                                                                                         : "Welch's t-test (suitable for unequal variances)"}
                                                                                 </li>
@@ -4938,17 +4938,17 @@ const closePreview= async () =>{
                                                                         {testType === 'fzt_visualization' && (
                                                                             <>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "একসাথে তিনটি পরীক্ষার ফলাফল প্রদর্শন করে"
                                                                                         : "Displays results of all three tests simultaneously"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "সম্মিলিত হিস্টোগ্রাম ও ডিস্ট্রিবিউশন প্লট"
                                                                                         : "Combined histogram and distribution plots"}
                                                                                 </li>
                                                                                 <li>
-                                                                                    {language === "বাংলা" 
+                                                                                    {language === 'bn' 
                                                                                         ? "বিস্তারিত পরিসংখ্যান ও ভিজ্যুয়ালাইজেশন"
                                                                                         : "Detailed statistics and visualizations"}
                                                                                 </li>
@@ -5203,7 +5203,7 @@ const closePreview= async () =>{
                                             <h2>{t.tests[testType]}</h2>
                                             <pre className="modal-body">
                                                 {statTestDetails[language]?.[testType] ||
-                                                    (language === "bn"
+                                                    (language === 'bn'
                                                         ? "এই পরীক্ষার বিস্তারিত পাওয়া যায়নি।"
                                                         : "No details available.")}
                                             </pre>

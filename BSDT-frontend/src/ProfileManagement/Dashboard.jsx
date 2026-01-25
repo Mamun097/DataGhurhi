@@ -1,4 +1,4 @@
-// FIXED VERSION - Key changes marked with // FIX comments
+// FIXED VERSION - Multi-language support integrated
 
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
@@ -46,6 +46,44 @@ import {
 import CouponManagement from "./AdminComponents/CouponManagement";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+// Language configurations matching navbar
+const LANGUAGES = [
+  { code: "en", name: "ENGLISH", flag: "🇬🇧", googleCode: "en" },
+  { code: "bn", name: "বাংলা", flag: "🇧🇩", googleCode: "bn" },
+  { code: "zh", name: "中文", flag: "🇨🇳", googleCode: "zh-CN" }, // Mandarin Chinese
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳", googleCode: "hi" },
+  { code: "es", name: "ESPAÑOL", flag: "🇪🇸", googleCode: "es" },
+  { code: "ar", name: "العربية", flag: "🇸🇦", googleCode: "ar" },
+  { code: "fr", name: "FRANÇAIS", flag: "🇫🇷", googleCode: "fr" },
+  { code: "pt", name: "PORTUGUÊS", flag: "🇵🇹", googleCode: "pt" },
+  { code: "ru", name: "РУССКИЙ", flag: "🇷🇺", googleCode: "ru" },
+  { code: "ur", name: "اردو", flag: "🇵🇰", googleCode: "ur" },
+  { code: "id", name: "BAHASA INDONESIA", flag: "🇮🇩", googleCode: "id" },
+  { code: "de", name: "DEUTSCH", flag: "🇩🇪", googleCode: "de" },
+  { code: "ja", name: "日本語", flag: "🇯🇵", googleCode: "ja" },
+  { code: "sw", name: "KISWAHILI", flag: "🇰🇪", googleCode: "sw" },
+  { code: "mr", name: "मराठी", flag: "🇮🇳", googleCode: "mr" },
+  { code: "te", name: "తెలుగు", flag: "🇮🇳", googleCode: "te" },
+  { code: "tr", name: "TÜRKÇE", flag: "🇹🇷", googleCode: "tr" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳", googleCode: "ta" },
+  { code: "vi", name: "TIẾNG VIỆT", flag: "🇻🇳", googleCode: "vi" },
+  { code: "ko", name: "한국어", flag: "🇰🇷", googleCode: "ko" },
+  { code: "it", name: "ITALIANO", flag: "🇮🇹", googleCode: "it" },
+  { code: "th", name: "ไทย", flag: "🇹🇭", googleCode: "th" },
+  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳", googleCode: "gu" },
+  { code: "fa", name: "فارسی", flag: "🇮🇷", googleCode: "fa" },
+  { code: "pl", name: "POLSKI", flag: "🇵🇱", googleCode: "pl" },
+  { code: "uk", name: "УКРАЇНСЬКА", flag: "🇺🇦", googleCode: "uk" },
+  { code: "kn", name: "ಕನ್ನಡ", flag: "🇮🇳", googleCode: "kn" },
+  { code: "ml", name: "മലയാളം", flag: "🇮🇳", googleCode: "ml" },
+  { code: "or", name: "ଓଡ଼ିଆ", flag: "🇮🇳", googleCode: "or" },
+  { code: "my", name: "မြန်မာ", flag: "🇲🇲", googleCode: "my" },
+  // Additional major African languages (if not already included)
+  { code: "ha", name: "HAUSA", flag: "🇳🇬", googleCode: "ha" },
+  { code: "yo", name: "YORÙBÁ", flag: "🇳🇬", googleCode: "yo" },
+  { code: "am", name: "አማርኛ", flag: "🇪🇹", googleCode: "am" },
+];
 
 const translateText = async (textArray, targetLang) => {
   try {
@@ -102,22 +140,21 @@ const Dashboard = () => {
   const [expandedMainTabs, setExpandedMainTabs] = useState(
     new Set(["projects"])
   );
+  
+  // Updated language state to use language codes
   const [language, setLanguage] = useState(
-    localStorage.getItem("language") || "English"
+    localStorage.getItem("language") || "en"
   );
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [showCollabModal, setShowCollabModal] = useState(false);
 
-  // FIX 1: Initialize userType from localStorage immediately - using "user_type" key
   const userId = localStorage.getItem("userId");
   const [userType, setUserType] = useState(
     localStorage.getItem("user_type") || "normal"
   );
 
-  // FIX 2: Add isAdmin state and initialize it properly
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // FIX 3: Admin states
   const [adminStats, setAdminStats] = useState({
     totalUsers: 0,
     activeSurveys: 0,
@@ -126,31 +163,41 @@ const Dashboard = () => {
     recentActivities: [],
   });
 
-  // FIX 4: Update userType whenever it changes in localStorage - using "user_type" key
   useEffect(() => {
     const storedUserType = localStorage.getItem("user_type");
-    console.log("Checking user_type from localStorage:", storedUserType); // Debug log
+    console.log("Checking user_type from localStorage:", storedUserType);
     if (storedUserType) {
       setUserType(storedUserType);
     }
   }, [userId]);
 
-  // FIX 5: Set isAdmin based on userType changes
   useEffect(() => {
-    console.log("Current userType:", userType); // Debug log
+    console.log("Current userType:", userType);
     const adminStatus = userType === "admin";
     setIsAdmin(adminStatus);
 
-    // Set initial tab based on user type
     if (!getTabFromURL()) {
       setActiveTab(adminStatus ? "dashboard" : "projects");
     }
 
-    // Fetch admin stats if user is admin
     if (adminStatus) {
       fetchAdminStats();
     }
   }, [userType]);
+
+  // Listen for language changes from navbar
+  useEffect(() => {
+    const handleLanguageChange = (event) => {
+      const newLanguage = event.detail.language;
+      setLanguage(newLanguage);
+    };
+
+    window.addEventListener("languageChanged", handleLanguageChange);
+    
+    return () => {
+      window.removeEventListener("languageChanged", handleLanguageChange);
+    };
+  }, []);
 
   // Sync state with URL parameters whenever location changes
   useEffect(() => {
@@ -217,12 +264,11 @@ const Dashboard = () => {
     }
   };
 
-  // Premium feature states
   const [showAdBanner, setShowAdBanner] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
 
   const loadTranslations = async () => {
-    if (language === "English") {
+    if (language === "en") {
       setTranslatedLabels({});
       return;
     }
@@ -341,9 +387,24 @@ const Dashboard = () => {
       "What is the topic or purpose of your survey?",
       "Who is your target audience?",
       "How many questions? (default is 10)",
+      "Select Gender",
+      "Male",
+      "Female",
+      "Other",
+      "Prefer not to say",
+      "Change Password",
+      "Cancel Password Change",
+      "Enter old password",
+      "Enter new password",
+      "Save Password",
+      "Manage Coupons",
     ];
 
-    const translations = await translateText(labelsToTranslate,"bn");
+    // Get the Google Translate language code for the current language
+    const currentLangObj = LANGUAGES.find(l => l.code === language);
+    const targetLang = currentLangObj ? currentLangObj.googleCode : "en";
+
+    const translations = await translateText(labelsToTranslate, targetLang);
     const translated = {};
     labelsToTranslate.forEach((key, idx) => {
       translated[key] = translations[idx];
@@ -356,7 +417,7 @@ const Dashboard = () => {
   }, [language]);
 
   const getLabel = (text) =>
-    language === "English" ? text : translatedLabels[text] || text;
+    language === "en" ? text : translatedLabels[text] || text;
 
   const fetchAdminStats = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -382,9 +443,6 @@ const Dashboard = () => {
       return newSet;
     });
   };
-
-  // FIX 6: Remove the problematic getuserType function - it's no longer needed
-  // The logic is now handled by the useEffect hooks above
 
   const handleTabClick = (tabKey) => {
     setActiveTab(tabKey);
@@ -614,21 +672,21 @@ const Dashboard = () => {
     if (isAdmin) {
       return [
         {
-          label: "Dashboard",
+          label: getLabel("Dashboard"),
           key: "dashboard",
           icon: <LayoutDashboard size={18} />,
         },
         {
-          label: "Customize Packages",
+          label: getLabel("Customize Packages"),
           key: "customizepackages",
           icon: <Package size={18} />,
         },
         {
-          label: "Manage Coupons",
+          label: getLabel("Manage Coupons"),
           key: "managecoupons",
           icon: <TicketPercent size={18} />,
         },
-        { label: "My Profile", key: "editprofile", icon: <User size={18} /> },
+        { label: getLabel("My Profile"), key: "editprofile", icon: <User size={18} /> },
       ];
     } else {
       const sortedProjects = [...projects].sort((a, b) =>
@@ -861,14 +919,15 @@ const Dashboard = () => {
     );
   };
 
-  // FIX 7: Add console log to help debug
   console.log(
     "Dashboard render - isAdmin:",
     isAdmin,
     "userType:",
     userType,
     "activeTab:",
-    activeTab
+    activeTab,
+    "language:",
+    language
   );
 
   return (
@@ -1144,7 +1203,6 @@ const Dashboard = () => {
         <PremiumPackagesModal
           isOpen={showPremiumModal}
           onClose={handleClosePremiumModal}
-          getLabel={getLabel}
         />
       )}
     </div>

@@ -13,6 +13,8 @@ import {
   FaSearch,
   FaChartBar,
   FaCreditCard,
+  FaChevronDown,
+  FaCheck,
 } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
 
@@ -21,6 +23,44 @@ import "./navbarAcholder.css";
 import apiClient from "../api";
 
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_TRANSLATE_API_KEY;
+
+// Language configurations with flag emojis and codes
+const LANGUAGES = [
+  { code: "en", name: "ENGLISH", flag: "🇬🇧", googleCode: "en" },
+  { code: "bn", name: "বাংলা", flag: "🇧🇩", googleCode: "bn" },
+  { code: "zh", name: "中文", flag: "🇨🇳", googleCode: "zh-CN" }, // Mandarin Chinese
+  { code: "hi", name: "हिन्दी", flag: "🇮🇳", googleCode: "hi" },
+  { code: "es", name: "ESPAÑOL", flag: "🇪🇸", googleCode: "es" },
+  { code: "ar", name: "العربية", flag: "🇸🇦", googleCode: "ar" },
+  { code: "fr", name: "FRANÇAIS", flag: "🇫🇷", googleCode: "fr" },
+  { code: "pt", name: "PORTUGUÊS", flag: "🇵🇹", googleCode: "pt" },
+  { code: "ru", name: "РУССКИЙ", flag: "🇷🇺", googleCode: "ru" },
+  { code: "ur", name: "اردو", flag: "🇵🇰", googleCode: "ur" },
+  { code: "id", name: "BAHASA INDONESIA", flag: "🇮🇩", googleCode: "id" },
+  { code: "de", name: "DEUTSCH", flag: "🇩🇪", googleCode: "de" },
+  { code: "ja", name: "日本語", flag: "🇯🇵", googleCode: "ja" },
+  { code: "sw", name: "KISWAHILI", flag: "🇰🇪", googleCode: "sw" },
+  { code: "mr", name: "मराठी", flag: "🇮🇳", googleCode: "mr" },
+  { code: "te", name: "తెలుగు", flag: "🇮🇳", googleCode: "te" },
+  { code: "tr", name: "TÜRKÇE", flag: "🇹🇷", googleCode: "tr" },
+  { code: "ta", name: "தமிழ்", flag: "🇮🇳", googleCode: "ta" },
+  { code: "vi", name: "TIẾNG VIỆT", flag: "🇻🇳", googleCode: "vi" },
+  { code: "ko", name: "한국어", flag: "🇰🇷", googleCode: "ko" },
+  { code: "it", name: "ITALIANO", flag: "🇮🇹", googleCode: "it" },
+  { code: "th", name: "ไทย", flag: "🇹🇭", googleCode: "th" },
+  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳", googleCode: "gu" },
+  { code: "fa", name: "فارسی", flag: "🇮🇷", googleCode: "fa" },
+  { code: "pl", name: "POLSKI", flag: "🇵🇱", googleCode: "pl" },
+  { code: "uk", name: "УКРАЇНСЬКА", flag: "🇺🇦", googleCode: "uk" },
+  { code: "kn", name: "ಕನ್ನಡ", flag: "🇮🇳", googleCode: "kn" },
+  { code: "ml", name: "മലയാളം", flag: "🇮🇳", googleCode: "ml" },
+  { code: "or", name: "ଓଡ଼ିଆ", flag: "🇮🇳", googleCode: "or" },
+  { code: "my", name: "မြန်မာ", flag: "🇲🇲", googleCode: "my" },
+  // Additional major African languages (if not already included)
+  { code: "ha", name: "HAUSA", flag: "🇳🇬", googleCode: "ha" },
+  { code: "yo", name: "YORÙBÁ", flag: "🇳🇬", googleCode: "yo" },
+  { code: "am", name: "አማርኛ", flag: "🇪🇹", googleCode: "am" },
+];
 
 const translateText = async (textArray, targetLang) => {
   try {
@@ -46,7 +86,7 @@ const logOut = async () => {
     });
     localStorage.clear();
     sessionStorage.clear();
-    localStorage.setItem("language", "English");
+    localStorage.setItem("language", "en");
     window.location.href = "/";
   } catch (err) {
     console.error("Error logging out:", err);
@@ -69,9 +109,12 @@ const NavbarAcholder = ({
   const [userType, setUserType] = useState("normal");
   const [menuOpen, setMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1200);
+  const [langMenuAnchor, setLangMenuAnchor] = useState(null);
+  const [currentLanguage, setCurrentLanguage] = useState("en");
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const open = Boolean(anchorEl);
+  const langMenuOpen = Boolean(langMenuAnchor);
 
   const labelsToTranslate = [
     "Go to Profile",
@@ -84,6 +127,9 @@ const NavbarAcholder = ({
     "Project",
     "Survey",
     "Account",
+    "Profile",
+    "Security",
+    "Subscription",
   ];
 
   useEffect(() => {
@@ -109,37 +155,45 @@ const NavbarAcholder = ({
   }, []);
 
   useEffect(() => {
+    // Load saved language from localStorage
+    const savedLang = localStorage.getItem("language") || "en";
+    setCurrentLanguage(savedLang);
+  }, []);
+
+  useEffect(() => {
     if (propIsAdmin !== undefined) setIsAdmin(propIsAdmin);
     if (propUserType !== undefined) setUserType(propUserType);
   }, [propIsAdmin, propUserType]);
 
   useEffect(() => {
-    if (language === "English") {
+    if (currentLanguage === "en") {
       setTranslatedLabels({});
       return;
     }
 
     const loadTranslations = async () => {
-      const translated = await translateText(labelsToTranslate, "bn");
+      const targetLang = LANGUAGES.find(l => l.code === currentLanguage)?.googleCode || "en";
+      const translated = await translateText(labelsToTranslate, targetLang);
       const map = {};
       labelsToTranslate.forEach((label, i) => (map[label] = translated[i]));
       setTranslatedLabels(map);
     };
 
     loadTranslations();
-  }, [language]);
+  }, [currentLanguage]);
 
   const getLabel = (text) =>
-    language === "English" ? text : translatedLabels[text] || text;
+    currentLanguage === "en" ? text : translatedLabels[text] || text;
 
-  const toggleLanguage = () => {
-    const newLang = language === "English" ? "বাংলা" : "English";
-    localStorage.setItem("language", newLang);
-    setLanguage(newLang);
+  const handleLanguageChange = (langCode) => {
+    setCurrentLanguage(langCode);
+    localStorage.setItem("language", langCode);
+    setLanguage(langCode);
+    setLangMenuAnchor(null);
 
     // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent("languageChanged", { 
-        detail: { language: newLang } 
+      detail: { language: langCode } 
     }));
   };
 
@@ -169,6 +223,8 @@ const NavbarAcholder = ({
     }
   };
 
+  const currentLangObj = LANGUAGES.find(l => l.code === currentLanguage) || LANGUAGES[0];
+
   return (
     <motion.nav className="NavbarAcholderContainer">
       <div className="NavbarAcholderTopSection">
@@ -181,18 +237,11 @@ const NavbarAcholder = ({
                 className="MainLogo"
                 onClick={() => navigate("/")}
               />
-
-              {/* Subscript Beta */}
               <span className="LogoBetaTag">Beta</span>
             </div>
-
             <span>DataGhurhi</span>
           </div>
         </div>
-
-        {/* Search + Language inline */}
-
-        {/* Language Switch now inline with search */}
 
         <div className="NavbarAcholderSearchWrapper">
           <div className="NavbarAcholderSearchSection">
@@ -225,41 +274,64 @@ const NavbarAcholder = ({
             </div>
           </div>
         </div>
-        <div className="NavbarAcholderLangSwitchInline">
-          <label className="NavbarAcholderSwitch">
-            <input
-              type="checkbox"
-              onChange={toggleLanguage}
-              checked={language === "বাংলা"}
-            />
-            <span className="NavbarAcholderSlider"></span>
-          </label>
-          <div className="NavbarAcholderLangLabels">
-            <span className={language === "English" ? "LangActive" : ""}>
-              English
-            </span>
-            <span className={language === "বাংলা" ? "LangActive" : ""}>
-              বাংলা
-            </span>
-          </div>
-        </div>
 
-        {/* NAVIGATION MENU */}
-        {/* <ul
-            className={`NavbarAcholderNavList ${
-              isMobile && menuOpen ? "NavbarAcholderPopupOpen" : ""
-            }`}
+        {/* Language Dropdown Button */}
+        <div className="NavbarAcholderLangDropdown">
+          <button 
+            className="NavbarAcholderLangButton"
+            onClick={(e) => setLangMenuAnchor(e.currentTarget)}
           >
-            <li onClick={() => isMobile && setMenuOpen(false)}>
-              <a href="/dashboard">
-                <FaHome className="NavbarAcholderIcon" />
-                
-              </a>
-            </li>
+            <span className="NavbarAcholderLangFlag">{currentLangObj.flag}</span>
+            <FaChevronDown className="NavbarAcholderLangChevron" />
+          </button>
 
-       
-          </ul> */}
-        {/* Profile dropdown always last */}
+          <Menu
+            anchorEl={langMenuAnchor}
+            open={langMenuOpen}
+            onClose={() => setLangMenuAnchor(null)}
+            PaperProps={{
+              elevation: 3,
+              sx: {
+                mt: 1.5,
+                borderRadius: "12px",
+                filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.1))",
+                minWidth: 180,
+                maxHeight: 400,
+              },
+            }}
+          >
+            {LANGUAGES.map((lang) => (
+              <MenuItem
+                key={lang.code}
+                onClick={() => handleLanguageChange(lang.code)}
+                className="NavbarAcholderLangMenuItem"
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '10px 16px',
+                  '&:hover': {
+                    backgroundColor: '#f0f0f0',
+                  },
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '20px' }}>{lang.flag}</span>
+                  <span style={{ 
+                    fontSize: '14px', 
+                    fontWeight: currentLanguage === lang.code ? '600' : '400',
+                    color: '#333'
+                  }}>
+                    {lang.name}
+                  </span>
+                </div>
+                {currentLanguage === lang.code && (
+                  <FaCheck style={{ color: '#4caf50', fontSize: '14px' }} />
+                )}
+              </MenuItem>
+            ))}
+          </Menu>
+        </div>
 
         <div className="NavbarAcholderProfile">
           <div className="NavbarAcholderAvatarWrap">
@@ -295,7 +367,6 @@ const NavbarAcholder = ({
             >
               {token && (
                 <>
-                  {/* Go to Profile */}
                   <MenuItem
                     onClick={() => (window.location.href = "/edit-profile")}
                   >
@@ -303,7 +374,6 @@ const NavbarAcholder = ({
                     {getLabel("Profile")}
                   </MenuItem>
 
-                  {/* Security */}
                   <MenuItem
                     onClick={() =>
                       (window.location.href = "/security-settings")
@@ -320,7 +390,7 @@ const NavbarAcholder = ({
                       {getLabel("Security")}
                     </span>
                   </MenuItem>
-                  {/* Subscription */}
+
                   <MenuItem
                     onClick={() => (window.location.href = "/subscription")}
                   >
@@ -335,18 +405,16 @@ const NavbarAcholder = ({
                       {getLabel("Subscription")}
                     </span>
                   </MenuItem>
-                  {/* Divider */}
+
                   <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
                 </>
               )}
 
-              {/* About */}
               <MenuItem onClick={() => (window.location.href = "/about")}>
                 <FaInfoCircle style={{ marginRight: "8px" }} />
                 {getLabel("About")}
               </MenuItem>
 
-              {/* FAQ */}
               <MenuItem onClick={() => (window.location.href = "/faq")}>
                 <FaQuestionCircle style={{ marginRight: "8px" }} />
                 {getLabel("FAQ")}
@@ -354,10 +422,8 @@ const NavbarAcholder = ({
 
               {token && (
                 <>
-                  {/* Divider */}
                   <hr style={{ margin: "8px 0", borderColor: "#130d0dff" }} />
 
-                  {/* Logout */}
                   <MenuItem onClick={logOut}>
                     <FaSignOutAlt style={{ marginRight: "8px" }} />
                     {getLabel("Logout")}
