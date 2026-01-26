@@ -9702,10 +9702,14 @@ def generate_unique_id_column_api(request):
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Failed to read Excel: {str(e)}'})
 
-        col_name = 'row_id'
-        if prefix:
+        col_name = 'row_id'          
+                
+        # Create unique ID column
+        if prefix:  
             col_name = f"{prefix}_row_id" 
-        row_id_column = pd.DataFrame({col_name: np.arange(1, len(df) + 1)})
+            row_id_column = pd.DataFrame({col_name: [f"{prefix}_{i}" for i in np.arange(1, len(df) + 1)]})
+        else:
+            row_id_column = pd.DataFrame({col_name: np.arange(1, len(df) + 1)})
         df = pd.concat([row_id_column, df], axis=1)
 
         df.to_excel(preprocess_file_path, index=False)

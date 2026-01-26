@@ -308,7 +308,8 @@ const translateText = async (textArray, targetLang) => {
 
 // Main App Component
 const StatisticalAnalysisTool = () => {
-    const API_BASE = 'http://127.0.0.1:8000/api';   
+    const API_BASE = 'http://127.0.0.1:8000/api'; 
+    const API_WORKBOOK='http://127.0.0.1:8000'  ;
     const navigate = useNavigate();
     // Language state - initialized from localStorage to sync with navbar
     const [language, setLanguage] = useState(() => {
@@ -539,7 +540,7 @@ const getLabel = (text) =>
             sessionStorage.removeItem("preprocessed");
         }
 
-        fileUrl = `${API_BASE}${sessionStorage.getItem("fileURL")}`;
+        fileUrl = `${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`;
         console.log("File URL from sessionStorage:", fileUrl);
         
         if (sessionStorage.getItem("fileURL")) {
@@ -2203,7 +2204,7 @@ const closePreview= async () =>{
                                             <h3>Data Preview</h3>
                                             
 
-                                                <PreviewTable workbookUrl={`${API_BASE}${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
+                                                <PreviewTable workbookUrl={`${API_WORKBOOK}${sessionStorage.getItem("fileURL")}`} columns={columns} initialData={data} data={data} setData={setData} setIsPreviewModalOpen={setIsPreviewModalOpen} isPreviewModalOpen={isPreviewModalOpen} />
                                         
                                         </div>
                                     </div>
@@ -3148,6 +3149,7 @@ const closePreview= async () =>{
                                                             value={column1}
                                                             onChange={(e) => setColumn1(e.target.value)}
                                                             disabled={columns.length === 0}
+                                                            
                                                         >
                                                             {columns.length === 0 ? (
                                                                 <option value="">-- Upload a file first --</option>

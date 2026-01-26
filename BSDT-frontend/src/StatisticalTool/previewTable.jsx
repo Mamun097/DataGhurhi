@@ -501,6 +501,11 @@ useEffect(() => {
       headerName: col,
       editable: true,
       resizable: true,
+      initialWidth: 300,
+      wrapText: true, // Wrap Cell Text
+      autoHeight: true, // Auto Height Cells
+      wrapHeaderText: true, // Wrap Header Text
+      autoHeaderHeight: true, // Auto Height Header
 
       headerClass: (params) => (selectedColumns.includes(col) ? "selected-header" : ""),
 

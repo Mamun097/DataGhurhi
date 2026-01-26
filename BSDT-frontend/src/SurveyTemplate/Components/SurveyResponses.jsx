@@ -1542,7 +1542,7 @@ const SurveyResponses = () => {
       formData.append("file_type", "survey");
 
       const response = await fetch(
-        "/api/sa/upload-preprocessed/",
+        "http://127.0.0.1:8000/api/upload-preprocessed/",
         {
           method: "POST",
           body: formData,
